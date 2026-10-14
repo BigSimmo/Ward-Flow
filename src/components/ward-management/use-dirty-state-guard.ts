@@ -26,8 +26,11 @@ export function clearWardFlowDraftCaches(): void {
   }
 }
 
-/** D18: typed text stays in memory. Warn on unload and purge caches from older versions. */
-export function useDirtyStateGuard({ key, isDirty }: DirtyStateGuardOptions) {
+/** D18: typed text stays in memory. Warn on unload, client navigation, and purge caches from older versions. */
+export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
+  const normalized: DirtyStateGuardOptions = typeof options === "boolean" ? { isDirty: options } : options;
+  const { key, isDirty, confirmMessage } = normalized;
+
   useEffect(() => {
     clearWardFlowDraftCaches();
   }, [key]);
@@ -50,6 +53,56 @@ export function useDirtyStateGuard({ key, isDirty }: DirtyStateGuardOptions) {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty || typeof document === "undefined") return;
+    const message = confirmMessage ?? "You have unsaved changes. Are you sure you want to leave?";
+
+    const handleClick = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (event.defaultPrevented) return;
+
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target && anchor.target !== "_self") return;
+      if (anchor.hasAttribute("download")) return;
+
+      const rawHref = anchor.getAttribute("href");
+      if (
+        !rawHref ||
+        rawHref.startsWith("#") ||
+        rawHref.startsWith("javascript:") ||
+        rawHref.startsWith("mailto:") ||
+        rawHref.startsWith("tel:")
+      ) {
+        return;
+      }
+
+      try {
+        const targetUrl = new URL(anchor.href, window.location.href);
+        const currentUrl = new URL(window.location.href);
+        if (
+          targetUrl.origin === currentUrl.origin &&
+          targetUrl.pathname === currentUrl.pathname &&
+          targetUrl.search === currentUrl.search
+        ) {
+          return;
+        }
+      } catch {
+        return;
+      }
+
+      const confirmed = window.confirm(message);
+      if (!confirmed) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [isDirty, confirmMessage]);
 
   return { clearDraft };
 }

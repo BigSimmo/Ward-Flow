@@ -138,4 +138,142 @@ describe("useDirtyStateGuard", () => {
     rerender({ renderIndex: 2 });
     expect(callCount).toBe(0);
   });
+
+  it("intercepts in-app link navigation when dirty and cancels when user dismisses confirm", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    const { unmount } = renderHook(() =>
+      useDirtyStateGuard({
+        isDirty: true,
+        confirmMessage: "Leave without saving?",
+      }),
+    );
+
+    const link = document.createElement("a");
+    link.href = "/mockups/ward-flow/movements";
+    document.body.appendChild(link);
+
+    const clickEvent = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+    });
+
+    link.dispatchEvent(clickEvent);
+
+    expect(confirmSpy).toHaveBeenCalledWith("Leave without saving?");
+    expect(clickEvent.defaultPrevented).toBe(true);
+
+    link.remove();
+    unmount();
+  });
+
+  it("allows in-app link navigation when dirty and user accepts confirm", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { unmount } = renderHook(() =>
+      useDirtyStateGuard({
+        isDirty: true,
+      }),
+    );
+
+    const link = document.createElement("a");
+    link.href = "/mockups/ward-flow/capacity";
+    document.body.appendChild(link);
+
+    const clickEvent = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+    });
+
+    link.dispatchEvent(clickEvent);
+
+    expect(confirmSpy).toHaveBeenCalledWith("You have unsaved changes. Are you sure you want to leave?");
+    expect(clickEvent.defaultPrevented).toBe(false);
+
+    link.remove();
+    unmount();
+  });
+
+  it("ignores modified clicks, target=_blank, and hash links", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    const { unmount } = renderHook(() =>
+      useDirtyStateGuard({
+        isDirty: true,
+      }),
+    );
+
+    // 1. Modified click (metaKey)
+    const navLink = document.createElement("a");
+    navLink.href = "/mockups/ward-flow/settings";
+    document.body.appendChild(navLink);
+
+    const metaClick = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      metaKey: true,
+    });
+    navLink.dispatchEvent(metaClick);
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    // 2. target="_blank"
+    const blankLink = document.createElement("a");
+    blankLink.href = "/mockups/ward-flow/external";
+    blankLink.target = "_blank";
+    document.body.appendChild(blankLink);
+
+    const blankClick = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+    });
+    blankLink.dispatchEvent(blankClick);
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    // 3. Hash link
+    const hashLink = document.createElement("a");
+    hashLink.href = "#details";
+    document.body.appendChild(hashLink);
+
+    const hashClick = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+    });
+    hashLink.dispatchEvent(hashClick);
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    navLink.remove();
+    blankLink.remove();
+    hashLink.remove();
+    unmount();
+  });
+
+  it("supports passing a bare boolean isDirty to useDirtyStateGuard", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    const { rerender, unmount } = renderHook(({ isDirty }: { isDirty: boolean }) => useDirtyStateGuard(isDirty), {
+      initialProps: { isDirty: false },
+    });
+
+    const link = document.createElement("a");
+    link.href = "/mockups/ward-flow/board";
+    document.body.appendChild(link);
+
+    link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    rerender({ isDirty: true });
+
+    const dirtyClick = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+    link.dispatchEvent(dirtyClick);
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(dirtyClick.defaultPrevented).toBe(true);
+
+    link.remove();
+    unmount();
+  });
 });

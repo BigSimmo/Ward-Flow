@@ -198,6 +198,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
               dispatch={vi.fn()}
               onClose={() => setIsOpen(false)}
               onSelectMovement={vi.fn()}
+              withBackdrop
             />
           )}
         </div>
@@ -217,13 +218,13 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       fireEvent.click(triggerBtn);
 
-      const drawer = screen.getByRole("complementary", { name: "Tasks" });
+      const drawer = screen.getByRole("dialog", { name: "Tasks" });
       expect(drawer).toBeInTheDocument();
       expect(drawer.contains(document.activeElement)).toBe(true);
 
       fireEvent.keyDown(window, { key: "Escape" });
 
-      expect(screen.queryByRole("complementary", { name: "Tasks" })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
       expect(document.activeElement).toBe(triggerBtn);
     });
   });
