@@ -19,7 +19,7 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { bedReleases, wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import type { BedRelease, Movement } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 
 const NOW = NOW_ANCHOR;
 const unit = allUnits()[0];
@@ -88,6 +88,20 @@ describe("bedsForecast", () => {
     expect(twoDays.likely).toBe(READY + 1 + 2 - 2);
   });
 
+  it("deduplicates beds needed in forecast when a waiting movement already has an allocated bed (WF-A3-01)", () => {
+    const releases = [release({ state: "confirmed", expectedAt: NOW + 60 })];
+    const movements = [
+      movement({ id: "MV-FC-1" as Movement["id"], stage: "accepted_awaiting_bed", allocatedBed: "BED-01" }),
+      movement({ id: "MV-FC-2" as Movement["id"], stage: "placement_requested" }),
+    ];
+    const forecast = bedsForecast([unit], releases, [], movements, NOW);
+    const day = horizon(forecast, 24);
+    // Clinical owner ruling 14 Oct 2026: the pulled/allocated movement is left out of the bed-wait count.
+    expect(day.waitingForBed).toBe(1);
+    expect(day.bedsNeeded).toBe(1);
+    expect(day.low).toBe(READY + 1 - 1);
+  });
+
   it("keeps held-up, overdue and unflagged planned discharges out of the likely figure but in the high end", () => {
     const flagged = release({ state: "expected", expectedAt: NOW + 60, admissionId: "AD-FLAGGED" });
     const releases = [
@@ -117,6 +131,53 @@ describe("bedsForecast", () => {
       NOW,
     );
     expect(horizon(forecast, 24)).toMatchObject({ expected: 0, plannedNotFlagged: 0 });
+  });
+
+  it("excludes every projected supply bucket from closed wards", () => {
+    const closedUnit = { ...allUnits()[1], isClosed: true };
+    const releases = [
+      release({ unitId: closedUnit.id, state: "confirmed" }),
+      release({ unitId: closedUnit.id, state: "expected" }),
+      release({ unitId: closedUnit.id, blocker: BED_RELEASE_BLOCKERS[0] }),
+      release({ unitId: closedUnit.id, expectedAt: NOW - 2 * MINUTES_PER_DAY }),
+      release({ unitId: unit.id, state: "confirmed" }),
+    ];
+    const admissions = [
+      admission({ id: "AD-CLOSED-PLANNED", unitId: closedUnit.id, expectedDischargeAt: NOW + 60 }),
+      admission({ id: "AD-OPEN-PLANNED", expectedDischargeAt: NOW + 60 }),
+    ];
+    const forecast = bedsForecast([unit, closedUnit], releases, admissions, [], NOW);
+    for (const entry of forecast.horizons) {
+      expect(entry).toMatchObject({
+        readyNow: READY,
+        confirmed: 1,
+        expected: 0,
+        heldUp: 0,
+        overdue: 0,
+        plannedNotFlagged: 1,
+        low: READY + 1,
+        likely: READY + 1,
+        high: READY + 2,
+      });
+    }
+  });
+
+  it.each([
+    // Clinical owner ruling 14 Oct 2026: main's R-B-09 rule, min(allocatable, empty), unclamped.
+    { beds: 4, empty: 8, allocatable: 10, ready: 8 },
+    { beds: 8, empty: 3, allocatable: 10, ready: 3 },
+    { beds: 8, empty: 6, allocatable: 2, ready: 2 },
+  ])("bounds Ready by physical, empty and allocatable capacity ($ready)", ({ beds, empty, allocatable, ready }) => {
+    const staleUnit: Unit = {
+      ...unit,
+      isClosed: false,
+      beds,
+      empty: { ...unit.empty, value: empty },
+      allocatable: { ...unit.allocatable, value: allocatable },
+    };
+    for (const entry of bedsForecast([staleUnit], [], [], [], NOW).horizons) {
+      expect(entry).toMatchObject({ readyNow: ready, low: ready, likely: ready, high: ready });
+    }
   });
 
   it("runs on the seeded network and keeps low <= likely <= high", () => {

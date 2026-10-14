@@ -449,4 +449,38 @@ describe("mutation proof: restoring `allocatable` alone is not enough", () => {
     // read `droppedTo` instead of `lockedBedsFree(unitBefore)`, the mutant has come back.
     expect(lockedBedsFree(unitIn(released))).not.toBe(droppedTo);
   });
+
+  it("recalculates pullExpiresAt upon bed re-pull (WF-S1-08)", () => {
+    const before = bench();
+    const movementId = "WF-BK-SEC-A";
+    const pull1Now = PULL_NOW;
+    const pulled1 = pull(before, movementId);
+    expect(pulled1.rejections).toEqual([]);
+    expect(movementIn(pulled1, movementId).pullExpiresAt).toBe(pull1Now + before.configuration.pullHoldMinutes);
+
+    // Step back to accepted_awaiting_bed
+    const steppedBack = wardFlowReducer(pulled1, {
+      type: "STEP_BACK_STAGE",
+      role: "coordinator",
+      now: pull1Now + 20,
+      movementId,
+      to: "accepted_awaiting_bed",
+      reason: "the_patient_situation_changed",
+    } as never);
+    expect(steppedBack.rejections).toEqual([]);
+
+    // Re-pull at later time
+    const pull2Now = pull1Now + 45;
+    const pulled2 = wardFlowReducer(steppedBack, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: pull2Now,
+      movementId,
+      unitId: UNIT_ID,
+    });
+    expect(pulled2.rejections).toEqual([]);
+    // Hold expiry must be refreshed relative to the new pull time
+    expect(movementIn(pulled2, movementId).pullExpiresAt).toBe(pull2Now + before.configuration.pullHoldMinutes);
+    expect(movementIn(pulled2, movementId).pullExpiresAt).not.toBe(pull1Now + before.configuration.pullHoldMinutes);
+  });
 });

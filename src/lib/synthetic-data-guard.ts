@@ -4,7 +4,7 @@
  *
  * Scans payloads for:
  * 1. Australian Medicare numbers (10 digits starting with 2-6)
- * 2. Australian hospital identifiers (UMRN / UR / MRN with 6-8 digits)
+ * 2. Australian hospital identifiers (UMRN / UR / MRN with 6-10 digits)
  * 3. Australian mobile and landline telephone numbers
  */
 
@@ -13,8 +13,8 @@ export type SyntheticCheckResult = { safe: true } | { safe: false; reason: strin
 // 10 digits, starts with 2, 3, 4, 5, or 6 (optionally formatted: 2xxx xxxxx x)
 const MEDICARE_PATTERN = /\b([2-6]\d{3}[ -]?\d{5}[ -]?\d)\b/;
 
-// Explicit hospital patient record markers followed by 6-9 digits
-const HOSPITAL_RECORD_PATTERN = /\b(?:UMRN|MRN|UR[N#]?)\s*[:#]?\s*(\d{6,9})\b/i;
+// Explicit hospital patient record markers followed by 6-10 digits
+const HOSPITAL_RECORD_PATTERN = /\b(?:UMRN|MRN|UR[N#]?)\s*[:#-]?\s*(\d{6,10})\b/i;
 
 // Australian phone numbers: Mobile 04xx xxx xxx or +61 4xx, WA landline (08) xxxx xxxx
 const PHONE_PATTERN =
@@ -74,6 +74,12 @@ export function checkSyntheticPayload(payload: unknown, maxDepth = 16): Syntheti
       return { safe: true };
     }
 
+    if (typeof node === "number") {
+      const violation = scanString(String(node));
+      if (violation) return violation;
+      return { safe: true };
+    }
+
     if (typeof node === "object" && node !== null) {
       if (seen.has(node)) {
         return { safe: true };
@@ -90,6 +96,12 @@ export function checkSyntheticPayload(payload: unknown, maxDepth = 16): Syntheti
           // Check key itself
           const keyViolation = scanString(key);
           if (keyViolation) return keyViolation;
+
+          // Check combined key-value if key is a record indicator and value is numeric or string
+          if (typeof value === "number" || typeof value === "string") {
+            const combinedViolation = scanString(`${key}: ${value}`);
+            if (combinedViolation) return combinedViolation;
+          }
 
           // Check value
           const valueViolation = walk(value, depth + 1);

@@ -16,6 +16,7 @@ import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react
 
 import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import {
   clockState,
   formatElapsed,
@@ -592,9 +593,8 @@ export function transportLeg(transport: TransportJob | undefined): TransportLeg 
  * at all (`tests/ward-capacity-reconciliation.test.ts`, `tests/ward-model.test.ts`).
  */
 export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
-  const available = Math.min(unit.allocatable.value, unit.empty.value);
-  const held = Math.max(unit.empty.value - available, 0);
-  const notEmpty = Math.max(unit.beds - unit.empty.value, 0);
+  const { effectiveEmpty, available, held } = boundedBedAvailability(unit);
+  const notEmpty = Math.max(unit.beds - effectiveEmpty, 0);
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model
   // (`Unit.blocked` is a typed count, not a record), so none is ever subtracted here and screens
   // say "Not recorded" where they used to print this count. Kept as a field so every consumer's

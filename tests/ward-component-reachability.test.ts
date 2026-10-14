@@ -140,6 +140,10 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/coordinator/coordinator-cockpit.tsx",
+    why: "added by #269 (WF-A1-15) but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
+  },
+  {
     module: "src/components/ward-management/patients/person-by-umrn.tsx",
     why: "a UMRN in /people/ is no longer resolved (D-39, PR #280); patient links use the person id and an unknown id gets the plain not-found",
   },
