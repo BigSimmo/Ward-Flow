@@ -474,37 +474,45 @@ export function WardArrivalsCorridor({
       )}
 
       {heldAfterStop.length > 0 ? (
-        <div aria-label="Stopped transports awaiting bed release" style={{ marginTop: "16px" }}>
+        <section aria-label="Stopped transports awaiting bed release" style={{ marginTop: "16px" }}>
           <h3>Transport stopped — release held bed</h3>
-          {heldAfterStop.map((movement) => (
-            <article key={movement.id} className={styles.inboundCard} data-state="warn">
-              <div className={styles.patientMeta}>
-                <strong>{resolvePatientIdentity(movement).displayName}</strong>
-                <p>Transport stopped after collection. The bed remains held until released.</p>
-              </div>
-              <div className={styles.corridorActions}>
-                <button
-                  type="button"
-                  className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
-                  data-testid={`ward-release-stopped-bed-${movement.id}`}
-                  onClick={() => {
-                    priorRejectionCountRef.current = rejections.length;
-                    dispatch({
-                      type: "RELEASE_HELD_BED",
-                      role: "ward",
-                      now,
-                      movementId: movement.id,
-                      actingUnitId: unit.id,
-                    });
-                    setCheckToken((t) => t + 1);
-                  }}
-                >
-                  Release held bed
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+          {heldAfterStop.map((movement) => {
+            const patient = resolvePatientIdentity(movement);
+            const patientDistinction = patient.umrn ? `(UMRN: ${patient.umrn})` : `(${movement.id})`;
+            return (
+              <article key={movement.id} className={styles.inboundCard} data-state="warn">
+                <div className={styles.patientMeta}>
+                  <div>
+                    <strong>{patient.displayName}</strong>
+                    {patient.umrn ? <span className={styles.patientUmrn}> UMRN: {patient.umrn}</span> : null}
+                  </div>
+                  <p>Transport stopped after collection. The bed remains held until released.</p>
+                </div>
+                <div className={styles.corridorActions}>
+                  <button
+                    type="button"
+                    aria-label={`Release held bed for ${patient.displayName} ${patientDistinction}`}
+                    className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
+                    data-testid={`ward-release-stopped-bed-${movement.id}`}
+                    onClick={() => {
+                      priorRejectionCountRef.current = rejections.length;
+                      dispatch({
+                        type: "RELEASE_HELD_BED",
+                        role: "ward",
+                        now,
+                        movementId: movement.id,
+                        actingUnitId: unit.id,
+                      });
+                      setCheckToken((t) => t + 1);
+                    }}
+                  >
+                    Release held bed
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </section>
       ) : null}
 
       {/* Explains the ruled four bed boxes (`ward-bed-states.ts`), Closed by contrast with the PULL */}

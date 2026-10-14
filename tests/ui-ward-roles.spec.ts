@@ -193,6 +193,11 @@ test.describe("@mockup Ward screen", () => {
     expect(unitById(bogusUnitId), "fixture assumption: this id resolves to no real unit").toBeUndefined();
 
     await page.goto(`/mockups/ward-flow/ward/${bogusUnitId}`, { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-unit-screen")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
 
     // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
@@ -268,7 +273,7 @@ test.describe("@mockup Ward screen", () => {
    * Deferred item 1. `tests/ui-ward-management.spec.ts`'s "retains its operating structure in
    * dark, forced-colours, and print modes" already proves this for the coordinator command view;
    * the four role screens had none of it. This copies that established `emulateMedia` sequence
-   * exactly — dark, then forced-colours, then print — and asserts the same class of thing it
+   * explicitly — dark, then forced-colours, then print — and asserts the same class of thing it
    * does: that the screen's *operating structure* survives each mode. It deliberately makes no
    * assertion about colour, contrast or appearance, because nothing here measures those.
    */
@@ -321,6 +326,11 @@ test.describe("@mockup Transport officer screen", () => {
   test("gives the officer four actions and nothing else", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-officer-screen")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -375,6 +385,11 @@ test.describe("@mockup Transport officer screen", () => {
   test("states it is showing every job rather than inventing an officer to own them", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-officer-screen")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
 
     // Worded "All outstanding jobs..." on screen now, not "every" — same claim, different word.
@@ -407,6 +422,11 @@ test.describe("@mockup Transport officer screen", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-officer-screen")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-officer-governance")).toBeVisible();
@@ -474,6 +494,11 @@ test.describe("@mockup Movements — transport panel", () => {
   test("tracks every vehicle by leg and by how long since the last stamp", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.goto("/mockups/ward-flow/movements", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-movements-page")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
 
     // ⚠️ **RETARGETED, 2026-09-17.** This panel used to render `WardRecordRow`
@@ -520,6 +545,11 @@ test.describe("@mockup Movements — transport panel", () => {
   test("lists exactly the movements that carry a transport job, and states the rest explicitly", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.goto("/mockups/ward-flow/movements", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-movements-page")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
 
     // 2026-09-25 re-measure: the rulings overlay (1b1c5bb2ba/6e4ba553f3) adds 17 open movements,
@@ -563,6 +593,11 @@ test.describe("@mockup Movements — operating structure in dark, forced-colours
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/mockups/ward-flow/movements", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByTestId("ward-movements-page")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 

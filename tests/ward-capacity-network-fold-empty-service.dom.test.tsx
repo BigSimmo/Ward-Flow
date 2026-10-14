@@ -20,7 +20,12 @@ import { describe, expect, it, vi } from "vitest";
  */
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
-  return { ...actual, useWardFlow: () => mockContext, useWardFlowClock: () => mockContext.now };
+  return {
+    ...actual,
+    useWardFlow: () => mockContext,
+    useWardFlowClock: () => mockContext.now,
+    useWardClock: () => mockContext.now,
+  };
 });
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";

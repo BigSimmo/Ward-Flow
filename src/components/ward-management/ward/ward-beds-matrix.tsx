@@ -185,6 +185,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.bedLabel === n.bedLabel &&
     p.status === n.status &&
     p.statusText === n.statusText &&
+    p.preparing === n.preparing &&
     p.patientAlias === n.patientAlias &&
     p.stayDays === n.stayDays &&
     p.expectedDays === n.expectedDays &&
@@ -266,6 +267,11 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
         <div className={styles.bedCardBody}>
           {isPulled ? <div className={styles.bedPatientName}>{bed.patientAlias}</div> : null}
           {cardMetaLine(bed) ? <div className={styles.bedPatientSub}>{cardMetaLine(bed)}</div> : null}
+        </div>
+      ) : isReady && bed.preparing ? (
+        <div className={styles.bedCardBody}>
+          <div className={styles.bedPatientName}>Not offered yet</div>
+          <div className={styles.bedPatientSub}>Being made ready</div>
         </div>
       ) : isReady ? (
         <div className={styles.bedCardBody}>

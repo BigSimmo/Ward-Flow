@@ -30,9 +30,14 @@ function viewFromHash(hash: string): StatisticsView {
  */
 export function useStatisticsView() {
   const [view, setView] = useState<StatisticsView>("board");
+  const [hash, setHash] = useState<string>("");
 
   useEffect(() => {
-    const sync = () => setView(viewFromHash(window.location.hash));
+    const sync = () => {
+      const currentHash = typeof window !== "undefined" ? window.location.hash : "";
+      setHash(currentHash);
+      setView(viewFromHash(currentHash));
+    };
     sync();
     window.addEventListener("hashchange", sync);
     window.addEventListener("popstate", sync);
@@ -43,16 +48,67 @@ export function useStatisticsView() {
   }, []);
 
   // A link to a card inside a view (#journey-stages) lands on that card once the view has drawn it.
+  // The view is code-split, so its card can appear after the view finishes loading.
   useEffect(() => {
-    const id = window.location.hash.replace(/^#/, "");
+    const id = hash.replace(/^#/, "");
     if (!id || id === view || viewFromHash(`#${id}`) !== view) return;
-    const frame = window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
-    return () => window.cancelAnimationFrame(frame);
-  }, [view]);
+
+    let observer: MutationObserver | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let frame = 0;
+
+    const land = () => {
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ block: "start" });
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        return true;
+      }
+      return false;
+    };
+
+    if (!land()) {
+      if (typeof MutationObserver !== "undefined") {
+        observer = new MutationObserver(() => {
+          land();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      } else {
+        let attempts = 0;
+        const retry = () => {
+          if (land()) return;
+          if (++attempts < 300) frame = window.requestAnimationFrame(retry);
+        };
+        frame = window.requestAnimationFrame(retry);
+      }
+
+      timer = setTimeout(() => {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+      }, 10000);
+    }
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      if (observer) observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, [view, hash]);
 
   const choose = useCallback((next: StatisticsView) => {
     setView(next);
     const { pathname, search } = window.location;
+    const nextHash = next === "board" ? "" : `#${next}`;
+    setHash(nextHash);
     const url = next === "board" ? `${pathname}${search}` : `${pathname}${search}#${next}`;
     if (`${pathname}${search}${window.location.hash}` !== url) window.history.pushState(null, "", url);
   }, []);

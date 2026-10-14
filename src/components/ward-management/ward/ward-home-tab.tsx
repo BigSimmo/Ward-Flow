@@ -78,6 +78,7 @@ export function wardActNowCount({
   rollupOverdue,
   lapsedHolds = 0,
   absences = 0,
+  stoppedHolds = 0,
 }: {
   alerts: number;
   incoming: number;
@@ -87,6 +88,8 @@ export function wardActNowCount({
   lapsedHolds?: number;
   /** Audit A3-1: this ward's absences on an order (`absentOnOrder`), one Act now row each. */
   absences?: number;
+  /** Stopped transports whose held bed on this ward has not yet been released. */
+  stoppedHolds?: number;
 }): number {
   return (
     absences +
@@ -94,7 +97,8 @@ export function wardActNowCount({
     (incoming > 0 ? 1 : 0) +
     (heldUp > 0 ? 1 : 0) +
     (rollupOverdue ? 1 : 0) +
-    (lapsedHolds > 0 ? 1 : 0)
+    (lapsedHolds > 0 ? 1 : 0) +
+    (stoppedHolds > 0 ? 1 : 0)
   );
 }
 
@@ -107,6 +111,7 @@ interface WardHomeTabProps {
   units: Unit[];
   capacity: { available: number; occupied: number };
   accepted: Movement[];
+  heldAfterStop?: Movement[];
   incoming: Movement[];
   withdrawn: Movement[];
   overridesHere: OverrideEntry[];
@@ -206,6 +211,7 @@ export function WardHomeTab({
   unit,
   units,
   accepted,
+  heldAfterStop = [],
   incoming,
   withdrawn,
   overridesHere,
@@ -759,6 +765,18 @@ export function WardHomeTab({
       meta: String(lapsedHolds.length),
       tone: "danger",
       action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
+    });
+  }
+  if (heldAfterStop.length > 0) {
+    actNow.push({
+      key: "stopped-holds",
+      title: heldAfterStop.length === 1 ? "Stopped transport holding bed" : "Stopped transports holding beds",
+      detail: heldAfterStop
+        .map((movement) => `${resolvePatientIdentity(movement).displayName}, transport stopped after collection`)
+        .join("; "),
+      meta: String(heldAfterStop.length),
+      tone: "warning",
+      action: onOpenArrivals ? { label: "Release bed", run: onOpenArrivals } : undefined,
     });
   }
   if (morningRollupOverdue && !morningRollupConfirmed) {

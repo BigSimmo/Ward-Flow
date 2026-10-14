@@ -272,7 +272,6 @@ export function isStoppedAwaitingRelease(row: HandoverRow): boolean {
 export function shownBedHold(row: HandoverRow, now: Instant) {
   return isCollected(row) ? null : bedHold(row.pullExpiresAt, now);
 }
-
 export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
   return !isCollected(row) && bedHoldLapsed(row.pullExpiresAt, now);
 }
@@ -345,8 +344,9 @@ export function destinationText(row: HandoverRow): string {
 
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
+  const collected = isCollected(row);
   if (
-    !isCollected(row) &&
+    !collected &&
     row.pullExpiresAt !== undefined &&
     (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
   ) {
@@ -354,7 +354,7 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
     return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
-  return null;
+  return collected ? "In transit" : null;
 }
 
 /**
@@ -362,8 +362,9 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
  * ("Pull over by", "Pull ends", "1A due"), which may truncate (device audit 11 Oct 2026).
  */
 export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string; atRisk?: boolean } | null {
+  const collected = isCollected(row);
   if (
-    !isCollected(row) &&
+    !collected &&
     row.pullExpiresAt !== undefined &&
     (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
   ) {
@@ -383,7 +384,7 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
-  return null;
+  return collected ? { when: "In transit", what: "Collected" } : null;
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
