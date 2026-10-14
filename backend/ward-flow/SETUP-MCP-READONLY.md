@@ -39,15 +39,14 @@ Use the exact server hostname, database `wardflow_dev`, verified database login 
 
 For an approved host that already has Azure CLI and `psql`, the following PowerShell example obtains the token into memory, runs only the fixed check file and clears it afterwards. Fill the five non-secret placeholders locally; `APPROVED_SERVER_HOSTNAME` is the `wardflow-dev-aue` flexible server's `.postgres.database.azure.com` name. Use the approved reader's isolated CLI profile; Azure CLI must already be signed in as that identity. An Azure login must not change MFA or Security Defaults.
 
-Start the dedicated shell from the Ward Flow repository root on the approved host so the repo-root-relative SQL file path resolves directly (or `cd backend/ward-flow` first and pass `infra/verify-reader.sql` / `sql/003_ward_flow_mcp_readonly_role.sql`). For POSIX shells with a pre-populated connection URI:
+Start the dedicated shell from the Ward Flow repository root on the approved host so the repo-root-relative SQL file path resolves directly. For POSIX shells with a pre-populated connection URI:
 
 ```sh
 # From the repository root:
-psql "$DATABASE_URL" -f backend/ward-flow/sql/003_ward_flow_mcp_readonly_role.sql
 psql "$DATABASE_URL" -f backend/ward-flow/infra/verify-reader.sql
 
 # Or from inside backend/ward-flow:
-cd backend/ward-flow && psql "$DATABASE_URL" -f sql/003_ward_flow_mcp_readonly_role.sql
+cd backend/ward-flow && psql "$DATABASE_URL" -f infra/verify-reader.sql
 ```
 
 In PowerShell from the repository root:
