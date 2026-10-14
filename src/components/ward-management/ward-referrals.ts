@@ -217,7 +217,7 @@ export function isAwaitingAnswer(addressing: ReferralAddressing): boolean {
  */
 export function referralDecidedAt(referral: Referral): Instant | undefined {
   const times = referral.destinations
-    .map((addressing) => addressing.decidedAt)
+    .map((addressing) => addressing.decidedAt ?? addressing.withdrawnAt)
     .filter((at): at is Instant => at !== undefined);
   return times.length > 0 ? Math.max(...times) : undefined;
 }
@@ -741,7 +741,14 @@ export function recentlyDecidedReferrals(referrals: Referral[]): Referral[] {
  * board the same day (census §8).
  */
 export function decidedReferrals(referrals: Referral[]): Referral[] {
-  return referrals.filter((referral) => referralState(referral) !== "queued");
+  return referrals.filter((referral) => {
+    const state = referralState(referral);
+    if (state !== "queued") return true;
+    return (
+      referral.destinations.length > 0 &&
+      referral.destinations.every((addressing) => addressing.withdrawnAt !== undefined)
+    );
+  });
 }
 
 /**

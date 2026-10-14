@@ -558,7 +558,16 @@ export function PatientNowScreen({
         role: routeRole,
         now,
         movementId: liveMovement.id,
-        ...(routeRole === "ward" && liveMovement.acceptedUnitId ? { actingUnitId: liveMovement.acceptedUnitId } : {}),
+        ...(routeRole === "ward"
+          ? (() => {
+              const originUnitId = liveMovement.referralId
+                ? referrals.find((referral) => referral.id === liveMovement.referralId)?.originUnitId
+                : undefined;
+              const sourceUnitId =
+                originUnitId ?? admissions.find((admission) => admission.id === liveMovement.sourceAdmissionId)?.unitId;
+              return sourceUnitId ? { actingUnitId: sourceUnitId } : {};
+            })()
+          : {}),
         provider: transportProviderDraft,
         escortRequired: transportEscortDraft,
         cadNumber: cleanCad,

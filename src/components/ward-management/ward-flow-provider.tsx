@@ -64,6 +64,7 @@ import {
 } from "@/components/ward-management/ward-flow-reducer";
 import type {
   BedRelease,
+  CapacityRefreshRequest,
   LeaveBed,
   Movement,
   Referral,
@@ -140,7 +141,7 @@ type WardFlowContextValue = {
   leaveBeds: LeaveBed[];
   /** Task 3, spec D12: every `REQUEST_CAPACITY_REFRESH` a coordinator has raised, live from
    *  reducer state. Records that somebody asked — nothing here ever changes a bed figure. */
-  refreshRequests: { unitId: string; at: Instant; byRole: string }[];
+  refreshRequests: CapacityRefreshRequest[];
   /** Handover sign-offs, role and time only (`RECORD_HANDOVER_SIGN_OFF`). Read by the Handover page's History. */
   handoverSignOffs: HandoverSignOffRecord[];
   /** Phone-logged repatriations (`RECORD_REPATRIATION`), read by the Out of area page's return status.
@@ -516,6 +517,33 @@ export function clearWardFlowDemoState(): boolean {
   }
 }
 
+let sharedBroadcastChannel: BroadcastChannel | null = null;
+
+function getSharedBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") {
+    return null;
+  }
+  try {
+    if (!sharedBroadcastChannel) {
+      sharedBroadcastChannel = new window.BroadcastChannel("ward-flow-sync");
+    }
+    return sharedBroadcastChannel;
+  } catch {
+    return null;
+  }
+}
+
+function broadcastDispatchEvent(eventType: string): void {
+  try {
+    const channel = getSharedBroadcastChannel();
+    if (channel) {
+      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType });
+    }
+  } catch {
+    sharedBroadcastChannel = null;
+  }
+}
+
 /**
  * Audit finding ISSUE-P1-83, defect 3c: `OPEN_DISCHARGE_RECORD` requests are identified by a
  * monotonically increasing `requestId` (`WardFlowWorld`'s `openRequestSequence` below), and
@@ -768,15 +796,7 @@ function WardFlowWorld({
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
       dispatchContainer(event);
-      if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
-        try {
-          const channel = new BroadcastChannel("ward-flow-sync");
-          channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
-          channel.close();
-        } catch {
-          // BroadcastChannel unavailable in this environment
-        }
-      }
+      broadcastDispatchEvent(event.type);
     },
     [dispatchContainer, sharedEnabled, dispatchShared],
   );
@@ -825,6 +845,10 @@ function WardFlowWorld({
   useEffect(() => {
     nowRef.current = now;
   }, [now]);
+  const elapsedRef = useRef(elapsed);
+  useEffect(() => {
+    elapsedRef.current = elapsed;
+  }, [elapsed]);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -1015,7 +1039,9 @@ function WardFlowWorld({
       return;
     }
     if (storageUnavailable) return;
-    if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed))) setStorageUnavailable(true);
+    if (!tryWriteDemoState(state, dayZero, nowRef.current, mountedAtAbsolute + Math.max(0, elapsedRef.current))) {
+      setStorageUnavailable(true);
+    }
   }, [
     state,
     container.typedTextSeen,
@@ -1023,8 +1049,6 @@ function WardFlowWorld({
     initialNow,
     mountedAtAbsolute,
     dayZero,
-    now,
-    elapsed,
     storageUnavailable,
     shared.enabled,
   ]);

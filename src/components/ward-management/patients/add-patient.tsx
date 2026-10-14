@@ -57,6 +57,7 @@ import { useOptionalToast } from "@/components/wf";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
 
 import styles from "./add-patient.module.css";
 
@@ -282,15 +283,10 @@ export function AddPatientForm() {
     clinicalNotes.trim().length > 0;
   const isDirty = identityChanged || placeChanged || intakeChanged;
 
-  useEffect(() => {
-    if (!isDirty || isSubmitting) return;
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isDirty, isSubmitting]);
+  useDirtyStateGuard({
+    isDirty: isDirty && !isSubmitting,
+    confirmMessage: "You have unsaved changes to this new admission. Are you sure you want to leave?",
+  });
 
   /** Everything Reset clears, so Undo can put every field back (v10 acceptance check). */
   const formSnapshot = () => ({

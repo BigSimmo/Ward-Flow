@@ -16,10 +16,11 @@ import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
  * not the other is invisible to anyone who only ever looks at their own preferred width. Both call
  * this; neither computes anything itself.
  *
- * ⚠️ **NO PROP, DELIBERATELY.** `ClinicalRail` is mounted 35 times across 27 files. Threading a
- * `role` through every one of them is 35 chances to type the wrong thing, and the failure mode is a
- * sidebar quietly ordered for somebody else. `usePathname` is the same source the header's figures
- * already read, so the two halves of the chrome cannot drift apart.
+ * ⚠️ **NO PROP, DELIBERATELY.** The shared navigation chrome (`WardBar`, formerly `ClinicalRail`)
+ * is mounted across the application routes. Threading a `role` through every screen is many chances
+ * to type the wrong thing, and the failure mode is a sidebar quietly ordered for somebody else.
+ * `usePathname` is the same source the header's figures already read, so the two halves of the chrome
+ * cannot drift apart.
  *
  * ⚠️ `wardNavCounts` is a pure function over state each caller already holds, so calling it from
  * both trees recomputes rather than shares. That is the cheap half of the trade; the expensive half

@@ -2065,7 +2065,13 @@
   background: transparent;
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
 }
 
 .departmentListTabs .tabBtn:hover {
@@ -3111,7 +3117,13 @@
   border-radius: var(--radius-pill, 9999px);
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
   line-height: 1.25;
 }
 

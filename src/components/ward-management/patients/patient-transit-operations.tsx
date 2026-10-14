@@ -50,7 +50,7 @@ export function PatientTransitOperations({
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
-  const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
+  const { units, admissions, referrals, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
@@ -58,7 +58,20 @@ export function PatientTransitOperations({
   // names who acted rather than a borrowed ward, ED or officer.
   const routeRole = useRouteRole();
   // A ward acts for the ward the patient is accepted at; the other roles name no unit.
-  const wardActing = routeRole === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {};
+  const wardActing = routeRole === "ward" ? { actingUnitId: movement.acceptedUnitId } : {};
+  // For BOOK_TRANSPORT, a ward acts for the sending ward (referral origin or source admission unit).
+  const wardSendingActing =
+    routeRole === "ward"
+      ? (() => {
+          const originUnitId =
+            (movement.referralId
+              ? referrals.find((referral) => referral.id === movement.referralId)?.originUnitId
+              : undefined) ??
+            admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId ??
+            (movement as { originUnitId?: string }).originUnitId;
+          return originUnitId ? { actingUnitId: originUnitId } : {};
+        })()
+      : {};
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const holdGate = gate("PULL_PATIENT");
   const bookGate = gate("BOOK_TRANSPORT");
@@ -380,27 +393,39 @@ export function PatientTransitOperations({
       )}
       <div className={styles.cardFooter}>
         <span>{selectedTargets.length} wards selected</span>
+        {selectedTargets.length === 0 ? (
+          <span id="refer-wards-disabled-guidance" className="sr-only">
+            Select at least one ward above before sending a referral.
+          </span>
+        ) : null}
         <button
           type="button"
           className={styles.primary}
-          disabled={
+          aria-disabled={
             !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+              ? "true"
+              : undefined
           }
-          onClick={() => {
-            setOverrideUnitIds(selectedTargets);
-            noteAttempt();
-            dispatch({
-              type: "REFER_TO_UNITS",
-              role: "coordinator",
-              now,
-              movementId: movement.id,
-              unitIds: selectedTargets,
-              ...(needsGenderPlacement && genderReason && wardChecked
-                ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                : {}),
-            });
-            setSelected([]);
-          }}
+          aria-describedby={selectedTargets.length === 0 ? "refer-wards-disabled-guidance" : undefined}
+          onClick={
+            !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+              ? ignoreUnavailableActivation
+              : () => {
+                  setOverrideUnitIds(selectedTargets);
+                  noteAttempt();
+                  dispatch({
+                    type: "REFER_TO_UNITS",
+                    role: "coordinator",
+                    now,
+                    movementId: movement.id,
+                    unitIds: selectedTargets,
+                    ...(needsGenderPlacement && genderReason && wardChecked
+                      ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                      : {}),
+                  });
+                  setSelected([]);
+                }
+          }
         >
           Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
         </button>
@@ -526,7 +551,7 @@ export function PatientTransitOperations({
                 dispatch({
                   type: "BOOK_TRANSPORT",
                   role: routeRole,
-                  ...wardActing,
+                  ...wardSendingActing,
                   now,
                   movementId: movement.id,
                   provider,

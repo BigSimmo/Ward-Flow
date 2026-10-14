@@ -482,4 +482,37 @@ describe("security gate — a mixed ward's locked beds are reachable", () => {
     expect(gate?.pass).toBe(true);
     expect(gate?.detail).toContain("only locked");
   });
+
+  it("S2-9: referralEligibility requires a free locked bed for a secure referral at a mixed ward and fails when allocatableLocked is 0", () => {
+    const mixedWardWithFreeLocked = unit({
+      beds: 17,
+      lockedBeds: 5,
+      allocatable: { value: 2, source: "ward", confirmedAt: NOW - 10, staleAfterMinutes: 120 },
+      allocatableLocked: 1,
+    });
+    const subjectReferral = referral({ ageBand: "Adult" });
+    const ward = subjectReferral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");
+    if (!ward || ward.destination.kind !== "psychiatric_ward") throw new Error("no ward destination");
+
+    const verdictWithFreeLocked = referralEligibility(subjectReferral, ward.destination, mixedWardWithFreeLocked, NOW);
+    expect(verdictWithFreeLocked.gates.find((g) => g.gate === "security")?.pass).toBe(true);
+
+    const mixedWardNoFreeLocked = unit({
+      beds: 17,
+      lockedBeds: 5,
+      allocatable: { value: 2, source: "ward", confirmedAt: NOW - 10, staleAfterMinutes: 120 },
+      allocatableLocked: 0,
+    });
+    const verdictNoFreeLocked = referralEligibility(subjectReferral, ward.destination, mixedWardNoFreeLocked, NOW);
+    expect(verdictNoFreeLocked.gates.find((g) => g.gate === "security")?.pass).toBe(false);
+
+    const openWard = unit({
+      beds: 17,
+      lockedBeds: 0,
+      allocatable: { value: 2, source: "ward", confirmedAt: NOW - 10, staleAfterMinutes: 120 },
+      allocatableLocked: 0,
+    });
+    const openVerdict = referralEligibility(subjectReferral, ward.destination, openWard, NOW);
+    expect(openVerdict.gates.find((g) => g.gate === "security")?.pass).toBe(false);
+  });
 });

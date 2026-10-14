@@ -18,6 +18,19 @@ import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("@azure/msal-browser", () => ({
+  PublicClientApplication: class {
+    initialize = async () => {};
+    handleRedirectPromise = async () => null;
+    getActiveAccount = () => null;
+    getAllAccounts = () => [];
+    setActiveAccount = () => {};
+    acquireTokenSilent = async () => ({ accessToken: "" });
+    loginRedirect = async () => {};
+    logoutRedirect = async () => {};
+  },
+}));
+
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardGround, WardShellHeader } from "@/components/ward-management/ward-shell";
@@ -158,7 +171,7 @@ describe("Task 2 — the header region adds no landmark, no heading, and no role
     expect(screen.queryByText(/Dabakarn/)).toBeNull();
   });
 
-  it("renders no role switcher — ClinicalRail already renders the only one", () => {
+  it("renders no role switcher — WardBar already renders the only one (formerly ClinicalRail)", () => {
     renderRoute("/mockups/ward-flow/ward/rph-adult-secure");
     expect(screen.queryAllByRole("button", { name: /change view/i })).toHaveLength(0);
   });

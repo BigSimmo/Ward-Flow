@@ -134,4 +134,65 @@ describe("apiMutationCsrfVerdict", () => {
       ),
     ).toEqual({ allowed: true });
   });
+
+  describe("x-ward-flow-csrf header validation (A4-12)", () => {
+    it("allows a request with valid x-ward-flow-csrf: '1' when Origin and Fetch Metadata are absent", () => {
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": "1" }), requestHost)).toEqual({ allowed: true });
+    });
+
+    it("allows a request with valid x-ward-flow-csrf: 'true' (case-insensitive and trimmed)", () => {
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": "true" }), requestHost)).toEqual({
+        allowed: true,
+      });
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": " TRUE " }), requestHost)).toEqual({
+        allowed: true,
+      });
+    });
+
+    it("rejects an explicitly invalid x-ward-flow-csrf header", () => {
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": "" }), requestHost)).toEqual({
+        allowed: false,
+        reason: "invalid_csrf_header",
+      });
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": "0" }), requestHost)).toEqual({
+        allowed: false,
+        reason: "invalid_csrf_header",
+      });
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": "false" }), requestHost)).toEqual({
+        allowed: false,
+        reason: "invalid_csrf_header",
+      });
+      expect(apiMutationCsrfVerdict(headersOf({ "x-ward-flow-csrf": "token123" }), requestHost)).toEqual({
+        allowed: false,
+        reason: "invalid_csrf_header",
+      });
+    });
+
+    it("rejects an invalid x-ward-flow-csrf header even when Origin matches", () => {
+      expect(
+        apiMutationCsrfVerdict(headersOf({ origin: "https://psychiatry.tools", "x-ward-flow-csrf": "0" }), requestHost),
+      ).toEqual({
+        allowed: false,
+        reason: "invalid_csrf_header",
+      });
+    });
+
+    it("rejects mismatched Origin even when valid x-ward-flow-csrf is present", () => {
+      expect(
+        apiMutationCsrfVerdict(headersOf({ origin: "https://attacker.example", "x-ward-flow-csrf": "1" }), requestHost),
+      ).toEqual({
+        allowed: false,
+        reason: "origin_mismatch",
+      });
+    });
+
+    it("rejects Sec-Fetch-Site: cross-site even when valid x-ward-flow-csrf is present", () => {
+      expect(
+        apiMutationCsrfVerdict(headersOf({ "sec-fetch-site": "cross-site", "x-ward-flow-csrf": "1" }), requestHost),
+      ).toEqual({
+        allowed: false,
+        reason: "cross_site",
+      });
+    });
+  });
 });

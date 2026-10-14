@@ -104,7 +104,13 @@
   justify-content: center;
   gap: 6px;
   font-family: var(--body);
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
   text-decoration: none;
   box-sizing: border-box;
 }
@@ -1057,7 +1063,13 @@
   font-size: var(--t-0, 12px);
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
   min-height: 26px;
   text-decoration: none;
   box-sizing: border-box;
@@ -1542,7 +1554,13 @@
   justify-content: center;
   text-align: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
   position: relative;
   user-select: none;
   box-sizing: border-box;

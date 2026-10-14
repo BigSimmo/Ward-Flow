@@ -91,6 +91,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       role,
       now,
       movementId: movement.id,
+      ...(role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
       arrivalMode,
       trackingNumber: trackingNumber.trim() || undefined,
       estimatedArrivalAt: etaMinutes,

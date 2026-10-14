@@ -1087,6 +1087,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openMovement = useCallback(
     (movementId: string, action?: "refer" | "contact", href?: string) => {
+      const globalWindow =
+        typeof window !== "undefined"
+          ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
+          : null;
+      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
       // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
       // routing so its portal cannot remain over the destination while the new page mounts.
       setOpenPanel(null);
@@ -1108,6 +1113,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // A discharge notification task opens the stay's checklist on the discharges board.
   const openDischarge = useCallback(
     (admissionId: string) => {
+      const globalWindow =
+        typeof window !== "undefined"
+          ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
+          : null;
+      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
       setOpenPanel(null);
       if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
         const nextState = { ...window.history.state };

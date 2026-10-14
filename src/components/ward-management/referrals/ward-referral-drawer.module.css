@@ -603,7 +603,7 @@
 
 .btnCancelReferral,
 .btnSendReferral {
-  height: var(--wf-h-md);
+  min-height: var(--spacing-tap, 3rem);
   padding: 0 14px;
   font-size: var(--wf-fs-13);
 }
