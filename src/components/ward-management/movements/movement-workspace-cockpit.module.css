@@ -294,7 +294,13 @@
   background: var(--surface-subtle, var(--surface));
   min-height: 64px;
   position: relative;
-  transition: all 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
 }
 
 .stepperStep[data-state="done"] {
@@ -818,7 +824,13 @@
   background: var(--surface-raised, var(--surface));
   color: var(--ward-heading, var(--text-heading));
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
   white-space: nowrap;
 }
 

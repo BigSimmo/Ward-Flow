@@ -225,6 +225,21 @@ describe("local project guard", () => {
         ).localServer,
       ).toMatchObject({ unsafeLocalCaller: "http://localhost:3000", safeLocalOrigin: false });
     });
+
+    it("rejects a non-local Host header on a local request with reason: non-local-host (A4-13)", () => {
+      const evilReq = request("http://127.0.0.1:3000/api/setup-status", { host: "evil.example.com" });
+      const payload = localProjectRequestIdentityPayload(evilReq);
+
+      expect(payload.localServer).toMatchObject({
+        currentUrl: null,
+        currentPort: null,
+        safeLocalOrigin: false,
+        reason: "non-local-host",
+      });
+      expect(payload.reason).toBe("non-local-host");
+      expect(isSafeLocalProjectRequest(evilReq)).toBe(false);
+      expect(() => assertSafeLocalProjectRequest(evilReq)).toThrow(UnsafeLocalProjectOriginError);
+    });
   });
 
   it("answers an unsafe local caller with an uncached 409 that names the remediation", async () => {

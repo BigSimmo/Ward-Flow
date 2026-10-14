@@ -14,13 +14,13 @@ import { cn, primaryControl } from "@/components/ui-primitives";
  * **not** wrap the `layout.js`... above it in the same segment." `ward-flow/error.tsx` and
  * `ward-flow/layout.tsx` are siblings in the same segment, so nothing placed anywhere inside that
  * folder could ever catch a throw out of `ward-flow/layout.tsx` itself —
- * `DeveloperAreaGate`, `WardFlowProvider`, or the reducer's `useReducer` initialiser
- * (`seedWardFlowStateAt`). Because this file lives one segment further up, at `mockups/`,
- * `ward-flow/layout.tsx` is a NESTED layout relative to it and IS wrapped ("error.js wraps... nested
- * layout.js files"). A throw from any of those three now lands here instead of replacing the whole
+ * `WardFlowProvider` (formerly alongside `DeveloperAreaGate`, now retired), or the reducer's
+ * `useReducer` initialiser (`seedWardFlowStateAt`). Because this file lives one segment further up,
+ * at `mockups/`, `ward-flow/layout.tsx` is a NESTED layout relative to it and IS wrapped ("error.js
+ * wraps... nested layout.js files"). A throw now lands here instead of replacing the whole
  * document via `src/app/error.tsx`. The same reasoning closes the identical gap for
- * `mockups/care-plan/layout.tsx` and `mockups/caring-contacts/layout.tsx`, which follow the same
- * gate-then-provider shape and previously had no nearer boundary either.
+ * `mockups/care-plan/layout.tsx` and `mockups/caring-contacts/layout.tsx`, which follow the direct
+ * provider shape and previously had no nearer boundary either.
  *
  * ⚠️ **WHAT IT STILL CANNOT COVER — read this before assuming the gap is fully closed.**
  *   - `ward-movements.ts` builds its seeded movements at MODULE scope

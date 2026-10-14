@@ -380,27 +380,39 @@ export function PatientTransitOperations({
       )}
       <div className={styles.cardFooter}>
         <span>{selectedTargets.length} wards selected</span>
+        {selectedTargets.length === 0 ? (
+          <span id="refer-wards-disabled-guidance" className="sr-only">
+            Select at least one ward above before sending a referral.
+          </span>
+        ) : null}
         <button
           type="button"
           className={styles.primary}
-          disabled={
+          aria-disabled={
             !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+              ? "true"
+              : undefined
           }
-          onClick={() => {
-            setOverrideUnitIds(selectedTargets);
-            noteAttempt();
-            dispatch({
-              type: "REFER_TO_UNITS",
-              role: "coordinator",
-              now,
-              movementId: movement.id,
-              unitIds: selectedTargets,
-              ...(needsGenderPlacement && genderReason && wardChecked
-                ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                : {}),
-            });
-            setSelected([]);
-          }}
+          aria-describedby={selectedTargets.length === 0 ? "refer-wards-disabled-guidance" : undefined}
+          onClick={
+            !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+              ? ignoreUnavailableActivation
+              : () => {
+                  setOverrideUnitIds(selectedTargets);
+                  noteAttempt();
+                  dispatch({
+                    type: "REFER_TO_UNITS",
+                    role: "coordinator",
+                    now,
+                    movementId: movement.id,
+                    unitIds: selectedTargets,
+                    ...(needsGenderPlacement && genderReason && wardChecked
+                      ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                      : {}),
+                  });
+                  setSelected([]);
+                }
+          }
         >
           Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
         </button>

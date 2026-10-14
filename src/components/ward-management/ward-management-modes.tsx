@@ -77,7 +77,7 @@ function ModeHeader({
           <small>Synthetic patient-flow prototype</small>
         </span>
         <div className={styles.modeTitle}>
-          <h1>{copy.title}</h1>
+          <span>{copy.title}</span>
           <p>{copy.description}</p>
         </div>
       </div>
@@ -264,6 +264,7 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
       data-role={role}
       data-ward-design="third-edition"
     >
+      <h1 className="sr-only">{modeCopy[mode].title}</h1>
       <ModeHeader mode={mode} role={role} onRoleChange={setRole} />
       <main id="main-content" className={styles.modeContent}>
         {/* v10: a page opens on its hero, so the role note follows the body rather than sitting

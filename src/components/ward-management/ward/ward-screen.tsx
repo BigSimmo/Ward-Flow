@@ -816,6 +816,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function handleCapacityModalKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
+      event.stopPropagation();
       closeCapacityModal();
       return;
     }
@@ -1037,7 +1038,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * from the five-state bed grid's own arithmetic". The band-filtered list exists only so the
    * stamp names a release from the same population as the number above it.
    */
-  const releasesCountedToday = pendingBedReleases.filter((release) => releaseBand(release, now) !== "beyond-today");
+  const releasesCountedToday = pendingBedReleases.filter((release) => dayOf(release.expectedAt) === dayOf(now));
 
   // Task 5, spec D12: every REQUEST_CAPACITY_REFRESH raised against this unit, live from the
   // provider. `refreshRequests` only ever grows (the reducer never removes an entry), so the last
@@ -1350,7 +1351,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : null;
     const expDays =
       admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
-        ? Math.floor((admission.expectedDischargeAt - now) / 1440)
+        ? dayOf(admission.expectedDischargeAt) - dayOf(now)
         : null;
     const tentDiag = admission?.tentativeDiagnosis
       ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)

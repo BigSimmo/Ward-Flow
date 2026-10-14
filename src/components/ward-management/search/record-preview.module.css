@@ -631,7 +631,7 @@
 
 .btnPrimary {
   padding: 7px 12px;
-  background: var(--accent);
+  background: var(--wf-btn-primary, var(--accent));
   color: var(--on-accent);
   font-size: var(--t-2);
   font-weight: 600;

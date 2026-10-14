@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
-import type { LocalProjectIdentityPayload, LocalServerRuntimeMode } from "@/lib/local-project-identity";
+import type {
+  LocalProjectIdentityPayload as BaseLocalProjectIdentityPayload,
+  LocalServerRuntimeMode,
+} from "@/lib/local-project-identity";
 import { appName, localProjectId, projectPortEnd, projectPortStart } from "@/lib/local-server-utils.mjs";
+
+export type LocalProjectIdentityPayload = BaseLocalProjectIdentityPayload & {
+  reason?: string | null;
+  localServer: BaseLocalProjectIdentityPayload["localServer"] & {
+    reason?: string | null;
+  };
+};
 
 const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
@@ -133,11 +143,42 @@ function judgedRequestUrl(request: Request): URL {
 }
 
 export function localProjectRequestIdentityPayload(request: Request): LocalProjectIdentityPayload {
-  const payload = localProjectIdentityPayload(request.url);
-  const facts = localOriginFacts(judgedRequestUrl(request));
+  const requestUrl = new URL(request.url);
+  const hostHeader = request.headers.get("host");
   const requestOrigin = request.headers.get("origin");
   const requestReferer = request.headers.get("referer");
   const unsafeLocalCaller = unsafeLocalCallerFromHeader(requestOrigin) ?? unsafeLocalCallerFromHeader(requestReferer);
+  const payload = localProjectIdentityPayload(request.url);
+
+  if (hostHeader !== null) {
+    let parsedHost: URL | null = null;
+    try {
+      parsedHost = new URL(`${requestUrl.protocol}//${hostHeader}`);
+    } catch {
+      parsedHost = null;
+    }
+    // If a Host header is explicitly present on a local request and its hostname is NOT a loopback hostname
+    // (or cannot be parsed as a valid host), the guard immediately rejects with reason: "non-local-host" (A4-13).
+    if ((!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) && isLocalUrl(requestUrl)) {
+      return {
+        ...payload,
+        reason: "non-local-host",
+        localServer: {
+          ...payload.localServer,
+          currentUrl: null,
+          currentPort: null,
+          safeLocalOrigin: false,
+          reason: "non-local-host",
+          requestOrigin,
+          requestReferer,
+          unsafeLocalCaller,
+          pid: null,
+        },
+      };
+    }
+  }
+
+  const facts = localOriginFacts(judgedRequestUrl(request));
 
   return {
     ...payload,

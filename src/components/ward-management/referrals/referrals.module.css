@@ -2097,7 +2097,13 @@
   color: var(--ink);
   font-size: var(--t-1);
   font-family: inherit;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .searchInput:focus {
@@ -2133,7 +2139,13 @@
   font-size: var(--t-0);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .filterChip:hover {
@@ -2225,7 +2237,13 @@
   font-size: var(--t-1);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 @media (max-width: 51.25rem), (pointer: coarse) {
@@ -3247,7 +3265,13 @@
   align-items: center;
   gap: 6px;
   border-radius: var(--r2, 6px);
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .tabBtn:hover {
@@ -3272,7 +3296,13 @@
   border: 1px solid var(--line);
   color: inherit;
   margin-left: 2px;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .tabBtn[aria-selected="true"] .tabBadge {
@@ -3630,7 +3660,13 @@
   font-size: var(--t-1, 13px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
   white-space: nowrap;
 }
 
@@ -3678,7 +3714,13 @@
   font-size: var(--t-1, 13px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
   white-space: nowrap;
 }
 
@@ -3699,7 +3741,13 @@
   border-radius: var(--r2, 6px);
   font-size: var(--t-1, 13px);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .cancelBtn:hover {
@@ -3724,7 +3772,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
 }
 
 .unitCard:hover {
@@ -3904,7 +3958,13 @@
   color: var(--ward-fixed-white);
   border: 1px solid var(--good);
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
   white-space: nowrap;
 }
 
@@ -3925,7 +3985,13 @@
   color: var(--ink-soft);
   border: 1px solid var(--line-strong);
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
   white-space: nowrap;
 }
 
@@ -4037,7 +4103,13 @@
   font-size: var(--t-0, 12px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease,
+    opacity 120ms ease;
 }
 
 .addCorrectionBtn:hover:not([aria-disabled="true"]) {

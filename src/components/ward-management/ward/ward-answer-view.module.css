@@ -532,7 +532,7 @@
 }
 
 .btnPrimary {
-  background: var(--accent);
+  background: var(--wf-btn-primary, var(--accent));
   color: var(--on-accent);
   border-color: var(--accent);
 }

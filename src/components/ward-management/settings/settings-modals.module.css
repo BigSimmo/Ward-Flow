@@ -41,7 +41,7 @@
  * primary, not red. Red stays for act now. */
 .btnPrimary {
   composes: btn;
-  background: var(--accent);
+  background: var(--wf-btn-primary, var(--accent));
   color: var(--on-accent);
   border-color: var(--accent);
 }

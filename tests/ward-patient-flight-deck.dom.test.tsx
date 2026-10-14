@@ -7,6 +7,15 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENDER_PLACEMENT_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { STEP_BACK_REASONS } from "@/components/ward-management/ward-model";
 import { ToastProvider } from "@/components/wf";
+vi.mock("@azure/msal-browser", () => ({
+  PublicClientApplication: class {
+    initialize = async () => {};
+    handleRedirectPromise = async () => null;
+    getActiveAccount = () => null;
+    getAllAccounts = () => [];
+  },
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/mockups/ward-flow/people/WF-012",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -37,7 +46,7 @@ function referAndAccept() {
   const candidate = within(shortlist).getAllByRole("article")[0];
   fireEvent.click(within(candidate).getByRole("checkbox"));
   const refer = screen.getByRole("button", { name: "Refer to selected wards" });
-  expect(refer).toBeDisabled();
+  expect(refer).toHaveAttribute("aria-disabled", "true");
   fireEvent.change(screen.getByLabelText("Ward placement reason"), { target: { value: GENDER_PLACEMENT_REASONS[0] } });
   fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
   fireEvent.click(refer);
