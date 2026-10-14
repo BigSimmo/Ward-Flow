@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > **Repository & Provider Boundary:** **Ward Flow must never connect to PsychSift's Supabase or Railway resources.** For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and the configured `/v1/workspace*` backend routes), it uses either its **dedicated Ward Flow synthetic-only Supabase project (`zakzoemeedfepxcstsou`)** or its **dedicated Ward Flow Azure Functions / PostgreSQL backend**, operating exclusively on 100% synthetic data. Never enter or upload real patient information.
 
-The shared synthetic workspace supports independent database (`WARD_DATABASE_PROVIDER`: `supabase` [default] | `postgres` | `azure`) and identity (`WARD_AUTH_PROVIDER`: `supabase` [default] | `entra`) selectors. Node (`server.mjs`) and Azure Functions (`function.mjs`) use the same backend factory (`providers.mjs`). See [Supabase/Azure presets](SETUP-SUPABASE.md), [PostgreSQL setup and recovery](SETUP-POSTGRES.md), [shared Azure setup](SETUP-SHARED-AZURE.md), and [read-only MCP database access](SETUP-MCP-READONLY.md). Runtime never auto-migrates or substitutes an administrator. **Every shared preset requires schema migration version `4` (`001` through `004`) before `/readyz` readiness**, including existing Azure installations. These source files do not establish a current hosted connection or deployment.
+The shared synthetic workspace supports independent database (`WARD_DATABASE_PROVIDER`: `supabase` [default] | `postgres` | `azure`) and identity (`WARD_AUTH_PROVIDER`: `supabase` [default] | `entra`) selectors. Node (`server.mjs`) and Azure Functions (`function.mjs`) use the same backend factory (`providers.mjs`). See [Supabase/Azure presets](SETUP-SUPABASE.md), [PostgreSQL setup and recovery](SETUP-POSTGRES.md), [shared Azure setup](SETUP-SHARED-AZURE.md), and [read-only MCP database access](SETUP-MCP-READONLY.md). Runtime never auto-migrates or substitutes an administrator. **Every shared preset requires schema migration version `5` (`001` through `005`) before `/readyz` readiness**, including existing Azure installations. These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects (`local` mode vs shared workspace)
 
@@ -27,7 +27,7 @@ The shared synthetic workspace supports independent database (`WARD_DATABASE_PRO
   - `engine.ts` & `build-engine.mjs` — shared Ward Flow domain reducer/validator compiled to `dist/engine.mjs`
   - `push.mjs` — optional Web Push (VAPID) notification builder and sender for act-now alerts
 - **Database & authentication adapters:**
-  - `postgres.mjs`, `postgres-config.mjs`, `postgres-preflight.mjs` — shared PostgreSQL workspace store, CAS/idempotency/audit transactions, schema readiness (`version = 4`), and catalogue preflight
+  - `postgres.mjs`, `postgres-config.mjs`, `postgres-preflight.mjs` — shared PostgreSQL workspace store, CAS/idempotency/audit transactions, schema readiness (`version = 5`), and catalogue preflight
   - `portable-postgres.mjs` — generic TLS PostgreSQL pool and runtime-role privilege verifier (`postgres` preset)
   - `supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs` (and `supabase-bootstrap.mjs` / `infra/supabase-*.sql` helpers) — dedicated Ward Flow Supabase (`zakzoemeedfepxcstsou`) pool, runtime-role verifier, and Auth token verifier (`supabase` preset)
   - `database.mjs`, `auth.mjs` — Azure Blob Storage snapshot adapter (`wflowdev7273a083aue`) and Entra v2 JWT verifier (`azure` / `entra` presets)
@@ -35,11 +35,12 @@ The shared synthetic workspace supports independent database (`WARD_DATABASE_PRO
   - `migrate-supabase.mjs`, `migrate-postgres.mjs`, `migrate.mjs` — schema migration and runtime-role runners for Ward Flow Supabase (`zakzoemeedfepxcstsou`), portable PostgreSQL, and Azure Entra
   - `azure-setup.mjs`, `az-command.mjs` — Azure CLI inspection, provisioning, configuration, and verification helpers
   - `package-deployment.mjs` — builds the deployment zip archive (`dist/wardflow-backend.zip`)
-- **Versioned SQL migrations (`migrations/`, all 4 required for `/readyz`):**
+- **Versioned SQL migrations (`migrations/`, all 5 required for `/readyz`):**
   - `migrations/001-shared-workspace.sql` — `ward_flow` schema, `migrations`, `workspaces`, `commands`, and append-only `audit` tables (`001`–`004` also correspond to `004_ward_flow_shared_workspace.sql` in earlier notes)
   - `migrations/002-workspace-data-mode.sql` — `data_mode` (`prototype` | `live`) column and reclassification-prevention trigger
   - `migrations/003-push-subscriptions.sql` — `push_subscriptions`, `push_baselines`, and `push_deliveries` tables for Web Push alerts
   - `migrations/004-trigger-search-path.sql` — hardens `search_path = pg_catalog, ward_flow` on `ward_flow` trigger functions (`schema.sql` at the package root is unapplied historical Blob-era scaffolding)
+  - `migrations/005-retention-and-indexes.sql` — adds composite active push subscription index (`push_subscriptions_actor_active`) and chronological command receipt index (`commands_workspace_committed`)
 - **Infrastructure templates (`infra/`):**
   - `infra/azure-settings.example.json`, `infra/database.bicep`, `infra/frontend.env.example`
   - `infra/postgres-settings.example.env`, `infra/postgres-runtime-role.sql`

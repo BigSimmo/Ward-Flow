@@ -227,7 +227,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "sequence_restricted",
     ].every((field) => row[field] === true) ||
     !Array.isArray(row.versions) ||
-    row.versions.length !== 4 ||
+    row.versions.length !== 5 ||
     !row.versions.every((version, index) => version === index + 1)
   )
     throw new Error(unsafeMessage);

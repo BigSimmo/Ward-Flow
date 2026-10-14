@@ -275,7 +275,7 @@ export function createWorkspaceStore(
   return {
     pushEnabled: !!push,
     async ready() {
-      const version = 4;
+      const version = 5;
       const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [version]);
       if (!rows.length) throw new Error("Shared schema unavailable");
     },
@@ -328,10 +328,13 @@ export function createWorkspaceStore(
     },
     async unsubscribe(actorId, endpoint) {
       if (!push) throw new Error("push-disabled");
-      const { rowCount } = await pool.query(
-        "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL",
+      const { rows, rowCount } = await pool.query(
+        "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL RETURNING id",
         [workspaceId, actorId, endpoint, clock()],
       );
+      if (rowCount && rows[0]?.id !== undefined) {
+        await pool.query("DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [rows[0].id]);
+      }
       return rowCount ? "unsubscribed" : "not-found";
     },
     /** Whether this account has an active phone alert record for this device endpoint. */
@@ -461,7 +464,7 @@ export function createWorkspaceStore(
   };
 }
 
-/** Azure startup gate: shared traffic needs the complete migration 1-4 ledger, including the trigger hardening. */
+/** Azure startup gate: shared traffic needs the complete migration 1-5 ledger, including the trigger hardening and retention indexes. */
 export async function verifyAzureMigrations(pool) {
   let versions;
   try {
@@ -472,6 +475,6 @@ export async function verifyAzureMigrations(pool) {
   } catch {
     throw new Error("Azure database runtime verification unavailable");
   }
-  if (!Array.isArray(versions) || versions.length !== 4 || !versions.every((version, index) => version === index + 1))
+  if (!Array.isArray(versions) || versions.length !== 5 || !versions.every((version, index) => version === index + 1))
     throw new Error("Unsafe or unprepared Azure database runtime");
 }

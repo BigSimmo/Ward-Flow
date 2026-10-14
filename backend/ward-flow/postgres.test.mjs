@@ -29,7 +29,7 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     const seed = await storeA.read(actorA);
     assert.equal(seed.revision, 1);
     assert.equal(seed.dataMode, "prototype");
-    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 4);
+    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 5);
     const { rows: protectedFunctions } = await pool.query(
       "SELECT proname, proconfig FROM pg_proc WHERE oid IN ('ward_flow.protect_audit()'::regprocedure, 'ward_flow.protect_workspace_mode()'::regprocedure) ORDER BY proname",
     );

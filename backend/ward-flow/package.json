@@ -20,11 +20,13 @@
     "azure:configure": "node azure-setup.mjs configure"
   },
   "dependencies": {
-    "@azure/functions": "^4.16.5",
-    "@azure/identity": "^4.13.3",
     "jose": "^6.2.12",
     "pg": "^8.23.1",
     "web-push": "^3.6.7"
+  },
+  "optionalDependencies": {
+    "@azure/functions": "^4.16.5",
+    "@azure/identity": "^4.13.3"
   },
   "devDependencies": {
     "esbuild": "0.28.2"

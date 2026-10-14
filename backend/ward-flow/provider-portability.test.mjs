@@ -164,7 +164,7 @@ const roleFields = [
 function safeSummary() {
   return {
     role: "wardflow_backend",
-    versions: [1, 2, 3, 4],
+    versions: [1, 2, 3, 4, 5],
     ...Object.fromEntries(roleFields.map((field) => [field, true])),
   };
 }
@@ -178,7 +178,7 @@ function summaryPool(row = safeSummary()) {
   };
 }
 
-test("runtime role verification requires every safeguard and the complete migration 4 ledger", async () => {
+test("runtime role verification requires every safeguard and the complete migration 5 ledger", async () => {
   const config = { connectionString: databaseUrl(), pushEnabled: false };
   await verifyPortableRuntimeRole(summaryPool(), config);
   await verifySupabaseRuntimeRole(summaryPool(), { pushEnabled: false });
@@ -188,7 +188,7 @@ test("runtime role verification requires every safeguard and the complete migrat
       await assert.rejects(verifyPortableRuntimeRole(summaryPool(row), config), /Unsafe or unprepared/);
     }
   }
-  for (const versions of [[], [1, 2, 3], [1, 2, 4], [1, 2, 3, "4"], [1, 2, 3, 4, 5]])
+  for (const versions of [[], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
     await assert.rejects(
       verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions })),
       /Unsafe or unprepared/,
@@ -240,13 +240,13 @@ test("enabled push requires its grants while optional push remains off by config
   );
 });
 
-test("shared readiness refuses a missing migration 4 without applying SQL", async () => {
+test("shared readiness refuses a missing migration 5 without applying SQL", async () => {
   const calls = [];
   let prepared = false;
   const pool = {
     query: async (sql, args) => {
       calls.push([sql, args]);
-      return { rows: prepared ? [{ version: 4 }] : [] };
+      return { rows: prepared ? [{ version: 5 }] : [] };
     },
   };
   const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine: {} });
@@ -255,7 +255,7 @@ test("shared readiness refuses a missing migration 4 without applying SQL", asyn
   await store.ready();
   assert.deepEqual(
     calls,
-    Array.from({ length: 2 }, () => ["SELECT version FROM ward_flow.migrations WHERE version=$1", [4]]),
+    Array.from({ length: 2 }, () => ["SELECT version FROM ward_flow.migrations WHERE version=$1", [5]]),
   );
 });
 
@@ -280,7 +280,7 @@ test("administrator grant failure rolls back its transaction and releases the cl
     query: async (sql) => {
       queries.push(sql);
       if (sql.includes("to_regclass")) return { rows: [{ relation: "ward_flow.migrations" }] };
-      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 4 }] };
+      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 5 }] };
       if (sql.includes("Runtime role flags are unsafe")) throw new Error("synthetic grant refusal");
       return { rows: [] };
     },
@@ -434,11 +434,11 @@ test("runtime summary refuses UPDATE on the audit and push ID sequences", () => 
   assert.match(RUNTIME_SUMMARY, /AS sequence_restricted/);
 });
 
-test("Azure startup refuses a database without the complete migration 4 ledger", async () => {
+test("Azure startup refuses a database without the complete migration 5 ledger", async () => {
   const { verifyAzureMigrations } = await import("./postgres.mjs");
   const pool = (versions) => ({ query: async () => ({ rows: [{ versions }] }) });
-  await verifyAzureMigrations(pool([1, 2, 3, 4]));
-  for (const versions of [null, [], [1, 2], [1, 2, 3], [1, 2, 4], [1, 2, 3, "4"], [1, 2, 3, 4, 5]])
+  await verifyAzureMigrations(pool([1, 2, 3, 4, 5]));
+  for (const versions of [null, [], [1, 2], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
     await assert.rejects(verifyAzureMigrations(pool(versions)), /Unsafe or unprepared Azure/);
   await assert.rejects(
     verifyAzureMigrations({ query: async () => Promise.reject(new Error("offline")) }),
@@ -582,7 +582,7 @@ test("migrateSupabasePostgres applies migrations, runs supabase-runtime-role.sql
     query: async (sql) => {
       executed.push(sql);
       if (sql.includes("to_regclass")) return { rows: [{ relation: "ward_flow.migrations" }] };
-      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 4 }] };
+      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 5 }] };
       return { rows: [] };
     },
     release: () => {
@@ -664,4 +664,23 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
   );
   await assert.rejects(brokenStore.read("coordinator-1", "2026-10-14T10:00:00.000Z"), /primary query failure/);
   assert.equal(releasedWith, rollbackErr);
+
+  // Verify unsubscribe() immediately prunes push_deliveries for the revoked subscription ID
+  const unsubQueries = [];
+  const unsubStore = createWorkspaceStore(
+    {
+      connect: async () => fastClient,
+      query: async (sql, args) => {
+        unsubQueries.push([sql, args]);
+        if (sql.includes("UPDATE ward_flow.push_subscriptions SET revoked_at")) {
+          return { rowCount: 1, rows: [{ id: 42 }] };
+        }
+        return { rowCount: 1, rows: [] };
+      },
+    },
+    { workspaceId: randomUUID(), engine: {}, push: { coordinatorIds: [] } },
+  );
+  assert.equal(await unsubStore.unsubscribe("coordinator-1", "https://fcm.googleapis.com/fcm/send/e1"), "unsubscribed");
+  assert.equal(unsubQueries.length, 2);
+  assert.deepEqual(unsubQueries[1], ["DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [42]]);
 });

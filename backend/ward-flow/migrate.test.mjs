@@ -25,16 +25,17 @@ function database(version) {
 }
 
 for (const [from, expected] of [
-  [null, [1, 2, 3, 4]],
-  [1, [2, 3, 4]],
-  [2, [3, 4]],
-  [3, [4]],
-  [4, []],
+  [null, [1, 2, 3, 4, 5]],
+  [1, [2, 3, 4, 5]],
+  [2, [3, 4, 5]],
+  [3, [4, 5]],
+  [4, [5]],
+  [5, []],
 ]) {
-  test(`migration runner advances ${from ?? "fresh"} to version 4 in order`, async () => {
+  test(`migration runner advances ${from ?? "fresh"} to version 5 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 4);
+    assert.equal(db.current(), 5);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -50,7 +51,7 @@ for (const [from, expected] of [
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 5, "4"]) {
+  for (const version of [0, 6, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -64,4 +65,17 @@ test("migration 4 pins both existing trigger function search paths without repla
     assert.match(sql, new RegExp(`ALTER FUNCTION ward_flow\\.${fn}\\(\\) SET search_path = pg_catalog, ward_flow;`));
   assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(4\);/);
   assert.doesNotMatch(sql, /CREATE (?:OR REPLACE )?FUNCTION|DROP FUNCTION/);
+});
+
+test("migration 5 adds composite active push subscription and chronological command receipt indexes", async () => {
+  const sql = await readFile(new URL("./migrations/005-retention-and-indexes.sql", import.meta.url), "utf8");
+  assert.match(
+    sql,
+    /CREATE INDEX commands_workspace_committed ON ward_flow\.commands\(workspace_id, committed_at DESC\);/,
+  );
+  assert.match(
+    sql,
+    /CREATE INDEX push_subscriptions_actor_active ON ward_flow\.push_subscriptions\(workspace_id, actor_id\) WHERE revoked_at IS NULL;/,
+  );
+  assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(5\);/);
 });
