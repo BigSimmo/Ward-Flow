@@ -1299,11 +1299,7 @@ function NetworkRow({
   // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
   // prevents a duplicate request rather than allowing one.
   const latestRequest = refreshRequests.filter((request) => request.unitId === row.unit.id).at(-1);
-  const asked =
-    latestRequest !== undefined &&
-    (latestRequest.allocatableRevision !== undefined
-      ? (row.unit.allocatable.revision ?? 0) <= latestRequest.allocatableRevision
-      : latestRequest.at >= row.unit.allocatable.confirmedAt);
+  const asked = latestRequest !== undefined && latestRequest.at >= row.unit.allocatable.confirmedAt;
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from
@@ -1895,7 +1891,9 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
   const records = readDischargeRecords(CAPACITY_RECORD_ACTOR, row.unit.id);
   const detail = opened ? readDischargeRecord(CAPACITY_RECORD_ACTOR, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
-  const request = refreshRequests.filter((entry) => entry.unitId === row.unit.id).at(-1);
+  const request = refreshRequests
+    .filter((entry) => entry.unitId === row.unit.id && entry.at >= row.unit.allocatable.confirmedAt)
+    .at(-1);
   function closeRecord() {
     setOpened(null);
     // The list remounts after state changes; restore its deliberate opener on the next frame.

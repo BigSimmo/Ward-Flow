@@ -93,6 +93,9 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       try {
         const targetUrl = new URL(anchor.href, window.location.href);
         const currentUrl = new URL(window.location.href);
+        if (targetUrl.origin !== currentUrl.origin) {
+          return;
+        }
         if (
           targetUrl.origin === currentUrl.origin &&
           targetUrl.pathname === currentUrl.pathname &&

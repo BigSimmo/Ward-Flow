@@ -1645,8 +1645,8 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     // and Ward B was withdrawn by the referrer), the movement was NOT declined by all.
     if (latestWithdrawalAt > latestDeclineAt) {
       acceptanceWithdrawn.push({ movement, kind: "acceptance_withdrawn" });
-    } else if (latestRequestWithdrawalAt > latestDeclineAt) {
-      // A withdrawal newer than the last decline is not a network refusal.
+    } else if (latestRequestWithdrawalAt >= latestDeclineAt) {
+      // A withdrawal at or newer than the last decline is not a network refusal.
       continue;
     } else {
       declinedByAll.push({ movement, kind: "declined_by_all" });

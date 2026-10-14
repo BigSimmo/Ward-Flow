@@ -239,6 +239,17 @@ describe("local project guard", () => {
       expect(payload.reason).toBe("non-local-host");
       expect(isSafeLocalProjectRequest(evilReq)).toBe(false);
       expect(() => assertSafeLocalProjectRequest(evilReq)).toThrow(UnsafeLocalProjectOriginError);
+
+      const boundEvilReq = request(boundUrl(projectPortStart), { host: "evil.example.com" });
+      const boundPayload = localProjectRequestIdentityPayload(boundEvilReq);
+      expect(boundPayload.localServer).toMatchObject({
+        currentUrl: null,
+        currentPort: null,
+        safeLocalOrigin: false,
+        reason: "non-local-host",
+      });
+      expect(boundPayload.reason).toBe("non-local-host");
+      expect(isSafeLocalProjectRequest(boundEvilReq)).toBe(false);
     });
   });
 

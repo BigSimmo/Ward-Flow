@@ -1297,7 +1297,6 @@ export type CapacityRefreshRequest = {
   byRole: string;
   message?: string;
   urgent?: boolean;
-  allocatableRevision?: number;
 };
 
 export type Movement = {

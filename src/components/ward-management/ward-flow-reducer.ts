@@ -7154,15 +7154,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: [
-          ...state.refreshRequests,
-          {
-            unitId: unit.id,
-            at: event.now,
-            byRole: event.role,
-            allocatableRevision: unit.allocatable?.revision ?? 0,
-          },
-        ],
+        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }],
       };
     }
 
@@ -8283,6 +8275,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       } else if (event.role === "community" || event.role === "ed") {
+        if (referral.source === "psychiatric_ward") {
+          return reject(
+            state,
+            event,
+            `referral ${referral.id} was sent by a psychiatric ward, so role ${event.role} cannot withdraw it`,
+          );
+        }
         const sender = referralSenderRole(referral);
         if (event.role !== sender) {
           return reject(
@@ -8292,11 +8291,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
         if (event.role === "ed" && event.actingPlaceId !== undefined) {
-          if (referral.originSiteCode !== undefined && event.actingPlaceId !== referral.originSiteCode) {
+          const originEdId = referralReferrer(referral)?.placeId;
+          if (
+            referral.originSiteCode !== undefined &&
+            event.actingPlaceId !== referral.originSiteCode &&
+            event.actingPlaceId !== originEdId
+          ) {
             return reject(
               state,
               event,
-              `caller ED ${event.actingPlaceId} is not the referral origin ED (${referral.originSiteCode}); only the sending ED or coordinator may withdraw it`,
+              `caller ED ${event.actingPlaceId} is not the referral origin ED (${originEdId ?? referral.originSiteCode}); only the sending ED or coordinator may withdraw it`,
             );
           }
         }
@@ -8533,25 +8537,25 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "ADD_REFERRAL_CORRECTION": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      if (event.role === "ed") {
+      if (event.role === "ed" && event.actingPlaceId !== undefined) {
+        const originEdId = referralReferrer(referral)?.placeId;
         if (
-          event.actingPlaceId === undefined ||
-          referral.originSiteCode === undefined ||
-          event.actingPlaceId !== referral.originSiteCode
+          referral.originSiteCode !== undefined &&
+          event.actingPlaceId !== referral.originSiteCode &&
+          event.actingPlaceId !== originEdId
         ) {
           return reject(
             state,
             event,
-            `caller ED ${event.actingPlaceId} is not the referral origin ED (${referral.originSiteCode}); only origin ED or coordinator may add corrections`,
+            `caller ED ${event.actingPlaceId} is not the referral origin ED (${originEdId ?? referral.originSiteCode}); only origin ED or coordinator may add corrections`,
           );
         }
       }
-      if (event.role === "community") {
+      if (event.role === "community" && event.actingPlaceId !== undefined) {
         if (
-          referral.sendingTeamName === undefined ||
-          event.actingPlaceId === undefined ||
-          (event.actingPlaceId !== referral.sendingTeamName &&
-            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName))
+          referral.sendingTeamName !== undefined &&
+          event.actingPlaceId !== referral.sendingTeamName &&
+          event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName)
         ) {
           return reject(
             state,
@@ -9462,7 +9466,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                     transport: {
                       ...movement.transport,
                       cancelledAt: event.now,
-                      cancelledReason: "examination_revoked",
                     },
                   }
                 : {}),

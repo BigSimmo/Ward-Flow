@@ -165,7 +165,16 @@ export function localProjectRequestIdentityPayload(request: Request): LocalProje
     }
     // If a Host header is explicitly present on a local request and its hostname is NOT a loopback hostname
     // (or cannot be parsed as a valid host), the guard immediately rejects with reason: "non-local-host" (A4-13).
-    if ((!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) && isLocalUrl(requestUrl)) {
+    // In local development (`next dev`), `request.url` arrives bound to `0.0.0.0:<port>`; in production, `0.0.0.0`
+    // is the container wildcard bind behind the public reverse proxy and is only treated as local when the port
+    // itself is within the managed local dev port range or runtimeMode is development.
+    const isLocalWildcardBind =
+      requestUrl.hostname === "0.0.0.0" &&
+      (localServerRuntimeMode() === "development" || isManagedProjectPort(portFor(requestUrl)));
+    if (
+      (!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) &&
+      (isLocalUrl(requestUrl) || isLocalWildcardBind)
+    ) {
       return {
         ...payload,
         reason: "non-local-host",
