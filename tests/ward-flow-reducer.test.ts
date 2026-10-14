@@ -2204,5 +2204,341 @@ describe("bed release privacy", () => {
         expect(newNotices.some((n) => n.to.role === "ward" && n.to.placeId === previousUnit)).toBe(true);
       }
     });
+
+    it("DEC-L5-01: refuses RECORD_MOVEMENT_BLOCKER on revoked-exam hold and allows RELEASE_HELD_BED to close as did_not_proceed", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find((m) => m.stage === "pulled" && m.admissionId !== undefined)!;
+      expect(movement).toBeDefined();
+
+      const withRevoked: ReturnType<typeof seedWardFlowState> = {
+        ...seeded,
+        movements: seeded.movements.map((m) =>
+          m.id === movement.id
+            ? {
+                ...m,
+                examination: { at: NOW, by: "doctor", outcome: "revoked" },
+                blocker: STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease,
+              }
+            : m,
+        ),
+      };
+
+      // RECORD_MOVEMENT_BLOCKER should be refused
+      const blockerAttempt = wardFlowReducer(withRevoked, {
+        type: "RECORD_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+        blocker: "Awaiting transport",
+      });
+      expect(blockerAttempt.rejections).toHaveLength(1);
+      expect(blockerAttempt.rejections[0].reason).toContain("examination was revoked while holding a bed");
+
+      // RELEASE_HELD_BED should release bed, clear admissionId, and close movement as did_not_proceed
+      const releaseSuccess = wardFlowReducer(withRevoked, {
+        type: "RELEASE_HELD_BED",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+      });
+      expect(releaseSuccess.rejections).toHaveLength(0);
+      const releasedM = releaseSuccess.movements.find((m) => m.id === movement.id)!;
+      expect(releasedM.admissionId).toBeUndefined();
+      expect(releasedM.blocker).toBe(STAGE_TRANSITION_BLOCKERS.didNotProceed);
+      expect(releasedM.closure?.outcome).toBe("did_not_proceed");
+      expect(releasedM.closure?.reason).toBe("examination_revoked");
+    });
+
+    it("DEC-L5-02: refuses SET_ARRIVAL_DETAILS, BOOK_TRANSPORT, RECORD_TRANSPORT_NEED when ward authority does not match", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find((m) => m.stage === "pulled" && m.acceptedUnitId !== undefined)!;
+      expect(movement).toBeDefined();
+      const acceptedUnit = movement.acceptedUnitId!;
+      const nonAcceptedUnit = seeded.units.find((u) => u.id !== acceptedUnit)!.id;
+
+      // SET_ARRIVAL_DETAILS: ward role rejected if actingUnitId !== acceptedUnitId
+      const arrivalRefused = wardFlowReducer(seeded, {
+        type: "SET_ARRIVAL_DETAILS",
+        role: "ward",
+        actingUnitId: nonAcceptedUnit,
+        now: NOW,
+        movementId: movement.id,
+        arrivalMode: "ambulance",
+        estimatedArrivalAt: NOW + 30,
+      });
+      expect(arrivalRefused.rejections).toHaveLength(1);
+      expect(arrivalRefused.rejections[0].reason).toContain(
+        "only destination ward or coordinator can set arrival details",
+      );
+
+      // Coordinator succeeds
+      const arrivalCoord = wardFlowReducer(seeded, {
+        type: "SET_ARRIVAL_DETAILS",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+        arrivalMode: "ambulance",
+        estimatedArrivalAt: NOW + 30,
+      });
+      expect(arrivalCoord.rejections).toHaveLength(0);
+
+      // BOOK_TRANSPORT & RECORD_TRANSPORT_NEED: ward role rejected if actingUnitId !== originUnitId
+      const transferMovement: ReturnType<typeof seedWardFlowState>["movements"][0] = {
+        ...movement,
+        stage: "pulled",
+      };
+      const stateWithTransfer: ReturnType<typeof seedWardFlowState> = {
+        ...seeded,
+        movements: seeded.movements.map((m) => (m.id === movement.id ? transferMovement : m)),
+        referrals: seeded.referrals.map((r) =>
+          r.id === movement.referralId ? { ...r, source: "psychiatric_ward", originUnitId: "scgh-adult-open" } : r,
+        ),
+      };
+
+      const bookRefused = wardFlowReducer(stateWithTransfer, {
+        type: "BOOK_TRANSPORT",
+        role: "ward",
+        actingUnitId: acceptedUnit,
+        now: NOW,
+        movementId: movement.id,
+        provider: "Ambulance service",
+        escortRequired: true,
+        cadNumber: "CAD-001",
+        transportLegalStatus: "voluntary",
+        estimatedAt: NOW + 30,
+      });
+      expect(bookRefused.rejections).toHaveLength(1);
+      expect(bookRefused.rejections[0].reason).toContain("only the sending ward can book transport");
+
+      const unrelatedUnit = seeded.units.find((u) => u.id !== acceptedUnit && u.id !== "scgh-adult-open")!.id;
+      const bookUnrelatedRefused = wardFlowReducer(stateWithTransfer, {
+        type: "BOOK_TRANSPORT",
+        role: "ward",
+        actingUnitId: unrelatedUnit,
+        now: NOW,
+        movementId: movement.id,
+        provider: "Ambulance service",
+        escortRequired: true,
+        cadNumber: "CAD-001",
+        transportLegalStatus: "voluntary",
+        estimatedAt: NOW + 30,
+      });
+      expect(bookUnrelatedRefused.rejections).toHaveLength(1);
+      expect(bookUnrelatedRefused.rejections[0].reason).toContain("only the sending ward can book transport");
+
+      const needRefused = wardFlowReducer(stateWithTransfer, {
+        type: "RECORD_TRANSPORT_NEED",
+        role: "ward",
+        actingUnitId: acceptedUnit,
+        now: NOW,
+        movementId: movement.id,
+        needed: true,
+      });
+      expect(needRefused.rejections).toHaveLength(1);
+      expect(needRefused.rejections[0].reason).toContain("only the sending ward can record transport need");
+    });
+
+    it("DEC-L5-03: verifies referrer origin authority on RECORD_REFERRER_WITHDRAWAL and ADD_REFERRAL_CORRECTION", () => {
+      const seeded = seedWardFlowState();
+      const referral = seeded.referrals[0];
+      expect(referral).toBeDefined();
+
+      const edReferralState: ReturnType<typeof seedWardFlowState> = {
+        ...seeded,
+        referrals: seeded.referrals.map((r) =>
+          r.id === referral.id ? { ...r, source: "ed_medical", originSiteCode: "RPH" } : r,
+        ),
+      };
+
+      const edMismatch = wardFlowReducer(edReferralState, {
+        type: "RECORD_REFERRER_WITHDRAWAL",
+        role: "ed",
+        actingPlaceId: "FSH",
+        now: NOW,
+        referralId: referral.id,
+        reason: "referred_in_error",
+      });
+      expect(edMismatch.rejections).toHaveLength(1);
+      expect(edMismatch.rejections[0].reason).toContain("is not the referral origin ED");
+
+      const wardReferralState: ReturnType<typeof seedWardFlowState> = {
+        ...seeded,
+        referrals: seeded.referrals.map((r) =>
+          r.id === referral.id ? { ...r, source: "psychiatric_ward", originUnitId: "scgh-adult-open" } : r,
+        ),
+      };
+
+      const wardMismatch = wardFlowReducer(wardReferralState, {
+        type: "RECORD_REFERRER_WITHDRAWAL",
+        role: "ward",
+        actingUnitId: "rph-adult-open",
+        now: NOW,
+        referralId: referral.id,
+        reason: "referred_in_error",
+      });
+      expect(wardMismatch.rejections).toHaveLength(1);
+      expect(wardMismatch.rejections[0].reason).toContain("is not the referral origin unit");
+
+      const wardMatch = wardFlowReducer(wardReferralState, {
+        type: "RECORD_REFERRER_WITHDRAWAL",
+        role: "ward",
+        actingUnitId: "scgh-adult-open",
+        now: NOW,
+        referralId: referral.id,
+        reason: "referred_in_error",
+      });
+      expect(wardMatch.rejections).toHaveLength(0);
+      const updatedRef = wardMatch.referrals.find((r) => r.id === referral.id)!;
+      expect(updatedRef.destinations.some((d) => d.withdrawnAt !== undefined)).toBe(true);
+
+      const correctionMismatch = wardFlowReducer(edReferralState, {
+        type: "ADD_REFERRAL_CORRECTION",
+        role: "ed",
+        actingPlaceId: "FSH",
+        now: NOW,
+        referralId: referral.id,
+        note: "Correction note",
+      });
+      expect(correctionMismatch.rejections).toHaveLength(1);
+      expect(correctionMismatch.rejections[0].reason).toContain("is not the referral origin ED");
+    });
+
+    it("DEC-L5-04: REQUEST_CAPACITY_REFRESH records allocatableRevision from target unit", () => {
+      const seeded = seedWardFlowState();
+      const unit = seeded.units[0];
+      const stateWithRevision = {
+        ...seeded,
+        units: seeded.units.map((u) =>
+          u.id === unit.id ? { ...u, allocatable: { ...u.allocatable, revision: 4 } } : u,
+        ),
+      };
+
+      const after = wardFlowReducer(stateWithRevision, {
+        type: "REQUEST_CAPACITY_REFRESH",
+        role: "coordinator",
+        now: NOW,
+        unitId: unit.id,
+      });
+      expect(after.rejections).toHaveLength(0);
+      const req = after.refreshRequests.at(-1)!;
+      expect(req.unitId).toBe(unit.id);
+      expect(req.allocatableRevision).toBe(4);
+    });
+
+    it("S1-7: ACCEPT_IN_PRINCIPLE clears waitlistedUnitIds to undefined", () => {
+      const baseState = wardFlowReducer(seeded(), {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW,
+        movementId: "WF-009",
+        unitIds: ["rph-adult-secure", "fsh-adult-secure"],
+      });
+      const stateWithWaitlist = {
+        ...baseState,
+        movements: baseState.movements.map((m) =>
+          m.id === "WF-009" ? { ...m, waitlistedUnitIds: ["unit-1", "unit-2"] } : m,
+        ),
+      };
+
+      const after = wardFlowReducer(stateWithWaitlist, {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        actingUnitId: "rph-adult-secure",
+        now: NOW,
+        movementId: "WF-009",
+        unitId: "rph-adult-secure",
+      });
+      expect(after.rejections).toHaveLength(0);
+      const updated = after.movements.find((m) => m.id === "WF-009")!;
+      expect(updated.waitlistedUnitIds).toBeUndefined();
+    });
+
+    it("S1-9..S1-11: validates urgency and outcome domains, and deduplicates referredUnitIds", () => {
+      const state = seeded();
+      const movement = state.movements[0];
+
+      // CHANGE_URGENCY validation
+      const invalidUrgency = wardFlowReducer(state, {
+        type: "CHANGE_URGENCY",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+        urgency: 5 as unknown as 1,
+        reason: "reassessed",
+      });
+      expect(invalidUrgency.rejections).toHaveLength(1);
+      expect(invalidUrgency.rejections[0].reason).toContain("chosen from URGENCY_LEVELS");
+
+      // RAISE_REFERRAL validation
+      const invalidRaiseUrgency = wardFlowReducer(state, {
+        type: "RAISE_REFERRAL",
+        role: "ed",
+        now: NOW,
+        edId: "jhc-ed",
+        draft: {
+          cohort: "Adult",
+          security: "Open",
+          sex: "Female",
+          gender: "Female",
+          specialling: false,
+          highAcuity: false,
+          legalStatus: "Voluntary",
+          urgency: 9 as unknown as 1,
+          legalFormCode: null,
+        },
+      });
+      expect(invalidRaiseUrgency.rejections).toHaveLength(1);
+      expect(invalidRaiseUrgency.rejections[0].reason).toContain("chosen from URGENCY_LEVELS");
+
+      // RECORD_EXAMINATION outcome validation
+      const invalidExam = wardFlowReducer(state, {
+        type: "RECORD_EXAMINATION",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+        outcome: "invalid_outcome" as unknown as "inpatient_order",
+      });
+      expect(invalidExam.rejections).toHaveLength(1);
+      expect(invalidExam.rejections[0].reason).toContain("chosen from EXAMINATION_OUTCOMES");
+
+      // RECORD_ED_OUTCOME outcome validation
+      const invalidEd = wardFlowReducer(state, {
+        type: "RECORD_ED_OUTCOME",
+        role: "ed",
+        now: NOW,
+        movementId: movement.id,
+        outcome: "invalid_outcome" as unknown as "for_discharge",
+      });
+      expect(invalidEd.rejections).toHaveLength(1);
+      expect(invalidEd.rejections[0].reason).toContain("chosen from ED_OUTCOMES");
+
+      // REFER_TO_UNITS deduplication
+      const duplicateRefer = wardFlowReducer(state, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW,
+        movementId: "WF-009",
+        unitIds: ["rph-adult-secure", "rph-adult-secure", "fsh-adult-secure"],
+      });
+      expect(duplicateRefer.rejections).toHaveLength(0);
+      const updatedM = duplicateRefer.movements.find((m) => m.id === "WF-009")!;
+      const counts = updatedM.referredUnitIds.filter((id) => id === "rph-adult-secure").length;
+      expect(counts).toBe(1);
+    });
+
+    it("A1-9: restricts RECORD_MOVEMENT_MEDICAL_CLEARANCE to ED and coordinator", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements[0];
+
+      const wardAttempt = wardFlowReducer(seeded, {
+        type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+        role: "ward" as unknown as "ed",
+        now: NOW,
+        movementId: movement.id,
+        cleared: true,
+      });
+      expect(wardAttempt.rejections).toHaveLength(1);
+      expect(wardAttempt.rejections[0].reason).toContain("requires role ed or coordinator");
+    });
   });
 });

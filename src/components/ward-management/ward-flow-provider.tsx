@@ -64,6 +64,7 @@ import {
 } from "@/components/ward-management/ward-flow-reducer";
 import type {
   BedRelease,
+  CapacityRefreshRequest,
   LeaveBed,
   Movement,
   Referral,
@@ -140,7 +141,7 @@ type WardFlowContextValue = {
   leaveBeds: LeaveBed[];
   /** Task 3, spec D12: every `REQUEST_CAPACITY_REFRESH` a coordinator has raised, live from
    *  reducer state. Records that somebody asked — nothing here ever changes a bed figure. */
-  refreshRequests: { unitId: string; at: Instant; byRole: string }[];
+  refreshRequests: CapacityRefreshRequest[];
   /** Handover sign-offs, role and time only (`RECORD_HANDOVER_SIGN_OFF`). Read by the Handover page's History. */
   handoverSignOffs: HandoverSignOffRecord[];
   /** Phone-logged repatriations (`RECORD_REPATRIATION`), read by the Out of area page's return status.

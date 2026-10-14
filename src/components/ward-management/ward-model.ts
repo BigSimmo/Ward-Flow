@@ -1280,7 +1280,25 @@ export type MovementId = `WF-${string}`;
  * this field for exactly those two values, never `"inpatient_order"` or
  * `"further_examination_ordered"`, neither of which is a revocation.
  */
-export type ExaminationOutcome = "inpatient_order" | "community_order" | "revoked" | "further_examination_ordered";
+export const EXAMINATION_OUTCOMES = [
+  "inpatient_order",
+  "community_order",
+  "revoked",
+  "further_examination_ordered",
+] as const;
+export type ExaminationOutcome = (typeof EXAMINATION_OUTCOMES)[number];
+
+export const ED_OUTCOMES = ["for_discharge", "for_community_follow_up"] as const;
+export type EdOutcome = (typeof ED_OUTCOMES)[number];
+
+export type CapacityRefreshRequest = {
+  unitId: string;
+  at: Instant;
+  byRole: string;
+  message?: string;
+  urgent?: boolean;
+  allocatableRevision?: number;
+};
 
 export type Movement = {
   id: MovementId;
