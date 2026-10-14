@@ -16,14 +16,14 @@ import {
   type ReactNode,
 } from "react";
 
-import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { searchWardFlow, shouldDeriveSearchTasks } from "@/components/ward-management/search/ward-smart-search";
 import { useDebouncedValue } from "./search/use-debounced-value";
-import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
+import { buildActionInbox, destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
 export type WardChromeSearchProps = {
   movements?: Movement[];
@@ -113,6 +113,17 @@ export function WardChromeSearch({
     setActiveIndex(-1);
   }
 
+  const now = useWardFlowClock(0);
+  const plannedAdmissions = context?.plannedAdmissions;
+
+  const precomputedTasks = useMemo(
+    () =>
+      debouncedTrimmed.length === 0 || !shouldDeriveSearchTasks(debouncedTrimmed)
+        ? undefined
+        : buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions ? { plannedAdmissions } : undefined),
+    [debouncedTrimmed, movements, now, plannedAdmissions, units],
+  );
+
   const smartResults = useMemo(
     () =>
       debouncedTrimmed.length === 0
@@ -123,13 +134,12 @@ export function WardChromeSearch({
             movements,
             units,
             referrals,
+            now,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
-            // Without the ward clock, task derivation ran at epoch zero and dropped expired pulls
-            // and overdue arrivals from task results.
-            now: context?.now,
+            precomputedTasks,
           }),
-    [debouncedTrimmed, patients, movements, units, referrals, context?.plannedAdmissions, context?.now],
+    [debouncedTrimmed, patients, movements, units, referrals, now, context?.plannedAdmissions, precomputedTasks],
   );
 
   const groups = useMemo(() => {

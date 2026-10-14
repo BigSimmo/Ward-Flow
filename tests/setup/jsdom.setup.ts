@@ -15,6 +15,12 @@ import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-man
 // component synchronously once it has resolved (the loading placeholder until then), so code-split
 // panes behave like static imports in jsdom tests.
 const pendingDynamicLoads: Promise<unknown>[] = [];
+let forceDynamicLoading = false;
+
+export function setForceDynamicLoading(force: boolean) {
+  forceDynamicLoading = force;
+}
+
 vi.mock("next/dynamic", async () => {
   const React = await import("react");
   return {
@@ -30,9 +36,9 @@ vi.mock("next/dynamic", async () => {
       function DynamicStandIn(props: Record<string, unknown>) {
         const [, rerender] = React.useReducer((n: number) => n + 1, 0);
         React.useEffect(() => {
-          if (!loaded) void started.then(rerender);
+          if (!loaded && !forceDynamicLoading) void started.then(rerender);
         }, []);
-        if (loaded) return React.createElement(loaded, props);
+        if (loaded && !forceDynamicLoading) return React.createElement(loaded, props);
         return options?.loading ? React.createElement(React.Fragment, null, options.loading()) : null;
       }
       return DynamicStandIn;
@@ -72,6 +78,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  forceDynamicLoading = false;
   cleanup();
   vi.restoreAllMocks();
   try {

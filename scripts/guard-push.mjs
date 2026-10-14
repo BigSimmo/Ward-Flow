@@ -70,7 +70,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const ZERO_SHA = "0000000000000000000000000000000000000000";
 const MAIN_REMOTE_REF = "refs/remotes/origin/main";

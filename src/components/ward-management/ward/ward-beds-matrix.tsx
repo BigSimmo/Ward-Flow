@@ -175,6 +175,39 @@ interface WardBedCardProps {
   onSelect: (bed: BedItem) => void;
 }
 
+function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): boolean {
+  if (prev.isSelected !== next.isSelected) return false;
+  if (prev.onSelect !== next.onSelect) return false;
+  const p = prev.bed;
+  const n = next.bed;
+  return (
+    p.bedNumber === n.bedNumber &&
+    p.bedLabel === n.bedLabel &&
+    p.status === n.status &&
+    p.statusText === n.statusText &&
+    p.preparing === n.preparing &&
+    p.patientAlias === n.patientAlias &&
+    p.stayDays === n.stayDays &&
+    p.expectedDays === n.expectedDays &&
+    p.departureExpectedAt === n.departureExpectedAt &&
+    p.isClosed === n.isClosed &&
+    p.isPulled === n.isPulled &&
+    p.pastDate === n.pastDate &&
+    p.admissionId === n.admissionId &&
+    p.awayAtEdHours === n.awayAtEdHours &&
+    p.blockReason === n.blockReason &&
+    p.isSpecialling === n.isSpecialling &&
+    p.isHdu === n.isHdu &&
+    p.age === n.age &&
+    p.sex === n.sex &&
+    p.legalStatusLabel === n.legalStatusLabel &&
+    p.tentativeDiagnosis === n.tentativeDiagnosis &&
+    p.notes === n.notes &&
+    p.isPlannedAdmission === n.isPlannedAdmission &&
+    p.isLeave === n.isLeave
+  );
+}
+
 const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect }: WardBedCardProps) {
   const stayDaysNum = typeof bed.stayDays === "number" ? bed.stayDays : null;
   const isPastDate = bed.pastDate === true;
@@ -268,7 +301,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
       ) : null}
     </button>
   );
-});
+}, areBedCardPropsEqual);
 
 export function WardBedsMatrix({
   unit,

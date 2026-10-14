@@ -20,6 +20,8 @@ vi.mock("next/link", () => ({
 }));
 
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
+import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { setForceDynamicLoading } from "./setup/jsdom.setup";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
@@ -39,6 +41,23 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
   const seed = seedWardFlowState();
 
   describe("1. WardAnswerView bed cells accessibility", () => {
+    it("renders the dynamic WardAnswerView loading fallback with a single main landmark and h1 while pending", () => {
+      setForceDynamicLoading(true);
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardScreen unitId="sjgm-adult-open" presentation="answer" />
+        </WardFlowProvider>,
+      );
+
+      const mains = screen.getAllByRole("main");
+      expect(mains).toHaveLength(1);
+      const main = mains[0]!;
+      expect(main).toHaveAttribute("id", "main-content");
+      expect(within(main).getAllByRole("heading", { level: 1 })).toHaveLength(1);
+      expect(within(main).getByRole("heading", { level: 1, name: "Ward answer" })).toBeInTheDocument();
+      expect(within(main).getByRole("status")).toHaveTextContent("Loading ward answer…");
+    });
+
     it("renders bed cells as native buttons with aria-label, enabled when vacant, disabled when occupied", () => {
       const unit = unitById("sjgm-adult-open")!;
       render(

@@ -262,7 +262,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: currentUnit.id, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: currentUnit.id,
+      actingUnitId: currentUnit.id,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
@@ -276,7 +284,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       return;
     }
     setDeclineNudge(false);
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: currentUnit.id, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: currentUnit.id,
+      actingUnitId: currentUnit.id,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
     triggerToast("Referral declined.");
@@ -288,7 +304,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     // v10 pass 3: Accept, then Undo on the toast (`UNDO_ACCEPT_IN_PRINCIPLE`, this ward's own).
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
     runStep(
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId: unitIdHere },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId: unitIdHere, actingUnitId: unitIdHere },
       {
         success: "Accepted in principle.",
         undo: (at) => ({
@@ -321,6 +337,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         now,
         movementId,
         unitId: currentUnit.id,
+        actingUnitId: currentUnit.id,
         overrideReason,
       });
     } else {
@@ -330,6 +347,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         now,
         movementId,
         unitId: currentUnit.id,
+        actingUnitId: currentUnit.id,
         overrideReason,
         numConsulted: isAcuityRefusal && numConsulted ? true : undefined,
       });

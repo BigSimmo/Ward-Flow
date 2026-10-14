@@ -33,7 +33,8 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useDebouncedValue } from "@/components/ward-management/search/use-debounced-value";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
   patientResultTitle,
@@ -649,11 +650,14 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions, now } = useWardFlow();
-  // Not deferred: a stale list under new text could open the wrong record.
-  const needle = query.trim();
+  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlow();
+  const now = useWardFlowClock();
+  const debouncedQuery = useDebouncedValue(query, 120);
+  const trimmed = query.trim();
+  const needle = debouncedQuery.trim();
+  const isPending = trimmed !== needle;
   return useMemo(() => {
-    if (!needle) return null;
+    if (!needle || isPending) return null;
     const refusal = refusalFor(needle);
     const results = searchWardFlow({
       query: needle,
@@ -687,7 +691,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
           )
           .filter((group) => group.items.length > 0);
     return { needle, refusal, pages, groups };
-  }, [needle, entries, movements, patients, units, referrals, plannedAdmissions, now]);
+  }, [needle, isPending, entries, movements, patients, units, referrals, plannedAdmissions, now]);
 }
 
 function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
@@ -789,7 +793,14 @@ function MenuPages({
   onClose: () => void;
 }) {
   const search = useMenuSearch(query, entries);
-  if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onResult} />;
+  if (query.trim().length > 0) {
+    if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onResult} />;
+    return (
+      <Section label="Searching">
+        <li className={styles.empty}>Searching…</li>
+      </Section>
+    );
+  }
   return (
     <>
       <Section label="Needs you" rich>

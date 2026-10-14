@@ -70,6 +70,7 @@ const StatisticsJourneyView = dynamic(() => import("./statistics-journey-view").
 
 const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
   ssr: false,
+  loading: () => <p role="status">Loading map view…</p>,
 });
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";

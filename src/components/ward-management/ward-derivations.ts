@@ -272,7 +272,8 @@ export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
  * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
  * Surfaced to clinicians so the held bed is visible and can be released.
  */
-export function isStoppedTransportAwaitingRelease(movement: Movement): boolean {
+export function isStoppedTransportAwaitingRelease(movement?: Movement | null): boolean {
+  if (!movement) return false;
   return (
     movement.transport?.stoppedAt !== undefined &&
     (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||

@@ -98,6 +98,7 @@ import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { openDecisionCount } from "./ward-decision-count";
+import type { BedItem } from "./ward-beds-matrix";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
@@ -113,7 +114,7 @@ import {
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
-import type { BedItem } from "./ward-beds-matrix";
+
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -139,7 +140,7 @@ const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.
   // The loading state keeps the page's one main landmark and one h1; the loaded view replaces it
   // wholesale, so neither is ever duplicated.
   loading: () => (
-    <main id="main-content">
+    <main id="main-content" data-testid="ward-answer-screen">
       <h1>Ward answer</h1>
       <p role="status">Loading ward answer…</p>
     </main>
@@ -319,6 +320,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     patients,
   } = useWardFlow();
   const now = useWardFlowClock();
+
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
   // listed cross-role pair in `ward-role-permissions.ts`.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
@@ -871,7 +873,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (rejections.length > priorRejectionCountRef.current) {
       const newest = rejections[rejections.length - 1];
       setLastActionRejection(
-        newest.attempted === "ACCEPT_IN_PRINCIPLE" || newest.attempted === "PULL_PATIENT" ? newest : undefined,
+        newest.attempted === "ACCEPT_IN_PRINCIPLE" ||
+          newest.attempted === "PULL_PATIENT" ||
+          newest.attempted === "RELEASE_HELD_BED"
+          ? newest
+          : undefined,
       );
     } else {
       setLastActionRejection(undefined);
@@ -1053,8 +1059,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     presentation === "answer" ? incoming.slice(activeAnswerIndex, activeAnswerIndex + 1) : incoming;
   // Accepted, pulled, or en route: this unit is the recorded destination, at any stage from
   // acceptance through transport. `isOpen` excludes `arrived` — once a patient arrives the record
-  // closes and the bed shows as occupied in the grid above, not as a card here. Also includes
-  // stopped transport movements awaiting release so the held bed remains visible to the ward.
+  // closes and the bed shows as occupied in the grid above, not as a card here. Stopped transport
+  // movements awaiting bed release are tracked separately in `heldAfterStop` so the held bed
+  // remains visible on both Home and All arrivals without adding closed records back to `accepted`.
   const accepted = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
   const heldAfterStop = movements.filter(
     (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
@@ -1600,6 +1607,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId: pick.movementId,
         unitId: boardUnitId,
+        actingUnitId: boardUnitId,
         bedNumber,
       });
     } else {
@@ -1656,7 +1664,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: wardUnitId, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: wardUnitId,
+      actingUnitId: wardUnitId,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
   }
@@ -1679,6 +1695,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((token) => token + 1);
   }
@@ -1693,6 +1710,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
     });
     setCheckToken((t) => t + 1);
   }
@@ -1723,6 +1741,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
       });
     } else {
@@ -1732,6 +1751,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         now,
         movementId,
         unitId: wardUnitId,
+        actingUnitId: wardUnitId,
         overrideReason,
         // Absent, never `false`, when this refusal is not the one the tick answers — see
         // `Override.numConsulted`'s own doc comment on that discipline.
@@ -2071,6 +2091,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     heldUp: blockedReleases.length,
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
     lapsedHolds: bedsList.filter((bed) => bed.status === "incoming" && bed.bedHold?.state === "lapsed").length,
+    stoppedHolds: heldAfterStop.length,
   });
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
@@ -2639,6 +2660,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             units={units}
             capacity={capacity}
             accepted={accepted}
+            heldAfterStop={heldAfterStop}
             incoming={incoming}
             withdrawn={withdrawn}
             overridesHere={overridesHere}

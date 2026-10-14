@@ -18,7 +18,7 @@ import {
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
@@ -96,7 +96,7 @@ export function StatisticsSummaryPhone({
   paused: boolean;
   onTogglePause: () => void;
 }) {
-  const { now } = useWardFlow();
+  const now = useWardFlowClock();
   const [group, setGroup] = useState<"hospital" | "ward">("hospital");
   const [sheet, setSheet] = useState<Sheet>(null);
   const [showAll, setShowAll] = useState(false);

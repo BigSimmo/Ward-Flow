@@ -1388,6 +1388,10 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // Option A (9 Oct 2026): the cards are the phone's queue, so this is measured at phone width.
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the whole screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
 
     const cards = page.getByTestId("ward-referral-board-queued-cards");
     await expect(cards, "no queued referral cards rendered").toBeVisible();

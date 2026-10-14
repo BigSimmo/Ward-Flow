@@ -216,10 +216,15 @@ export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
 export const WardClockContext = createContext<Instant | null>(null);
 
-export function useWardClock(): Instant {
-  const now = useContext(WardClockContext);
-  if (now === null) throw new Error("useWardClock must be used within WardFlowProvider");
-  return now;
+export function useWardClock(fallback?: Instant): Instant {
+  const clock = useContext(WardClockContext);
+  const flowClock = useContext(WardFlowClockContext);
+  const wardFlow = useContext(WardFlowContext);
+  if (clock !== null) return clock;
+  if (flowClock !== null) return flowClock;
+  if (wardFlow) return wardFlow.now;
+  if (fallback !== undefined) return fallback;
+  throw new Error("useWardClock must be used within WardFlowProvider.");
 }
 
 const EMPTY_ARRAY = Object.freeze([]) as never[];
@@ -864,7 +869,6 @@ function WardFlowWorld({
   }, [shared.enabled, shared.snapshot, anchorOffsetMinutes]);
 
   useEffect(() => {
-    if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -894,7 +898,7 @@ function WardFlowWorld({
       if (timeoutTimer) clearTimeout(timeoutTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [initialNow, mountedAtAbsolute, shared.enabled]);
+  }, [initialNow, mountedAtAbsolute]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;

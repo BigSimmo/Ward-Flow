@@ -124,4 +124,30 @@ describe("ward decision demonstration boundaries", () => {
     expect(screen.getAllByText(/^Pull expired /u).length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Late$/u)).not.toBeInTheDocument();
   });
+  it("shows stopped held beds in Act now without mixing closed movements into accepted", () => {
+    const base = seedWardFlowState().movements[0]!;
+    const stopped = {
+      ...base,
+      id: "WF-stopped-hold",
+      stage: "closed" as const,
+      closedReason: "transport_stopped" as const,
+      pulledUnitId: unit.id,
+      pulledBedReleasedAt: undefined,
+    } as typeof base;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardHomeTab
+          {...props}
+          heldAfterStop={[stopped]}
+          resolvePatientIdentity={() => ({
+            displayName: "Synthetic Person",
+            formalName: "Synthetic Person",
+            umrn: "UM000000",
+            initials: "SP",
+          })}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.getAllByText("Stopped transport holding bed").length).toBeGreaterThan(0);
+  });
 });

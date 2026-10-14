@@ -564,6 +564,50 @@ export function normaliseCommaNameQuery(query: string): string {
 }
 
 /**
+ * Words the inbox titles are written in ("Bed pull expired", "Transport awaiting departure", ...).
+ * A query that is the start of one of them can match a task title, whatever intent it was given:
+ * "bed" reads as a name and "transport" as a view, and deriving no tasks for either hid the real
+ * action from every search surface (PR #285 review). Names are not caught by this: only a typed
+ * prefix of one of these words, at least three letters long, opens the gate.
+ */
+const TASK_TITLE_WORDS = [
+  "accepted",
+  "arrival",
+  "bed",
+  "declined",
+  "departure",
+  "destination",
+  "destinations",
+  "expired",
+  "legal",
+  "planned",
+  "pull",
+  "transport",
+] as const;
+
+function queryStartsATaskTitleWord(typed: string): boolean {
+  return typed
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .some((token) => token.length >= 3 && TASK_TITLE_WORDS.some((word) => word.startsWith(token)));
+}
+
+/** Determines whether a query has potential task intent requiring inbox action derivation. */
+export function shouldDeriveSearchTasks(query: string): boolean {
+  const trimmed = normaliseCommaNameQuery(query);
+  const typed = query.trim();
+  if (typed.length === 0) return false;
+  const intent = detectSearchIntent(trimmed);
+  return (
+    intent === "task" ||
+    intent === "general" ||
+    intent === "identifier" ||
+    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed) ||
+    queryStartsATaskTitleWord(typed)
+  );
+}
+
+/**
  * Unified multi-entity search runner.
  * Prefix and word-start matches lead each group. No score, no provider calls.
  */
@@ -649,20 +693,25 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
-  const tasksInbox =
-    input.precomputedTasks ??
-    buildActionInbox(
-      input.movements.filter(isOpen),
-      input.now ?? 0,
-      input.units,
-      input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
-    );
-  const tasks = rankAndLimit(
-    searchTasks(typed, tasksInbox),
-    typed,
-    (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
-    limit,
-  );
+  const shouldDeriveTasks = shouldDeriveSearchTasks(input.query);
+
+  const tasksInbox = shouldDeriveTasks
+    ? (input.precomputedTasks ??
+      buildActionInbox(
+        input.movements.filter(isOpen),
+        input.now ?? 0,
+        input.units,
+        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
+      ))
+    : [];
+  const tasks = shouldDeriveTasks
+    ? rankAndLimit(
+        searchTasks(typed, tasksInbox),
+        typed,
+        (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
+        limit,
+      )
+    : [];
 
   const totalCount =
     people.length +
