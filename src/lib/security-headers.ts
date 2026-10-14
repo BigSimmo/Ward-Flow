@@ -57,8 +57,8 @@ export function resolveSharedWorkspaceOrigins(
     return [];
   }
   if (url.username || url.password) return [];
-  // Blank means unset (offline wrappers blank it), matching the client's Entra default.
-  const provider = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "entra";
+  // Blank means unset (offline wrappers blank it), matching the client's Supabase default.
+  const provider = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "supabase";
   const loopback =
     process.env.NODE_ENV === "development" &&
     url.protocol === "http:" &&

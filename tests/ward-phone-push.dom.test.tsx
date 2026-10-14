@@ -5,27 +5,6 @@ import { runInNewContext } from "node:vm";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Microsoft sign-in, faked so the shared connection's sign-out can be exercised offline.
-const msal = vi.hoisted(() => ({
-  logoutRedirect: vi.fn<(...args: unknown[]) => Promise<void>>(async () => {}),
-  order: [] as string[],
-}));
-vi.mock("@azure/msal-browser", () => ({
-  PublicClientApplication: class {
-    initialize = async () => {};
-    handleRedirectPromise = async () => ({ account: { username: "synthetic.coordinator" } });
-    getActiveAccount = () => null;
-    getAllAccounts = () => [];
-    setActiveAccount = () => {};
-    acquireTokenSilent = async () => ({ accessToken: "synthetic-token" });
-    loginRedirect = async () => {};
-    logoutRedirect = async (...args: unknown[]) => {
-      msal.order.push("sign-out");
-      await msal.logoutRedirect(...args);
-    };
-  },
-}));
-
 // Same reason as every sibling settings dom suite: next/link needs an App Router context.
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -51,6 +30,8 @@ import {
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { useWardShared } from "@/components/ward-management/ward-shared-access";
+import { SharedWorkspaceClient } from "@/components/ward-management/ward-shared-client";
+import { WARD_AUTH_STORAGE_KEY } from "@/components/ward-management/ward-supabase-auth";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 
 /** Feature 4, 10 Oct 2026: phone alerts are off by default, per device, and never hidden. */
@@ -124,7 +105,7 @@ describe("phone alerts row", () => {
     );
     fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
     const row = screen.getByTestId("setting-phone-alerts-row");
-    expect(row).toHaveTextContent("Needs the shared Azure workspace");
+    expect(row).toHaveTextContent("Needs the shared workspace");
     expect(within(row).getByRole("switch", { name: "Phone alerts" })).toHaveAttribute("aria-disabled", "true");
   });
 
@@ -406,33 +387,45 @@ const SHARED_SNAPSHOT = {
 
 function sharedServer(hang: string | null = null) {
   const calls: { path: string; body: unknown }[] = [];
+  const user = { id: "12345678-1234-1234-1234-123456789abc" };
   const answers: Record<string, unknown> = {
+    "/auth/v1/user": user,
     "/v1/workspace": { snapshot: SHARED_SNAPSHOT },
     "/v1/workspace/push-key": { enabled: true, publicKey: SERVER_KEY },
     "/v1/workspace/push-status": { owned: true },
     "/v1/workspace/push-subscribe": { subscribed: true },
     "/v1/workspace/push-unsubscribe": { subscribed: false, revoked: true },
   };
+  sessionStorage.setItem(
+    WARD_AUTH_STORAGE_KEY,
+    JSON.stringify({
+      access_token: "synthetic-token",
+      refresh_token: "synthetic-refresh",
+      expiresAt: Date.now() + 3600_000,
+      recovery: false,
+      user,
+    }),
+  );
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, options?: RequestInit) => {
       const path = new URL(url).pathname;
       calls.push({ path, body: options?.body ? JSON.parse(String(options.body)) : null });
       if (path === hang) return new Promise<Response>(() => {});
-      if (path === "/v1/workspace/push-unsubscribe") msal.order.push("revoke");
+      if (path === "/auth/v1/logout") return new Response(null, { status: 204 });
       return Response.json(answers[path]);
     }),
   );
-  vi.stubEnv("NEXT_PUBLIC_WARD_TENANT_ID", "11111111-1111-4111-8111-111111111111");
-  vi.stubEnv("NEXT_PUBLIC_WARD_CLIENT_ID", "22222222-2222-4222-8222-222222222222");
+  vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+  vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test_key");
   vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://ward-api.example/");
-  vi.stubEnv("NEXT_PUBLIC_WARD_API_SCOPE", "api://ward-flow-synthetic/WardFlow.Access");
   return calls;
 }
 
 async function signedInShared() {
   const view = renderHook(() => useWardShared(true));
   await waitFor(() => expect(view.result.current.status).toBe("ready"));
+  await waitFor(() => expect(view.result.current.signedIn).toBe(true));
   return view;
 }
 
@@ -440,8 +433,7 @@ describe("shared connection phone alerts", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.useRealTimers();
-    msal.order.length = 0;
-    msal.logoutRedirect.mockClear();
+    sessionStorage.clear();
   });
 
   it("sends each phone alert call to the signed-in workspace", async () => {
@@ -452,7 +444,7 @@ describe("shared connection phone alerts", () => {
     expect(await pushApi.pushStatus("https://fcm.googleapis.com/fcm/send/device")).toBe(true);
     await pushApi.pushSubscribe({ endpoint: "https://fcm.googleapis.com/fcm/send/device", keys: { p256dh: "p" } });
     expect(await pushApi.pushUnsubscribe("https://fcm.googleapis.com/fcm/send/device")).toBe(true);
-    expect(calls.slice(1)).toEqual([
+    expect(calls.filter((call) => call.path.startsWith("/v1/workspace/push-"))).toEqual([
       { path: "/v1/workspace/push-key", body: null },
       { path: "/v1/workspace/push-status", body: { endpoint: "https://fcm.googleapis.com/fcm/send/device" } },
       {
@@ -466,13 +458,14 @@ describe("shared connection phone alerts", () => {
   });
 
   it("sign-out releases this device's phone alerts first, then signs out", async () => {
-    sharedServer();
+    const calls = sharedServer();
     const browser = installBrowser({ permission: "granted", subscribed: true });
     const { result, unmount } = await signedInShared();
     act(() => result.current.signOut());
-    await waitFor(() => expect(msal.logoutRedirect).toHaveBeenCalledTimes(1));
-    expect(msal.order).toEqual(["revoke", "sign-out"]);
+    await waitFor(() => expect(calls.some((call) => call.path === "/v1/workspace/push-unsubscribe")).toBe(true));
+    await waitFor(() => expect(calls.some((call) => call.path === "/auth/v1/logout")).toBe(true));
     expect(browser.subscription.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     expect(result.current.signedIn).toBe(false);
     unmount();
   });
@@ -480,17 +473,21 @@ describe("shared connection phone alerts", () => {
   it("sign-out never waits more than two seconds on the server", async () => {
     sharedServer("/v1/workspace/push-unsubscribe");
     installBrowser({ permission: "granted", subscribed: true });
+    const dispose = vi.spyOn(SharedWorkspaceClient.prototype, "dispose");
     const { result, unmount } = await signedInShared();
+    dispose.mockClear();
     vi.useFakeTimers();
     act(() => result.current.signOut());
+    // Active board client is disposed immediately on sign-out; cleanup client waits up to 2s.
+    expect(dispose).toHaveBeenCalledTimes(1);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1900);
     });
-    expect(msal.logoutRedirect).not.toHaveBeenCalled();
+    expect(dispose).toHaveBeenCalledTimes(1);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(200);
     });
-    expect(msal.logoutRedirect).toHaveBeenCalledTimes(1);
+    expect(dispose).toHaveBeenCalledTimes(2);
     unmount();
   });
 });

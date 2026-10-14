@@ -102,12 +102,26 @@ describe("Supabase shared sign-in", () => {
       expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     },
   );
-  it("uses the same trimmed provider selector as the CSP", async () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", " supabase ");
+  it("uses the same trimmed provider selector as the CSP and defaults blank to Supabase", async () => {
+    for (const selector of [" supabase ", ""]) {
+      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", selector);
+      const fetcher = vi.fn();
+      vi.stubGlobal("fetch", fetcher);
+      const { unmount } = render(<Probe />);
+      expect(await screen.findByRole("button", { name: "Sign in with email" })).toBeEnabled();
+      expect(fetcher).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+  it("reports Microsoft sign-in unavailable without network calls when entra is selected", async () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "entra");
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
     render(<Probe />);
-    expect(await screen.findByRole("button", { name: "Sign in with email" })).toBeEnabled();
+    expect(
+      await screen.findByText("Microsoft sign-in or shared workspace configuration is unavailable."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in with Microsoft" })).toBeDisabled();
     expect(fetcher).not.toHaveBeenCalled();
   });
   it("rejects an unknown provider without restoring a session", async () => {
