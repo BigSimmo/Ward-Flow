@@ -362,6 +362,8 @@ export function runCheckMode({ root = DEFAULT_ROOT } = {}) {
     "--check",
     "--source",
     "working-tree",
+    "--root",
+    root,
   ]);
   let unclassifiedRecommendations = [];
   if (!orgExec.ok) {
@@ -401,7 +403,15 @@ export function runCheckMode({ root = DEFAULT_ROOT } = {}) {
 
 export function runWriteMode({ root = DEFAULT_ROOT } = {}) {
   const packManifestUpdate = checkOrUpdatePackManifest({ root, write: true });
-  const generatorRuns = WRITE_GENERATOR_STEPS.map((step) => runNodeCommand(root, step.label, step.args));
+  const generatorRuns = WRITE_GENERATOR_STEPS.map((step) =>
+    runNodeCommand(
+      root,
+      step.label,
+      step.label === "organisation"
+        ? [...step.args, "--root", root]
+        : step.args,
+    ),
+  );
   const verification = runCheckMode({ root });
 
   const allOk = packManifestUpdate.ok && generatorRuns.every((g) => g.ok) && verification.ok;
@@ -416,6 +426,7 @@ export function runWriteMode({ root = DEFAULT_ROOT } = {}) {
 
 export function parseArgs(argv = process.argv.slice(2)) {
   let mode = "check";
+  let explicitMode = false;
   let json = false;
   let root = DEFAULT_ROOT;
   const classifyPaths = [];
@@ -424,14 +435,25 @@ export function parseArgs(argv = process.argv.slice(2)) {
     const arg = argv[i];
     if (arg === "--json") {
       json = true;
-    } else if (arg === "--check") {
-      mode = "check";
-    } else if (arg === "--write") {
-      mode = "write";
+    } else if (arg === "--check" || arg === "--write") {
+      const requestedMode = arg.slice(2);
+      if (explicitMode && mode !== requestedMode) {
+        throw new Error(
+          `Conflicting mode flags: --${mode} and --${requestedMode}. Usage: --check | --write | --classify <path...> [--json] [--root <dir>]`,
+        );
+      }
+      mode = requestedMode;
+      explicitMode = true;
     } else if (arg === "--root" && argv[i + 1]) {
       root = path.resolve(argv[++i]);
     } else if (arg === "--classify") {
+      if (explicitMode && mode !== "classify") {
+        throw new Error(
+          `Conflicting mode flags: --${mode} and --classify. Usage: --check | --write | --classify <path...> [--json] [--root <dir>]`,
+        );
+      }
       mode = "classify";
+      explicitMode = true;
       while (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
         classifyPaths.push(argv[++i]);
       }
