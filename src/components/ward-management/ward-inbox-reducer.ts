@@ -85,6 +85,10 @@ export const INBOX_CATEGORIES = {
   /** Audit A3-1 (13 Oct 2026): a person on an order recorded absent without leave. Act now. Leaves
    *  when the return is recorded. Remainder is the stay's admission id (`ward-absence-tasks.ts`). */
   absent_without_leave: { idPrefix: "awol-", kind: "fact" },
+  /** Clinical owner ruling (14 Oct 2026): an open, unplaced movement with no eligible bed anywhere
+   *  in the network. The patient stays on the waitlist with a visible flag and the bed coordinator
+   *  is notified; nothing drops or releases them. Act now. Remainder is the movement id. */
+  no_eligible_bed: { idPrefix: "no-eligible-bed-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**

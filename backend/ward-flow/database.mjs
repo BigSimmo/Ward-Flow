@@ -64,6 +64,21 @@ export async function openStorage(storage) {
   };
 }
 
+/**
+ * Conditional-write contention only: 412, or a 409 whose Azure error code is a lease/condition
+ * conflict. Other 409s (container being deleted, wrong blob type, ...) are storage failures.
+ */
+const WRITE_CONFLICT_409_CODES = new Set([
+  "LeaseIdMissing",
+  "LeaseAlreadyPresent",
+  "ConditionNotMet",
+  "BlobAlreadyExists",
+]);
+function isWriteConflict(result) {
+  if (result.status === 412) return true;
+  return result.status === 409 && WRITE_CONFLICT_409_CODES.has(result.headers?.get?.("x-ms-error-code") ?? "");
+}
+
 export function createStore(client) {
   const base = `https://${client.account}.blob.core.windows.net/${client.container}`;
   let containerPromise;
@@ -130,8 +145,9 @@ export function createStore(client) {
         "x-ms-blob-type": "BlockBlob",
         [current.etag ? "if-match" : "if-none-match"]: current.etag ?? "*",
       });
-      if (result.status === 412) {
+      if (isWriteConflict(result)) {
         if (!canonicalRequestId) return null;
+        // A failed reconciliation read is a storage failure, not an edit conflict: let it surface.
         const winner = await get(owner, id);
         return replay(winner.record) ? winner.record.revision : null;
       }
@@ -149,7 +165,7 @@ export function createStore(client) {
         "content-type": "application/json",
         "x-ms-blob-type": "BlockBlob",
       });
-      if (result.status === 412) return "conflict";
+      if (isWriteConflict(result)) return "conflict";
       if (result.status !== 201) throw new Error("Session deletion unavailable");
       return "deleted";
     },

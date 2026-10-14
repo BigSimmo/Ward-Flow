@@ -2489,6 +2489,8 @@ export type ReferralAddressingState = (typeof REFERRAL_ADDRESSING_STATES)[number
 export type ReferralAddressing = {
   /** Explicitly placed on a recipient waitlist; still awaiting an answer. */
   waitlistedAt?: Instant;
+  /** When this specific destination was referred. */
+  referredAt?: Instant;
   destination: ReferralDestination;
   state: ReferralAddressingState;
   /** When this destination answered, or when acceptance elsewhere cancelled it. */

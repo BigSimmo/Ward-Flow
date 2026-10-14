@@ -45,8 +45,9 @@ export async function createAuthenticator(config, dependencies = {}) {
       !isUserAllowed ||
       typeof payload.scp !== "string" ||
       !payload.scp.split(" ").includes("WardFlow.Access")
-    )
+    ) {
       throw new Error("Unauthorised");
+    }
     return payload.oid;
   };
 }

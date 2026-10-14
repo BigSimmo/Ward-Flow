@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
+  examinationRevokedWhileBedHeld,
   isOpen,
   referralForMovement,
   shortlistCandidates,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 
 export type DelayCause =
   // ⚠️ AUDIT GAP 3 CLOSED. This used to be one cause, `legal_expiring`, covering both
@@ -215,70 +217,77 @@ export function ownerOf(cause: DelayCause): DelayOwnerId {
  * group is dropped from the screen — so the failure would have looked like "nothing is wrong in
  * that category" rather than like a defect.
  */
-export function delayGroups(movements: Movement[], units: Unit[], now: Instant): DelayGroup[] {
-  const causeOf = (movement: Movement): DelayCause => {
-    // ⚠️ CORRECTION 1. The plan wrote `clockState(...) !== "ok"`. `ClockState` has no member "ok" —
-    // it is "breached" | "critical" | "due" | "clear" — so that comparison is a type error, and had
-    // it compiled it would have been true for every movement carrying a dueAt, putting the whole
-    // fixture in this group.
-    //
-    // ⚠️ AND THE REPLACEMENT IS A JUDGEMENT, NOT A MEASUREMENT. "Running out" is read here as
-    // breached or critical (already past, or under an hour). "due" — under three hours — is
-    // deliberately excluded, because a top group that holds a third of the screen directs the eye
-    // nowhere, which is the same failure as flagging every tile amber. The thresholds themselves
-    // are `clockState`'s own and are not invented here, but WHICH of them count as "running out"
-    // is the plan author's reading and the owner has not ruled on it.
-    //
-    // ⚠️ AUDIT GAP 3: breached and critical used to collapse into one cause here. They are now
-    // two returns instead of one `||`, so a caller can rank and label a passed deadline
-    // differently from an approaching one. As of this fixture, no seeded movement's legal form
-    // is actually breached or critical (the four `dueAt` values in ward-movements.ts are all
-    // "due" or "clear" against NOW_ANCHOR) — both branches are real and reachable, but neither
-    // is exercised by today's data. See the test file for how that is proved rather than assumed.
-    // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
-    const legal = currentLegalDueAt(movement);
-    if (legal !== undefined) {
-      const state = clockState(legal, now);
-      if (state === "breached") return "legal_breached";
-      if (state === "critical") return "legal_expiring";
-    }
+export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayCause {
+  // ⚠️ CORRECTION 1. The plan wrote `clockState(...) !== "ok"`. `ClockState` has no member "ok" —
+  // it is "breached" | "critical" | "due" | "clear" — so that comparison is a type error, and had
+  // it compiled it would have been true for every movement carrying a dueAt, putting the whole
+  // fixture in this group.
+  //
+  // ⚠️ AND THE REPLACEMENT IS A JUDGEMENT, NOT A MEASUREMENT. "Running out" is read here as
+  // breached or critical (already past, or under an hour). "due" — under three hours — is
+  // deliberately excluded, because a top group that holds a third of the screen directs the eye
+  // nowhere, which is the same failure as flagging every tile amber. The thresholds themselves
+  // are `clockState`'s own and are not invented here, but WHICH of them count as "running out"
+  // is the plan author's reading and the owner has not ruled on it.
+  //
+  // ⚠️ AUDIT GAP 3: breached and critical used to collapse into one cause here. They are now
+  // two returns instead of one `||`, so a caller can rank and label a passed deadline
+  // differently from an approaching one. As of this fixture, no seeded movement's legal form
+  // is actually breached or critical (the four `dueAt` values in ward-movements.ts are all
+  // "due" or "clear" against NOW_ANCHOR) — both branches are real and reachable, but neither
+  // is exercised by today's data. See the test file for how that is proved rather than assumed.
+  // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
+  const legal = currentLegalDueAt(movement);
+  if (legal !== undefined) {
+    const state = clockState(legal, now);
+    if (state === "breached") return "legal_breached";
+    if (state === "critical") return "legal_expiring";
+  }
 
-    if (destinationNoLongerLawful(movement, units) !== undefined) return "no_eligible_bed";
+  if (destinationNoLongerLawful(movement, units) !== undefined) return "no_eligible_bed";
 
-    // ⚠️ CORRECTION 2, AND IT IS THE ONE THAT MATTERED. The plan wrote
-    // `shortlistCandidates(movement, units, now).length === 0`. That function returns EVERY ward
-    // with an honest verdict on each and never a pre-filtered list — its own doc comment says so in
-    // capitals — so its length is zero only when the network holds no wards at all. This group
-    // would have been permanently empty, and an empty group is dropped, so the two people with
-    // nowhere to go would simply not have appeared on the screen built to find them.
-    if (movement.acceptedUnitId === undefined) {
-      const candidates = shortlistCandidates(movement, units, now);
-      if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
-    }
+  // ⚠️ CORRECTION 2, AND IT IS THE ONE THAT MATTERED. The plan wrote
+  // `shortlistCandidates(movement, units, now).length === 0`. That function returns EVERY ward
+  // with an honest verdict on each and never a pre-filtered list — its own doc comment says so in
+  // capitals — so its length is zero only when the network holds no wards at all. This group
+  // would have been permanently empty, and an empty group is dropped, so the two people with
+  // nowhere to go would simply not have appeared on the screen built to find them.
+  if (movement.acceptedUnitId === undefined) {
+    const candidates = shortlistCandidates(movement, units, now);
+    if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
+  }
 
-    if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
-      return "awaiting_ward_answer";
-    }
-    if (movement.stage === "pulled") {
-      // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
-      // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
-      // pullExpiresAt < now`. Do not let this drift from that one independently; the two screens
-      // must agree on which holds count as expired.
-      if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) return "bed_pull_expired";
-      return "awaiting_bed_ready";
-    }
-    if (movement.transport !== undefined) return "awaiting_transport";
-    // ⚠️ CORRECTION 3. The plan wrote `movement.urgentFlag`. The field is `flaggedUrgent`
-    // (ward-model.ts) and `urgentFlag` exists nowhere in this codebase, so the plan's line would
-    // not have compiled.
-    if (movement.flaggedUrgent) return "patient_or_family";
+  if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
+    return "awaiting_ward_answer";
+  }
+  if (
+    movement.examination?.outcome === "revoked" ||
+    examinationRevokedWhileBedHeld(movement) ||
+    movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
+  ) {
     return "awaiting_coordinator";
-  };
+  }
+  if (movement.stage === "pulled") {
+    // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
+    // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
+    // pullExpiresAt < now`. Do not let this drift from that one independently; the two screens
+    // must agree on which holds count as expired.
+    if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) return "bed_pull_expired";
+    return "awaiting_bed_ready";
+  }
+  if (movement.transport !== undefined) return "awaiting_transport";
+  // ⚠️ CORRECTION 3. The plan wrote `movement.urgentFlag`. The field is `flaggedUrgent`
+  // (ward-model.ts) and `urgentFlag` exists nowhere in this codebase, so the plan's line would
+  // not have compiled.
+  if (movement.flaggedUrgent) return "patient_or_family";
+  return "awaiting_coordinator";
+}
 
+export function delayGroups(movements: Movement[], units: Unit[], now: Instant): DelayGroup[] {
   const open = movements.filter(isOpen);
   const causeByMovementId = new Map<string, DelayCause>();
   for (const movement of open) {
-    causeByMovementId.set(movement.id, causeOf(movement));
+    causeByMovementId.set(movement.id, causeOf(movement, units, now));
   }
 
   return ORDER.map((entry) => ({
@@ -396,6 +405,10 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   if (transport?.enRouteAt !== undefined) candidates.push({ at: transport.enRouteAt, what: "transport left en route" });
   if (transport?.acceptedAt !== undefined)
     candidates.push({ at: transport.acceptedAt, what: "transport accepted the job" });
+  if (movement.acceptedAt !== undefined) {
+    // Same wording as the Delays board's own acceptance line, so the two never disagree.
+    candidates.push({ at: movement.acceptedAt, what: "a ward accepted" });
+  }
   if (movement.referredAt !== undefined) {
     candidates.push({ at: movement.referredAt, what: "referral raised" });
   }
@@ -618,6 +631,17 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
     return silentCommunityReminder(referral.raisedAt, now);
   }
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
+    // Only destinations still awaiting an answer (and not waitlisted) count, and the OLDEST silent one drives the
+    // reminder, so an answered, withdrawn or newer arm can never reset an older silence.
+    const wardArms = (referral?.destinations ?? []).filter((d) => d.destination.kind === "psychiatric_ward");
+    if (wardArms.length > 0) {
+      const silentWardTimes = wardArms
+        .filter((d) => isAwaitingAnswer(d) && d.waitlistedAt === undefined)
+        .map((d) => d.referredAt ?? movement.referredAt)
+        .filter((t): t is Instant => t !== undefined);
+      if (silentWardTimes.length > 0) return silentWardReminder(Math.min(...silentWardTimes), now);
+      return undefined;
+    }
     return silentWardReminder(movement.referredAt, now);
   }
   return undefined;
