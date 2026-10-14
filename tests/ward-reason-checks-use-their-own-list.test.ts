@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
+
+import { scanReducerReasonChecks } from "./helpers/ward-reducer-reason-checks";
 
 /**
  * ═══ EVERY REASON CHECK VALIDATES AGAINST ITS OWN EVENT'S LIST ═══
@@ -138,6 +142,29 @@ function reasonTypeOf(eventName: string): string | undefined {
 }
 
 describe("reason membership checks", () => {
+  it("covers every runtime-imported reducer module the scanner finds a reason check in", () => {
+    /*
+     * The REDUCERS list above is hand-kept. If a reason-validating handler moves into another
+     * runtime-imported reducer, the scanner follows the import while the list does not, so the
+     * scanner's own checks are held to the same event-derived lists here.
+     */
+    const scanned = scanReducerReasonChecks(REDUCERS[0]);
+    expect(scanned.checks.length, "the scanner found no reason checks").toBeGreaterThanOrEqual(5);
+    const wrong: string[] = [];
+    for (const check of scanned.checks) {
+      const type = reasonTypeOf(check.event);
+      const expectedList = type === undefined ? undefined : LIST_FOR_TYPE[type];
+      if (check.list !== expectedList)
+        wrong.push(`${check.event}: validates against ${check.list}, expected ${expectedList ?? "(no reason type)"}`);
+    }
+    expect(wrong).toEqual([]);
+    const listed = new Set(REDUCERS.map((file) => path.normalize(file)));
+    const unlisted = scanned.sources.filter(
+      (file) => !listed.has(file) && /\.includes\(\s*event\.reason/u.test(stripComments(readFileSync(file, "utf8"))),
+    );
+    expect(unlisted, "a runtime-imported reducer validates reasons but is missing from REDUCERS").toEqual([]);
+  });
+
   it("walks a real reducer, so the checks below are not ranging over nothing", () => {
     /*
      * ⚠️ Floors on the POPULATION. If the scan's pattern stops matching — a reformat putting the
