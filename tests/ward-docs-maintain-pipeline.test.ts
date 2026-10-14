@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   CHECK_INDEX_STEPS,
   CHECK_INTEGRITY_GATE_STEPS,
@@ -191,6 +191,63 @@ describe("ward-docs-maintain-pipeline", () => {
           });
         }
         expect(checkOrUpdatePackManifest({ root }).ok).toBe(scenario === "repairable");
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      }
+    });
+  });
+
+  describe("public --check and --write modes", () => {
+    function runJson(argv: string[]) {
+      const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      try {
+        const code = main(argv);
+        return { code, out: JSON.parse(String(log.mock.calls.at(-1)?.[0])) };
+      } finally {
+        log.mockRestore();
+      }
+    }
+
+    it("propagates failure status and delegates the defined steps in --check mode", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "ward-check-"));
+      try {
+        const { code, out } = runJson(["--check", "--root", root, "--json"]);
+        expect(code).toBe(1);
+        expect(out.mode).toBe("check");
+        expect(out.ok).toBe(false);
+        expect(out.indexChecks.map((s: { label: string }) => s.label)).toEqual(CHECK_INDEX_STEPS.map((s) => s.label));
+        expect(out.integrityGates.map((s: { label: string }) => s.label)).toEqual(
+          CHECK_INTEGRITY_GATE_STEPS.map((s) => s.label),
+        );
+        expect(out.indexChecks[0].command).toBe(`node ${CHECK_INDEX_STEPS[0].args.join(" ")}`);
+        expect(out.organisation.command).toContain("--check --source working-tree --root");
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      }
+    });
+
+    it("runs every generator, repairs the manifest and propagates failure in --write mode", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "ward-write-"));
+      try {
+        const refDir = path.join(root, "docs/ward-flow/reference-data");
+        fs.mkdirSync(refDir, { recursive: true });
+        const raw = Buffer.from("synthetic fixture\n");
+        fs.writeFileSync(path.join(refDir, "present.txt"), raw);
+        const manifestPath = path.join(refDir, "pack_manifest.json");
+        fs.writeFileSync(manifestPath, JSON.stringify({ files: { "present.txt": { bytes: 0, sha256: "stale" } } }));
+
+        const { code, out } = runJson(["--write", "--root", root, "--json"]);
+        expect(code).toBe(1);
+        expect(out.mode).toBe("write");
+        expect(out.ok).toBe(false);
+        expect(out.packManifestUpdate.updated).toBe(true);
+        expect(out.generatorRuns.map((g: { label: string }) => g.label)).toEqual(
+          WRITE_GENERATOR_STEPS.map((s) => s.label),
+        );
+        expect(JSON.parse(fs.readFileSync(manifestPath, "utf8")).files["present.txt"]).toEqual({
+          bytes: raw.length,
+          sha256: createHash("sha256").update(raw).digest("hex"),
+        });
       } finally {
         fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
       }

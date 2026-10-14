@@ -319,7 +319,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 - **Presenter Spoken Dialogue:**
   > "A quick word on session persistence and clinical privacy: when a coordinator performs **structured actions**—such as holding a bed, toggling a bed state, or assigning a structured blocker or step—and refreshes the tab (`F5`), Ward Flow restores that structured state from `sessionStorage`.
   >
-  > Equally important is Owner Ruling **`D-18`** (`eventCarriesFreeText()`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, makes Ward Flow intentionally wipe `sessionStorage` and disable browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
+  > Equally important is Owner Ruling **`D-18`** (`eventCarriesTypedTextPayload(event)`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, makes Ward Flow intentionally clear the central demo snapshot and `wf-draft:*` caches, then disable browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
   >
   > Now, Callum’s transport vehicle has arrived at Dabakarn. Let us move to the inpatient unit for receiving and handover."
 - **Presenter Action:** Close the movement cockpit and navigate to `/mockups/ward-flow/handover`.
@@ -471,9 +471,9 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 >
 > Actions are handled by a central state reducer. When browser storage is available and the demo's privacy lock permits saving, the central demo snapshot is saved as plain JSON in this tab's session storage; it is not encrypted by the application. A valid saved snapshot may be restored on a same-day reload while that browser session remains available. Restoration after a tab closes, a browser crash or a workstation reboot is not guaranteed.
 >
-> Under Owner Ruling `D-18` (`eventCarriesFreeText()`), once an event that can carry typed free text is dispatched, whether accepted or refused, the central demo snapshot in `sessionStorage` is wiped and further snapshot saving stops until a genuine demo reset or scenario reseed. If snapshot storage is unavailable, state changes remain in memory and may be lost when the page closes.
+> Under Owner Ruling `D-18` (`eventCarriesTypedTextPayload(event)`), once an event that can carry typed free text is dispatched, whether accepted or refused, the central demo snapshot in `sessionStorage` and any `wf-draft:*` draft caches are cleared and further snapshot saving stops until a genuine demo reset or scenario reseed. If snapshot storage is unavailable, state changes remain in memory and may be lost when the page closes.
 >
-> Eligible unsaved drafts in forms configured with `useDirtyStateGuard` can still be cached independently as unencrypted text under separate `wf-draft:*` session-storage keys and restored on reload while that browser session remains available. For example, a refused broadcast can retain its draft even after the central snapshot is cleared. Draft caching does not guarantee recovery.
+> Typed drafts are not restored from browser storage after that point: D-18 removes any `wf-draft:*` entries together with the central snapshot, so unsaved typed text remains in memory only and may be lost on reload.
 >
 > Where a form marks unsaved changes, `useDirtyStateGuard` can request a browser warning before leaving the page. That warning does not guarantee recovery or prevent loss after a crash. Use synthetic data only."
 
