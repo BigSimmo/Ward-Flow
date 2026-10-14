@@ -71,6 +71,9 @@ export const BROADCAST_ANSWER_LABELS: Record<BroadcastAnswer, string> = {
 export const BED_CALL_MAX_BEDS = 4;
 /** "Ready at" choices, minutes from now. Chosen, never typed. */
 export const READY_IN_CHOICES: readonly number[] = [30, 60, 120, 240];
+/** Default broadcast duration (4 hours) and quick extension increment (+2 hours) (#25). */
+export const DEFAULT_BROADCAST_DURATION_MINUTES = 240;
+export const DEFAULT_BROADCAST_EXTENSION_MINUTES = 120;
 // Timing defaults live in the named-defaults module, labelled as Josh's defaults.
 export { PULL_NOW_ANSWER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
@@ -372,4 +375,15 @@ export function formatTimeRemaining(expiresAt: Instant, now: Instant): string {
   if (hours === 0) return `${minutes}m remaining`;
   if (minutes === 0) return `${hours}h remaining`;
   return `${hours}h ${minutes}m remaining`;
+}
+
+export interface WardBroadcastAlert {
+  id: string;
+  title?: string;
+  message: string;
+  severity: BroadcastSeverity;
+  author?: string;
+  createdAt?: string | Instant;
+  expiresAt: string | Instant;
+  status?: "active" | "stood_down" | "expired";
 }

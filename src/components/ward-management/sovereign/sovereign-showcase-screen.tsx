@@ -50,11 +50,12 @@ import { openWardDrawer, type WardDrawerId } from "@/components/ward-management/
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardTop25Cockpit } from "@/components/ward-management/top25/ward-top25-cockpit";
 
 import styles from "./sovereign-showcase.module.css";
 
 type Density = "comfortable" | "compact";
-type Section = "all" | "foundations" | "interaction" | "live" | "drawers";
+type Section = "all" | "foundations" | "interaction" | "live" | "drawers" | "top25";
 type Connection = "live" | "stale" | "offline";
 type Feedback = { kind: "idle" | "error" | "success"; text: string };
 
@@ -68,6 +69,7 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: "interaction", label: "Interaction" },
   { id: "live", label: "Live" },
   { id: "drawers", label: "Drawers" },
+  { id: "top25", label: "Top 25" },
 ];
 
 const TYPE_SCALE = [
@@ -732,6 +734,8 @@ export function SovereignShowcaseScreen() {
           ) : null}
         </div>
       ) : null}
+
+      {section === "top25" ? <WardTop25Cockpit /> : null}
 
       <WardPrototypeFooter
         testId="ward-sovereign-governance"

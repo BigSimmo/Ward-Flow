@@ -1,0 +1,164 @@
+.cockpit {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.headerTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eyebrow {
+  font-size: var(--wf-fs-11);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 700;
+  color: var(--wf-ink-1);
+}
+
+.headerControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tierGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardRank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-ink-1);
+  color: var(--wf-surface);
+  font-size: var(--wf-fs-11);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  flex: 1;
+}
+
+.cardBody {
+  font-size: var(--wf-fs-13);
+  line-height: 1.45;
+  color: var(--wf-ink-2);
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.phoneWalkRoundFrame {
+  width: 390px;
+  max-width: 100%;
+  min-height: 320px;
+  max-height: 844px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.phoneWalkRoundHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.phoneWalkRoundList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneWalkRoundRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.phoneWalkRoundInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneWalkRoundBed {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneWalkRoundMeta {
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
