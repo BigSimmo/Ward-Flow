@@ -8,6 +8,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 const icon = (() => null) as unknown as LucideIcon;
 const task = (id: string, title: string): InboxItem => ({
   id,
+  kind: "fact",
   tone: "danger",
   icon,
   title,
