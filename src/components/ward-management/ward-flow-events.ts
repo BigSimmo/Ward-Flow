@@ -339,6 +339,7 @@ export type WardFlowEvent =
        */
       type: "RECORD_TRANSPORT_NEED";
       role: WardFlowRole;
+      actingUnitId?: string;
       now: Instant;
       movementId: string;
       needed: boolean;
@@ -1484,6 +1485,8 @@ export type WardFlowEvent =
       now: Instant;
       /** The referral the referrer took back. */
       referralId: string;
+      actingUnitId?: string;
+      actingPlaceId?: string;
       /** Owner ruling 11 — see the doc comment above. Omitted, this is the original whole-referral
        *  act. `"community_team"` scopes it to that one arm alone. */
       destinationKind?: "community_team";
@@ -1516,6 +1519,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       referralId: string;
+      actingPlaceId?: string;
       /** Refused blank or over `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS` characters. Never truncated. */
       note: string;
     }
@@ -1948,6 +1952,7 @@ export type WardFlowEvent =
       type: "SET_ARRIVAL_DETAILS";
       role: WardFlowRole;
       now: Instant;
+      actingUnitId?: string;
       movementId: string;
       arrivalMode: ArrivalMode;
       trackingNumber?: string;
@@ -2864,7 +2869,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * team cannot withdraw an ED's referral, nor an ED a community one. The coordinator keeps the
    * role for any referral.
    */
-  RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed"],
+  RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed", "ward"],
   /**
    * RB7, build plan item 27 (2026-09-17): the three parties who could plausibly need to correct a
    * referral after the fact — the referrer's own team (`community` or `ed`, whichever raised it),
@@ -2924,7 +2929,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
-  RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
+  RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
   RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],

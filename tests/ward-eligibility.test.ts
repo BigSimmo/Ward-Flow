@@ -482,4 +482,29 @@ describe("security gate — a mixed ward's locked beds are reachable", () => {
     expect(gate?.pass).toBe(true);
     expect(gate?.detail).toContain("only locked");
   });
+
+  it("S2-9: referralEligibility agrees with eligibility: mixed ward with locked beds passes security gate even when allocatableLocked is 0", () => {
+    const mixedWard = unit({
+      beds: 17,
+      lockedBeds: 5,
+      allocatable: { value: 2, source: "ward", confirmedAt: NOW - 10, staleAfterMinutes: 120 },
+      allocatableLocked: 0,
+    });
+    const subjectReferral = referral({ ageBand: "Adult" });
+    const ward = subjectReferral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");
+    if (!ward || ward.destination.kind !== "psychiatric_ward") throw new Error("no ward destination");
+
+    const verdict = referralEligibility(subjectReferral, ward.destination, mixedWard, NOW);
+    const gate = verdict.gates.find((g) => g.gate === "security");
+    expect(gate?.pass).toBe(true);
+
+    const openWard = unit({
+      beds: 17,
+      lockedBeds: 0,
+      allocatable: { value: 2, source: "ward", confirmedAt: NOW - 10, staleAfterMinutes: 120 },
+      allocatableLocked: 0,
+    });
+    const openVerdict = referralEligibility(subjectReferral, ward.destination, openWard, NOW);
+    expect(openVerdict.gates.find((g) => g.gate === "security")?.pass).toBe(false);
+  });
 });
