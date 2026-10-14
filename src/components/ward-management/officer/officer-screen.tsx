@@ -1643,7 +1643,7 @@ export function OfficerScreen() {
                   <span className={styles.mono}>{umrnFor(movement)}</span> · {originShortFor(movement)} to{" "}
                   {destinationLabelFor(movement)} ·{" "}
                   <Link
-                    href={`/patient/${encodeURIComponent(movement.id)}`}
+                    href={`/mockups/ward-flow/people/${encodeURIComponent(movement.id)}`}
                     data-testid={`ward-officer-book-transport-${movement.id}`}
                   >
                     Book transport →
