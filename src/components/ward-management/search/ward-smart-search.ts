@@ -563,6 +563,35 @@ export function normaliseCommaNameQuery(query: string): string {
   return parts.join(" ");
 }
 
+/**
+ * Words the inbox titles are written in ("Bed pull expired", "Transport awaiting departure", ...).
+ * A query that is the start of one of them can match a task title, whatever intent it was given:
+ * "bed" reads as a name and "transport" as a view, and deriving no tasks for either hid the real
+ * action from every search surface (PR #285 review). Names are not caught by this: only a typed
+ * prefix of one of these words, at least three letters long, opens the gate.
+ */
+const TASK_TITLE_WORDS = [
+  "accepted",
+  "arrival",
+  "bed",
+  "declined",
+  "departure",
+  "destination",
+  "destinations",
+  "expired",
+  "legal",
+  "planned",
+  "pull",
+  "transport",
+] as const;
+
+function queryStartsATaskTitleWord(typed: string): boolean {
+  return typed
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .some((token) => token.length >= 3 && TASK_TITLE_WORDS.some((word) => word.startsWith(token)));
+}
+
 /** Determines whether a query has potential task intent requiring inbox action derivation. */
 export function shouldDeriveSearchTasks(query: string): boolean {
   const trimmed = normaliseCommaNameQuery(query);
@@ -573,7 +602,8 @@ export function shouldDeriveSearchTasks(query: string): boolean {
     intent === "task" ||
     intent === "general" ||
     intent === "identifier" ||
-    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed)
+    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed) ||
+    queryStartsATaskTitleWord(typed)
   );
 }
 
