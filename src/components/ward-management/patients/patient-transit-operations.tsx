@@ -835,7 +835,13 @@ export function PatientTransitOperations({
                   disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
                   onClick={() => {
                     noteAttempt();
-                    dispatch({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id });
+                    dispatch({
+                      type: "WITHDRAW_REFERRAL",
+                      role: "coordinator",
+                      now,
+                      movementId: movement.id,
+                      actingPlaceId: "coordinator",
+                    });
                   }}
                 >
                   Withdraw referral

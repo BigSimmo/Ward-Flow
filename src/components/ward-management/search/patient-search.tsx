@@ -1026,7 +1026,7 @@ export function PatientSearchPage() {
               Your default, not a legal limit
             </span>
 
-            <div aria-label="Quick queries">
+            <div role="group" aria-label="Quick queries">
               {QUICK_CHIPS.map((chip) => {
                 const isActive = text === chip.query;
                 return (
@@ -1298,7 +1298,16 @@ export function PatientSearchPage() {
               empty={refusal ? null : empty}
               notice={refusalNotice}
             />
-            <Card className={cs.side} role="region" aria-label="Patient details" data-preview-card data-wf-rail="1201">
+            <Card
+              className={cs.side}
+              role="region"
+              aria-labelledby="ward-patient-search-side-title"
+              data-preview-card
+              data-wf-rail="1201"
+            >
+              <span id="ward-patient-search-side-title" className="sr-only">
+                Patient details
+              </span>
               {detailOrSummary(true)}
             </Card>
           </div>

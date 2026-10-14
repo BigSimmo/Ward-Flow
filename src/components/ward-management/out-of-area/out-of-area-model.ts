@@ -17,6 +17,7 @@ import type {
 import { BED_MEETING_MINUTES, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /**
  * Out of area option A (9 Oct 2026): the small, pure reads the page shows beside the ledger.
@@ -216,7 +217,7 @@ function bedOption(unit: Unit, band: TravelBand, now: Instant): BedOption {
     band,
     // The same `min(allocatable, empty)` every other screen shows: a ward can confirm more
     // allocatable beds than it has physically empty once arrivals land.
-    beds: Math.min(unit.allocatable.value, unit.empty.value),
+    beds: boundedBedAvailability(unit).available,
     ageMinutes,
     stale: ageMinutes > unit.allocatable.staleAfterMinutes,
   };

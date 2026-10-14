@@ -26,7 +26,9 @@ export function useCopyDiagnostics(error: Error & { digest?: string }) {
   const copyDiagnostics = () => {
     const diagnosticPayload = {
       name: error.name,
-      message: redactLogValue(error.message),
+      // Owner ruling 13 Oct 2026: copied diagnostics carry IDs only. An error message can quote a
+      // patient's name, and no pattern can reliably find every name, so the message is left out;
+      // the digest identifies the server-side log entry instead.
       digest: error.digest,
       url: typeof window !== "undefined" ? redactLogValue(window.location.href) : "unknown",
       userAgent: typeof window !== "undefined" ? redactLogValue(window.navigator.userAgent) : "unknown",
