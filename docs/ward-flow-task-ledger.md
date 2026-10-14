@@ -1,13 +1,13 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 13 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.77) record PRs landed on `origin/main` up through commit `0ddcf956` (PRs #258 / #260).
+> **Current task navigation — 14 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.78) record PRs landed up through PR #284 (`feat/engine-and-screen-fixes`).
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
-> 🟢 **STATUS AS OF 13 OCTOBER 2026, ESTATE RECONCILIATION & SAFETY REMEDIATION: read this first.** The latest session closeout,
-> landed estate baseline across PRs #246–#260 on `origin/main` (`0ddcf956`), clinical safety remediations (AUD-01, AUD-02, AUD-04, AUD-05, WF-09A),
-> and workspace worktree hygiene are tracked in **§7.77 ("Reconciliation & Safety Fixes (13 October 2026)")** at the end of this file.
-> Prior elevations are tracked through **§7.70–§7.76**.
+> 🟢 **STATUS AS OF 14 OCTOBER 2026, ENGINE DEFECT REMEDIATION & OPEN TASK INVENTORY: read this first.** The latest session closeout,
+> landed PR #284 (19 state machine, derivation, and backend concurrency fixes with 24/24 CI checks passing),
+> and the remaining categorized open task inventory across UI ergonomics, accessibility, CSS stability, reducer invariants, and test hygiene are tracked in **§7.78 ("Engine Fixes (PR #284) & Open Task Inventory (14 October 2026)")** at the end of this file.
+> Prior elevations are tracked through **§7.70–§7.77**.
 > Broader task state remains tracked across §7.8 to §7.69.
 >
 > - Everything between here and **"👑 AUTHORITATIVE WARD FLOW MASTER LEDGER"** is the 30 August record.
@@ -8653,3 +8653,89 @@ Branch: `feat/task-ledger-safety-fixes`.
 4. **WF-23 (Discharge Block Reason Mandatory Selector)**: Clinician reason requirement prior to discharge delay unblocking.
 5. **WF-33 / WF-29 / WF-57 (Azure Shared PostgreSQL / Authentication)**: Connect shared PostgreSQL backend once Azure Entra credentials / network permissions are provisioned.
 6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation.
+
+## §7.78 — Engine Fixes (PR #284) & Open Task Inventory (14 October 2026)
+
+Landed snapshot: [PR #284](https://github.com/BigSimmo/Ward-Flow/pull/284) (`feat/engine-and-screen-fixes`, commit `f761b399`).
+All 24 CI checks passing (static checks, secret scan, build, all 8 unit shards, coverage merge, required gates, and all 3 browser journey shards). All review threads resolved.
+
+### 1. Landed Remediations in PR #284 (19 Defect Remediations)
+
+- **S2-6 (Discharged Repatriation Guard)**: `src/components/ward-management/ward-flow-reducer.ts:10265` — Rejects `RECORD_REPATRIATION` for discharged admissions (`state === "departed"` or `leftAt !== null`) while permitting standard occupied admissions with prior movement closure outcome `"arrived"`.
+- **S1-3 (Walk-In Community Referral Patient Link)**: `src/components/ward-management/ward-flow-reducer.ts:3656` — Preserves `patientId` for unscheduled walk-in community intake (`linkedReferral?.patientId ?? movement.patientId`).
+- **S1-6 (Unneeded Clinical Placement Overrides)**: `src/components/ward-management/ward-flow-reducer.ts:4179` — Only appends override records when placement criteria are bypassed and permitted units exist.
+- **S2-5 (Arrival Updates on Closed Movements)**: `src/components/ward-management/ward-flow-reducer.ts:9407` — Rejects `SET_ARRIVAL_DETAILS` if `movement.closure` is set.
+- **S2-13 (Deduplicated Transfer-Out Revision Increment)**: `src/components/ward-management/ward-flow-reducer.ts:5742` — Removed duplicate manual increment in `PATIENT_ARRIVED` transfer-out handler; `departAdmission` now advances the counter exactly once.
+- **S2-14 (Referral Withdrawal Visibility Guard)**: `src/components/ward-management/ward-referrals.ts:124` — `referralWithdrawable` checks linked movements and hides the withdraw button on non-withdrawable stages (`moving`, `arrived`, `closed`).
+- **S2-15 (Broadcast Alert Stand-Down Role Attribution)**: `src/components/ward-management/alerts/ward-broadcast-reducer.ts:198` — Records `event.stoodDownByRole ?? event.role` in the stand-down audit entry.
+- **S1-12 (Scoped Unit ID on Expected Discharge Edits)**: `src/components/ward-management/ward-flow-reducer.ts:2643` — Strictly requires `actingUnitId` to match `admission.unitId` when role is `ward`.
+- **S1-14 (ED Medical Bed Release Window Constant)**: `src/components/ward-management/ward-model.ts:538` — Aligned `ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS` to 48 hours per Owner Ruling FD-19.
+- **A1-7 (Cross-Role Referral Attribution)**: `src/components/ward-management/ward-flow-events.ts:2775` — Preserved `CROSS_ROLE_ALLOWED` contract for inpatient ward referrals without opening unvalidated sender roles.
+- **A1-11 (Initial Legal Form Expiry vs Extension)**: `src/components/ward-management/ward-audit.ts:672` — Accurately labels initial expiry as `"expiry-recorded"` and subsequent edits as `"extension-recorded"`.
+- **A1-13 (Coordinator Alert Acknowledgment Role Authorization)**: `src/components/ward-management/alerts/ward-broadcast-reducer.ts:154` — Restricts `COORDINATOR_DESK_ACKNOWLEDGER_ID` acknowledgments to `role === "coordinator"`.
+- **A3-4 (Delays Board Categorization for Unreferred Patients)**: `src/components/ward-management/delays/delays-derivations.ts:254` — Classifies unreferred patients with zero eligible beds across WA as `"no_eligible_bed"` while routing patients with eligible beds to `"awaiting_coordinator"`.
+- **A3-6 (Separate Waitlist Answers from Declines in Metrics)**: `src/components/ward-management/ward-derivations.ts:1520` — Filters out `WAITLIST_INSTEAD_OF_DECLINE_REASONS` from `allDeclines()`.
+- **A3-7 (Measure Ward Silence Per Destination)**: `src/components/ward-management/delays/delays-derivations.ts:636` — Stamped `referredAt: event.now` on `ReferralAddressing` destinations and anchored ward silence timer to oldest awaiting destination.
+- **A3-11 (Delay Inactivity Timers State Transitions)**: `src/components/ward-management/delays/delays-derivations.ts:403` — Includes `acceptedAt` and `pullRequestedAt` in `lastRecordedActivity`.
+- **A3-12 (Route Revoked-Exam Holds to Coordinator)**: `src/components/ward-management/delays/delays-derivations.ts:271` — Routes revoked examinations (`examinationRevokedWhileBedHeld`) to `"awaiting_coordinator"` rather than transport dispatch.
+- **A2-8 (Optimistic Concurrency 409 vs 503)**: `backend/ward-flow/database.mjs:130` — Maps Azure Storage precondition/revision failures to HTTP 409 Conflict.
+- **A4-8 (Tenant Token Claims Verification for Guest Accounts)**: `backend/ward-flow/auth.mjs:43` — Strictly validates `payload.tid === config.tenant` and `WardFlow.Access` scope claims.
+
+---
+
+### 2. Remaining Open Tasks Inventory (Categorized by Domain)
+
+The following outstanding tasks from recent engine audits, accessibility reviews, and backlog inventories are registered for subsequent implementation streams:
+
+#### Stream 1: Core State Machine & Reducer Invariants
+
+| ID              | Title / Location                                                        | Issue Summary                                                                                                                | Target Resolution                                                                              | Status |
+| :-------------- | :---------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :----- |
+| **S1-7**        | Purge Lingering Waitlist Entries (`ward-flow-reducer.ts:3601`)          | When a patient is accepted by Ward A, their waitlist entry on Ward B survives and can falsely block real waitlist capacity.  | Clear all pending waitlist entries across other wards once a definitive bed acceptance occurs. | Open   |
+| **S2-9**        | Align Security Gate Definitions (`ward-eligibility.ts:601`)             | Security gate check (Open vs Closed unit) uses slightly different matching rules between the two clinical eligibility paths. | Unify both evaluation paths to use the same security level comparator.                         | Open   |
+| **S1-5**        | Clear Target Units on Revoked Examination (`ward-flow-reducer.ts:7410`) | Revoking an examination order when a patient had pending referrals leaves unit targets in intermediate state.                | Clear target unit IDs when an involuntary examination order is revoked.                        | Open   |
+| **S1-9..S1-11** | Urgency Enum Runtime Validation (`ward-flow-reducer.ts`)                | Reducer accepts raw urgency strings without strict runtime enum boundary checks.                                             | Enforce runtime enum boundary validation for clinical urgency in reducer handlers.             | Open   |
+| **S2-3**        | Phantom Free Bed on Full Ward Arrival (`ward-flow-reducer.ts`)          | Over-capacity arrival into a full ward can later miscalculate available beds.                                                | Guard bed count derivation against phantom bed release during overcapacity admissions.         | Open   |
+| **S1-8**        | Bed Re-Pull Hold Expiry Reset (`ward-flow-reducer.ts`)                  | Re-pulling a bed hold retains the previous hold expiry timestamp.                                                            | Refresh `pullExpiresAt` upon re-pull action.                                                   | Open   |
+
+#### Stream 2: UI Accessibility, Focus Management & Ergonomics
+
+| ID                | Title / Location                                              | Issue Summary                                                                                                               | Target Resolution                                                                                         | Status |
+| :---------------- | :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- | :----- |
+| **AUD-11**        | Choice Indicator Visibility (`choice.tsx:153`)                | Checkbox tick and radio dot never show; `peer-checked` on icon cannot match because the icon is inside the input's sibling. | Put checked state on the box container (`peer-checked:[&>svg]:opacity-100`); screenshot before/after.     | Open   |
+| **AUD-12**        | Accessible Heading Landmarks (`ward-management-modes.tsx:79`) | Network and Governance pages lack visible or accessible `<h1>`; currently sits in a `hidden` header.                        | Add visually hidden accessible `<h1>` (`sr-only`) without unhiding the visual header.                     | Open   |
+| **WF-FIX-07/08**  | Modal Escape Key Event Bubbling (`ward-screen.tsx`)           | Pressing Escape in a top-level modal bubbles down and simultaneously dismisses underlying background bed drawers.           | Stop event propagation on Escape dismiss within modal dialog containers.                                  | Open   |
+| **AUD-13**        | Drawer Focus Trapping Decoupling (`ward-tasks-drawer.tsx`)    | Focus trapping runs even when drawer is in non-modal / backdrop-less preview mode.                                          | Decouple focus trapping so it only engages when modal backdrop is active.                                 | Open   |
+| **WF-FIX-06**     | Bed Dossier URL Params Sync (`ward-screen.tsx`)               | Opening a bed dossier does not update URL query parameters (`?bed=XX`), preventing deep linking and back-button navigation. | Synchronize open bed dossier state with URL search params using `useSearchParams` / `useRouter`.          | Open   |
+| **M-WARD-ANSWER** | "Accept in Principle" Visibility (`ward-answer-view.tsx`)     | "Accept in principle (waitlist)" button renders in disabled/opaque state when no referrals are pending.                     | Conditionally render or provide accessible explanatory tooltip when no actionable referrals exist.        | Open   |
+| **D7**            | Disabled Referral Submission Guidance (`referral-match.tsx`)  | "Refer to selected wards" button is disabled without explanation of missing placement criteria.                             | Render accessible helper guidance text and `aria-describedby` explaining why referral button is disabled. | Open   |
+
+#### Stream 3: CSS Stability, Design Tokens & Responsive Layout
+
+| ID           | Title / Location                                          | Issue Summary                                                                                     | Target Resolution                                                                                | Status |
+| :----------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------- | :----- |
+| **D2**       | Replace Broad `transition: all` (CSS modules)             | Wildcard `transition: all` triggers unintended layout reflows and jank during drawer animations.  | Replace `transition: all` with explicit properties (`transform`, `opacity`, `background-color`). | Open   |
+| **D3**       | Bed Matrix CLS Prevention (`ward-beds-matrix.module.css`) | Bed matrix cards lack minimum container height floors, causing layout shifts during data loading. | Enforce explicit `min-height: 480px` floors on bed matrix containers.                            | Open   |
+| **D5**       | PWA Web App Manifest Shortcuts (`src/app/manifest.ts`)    | PWA manifest lacks dedicated launcher shortcuts for key workflows.                                | Add shortcuts for Coordinator Hub, Capacity Matrix, and ED Psychiatry.                           | Open   |
+| **M-TOKENS** | Consolidate Primary Buttons to Tokens (5 CSS modules)     | Ad-hoc local `.btnPrimary` classes bypass shared design token variables.                          | Migrate remaining button styles to `--wf-btn-primary` token contract.                            | Open   |
+
+#### Stream 4: Derivations, Timers & Communication State
+
+| ID              | Title / Location                                                                  | Issue Summary                                                                                                                     | Target Resolution                                                                                      | Status |
+| :-------------- | :-------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- | :----- |
+| **A3-15**       | Harmonize Bed Freeing Date to WA Midnight (`ward-screen.tsx`, `beds-forecast.ts`) | Expected discharge date comparisons use UTC midnight rather than WA local midnight (`AWST`), causing edge-of-day miscalculations. | Use `dayOf()` with Western Australia timezone offset for bed forecast calculations.                    | Open   |
+| **A3-8/A3-9**   | Referral Withdrawal vs Multi-Ward Decline (`ward-referrals.ts`)                   | Screen derivation collapses "Withdrawn by Referrer" into "Declined by all receiving wards".                                       | Explicitly distinguish referrer withdrawal states from simultaneous ward declines in badge indicators. | Open   |
+| **A2-11/A2-12** | BroadcastChannel Singleton & Storage Debounce (`use-ward-flow.ts`)                | BroadcastChannel created per event dispatch; local storage sync runs on every keystroke/dispatch without debouncing.              | Wrap `BroadcastChannel` in a module singleton and debounce local storage sync by 300ms.                | Open   |
+| **A1-15**       | Coordinator Role Attribution in Cockpit (`coordinator-cockpit.tsx`)               | Cockpit events should consistently pass `role: "coordinator"` instead of defaulting to generic route role.                        | Audit and pin `role: "coordinator"` on all cockpit dispatches with tests.                              | Open   |
+
+#### Stream 5: Backend Security, Plumbing & Test Harness Hygiene
+
+| ID            | Title / Location                                                       | Issue Summary                                                                                                  | Target Resolution                                                                           | Status |
+| :------------ | :--------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ | :----- |
+| **A4-12**     | Enforce CSRF Header on State Mutation (`api-csrf.ts:111`)              | Mutation endpoints permit requests without CSRF protection headers.                                            | Reject state mutation requests lacking valid CSRF headers (`x-ward-flow-csrf`).             | Open   |
+| **A4-13**     | Strict Localhost Binding for Dev Server (`local-project-guard.ts:114`) | Development server binds to `0.0.0.0` and trusts arbitrary `Host` headers.                                     | Bind strictly to `127.0.0.1` and validate incoming host headers.                            | Open   |
+| **A4-15**     | Remove Stale PsychSift Security Plumbing (`privacy.ts:1`)              | Unused legacy webhook exception and RAG privacy rules from PsychSift repository remain in code.                | Prune legacy PsychSift code and keep only Ward Flow privacy logic.                          | Open   |
+| **WF-ACT-03** | Purge Obsolete Standalone Static HTML Mockups (`public/*.html`)        | Standalone static HTML mockups in `public/` bypass React/Next.js architecture and load unpinned CDN resources. | Remove obsolete mockups or replace with Next.js route redirects.                            | Open   |
+| **R09**       | Sign-In Landmark Accessibility Test (`tests/ward-landmarks.test.ts`)   | `/mockups/ward-flow-sign-in` missing from automated landmark audit assertions.                                 | Add test coverage verifying `<header>`, `<main id="main-content">`, and landmark structure. | Open   |
+| **R14**       | Suppress Next.js `prefetch` Test Warnings (`tests/test-utils.tsx`)     | Tests rendering plain `<a>` tags with `prefetch={false}` generate console warnings in test runner.             | Filter or strip `prefetch` attribute in custom test render wrapper.                         | Open   |
+| **AUD-14**    | Portable Developer Paths in Tooling Scripts (`scripts/*.mjs`)          | Tooling scripts contain hardcoded `C:/Users/joshs` fallback paths.                                             | Replace hardcoded user home paths with dynamic `os.homedir()` / `process.cwd()`.            | Open   |
