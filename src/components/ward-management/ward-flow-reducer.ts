@@ -8271,11 +8271,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
         const callerUnitId = event.actingUnitId ?? event.actingPlaceId;
-        if (
-          callerUnitId !== undefined &&
-          referral.originUnitId !== undefined &&
-          callerUnitId !== referral.originUnitId
-        ) {
+        if (callerUnitId === undefined || referral.originUnitId === undefined || callerUnitId !== referral.originUnitId) {
           return reject(
             state,
             event,
@@ -8304,7 +8300,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           if (
             referral.sendingTeamName !== undefined &&
             event.actingPlaceId !== referral.sendingTeamName &&
-            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName)
+            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName))
           ) {
             return reject(
               state,
@@ -8533,8 +8529,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "ADD_REFERRAL_CORRECTION": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      if (event.role === "ed" && event.actingPlaceId !== undefined) {
-        if (referral.originSiteCode !== undefined && event.actingPlaceId !== referral.originSiteCode) {
+      if (event.role === "ed") {
+        if (event.actingPlaceId === undefined || referral.originSiteCode === undefined || event.actingPlaceId !== referral.originSiteCode) {
           return reject(
             state,
             event,
@@ -8542,11 +8538,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      if (event.role === "community" && event.actingPlaceId !== undefined) {
+      if (event.role === "community") {
         if (
-          referral.sendingTeamName !== undefined &&
-          event.actingPlaceId !== referral.sendingTeamName &&
-          event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName)
+          referral.sendingTeamName === undefined ||
+          event.actingPlaceId === undefined ||
+          (event.actingPlaceId !== referral.sendingTeamName &&
+            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName))
         ) {
           return reject(
             state,
