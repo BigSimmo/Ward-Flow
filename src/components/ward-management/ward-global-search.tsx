@@ -592,6 +592,7 @@ export function WardGlobalSearch({
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const nameFor = usePatientNameDisplay();
+  const { dispatch } = useWardFlow();
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -1204,9 +1205,7 @@ export function WardGlobalSearch({
                     className={styles.commandBtn}
                     data-testid="ward-global-search-cmd-advance-clock"
                     onClick={() => {
-                      if (typeof window !== "undefined") {
-                        window.dispatchEvent(new CustomEvent("ward-flow:advance-clock", { detail: { minutes: 15 } }));
-                      }
+                      dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 15 });
                       close();
                     }}
                   >
@@ -1218,7 +1217,7 @@ export function WardGlobalSearch({
                     className={styles.commandBtn}
                     data-testid="ward-global-search-cmd-desk-coordinator"
                     onClick={() => {
-                      setDeskRole("coordinator", typeof window !== "undefined" ? window.location.pathname : "");
+                      setDeskRole("coordinator", "/mockups/ward-flow");
                       select("/mockups/ward-flow");
                     }}
                   >
@@ -1254,7 +1253,7 @@ export function WardGlobalSearch({
                     className={styles.commandBtn}
                     data-testid="ward-global-search-cmd-desk-officer"
                     onClick={() => {
-                      setDeskRole("officer", typeof window !== "undefined" ? window.location.pathname : "");
+                      setDeskRole("officer", "/mockups/ward-flow/transport/officer");
                       select("/mockups/ward-flow/transport/officer");
                     }}
                   >
