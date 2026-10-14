@@ -1,13 +1,13 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 13 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.77) record PRs landed on `origin/main` up through commit `0ddcf956` (PRs #258 / #260).
+> **Current task navigation — 14 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.78) record PRs landed on `origin/main` up through commit `72375705` (PR #285) and open PRs #284, #283.
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
-> 🟢 **STATUS AS OF 13 OCTOBER 2026, ESTATE RECONCILIATION & SAFETY REMEDIATION: read this first.** The latest session closeout,
-> landed estate baseline across PRs #246–#260 on `origin/main` (`0ddcf956`), clinical safety remediations (AUD-01, AUD-02, AUD-04, AUD-05, WF-09A),
-> and workspace worktree hygiene are tracked in **§7.77 ("Reconciliation & Safety Fixes (13 October 2026)")** at the end of this file.
-> Prior elevations are tracked through **§7.70–§7.76**.
+> 🟢 **STATUS AS OF 14 OCTOBER 2026, ESTATE RECONCILIATION & OPEN ISSUES: read this first.** The latest session closeout,
+> landed estate baseline across PRs #261–#285 on `origin/main` (`72375705`), pending PR #284, and the open backlog (PR #283,
+> Safari device testing, AUD-03, AUD-06, WF-09, WF-23, CAP-REV) are tracked in **§7.78 ("Post-Audit Remediation Baseline & Open Issues Ledger (14 October 2026)")** at the end of this file.
+> Prior elevations are tracked through **§7.70–§7.77**.
 > Broader task state remains tracked across §7.8 to §7.69.
 >
 > - Everything between here and **"👑 AUTHORITATIVE WARD FLOW MASTER LEDGER"** is the 30 August record.
@@ -8652,4 +8652,84 @@ Branch: `feat/task-ledger-safety-fixes`.
 3. **WF-09 (Gender Match Validation)**: Ensure incoming bed assignments respect ward sex mix.
 4. **WF-23 (Discharge Block Reason Mandatory Selector)**: Clinician reason requirement prior to discharge delay unblocking.
 5. **WF-33 / WF-29 / WF-57 (Azure Shared PostgreSQL / Authentication)**: Connect shared PostgreSQL backend once Azure Entra credentials / network permissions are provisioned.
-6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation.
+6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation (Resolved in PR #280).
+
+## §7.78 — Post-Audit Remediation Baseline & Open Issues Ledger (14 October 2026)
+
+Reconciliation snapshot: `72375705` (`perf: speed, bundle diet, 30s clock decoupling, and search latency remediation (#285)`) on `origin/main`.
+Branch: `feat/task-ledger-estate-reconciliation`.
+Target: Local task-detail and history ledger synchronisation following completion of October audit remediations.
+
+### 1. Landed Estate Baseline (PRs #261 – #285)
+
+- **PR #262 (`feat/audit-remediation-batches`)**: 4-batch repository remediation: Windows `cmd.exe /c az` CLI compatibility, Prototype Pill Cumulative Layout Shift (CLS) fix, Census bed navigation (`?bed=XX` URL sync), D-30 transfer coordinator role gate, CI cache tests.
+- **PR #263 (`feat/task-ledger-safety-fixes`)**: Critical safety fixes: AUD-02 Windows drive-letter casing guard in `guard-push.mjs` and `check-ward-data.mjs`; AUD-04 `WardDailySheet` deterministic clock fallback preventing epoch-0 (1970) duration calculations; AUD-05 in-transit bed expiry false alarm suppression; WF-09A involuntary badge presentation when legal form is unrecorded.
+- **PR #272 (`claude/clinical-audit-round-2-m6ji0x`)**: Round 2 clinical audit fixes: phone safety disclosures ("Published, not call-tested"), unified referral flow, truthful patient presence counts ("On this board now"), 44px phone tap targets.
+- **PR #273 (`codex/pr261-rebuild-20261013`)**: Portable database architecture introducing Supabase + local PostgreSQL support with multi-database selector (`azure` | `supabase` | `postgres`), preserving Azure schema contracts.
+- **PR #274 (`codex/pr265-rebuild-20261013`)**: Validated batches, derivations, and comprehensive runtime reducer guard scan.
+- **PR #276 (`claude/phone-tap-sizes-stp74x`)**: Mobile tap ergonomics: text fields and Delays filter chips upgraded to full 44px minimum tap boundaries.
+- **PR #277 (`ui/275-ui-polish`)**: Modular UI-only ergonomics and layout polish.
+- **PR #278 (`codex/backend-foreign-schema-grant-preflight`)**: Runtime role read grant security restriction refusing queries outside `ward_flow` schema.
+- **PR #279 (`feat/group-a-clinical-fixes`)**: Group A clinical, legal, and operational defect remediation:
+  - **S1-4 & S2-4**: Dispatches cancellation notices to transport officers (`{ role: "officer" }`) upon referral withdrawal; sends pre-acceptance revocation notices to receiving wards.
+  - **A3-10 & S2-7**: Stopped-transport held beds surfaced in Handover under actionable placements to eliminate indefinitely stranded psychiatric beds.
+  - **A3-2**: Handover expiry derivation suppresses false "Expired pulled bed" warnings once patient is collected into transit.
+  - **A1-4**: Restores statutory continuation legal forms (Form 5B, 3C, 6B, 6C) to the legal audit trail alongside selectable forms.
+  - **A1-6**: Restores patient identity in movement audit records for unscheduled walk-in admissions lacking an ED referral.
+  - **A4-11**: Logger context sanitisation preventing context payloads from overwriting canonical `level`, `message`, and `timestamp`.
+- **PR #280 (`claude/project-thread-nintor`)**: Remaining pages audit fixes: correct presence counts, privacy mask on Statistics, printable emergency downtime packet (WF-58 resolved), Menu over sheets.
+- **PR #281 (`claude/audit-verified-fixes-20261013`)**: Verified audit fixes: shortlist gender-placement state reset on patient switch; bed-hold expiry transport property check; daily sheet clock pass-through.
+- **PR #285 (`feat/p1-p2-authority-and-capacity-fixes`)**: Speed, bundle diet, decoupling of 30-second autosave timer from search/navigation churn, and sub-100ms search latency optimizations.
+
+### 2. Prepared & Verified Pending Land (PR #284)
+
+- **PR #284 (`feat/engine-and-screen-fixes`)**:
+  - **Status**: **100% Green** across all 18 CI shards and test suites; **Auto-Approved by Gitar**. Ready for owner merge.
+  - **Scope (19 Engine & Screen Remediations)**:
+    - **A3-4**: Corrects delay cause evaluation order in `delays-derivations.ts` so unreferred patients with no eligible bed network-wide (`WF-308`) retain the `no_eligible_bed` severe delay category, while referrable unreferred patients classify under `awaiting_coordinator`.
+    - **A3-12**: Incorporates `examinationRevokedWhileBedHeld(movement)` in `causeOf` to correctly route community order and revoked exam holds to the coordinator rather than stranding under `awaiting_transport`.
+    - **A3-7**: Records per-destination `referredAt` on queued referral addressings (`RECEIVE_REFERRAL`); derives silence reminders from the oldest live awaiting arm, with synchronised type declarations in `statistics-claims-register.ts`.
+    - **A1-13**: Restricts broadcast alert acknowledgments for `COORDINATOR_DESK_ACKNOWLEDGER_ID` strictly to `role: "coordinator"`.
+    - **S2-6**: Rejects `RECORD_REPATRIATION` for discharged admissions (`admission.state === "departed"`) or closed movements.
+    - **S1-12**: Enforces `actingUnitId === admission.unitId` when updating expected discharge date as `role: "ward"`.
+    - **S2-14**: Validates referral withdrawal stage guards against `isMovementWithdrawable`.
+    - **S1-3**: Preserves `patientId` on unscheduled walk-in community intake.
+    - **S1-6**: Placement overrides only appended when units actually received an override.
+    - **S2-5**: Rejects `SET_ARRIVAL_DETAILS` on closed movements.
+    - **S1-14**: ED medical bed release timeout pinned strictly to 48 hours.
+    - **A1-11**: Distinguishes expiry-recorded from extension-recorded based on `priorDueAt`.
+    - **Backend 409 Conflict**: Differentiates conditional write revision conflicts from operational Azure storage 409 errors.
+
+### 3. Open Estate Tasks & Unresolved Work (14 October 2026)
+
+The following items constitute the active, prioritized open backlog:
+
+1. **PR #283 Rebase & Conflict Resolution (`feat/group-b-ui-perf-accessibility`)**:
+   - **Status**: Open, currently conflicting with `origin/main` following merges of PRs #262, #263, #279, #285.
+   - **Scope**: Rebase branch onto latest `origin/main`, resolve merge conflicts in search/drawers/dialogs, verify WCAG 2.1 AA keyboard focus management (Escape dismiss, focus restoration), and ensure green CI.
+2. **PR #284 Merge (`feat/engine-and-screen-fixes`)**:
+   - **Status**: Ready for merge by repository owner (all 18 CI check suites green, auto-approved).
+3. **Safari / Real iOS Physical Device Walkthrough (Audit Safari / D1)**:
+   - **Status**: Open.
+   - **Requirement**: Physical iPhone Safari device inspection. Synthetic Chromium emulation cannot replicate dynamic URL bar collapsing, bottom safe-area insets (`env(safe-area-inset-bottom)`), or virtual keyboard interaction with the fixed bottom dock.
+4. **AUD-03 (Bed-Hold Countdown Arithmetic Unit Tests)**:
+   - **Status**: Open.
+   - **Requirement**: Unit test suite for `bedHoldExpiryAlert` hold countdown arithmetic, verifying boundary behavior at 0m, 15m, 60m, and expired transitions.
+5. **AUD-06 (Multi-Ward Rapid Click Reducer Serialization)**:
+   - **Status**: Open.
+   - **Requirement**: Prevent stale reducer action overwrites when clinicians switch rapidly between wards in the UI under concurrent event dispatch.
+6. **WF-09 (Gender Placement Validation Gate)**:
+   - **Status**: Open.
+   - **Requirement**: Validate incoming bed assignments against ward sex mix rules, ensuring non-binary / other gender placements cannot bypass procedural verification.
+7. **WF-23 (Discharge Block Reason Mandatory Selector)**:
+   - **Status**: Open.
+   - **Requirement**: Require clinician reason selection from fixed taxonomy prior to unblocking discharge delays.
+8. **CAP-REV (Capacity Request Revision Decoupling)**:
+   - **Status**: Open.
+   - **Requirement**: Record the allocatable revision on each Capacity request so request ordering and clearance do not rely on minute-level timestamps.
+9. **Code-Map Route Audit Synchronization**:
+   - **Status**: Open.
+   - **Requirement**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points (including `/command`, Statistics sub-routes, and report entry points).
+10. **WF-33 / WF-29 / WF-57 (Multi-User Shared Database Verification)**:
+    - **Status**: Open.
+    - **Requirement**: End-to-end multi-user test of authenticated shared save/reload and conflict reconciliation against live PostgreSQL / Supabase staging instance.
