@@ -1,4 +1,5 @@
 import { ChevronDown, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "./button";
 import { CardHead } from "./card";
@@ -635,7 +636,18 @@ export function UndoHairline({
   onExpire,
   className,
 }: UndoHairlineProps) {
-  const effectiveRemainingMs = remainingMs ?? durationMs ?? windowMs;
+  const [tick, setTick] = useState(0);
+  const effectiveInitialMs = remainingMs ?? durationMs ?? windowMs;
+  const deadlineRef = useRef(Date.now() + effectiveInitialMs);
+  useEffect(() => {
+    deadlineRef.current = Date.now() + effectiveInitialMs;
+  }, [effectiveInitialMs]);
+  useEffect(() => {
+    if (!active || remainingMs !== undefined) return;
+    const timer = window.setInterval(() => setTick(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [active, remainingMs]);
+  const effectiveRemainingMs = remainingMs ?? Math.max(0, deadlineRef.current - (tick || Date.now()));
   const effectiveWindowMs = durationMs ?? windowMs;
   if (!active || effectiveRemainingMs <= 0) {
     return onExpire && active ? (
