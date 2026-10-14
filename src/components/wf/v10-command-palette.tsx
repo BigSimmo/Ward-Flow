@@ -49,8 +49,28 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
 
   useEffect(() => {
+    if (open) {
+      restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      inputRef.current?.focus();
+    } else {
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+    }
+  }, [open]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      if (open && event.key === "Tab") {
+        const focusable = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="wf-command-palette"] button, [data-testid="wf-command-palette"] input'));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (first && last && (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+        return;
+      }
+      if (enableGlobalShortcut && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         event.stopPropagation();
         if (open) {
@@ -64,6 +84,7 @@ export function CommandPalette({
         return;
       }
       if (
+        enableGlobalShortcut &&
         !open &&
         event.key === "/" &&
         !event.ctrlKey &&
@@ -146,6 +167,7 @@ export function CommandPalette({
         </div>
         <div className={styles.cmdSearchWrap}>
           <input
+            ref={inputRef}
             type="search"
             className={styles.cmdInput}
             placeholder={placeholder}
