@@ -1516,16 +1516,13 @@ export function isBedHoldExpired(
   if (pulledAt === undefined || pulledAt === null || !Number.isFinite(pulledAt)) {
     return false;
   }
-  // If transport is already dispatched/in-transit or arrived, hold is not expired/stalled
+  // If transport is already en route, collected or arrived, the hold is not expired/stalled.
+  // `TransportJob` records progress as timestamps; it has no `stage` field.
   const transport = movement.transport;
-  const transportStage = (transport as { stage?: string } | undefined)?.stage;
-  if (transportStage === "in_transit" || transportStage === "arrived") {
-    return false;
-  }
   if (
-    transport &&
-    (transport.cancelledAt === undefined || transport.cancelledAt === null) &&
-    (transport.enRouteAt !== undefined || transport.arrivedAt !== undefined)
+    transport !== undefined &&
+    transport.cancelledAt === undefined &&
+    (transport.enRouteAt !== undefined || transport.collectedAt !== undefined || transport.arrivedAt !== undefined)
   ) {
     return false;
   }

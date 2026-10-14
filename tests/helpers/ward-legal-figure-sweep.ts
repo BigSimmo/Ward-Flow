@@ -898,7 +898,16 @@ export function candidateEvents(
       // refused — a movement that has closed, one already accepted, one holding no live referral —
       // and a generator that pre-filtered to only the acceptable ones would sweep the happy path
       // alone, which is the half least likely to smuggle a legal figure onto a record.
-      return movementIds.map((movementId) => ({ type, role, now, movementId }));
+      // Owner ruling 13 Oct: a withdrawal must name the caller's place and it must match the
+      // recorded sender, so each candidate claims the movement's own origin ED — the same
+      // discipline RECORD_ED_MEDICAL_DETERIORATION uses. A claim-less candidate is always refused.
+      return state.movements.map((movement) => ({
+        type,
+        role,
+        now,
+        movementId: movement.id,
+        actingPlaceId: movement.originEdId,
+      }));
     case "RECORD_LEAVING":
       // One candidate per admission already in `state.admissions`, crossed with EVERY leaving
       // destination. Crossed rather than sampled for the reason `RECORD_LEAVE_BED` used to cross

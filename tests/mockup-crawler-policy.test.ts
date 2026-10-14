@@ -16,7 +16,16 @@ describe("public mockup crawler policy", () => {
     const mockupRule = robotsRules.find((rule) => rule.source === "/mockups/:path*");
 
     expect(mockupRule?.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
-    expect(robotsRules.map((rule) => rule.source)).toEqual(["/mockups/:path*"]);
+    // A4-7 (12 October 2026): the root-level public/*.html mockups are noindexed too.
+    expect(robotsRules.map((rule) => rule.source)).toEqual(["/mockups/:path*", "/:file([^/]+\\.html)"]);
+    const htmlRule = robotsRules.find((rule) => rule.source !== "/mockups/:path*")!;
+    expect(htmlRule.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+    const htmlParsed = tryToParsePath(htmlRule.source);
+    expect(htmlParsed.error).toBeUndefined();
+    const htmlMatches = new RegExp(htmlParsed.regexStr!);
+    expect(htmlMatches.test("/mockup.html")).toBe(true);
+    expect(htmlMatches.test("/referral-board-mockup.html")).toBe(true);
+    expect(htmlMatches.test("/therapy-compass-data/therapies.json")).toBe(false);
 
     const parsed = tryToParsePath(mockupRule!.source);
     expect(parsed.error).toBeUndefined();

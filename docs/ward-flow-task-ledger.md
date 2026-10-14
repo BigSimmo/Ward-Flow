@@ -8577,6 +8577,51 @@ Still open after this task, with the reason:
 
 Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b3e579f` (static checks, eight unit shards, three browser-journey groups, production build, coverage and secret scan), with CodeAnt, CodSpeed and GitGuardian also passing. The follow-up was first checked locally on Node 22; the search, preview and community suites were then re-run on Node 24 (19 files pass). Hosted CI remains the authoritative check.
 
+## WF-ISSUE-REGISTER-2026-10-13 — every open audit issue is now in the register
+
+Owner request (13 October 2026): put all remaining issues in the ledger. The full register is [`ward-flow/audit-2026-10-13-issue-triage.md`](ward-flow/audit-2026-10-13-issue-triage.md); this entry points to it and records what was added. Documentation only. No tests, lint, build or provider call was run, and nothing was compared with the hosted site.
+
+- Group 7 of the register lists the items the first triage missed: Capacity request revision (CAP-REV), SPEC-005 queue ordering, the retired `ward-chrome-header` module, five remaining `.btnPrimary` modules, the code-map route drift (eight unmapped routes), the unrefreshed expected-reds check, the five routes the audit never walked, Statistics Samples, the design "Later" items, the 39 remaining backend, governance and clinical tasks, and the unproven hosted deployment.
+- It also records what #258 and #270 settled, so those items are not worked twice.
+- The `WF-HONESTY-2026-10-13` entry above stays as the record of that task. Where the two differ, the register is the later source.
+
+## WF-AUDIT-TRIAGE-20261013 — external audit headline findings, verified against `main` (13 October 2026)
+
+Source: an external multi-agent audit (Antigravity, 52 batches, 355 findings, "84/100"). Claude Code checked only its 11 headline findings against `origin/main` at `812048e67cacb2012321f95e60b0ac63f6bc0c89`. Several of the audit's line numbers did not match `main` and two of its script paths do not exist, so it may have run on a local checkout with uncommitted work. **The other 344 findings are unverified; check each against the code before acting.** Of these 11: 4 real (items 1, 2, 4, 5), 1 overstated but fixed (item 3), 1 probably real (item 6), and the rest unproven, misframed or not real.
+
+Fixed in branch `claude/audit-verified-fixes-20261013` (items 1–3), with regression tests that fail on the old code:
+
+| #   | Finding                                                                                                                                                                     | Verdict                                                                      | Status                                                                                                                                  |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Shortlist kept the non-binary placement reason and "checked with the ward" tick when the patient changed (`src/components/ward-management/coordinator/shortlist-panel.tsx`) | Real                                                                         | **Fixed** — both cleared in the existing patient-change reset. Test: `tests/ward-shortlist-gender-placement-switch.dom.test.tsx`        |
+| 2   | `isBedHoldExpired` read `transport.stage`, which `TransportJob` does not have (`src/components/ward-management/ward-referrals.ts`)                                          | Real, but no callers today                                                   | **Fixed** — reads `enRouteAt`/`collectedAt`/`arrivedAt`, ignoring a cancelled job. Test: `tests/ward-bed-hold-expiry-transport.test.ts` |
+| 3   | Board's daily sheet had no `now` (`src/components/ward-management/board/ward-board.tsx`)                                                                                    | Overstated — stay lengths were correct; only the shift timestamp was missing | **Fixed** — passes the board's clock; the sheet now shows its shift timestamp                                                           |
+
+Open — low to moderate risk, need a screen check:
+
+| #   | Finding                                                                                                                                                | Verdict | Next action                                                                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 4   | Checkbox tick never shows (`src/components/ui/choice.tsx:153`): `peer-checked` on the icon cannot match because the icon is inside the input's sibling | Real    | Put the checked state on the box (e.g. `peer-checked:[&>svg]:opacity-100`); screenshot every checkbox surface before and after |
+| 5   | Network and Governance pages have no visible or accessible `<h1>`; it sits in a `hidden` header (`ward-management-modes.tsx:79`)                       | Real    | Add a visually hidden `<h1>`; do not unhide the header (approved design). Re-run the browser test that finds the mode heading  |
+
+Open — needs owner decision:
+
+| #   | Finding                                                                                                                                         | Verdict                                                                                    | Next action                                                                                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6   | Referral with both a ward and an ED destination shows community controls but no ED accept/decline (`referrals/referral-match.tsx`, ward branch) | Probably real                                                                              | Confirm a ward + ED referral can be created; owner to decide whether the ward panel should action the ED arm                                                                                      |
+| 7   | Push/data guards "skip on Windows drive-letter case" (`scripts/guard-push.mjs:1839`, `scripts/check-ward-data.mjs:945`)                         | Unproven — both sides derive from the same path string                                     | On Josh's Windows machine, run the pre-push hook and confirm guard output appears. Change only if it skips: this is the blocking push guard, and a wrong change could make importing tests run it |
+| 8   | "Real hospital phone number" (`reference/ward-reference-teams.ts`)                                                                              | Misframed — generated, sourced public contact data for WA services, marked not call-tested | Do not hand-edit (breaks `check:ward-reference`). If real public numbers are unwanted, change `docs/ward-flow/reference-data/entities.json` and regenerate                                        |
+
+No action:
+
+| #   | Finding                                                                   | Why                                                                                                                                         |
+| --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 9   | UMRN/UR missing from `src/lib/privacy.ts`                                 | `redactCaptionIdentifiers` has no callers; UMRN/UR detection exists in `src/lib/synthetic-data-guard.ts`                                    |
+| 10  | Hardcoded `C:/Users/joshs` paths                                          | Script values are fallbacks when `LOCALAPPDATA` is unset; `tests/ward-whois-register.test.ts` paths are deliberate fixtures — do not change |
+| 11  | Patient card `aria-label` masks its details (`search/patient-search.tsx`) | Not present on `main`; cited line is past end of file. Check Josh's local checkout for uncommitted work                                     |
+
+Evidence for 1–3: new tests 9/9 pass, and 4 of them fail with the source fixes stashed; related suites 34 files / 279 tests pass; `tsc -p tsconfig.typecheck.json` and changed-file ESLint clean. Run on Node 22 (repo pins 24; engine check overridden for install). No browser check of the item 3 timestamp.
+
 ## §7.77 — Estate Reconciliation & Safety Remediation (13 October 2026)
 
 Historical reconciliation snapshot: `0ddcf95612e77b0b7bc91a1b1f0c93caff285aae` (the merge of PR #258), rather than the current `origin/main` ref. The entries below describe that snapshot. This PR subsequently incorporated main checkpoint `686531e3fd1ab18a44b79a7a12cfb8c539d6c50b` (PR #277); fetch and verify the ref again for later reconciliation.

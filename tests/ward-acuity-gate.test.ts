@@ -439,3 +439,16 @@ describe("high-acuity staffing capacity — the pull", () => {
     expect(remainingHighAcuityCapacity(unitIn(ordinary), ordinary.admissions)).toBe(0);
   });
 });
+
+describe("owner ruling 13 Oct 2026 (R-B-09): the ward offer uses the same Ready as the bed pull", () => {
+  it("a closed ward is not offered, though its feed still reports allocatable beds", () => {
+    const need = wardNeed({});
+    const ref = referral(need);
+    const open = referralEligibility(ref, need, unit(), NOW).gates.find((g) => g.gate === "allocatable_bed");
+    const closed = referralEligibility(ref, need, unit({ isClosed: true }), NOW).gates.find(
+      (g) => g.gate === "allocatable_bed",
+    );
+    expect(open?.pass).toBe(true);
+    expect(closed?.pass).toBe(false);
+  });
+});

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
+import { redactCaptionIdentifiers } from "@/lib/privacy";
 
 describe("synthetic-data-guard", () => {
   it("passes valid synthetic clinical demonstration data", () => {
@@ -52,6 +53,47 @@ describe("synthetic-data-guard", () => {
     }
   });
 
+  it("detects hyphenated Australian hospital UMRN format UMRN-1234567", () => {
+    const badPayload = {
+      notes: "Transferred under UMRN-1234567 to Bentley.",
+    };
+
+    const result = checkSyntheticPayload(badPayload);
+    expect(result.safe).toBe(false);
+    if (!result.safe) {
+      expect(result.reason).toContain("hospital record number");
+    }
+  });
+
+  it("detects numeric Medicare and UMRN identifiers in payload values", () => {
+    const numericMedicare = {
+      medicareNumber: 2123456781,
+    };
+    const result1 = checkSyntheticPayload(numericMedicare);
+    expect(result1.safe).toBe(false);
+
+    const numericUmrn = {
+      UMRN: 7654321,
+    };
+    const result2 = checkSyntheticPayload(numericUmrn);
+    expect(result2.safe).toBe(false);
+  });
+
+  it.each(["9876543210", 9876543210])("rejects ten-digit UMRN key-value identifiers (%s)", (umrn) => {
+    const result = checkSyntheticPayload({ UMRN: umrn });
+    expect(result.safe).toBe(false);
+    if (!result.safe) {
+      expect(result.reason).toContain("hospital record number");
+      expect(result.sample).not.toContain(String(umrn));
+    }
+  });
+
+  it("rejects ten-digit UMRNs embedded in text", () => {
+    const result = checkSyntheticPayload({ notes: "Record UMRN: 9876543210 found." });
+    expect(result.safe).toBe(false);
+    if (!result.safe) expect(result.reason).toContain("hospital record number");
+  });
+
   it("detects Australian mobile phone numbers", () => {
     const badPayload = {
       contact: "Next of kin phone 0412 345 678 called.",
@@ -81,5 +123,11 @@ describe("synthetic-data-guard", () => {
       node = next;
     }
     expect(checkSyntheticPayload(deep, 5).safe).toBe(false);
+  });
+
+  it("redacts WA UMRN formats in redactCaptionIdentifiers", () => {
+    expect(redactCaptionIdentifiers("Patient UMRN: 1234567 admitted")).toBe("Patient [id] admitted");
+    expect(redactCaptionIdentifiers("Patient UMRN-1234567 admitted")).toBe("Patient [id] admitted");
+    expect(redactCaptionIdentifiers("Patient UMRN1234567 admitted")).toBe("Patient [id] admitted");
   });
 });

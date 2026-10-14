@@ -4,6 +4,7 @@ import { capacityBreakdown, releaseBand } from "../src/components/ward-managemen
 import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
+import type { Movement } from "../src/components/ward-management/ward-model";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -1040,6 +1041,50 @@ describe("ward bed release lifecycle", () => {
     // The point of this second half: RELEASE_BED moved the release's own STATE but wrote no bed
     // figure at all — the unit's empty/allocatable values are exactly what they were on the
     // hand-constructed (not-yet-incremented) state above.
+    expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
+    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
+  });
+
+  it("14. RELEASE_BED still discharges a departed admission whose movement predates allocatedBed (legacy state)", () => {
+    const state = seeded();
+    const target = expectedUnblockedRelease(state);
+    const beforeAdmission = admission(state, target.admissionId);
+    const departedWithPreAllocMovement = {
+      ...state,
+      movements: [
+        ...state.movements,
+        {
+          ...state.movements[0],
+          id: "MV-PRE-ALLOC" as Movement["id"],
+          allocatedBed: undefined,
+        },
+      ],
+      admissions: state.admissions.map((candidate) =>
+        candidate.id === beforeAdmission.id
+          ? {
+              ...candidate,
+              movementId: "MV-PRE-ALLOC" as Movement["id"],
+              state: "departed" as const,
+              leftAt: NOW,
+              leavingDestination: "moved-to-residential-care" as const,
+            }
+          : candidate,
+      ),
+    };
+
+    const beforeUnit = unit(departedWithPreAllocMovement, target.unitId);
+    const next = wardFlowReducer(departedWithPreAllocMovement, {
+      type: "RELEASE_BED",
+      role: "ward",
+      now: NOW,
+      releaseId: target.id,
+      actingUnitId: target.unitId,
+    });
+    // A patient who has physically left frees the bed whether or not the movement carries the
+    // newer allocatedBed field; a silent no-op here would strand the bed as occupied.
+    expect(next.rejections).toHaveLength(0);
+    expect(release(next, target.id).state).toBe("discharged");
+    const afterUnit = unit(next, target.unitId);
     expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
     expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
   });
