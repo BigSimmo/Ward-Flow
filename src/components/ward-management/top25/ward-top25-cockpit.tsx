@@ -97,7 +97,7 @@ const DEFAULT_WALK_ROUND_ROWS: readonly WalkRoundRowItem[] = [
   {
     id: "wr-bed-2",
     bedLabel: "Bed 02 · Shared Bay A",
-    statusLabel: "Overnight leave (>24h)",
+    statusLabel: "Overnight leave (extended)",
     eddLabel: "Leave Return Due",
     primaryActionLabel: "Convert Leave to Discharge",
   },
@@ -308,7 +308,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
     () =>
       deriveRoleNeedsYouItems(
         [
-          { id: "ny-1", role: "coordinator", title: "Silent ward escalation (>4h unanswered)", priority: 1 },
+          { id: "ny-1", role: "coordinator", title: "Silent ward escalation (unanswered referral)", priority: 1 },
           { id: "ny-2", role: "ward", title: "Confirm morning TTO & cleaning pre-stage", priority: 1 },
           { id: "ny-3", role: "ed", title: "Complete 4-tick Pre-Flight Admissions Packet", priority: 1 },
         ],
@@ -654,8 +654,8 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
         <article className={styles.card} data-testid="top25-item-5">
           <div className={styles.cardHeader}>
             <span className={styles.cardRank}>#5</span>
-            <h3 className={styles.cardTitle}>T-Minus 24h Discharge Prep & Barrier Tagging</h3>
-            <Chip tone="info">{tMinus24hPrompts.length} Due in 24h</Chip>
+            <h3 className={styles.cardTitle}>Prior-Day Discharge Prep & Barrier Tagging</h3>
+            <Chip tone="info">{tMinus24hPrompts.length} Due Tomorrow</Chip>
           </div>
           <p className={styles.cardBody}>Early barrier taxonomy: {dischargeDelayReasonLabels[selectedBarrier]}</p>
           <div className={styles.cardActions}>
@@ -681,7 +681,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             <Chip tone="danger">{silentWards.length} Unanswered</Chip>
           </div>
           <p className={styles.cardBody}>
-            Flags referrals unanswered at 2h (amber nudge) and 4h (red coordinator re-allocation).
+            Flags unanswered ward referrals for amber NUM nudge and red coordinator re-allocation.
           </p>
           <div className={styles.cardActions}>
             <Button
@@ -705,7 +705,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       {/* Tier 2: High-Impact Clinical & Step-Down Accelerators (#8–#15) */}
       <SectionHead
         title="Tier 2 · High-Impact Clinical & Step-Down Accelerators (#8–#15)"
-        subtitle="HDU step-down pull board, Criteria-Led Discharge, leave fast-track, CTO handshake, and ED breach ladder"
+        subtitle="HDU step-down pull board, Criteria-Led Discharge, leave fast-track, CTO handshake, and ED escalation ladder"
       />
       <div className={styles.tierGrid}>
         {/* #8 HDU / Secure-to-Acute Step-Down Pull Board */}
@@ -761,7 +761,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
           </div>
           <p className={styles.cardBody}>
             {leaveFastTrack.promptsDischargeConversion
-              ? "Over 24h overnight leave — prompt to convert to formal discharge or restore in 1 tap."
+              ? "Extended overnight leave — prompt to convert to formal discharge or restore in 1 tap."
               : "Active trial leave."}
           </p>
         </article>
@@ -786,11 +786,11 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
           <p className={styles.cardBody}>{stuckHandover.actionLabel}</p>
         </article>
 
-        {/* #13 ED 8h / 12h / 24h Breach Prevention Escalation Ladder */}
+        {/* #13 ED Long-Wait Escalation Ladder */}
         <article className={styles.card} data-testid="top25-item-13">
           <div className={styles.cardHeader}>
             <span className={styles.cardRank}>#13</span>
-            <h3 className={styles.cardTitle}>ED 8h / 12h / 24h Escalation Ladder</h3>
+            <h3 className={styles.cardTitle}>ED Long-Wait Escalation Ladder</h3>
             <Chip tone="danger">Top Wait {edLadder[0]?.waitHours ?? 0}h</Chip>
           </div>
           <p className={styles.cardBody}>Tiers: {edLadder.map((e) => `${e.id} (${e.tier})`).join(" · ")}</p>
@@ -846,7 +846,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             <Chip tone="info">{swapPairs.length} Mutual Swap</Chip>
           </div>
           <p className={styles.cardBody}>
-            Matched 1-for-1 exchange between {swapPairs[0]?.unitA} and {swapPairs[0]?.unitB} when both wards are at 100%
+            Matched 1-for-1 exchange between {swapPairs[0]?.unitA} and {swapPairs[0]?.unitB} when both wards are at full
             occupancy.
           </p>
         </article>
@@ -875,7 +875,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
         <article className={styles.card} data-testid="top25-item-19">
           <div className={styles.cardHeader}>
             <span className={styles.cardRank}>#19</span>
-            <h3 className={styles.cardTitle}>Paper-Form Expiry Radar (4h Amber / 1h Red)</h3>
+            <h3 className={styles.cardTitle}>Paper-Form Statutory Expiry Radar</h3>
             <Chip tone="danger">{paperExpiryRadar[0]?.urgency}</Chip>
           </div>
           <p className={styles.cardBody}>

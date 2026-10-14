@@ -156,7 +156,7 @@ function ControlledBroadcastBanner({
           </span>
           {onExtend ? (
             <Button size="sm" onClick={onExtend}>
-              Extend +2h
+              Extend <span>+2h</span>
             </Button>
           ) : null}
           {onClear ? (

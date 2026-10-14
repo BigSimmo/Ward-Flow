@@ -2374,7 +2374,8 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
         unitId,
         elapsedMinutes,
         escalationTier,
-        actionLabel: escalationTier === "escalate_4h" ? "Switch to Next Compatible Ward" : "Nudge NUM (2h unanswered)",
+        actionLabel:
+          escalationTier === "escalate_4h" ? "Switch to Next Compatible Ward" : "Nudge NUM — unanswered referral",
       });
     }
   }

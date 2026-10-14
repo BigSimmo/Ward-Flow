@@ -71,11 +71,12 @@ export const BROADCAST_ANSWER_LABELS: Record<BroadcastAnswer, string> = {
 export const BED_CALL_MAX_BEDS = 4;
 /** "Ready at" choices, minutes from now. Chosen, never typed. */
 export const READY_IN_CHOICES: readonly number[] = [30, 60, 120, 240];
-/** Default broadcast duration (4 hours) and quick extension increment (+2 hours) (#25). */
-export const DEFAULT_BROADCAST_DURATION_MINUTES = 240;
-export const DEFAULT_BROADCAST_EXTENSION_MINUTES = 120;
 // Timing defaults live in the named-defaults module, labelled as Josh's defaults.
-export { PULL_NOW_ANSWER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+export {
+  DEFAULT_BROADCAST_DURATION_MINUTES,
+  DEFAULT_BROADCAST_EXTENSION_MINUTES,
+  PULL_NOW_ANSWER_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 
 export interface BroadcastReply {
   /** The ward or ED desk that answered (`state.units` id or an ED id). */
