@@ -217,7 +217,7 @@ For the button, navigation, new-route, and gate rules, see [`docs/agents/wiring-
 
 # Bundle budget
 
-For the three `bundle-budget.json` safeguards, how chunks are attributed, and how to measure them, see [`docs/agents/wiring-and-bundle-budget.md`](docs/agents/wiring-and-bundle-budget.md).
+For the historical PsychSift `bundle-budget.json` safeguards (`bundle-budget.json` is not present in `BigSimmo/Ward-Flow`), how chunks were attributed, and how to measure them, see [`docs/agents/wiring-and-bundle-budget.md`](docs/agents/wiring-and-bundle-budget.md).
 <!-- END:page-and-button-wiring -->
 
 <!-- BEGIN:search-chrome-behaviour -->
@@ -265,7 +265,7 @@ authority before acting.
 
 # How these rules are organised
 
-# Process hardening phases
+See [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#how-these-rules-are-organised) for the continuation index and delegated `docs/agents/` reference table.
 
 <!-- BEGIN:process-hardening -->
 
@@ -278,7 +278,7 @@ When the user says `open PR`, `create PR`, or `publish PR` without also requesti
 - Inspect only what is necessary to avoid publishing the wrong change: the branch, base, staged/unstaged scope, and PR title/body. Reuse an existing dedicated branch or worktree rather than recreating it. Do not fetch, pull, rebase, review the ledger, inventory history, load a release/handover skill, or create a worktree unless it is necessary to keep unrelated work out of the PR.
 - Do **not** run or wait for `npm run format`, dependency installation or linking, `npm run verify:pr-local`, tests, lint, typecheck, builds, browser checks, audits, generated-document synchronization, or CI. Do not invoke a release/readiness workflow for this request.
 - If a local commit hook or a readiness-only push guard (format or static) is the only blocker, publish with `git commit --no-verify` and that guard's own scoped override (`SKIP_FORMAT_GUARD=1` or `SKIP_STATIC_GUARD=1`, as applicable) instead of `git push --no-verify`; do not spend time preparing dependencies or formatting solely to satisfy the hook. Never skip the push hook wholesale — the auto-merge ownership guard has no override and must never be bypassed, even for a bare-publication request. This exception is limited to the explicit bare-publication request and does not weaken normal-push safeguards.
-- Create the PR immediately after the push, using the repository PR template where its policy fields apply. Report the URL and identify all local and hosted checks as unrun by request. Do not babysit CI, amend, or perform follow-up readiness work unless the user asks. This route overrides generic branch-bundling, handover, review, and babysit instructions.
+- Create the PR immediately after the push, using the repository's PR conventions where applicable (note: PsychSift's `.github/pull_request_template.md` is inapplicable per Prototype Operating Mode §1). Report the URL and identify all local and hosted checks as unrun by request. Do not babysit CI, amend, or perform follow-up readiness work unless the user asks. This route overrides generic branch-bundling, handover, review, and babysit instructions.
 
 - **For normal engineering pushes, run `npm run format -- --files <exact-owned-paths>` for every owned candidate/pushed file, including docs/config, and commit the result before push.** This rule does not apply to the explicit bare PR publication route above. Formatting is in neither `npm run test`, `npm run typecheck`, nor `npm run lint`, so the ordinary loop can report green while the changed-file CI check or exact-commit pre-push guard fails. Three CI failures on 2026-07-30 came from exactly this (two of them on `ci/circleci: verify`, since removed from the repo by PR #1412). Two traps beyond simply running it:
   - **Formatting without committing does nothing for the push.** A push sends commits, not your working tree, so formatting after committing leaves the unformatted blob on the branch. Amend or add a follow-up commit.
@@ -296,37 +296,65 @@ For the verification principle, the tier table, and the rest of the gate-selecti
 For current Ward Flow gate selection, selector limits and evidence reuse, see [`docs/agents/task-efficiency.md`](docs/agents/task-efficiency.md). Unknown CI coverage requires running the selected gate or reporting it blocked; a declared workflow is not an observed verdict. The copied gate-claim examples in [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md) require Ward-specific revalidation before use.
 <!-- END:process-hardening -->
 
-## Do not pay twice for the verdict GitHub is about to reach
-
 # `upload` shortcut
+
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#upload-shortcut) and [`docs/agents/upload-shortcut.md`](docs/agents/upload-shortcut.md).
 
 ## Open PR branch sync (anti-churn)
 
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#open-pr-branch-sync-anti-churn).
+
 ## Run PR and Babysit shortcuts
+
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#run-pr-and-babysit-shortcuts).
 
 ## Automated review coverage
 
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#automated-review-coverage).
+
 ## PR bundling (reduce one-task-one-PR churn)
+
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#pr-bundling-reduce-one-task-one-pr-churn).
 
 ## Anti-conflict and CI-speed operating procedure
 
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#anti-conflict-and-ci-speed-operating-procedure).
+
 ## Codex productivity defaults
+
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#codex-productivity-defaults).
 
 ## Repository productivity skills
 
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#repository-productivity-skills).
+
 ## Codex GitHub review behavior
+
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#codex-github-review-behavior).
 
 ## Codex Cloud environment
 
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#codex-cloud-environment).
+
 ## Cursor Cloud specific instructions (not Codex Cloud)
+
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#cursor-cloud-specific-instructions-not-codex-cloud).
 
 # Commit as you go — the thing that loses work here is interruption, not carelessness
 
+Continued in [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#commit-as-you-go--the-thing-that-loses-work-here-is-interruption-not-carelessness).
+
 ## The rule
+
+See [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#the-rule).
 
 ## Why this matters more here than in an ordinary repository
 
+See [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#why-this-matters-more-here-than-in-an-ordinary-repository).
+
 ## When you genuinely cannot commit
+
+See [`PROJECT-INSTRUCTIONS-CONTINUATION.md`](PROJECT-INSTRUCTIONS-CONTINUATION.md#when-you-genuinely-cannot-commit).
 
 ## Always-loaded publication safeguards
 

@@ -1,5 +1,11 @@
 # Four things that need deleting and one guard that will not let me
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Stamped 2026-09-02 by Ward Lead. Nothing here is urgent; one is on the master line.**
 
 The `protect-ward-flow` hook refuses every removal under a path matching `ward-*`. That is correct
@@ -33,3 +39,5 @@ same:** the override is approved per-deletion by the owner, and a chat that uses
 Each prefixed with `CLAUDE_ALLOW_PROTECTED_DELETE=1` **as the first token of the whole command** —
 mid-chain it is not seen. The link is removed with Windows `rmdir` via `cmd`, which does not follow a
 reparse point; the target is untouched. The master-line file goes through `git rm` and a commit.
+
+<!-- docs-script-refs:historical-end -->

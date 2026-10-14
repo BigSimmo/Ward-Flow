@@ -1,6 +1,6 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 14 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.78) record PRs landed up through PR #284 (`feat/engine-and-screen-fixes`).
+> **Current task navigation — 14 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.79) record PRs landed on `origin/main` up through PR #285 (`72375705`), PR #284 (`36e68bfa`), and PR #283 (`a974d040`).
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
@@ -1341,7 +1341,7 @@ before checking.** **It measured the LABEL and was about to conclude about the C
 ## 👑 AUTHORITATIVE WARD FLOW MASTER LEDGER — RECONCILED 2026-09-13
 
 **Evidence Cut-off:** 13 September 2026, 22:11 AWST  
-**Master Sources:** [`C:\\Users\\joshs\\OneDrive\\Ward_Flow_Master_2026-09-13.md`](file:///C:/Users/joshs/OneDrive/Ward_Flow_Master_2026-09-13.md) (Version 1.0, 65 pages), [`Ward_Flow_Master_Tracker.xlsx`](file:///C:/Users/joshs/OneDrive/Ward_Flow_Master_Tracker.xlsx), and live worktree `codex/task-ward-flow-live-state-20260831` at commit `1ef9ed3975078b789e9b5d70b3f000c64edc3809`.
+**Master Sources:** `C:\Users\joshs\OneDrive\Ward_Flow_Master_2026-09-13.md` (Version 1.0, 65 pages), `C:\Users\joshs\OneDrive\Ward_Flow_Master_Tracker.xlsx` (`Ward_Flow_Master_Tracker.xlsx`), and live worktree `codex/task-ward-flow-live-state-20260831` at commit `1ef9ed3975078b789e9b5d70b3f000c64edc3809`.
 
 ### VERIFICATION SUMMARY AT A GLANCE
 
@@ -7808,7 +7808,7 @@ All active background subagents have been cleanly stopped (`kill_all`) to preven
 
 ---
 
-## §7.69 · Estate-Wide Review & Hardening of Alert Behaviours Across Ward Flow and System Surfaces
+## §7.69b · Estate-Wide Review & Hardening of Alert Behaviours Across Ward Flow and System Surfaces
 
 **Audit & Alignment Completed: 25 September 2026**
 
@@ -7850,7 +7850,7 @@ Comprehensive review and verification of alerts throughout the project to ensure
 
 ---
 
-## §7.70 · Full-Estate 41-Route and Interactive Component Audit Closeout
+## §7.70b · Full-Estate 41-Route and Interactive Component Audit Closeout
 
 **Audit & Alignment Completed: 25 September 2026**
 
@@ -8104,7 +8104,7 @@ evidence is under `.local/drawers/live/` in `/workspace/Ward-Flow-live`.
 
 ---
 
-## §7.70 · WF-BANNER-20261005 — Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub (PR #65, PR #66)
+## §7.70c · WF-BANNER-20261005 — Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub (PR #65, PR #66)
 
 Completed implementation and estate-wide integration of the universal curved prototype banner, symmetrical master search hub, and associated screen polish. PR #65 (`2683a5f`) unified the bottom prototype banner across all 40+ estate screens; PR #66 (`5f6c8e1`, task branch `feat/curved-synthetic-prototype-banner` based on verified main `9da4193` / `2683a5f`) deployed the curved banner styling, symmetrical search hub header, Direction 3 Floating Glass Command Horizon, live Discharges board overhaul, Ward Bed Dossier drawer extraction, and Referral Detail inspector.
 
@@ -8653,6 +8653,144 @@ Branch: `feat/task-ledger-safety-fixes`.
 4. **WF-23 (Discharge Block Reason Mandatory Selector)**: Clinician reason requirement prior to discharge delay unblocking.
 5. **WF-33 / WF-29 / WF-57 (Azure Shared PostgreSQL / Authentication)**: Connect shared PostgreSQL backend once Azure Entra credentials / network permissions are provisioned.
 6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation.
+
+## §7.79 — Estate Reconciliation & Outstanding Tasks Inventory (14 October 2026)
+
+Landed baseline on `origin/main`: commit `72375705` (incorporating PRs #261 through #285).
+Branch: `docs/perf-task-ledger-update`.
+Target: Local task-detail and history ledger synchronisation following completion of October audit remediations.
+
+### 1. Landed Estate Baseline (PRs #261 – #285)
+
+- **PR #261 / #262**: 4-batch repository remediation: Windows `cmd.exe /c az` CLI compatibility, Prototype Pill Cumulative Layout Shift (CLS) fix, Census bed navigation (`?bed=XX` URL sync), D-30 transfer coordinator role gate, CI cache tests, R-B-09 Ready arithmetic & capacity derivations restoration.
+- **PR #263**: Critical safety fixes: AUD-02 Windows drive-letter casing guard in `guard-push.mjs` and `check-ward-data.mjs`; AUD-04 `WardDailySheet` deterministic clock fallback preventing epoch-0 (1970) duration calculations; AUD-05 in-transit bed expiry false alarm suppression; WF-09A involuntary badge presentation when legal form is unrecorded.
+- **PR #265 / #274**: Validated batches, derivations, and comprehensive runtime reducer guard scan.
+- **PR #272**: Round 2 clinical audit fixes: phone safety disclosures ("Published, not call-tested"), unified referral flow, truthful patient presence counts ("On this board now"), 44px phone tap targets.
+- **PR #273**: Portable database architecture introducing Supabase + local PostgreSQL support with multi-database selector (`azure` | `supabase` | `postgres`), preserving Azure schema contracts.
+- **PR #276**: Mobile tap ergonomics: text fields and Delays filter chips upgraded to full 44px minimum tap boundaries.
+- **PR #277**: Modular UI-only ergonomics and layout polish.
+- **PR #278**: Runtime role read grant security restriction refusing queries outside `ward_flow` schema.
+- **PR #279 (Group A Clinical Fixes)**: Complete Group A defect remediation:
+  - **S1-4 & S2-4**: Dispatches cancellation notices to transport officers (`{ role: "officer" }`) upon referral withdrawal; sends pre-acceptance revocation notices to receiving wards.
+  - **A3-10 & S2-7**: Stopped-transport held beds surfaced in Handover under actionable placements to eliminate indefinitely stranded psychiatric beds.
+  - **A3-2**: Handover expiry derivation suppresses false "Expired pulled bed" warnings once patient is collected into transit.
+  - **A1-4**: Restores statutory continuation legal forms (Form 5B, 3C, 6B, 6C) to the legal audit trail alongside selectable forms.
+  - **A1-6**: Restores patient identity in movement audit records for unscheduled walk-in admissions lacking an ED referral.
+  - **A4-11**: Logger context sanitisation preventing context payloads from overwriting canonical `level`, `message`, and `timestamp`.
+- **PR #280**: Remaining pages audit fixes: correct presence counts, privacy mask on Statistics, printable emergency downtime packet (WF-58 resolved), Menu over sheets.
+- **PR #281**: Verified audit findings triage recorded (`docs/ward-flow/audit-2026-10-13-issue-triage.md`).
+- **PR #285 (Performance Remediation & Authority Hardening)**:
+  - **Workstream A**: State & 30s clock tick decoupling (`useWardClock`), memoized `<WardBedCard>` re-renders, fast structural dirty check (`isSameWorld`), frozen array constants.
+  - **Workstream B**: Bundle payload diet: dynamic import for `@azure/msal-browser` (~290 KB saved), extracted `handover-scope.ts` eliminating 63.3 KB leaked CSS, code-splitting secondary dialogs/drawers via `next/dynamic`.
+  - **Workstream C**: Sub-100ms search latency (`shouldDeriveSearchTasks`), 60fps input debouncing (`useDebouncedValue`), React 19 `startTransition` on screen tab navigation.
+  - **Workstream D**: Notification banner layout anchoring eliminating CLS, SVG map code-splitting, tabular font metrics.
+  - **Option A & B Authority Remediations**: Cross-ward action authority (`actingUnitId` validation on `ACCEPT_IN_PRINCIPLE`, `PULL_PATIENT`, `DECLINE`), statutory legal form paper expiry role restriction to `["ed", "coordinator"]` (A1-5), phantom free bed prevention via `arrivalCapacityConflicts` (S2-3), revoked exam referral unwinding (S1-5).
+
+### 2. Prepared & Verified Pending Land (PR #284)
+
+- **PR #284 (`feat/engine-and-screen-fixes`)**:
+  - **Status**: **100% Green** across all 18 CI shards and test suites; **Auto-Approved by Gitar**. Ready for owner merge.
+  - **Scope (19 Engine & Screen Remediations)**:
+    - **A3-4**: Corrects delay cause evaluation order in `delays-derivations.ts` so unreferred patients with no eligible bed network-wide (`WF-308`) retain the `no_eligible_bed` severe delay category, while referrable unreferred patients classify under `awaiting_coordinator`.
+    - **A3-12**: Incorporates `examinationRevokedWhileBedHeld(movement)` in `causeOf` to correctly route community order and revoked exam holds to the coordinator rather than stranding under `awaiting_transport`.
+    - **A3-7**: Records per-destination `referredAt` on queued referral addressings (`RECEIVE_REFERRAL`); derives silence reminders from the oldest live awaiting arm, with synchronised type declarations in `statistics-claims-register.ts`.
+    - **A1-13**: Restricts broadcast alert acknowledgments for `COORDINATOR_DESK_ACKNOWLEDGER_ID` strictly to `role: "coordinator"`.
+    - **S2-6**: Rejects `RECORD_REPATRIATION` for discharged admissions (`admission.state === "departed"`) or closed movements.
+    - **S1-12**: Enforces `actingUnitId === admission.unitId` when updating expected discharge date as `role: "ward"`.
+    - **S2-14**: Validates referral withdrawal stage guards against `isMovementWithdrawable`.
+    - **S1-3**: Preserves `patientId` on unscheduled walk-in community intake.
+    - **S1-6**: Placement overrides only appended when units actually received an override.
+    - **S2-5**: Rejects `SET_ARRIVAL_DETAILS` on closed movements.
+    - **S1-14**: ED medical bed release timeout pinned strictly to 48 hours.
+    - **A1-11**: Distinguishes expiry-recorded from extension-recorded based on `priorDueAt`.
+    - **Backend 409 Conflict**: Differentiates conditional write revision conflicts from operational Azure storage 409 errors.
+
+### 3. Outstanding Tasks Inventory (Categorized & Prioritized)
+
+The active open backlog categorized by complexity and risk:
+
+#### Active PRs Requiring Action
+
+1. **PR #283 Rebase & Conflict Resolution (`feat/group-b-ui-perf-accessibility`)**:
+   - **Status**: Open, currently conflicting with `origin/main` following merges of PRs #262, #263, #279, #285.
+   - **Scope**: Rebase branch onto latest `origin/main`, resolve merge conflicts in search/drawers/dialogs, verify WCAG 2.1 AA keyboard focus management (Escape dismiss, focus restoration), and ensure green CI.
+2. **PR #284 Merge (`feat/engine-and-screen-fixes`)**:
+   - **Status**: Ready for merge by repository owner (all 18 CI check suites green, auto-approved).
+
+#### Category 1: Quick & Low-Risk Polish (Text, Markup, Config, Docs)
+
+- **TASK-L1-01 (A4-5)**: Correct stale `DeveloperAreaGate` comments in `src/proxy.ts` and `src/app/mockups/layout.tsx` (gate removed 28 Sept).
+- **TASK-L1-02 (Live Leftovers)**: Align `settings-panes.tsx` "Live" option and Sovereign "Live" tab with "Demo" terminology.
+- **TASK-L1-03 (ClinicalRail comments)**: Correct comments describing `ClinicalRail` as mounted.
+- **TASK-L1-04 (R7)**: Add `background_color` property to `src/app/manifest.ts`.
+- **TASK-L1-05 (R9)**: Add sign-in route to the landmark test suite.
+- **TASK-L1-06 (R14)**: Prevent `prefetch={false}` leaking onto test anchor DOM attributes.
+- **TASK-L1-07 (Touch Target)**: Enlarge 36px "New referral" sibling button to the repository standard 48px touch target.
+- **TASK-L1-08 (M-WARD-ANSWER)**: Add explanatory helper text or hide the disabled "Accept in principle (waitlist)" button in ward answer view.
+- **TASK-L1-09 (D7)**: Add helper sentence explaining why "Refer to selected wards" is disabled when no units are chosen.
+- **TASK-L1-10 (M-STATUS / M-HOSTING)**: Reconcile stale commits, deployment claims, and test counts in `docs/ward-flow/STATUS.md` and `docs/hosting.md`.
+- **TASK-L1-11 (M-CODEMAP)**: Refresh `code-map/shell-and-shared.md` to index all 50 mockup page entry points (currently documents 42).
+- **TASK-L1-12 (M-TOKENS)**: Consolidate duplicate local `.btnPrimary` definitions across five CSS modules into shared design tokens.
+- **TASK-L1-13 (M-DEAD)**: Remove retired `ward-chrome-header.tsx`, `governance-screen.tsx`, and unused Postgres fixtures (requires owner approval gate; note that `eventCarriesFreeText()` (`D-18`) is implemented and active in `src/lib/ward-flow/ward-state-context.tsx:91`).
+
+#### Category 2: Remaining Contained Engine & Derivation Fixes (Moderate Risk)
+
+- **TASK-L2-01 (S2-15)**: Attribute alert stand-down audit events to the specific role that performed the action.
+- **TASK-L2-02 (A3-3 / A3-5)**: Fix "Nowhere eligible" filter listing patients with allocated beds, and ensure accepted patients remain discoverable in search.
+- **TASK-L2-03 (A3-8 / A3-9)**: Prevent withdrawn referrals from disappearing prematurely from the board; eliminate false "declined by all" banners.
+- **TASK-L2-04 (A3-1 / A3-13 / A3-14)**: Capacity screen: resolve double-counting of pulled patients and stuck "not settled" state banners.
+- **TASK-L2-05 (A2-4)**: Guard against null timestamps from local storage raising false legal-due alarms.
+- **TASK-L2-06 (A2-6 / A2-7)**: Improve session storage failure reporting; prevent 30-second autosave from undoing explicit "Clear session".
+- **TASK-L2-07 (A2-10 / A2-15)**: Reset "Since last look" state cleanly on session clear; ensure reload crossing midnight handles date rollover.
+- **TASK-L2-08 (A4-1 / A4-2 / A4-10)**: Strengthen synthetic-data guard pattern matching for edge-case ID formats; sanitize "Copy diagnostics" exports.
+- **TASK-L2-09 (A4-12 / A4-15)**: Add CSRF header validation on mutable endpoints and harden fail-open webhook stubs.
+- **TASK-L2-10 (A4-6 / A4-7)**: Restrict CSP bypass on routes with image extensions; pin or remove unpinned CDN script tags in static HTML mockups.
+
+#### Category 3: Remaining Core Reducer Invariants (Higher Complexity)
+
+- **TASK-L3-01 (S2-7)**: Ensure release-and-reopen workflow only reports bed releases when a physical bed was actually held.
+- **TASK-L3-02 (S2-13)**: Prevent transfer-out events from advancing the discharge revision sequence twice.
+- **TASK-L3-03 (S1-8)**: Ensure re-pulling a patient resets the hold expiry countdown instead of retaining the old timestamp.
+- **TASK-L3-04 (A1-7)**: Ensure ward-initiated referrals are not misattributed to community teams in audit logs.
+- **TASK-L3-05 (A1-9)**: Remove `ward` and `community` roles from `RECORD_MOVEMENT_MEDICAL_CLEARANCE` permissions.
+- **TASK-L3-06 (Shared Close Helper: S1-7)**: Unify movement closure logic across remaining closure triggers to guarantee consistent referral unwinding, notice generation, and waitlist cleanup.
+- **TASK-L3-07 (Tighter Load Validator: A2-3, A2-5)**: Validate snapshot data on import to reject malformed event payloads (rendering type bugs S1-9, S1-10, S1-11 unreachable).
+
+#### Category 4: Standing Architecture & External Integration Roadmap
+
+- **TASK-L4-01 (Safari / Physical Device Walkthrough - Safari / D1)**: Physical iPhone Safari inspection of collapsing URL bars, bottom safe-area insets (`env(safe-area-inset-bottom)`), and virtual keyboard interaction with bottom dock.
+- **TASK-L4-02 (AUD-03 Bed-Hold Countdown Arithmetic Unit Tests)**: Unit tests for hold expiry arithmetic (`bedHoldExpiryAlert`).
+- **TASK-L4-03 (AUD-06 Multi-Ward Rapid Click Reducer Serialization)**: Reducer action serialization under rapid ward switching.
+- **TASK-L4-04 (WF-09 / S2-9 Gender Match Validation)**: Gender match & security classification validation on bed placements against ward mix policies.
+- **TASK-L4-05 (WF-23 Discharge Block Reason Selector)**: Mandatory clinician reason selection prior to discharge delay unblocking.
+- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record allocatable revision counter on requests to avoid timestamp collisions.
+- **TASK-L4-07 (Code-Map Route Audit Synchronization)**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points.
+- **TASK-L4-08 (WF-33 / WF-29 / WF-57 Live Database Staging)**: Multi-user shared save/reload and conflict reconciliation verification on live PostgreSQL / Supabase instance.
+- **TASK-L4-09 (PERF-01 Retire 5 Orphaned Statistics CSS Files - 134.2 KB)**: Delete unimported legacy files in `src/components/ward-management/statistics/` (awaiting explicit approval).
+- **TASK-L4-10 (PERF-02 Design Token Consolidation)**: Deprecate `ward-flow-v6-tokens.css` in favor of consolidated `ward-flow-v9-tokens.css` (~90 KB uncompressed CSS reduction).
+- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching.
+- **TASK-L4-12 (PERF-04 Deep-Link Scroll Timing on Lazy Secondary Views)**: Explicit post-mount scroll event for hash links navigating to dynamically imported tabs.
+- **TASK-L4-13 (A2-14 Unused Standalone Clock Provider)**: Retire or align unused standalone `WardFlowClockProvider` in `ward-flow-provider.tsx`.
+
+#### Category 5: Owner Policy Decisions (Awaiting User Ruling)
+
+- **DEC-L5-01 (S2-2)**: Revoked-examination hold release: decide whether to count bed-holding stages or refuse edits to "awaiting release" blocker (two pinned tests conflict).
+- **DEC-L5-02 (A1-8, A1-10, S2-10, A1-13, A1-14)**: Decide whether to extend strict `actingUnitId` validation to arrival details, transport booking, and referral corrections.
+- **DEC-L5-03 (A1-2)**: Clinical definition: determine which roles count as the authorized referrer for referral withdrawal.
+- **DEC-L5-04 (CAP-REV)**: Capacity request ordering: decide whether to add an allocatable revision counter to request objects to avoid timestamp collisions.
+- **DEC-L5-05 (SPEC-005)**: Home queue ordering policy: decide priority weight between ATS triage categories and the "Flagged urgent" indicator.
+
+#### Category 6: Front-End, UX, Accessibility & Architecture Audit Backlog (October 2026)
+
+- **TASK-L6-01 (AUD-UX-01 / In-App Client Navigation Draft Loss Protection)**: Connect `use-dirty-state-guard.ts` to client-side Next.js App Router navigation transitions (`<Link>`, `router.push`, header/phone menu links) in `add-patient.tsx` and `shortlist-panel.tsx`. Currently, form dirty state is only guarded against tab/window closure via `window.beforeunload`; internal router navigation silently discards unsubmitted patient creation and referral drafting.
+- **TASK-L6-02 (AUD-A11Y-01 / Active Mockup Custom ESLint Accessibility Coverage)**: Refine `MOCKUP_IGNORES` in `eslint.config.mjs:35` so custom repository accessibility rules (`local/require-button-wiring`, `local/require-lucide-icon-aria`) actively lint production mockup components under `src/app/mockups/ward-flow/**` while preserving test and experimental file exemptions.
+- **TASK-L6-03 (AUD-ARCH-01 / Progressive Domain Slice Reducer Migration)**: Partition `ward-flow-reducer.ts` (10,458 lines, 557 KB) into domain slice reducers (`movementReducer`, `referralReducer`, `admissionReducer`, `careSettingsReducer`, `broadcastAlertReducer`) using typed action routing. This eliminates the central architectural monolith, drastically reducing TypeScript compiler overhead and isolating domain test failures.
+- **TASK-L6-04 (AUD-ARCH-02 / Screen Monolith Decomposition >3,000 LOC)**: Progressively decompose 6 oversized screen monoliths exceeding 3,000 LOC (`ed-screen.tsx` at 6,791 lines, `community-screen.tsx` at 5,986 lines, `ward-referral-drawer.tsx` at 4,039 lines, `ward-board.tsx` at 3,796 lines, `ward-movements.ts` at 3,250 lines, and `ward-screen.tsx` at 3,182 lines) by extracting modular sub-panels, modal controllers, and domain hooks.
+- **TASK-L6-05 (AUD-NAV-01 / Same-View Deep-Link Hash Navigation)**: Complete `useStatisticsView` reactive `hash` tracking so internal anchor navigation between cards within the same view (e.g. `#journey-overview` to `#journey-stages`) automatically triggers smooth scrolling and `MutationObserver` card resolution without requiring a full `view` state switch.
+- **TASK-L6-06 (AUD-TEST-01 / Dynamic Import Loading State Harness)**: Extend `tests/setup/jsdom.setup.ts` with a controlled deferred-resolution test helper to verify intermediate loading states, accessible skeleton landmarks, and headings for dynamic components (`WardAnswerView`, lazy tab panes) prior to chunk load.
+- **TASK-L6-07 (AUD-A11Y-02 / Explanatory Button Automated Regression Floor)**: Add automated static regression check (`scripts/ward-flow/check-explanatory-buttons.mjs` or custom ESLint rule) ensuring no interactive control combines native `disabled` with `aria-describedby`, enforcing the `aria-disabled="true"` + `ignoreUnavailableActivation` standard repository-wide.
+- **TASK-L6-08 (AUD-SITEMAP / App Router Route Map Reachability)**: Audit all 53 Next.js App Router routes under `src/app/mockups/ward-flow/` to ensure every route is reachable via top navigation, phone menu, breadcrumbs, or deep links, eliminating orphan routes.
+- **TASK-L6-09 (AUD-PERF-05 / Dynamic Import Loading Skeletons)**: Add dimension-matched skeleton loaders to dynamic code-split views (`WardAnswerView`, lazy statistics tabs) to eliminate Cumulative Layout Shift (CLS) on slow network chunk arrivals.
 
 ## §7.78 — Engine Fixes (PR #284) & Open Task Inventory (14 October 2026)
 

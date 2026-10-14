@@ -1,5 +1,7 @@
 # Codex Reasoning Effort Calibration
 
+> **Ward Flow scope note (3 October 2026):** This reasoning-effort calibration guide applies to Codex sessions working in `BigSimmo/Ward-Flow` alongside [`AGENTS.md`](../../AGENTS.md). References in the table below to Supabase migrations/RLS, RAG ranking surfaces, ingestion contracts, and the one-composer rule are inherited PsychSift examples; in Ward Flow, apply the `xhigh`/`high` tier to reducer state transitions, persistence/privacy boundaries (`D-11`/`D-18`), WA Mental Health Act statutory boundaries (`D5`/`D-29`), and cross-cutting architecture.
+
 <!-- BEGIN:reasoning-effort-calibration -->
 
 # Reasoning effort calibration

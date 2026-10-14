@@ -13,18 +13,18 @@ verdict it names that document.
 
 ## The parts
 
-| Part                                                 | Covers                                                                                          |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [Overview](overview.md)                              | The whole thing on one page: sizes, how the pieces fit, known gaps (the original 25 Sept map)   |
-| [Engine](engine.md)                                  | Reducer, every event type, state shape, entities, persistence, the clock, adding an event       |
-| [Data and rules](data-and-rules.md)                  | Seeds, reference data, eligibility, referrals, catchment, legal clocks, capacity, all selectors |
-| [Routes, shell and shared UI](shell-and-shared.md)   | All 42 routes and redirects, the layout chain, rail, top bar, navigation, shared UI pieces      |
-| [Screens A](screens-a.md)                            | Coordinator, ED, ward, referrals, community, search, statistics                                 |
-| [Screens B](screens-b.md)                            | Board, capacity, movements, delays, handover, patients, alerts and the rest                     |
-| [Tests](tests.md)                                    | Every ward test file, how the suites run, which tests to run for a change                       |
-| [Scripts and tooling](scripts-and-tooling.md)        | Every script, generator, check, git hook and npm script; fold gates in order                    |
-| [Docs and mockups](docs-and-mockups.md)              | Dated 25 September inventory of documents/drawings; its classifications are historical          |
-| [Former frame and PsychSift](frame-and-psychsift.md) | Historical extraction context; verify current shared imports in this repository                 |
+| Part                                                 | Covers                                                                                                                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Overview](overview.md)                              | The whole thing on one page: sizes, how the pieces fit, known gaps (the original 25 Sept map)                                                                                                    |
+| [Engine](engine.md)                                  | Reducer, every event type, state shape, entities, persistence, the clock, adding an event                                                                                                        |
+| [Data and rules](data-and-rules.md)                  | Seeds, reference data, eligibility, referrals, catchment, legal clocks, capacity, all selectors                                                                                                  |
+| [Routes, shell and shared UI](shell-and-shared.md)   | All 50 routes under `/mockups/ward-flow/*` (52 total including sign-in and digest, plus `/` redirect), the layout chain, rail, top bar, navigation, shared UI pieces, and `src/components/wf/**` |
+| [Screens A](screens-a.md)                            | Coordinator (`/` and `/command`), ED (`/ed`, `/ed/[edId]`), ward, referrals, community, search, statistics (12 routes), reports (`/reports/chronology`, `/reports/downtime`)                     |
+| [Screens B](screens-b.md)                            | Board, capacity, movements, delays, handover, patients, alerts and the rest                                                                                                                      |
+| [Tests](tests.md)                                    | Every ward test file, how the suites run, which tests to run for a change                                                                                                                        |
+| [Scripts and tooling](scripts-and-tooling.md)        | Every script, generator, check, git hook and npm script; fold gates in order                                                                                                                     |
+| [Docs and mockups](docs-and-mockups.md)              | Dated 25 September inventory of documents/drawings; its classifications are historical                                                                                                           |
+| [Former frame and PsychSift](frame-and-psychsift.md) | Historical extraction context; verify current shared imports in this repository                                                                                                                  |
 
 ## Key concepts in ten lines
 
@@ -76,7 +76,7 @@ Work in a separate worktree from the current `BigSimmo/Ward-Flow` `main`, follow
 the checkout and remote before changing or running anything.
 
 ```bash
-npm run ward:dev                                  # organisation check, then prints the local URL
+npm run ensure                                    # start or verify local server and print the URL
 node scripts/ward-flow/serve-mockups.mjs          # serve the drawings (never double-click them)
 node scripts/run-vitest.mjs <files>               # focused tests: your files + up to 3 direct importers
 node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit

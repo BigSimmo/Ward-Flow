@@ -1,5 +1,11 @@
 # Ward Flow Phases 6 and 7 — decisions taken before design
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md). Active owner rulings are maintained in [`docs/ward-flow/decisions.md`](ward-flow/decisions.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Recorded 2026-08-27.** These are the product owner's answers to the questions that had to be
 settled before Phases 6 and 7 could be specified. They were given in conversation, and this file
 exists so they survive it — the recurring failure in this project is a decision that lived only in
@@ -559,3 +565,5 @@ is still a confirmed bed. Nothing on screen adds them and every comment and test
 remove** — a blocked bed vanishing from the confirmed count, so the ward's figures improve at the
 moment it is stuck. Recorded here because "make the numbers add up" is a plausible-sounding change
 that a future reader might make without knowing what it would undo.
+
+<!-- docs-script-refs:historical-end -->

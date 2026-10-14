@@ -1,5 +1,11 @@
 # Building on deferred answers
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md). Active owner rulings and open questions are tracked in [`docs/ward-flow/decisions.md`](ward-flow/decisions.md) and [`docs/ward-flow/OPEN-QUESTIONS.md`](ward-flow/OPEN-QUESTIONS.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Owner's ruling, 2026-08-30:** _"Please defer these. Do your best for now to build what's there
 knowing that it is liable to change and also ensuring any change is easy to do in the future."_
 
@@ -362,3 +368,5 @@ text re-enters a system that removed it on purpose. It stays a bare option.
 **It also breaks the list's setting-shaped rule by construction** — every other entry says what the
 CURRENT SETTING cannot do. That is not an oversight: a none-of-these that described a setting would
 be making exactly the claim it exists to avoid.
+
+<!-- docs-script-refs:historical-end -->

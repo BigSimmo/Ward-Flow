@@ -1,5 +1,11 @@
 # Ward Flow — start here (2026-09-16, 16:05)
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../../AGENTS.md), [`docs/ward-flow/README.md`](../README.md), [`docs/ward-flow/STATUS.md`](../STATUS.md), and [`design/v9/design-system-v9.md`](../../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/README.md`.** Kept for history; do not follow. Its instruction not to build against the fourteen replaced drawings is retired: the drawings committed at HEAD are the design (see `docs/ward-flow/STATUS.md`). Its §1 clashes and §6 questions are answered in `docs/ward-flow/owner-answers-2026-09-17.md`.
 
 **For a new chat working in `D:\Worktrees\Database\ward-lead`. Checked against HEAD `9839ddec4d`
@@ -199,3 +205,5 @@ the restyle "Ok go" — were then opened and confirmed by hand at 16:05 against 
 
 **No test or gate was run.** This folder was still being committed to while it was checked. Re-check any
 figure before relying on it.
+
+<!-- docs-script-refs:historical-end -->

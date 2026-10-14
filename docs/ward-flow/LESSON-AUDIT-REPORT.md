@@ -1,5 +1,11 @@
 # Automated Lesson Store Audit Report
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > **Audited 160 lessons from `C:\Users\joshs\.claude\projects\D--Repos-Database\memory`**
 > Generated on 2026-09-13T05:54:03.908Z
 
@@ -52,3 +58,5 @@ Verifying that all known opposing guidance axes carry explicit domain/boundary q
 - ✅ **Ban Everywhere vs Scope to False States**: Domain boundaries explicitly declared across involved files.
 - ✅ **File Pointers vs Plain Brief Prose**: Domain boundaries explicitly declared across involved files.
 - ✅ **Pin SHA vs Never Pin SHA**: Domain boundaries explicitly declared across involved files.
+
+<!-- docs-script-refs:historical-end -->

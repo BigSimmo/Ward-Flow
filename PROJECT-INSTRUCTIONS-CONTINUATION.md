@@ -23,9 +23,13 @@ for Ward Flow. The `Run PR` sweep is disabled here until a Ward Flow specific wo
 | Button and route wiring, the bundle budget                                                                                | [`docs/agents/wiring-and-bundle-budget.md`](docs/agents/wiring-and-bundle-budget.md)             |
 | External skill precedence, evidence and calibration                                                                       | [`docs/agents/external-skill-precedence.md`](docs/agents/external-skill-precedence.md)           |
 | Deleting code you believe is dead                                                                                         | [`docs/agents/dead-code-deletion.md`](docs/agents/dead-code-deletion.md)                         |
+| Deleting tests, or letting a tool delete them for you                                                                     | [`docs/agents/test-deletion-guard.md`](docs/agents/test-deletion-guard.md)                       |
 | Claude Code hook scripts                                                                                                  | [`docs/agents/claude-hook-scripts.md`](docs/agents/claude-hook-scripts.md)                       |
+| Codex Desktop worktree setup                                                                                              | [`docs/agents/codex-desktop-worktree-setup.md`](docs/agents/codex-desktop-worktree-setup.md)     |
+| Codex reasoning effort calibration                                                                                        | [`docs/agents/codex-reasoning-effort.md`](docs/agents/codex-reasoning-effort.md)                 |
 | The `bug-hunter` shortcut                                                                                                 | [`docs/agents/bug-hunter-shortcut.md`](docs/agents/bug-hunter-shortcut.md)                       |
 | Repository skills                                                                                                         | [`docs/agents/repository-skills-and-issues.md`](docs/agents/repository-skills-and-issues.md)     |
+| Figma sync and Ward Flow design token alignment                                                                           | [`docs/agents/figma-sync.md`](docs/agents/figma-sync.md)                                         |
 | Codex dependency, review throttling, desktop worktree, reasoning effort, productivity, GitHub review, Cloud; Cursor Cloud | the `docs/agents/codex-*.md` and `docs/agents/cursor-cloud.md` pointers below and in `AGENTS.md` |
 
 Some headings remain for existing policy checks, including `## Bare PR publication is not readiness work`,
@@ -45,7 +49,7 @@ For the `upload` safe Git handoff workflow — protected branches, required insp
 
 ## Open PR branch sync (anti-churn)
 
-Inherited PsychSift PR branch sync and sweep automation are retired for Ward Flow.
+Inherited PsychSift automatic PR branch sync and sweep workflows are retired for Ward Flow: do not run opportunistic background PR sweeps. Explicit operator opt-in remains available when requested by the owner (`npm run sync:pr-branches` for a dry-run report; `npm run sync:pr-branches:apply` with explicit human/operator confirmation, as noted under `### Operator sync (explicit only)` below).
 <!-- END:pr-branch-sync -->
 
 ## Run PR and Babysit shortcuts

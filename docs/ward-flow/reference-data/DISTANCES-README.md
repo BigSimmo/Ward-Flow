@@ -1,24 +1,26 @@
 # Distances — 2026-09-17, completed and repaired 2026-09-18
 
-**Method:** Nominatim geocode (AU) + OSRM public driving router
-**Filled:** 468 directed pairs
-**Geocoded points:** 19
+**Repository:** `BigSimmo/Ward-Flow` (`docs/ward-flow/reference-data/distances.json`, also referred to as `wa_site_distances_km.json`)  
+**Method:** Nominatim geocode (AU) + OSRM public driving router  
+**Filled:** **468 verified directed site-pair entries** (superseding the earlier 4 null stubs and 186-pair / 434-pair passes)  
+**Geocoded points:** 19  
 **Outstanding:** 0
 
-## Caveats
+## Caveats & runtime compilation
 
 - Indicative OSM/OSRM road distance/time — **not** live traffic, peak, or clinical ETA
 - ED pin = hospital campus
-- Approvals remain **false** on every row
-- Tip `TRAVEL_BANDS_ARE_INVENTED` unchanged (no Phase 6)
+- Approvals remain **false** on every row (`operational_use_approved=false`, `automatic_routing_approved=false`)
+- `scripts/ward-flow/build-reference-distances.mjs` (`npm run ward:reference:build`, checked by `npm run check:ward-reference`) compiles all **468 verified site-pair entries** into `src/components/ward-management/reference/ward-reference-distances.ts` (`src/lib/ward-flow/ward-reference-distances.ts`), which is imported by the Ward Flow runtime (`src/components/ward-management/` / `src/lib/ward-flow/`) alongside `ward-reference-registry.ts` (`scripts/ward-flow/build-reference-registry.mjs`)
+- Regional home-region travel bands in `ward-travel-bands.ts` remain `TRAVEL_BANDS_ARE_INVENTED = true` because the 468 verified pairs are metropolitan-only
 - Values are directional and routed each way separately, not mirrored, so small real
   asymmetries survive (Cockburn→RPH 22.98 km against RPH→Cockburn 23.39 km)
 
 ## Coverage
 
-All public metro EDs in the register (including KEMH, PCH and Midland) ↔ metro adult acute,
+All public metro EDs in the register (10 public EDs in `ward-sites.ts`, including specialist EDs `KEMH`, `PCH`, and `Midland`) ↔ metro adult acute,
 plus Graylands, Bentley, Fremantle, Mount Lawley and Cockburn; site↔site among acute. Private
-Hollywood and SJOG Murdoch EDs included.
+Hollywood and SJOG Murdoch EDs included in the 12-ED reference register. Runtime `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) models **10 public EDs** and **13 runtime inpatient units (266 operational beds)** vs **279 reference-pack beds** (which include the 13-bed `SCGH-MHOA` observation area).
 
 Cockburn has no emergency department (WF-20), so it appears only as a destination — there are
 no `ed-cock__*` pairs and their absence is correct, not a gap.

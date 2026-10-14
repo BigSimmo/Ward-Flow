@@ -10,6 +10,11 @@ numbers, locked beds, single-sex or mixed, authorisation for involuntary patient
 ward line at 00d72ca371. When a site answers, change `ward-sites.ts` in its own reviewed branch
 and tick the line here.
 
+> [!NOTE]
+> The default `STANDARD_WARD_SITES` network contains 23 inpatient units and 304 synthetic/sample
+> beds. These are not gazetted capacities: the runtime fixture does not import bed counts from
+> the external reference pack (`docs/ward-flow/reference-data/capacity_assertions.json`).
+
 Already settled, so not asked again: Broome's Mabu Liyan is not forensic (owner ruling 1A,
 25 Sept 2026), and CAHS includes Perth Children's.
 

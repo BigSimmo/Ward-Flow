@@ -23,6 +23,8 @@ else is derived from it.
 
 ## The command
 
+> **Clinical vs Worktree Role Note:** In clinical user documentation, the primary user role is **Bed Flow Coordinator** (with _"Psychiatric Bed Manager"_ used only as an informal synonym; see [`product-brief.md`](product-brief.md)). The `whois.mjs` command below tracks _agent worktree_ roles.
+
 ```bash
 node scripts/ward-flow/whois.mjs          # every ward worktree, who claims it, and what git says
 node scripts/ward-flow/whois.mjs lead     # filter by role or by path fragment

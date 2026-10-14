@@ -1,10 +1,10 @@
 /*
- * Ward Flow design system v6 tokens (approved 7 October 2026). Synthetic prototype.
- * Source: the v6 token sheet and spec, design/v6/ward-flow-v6.css and design-system-v6.md in the
- * project files. Day values sit on :root and .day. Night values follow the Appearance control the same way the shell
- * tokens do: :root[data-theme="dark"], or a dark OS unless data-theme="light". .night and .day
- * force a theme on a subtree. Components read these through CSS
- * Modules in src/components/wf/. Never hard-code a colour, radius or shadow beside them.
+ * Ward Flow design system base tokens (v6 baseline approved 7 October 2026; superseded and overridden by
+ * `src/app/ward-flow-v9-tokens.css` per `design/v9/design-system-v9.md`, Sections 8–14). Synthetic prototype.
+ * Note: there is no committed `design/v6/design-system-v6.md` or `design/v10/` directory in this repository;
+ * `design/v9/design-system-v9.md` is the active written specification. Day values sit on :root and .day.
+ * Night values follow the Appearance control (:root[data-theme="dark"], or a dark OS unless data-theme="light").
+ * .night and .day force a theme on a subtree. Components read these through CSS Modules in `src/components/wf/`.
  */
 :root,
 .day {

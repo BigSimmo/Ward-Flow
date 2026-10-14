@@ -1,5 +1,7 @@
 # Claude Code Hook Scripts
 
+> **Ward Flow scope note (3 October 2026):** `.claude/hooks/*.sh` and `tests/session-start-hook.test.ts` remain active in `BigSimmo/Ward-Flow`; always follow the repository boundary in [`AGENTS.md`](../../AGENTS.md). Historical PR numbers cited below (#1611, #1697, #1705, #1740) are from the earlier shared history.
+
 <!-- BEGIN:claude-hook-scripts -->
 
 # Claude Code hook scripts

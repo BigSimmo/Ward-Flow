@@ -1,5 +1,11 @@
 # PsychSift design system — COMPONENTS
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **The public component contracts, their local publication state, and the remaining
 specifications.** Prop shapes are normative contracts; token references are roles only —
 values live in the token files (see [TOKENS.md](TOKENS.md)).
@@ -1094,3 +1100,5 @@ This generated snapshot is a local source-derived inventory. It does not assert 
 | `VerificationNotice`     | answer   | yes   | yes                | inherited-global-root | yes            | no                 |               2 |
 
 <!-- adoption-manifest:maturity:end -->
+
+<!-- docs-script-refs:historical-end -->

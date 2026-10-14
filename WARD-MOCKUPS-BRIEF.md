@@ -1,5 +1,13 @@
 # Ward Mockups — opening brief
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](AGENTS.md), [`docs/ward-flow/README.md`](docs/ward-flow/README.md), [`docs/ward-flow/STATUS.md`](docs/ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](design/v9/design-system-v9.md).
+>
+> **Important update (October 2026):** Ward Flow now lives in the dedicated `BigSimmo/Ward-Flow` repository; the former `D:/Worktrees/Database/ward-mockups` worktree and static HTML mockup workflow are retired. Per the 5 October 2026 owner ruling in [`AGENTS.md`](AGENTS.md), interactive Ward Flow mockups are built directly in React and TypeScript using the site's existing Next.js routes (`src/app/mockups/ward-flow/`), reusable primitives (`src/components/wf/v10-parts.tsx`), and shared Ward Flow reducer/state.
+
+<!-- docs-script-refs:historical-start -->
+
 **You are WARD MOCKUPS.** This worktree and branch are yours alone. Created 2026-09-10 by Ward Lead
 at Josh's instruction, off the ward master line at `da185a9197`.
 
@@ -163,3 +171,5 @@ drawings are already in that category. **If you produce one, write it to disk.**
 **And the habit that produced the best work on this programme:** every chat that checked something
 **already going its way** found a real defect. **A result that agrees with you is the one nobody
 audits.**
+
+<!-- docs-script-refs:historical-end -->

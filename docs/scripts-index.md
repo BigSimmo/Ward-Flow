@@ -5,11 +5,21 @@
 
 # Ward Flow scripts inventory
 
-Curated map of `scripts/` (162 files) and the `package.json` script surface (118 entries),
+Curated map of `scripts/` (165 files) and the `package.json` script surface (121 entries),
 with a maintained generated count header and a historical catalogue below. The current
 command surface is `package.json`. `npm run docs:check-inventory` checks the declared counts
 with the existing tolerance; `npm run docs:check-scripts` checks maintained command references,
 excluding marked historical sections. Neither check establishes semantic freshness.
+
+## Active Ward Flow documentation & organisation scripts
+
+| Command / Script                                                                                                  | Purpose                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`)                     | Regenerate all derived Ward Flow and repository indexes (`OWNER-RULINGS.md`, `SCREEN-MAP.md`, `MANIFEST.json`, `SCREEN-VERIFICATION.md`, `RULES.md`, `<git-dir>/ward-organisation/ORGANISATION.md`, `scripts-index.md`, `site-map.md`), update `pack_manifest.json` SHA-256 digests, and run all 7 documentation & organisation gates |
+| `npm run docs:maintain:check` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --check`)               | Verify all generated indexes, `pack_manifest.json` digests, file organisation (`registry.json`), and all 7 documentation integrity gates without writing                                                                                                                                                                              |
+| `npm run ward:classify -- <path>` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>`) | Classify any existing or proposed file path against `docs/ward-flow/organisation/registry.json` and recommend the canonical folder and naming convention when unregistered                                                                                                                                                            |
+| `npm run ensure` (`node scripts/ensure-local-server.mjs`)                                                         | Start or verify the local Ward Flow server and print its project-verified URL                                                                                                                                                                                                                                                         |
+| `npm run verify:pr-local` (`node scripts/verify-pr-local.mjs`)                                                    | Run the public Ward Flow pre-push verification gate                                                                                                                                                                                                                                                                                   |
 
 <!-- docs-script-refs:historical-start -->
 

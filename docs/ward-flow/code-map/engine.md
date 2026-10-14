@@ -35,12 +35,21 @@ when unavailable). `public/ward-flow-push-sw.js` shows the notification and open
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
 
-## Current remediation seams — 8 October 2026
+## Current remediation seams — 8–14 October 2026
 
 The original map below is historical; its line numbers and earlier counts are not current.
-This task integrates canonical main `0bbcd34` and locally tested remediation. The current
-`WardFlowEvent` union has 100 discriminants, including `UPDATE_EXPECTED_DISCHARGE` and
-`RECORD_ED_MEDICAL_DETERIORATION`. All events retain role, audit/history, stage and
+This task integrates canonical main and locally tested remediation. As of 14 October 2026,
+`src/components/ward-management/ward-flow-events.ts` and `EVENT_ROLE` define **127**
+`WardFlowEvent` variants (the 97 baseline variants from the 25 September 2026 extraction
+pass catalogued in §2 below, minus the removed `OVERRIDE_LEGAL_MISMATCH`, plus 31 variants
+added across the October passes: 18 named variants (`RECORD_ADMISSION_FOLLOW_UP`,
+`RECORD_ADMISSION_CARE`, `RECORD_ED_MEDICAL_DETERIORATION`,
+`RECORD_ABSENT_WITHOUT_LEAVE`, `RECORD_ABSENCE_STEP`, `RECORD_COMMUNITY_TREATMENT_ORDER`,
+`END_COMMUNITY_TREATMENT_ORDER`, `TAKE_INBOX_ITEM_OWNERSHIP`, `SNOOZE_INBOX_ITEM`,
+`UNSNOOZE_INBOX_ITEM`, `RAISE_PULL_NOW`, `REPLY_BROADCAST_ALERT`,
+`BOOK_PLANNED_ADMISSION`, `CHANGE_PLANNED_ADMISSION`, `CANCEL_PLANNED_ADMISSION`,
+`CONVERT_PLANNED_ADMISSION`, `RECORD_SUPPORT_NOTIFICATION`, `PLACE_IN_BED`) and 13
+`UNDO_*` events). All events retain role, audit/history, stage and
 persistence classifications. D-34 is an explicit originating-ED, pre-collection action:
 release the held admission, cancel uncollected transport, clear placement acceptance and
 pause until a later clinician clearance. Re-clearance requires a new placement, never
@@ -69,7 +78,7 @@ Final boundary repairs: protected departures use the approved scoped projection;
 
 ## WA remediation update — 3 October 2026
 
-The current event union has **98** types. `RECORD_ADMISSION_CARE` uses identity, generation, revision and explicit ward/community scope checks; its closed changes cover planning, documents, appointments, current-appointment contacts, coding, episode type, transport, transfers and recorded legal paperwork. Transfer arrival changes sending and receiving occupancy atomically. The provider now dispatches protected patient-linked departures. Movement workflow controls expose the nine formerly unexposed operational/legal commands. Ward requests use closed synthetic messages. Audit, history, restore validation and persistence classification include the care command.
+At the 3 October 2026 pass the event union had 98 types (now **127** on disk as of 14 October 2026). `RECORD_ADMISSION_CARE` uses identity, generation, revision and explicit ward/community scope checks; its closed changes cover planning, documents, appointments, current-appointment contacts, coding, episode type, transport, transfers and recorded legal paperwork. Transfer arrival changes sending and receiving occupancy atomically. The provider now dispatches protected patient-linked departures. Movement workflow controls expose the nine formerly unexposed operational/legal commands. Ward requests use closed synthetic messages. Audit, history, restore validation and persistence classification include the care command.
 
 The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
 
@@ -77,7 +86,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 `RECORD_ADMISSION_FOLLOW_UP` records a fixed arrangement state for a uniquely linked occupied/departed admission. It uses the protected role/scope/identity/generation/revision boundary, advances the discharge revision, appends typed before/requested/after audit facts and is classified as a text-safe event. Deaths and unoccupied stays are excluded. Both departure commands validate the shared destination vocabulary and arrival time, and resolve the current admission's movement before considering an unlinked open fallback. Stored admissions now validate destination membership. See the [WA comparison and pathway report](../reports/wa-health-pathway-audit-2026-10-03.md).
 
-Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
+Read-only baseline map below, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers the thirteen
 engine files under `src/components/ward-management/`: `ward-flow-reducer.ts`,
 `ward-flow-events.ts`, `ward-model.ts`, `ward-flow-provider.tsx`,
@@ -87,7 +96,7 @@ engine files under `src/components/ward-management/`: `ward-flow-reducer.ts`,
 number below was read directly from `ward-flow-reducer.ts` (not inferred), grouped across four
 read-only extraction passes (Sonnet, extraction) whose output this document assembles and whose
 line numbers this document's own author re-checked against the file's `case "TYPE":` labels by
-`grep`. The event-type count (97) and the `EVENT_ROLE` table were read from
+`grep`. The baseline event-type count (97 at 25 September 2026; **127** on disk as of 14 October 2026) and the `EVENT_ROLE` table were read from
 `ward-flow-events.ts` directly, not carried over from the overview map. Nothing was run except
 reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 
@@ -95,11 +104,11 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 
 ## 1. Files
 
-- **`ward-flow-reducer.ts`** (8,741 lines) — the whole engine's write path: `WardFlowState`,
+- **`ward-flow-reducer.ts`** (8,741 lines at baseline) — the whole engine's write path: `WardFlowState`,
   `wardFlowReducer(state, event)`, `seedWardFlowState`/`seedWardFlowStateAt`, and every event's
-  guard-and-effect case. See §1a for its internal structure and §2 for the full event catalogue.
-- **`ward-flow-events.ts`** (2,452 lines) — declares the `WardFlowEvent` discriminated union (97
-  variants, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
+  guard-and-effect case. See §1a for its internal structure and §2 for the event catalogue.
+- **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**127**
+  variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
   first. Also declares `ReferralDraft` (the intake form's shape) and re-exports `WardFlowRole`/
   `WARD_FLOW_ROLE_LABELS` from `ward-flow-roles.ts`. Heavily commented — most of the file is
@@ -207,8 +216,9 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   `reduceClinicalEvent`, then (for `RESET_SCENARIO`/`SET_SCENARIO`) bumps `worldGeneration` only
   if the world actually changed reference (guards against a rejected reset silently incrementing
   generation), then always calls `appendAudit`.
-- **`reduceClinicalEvent(state, event, decision)`** (`:1733`) — the guard chain and the 97-case
-  `switch (event.type)` documented in full in §2. Guard order: **(1) role** — `EVENT_ROLE[type]`
+- **`reduceClinicalEvent(state, event, decision)`** (`:1733`) — the guard chain and the
+  `switch (event.type)` documented in §2 (97 cases in the 25 September 2026 baseline below; **127**
+  `WardFlowEvent` variants on disk as of 14 October 2026). Guard order: **(1) role** — `EVENT_ROLE[type]`
   checked before any payload field is read (`:1734`–`:1743`); **(2)** each case's own domain
   guards (record exists, not closed, stage/state correct, reason/code is a member of its closed
   list, actor's claimed `actingUnitId`/`actingPlaceId` matches the record) — see §2 for what each
@@ -221,10 +231,10 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 
 ## 2. Event catalogue
 
-**97 event types** (`grep -c '^\s*case "[A-Z_]+":' ` on `reduceClinicalEvent`'s switch, matching
-`EVENT_ROLE`'s 97 keys exactly — re-checked, not inferred from the overview map, which cites 148
-case labels; that figure counts every `case` in the whole file, including the unrelated
-`subjectId` switch at `:700`, which alone accounts for most of the difference). Grouped by domain
+**127 event types on disk as of 14 October 2026; 97 baseline event types catalogued below**
+(`grep -Ec '^[[:space:]]*case "[A-Z_]+":'` on `reduceClinicalEvent`'s switch at the 25 September 2026
+baseline, matching `EVENT_ROLE`'s 97 baseline keys — see the 8–14 October header above for the
+31 variants added since and the removal of `OVERRIDE_LEGAL_MISMATCH`). Grouped by domain
 below. Each line: **role list** (from `EVENT_ROLE`), **effect** on success, **main guards**, and
 the **reducer case's line number**. "Closure" means `movement.closure` is set (stage becomes
 terminal); "open" means no closure yet.
@@ -445,7 +455,7 @@ terminal); "open" means no closure yet.
   "None — cleared" sentinel. Guards: movement exists, open; refused as a no-op if already one of
   `BLOCKERS_MEANING_NOTHING_IS_BLOCKING`. Case at `:4915`.
 
-### 2.4 Legal status and forms (11)
+### 2.4 Legal status and forms (10)
 
 - **`CHANGE_LEGAL_STATUS`** — roles: `coordinator`, `ed`. Effect: sets `movement.legalStatus`,
   appends to `statusChanges`; deliberately never reacts to a resulting unlawful placement. Guards:
@@ -481,11 +491,10 @@ terminal); "open" means no closure yet.
   be exactly `voluntary_48h`/`involuntary_7d`. Case at `:8405`.
 - **`FLAG_LEGAL_MISMATCH`** — roles: `ward`, `coordinator`. Effect: sets
   `movement.legalMismatch` to `{at, unitId, kind}` (kind derived from unit/legal-status rules, or
-  the event's supplied kind). Guards: movement exists; unit exists. Case at `:8422`.
-- **`OVERRIDE_LEGAL_MISMATCH`** — roles: `coordinator`, `ward`. Effect: sets
-  `movement.legalMismatch.overridden = true` and records `overrideReason`. Guards: movement
-  exists, has an existing `legalMismatch`; `overrideReason` in `OVERRIDE_REASONS`. Case at
-  `:8442`.
+  the event's supplied kind). Guards: movement exists; unit exists. Case at `:8422`. (Note: the
+  former `OVERRIDE_LEGAL_MISMATCH` event was removed per `D-16` — legal/authorisation mismatches
+  are non-overridable, and `OverridableWardFlowEvent` covers only `REFER_TO_UNITS |
+ACCEPT_IN_PRINCIPLE | PULL_PATIENT | ACCEPT_REFERRAL`.)
 
 ### 2.5 Capacity and bed release (15)
 

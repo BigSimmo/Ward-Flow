@@ -1,5 +1,8 @@
 # Supabase and Azure presets
 
+> [!IMPORTANT]
+> **Repository & Data Boundary:** Project `zakzoemeedfepxcstsou` is a **dedicated, isolated Ward Flow synthetic-only Supabase project**. **PsychSift's Supabase project, database, and credentials must never be used in Ward Flow.** Ward Flow's optional shared workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`) operates exclusively on **100% synthetic data** — zero real patient information (PII/PHI) is permitted.
+
 Ward Flow retains its Azure PostgreSQL/Entra preset and adds an approved Supabase PostgreSQL/Auth preset. Database selectors (`azure`, `supabase`, `postgres`) and identity selectors (`entra`, `supabase`) are independent. Omitted selectors retain Azure/Entra compatibility. The shared engine, `/v1/workspace` paths, snapshots, command receipts, immutable audit and revision conflicts are the same. All data remains synthetic.
 
 Shared mode is opt-in through backend `WARD_SHARED_ENABLED=true` and browser `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`. The synthetic offline demo remains available when browser shared mode is off. Push stays off by default.

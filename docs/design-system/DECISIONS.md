@@ -1,5 +1,11 @@
 # PsychSift design system — DECISIONS
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **The six conflicts resolved — what was chosen, what was rejected, and why — plus the
 clinical Q&A that shaped the component specs, the assumptions register, and the blocked
 list.**
@@ -340,3 +346,5 @@ design-token contract's no-arbitrary-leading rule on the branch tip. Now the nam
    opaque Canvas · the six now-landed paths removed from the docs-link allowlist per their
    own remove-after-merge note. Remaining design-app step unchanged: one real
    `/design-sync` run (guidelines index + `_ds_needs_recompile`).
+
+<!-- docs-script-refs:historical-end -->

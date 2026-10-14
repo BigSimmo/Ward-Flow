@@ -1,5 +1,11 @@
 # Ward Flow — how the three chats work together
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+
+<!-- docs-script-refs:historical-start -->
+
 > [!NOTE]
 > **SUPERSEDED — 2026-09-28.**
 > This document was written on 2026-09-01 for a local three-chat arrangement in `D:/Worktrees/Database/`.
@@ -509,3 +515,5 @@ real negative.**
 **Because of limit 2 the answer was captured to a file rather than left as a command:**
 `docs/ward-flow/archive/dated-notes/commit-attribution-2026-09-06.md` and its `.tsv`. **The reflog answers the question
 today; it is not an archive.**
+
+<!-- docs-script-refs:historical-end -->

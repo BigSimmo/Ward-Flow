@@ -77,21 +77,34 @@ nothing said so.
 
 ## Imports, modules and architecture boundaries
 
-| You would search for                                                                                                   | It is called                                                                           | Where             |
-| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------- |
-| import graph · who imports this · module resolver · is this file reachable · dead file · `"use client"` · RSC boundary | `runtimeGraph`, `resolveModule`, `moduleSpecifiersFromSource`, `hasUseClientDirective` | `module-graph.ts` |
+| You would search for                                                                                                   | It is called                                                                           | Where                     |
+| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------- |
+| import graph · who imports this · module resolver · is this file reachable · dead file · `"use client"` · RSC boundary | `runtimeGraph`, `resolveModule`, `moduleSpecifiersFromSource`, `hasUseClientDirective` | `module-graph.ts`         |
+| Ward Flow import graph · Ward module specifiers · transitive imports under `ward-management`                           | `wardModuleSpecifiers`, `collectWardModuleGraph`                                       | `ward-module-graph.ts`    |
+| dead-end routes · broken `href` in Ward Flow · scan `src/app` routes · orphan link check                               | `scanAppRoutes`, `hrefResolvesToRoute`, `scanWardFlowRoutes`, `escapeRegex`            | `ward-dead-end-routes.ts` |
 
 **One resolver, deliberately.** Two that drift apart are worse than one — a boundary guard is only as
 trustworthy as its agreement with the other guard reading the same graph.
 
 ## Ward Flow
 
-| You would search for                                                                                                            | It is called                                                        | Where                      |
-| ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------- |
-| qualifying caption · the sentence under a figure · does this screen say · assert wording · retired wording must never come back | `expectSays`, `expectCaption`, `expectNeverSaysAgain`, `screenText` | `ward-caption.ts`          |
-| place-name leak · hospital name · FD-23 privacy · does this text name a real ward                                               | `namesRealPlace`, `escapeForRegExp`                                 | `ward-place-names.ts`      |
-| capacity ward table · network table · open the Table layout · bed map Table view                                                | `showWardTable`                                                     | `capacity-ward-table.ts`   |
-| referral history character limit · free-text cap · one character too long · boundary fixture                                    | `FIXTURE_HISTORY`, `oneCharacterTooLong`, `exactlyAtTheLimit`       | `ward-referral-history.ts` |
+| You would search for                                                                                                            | It is called                                                                    | Where                           |
+| ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------- |
+| qualifying caption · the sentence under a figure · does this screen say · assert wording · retired wording must never come back | `expectSays`, `expectCaption`, `expectNeverSaysAgain`, `screenText`             | `ward-caption.ts`               |
+| place-name leak · hospital name · FD-23 privacy · does this text name a real ward                                               | `namesRealPlace`, `escapeForRegExp`                                             | `ward-place-names.ts`           |
+| capacity ward table · network table · open the Table layout · bed map Table view                                                | `showWardTable`                                                                 | `capacity-ward-table.ts`        |
+| referral history character limit · free-text cap · one character too long · boundary fixture                                    | `FIXTURE_HISTORY`, `oneCharacterTooLong`, `exactlyAtTheLimit`                   | `ward-referral-history.ts`      |
+| delays screen interactions · render all delays · expand every delay row · open delay person drawer                              | `renderAllDelays`, `showEveryDelayRow`, `inspectDelayPerson`                    | `delays-interactions.tsx`       |
+| ED inbox referral fixture · raise into movement form · open ED raise-into-movement panel                                        | `EdInboxReferralFixture`, `openRaiseIntoMovementForm`                           | `ed-raise-into-movement.tsx`    |
+| referral drawer sample person · pick a synthetic referral person for drawer tests                                               | `chooseSampleReferralPerson`                                                    | `referral-drawer-person.ts`     |
+| statistics screen presentation · assert statistics figures and qualifying captions                                              | `assertStatisticsPresentation`                                                  | `statistics-presentation.tsx`   |
+| invented clinical figures · figure provenance guard · does a number state its own provenance                                    | `statesItsOwnProvenance`, `provenanceFailure`                                   | `ward-invented-figures.ts`      |
+| legal figure provenance sweep · `dueAt` / Mental Health Act statutory deadline guard sweep                                      | `runLegalFigureProvenanceSweep`                                                 | `ward-legal-figure-sweep.ts`    |
+| made-up forensic ward fixture · Broome forensic test fixture · inject synthetic forensic unit                                   | `madeUpForensicWard`, `withMadeUpForensicWard`, `markBroomeForensicForThisFile` | `ward-made-up-forensic-ward.ts` |
+| ward screen panel order · list section/panel headings in DOM order                                                              | `panelTitlesInOrder`                                                            | `ward-panels.ts`                |
+| reducer refusal/reason checks · scan `ward-flow-reducer.ts` for required reason guards                                          | `scanReducerReasonChecks`                                                       | `ward-reducer-reason-checks.ts` |
+
+> **Note on retired or elsewhere-located test utilities:** If you are searching for older PsychSift or environment preload helpers (`dom-environment-preload.ts`, `next-Config-Eval.ts`, `node-test-env.ts`, `playwright-route-contracts.ts`, `source-scan-cache.ts`, `ward-accessibility-axe.ts`, `ward-flow-test-fixtures.ts`, `ward-screen-render.tsx`), they are not separate files under `tests/helpers/`; check `tests/setup.ts`, `src/components/ward-management/ward-flow-fixtures.ts`, and `vitest.config.ts`.
 
 🔴 **`ward-caption.ts` exists because pinning a sentence pins the RENDERING, not the truth.**
 `expect(text).toContain("…")` passes for any string containing those words — including one whose

@@ -11,10 +11,14 @@
   ],
   "roots": [
     "src/components/ward-management/**",
+    "src/components/wf/**",
     "src/app/mockups/ward-flow/**",
+    "src/app/ward-flow-v*-tokens.css",
+    "src/app/ward-flow-shell-tokens.module.css",
     "src/components/ward-flow-sign-in/**",
     "src/app/mockups/ward-flow-sign-in/**",
     "src/app/mockups/ward-flow-digest/**",
+    "design/**",
     "docs/ward-flow/**",
     "docs/ward-*.md",
     "docs/superpowers/plans/*ward-*",
@@ -100,6 +104,56 @@
       "module": "ward-flow",
       "reference": "docs/ward-flow-task-ledger.md",
       "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-v9-primitives",
+      "pattern": "src/components/wf/**",
+      "priority": 5,
+      "owner": "ward-flow",
+      "system": "behaviour",
+      "module": "design-system",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex design-system and organisation sync, 2026-10-14"
+    },
+    {
+      "id": "ward-v9-tokens",
+      "pattern": "src/app/ward-flow-v*-tokens.css",
+      "priority": 5,
+      "owner": "ward-flow",
+      "system": "behaviour",
+      "module": "design-system",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex design-system and organisation sync, 2026-10-14"
+    },
+    {
+      "id": "ward-shell-tokens",
+      "pattern": "src/app/ward-flow-shell-tokens.module.css",
+      "priority": 5,
+      "owner": "ward-flow",
+      "system": "behaviour",
+      "module": "design-system",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex design-system and organisation sync, 2026-10-14"
+    },
+    {
+      "id": "ward-design-v9",
+      "pattern": "design/v9/**",
+      "priority": 10,
+      "owner": "ward-flow",
+      "system": "documentation-knowledge",
+      "module": "design",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex design-system and organisation sync, 2026-10-14"
+    },
+    {
+      "id": "ward-design-artifacts",
+      "pattern": "design/**",
+      "priority": 0,
+      "owner": "design-reference",
+      "system": null,
+      "module": "design",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex design-system and organisation sync, 2026-10-14"
     },
     {
       "id": "ward-routes",
@@ -712,9 +766,9 @@
     },
     {
       "id": "source-decisions",
-      "path": "docs/ward-flow-ledger.md",
+      "path": "docs/ward-flow/decisions.md",
       "reference": "docs/ward-flow-task-ledger.md",
-      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+      "reviewedBy": "Codex design-system and organisation sync, 2026-10-14"
     },
     {
       "id": "source-rulings",

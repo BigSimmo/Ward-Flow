@@ -1,5 +1,11 @@
 # The clinician check — questions to put to a ward clinician
 
+> **SUPERSEDED — Historical Archive**
+> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md). Active open questions are tracked in [`docs/ward-flow/OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md) and answered owner rulings are recorded in [`docs/ward-flow/decisions.md`](decisions.md).
+
+<!-- docs-script-refs:historical-start -->
+
 **Written 2026-09-06 at the owner's request.** The bed model has been revised twice and has
 never been shown to a ward clinician. These are the questions that would settle it.
 
@@ -88,3 +94,5 @@ Leave (usable).**
   the board, so it is one change in one place.
 - **"Instead of ringing"** → stop and re-scope. That is a different product with different
   obligations.
+
+<!-- docs-script-refs:historical-end -->

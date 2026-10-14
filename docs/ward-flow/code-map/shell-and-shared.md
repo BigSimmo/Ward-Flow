@@ -83,8 +83,7 @@ to read" (owner ruling, 10 September 2026).
 
 ### 1.2 Route table
 
-Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view. "Screen" is the
-component the page renders; its file is named once in §1.4 rather than repeated per row.
+Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (50 `page.tsx` routes under `/mockups/ward-flow/**` plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 routes** total). Shared design-system primitives in `src/components/wf/**` (`v10-parts.tsx`, labeled `"v10 sections 8 to 14"`, alongside `bar.tsx`, `rail.tsx`, `drawer.tsx`, `modal.tsx`, `toast.tsx`, `pill.tsx`, `kbd.tsx`, `avatar.tsx`, `stat.tsx`, `table.tsx`, `filter-chip.tsx`, `segmented.tsx`, `banner.tsx`, `sparkline.tsx`) implement Sections 8–14 of `design/v9/design-system-v9.md`. "Screen" is the component the page renders; its file is named once in §1.4 rather than repeated per row.
 
 | URL under `/mockups/ward-flow`    | Screen                                                                                          |
 | --------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -92,12 +91,13 @@ component the page renders; its file is named once in §1.4 rather than repeated
 | `/alerts`                         | `AlertsScreen`                                                                                  |
 | `/board/[unitId]`                 | `WardBoard`                                                                                     |
 | `/capacity`                       | `CapacityScreen`                                                                                |
+| `/command`                        | redirect → `/` (`/mockups/ward-flow`)                                                           |
 | `/community`                      | `CommunityIndex`                                                                                |
 | `/community/[teamId]`             | `CommunityScreen`                                                                               |
 | `/constellation`                  | redirect → `/network`                                                                           |
 | `/delays`                         | `DelaysScreen`                                                                                  |
 | `/discharges`                     | `DischargeBoard`                                                                                |
-| `/ed`                             | redirect → `/ed/fremantle-ed`                                                                   |
+| `/ed`                             | `EdIndex`                                                                                       |
 | `/ed/[edId]`                      | `EdScreen`                                                                                      |
 | `/escalation`                     | redirect → `/delays?from=escalation`                                                            |
 | `/exceptions`                     | redirect → `/delays?from=exceptions`                                                            |
@@ -106,7 +106,7 @@ component the page renders; its file is named once in §1.4 rather than repeated
 | `/hub`                            | `HubScreen`                                                                                     |
 | `/legal-forms`                    | `LegalFormsScreen`                                                                              |
 | `/movements`                      | `MovementsScreen`                                                                               |
-| `/movements/[movementId]`         | `WardPatientWorkspace` (or `WardMovementNotFound`)                                              |
+| `/movements/[movementId]`         | `PatientNowScreen` (or `WardMovementNotFound`)                                                  |
 | `/network`                        | `WardModeWorkspace` mode `"network"` → `WardNetworkWorkspace`                                   |
 | `/on-call`                        | `OnCallScreen`                                                                                  |
 | `/out-of-area`                    | `OutOfAreaBoard`                                                                                |
@@ -115,6 +115,8 @@ component the page renders; its file is named once in §1.4 rather than repeated
 | `/queue`                          | redirect → `/delays?from=queue`                                                                 |
 | `/referrals`                      | `ReferralBoard`                                                                                 |
 | `/referrals/new`                  | `ReferralBoard` with the referral slide-out open (`shell/ward-bar.tsx`)                         |
+| `/reports/chronology`             | `PatientChronologyScreen`                                                                       |
+| `/reports/downtime`               | `DowntimePackScreen`                                                                            |
 | `/search`                         | `PatientSearchPage`                                                                             |
 | `/settings`                       | `SettingsScreen`                                                                                |
 | `/sovereign`                      | `SovereignShowcaseScreen`                                                                       |
@@ -122,9 +124,14 @@ component the page renders; its file is named once in §1.4 rather than repeated
 | `/statistics/community/[teamId]`  | `StatisticsCommunityScreen`                                                                     |
 | `/statistics/compare`             | `StatisticsCompareScreen`                                                                       |
 | `/statistics/ed/[edId]`           | `StatisticsEdScreen`                                                                            |
+| `/statistics/eds`                 | `StatisticsEdsIndex`                                                                            |
 | `/statistics/overview`            | `StatisticsOverviewScreen`                                                                      |
 | `/statistics/service/[serviceId]` | `StatisticsServiceScreen`                                                                       |
+| `/statistics/services`            | `StatisticsServicesIndex`                                                                       |
+| `/statistics/teams`               | `StatisticsTeamsIndex`                                                                          |
 | `/statistics/ward/[unitId]`       | `StatisticsWardScreen`                                                                          |
+| `/statistics/wards`               | `StatisticsWardsIndex`                                                                          |
+| `/statistics/weekly`              | `WeeklyReportScreen`                                                                            |
 | `/transport`                      | redirect → `/movements`                                                                         |
 | `/transport/officer`              | `OfficerScreen`                                                                                 |
 | `/ward/[unitId]`                  | `WardScreen`                                                                                    |
@@ -135,20 +142,20 @@ component the page renders; its file is named once in §1.4 rather than repeated
 route handler (`GET`) that streams `docs/ward-flow/mockups/ward-flow-digest.html` back verbatim.
 
 **Six redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
-`constellation` → `/network`; `ed` → `/ed/fremantle-ed`; `escalation`, `exceptions`, `queue` → each
+`command` → `/mockups/ward-flow`; `constellation` → `/network`; `escalation`, `exceptions`, `queue` → each
 its own `/delays?from=<name>` (Delays reads that query param to show an alias banner); `transport` →
-`/movements`. `transport/officer` is a separate, nested route unaffected by the `transport` redirect.
+`/movements`. (`/ed` was formerly a redirect to `/ed/fremantle-ed` and now renders `EdIndex`.) `transport/officer` is a separate, nested route unaffected by the `transport` redirect.
 
 ### 1.3 Error and loading boundaries
 
 Three `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tree:
 
 - `src/app/mockups/ward-flow/error.tsx` — the outer boundary. Wraps every route in the tree except
-  the five `statistics/**` routes (which have their own nearer boundary) and the `sovereign/` pair
+  the `statistics/**` routes (which have their own nearer boundary) and the `sovereign/` pair
   (which have their own). It **cannot** catch a throw from `layout.tsx` itself (the provider's
   `useReducer` initialiser, or a module-scope throw in `ward-movements.ts`'s seed construction) —
   those still escape to the app-wide `src/app/error.tsx`.
-- `src/app/mockups/ward-flow/statistics/error.tsx` — the nearer boundary for the five statistics
+- `src/app/mockups/ward-flow/statistics/error.tsx` — the nearer boundary for the statistics
   routes. Exists because six of the prototype's render guards (five "section no longer defined"
   checks plus `admissionStagePosition`'s `default:` arm) live only there, so `retry()` re-renders
   just that segment and the message can name what failed.
@@ -184,10 +191,11 @@ Three `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tr
 - **`src/app/mockups/ward-flow/sovereign/loading.tsx`** (26 lines) — skeleton loading state for the
   showcase route.
 - **`src/app/mockups/ward-flow/alerts/page.tsx`** (13) — `/alerts` → `AlertsScreen`.
-- **`src/app/mockups/ward-flow/board/[unitId]/page.tsx`** (14) — `/board/[unitId]` → `WardBoard`.
+- **`src/app/mockups/ward-flow/board/[unitId]/page.tsx`** (14) — `/board/[unitId]` → `WardBoard` (`@/components/ward-management/board/ward-board`).
 - **`src/app/mockups/ward-flow/capacity/page.tsx`** (19) — `/capacity` → `CapacityScreen`. Doc
   comment records that this screen absorbed the former bed-state view and the retired "morning" page
   (MERGE 02, then owner answer 41 retired the redirect outright).
+- **`src/app/mockups/ward-flow/command/page.tsx`** — `/command` → redirect to `/mockups/ward-flow`.
 - **`src/app/mockups/ward-flow/community/page.tsx`** (32) — `/community` → `CommunityIndex`. Doc
   comment is explicit this is the parent route of `[teamId]` on purpose (deleting a team id from the
   URL should land on a list, not a 404) and that it is a real, linked nav entry, not a leftover.
@@ -196,7 +204,7 @@ Three `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tr
 - **`src/app/mockups/ward-flow/constellation/page.tsx`** (10) — redirect → `/network`.
 - **`src/app/mockups/ward-flow/delays/page.tsx`** (13) — `/delays` → `DelaysScreen`.
 - **`src/app/mockups/ward-flow/discharges/page.tsx`** (12) — `/discharges` → `DischargeBoard`.
-- **`src/app/mockups/ward-flow/ed/page.tsx`** (12) — redirect → `/ed/fremantle-ed`.
+- **`src/app/mockups/ward-flow/ed/page.tsx`** — `/ed` → `EdIndex` (`@/components/ward-management/ed/ed-index`).
 - **`src/app/mockups/ward-flow/ed/[edId]/page.tsx`** (24) — `/ed/[edId]` → `EdScreen`;
   `generateMetadata` resolves the department name via `edById`.
 - **`src/app/mockups/ward-flow/escalation/page.tsx`** (13) — redirect → `/delays?from=escalation`.
@@ -219,7 +227,7 @@ mode="network"`.
   `caring-contacts/team-roster.tsx` — three unrelated "on-call" surfaces in one repository, none a
   source of staff data for the others.
 - **`src/app/mockups/ward-flow/out-of-area/page.tsx`** (13) — `/out-of-area` → `OutOfAreaBoard`.
-- **`src/app/mockups/ward-flow/people/new/page.tsx`** (12) — `/people/new` → `AddPatientForm`.
+- **`src/app/mockups/ward-flow/people/new/page.tsx`** (12) — `/people/new` → `AddPatientForm` (`@/components/ward-management/patients/add-patient`).
 - **`src/app/mockups/ward-flow/people/[patientId]/page.tsx`** (62) — `/people/[patientId]`.
   `?view=governed` or `?view=legacy` → `PersonScreen`; otherwise → `PatientNowScreen` (a `PT-`
   prefix is passed as `patientId`, a `WF-` prefix as `movementId`); an id starting with neither →
@@ -227,14 +235,16 @@ mode="network"`.
   `/patients/[patientId]` route actually looked a _Movement_ up by id.
 - **`src/app/mockups/ward-flow/queue/page.tsx`** (13) — redirect → `/delays?from=queue`.
 - **`src/app/mockups/ward-flow/referrals/page.tsx`** (13) — `/referrals` → `ReferralBoard
-defaultSelectFirst`.
+defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/mockups/ward-flow/referrals/new/page.tsx`** (13) — `/referrals/new` →
   `ReferralBoard defaultSelectFirst`; the bar opens the referral slide-out over it on arrival.
+- **`src/app/mockups/ward-flow/reports/chronology/page.tsx`** — `/reports/chronology` → `PatientChronologyScreen` (`@/components/ward-management/reports/patient-chronology-screen`).
+- **`src/app/mockups/ward-flow/reports/downtime/page.tsx`** — `/reports/downtime` → `DowntimePackScreen` (`@/components/ward-management/reports/downtime-pack-screen`).
 - **`src/app/mockups/ward-flow/search/page.tsx`** (12) — `/search` → `PatientSearchPage`.
 - **`src/app/mockups/ward-flow/settings/page.tsx`** (13) — `/settings` → `SettingsScreen`.
 - **`src/app/mockups/ward-flow/sovereign/page.tsx`** (12) — `/sovereign` →
   `SovereignShowcaseScreen`.
-- **`src/app/mockups/ward-flow/statistics/page.tsx`** (25) — `/statistics` → `StatisticsScreen`.
+- **`src/app/mockups/ward-flow/statistics/page.tsx`** (25) — `/statistics` → `StatisticsScreen` (`@/components/ward-management/statistics/statistics-screen`).
   Doc comment: the screen must never be passed `admissions`/`referrals`/`bedReleases`/`movements` —
   those are test-only override props, and passing them from the route would silently pin a live
   figure to a fixture.
@@ -245,22 +255,27 @@ defaultSelectFirst`.
   same fixture-pinning reason as above.
 - **`src/app/mockups/ward-flow/statistics/ed/[edId]/page.tsx`** (23) — `/statistics/ed/[edId]` →
   `StatisticsEdScreen`.
+- **`src/app/mockups/ward-flow/statistics/eds/page.tsx`** — `/statistics/eds` → `StatisticsEdsIndex` (`@/components/ward-management/statistics/statistics-eds-index`).
 - **`src/app/mockups/ward-flow/statistics/overview/page.tsx`** (17) — `/statistics/overview` →
   `StatisticsOverviewScreen`.
 - **`src/app/mockups/ward-flow/statistics/service/[serviceId]/page.tsx`** (23) —
   `/statistics/service/[serviceId]` → `StatisticsServiceScreen`.
+- **`src/app/mockups/ward-flow/statistics/services/page.tsx`** — `/statistics/services` → `StatisticsServicesIndex` (`@/components/ward-management/statistics/statistics-services-index`).
+- **`src/app/mockups/ward-flow/statistics/teams/page.tsx`** — `/statistics/teams` → `StatisticsTeamsIndex` (`@/components/ward-management/statistics/statistics-teams-index`).
 - **`src/app/mockups/ward-flow/statistics/ward/[unitId]/page.tsx`** (24) —
   `/statistics/ward/[unitId]` → `StatisticsWardScreen`; must never be passed a `units` override.
+- **`src/app/mockups/ward-flow/statistics/wards/page.tsx`** — `/statistics/wards` → `StatisticsWardsIndex` (`@/components/ward-management/statistics/statistics-wards-index`).
+- **`src/app/mockups/ward-flow/statistics/weekly/page.tsx`** — `/statistics/weekly` → `WeeklyReportScreen` (`@/components/ward-management/reports/weekly-report-screen`).
 - **`src/app/mockups/ward-flow/transport/page.tsx`** (18) — redirect → `/movements`.
 - **`src/app/mockups/ward-flow/transport/officer/page.tsx`** (12) — `/transport/officer` →
-  `OfficerScreen`.
-- **`src/app/mockups/ward-flow/ward/[unitId]/page.tsx`** (36) — `/ward/[unitId]` → `WardScreen`.
+  `OfficerScreen` (`@/components/ward-management/officer/officer-screen`).
+- **`src/app/mockups/ward-flow/ward/[unitId]/page.tsx`** (36) — `/ward/[unitId]` → `WardScreen` (`@/components/ward-management/ward/ward-screen`).
   `generateMetadata` resolves the unit's name from the frozen `ward-sites.ts` fixture rather than
   the live provider (metadata generation runs on the server; `useWardFlow()` is client state) — the
   file's own comment says this is safe because a unit's _name_ is never reducer-written, so the two
   sources cannot disagree.
 - **`src/app/mockups/ward-flow/ward/[unitId]/answer/page.tsx`** (17) — `/ward/[unitId]/answer` →
-  `WardScreen unitId presentation="answer"`.
+  `WardScreen unitId presentation="answer"` (`@/components/ward-management/ward/ward-screen`).
 - **`src/app/mockups/ward-flow/wards/page.tsx`** (13) — `/wards` → `WardIndex`.
 - **`src/app/mockups/ward-flow-sign-in/page.tsx`** (21) — `/mockups/ward-flow-sign-in`, a sibling
   route with no shell (§1.1). Renders `WardFlowSignInScreen`

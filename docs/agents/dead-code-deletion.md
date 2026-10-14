@@ -1,5 +1,7 @@
 # Deleting Code You Believe Is Dead
 
+> **Ward Flow scope note (3 October 2026):** `npm run check:dead-code-candidate` remains active and fails closed by default in `BigSimmo/Ward-Flow` (with `DEAD_CODE_OWNER_APPROVED=1` permitted only on a single owner-approved invocation per [`AGENTS.md`](../../AGENTS.md)). Historical PsychSift examples below (`bestEffortReembedRegistryRecordAfterEdit`, `worker/`, PR #2204) are retained for provenance only.
+
 <!-- BEGIN:dead-code-deletion -->
 
 # Deleting code you believe is dead
@@ -21,7 +23,7 @@ npm run check:dead-code-candidate -- --diff origin/main
 
 It fails closed and refuses a candidate that is: named in a `docs/superpowers/plans|specs`
 file with unchecked tasks; pinned by a committed test; present as a string literal anywhere
-in `src`/`tests`/`scripts`/`worker` (a dynamic-lookup path no import graph shows);
+in `src`/`tests`/`scripts` (or the historical PsychSift `worker/` tree — a dynamic-lookup path no import graph shows);
 introduced within `DEAD_CODE_RECENT_DAYS` (default 30); or assessed on a **shallow clone**,
 where nothing can be dated — run `git fetch --deepen=2000` first rather than proceeding on
 the weaker signal. It also warns when the symbol is mentioned in any doc, and when its file

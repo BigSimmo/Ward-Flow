@@ -1,11 +1,23 @@
 # Ward Flow — Master Complete Document
 
+> [!IMPORTANT]
+> **Current Status & Post-17 September Reconciliation (`BigSimmo/Ward-Flow`):**
+> This document is the dated **17 September 2026** historical assessment and reference-pack build log. Subsequent work in `BigSimmo/Ward-Flow` completed and reconciled several items recorded as pending or interim below:
+>
+> 1. **Repository boundary:** Ward Flow now lives in the dedicated `BigSimmo/Ward-Flow` repository (`docs/ward-flow/reference-data/`), replacing the historical `D:\Worktrees\Database\ward-lead` checkout referenced in the 17 September build log below.
+> 2. **Phase 5 distances (`distances.json` / `wa_site_distances_km.json`):** Completed and repaired on 18 September 2026 with **468 verified directed site-pair entries** across 19 geocoded points (`outstanding: 0`), superseding the initial 4 null stubs and 186-pair / 434-pair intermediate passes (see [DISTANCES-README.md](DISTANCES-README.md)).
+> 3. **Phase 6 reference compilation & runtime alignment:** `scripts/ward-flow/build-reference-registry.mjs` and `scripts/ward-flow/build-reference-distances.mjs` (plus `scripts/ward-flow/build-reference-teams.mjs`) compile `entities.json` and `distances.json` into `src/components/ward-management/reference/ward-reference-registry.ts` and `src/components/ward-management/reference/ward-reference-distances.ts` (`src/lib/ward-flow/ward-reference-registry.ts` and `src/lib/ward-flow/ward-reference-distances.ts`), which **are imported by the Ward Flow runtime** (`src/components/ward-management/` / `src/lib/ward-flow/`). In addition, `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) now includes **10 public EDs** (including specialist EDs `KEMH` and `PCH`) and **13 runtime inpatient units (266 operational beds)** vs **279 reference-pack beds** (which include the 13-bed `SCGH-MHOA` observation area; alongside the 22-unit synthetic standard network in `STANDARD_WARD_SITES`). All runtime bed counts remain synthetic/sample and all pack approval flags remain `false`.
+> 4. **18 September provenance audit ([PROVENANCE-AUDIT-2026-09-18.md](PROVENANCE-AUDIT-2026-09-18.md)):** Reconciled the earlier `87` / `"47 sources inherited_not_freshly_rechecked"` counts in Section 13.1 below against the 111-record `sources.json` register (`47` was a substring match in nested review history; at the top level, `24` records carry `this_pass_status: "inherited_not_independently_rechecked"`, `53` are re-observed, and `34` use a separate schema without `this_pass_status`). The audit also verified that `E-CENSUS` returns a soft HTTP 404 and retired it as a live primary (`primary_status: "RETIRED_AS_PRIMARY"`).
+
+<!-- docs-script-refs:historical-start -->
+
 **Edition:** 2026-09-17  
 **Project:** Ward Journey / Ward Flow  
-**Tip:** `f10ca39fbdb4f2903eeb87bf067946a6353dd9f3`  
-**Tree:** `D:\\Worktrees\\Database\\ward-lead`  
-**UI (local only):** `http://localhost:3606`  
-**Constraint:** never merge / never auto-merge Database PRs; tip seeds not mutated in Phases 1–5
+**Historical Tip (2026-09-17):** `f10ca39fbdb4f2903eeb87bf067946a6353dd9f3`  
+**Current Repository:** `BigSimmo/Ward-Flow` (historical 2026-09-17 build tree: `D:\Worktrees\Database\ward-lead`)  
+**UI (local only):** `http://localhost:3606` (use `npm run ensure` in `BigSimmo/Ward-Flow`)  
+**Constraint:** never merge / never auto-merge PRs without explicit owner approval; runtime bed numbers remain synthetic
+<!-- docs-script-refs:historical-end -->
 
 This is the single thorough roll-up of (1) local product audit, (2) data perfection Phases 1–5, (3) live fact-checks, (4) OneDrive Referring/Forms reconciliation, (5) open questions + owner decision packet, (6) file index.
 
@@ -110,7 +122,7 @@ _Canonical detailed audit:_ `C:\\Users\\joshs\\Documents\\WARD-FLOW-CONSOLIDATED
 **Locations (identical):**
 
 - `C:\\Users\\joshs\\Documents\\ward-flow-data-review\\reference-pack\\`
-- `D:\\Worktrees\\Database\\ward-lead\\docs\\ward-flow\\reference-data\\`
+- `BigSimmo/Ward-Flow` (`docs/ward-flow/reference-data/`, migrated from the historical 2026-09-17 checkout)
 
 | File                        | Role                                      |
 | --------------------------- | ----------------------------------------- |
@@ -128,15 +140,15 @@ _Canonical detailed audit:_ `C:\\Users\\joshs\\Documents\\WARD-FLOW-CONSOLIDATED
 
 ### Counts (pack on disk)
 
-| Metric               |                                                         Count |
-| -------------------- | ------------------------------------------------------------: |
-| Entities             |                                                           288 |
-| Entity types (raw)   | 3 kinds — unknown:260, hospital:27, rehabilitation_facility:1 |
-| Capacity assertions  |                                                            65 |
-| Catchment assertions |                                                           955 |
-| Distance stubs       |                                                             4 |
-| Sources              |                                                           111 |
-| Open questions       |                                    52 (P0=18, P1=12, High=22) |
+| Metric               |                                                                                Count |
+| -------------------- | -----------------------------------------------------------------------------------: |
+| Entities             |                                                                                  288 |
+| Entity types (raw)   |                        3 kinds — unknown:260, hospital:27, rehabilitation_facility:1 |
+| Capacity assertions  |                                                                                   65 |
+| Catchment assertions |                                                                                  955 |
+| Distance entries     |                               468 (repaired 18 Sep 2026; was 4 stubs on 17 Sep 2026) |
+| Sources              | 111 (reconciled in [PROVENANCE-AUDIT-2026-09-18.md](PROVENANCE-AUDIT-2026-09-18.md)) |
+| Open questions       |                                                           52 (P0=18, P1=12, High=22) |
 
 ### Graylands dual (pack)
 
@@ -226,30 +238,30 @@ Answer these; until then tip stays synthetic and routing stays non-automatic.
 
 ## 8. Open questions — High / prep
 
-| ID      | Subject                                                  | Finding (short)                                                                                                                                                  |
-| ------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WF-25   | Stirling parent versus clinic identity                   | Stirling is a supported umbrella; existing five-clinic list omitted the parent. Exact local identifier behind user term Stirling CMHT is unresolved.             |
-| WF-26   | Mixed service hierarchy counted as teams                 | Geographic areas, physical clinics, cohorts, ATT/CTT functions and specialist programmes must not be flattened into a misleading team count.                     |
-| WF-27   | Child community versus inpatient age thresholds          | Community CAMHS under 18 is not PCH inpatient under 16; Nickoll selected 14–15.                                                                                  |
-| WF-28   | Older-adult threshold is service-specific                | City older adult publishes 45 for Aboriginal/Torres Strait Islander people; FOAMHS 55 plus self-identification. No universal Aboriginal threshold.               |
-| WF-29   | Postcode field contradictions                            | Bibra Lake 6163 vs 6153; Kenwick 6107 vs 6108; Thornlie 6108 vs 6107 between schedule and clinic pages.                                                          |
-| WF-30   | ED live-labelled source stale                            | Fetched official ED page carried 11 August 2026 02:15 data during September review.                                                                              |
-| WF-31   | Fremantle MHCC versus ATT transition                     | V Block newer MHCC page versus W Block older ATT 08–20 page; project 24/7 promise does not settle current actual hours.                                          |
-| WF-32   | Joondalup design versus operation                        | Architect supplies 102-room breakdown with swing capacity, not current operational ward IDs or staffed allocation.                                               |
-| WF-33   | Older-adult source acquisition gap                       | 112 undated NMHS older-adult locality rows now text-extracted. Effective-date confirmation, fresh visual table verification and operational ratification rema... |
-| WF-34   | No fresh PDF visual validation                           | New screenshot attempts failed. Parsed text and inherited structured rows were checked, but layout-sensitive completeness still needs page-image validation.     |
-| WF-35   | Public-source contact and page mirrors                   | A recently crawled mirror can contain older contacts than another official page. Contacts are not call-tested and review status must be field-specific.          |
-| WF-36   | OCP authorisation reference outdated for operational use | PriorOctober 2025 legal register is not a currentSeptember 2026 authorisation attestation. Lock status is not legal authority.                                   |
-| PREP-01 | Undated older-adult schedule                             | 112 rows extracted, but publication/effective date absent and screenshot failed.                                                                                 |
-| PREP-02 | SCGH observation denominator                             | Specific page 6 beds+2 chairs differs from broader page 8 beds.                                                                                                  |
-| PREP-03 | Selby historical32 not independently current-confirmed   | 2024 annual report could not be reacquired; combined 56 does not itself prove current split.                                                                     |
-| PREP-04 | Geraldton commissioning transition                       | Project and August transition evidence does not prove completed September opening or bed counts.                                                                 |
-| PREP-05 | Bunbury acute versus observation                         | 6-bedroom MHOA is supported. Current APU count and planned 37 not established.                                                                                   |
-| PREP-06 | Fremantle project versus operating capacity              | 104 and some component claims retained from earlier sources; no full current commissioning schedule.                                                             |
-| PREP-07 | Published contact subteams                               | Fremantle CAMHS 1/2 extensions do not establish independently defined CMHTs.                                                                                     |
-| PREP-08 | Regional completeness                                    | Five regional sites recorded. This is not proof that Wheatbelt/Pilbara lack other designated arrangements.                                                       |
-| PREP-09 | Timestamp and source-cache discrepancies                 | OCP publication/search dates disagree; recently crawled pages can still be old.                                                                                  |
-| PREP-10 | Team-name expansions and hours                           | Active/Assertive ART, Clinical/Community MCOT and Bentley ATT closing times differ between sources.                                                              |
+| ID      | Subject                                                  | Finding (short)                                                                                                                                                              |
+| ------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WF-25   | Stirling parent versus clinic identity                   | Stirling is a supported umbrella; existing five-clinic list omitted the parent. Exact local identifier behind user term Stirling CMHT is unresolved.                         |
+| WF-26   | Mixed service hierarchy counted as teams                 | Geographic areas, physical clinics, cohorts, ATT/CTT functions and specialist programmes must not be flattened into a misleading team count.                                 |
+| WF-27   | Child community versus inpatient age thresholds          | Community CAMHS under 18 is not PCH inpatient under 16; Nickoll selected 14–15.                                                                                              |
+| WF-28   | Older-adult threshold is service-specific                | City older adult publishes 45 for Aboriginal/Torres Strait Islander people; FOAMHS 55 plus self-identification. No universal Aboriginal threshold.                           |
+| WF-29   | Postcode field contradictions                            | Bibra Lake 6163 vs 6153; Kenwick 6107 vs 6108; Thornlie 6108 vs 6107 between schedule and clinic pages.                                                                      |
+| WF-30   | ED live-labelled source stale                            | Fetched official ED page carried 11 August 2026 02:15 data during September review.                                                                                          |
+| WF-31   | Fremantle MHCC versus ATT transition                     | V Block newer MHCC page versus W Block older ATT 08–20 page; project 24/7 promise does not settle current actual hours.                                                      |
+| WF-32   | Joondalup design versus operation                        | Architect supplies 102-room breakdown with swing capacity, not current operational ward IDs or staffed allocation.                                                           |
+| WF-33   | Older-adult source acquisition gap                       | 112 undated NMHS older-adult locality rows now text-extracted. Effective-date confirmation, fresh visual table verification and operational ratification remain outstanding. |
+| WF-34   | No fresh PDF visual validation                           | New screenshot attempts failed. Parsed text and inherited structured rows were checked, but layout-sensitive completeness still needs page-image validation.                 |
+| WF-35   | Public-source contact and page mirrors                   | A recently crawled mirror can contain older contacts than another official page. Contacts are not call-tested and review status must be field-specific.                      |
+| WF-36   | OCP authorisation reference outdated for operational use | PriorOctober 2025 legal register is not a currentSeptember 2026 authorisation attestation. Lock status is not legal authority.                                               |
+| PREP-01 | Undated older-adult schedule                             | 112 rows extracted, but publication/effective date absent and screenshot failed.                                                                                             |
+| PREP-02 | SCGH observation denominator                             | Specific page 6 beds+2 chairs differs from broader page 8 beds.                                                                                                              |
+| PREP-03 | Selby historical32 not independently current-confirmed   | 2024 annual report could not be reacquired; combined 56 does not itself prove current split.                                                                                 |
+| PREP-04 | Geraldton commissioning transition                       | Project and August transition evidence does not prove completed September opening or bed counts.                                                                             |
+| PREP-05 | Bunbury acute versus observation                         | 6-bedroom MHOA is supported. Current APU count and planned 37 not established.                                                                                               |
+| PREP-06 | Fremantle project versus operating capacity              | 104 and some component claims retained from earlier sources; no full current commissioning schedule.                                                                         |
+| PREP-07 | Published contact subteams                               | Fremantle CAMHS 1/2 extensions do not establish independently defined CMHTs.                                                                                                 |
+| PREP-08 | Regional completeness                                    | Five regional sites recorded. This is not proof that Wheatbelt/Pilbara lack other designated arrangements.                                                                   |
+| PREP-09 | Timestamp and source-cache discrepancies                 | OCP publication/search dates disagree; recently crawled pages can still be old.                                                                                              |
+| PREP-10 | Team-name expansions and hours                           | Active/Assertive ART, Clinical/Community MCOT and Bentley ATT closing times differ between sources.                                                                          |
 
 ---
 
@@ -367,9 +379,7 @@ Fremantle/Bentley/Graylands correctly have no ED in tip.
 
 Full: `web-capacity-factcheck-2026-09-17.md`
 
-**Graylands:** Dual live confirmed; facility page ~109 (dated
-
-… _(truncated for length; full file on disk)_
+**Graylands:** Dual live confirmed; facility page ~109 (dated ~24/06/2026, 51 acute + 58 HECS) vs Inpatient Adult MH page 122 (Last Updated 10/03/2026, 53 acute + 69 HECS). Neither total represents a live staffed-bed feed; keep both assertions side-by-side (`gray109` and `gray122`) until NMHS confirms the operational ward breakdown.
 
 ---
 
@@ -393,9 +403,7 @@ _Full inventory:_ `ward-flow-data-review/referring-forms/INVENTORY-REPORT-2026-0
 | WF-06 Armadale / Orchard  | ATT Referral (AKG) still **Mead Centre / 3056 Albany Hwy / 9391 2400**; CTT at Eudoria St in manual                       | Live AHS Adult MH Programs: ATT+CTT at **Orchard Ave Centre** Tenancy 3/10 Orchard Ave; phone **9398 6600**; ATTReferral.Armadale@health.wa.gov.au; Last Updated **24/02/2026** (https://www.ahs.health.wa.gov.au/Services/Mental-Health/Adult-Mental-Health-Programs). LGA wording verified; suburb schedule not found     | web-catchment-factcheck; tip Mead/Eudoria stale                                        | Tip Mead/Eudoria stale                      | **conflict** OneDrive address vs live Orchard; **missing** suburb schedule |
 | ATT team presence         | Extracted ATT ops for AKG, BHS, FSFHG + Psychiatry contacts sheet                                                         | Live confirms Armadale ATT, FSFHG ATT entry, NMHS community clinics                                                                                                                                                                                                                                                         | Handover programmes                                                                    | tip `ward-teams.ts` synthetic names         | **agree** entities exist; **tip-synthetic** vocabulary                     |
 | CTT team presence         | CTT Guidelines (+BHS) extracted; receives via ATT                                                                         | Live Armadale CTT at Orchard Ave; FSFHG geographic CTTs named                                                                                                                                                                                                                                                               | WF-05                                                                                  | Synthetic teams                             | **partial** / **tip-synthetic**                                            |
-| TCU/PRU/RRU capacity      | Extracted: BWK = PRU 20 + RRU 20 = **40** transitio                                                                       |
-
-… _(truncated for length; full file on disk)_
+| TCU/PRU/RRU capacity      | Extracted: BWK = PRU 20 + RRU 20 = **40** transitional rehabilitation beds (Bentley Woodlupine / subacute)                | EMHS subacute/TCU descriptions reference 40 beds across PRU + RRU; primary E-CENSUS medcareers URL returned HTTP 404 on 2026-09-17                                                                                                                                                                                          | `capacity_assertions.json` records 40 subacute/TCU beds (`E-CENSUS-404` noted)         | Not modelled as acute inpatient unit in tip | **agree** 40 subacute beds; primary URL retired                            |
 
 ---
 
@@ -440,7 +448,11 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 
 ## Strong live refs (keep citing)
 
-… _(truncated for length; full file on disk)_
+- **RPH:** Ward 2K 14 acute + Ward 2G 12 open + MHOA 6 beds + 2 assessment chairs (`capacity_assertions.json`).
+- **SJG Midland:** 56 mental health beds (25 adult + 16 older adult + 15 youth).
+- **SCGH:** MHU 30 inpatient beds + MHOA 6 beds and 2 recliner chairs (kept distinct from inpatient ward capacity).
+- **Osborne Park (OPH):** 24 older-adult beds.
+- **WACHS regional:** Broome (Mabu Liyan), Albany, Bunbury, Kalgoorlie, and Geraldton records retained in `capacity_assertions.json`.
 
 ---
 
@@ -483,7 +495,7 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 
 **Source URL (PDF):** https://cahs.health.wa.gov.au/~/media/HSPs/CAHS/Documents/Mental-Health/Catchment-area-by-postcode.pdf
 
-… _(truncated for length; full file on disk)_
+**Remaining P0 synthesis items (`WF-04`, `WF-05`, `WF-06`, and transfer distance schema):** Encoded directly in `catchment_assertions.json`, `open_questions.json`, and `distances.json` with `approved_for_routing = false` on all contested or unpublished clinic splits.
 
 ---
 
@@ -496,7 +508,7 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 **Inputs:**
 
 - Attached handover: `Ward_Flow_Complete_Handover_2026-09-17` (working master 17 Sep prepared register)
-- Tip: `D:\Worktrees\Database\ward-lead` @ `f10ca39fbd`
+- Tip: `BigSimmo/Ward-Flow` (historical 2026-09-17 checkout @ `f10ca39fbd`)
 - Live web re-checks started 17 Sep 2026 (AWST)
 
 ---
@@ -514,22 +526,22 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 
 ## 1. Current inventory (handover master)
 
-| Dataset                         |                               Count | Notes                                      |
-| ------------------------------- | ----------------------------------: | ------------------------------------------ |
-| Core community services         |                                  32 | 14 adult + 9 older + 9 CAMHS               |
-| Specialist/interface programmes |                                  33 | Not geographic CMHTs                       |
-| Operational review records      |                                  29 | Teams/functions/endpoints                  |
-| Catchment assertions            |                                 955 | 843 inherited + 112 new older-adult        |
-| Emergency departments           |                                  12 | 11 Perth + Peel (+ 2 private in list)      |
-| Facility/site-service entries   |                                  28 | Not full campus census                     |
-| Ward/unit records               |                                  56 | Only 14 named_ward + 12 named_unit         |
-| Capacity assertions             |                                  65 | Not additive                               |
-| Relationships / sources         |                            188 / 87 | 47 sources inherited_not_freshly_rechecked |
-| Verification issues             | **46 open** (14 P0, 10 P1, 22 High) | NEXT_REVIEW_QUEUE                          |
+| Dataset                         |                               Count | Notes                                                                                                                                                                                                                                                                                                          |
+| ------------------------------- | ----------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core community services         |                                  32 | 14 adult + 9 older + 9 CAMHS                                                                                                                                                                                                                                                                                   |
+| Specialist/interface programmes |                                  33 | Not geographic CMHTs                                                                                                                                                                                                                                                                                           |
+| Operational review records      |                                  29 | Teams/functions/endpoints                                                                                                                                                                                                                                                                                      |
+| Catchment assertions            |                                 955 | 843 inherited + 112 new older-adult                                                                                                                                                                                                                                                                            |
+| Emergency departments           |                                  12 | 11 Perth + Peel (+ 2 private in list)                                                                                                                                                                                                                                                                          |
+| Facility/site-service entries   |                                  28 | Not full campus census                                                                                                                                                                                                                                                                                         |
+| Ward/unit records               |                                  56 | Only 14 named_ward + 12 named_unit                                                                                                                                                                                                                                                                             |
+| Capacity assertions             |                                  65 | Not additive                                                                                                                                                                                                                                                                                                   |
+| Relationships / sources         |              188 / 87 (111 in pack) | Handover listed 87 (`47` nested substring hits for `inherited_not_freshly_rechecked`); `sources.json` contains **111** records (`24` top-level `inherited_not_independently_rechecked`, `53` re-observed, `34` separate-schema records — see [PROVENANCE-AUDIT-2026-09-18.md](PROVENANCE-AUDIT-2026-09-18.md)) |
+| Verification issues             | **46 open** (14 P0, 10 P1, 22 High) | NEXT_REVIEW_QUEUE                                                                                                                                                                                                                                                                                              |
 
 Handover itself says packaging **did not re-crawl**; treat as research master requiring fresh verification.
 
-## 2. Tip seed / behaviour files to reconcile (ward-lead)
+## 2. Tip seed / behaviour files to reconcile (`BigSimmo/Ward-Flow`)
 
 Canonical code surfaces (not exhaustive):
 
@@ -558,7 +570,8 @@ Canonical code surfaces (not exhaustive):
 
 ## 4. Fresh web finding
 
-… _(truncated for length; full file on disk)_
+- **CAHS postcode PDF (12 Nov 2025 footer, fetched 2026-09-17):** Postcode `6147` splits Parkwood → Fremantle CAMHS and Langford + Lynwood → Swan CAMHS, while the live Fremantle CAMHS webpage lists Lynwood (`WF-03` kept contested).
+- **NMHS Graylands pages (fetched 2026-09-17):** Both the 109-bed (`51` acute + `58` HECS) and 122-bed (`53` acute + `69` HECS) published figures remain live (`WF-07` kept dual).
 
 ---
 
@@ -590,7 +603,7 @@ Canonical code surfaces (not exhaustive):
 
 - `C:\\Users\\joshs\\Documents\\ward-flow-data-review\\` (plan, gaps, web fact-checks, geo, capacity, referring-forms)
 - `C:\\Users\\joshs\\Documents\\ward-flow-data-review\\reference-pack\\`
-- `D:\\Worktrees\\Database\\ward-lead\\docs\\ward-flow\\reference-data\\`
+- `BigSimmo/Ward-Flow` (`docs/ward-flow/reference-data/`, migrated from the historical 2026-09-17 checkout)
 
 ### Visual evidence
 
