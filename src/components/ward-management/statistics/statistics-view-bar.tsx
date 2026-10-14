@@ -30,9 +30,14 @@ function viewFromHash(hash: string): StatisticsView {
  */
 export function useStatisticsView() {
   const [view, setView] = useState<StatisticsView>("board");
+  const [hash, setHash] = useState<string>("");
 
   useEffect(() => {
-    const sync = () => setView(viewFromHash(window.location.hash));
+    const sync = () => {
+      const currentHash = typeof window !== "undefined" ? window.location.hash : "";
+      setHash(currentHash);
+      setView(viewFromHash(currentHash));
+    };
     sync();
     window.addEventListener("hashchange", sync);
     window.addEventListener("popstate", sync);
@@ -45,7 +50,7 @@ export function useStatisticsView() {
   // A link to a card inside a view (#journey-stages) lands on that card once the view has drawn it.
   // The view is code-split, so its card can appear after the view finishes loading.
   useEffect(() => {
-    const id = window.location.hash.replace(/^#/, "");
+    const id = hash.replace(/^#/, "");
     if (!id || id === view || viewFromHash(`#${id}`) !== view) return;
 
     let observer: MutationObserver | null = null;
@@ -97,11 +102,13 @@ export function useStatisticsView() {
       if (observer) observer.disconnect();
       if (timer) clearTimeout(timer);
     };
-  }, [view]);
+  }, [view, hash]);
 
   const choose = useCallback((next: StatisticsView) => {
     setView(next);
     const { pathname, search } = window.location;
+    const nextHash = next === "board" ? "" : `#${next}`;
+    setHash(nextHash);
     const url = next === "board" ? `${pathname}${search}` : `${pathname}${search}#${next}`;
     if (`${pathname}${search}${window.location.hash}` !== url) window.history.pushState(null, "", url);
   }, []);
