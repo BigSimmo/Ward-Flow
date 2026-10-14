@@ -43,10 +43,21 @@ export function useStatisticsView() {
   }, []);
 
   // A link to a card inside a view (#journey-stages) lands on that card once the view has drawn it.
+  // The view is code-split, so its card can appear a few frames after the view is chosen.
   useEffect(() => {
     const id = window.location.hash.replace(/^#/, "");
     if (!id || id === view || viewFromHash(`#${id}`) !== view) return;
-    const frame = window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+    let frame = 0;
+    let attempts = 0;
+    const land = () => {
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ block: "start" });
+        return;
+      }
+      if (++attempts < 300) frame = window.requestAnimationFrame(land);
+    };
+    frame = window.requestAnimationFrame(land);
     return () => window.cancelAnimationFrame(frame);
   }, [view]);
 
