@@ -56,6 +56,7 @@ import {
 import { useOptionalToast } from "@/components/wf";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
+import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 
 import styles from "./add-patient.module.css";
 
@@ -417,7 +418,7 @@ export function AddPatientForm() {
       params.set("legal", legalStatus);
       const diagBlock = COMPLAINT_TO_DIAGNOSIS_BLOCK[presentingComplaint];
       if (diagBlock) params.set("complaint", diagBlock);
-      router.push(`/mockups/ward-flow/referrals?${params.toString()}`);
+      router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
       return;
     }
     router.push(`/mockups/ward-flow/people/${added[0].id}`);

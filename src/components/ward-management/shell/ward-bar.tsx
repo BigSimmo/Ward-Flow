@@ -1051,11 +1051,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       openPopover(drawerId);
     });
     const unsubClose = subscribeWardDrawerClose(() => {
-      // The rail's Escape reaches here before the Sheet's own Escape handler. An open referral
-      // slide-out leaves Escape to that handler, which asks before an unsent draft is lost.
-      if (referralCloseRef.current) return;
+      // The rail's Escape reaches here before the Sheet's own Escape handler. Any open Sheet
+      // drawer ("activity", "tasks", "tools", "referral") leaves Escape to that handler so
+      // history.back() and closingViaHistoryRef stay in sync (and an unsent referral draft asks).
+      if (referralCloseRef.current || hasOpenSheet()) return;
       setOpenPanel((current) => {
-        if (current !== null) announceToWardShell("Closed.");
+        if (current !== null) queueMicrotask(() => announceToWardShell("Closed."));
         return null;
       });
     });
@@ -1692,14 +1693,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         bodyClassName={styles.drawerBody}
         footer={
           isPhone ? undefined : (
-            <p className={styles.drawerFoot}>
+            <div className={styles.drawerFoot}>
               <span>Synthetic events · newest first</span>
               <WardDemoClockPopover>
                 <span className={styles.footClock}>
                   Demo time <b>{formatInstant(now)}</b>
                 </span>
               </WardDemoClockPopover>
-            </p>
+            </div>
           )
         }
         footerClassName={styles.drawerFooter}

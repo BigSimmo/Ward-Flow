@@ -860,9 +860,7 @@ export function ShortlistPanel({
   }
 
   function handleQuickSend() {
-    if (!canRefer) return;
-    dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
-    setOverrideOpen(false);
+    handleRefer();
   }
 
   /**

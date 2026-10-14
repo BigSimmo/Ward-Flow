@@ -5,7 +5,7 @@
 }
 
 .button {
-  border: 1px dashed var(--line-hi, var(--wf-border-strong, var(--wf-line-2)));
+  border: 1px dashed var(--wf-line-2);
 }
 
 .panel {

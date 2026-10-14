@@ -41,6 +41,8 @@ import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-ma
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
+import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -592,7 +594,7 @@ export function WardGlobalSearch({
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const nameFor = usePatientNameDisplay();
-  const { dispatch } = useWardFlow();
+  const wardFlow = useOptionalWardFlow();
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -1205,7 +1207,14 @@ export function WardGlobalSearch({
                     className={styles.commandBtn}
                     data-testid="ward-global-search-cmd-advance-clock"
                     onClick={() => {
-                      dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 15 });
+                      if (wardFlow) {
+                        wardFlow.dispatch({
+                          type: "ADVANCE_CLOCK",
+                          role: "demo",
+                          now: now ?? wardFlow.now,
+                          minutes: 15,
+                        });
+                      }
                       close();
                     }}
                   >
@@ -1218,6 +1227,7 @@ export function WardGlobalSearch({
                     data-testid="ward-global-search-cmd-desk-coordinator"
                     onClick={() => {
                       setDeskRole("coordinator", "/mockups/ward-flow");
+                      dispatchPersonaSyncForRole("coordinator");
                       select("/mockups/ward-flow");
                     }}
                   >
@@ -1230,6 +1240,7 @@ export function WardGlobalSearch({
                     data-testid="ward-global-search-cmd-desk-ward"
                     onClick={() => {
                       setDeskRole("ward", typeof window !== "undefined" ? window.location.pathname : "");
+                      dispatchPersonaSyncForRole("ward");
                       select("/mockups/ward-flow/wards");
                     }}
                   >
@@ -1242,6 +1253,7 @@ export function WardGlobalSearch({
                     data-testid="ward-global-search-cmd-desk-ed"
                     onClick={() => {
                       setDeskRole("ed", typeof window !== "undefined" ? window.location.pathname : "");
+                      dispatchPersonaSyncForRole("ed");
                       select("/mockups/ward-flow/ed");
                     }}
                   >
@@ -1254,6 +1266,7 @@ export function WardGlobalSearch({
                     data-testid="ward-global-search-cmd-desk-officer"
                     onClick={() => {
                       setDeskRole("officer", "/mockups/ward-flow/transport/officer");
+                      dispatchPersonaSyncForRole("officer");
                       select("/mockups/ward-flow/transport/officer");
                     }}
                   >

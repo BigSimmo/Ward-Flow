@@ -48,7 +48,7 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { settingsHref, unitHref } from "./ward-facade";
+import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import styles from "./ward-phone-menu.module.css";
@@ -140,7 +140,7 @@ const CREATE_LINKS: readonly {
     label: "Book transport",
     meta: "Ready-to-book queue on Transport",
     icon: Truck,
-    href: "/mockups/ward-flow/transport/officer#ready-to-book",
+    href: `${officerHref()}#ready-to-book`,
     asButton: true,
   },
 ];

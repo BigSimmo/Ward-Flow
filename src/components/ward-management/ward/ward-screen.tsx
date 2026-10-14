@@ -403,6 +403,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [bedQuery, setBedQuery] = useState("");
   const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
+  const [stayBlockers, setStayBlockers] = useState<Record<string, BedReleaseBlocker | null>>({});
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
   const bedParam = searchParams?.get("bed");
@@ -1396,6 +1397,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const releaseBlocker = bedReleases.find(
       (r) => r.admissionId === admission?.id && r.state !== "discharged",
     )?.blocker;
+    const localStayBlocker = admission?.id ? stayBlockers[admission.id] : undefined;
 
     const patient = patientInfo?.patient;
     const expectedDischargeLabel =
@@ -1422,7 +1424,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       awayAtEdHours: awayHours,
       expectedDays: expDays,
       tentativeDiagnosis: tentDiag,
-      blockReason: releaseBlocker ?? admission?.blockReason ?? undefined,
+      blockReason:
+        localStayBlocker === null
+          ? undefined
+          : (localStayBlocker ?? releaseBlocker ?? admission?.blockReason ?? undefined),
       dischargeBarrier: admission?.dischargeBarrier ?? undefined,
       isSpecialling,
       legalStatus: patientLegalStatus,
@@ -1537,7 +1542,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   function fullWardReferralHref(patientId?: string): string {
-    return `/mockups/ward-flow/referrals?new=1&category=ward${patientId ? `&patientId=${encodeURIComponent(patientId)}` : ""}&site=${encodeURIComponent(unit?.siteCode ?? "")}`;
+    return `/mockups/ward-flow/referrals/new?category=ward${patientId ? `&patientId=${encodeURIComponent(patientId)}` : ""}&site=${encodeURIComponent(unit?.siteCode ?? "")}`;
   }
 
   function handleRaiseWardReferral(bedOverride?: unknown) {
@@ -3282,45 +3287,40 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onRecordLeft={(admissionId, who) => {
                     handleDrawerRecordLeft(admissionId, who);
                   }}
-                  onUpdateBlocker={routeRole === "ward" ? (admissionId, blocker) => {
-                    const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
-                    if (blocker === null) {
-                      if (pendingRelease && pendingRelease.blocker !== null) {
-                        dispatch({
-                          type: "CLEAR_BED_RELEASE_BLOCK",
-                          role: "ward",
-                          now,
-                          releaseId: pendingRelease.id,
-                          actingUnitId: unitId,
-                        });
-                      }
-                      setToastMessage("Discharge blocker cleared.");
-                      return;
-                    }
-                    if (pendingRelease) {
-                      dispatch({
-                        type: "BLOCK_BED_RELEASE",
-                        role: "ward",
-                        now,
-                        releaseId: pendingRelease.id,
-                        actingUnitId: unitId,
-                        blocker: blocker as BedReleaseBlocker,
-                      });
-                    } else {
-                      dispatch({
-                        type: "FLAG_BED_RELEASE",
-                        role: "ward",
-                        now,
-                        unitId,
-                        actingUnitId: unitId,
-                        admissionId,
-                        waitingOn: "Not recorded",
-                        expectedAt: now,
-                        blocker: blocker as BedReleaseBlocker,
-                      });
-                    }
-                    setToastMessage(`Discharge blocker recorded: ${blocker}`);
-                  }}
+                  onUpdateBlocker={
+                    !pathname || routeRole === "ward"
+                      ? (admissionId, blocker) => {
+                          const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
+                          if (blocker === null) {
+                            setStayBlockers((prev) => ({ ...prev, [admissionId]: null }));
+                            if (pendingRelease && pendingRelease.blocker !== null) {
+                              dispatch({
+                                type: "CLEAR_BED_RELEASE_BLOCK",
+                                role: "ward",
+                                now,
+                                releaseId: pendingRelease.id,
+                                actingUnitId: unitId,
+                              });
+                            }
+                            setToastMessage("Discharge blocker cleared.");
+                            return;
+                          }
+                          const validBlocker = blocker as BedReleaseBlocker;
+                          setStayBlockers((prev) => ({ ...prev, [admissionId]: validBlocker }));
+                          if (pendingRelease) {
+                            dispatch({
+                              type: "BLOCK_BED_RELEASE",
+                              role: "ward",
+                              now,
+                              releaseId: pendingRelease.id,
+                              actingUnitId: unitId,
+                              blocker: validBlocker,
+                            });
+                          }
+                          setToastMessage(`Discharge blocker recorded: ${blocker}`);
+                        }
+                      : undefined
+                  }
                   onMarkAtEd={(bedNum) => {
                     if (!selectedBedItem?.admissionId) return;
                     // The engine refuses ED while the stay is on leave or absent, so say so here

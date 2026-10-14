@@ -3333,15 +3333,15 @@ details.refCard > summary {
   gap: var(--wf-s-2);
   margin-top: var(--wf-s-2);
   padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-good-line);
+  border: 1px solid var(--wf-success);
   border-radius: var(--wf-r-md);
-  background: var(--wf-good-bg);
-  color: var(--wf-good-ink);
+  background: var(--wf-surface-2);
+  color: var(--wf-success-ink);
   font-size: var(--wf-fs-12);
 }
 
 .fastTrackText {
-  font-weight: var(--wf-fw-semi);
+  font-weight: 600;
 }
 
 .fastTrackActions {
@@ -3356,12 +3356,12 @@ details.refCard > summary {
   align-items: center;
   min-height: 3rem;
   padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-good-line);
+  border: 1px solid var(--wf-success);
   border-radius: var(--wf-r-sm);
   background: var(--wf-surface);
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
-  font-weight: var(--wf-fw-semi);
+  font-weight: 600;
   cursor: pointer;
 }
 

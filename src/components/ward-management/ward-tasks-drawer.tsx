@@ -1076,8 +1076,8 @@ export function WardTasksDrawer({
             flexWrap: "wrap",
             gap: "6px",
             padding: "8px 14px",
-            borderTop: "1px solid var(--wf-line-1, var(--line))",
-            background: "var(--wf-surface-2, var(--bg-2))",
+            borderTop: "1px solid var(--wf-line)",
+            background: "var(--wf-surface-2)",
             fontSize: "0.75rem",
           }}
         >
@@ -1085,29 +1085,29 @@ export function WardTasksDrawer({
             href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/mockups/ward-flow/delays"}
             onClick={onClose}
             data-testid="ward-tasks-jump-delays"
-            style={{ color: "var(--wf-ink-1, var(--ink))", textDecoration: "none", fontWeight: 600 }}
+            style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
           >
             Delays board →
           </Link>
-          <span aria-hidden="true" style={{ color: "var(--wf-ink-3, var(--ink-dim))" }}>
+          <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
             ·
           </span>
           <Link
             href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? "/mockups/ward-flow/alerts"}
             onClick={onClose}
             data-testid="ward-tasks-jump-alerts"
-            style={{ color: "var(--wf-ink-1, var(--ink))", textDecoration: "none", fontWeight: 600 }}
+            style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
           >
             Alerts &amp; watches →
           </Link>
-          <span aria-hidden="true" style={{ color: "var(--wf-ink-3, var(--ink-dim))" }}>
+          <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
             ·
           </span>
           <Link
             href={WARD_HOME_HREF}
             onClick={onClose}
             data-testid="ward-tasks-jump-coordinator"
-            style={{ color: "var(--wf-ink-1, var(--ink))", textDecoration: "none", fontWeight: 600 }}
+            style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
           >
             Coordinator workspace →
           </Link>

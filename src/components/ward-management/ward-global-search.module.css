@@ -628,7 +628,7 @@
   display: flex;
   flex-direction: column;
   padding: 6px 8px 10px;
-  border-top: 1px solid var(--wf-line-1);
+  border-top: 1px solid var(--wf-line);
 }
 
 .commandList {
@@ -654,7 +654,7 @@
 
 .commandBtn:hover,
 .commandBtn:focus-visible {
-  background: var(--wf-surface-3);
+  background: var(--wf-hover);
   border-color: var(--wf-accent);
 }
 
@@ -668,7 +668,7 @@
   gap: 6px 12px;
   margin: 8px 8px 0;
   padding: 8px 10px;
-  border: 1px solid var(--wf-line-1);
+  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-sm);
   background: var(--wf-surface-2);
   font-size: var(--wf-fs-12);

@@ -180,7 +180,9 @@ function MovementPreview({
     .filter(Boolean)
     .join(" · ");
   const linkedReferral = (lookup.referrals ?? []).find(
-    (ref) => ref.id === movement.referralId || (patient !== undefined && ref.patientId === patient.id),
+    (ref) =>
+      ref.id === movement.referralId ||
+      (patient !== undefined && resolveSubjectPatient(ref, lookup).patient?.id === patient.id),
   );
 
   return (
@@ -256,7 +258,7 @@ function MovementPreview({
         ) : null}
         {linkedReferral ? (
           <Action
-            href={`/mockups/ward-flow/referrals?referralId=${encodeURIComponent(linkedReferral.id)}`}
+            href={`/mockups/ward-flow/referrals?referral=${encodeURIComponent(linkedReferral.id)}`}
             onOpen={onOpen}
             testId="ward-global-search-preview-open-referral"
           >

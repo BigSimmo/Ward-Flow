@@ -801,17 +801,21 @@ function WardReferralDrawerContent({
   const urlPrefill = useMemo(() => {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
-    const patientId = params.get("patientId")?.trim() || undefined;
+    const personId = params.get("patientId")?.trim() || undefined;
+    if (initialPatientId && personId && initialPatientId !== personId) return null;
+    if (!personId && (initialPatientId || initialOriginSiteCode || initialSendingTeam || initialUnitIds?.length)) {
+      return null;
+    }
     const site = params.get("site")?.trim() || undefined;
     const service = params.get("service")?.trim() || undefined;
     const atsRaw = Number(params.get("ats"));
     const ats = ATS_CATEGORIES.find((value) => value === atsRaw);
     const legal = params.get("legal")?.trim() || undefined;
     const complaint = params.get("complaint")?.trim() || undefined;
-    if (!patientId && !site && !service && !ats && !legal && !complaint) return null;
-    return { patientId, site, service, ats, legal, complaint };
-  }, []);
-  const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.patientId;
+    if (!personId && !site && !service && !ats && !legal && !complaint) return null;
+    return { personId, site, service, ats, legal, complaint };
+  }, [initialOriginSiteCode, initialPatientId, initialSendingTeam, initialUnitIds]);
+  const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.personId;
   const effectiveInitialOriginSiteCode = initialOriginSiteCode ?? urlPrefill?.site;
 
   const [prefillKey] = useState(() =>
@@ -943,7 +947,9 @@ function WardReferralDrawerContent({
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
     (initialSendingTeam ? "community" : undefined) ??
-      (effectiveInitialOriginSiteCode ? "ed" : kept?.sourceKind) ??
+      (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
+        ? "ed"
+        : kept?.sourceKind) ??
       (liveOriginSite || initialCategory === "ed" ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
@@ -3519,7 +3525,9 @@ function WardReferralDrawerContent({
                                         : " · Catchment not confirmed"}
                                     <span className={styles.wardMetaMore}>
                                       {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                                      <span className={styles.mono}>{unit.siteCode}</span>
+                                      <span className={styles.mono}>
+                                        {unit.siteCode ? `${unit.siteCode} · ${unit.unitId}` : unit.unitId}
+                                      </span>
                                     </span>
                                   </span>
                                 </span>
@@ -4127,26 +4135,6 @@ function WardReferralDrawerContent({
                   className={styles.btnSendReferral}
                   onClick={() => setGuardOpen(false)}
                 >
-                  Keep editing
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      {liveMovement ? (
-        <ArrivalTimeModal
-          isOpen={arrivalPlanOpen}
-          onClose={() => setArrivalPlanOpen(false)}
-          movement={liveMovement}
-          role={arrivalRole}
-        />
-      ) : null}
-    </>
-  );
-}
-            >
                   Keep editing
                 </button>
               </div>

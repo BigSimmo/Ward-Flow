@@ -1274,6 +1274,10 @@ export function WardFlowClockProvider({
   );
 }
 
+export function useOptionalWardFlow(): WardFlowContextValue | null {
+  return useContext(WardFlowContext);
+}
+
 /** Conservative failure: a screen rendered outside the provider must fail loudly, never fall
  * back to a default empty world that would silently read as "no patients tonight". */
 export function useWardFlow(): WardFlowContextValue {
