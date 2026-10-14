@@ -159,6 +159,13 @@ export type PullToArrival = {
    */
   incoherentCount: number;
 };
+function recordedArrivalGap(admission: Admission): number | undefined {
+  const { pulledAt, arrivedAt } = admission;
+  if (pulledAt === null || arrivedAt === null) return undefined;
+  if (!Number.isFinite(pulledAt) || !Number.isFinite(arrivedAt)) return undefined;
+  const gap = arrivedAt - pulledAt;
+  return Number.isFinite(gap) ? gap : undefined;
+}
 
 /**
  * `pulledAt` -> `arrivedAt`, and ONLY those two instants.
@@ -175,6 +182,7 @@ export type PullToArrival = {
  *
  * Non-finite instants are skipped rather than coerced — no answer, never a substituted one.
  */
+
 export function pullToArrival(admissions: Admission[]): PullToArrival {
   const gaps: number[] = [];
   let endedCount = 0;
@@ -184,11 +192,8 @@ export function pullToArrival(admissions: Admission[]): PullToArrival {
   for (const admission of admissions) {
     if (admissionStagePosition(admission) === "bed-given-not-arrived") awaitingArrivalCount += 1;
 
-    const { pulledAt, arrivedAt } = admission;
-    if (pulledAt === null || arrivedAt === null) continue;
-    if (!Number.isFinite(pulledAt) || !Number.isFinite(arrivedAt)) continue;
-
-    const gap = arrivedAt - pulledAt;
+    const gap = recordedArrivalGap(admission);
+    if (gap === undefined) continue;
     if (gap < 0) {
       incoherentCount += 1;
       continue;
@@ -299,7 +304,8 @@ export function referralToBedJoin(admissions: Admission[], referrals: Referral[]
     joinedCount += 1;
 
     const { arrivedAt } = admission;
-    if (arrivedAt === null || !Number.isFinite(arrivedAt) || !Number.isFinite(referral.raisedAt)) continue;
+    if (arrivedAt === null) continue;
+    if (!Number.isFinite(arrivedAt) || !Number.isFinite(referral.raisedAt)) continue;
     if (arrivedAt >= referral.raisedAt) chronologicallyCoherentCount += 1;
   }
 
@@ -539,18 +545,7 @@ export function declinesByReason(movements: Movement[]): DeclinesByReason {
 
   for (const movement of movements) {
     if (movement.declines.length > 0) movementsWithDeclinesCount += 1;
-    for (const decline of movement.declines) {
-      const seen = counts.get(decline.reason);
-      if (seen === undefined) {
-        throw new Error(
-          `declinesByReason: movement ${movement.id} carries a decline reason ${JSON.stringify(decline.reason)} ` +
-            `that is not a member of DECLINE_REASONS — add it to the vocabulary rather than letting this total ` +
-            `quietly shrink.`,
-        );
-      }
-      counts.set(decline.reason, seen + 1);
-      totalCount += 1;
-    }
+    totalCount += countMovementDeclines(movement, counts);
   }
 
   return {
@@ -563,6 +558,23 @@ export function declinesByReason(movements: Movement[]): DeclinesByReason {
     movementCount: movements.length,
     vocabularySize: DECLINE_REASONS.length,
   };
+}
+
+function countMovementDeclines(movement: Movement, counts: Map<DeclineReason, number>): number {
+  let count = 0;
+  for (const decline of movement.declines) {
+    const seen = counts.get(decline.reason);
+    if (seen === undefined) {
+      throw new Error(
+        `declinesByReason: movement ${movement.id} carries a decline reason ${JSON.stringify(decline.reason)} ` +
+          `that is not a member of DECLINE_REASONS — add it to the vocabulary rather than letting this total ` +
+          `quietly shrink.`,
+      );
+    }
+    counts.set(decline.reason, seen + 1);
+    count += 1;
+  }
+  return count;
 }
 
 /**

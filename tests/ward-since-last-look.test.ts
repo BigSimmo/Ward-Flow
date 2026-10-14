@@ -118,5 +118,16 @@ describe("what changed since you last looked", () => {
     expect(parseLastLookSnapshot("not json")).toBeUndefined();
     expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, version: 2 }))).toBeUndefined();
     expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, referralIds: [1] }))).toBeUndefined();
+    // A stored time that JSON overflows to Infinity would render as NaN:NaN.
+    expect(
+      parseLastLookSnapshot(JSON.stringify({ ...snapshot, at: 0 }).replace('"at":0', '"at":1e400')),
+    ).toBeUndefined();
+    // Malformed stored ready counts must not surface as fractional, negative or infinite beds freed.
+    for (const bad of [-1, 1.5, "1e400"]) {
+      const raw = JSON.stringify({ ...snapshot, readyByUnit: { u1: 0 } }).replace('"u1":0', `"u1":${bad}`);
+      expect(parseLastLookSnapshot(raw), `ready count ${bad}`).toBeUndefined();
+    }
+    // An array (even an empty one) is not a map of ready counts by unit.
+    expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, readyByUnit: [] }))).toBeUndefined();
   });
 });

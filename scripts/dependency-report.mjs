@@ -62,27 +62,43 @@ export function renderDependencyReport(outdated, audit) {
   const stamp = new Date().toISOString();
   const lines = [`### Dependency report — ${stamp}`, ""];
 
+  appendOutdatedDependencies(lines, outdated);
+  appendVulnerabilities(lines, audit);
+  lines.push(
+    "",
+    "_Report only. Run the AGENTS.md `dependency` protocol (compatibility audit + grouped upgrades) to act — never a bulk auto-bump._",
+  );
+  return lines.join("\n") + "\n";
+}
+
+function appendOutdatedDependencies(lines, outdated) {
   if (outdated == null) {
     lines.push("**Outdated direct dependencies:** data unavailable (npm outdated failed — see run logs).");
   } else if (Object.keys(outdated).length === 0) {
     lines.push("**Outdated direct dependencies:** none 🎉");
   } else {
     const entries = Object.entries(outdated);
-    const majors = entries.filter(([, v]) => {
-      const cur = majorOf(v.current);
-      const latest = majorOf(v.latest);
-      return cur != null && latest != null && latest > cur;
-    });
+    const majors = entries.filter(([, v]) => isMajorUpgrade(v));
     lines.push(`**Outdated direct dependencies:** ${entries.length} (${majors.length} major)`, "");
     lines.push("| package | current | wanted | latest | major? |", "| --- | --- | --- | --- | --- |");
     for (const [name, v] of entries.sort((a, b) => a[0].localeCompare(b[0]))) {
-      const isMajor = majorOf(v.latest) != null && majorOf(v.current) != null && majorOf(v.latest) > majorOf(v.current);
-      lines.push(
-        `| ${name} | ${v.current ?? "?"} | ${v.wanted ?? "?"} | ${v.latest ?? "?"} | ${isMajor ? "⚠ yes" : "—"} |`,
-      );
+      lines.push(dependencyRow(name, v));
     }
   }
+}
 
+function isMajorUpgrade(version) {
+  const current = majorOf(version.current);
+  const latest = majorOf(version.latest);
+  return current != null && latest != null && latest > current;
+}
+
+function dependencyRow(name, version) {
+  const isMajor = isMajorUpgrade(version);
+  return `| ${name} | ${version.current ?? "?"} | ${version.wanted ?? "?"} | ${version.latest ?? "?"} | ${isMajor ? "⚠ yes" : "—"} |`;
+}
+
+function appendVulnerabilities(lines, audit) {
   const vulns = audit?.metadata?.vulnerabilities;
   lines.push("");
   if (vulns) {
@@ -93,12 +109,6 @@ export function renderDependencyReport(outdated, audit) {
   } else {
     lines.push("**Vulnerabilities:** audit data unavailable.");
   }
-
-  lines.push(
-    "",
-    "_Report only. Run the AGENTS.md `dependency` protocol (compatibility audit + grouped upgrades) to act — never a bulk auto-bump._",
-  );
-  return lines.join("\n") + "\n";
 }
 
 /** Highest severity present, for the workflow to decide whether to notify. */
@@ -128,7 +138,7 @@ function main() {
 
   // A failed `npm outdated --json` can still emit a JSON error payload ({ error: … }) on
   // stdout; treat that as "data unavailable" rather than counting `error` as a package.
-  if (outdated && typeof outdated === "object" && "error" in outdated) {
+  if (failedOutdatedPayload(outdated)) {
     process.stderr.write(
       `[dependency-report] warning: npm outdated failed: ${JSON.stringify(outdated.error).slice(0, 200)}\n`,
     );
@@ -147,6 +157,10 @@ function main() {
     });
   }
   process.exit(0);
+}
+
+function failedOutdatedPayload(outdated) {
+  return outdated && typeof outdated === "object" && "error" in outdated;
 }
 
 const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
