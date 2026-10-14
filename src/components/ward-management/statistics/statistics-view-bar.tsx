@@ -43,22 +43,60 @@ export function useStatisticsView() {
   }, []);
 
   // A link to a card inside a view (#journey-stages) lands on that card once the view has drawn it.
-  // The view is code-split, so its card can appear a few frames after the view is chosen.
+  // The view is code-split, so its card can appear after the view finishes loading.
   useEffect(() => {
     const id = window.location.hash.replace(/^#/, "");
     if (!id || id === view || viewFromHash(`#${id}`) !== view) return;
+
+    let observer: MutationObserver | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     let frame = 0;
-    let attempts = 0;
+
     const land = () => {
       const target = document.getElementById(id);
       if (target) {
         target.scrollIntoView({ block: "start" });
-        return;
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        return true;
       }
-      if (++attempts < 300) frame = window.requestAnimationFrame(land);
+      return false;
     };
-    frame = window.requestAnimationFrame(land);
-    return () => window.cancelAnimationFrame(frame);
+
+    if (!land()) {
+      if (typeof MutationObserver !== "undefined") {
+        observer = new MutationObserver(() => {
+          land();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      } else {
+        let attempts = 0;
+        const retry = () => {
+          if (land()) return;
+          if (++attempts < 300) frame = window.requestAnimationFrame(retry);
+        };
+        frame = window.requestAnimationFrame(retry);
+      }
+
+      timer = setTimeout(() => {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+      }, 10000);
+    }
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      if (observer) observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
   }, [view]);
 
   const choose = useCallback((next: StatisticsView) => {
