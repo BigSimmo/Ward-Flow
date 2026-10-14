@@ -56,7 +56,7 @@ The shared synthetic workspace supports independent database (`WARD_DATABASE_PRO
   its existing storage account (`wflowdev7273a083aue`) for `/v1/sessions/:uuid`, and connects to Azure Database for PostgreSQL (`wardflow-dev-aue` / `wardflow_dev`) for `/v1/workspace*`.
   No storage key or password is stored in the backend.
 - The root `schema.sql` remains unapplied historical Blob-era scaffolding
-  and is not used by runtime. The shared workspace adapter uses `postgres.mjs`, versioned `migrations/` (`001` through `004`), and
+  and is not used by runtime. The shared workspace adapter uses `postgres.mjs`, versioned `migrations/` (`001` through `005`), and
   `migrate-supabase.mjs` / `migrate-postgres.mjs` / `migrate.mjs`.
 - Each Blob session has an owner UUID and a revision. `PUT` uses an expected revision;
   a stale save returns `409` and does not replace the current blob.
