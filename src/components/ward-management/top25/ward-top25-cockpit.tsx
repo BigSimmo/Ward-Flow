@@ -151,10 +151,10 @@ export function PhoneWalkRoundSheet({
                 </span>
               </div>
               <div className={styles.cardActions}>
-                <Button size="sm" variant={done ? "ghost" : "pri"} onClick={() => handleAction(row)}>
+                <Button className={styles.mobileTapTarget} size="sm" variant={done ? "ghost" : "pri"} onClick={() => handleAction(row)}>
                   {done ? "Completed" : row.primaryActionLabel}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => setSelectedRow(row)}>
+                <Button className={styles.mobileTapTarget} size="sm" variant="ghost" onClick={() => setSelectedRow(row)}>
                   Sheet
                 </Button>
               </div>
@@ -271,8 +271,8 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
   const afternoonDischarges = useMemo(() => deriveAfternoonDischarges(state.admissions, now), [state.admissions, now]);
   const sampleMovement = state.movements[0];
   const topCompatibleWards = useMemo(
-    () => (sampleMovement ? deriveTopCompatibleWards(sampleMovement, state.units, 3) : []),
-    [sampleMovement, state.units],
+    () => (sampleMovement ? deriveTopCompatibleWards(sampleMovement, state.units, 3, now) : []),
+    [sampleMovement, state.units, now],
   );
   const refusalRecovery = useMemo(() => deriveRefusalRecoveryAction("gender_mismatch"), []);
   const ghostAlerts = useMemo(
@@ -391,6 +391,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
           awaitingAfternoonTransport: true,
           highRisk: false,
           seclusion: false,
+          legalStatus: "voluntary",
         },
       ]),
     [],
@@ -460,13 +461,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             }),
           ),
       },
-      ...state.units.slice(0, 5).map((u) => ({
-        id: `cmd-unit-${u.id}`,
-        label: `Jump to ${u.name}`,
-        category: "Ward",
-        keywords: [u.siteCode, u.cohort],
-        onSelect: () => {},
-      })),
     ],
     [topCompatibleWards, afternoonDischarges, state.units],
   );

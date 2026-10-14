@@ -159,6 +159,8 @@ export function completeCleanAndOpenBed<
   },
 >(unit: T, bedId?: string): T {
   const next = { ...unit };
+  const hasPreparingBed = next.preparingBeds === undefined || next.preparingBeds > 0 || next.preparing === true;
+  if (!hasPreparingBed) return unit;
   if (typeof next.availableBeds === "number") {
     next.availableBeds = next.availableBeds + 1;
   }
@@ -282,11 +284,7 @@ export function deriveStepDownPullBoard(
     const isStepDownReady =
       cand.stepDownReady === true ||
       cand.dischargeDestination === "mental_health_step_down" ||
-      cand.dischargeDestination === "supported_accommodation" ||
-      cand.dischargeDelayReason === "accommodation" ||
-      cand.dischargeDelayReason === "ndis_support" ||
-      cand.dischargeDelayReason === "supported_accommodation" ||
-      cand.dischargeDelayReason === "ndis_sil_funding";
+      cand.dischargeDestination === "supported_accommodation";
     if (!isStepDownReady) continue;
     const compatibleOpenUnitIds = units
       .filter((u) => {
@@ -296,7 +294,9 @@ export function deriveStepDownPullBoard(
             ? u.availableBeds
             : "allocatable" in u && typeof u.allocatable === "number"
               ? u.allocatable
-              : 0;
+              : "allocatable" in u && u.allocatable && typeof u.allocatable === "object" && "available" in u.allocatable && typeof u.allocatable.available === "number"
+                ? u.allocatable.available
+                : 0;
         const unitCohort = "cohort" in u && u.cohort ? u.cohort : "ageBand" in u ? u.ageBand : "Adult";
         return sec === "Open" && avail > 0 && unitCohort === cand.cohort;
       })
@@ -387,7 +387,12 @@ export function deriveCtoFollowUpHandshake(input: CtoFollowUpInput): CtoFollowUp
   if (!effectiveManager || !effectiveManager.trim()) {
     missingFields.push("assignedCaseManager");
   }
-  if (effectiveFollowUp === null || effectiveFollowUp === "") {
+  if (
+    effectiveFollowUp === null ||
+    effectiveFollowUp === "" ||
+    (typeof effectiveFollowUp === "string" && Number.isNaN(Date.parse(effectiveFollowUp))) ||
+    (typeof effectiveFollowUp === "number" && !Number.isFinite(effectiveFollowUp))
+  ) {
     missingFields.push("followUpAppointmentAt");
   }
   const warningActive = missingFields.length > 0;
@@ -637,7 +642,7 @@ export function deriveDischargeLoungeEligible(
       c.awaitingAfternoonTransport &&
       !c.highRisk &&
       !c.seclusion &&
-      (c.legalStatus === undefined || c.legalStatus === "voluntary"),
+      c.legalStatus === "voluntary",
   );
 }
 

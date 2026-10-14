@@ -2237,7 +2237,7 @@ export function deriveAfternoonDischarges(admissions: readonly Admission[], now:
       return false;
     }
     const diff = adm.expectedDischargeAt - nowMin;
-    return diff >= -MINUTES_PER_DAY && diff <= 2 * MINUTES_PER_DAY;
+    return diff >= 0 && diff <= MINUTES_PER_DAY;
   });
 }
 
@@ -2257,6 +2257,7 @@ export function deriveTopCompatibleWards(
   movement: Movement,
   units: readonly Unit[],
   maxCount: number = PARALLEL_REFERRAL_CAP,
+  now: Instant = toInstantMinutes(new Date().toISOString()) as Instant,
 ): CompatibleWardCandidate[] {
   const cap = Math.max(0, Math.min(maxCount, PARALLEL_REFERRAL_CAP));
   if (cap === 0) return [];
@@ -2264,7 +2265,7 @@ export function deriveTopCompatibleWards(
   const scored = units
     .filter((u) => !movement.referredUnitIds.includes(u.id))
     .map((unit) => {
-      const check = eligibility(movement, unit, unit.allocatable.confirmedAt);
+      const check = eligibility(movement, unit, now);
       const { available } = boundedBedAvailability(unit);
       const isOutOfArea = Boolean(originService && siteByCode(unit.siteCode)?.service !== originService);
       const failingGates = (check.gates ?? []).filter((g) => !g.pass).map((g) => g.gate);
@@ -2379,5 +2380,8 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
       });
     }
   }
+  return results;
+}
+
   return results;
 }
