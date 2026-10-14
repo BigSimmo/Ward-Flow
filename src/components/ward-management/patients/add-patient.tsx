@@ -194,11 +194,11 @@ const FACILITY_TO_SITE_CODE: Record<string, string> = {
   "rph-ed": "RPH",
   "scgh-ed": "SCGH",
   "fsh-ed": "FSH",
-  "arm-ed": "AHS",
-  "sjgm-ed": "MID",
+  "arm-ed": "ARM",
+  "sjgm-ed": "SJGM",
   "rgh-ed": "RGH",
   "jhc-ed": "JHC",
-  "peel-ed": "PHC",
+  "peel-ed": "PEEL",
 };
 
 const COMPLAINT_TO_DIAGNOSIS_BLOCK: Record<string, string> = {
