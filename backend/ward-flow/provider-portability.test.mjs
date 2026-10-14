@@ -15,7 +15,8 @@ import {
   CRON_OWNER_FILTER_FORMS,
 } from "./portable-postgres.mjs";
 import { readMigrationConfig, migratePortablePostgres } from "./migrate-postgres.mjs";
-import { createSupabasePool, verifySupabaseRuntimeRole } from "./supabase-postgres.mjs";
+import { readSupabaseMigrationConfig, migrateSupabasePostgres } from "./migrate-supabase.mjs";
+import { createSupabasePool, createSupabaseMigrationPool, verifySupabaseRuntimeRole } from "./supabase-postgres.mjs";
 import {
   APPROVED_SUPABASE_PROJECT,
   APPROVED_SUPABASE_POOLER,
@@ -77,6 +78,11 @@ test("both pool presets enforce verified TLS and bounded resources without netwo
     assert.equal(pool.options.connectionTimeoutMillis, 6000);
     assert.equal(pool.options.statement_timeout, 10000);
     assert.equal(pool.options.query_timeout, 12000);
+    assert.equal(pool.options.idle_in_transaction_session_timeout, 10000);
+    assert.equal(pool.options.lock_timeout, 5000);
+    assert.equal(pool.options.keepAlive, true);
+    assert.equal(pool.options.keepAliveInitialDelayMillis, 10000);
+    assert.equal(pool.options.application_name, "wardflow_backend");
     assert.equal(pool.event, "error");
   }
 });
@@ -90,6 +96,15 @@ test("the migration factory cannot be selected through runtime URL configuration
   assert.equal(
     createPortableMigrationPool({ connectionString }, { Pool: RecordingPool }).options.connectionString,
     connectionString,
+  );
+  const supabaseAdmin = databaseUrl("postgres", `db.${APPROVED_SUPABASE_PROJECT}.supabase.co`, "postgres");
+  assert.throws(
+    () => createSupabasePool({ connectionString: supabaseAdmin, runtime: false }, { Pool: RecordingPool }),
+    /Unapproved shared database target/,
+  );
+  assert.equal(
+    createSupabaseMigrationPool({ connectionString: supabaseAdmin }, { Pool: RecordingPool }).options.connectionString,
+    supabaseAdmin,
   );
 });
 
@@ -149,7 +164,7 @@ const roleFields = [
 function safeSummary() {
   return {
     role: "wardflow_backend",
-    versions: [1, 2, 3, 4],
+    versions: [1, 2, 3, 4, 5],
     ...Object.fromEntries(roleFields.map((field) => [field, true])),
   };
 }
@@ -163,7 +178,7 @@ function summaryPool(row = safeSummary()) {
   };
 }
 
-test("runtime role verification requires every safeguard and the complete migration 4 ledger", async () => {
+test("runtime role verification requires every safeguard and the complete migration 5 ledger", async () => {
   const config = { connectionString: databaseUrl(), pushEnabled: false };
   await verifyPortableRuntimeRole(summaryPool(), config);
   await verifySupabaseRuntimeRole(summaryPool(), { pushEnabled: false });
@@ -173,7 +188,7 @@ test("runtime role verification requires every safeguard and the complete migrat
       await assert.rejects(verifyPortableRuntimeRole(summaryPool(row), config), /Unsafe or unprepared/);
     }
   }
-  for (const versions of [[], [1, 2, 3], [1, 2, 4], [1, 2, 3, "4"], [1, 2, 3, 4, 5]])
+  for (const versions of [[], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
     await assert.rejects(
       verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions })),
       /Unsafe or unprepared/,
@@ -225,13 +240,13 @@ test("enabled push requires its grants while optional push remains off by config
   );
 });
 
-test("shared readiness refuses a missing migration 4 without applying SQL", async () => {
+test("shared readiness refuses a missing migration 5 without applying SQL", async () => {
   const calls = [];
   let prepared = false;
   const pool = {
     query: async (sql, args) => {
       calls.push([sql, args]);
-      return { rows: prepared ? [{ version: 4 }] : [] };
+      return { rows: prepared ? [{ version: 5 }] : [] };
     },
   };
   const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine: {} });
@@ -240,7 +255,7 @@ test("shared readiness refuses a missing migration 4 without applying SQL", asyn
   await store.ready();
   assert.deepEqual(
     calls,
-    Array.from({ length: 2 }, () => ["SELECT version FROM ward_flow.migrations WHERE version=$1", [4]]),
+    Array.from({ length: 2 }, () => ["SELECT version FROM ward_flow.migrations WHERE version=$1", [5]]),
   );
 });
 
@@ -265,7 +280,7 @@ test("administrator grant failure rolls back its transaction and releases the cl
     query: async (sql) => {
       queries.push(sql);
       if (sql.includes("to_regclass")) return { rows: [{ relation: "ward_flow.migrations" }] };
-      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 4 }] };
+      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 5 }] };
       if (sql.includes("Runtime role flags are unsafe")) throw new Error("synthetic grant refusal");
       return { rows: [] };
     },
@@ -419,11 +434,11 @@ test("runtime summary refuses UPDATE on the audit and push ID sequences", () => 
   assert.match(RUNTIME_SUMMARY, /AS sequence_restricted/);
 });
 
-test("Azure startup refuses a database without the complete migration 4 ledger", async () => {
+test("Azure startup refuses a database without the complete migration 5 ledger", async () => {
   const { verifyAzureMigrations } = await import("./postgres.mjs");
   const pool = (versions) => ({ query: async () => ({ rows: [{ versions }] }) });
-  await verifyAzureMigrations(pool([1, 2, 3, 4]));
-  for (const versions of [null, [], [1, 2], [1, 2, 3], [1, 2, 4], [1, 2, 3, "4"], [1, 2, 3, 4, 5]])
+  await verifyAzureMigrations(pool([1, 2, 3, 4, 5]));
+  for (const versions of [null, [], [1, 2], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
     await assert.rejects(verifyAzureMigrations(pool(versions)), /Unsafe or unprepared Azure/);
   await assert.rejects(
     verifyAzureMigrations({ query: async () => Promise.reject(new Error("offline")) }),
@@ -511,4 +526,165 @@ test("runtime summary refuses read grants outside ward_flow except stock Supabas
   assert.match(clause, /has_any_column_privilege\(r\.oid, c\.oid, 'SELECT'\)/);
   assert.match(clause, /c\.relkind IN \('r', 'p', 'v', 'm', 'f'\)/);
   assert.match(clause, /has_sequence_privilege\(r\.oid, c\.oid, 'SELECT,USAGE'\)/);
+});
+
+test("Supabase migration config requires matching approved target and distinct admin/runtime roles", () => {
+  const directHost = `db.${APPROVED_SUPABASE_PROJECT}.supabase.co`;
+  const directAdmin = databaseUrl("postgres", directHost, "postgres");
+  const directConfig = readSupabaseMigrationConfig({
+    WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
+    WARD_SUPABASE_MIGRATION_DATABASE_URL: directAdmin,
+    WARD_SUPABASE_DATABASE_URL: databaseUrl("wardflow_backend", directHost, "postgres"),
+  });
+  assert.equal(directConfig.connectionString, directAdmin);
+
+  const poolerAdmin = databaseUrl(`postgres.${APPROVED_SUPABASE_PROJECT}`, APPROVED_SUPABASE_POOLER, "postgres");
+  const poolerConfig = readSupabaseMigrationConfig({
+    WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
+    WARD_SUPABASE_MIGRATION_DATABASE_URL: poolerAdmin,
+    WARD_SUPABASE_DATABASE_URL: databaseUrl(
+      `wardflow_backend.${APPROVED_SUPABASE_PROJECT}`,
+      APPROVED_SUPABASE_POOLER,
+      "postgres",
+    ),
+  });
+  assert.equal(poolerConfig.connectionString, poolerAdmin);
+
+  // Reject identical runtime/admin role or mismatched host targets
+  assert.throws(
+    () =>
+      readSupabaseMigrationConfig({
+        WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
+        WARD_SUPABASE_MIGRATION_DATABASE_URL: databaseUrl("wardflow_backend", directHost, "postgres"),
+        WARD_SUPABASE_DATABASE_URL: databaseUrl("wardflow_backend", directHost, "postgres"),
+      }),
+    /Migration and runtime targets must match with separate identities/,
+  );
+  assert.throws(
+    () =>
+      readSupabaseMigrationConfig({
+        WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
+        WARD_SUPABASE_MIGRATION_DATABASE_URL: databaseUrl("postgres", directHost, "postgres"),
+        WARD_SUPABASE_DATABASE_URL: databaseUrl(
+          `wardflow_backend.${APPROVED_SUPABASE_PROJECT}`,
+          APPROVED_SUPABASE_POOLER,
+          "postgres",
+        ),
+      }),
+    /Migration and runtime targets must match with separate identities/,
+  );
+});
+
+test("migrateSupabasePostgres applies migrations, runs supabase-runtime-role.sql and rolls back on failure", async () => {
+  const executed = [];
+  let releases = 0;
+  const client = {
+    query: async (sql) => {
+      executed.push(sql);
+      if (sql.includes("to_regclass")) return { rows: [{ relation: "ward_flow.migrations" }] };
+      if (sql.includes("SELECT max(version)")) return { rows: [{ version: 5 }] };
+      return { rows: [] };
+    },
+    release: () => {
+      releases++;
+    },
+  };
+  const pool = {
+    query: async () => ({ rows: [{ owner: null }] }),
+    connect: async () => client,
+  };
+  await migrateSupabasePostgres(pool);
+  assert.equal(releases, 2);
+  assert.ok(executed.some((sql) => sql.includes("REVOKE CREATE ON SCHEMA public FROM PUBLIC, wardflow_backend")));
+  assert.ok(executed.some((sql) => sql.includes("ALTER ROLE wardflow_backend SET statement_timeout = '10s'")));
+});
+
+test("workspace store lock() reads existing row with FOR UPDATE before seeding and evicts broken rollback sockets", async () => {
+  const queries = [];
+  let seedCalls = 0;
+  const existingSnapshot = { state: { worldGeneration: 1 } };
+  const fastClient = {
+    query: async (sql) => {
+      queries.push(sql.trim());
+      if (sql.includes("FROM ward_flow.workspaces WHERE id=$1")) {
+        return {
+          rows: [
+            {
+              data_mode: "prototype",
+              revision: 7,
+              payload: existingSnapshot,
+            },
+          ],
+        };
+      }
+      if (sql.includes("FROM ward_flow.audit")) return { rows: [] };
+      return { rows: [] };
+    },
+    release: () => {},
+  };
+  const fastPool = {
+    connect: async () => fastClient,
+    query: async () => ({ rows: [] }),
+  };
+  const store = createWorkspaceStore(fastPool, {
+    workspaceId: randomUUID(),
+    engine: {
+      seedWorld: () => {
+        seedCalls++;
+        return existingSnapshot;
+      },
+      validWorld: () => true,
+      worldNow: (_p, at) => at,
+    },
+  });
+  const doc = await store.read("coordinator-1", "2026-10-14T10:00:00.000Z");
+  assert.equal(doc.revision, 7);
+  assert.equal(seedCalls, 0);
+  assert.equal(
+    queries.some((sql) => sql.includes("INSERT INTO ward_flow.workspaces")),
+    false,
+  );
+
+  // Verify broken socket eviction when both main query and ROLLBACK fail
+  let releasedWith;
+  const rollbackErr = new Error("socket terminated during rollback");
+  const brokenClient = {
+    query: async (sql) => {
+      if (sql === "BEGIN") return { rows: [] };
+      if (sql === "ROLLBACK") throw rollbackErr;
+      throw new Error("primary query failure");
+    },
+    release: (err) => {
+      releasedWith = err;
+    },
+  };
+  const brokenStore = createWorkspaceStore(
+    { connect: async () => brokenClient, query: async () => ({ rows: [] }) },
+    { workspaceId: randomUUID(), engine: {} },
+  );
+  await assert.rejects(brokenStore.read("coordinator-1", "2026-10-14T10:00:00.000Z"), /primary query failure/);
+  assert.equal(releasedWith, rollbackErr);
+
+  // Verify unsubscribe() immediately prunes push_deliveries for the revoked subscription ID
+  const unsubQueries = [];
+  const unsubClient = {
+    query: async (sql, args) => {
+      unsubQueries.push([sql, args]);
+      if (sql.includes("UPDATE ward_flow.push_subscriptions SET revoked_at")) {
+        return { rowCount: 1, rows: [{ id: 42 }] };
+      }
+      return { rowCount: 1, rows: [] };
+    },
+    release: () => {},
+  };
+  const unsubStore = createWorkspaceStore(
+    { connect: async () => unsubClient, query: async () => ({ rows: [] }) },
+    { workspaceId: randomUUID(), engine: {}, push: { coordinatorIds: [] } },
+  );
+  assert.equal(await unsubStore.unsubscribe("coordinator-1", "https://fcm.googleapis.com/fcm/send/e1"), "unsubscribed");
+  assert.deepEqual(
+    unsubQueries.map(([sql]) => sql.split(" ")[0]),
+    ["BEGIN", "UPDATE", "DELETE", "COMMIT"],
+  );
+  assert.deepEqual(unsubQueries[2], ["DELETE FROM ward_flow.push_deliveries WHERE subscription_id=$1", [42]]);
 });

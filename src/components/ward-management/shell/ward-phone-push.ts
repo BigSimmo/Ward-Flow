@@ -1,9 +1,9 @@
 /**
  * PHONE ALERTS — feature 4, 10 Oct 2026.
  *
- * Standard Web Push through the shared Azure backend, so a coordinator's phone or browser shows a
+ * Standard Web Push through the shared backend, so a coordinator's phone or browser shows a
  * new act-now (red) item while Ward Flow is closed. Off by default, turned on per device in
- * Settings, and only available when the shared Azure workspace is signed in: the local
+ * Settings, and only available when the shared workspace is signed in: the local
  * demonstration has no server to send from. The server writes the words: a count, the hospital
  * site and a link to Alerts, never a patient name, record number, Ward Flow id or typed text.
  *
@@ -30,7 +30,7 @@ export type PhonePushApi = {
   pushUnsubscribe(endpoint: string): Promise<boolean>;
 };
 
-/** Whether this screen is on the shared Azure workspace, and signed in. */
+/** Whether this screen is on the shared workspace, and signed in. */
 export type PhonePushAccess = { kind: "local" } | { kind: "signed-out" } | { kind: "connected"; api: PhonePushApi };
 
 export const PhonePushAccessContext = createContext<PhonePushAccess>({ kind: "local" });
@@ -64,7 +64,7 @@ export function phonePushRow(state: PhonePushState): { checked: boolean; unavail
   const unavailable = (sub: string) => ({ checked: false, unavailable: true, sub });
   switch (state) {
     case "local":
-      return unavailable("Needs the shared Azure workspace");
+      return unavailable("Needs the shared workspace");
     case "signed-out":
       return unavailable("Sign in to the shared workspace first");
     case "checking":

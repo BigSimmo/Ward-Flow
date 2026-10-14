@@ -102,12 +102,26 @@ describe("Supabase shared sign-in", () => {
       expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     },
   );
-  it("uses the same trimmed provider selector as the CSP", async () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", " supabase ");
+  it("uses the same trimmed provider selector as the CSP and defaults blank to Supabase", async () => {
+    for (const selector of [" supabase ", ""]) {
+      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", selector);
+      const fetcher = vi.fn();
+      vi.stubGlobal("fetch", fetcher);
+      const { unmount } = render(<Probe />);
+      expect(await screen.findByRole("button", { name: "Sign in with email" })).toBeEnabled();
+      expect(fetcher).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+  it("reports Microsoft sign-in unavailable without network calls when entra is selected", async () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "entra");
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
     render(<Probe />);
-    expect(await screen.findByRole("button", { name: "Sign in with email" })).toBeEnabled();
+    expect(
+      await screen.findByText("Microsoft sign-in or shared workspace configuration is unavailable."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in with Microsoft" })).toBeDisabled();
     expect(fetcher).not.toHaveBeenCalled();
   });
   it("rejects an unknown provider without restoring a session", async () => {
@@ -340,4 +354,57 @@ it("stops polling and signs out the view when the workspace refuses access", asy
   expect(interval.mock.calls.some(([, ms]) => ms === 3000)).toBe(false);
   expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+});
+it("pauses 3-second polling while document is hidden and refreshes immediately when visible", async () => {
+  const snapshot = {
+    dataMode: "prototype",
+    revision: 1,
+    now: 642,
+    payload: {
+      version: 1,
+      state: seedWardFlowStateAt(0),
+      dayZero: "2026-10-07T00:00:00Z",
+      startedAt: "2026-10-07T10:00:00Z",
+    },
+  };
+  const fetcher = vi.fn(async (url: string | URL | Request) =>
+    String(url).includes("/v1/workspace")
+      ? Response.json({ snapshot })
+      : String(url).endsWith("/user")
+        ? Response.json(user)
+        : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  const realSetInterval = globalThis.setInterval;
+  let pollTick: (() => void) | undefined;
+  vi.spyOn(globalThis, "setInterval").mockImplementation(((fn: TimerHandler, ms?: number) => {
+    if (ms === 3000 && typeof fn === "function") {
+      pollTick = fn as () => void;
+      return 0 as unknown as ReturnType<typeof setInterval>;
+    }
+    return realSetInterval(fn, ms);
+  }) as typeof setInterval);
+  const { result, unmount } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  expect(pollTick).toBeDefined();
+  const initialReads = fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace")).length;
+  expect(initialReads).toBe(1);
+
+  const visibilitySpy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+  await act(async () => {
+    pollTick!();
+  });
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);
+
+  visibilitySpy.mockReturnValue("visible");
+  await act(async () => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await waitFor(() =>
+    expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(2),
+  );
+  unmount();
 });

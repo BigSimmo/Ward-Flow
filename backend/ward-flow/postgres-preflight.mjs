@@ -144,6 +144,8 @@ const indexes = [
   [3, "push_baselines_pkey", "push_baselines", "workspace_id", true],
   [3, "push_deliveries_pkey", "push_deliveries", "subscription_id, item_id", true],
   [3, "push_deliveries_pending", "push_deliveries", "subscription_id", false, "status = 'pending'"],
+  [5, "commands_workspace_committed", "commands", "workspace_id, committed_at DESC", false],
+  [5, "push_subscriptions_actor_active", "push_subscriptions", "workspace_id, actor_id", false, "revoked_at IS NULL"],
 ];
 
 const protectors = {
@@ -372,11 +374,11 @@ export async function verifyPostgresNamespace(pool, { runtimeRole = "wardflow_ba
   verifyColumns(migrations.columns, columns(tableColumns.migrations));
   let versions;
   try {
-    const result = await pool.query("SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 5");
+    const result = await pool.query("SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 6");
     versions = result.rows.map((row) => row.version);
   } catch {
     throw new Error("Ward Flow database migration identity verification unavailable");
   }
-  if (!versions.length || versions.length > 4 || !versions.every((version, index) => version === index + 1)) refuse();
+  if (!versions.length || versions.length > 5 || !versions.every((version, index) => version === index + 1)) refuse();
   verifyCatalog(catalog, versions.length, runtimeRole);
 }

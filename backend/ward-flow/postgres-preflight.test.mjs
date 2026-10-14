@@ -8,6 +8,7 @@ const sqlFiles = [
   "002-workspace-data-mode",
   "003-push-subscriptions",
   "004-trigger-search-path",
+  "005-retention-and-indexes",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -42,7 +43,7 @@ function checkExpressions(sql) {
   return result;
 }
 
-function fixture(version = 4) {
+function fixture(version = 5) {
   const owner = "migration_admin";
   const catalog = {
     owner,
@@ -221,13 +222,13 @@ function withPostgresTextDeparse(catalog) {
   return catalog;
 }
 
-function pool(catalog, versions = [1, 2, 3, 4]) {
+function pool(catalog, versions = [1, 2, 3, 4, 5]) {
   const queries = [];
   return {
     queries,
     query: async (sql) => {
       queries.push(sql);
-      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 5")
+      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 6")
         return { rows: versions.map((version) => ({ version })) };
       assert.match(sql, /^WITH namespace/);
       assert.doesNotMatch(sql, /(?:ALTER|INSERT INTO|UPDATE ward_flow|DELETE FROM|DROP|CREATE SCHEMA|CREATE TABLE)/);
@@ -242,7 +243,7 @@ test("absent namespace is accepted by one read-only catalogue query", async () =
   assert.equal(db.queries.length, 1);
 });
 
-for (const version of [1, 2, 3, 4])
+for (const version of [1, 2, 3, 4, 5])
   test(`known migration ${version} namespace permits the separate migration stage`, async () => {
     const db = pool(
       fixture(version),
@@ -250,7 +251,7 @@ for (const version of [1, 2, 3, 4])
     );
     await verifyPostgresNamespace(db);
     assert.equal(db.queries.length, 2);
-    assert.match(db.queries[1], /LIMIT 5$/);
+    assert.match(db.queries[1], /LIMIT 6$/);
   });
 
 test("PostgreSQL text-literal casts in defaults, checks and index predicates permit the known schema", async () => {
@@ -311,7 +312,7 @@ test("reserved empty namespace and wrong migration-table shape refuse before rea
 });
 
 test("noncontiguous, empty, unsupported and malformed versions refuse migration", async () => {
-  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5], [1, 2, 2], [1, 2, 3, "4"]])
+  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5, 6], [1, 2, 2], [1, 2, 3, 4, "5"]])
     await assert.rejects(verifyPostgresNamespace(pool(fixture(), versions)), /Unrecognised or unsafe/);
 });
 
