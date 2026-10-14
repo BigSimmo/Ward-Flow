@@ -474,7 +474,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
 
       // Verify dueParts does not say "Pull expired"
       const parts = dueParts(row, NOW);
-      expect(parts?.what).toBe("Pull active");
+      expect(parts?.what).toBe("Collected");
       expect(parts?.when).toBe("In transit");
 
       // Verify dueShort does not say "Pull expired"

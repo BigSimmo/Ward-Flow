@@ -370,9 +370,7 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
-  return collected
-    ? { when: "In transit", what: row.pullExpiresAt !== undefined ? "Pull active" : "In transit" }
-    : null;
+  return collected ? { when: "In transit", what: "Collected" } : null;
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
