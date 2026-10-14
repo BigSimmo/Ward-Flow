@@ -42,11 +42,22 @@ export function isCsrfGuardedApiRequest(method: string, pathname: string): boole
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
+export const WARD_FLOW_CSRF_HEADER = "x-ward-flow-csrf";
+
 export type ApiMutationCsrfVerdict =
   | { allowed: true }
-  | { allowed: false; reason: "cross_site" | "origin_mismatch" | "referer_mismatch" | "missing_browser_headers" };
+  | {
+      allowed: false;
+      reason: "cross_site" | "origin_mismatch" | "referer_mismatch" | "missing_browser_headers" | "invalid_csrf_header";
+    };
 
 const ALLOWED: ApiMutationCsrfVerdict = { allowed: true };
+
+function isValidCsrfHeaderValue(value: string | null): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true";
+}
 
 /** The host of an absolute URL, lowercased, or null when it is not parsable. */
 function hostOfUrl(value: string): string | null {
@@ -85,6 +96,11 @@ function addressedHosts(headers: Headers, requestHost: string): Set<string> {
  * read from `headers` and count too.
  */
 export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): ApiMutationCsrfVerdict {
+  const csrfHeader = headers.get(WARD_FLOW_CSRF_HEADER);
+  if (csrfHeader !== null && !isValidCsrfHeaderValue(csrfHeader)) {
+    return { allowed: false, reason: "invalid_csrf_header" };
+  }
+
   const secFetchSite = headers.get("sec-fetch-site");
   if (secFetchSite === "cross-site") return { allowed: false, reason: "cross_site" };
 
@@ -104,13 +120,18 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
   // signal and is routinely stripped by privacy settings.
   if (secFetchSite !== null) return ALLOWED;
 
+  // Explicit valid x-ward-flow-csrf header vouches for programmatic or non-browser
+  // requests when Fetch Metadata and Origin are absent (A4-12).
+  if (csrfHeader !== null && isValidCsrfHeaderValue(csrfHeader)) return ALLOWED;
+
   const referer = headers.get("referer");
   if (referer !== null) {
     const refererHost = hostOfUrl(referer);
     return refererHost && hosts.has(refererHost) ? ALLOWED : { allowed: false, reason: "referer_mismatch" };
   }
 
-  // No Fetch Metadata, no Origin, no Referer: nothing vouches for where the request
-  // came from, so it is refused rather than assumed to be a non-browser client.
+  // No Fetch Metadata, no Origin, no Referer, and no valid x-ward-flow-csrf header:
+  // nothing vouches for where the request came from, so it is refused rather than
+  // assumed to be a non-browser client.
   return { allowed: false, reason: "missing_browser_headers" };
 }

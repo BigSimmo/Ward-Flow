@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
-import type { LocalProjectIdentityPayload, LocalServerRuntimeMode } from "@/lib/local-project-identity";
+import type {
+  LocalProjectIdentityPayload as BaseLocalProjectIdentityPayload,
+  LocalServerRuntimeMode,
+} from "@/lib/local-project-identity";
 import { appName, localProjectId, projectPortEnd, projectPortStart } from "@/lib/local-server-utils.mjs";
+
+export type LocalProjectIdentityPayload = BaseLocalProjectIdentityPayload & {
+  reason?: string | null;
+  localServer: BaseLocalProjectIdentityPayload["localServer"] & {
+    reason?: string | null;
+  };
+};
 
 const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
@@ -115,9 +125,11 @@ function judgedRequestUrl(request: Request): URL {
   const requestUrl = new URL(request.url);
   const host = request.headers.get("host");
   if (!host) return requestUrl;
+  const cleanHost = host.trim();
+  if (!/^(?:\[[0-9a-fA-F:]+\]|[a-zA-Z0-9.-]+)(?::\d+)?$/.test(cleanHost)) return requestUrl;
 
   try {
-    const fromHost = new URL(`${requestUrl.protocol}//${host}`);
+    const fromHost = new URL(`${requestUrl.protocol}//${cleanHost}`);
     // Only a loopback Host is believed (12 October 2026 review, A4-13). A caller can put anything
     // in Host — a DNS-rebinding page sends its own domain — and a non-loopback value would mark
     // the request "not local" and skip the port rule entirely. So a non-loopback Host never
@@ -133,11 +145,55 @@ function judgedRequestUrl(request: Request): URL {
 }
 
 export function localProjectRequestIdentityPayload(request: Request): LocalProjectIdentityPayload {
-  const payload = localProjectIdentityPayload(request.url);
-  const facts = localOriginFacts(judgedRequestUrl(request));
+  const requestUrl = new URL(request.url);
+  const hostHeader = request.headers.get("host");
   const requestOrigin = request.headers.get("origin");
   const requestReferer = request.headers.get("referer");
   const unsafeLocalCaller = unsafeLocalCallerFromHeader(requestOrigin) ?? unsafeLocalCallerFromHeader(requestReferer);
+  const payload = localProjectIdentityPayload(request.url);
+
+  if (hostHeader !== null) {
+    const cleanHost = hostHeader.trim();
+    const validHostSyntax = /^(?:\[[0-9a-fA-F:]+\]|[a-zA-Z0-9.-]+)(?::\d+)?$/.test(cleanHost);
+    let parsedHost: URL | null = null;
+    if (validHostSyntax) {
+      try {
+        parsedHost = new URL(`${requestUrl.protocol}//${cleanHost}`);
+      } catch {
+        parsedHost = null;
+      }
+    }
+    // If a Host header is explicitly present on a local request and its hostname is NOT a loopback hostname
+    // (or cannot be parsed as a valid host), the guard immediately rejects with reason: "non-local-host" (A4-13).
+    // In local development (`next dev`), `request.url` arrives bound to `0.0.0.0:<port>`; in production, `0.0.0.0`
+    // is the container wildcard bind behind the public reverse proxy and is only treated as local when the port
+    // itself is within the managed local dev port range or runtimeMode is development.
+    const isLocalWildcardBind =
+      requestUrl.hostname === "0.0.0.0" &&
+      (localServerRuntimeMode() === "development" || isManagedProjectPort(portFor(requestUrl)));
+    if (
+      (!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) &&
+      (isLocalUrl(requestUrl) || isLocalWildcardBind)
+    ) {
+      return {
+        ...payload,
+        reason: "non-local-host",
+        localServer: {
+          ...payload.localServer,
+          currentUrl: requestUrl.origin,
+          currentPort: portFor(requestUrl),
+          safeLocalOrigin: false,
+          reason: "non-local-host",
+          requestOrigin,
+          requestReferer,
+          unsafeLocalCaller,
+          pid: null,
+        },
+      };
+    }
+  }
+
+  const facts = localOriginFacts(judgedRequestUrl(request));
 
   return {
     ...payload,

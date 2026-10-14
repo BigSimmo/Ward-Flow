@@ -1891,7 +1891,9 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
   const records = readDischargeRecords(CAPACITY_RECORD_ACTOR, row.unit.id);
   const detail = opened ? readDischargeRecord(CAPACITY_RECORD_ACTOR, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
-  const request = refreshRequests.filter((entry) => entry.unitId === row.unit.id).at(-1);
+  const request = refreshRequests
+    .filter((entry) => entry.unitId === row.unit.id && entry.at >= row.unit.allocatable.confirmedAt)
+    .at(-1);
   function closeRecord() {
     setOpened(null);
     // The list remounts after state changes; restore its deliberate opener on the next frame.

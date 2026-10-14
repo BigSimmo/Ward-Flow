@@ -1,9 +1,13 @@
 import { chromium } from "playwright";
 import { resolveAuditTarget } from "./local-audit-target.mjs";
 import { newestPreinstalledChromiumHeadlessShell } from "../playwright-browser-preflight.mjs";
+import os from "node:os";
 import path from "node:path";
 
-const browsersRoot = path.join(process.env.LOCALAPPDATA || "C:/Users/joshs/AppData/Local", "ms-playwright");
+const browsersRoot = path.join(
+  process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
+  "ms-playwright",
+);
 const BROWSER_PATH = newestPreinstalledChromiumHeadlessShell(browsersRoot);
 
 async function run() {

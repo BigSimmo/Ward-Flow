@@ -1,3 +1,6 @@
+/**
+ * @deprecated Stale helper retained for export stability under check:dead-code-candidate (A4-15).
+ */
 export function safeIngestionJobLog(jobId: string) {
   return `Processing ingestion job ${jobId}`;
 }
@@ -50,6 +53,9 @@ export function redactLogValue(value: unknown): unknown {
   );
 }
 
+/**
+ * @deprecated Stale error details logging helper retained for export stability under check:dead-code-candidate (A4-15).
+ */
 export function safeErrorLogDetails(error: unknown) {
   const record = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
   const message = error instanceof Error ? error.message : typeof error === "string" ? error : record.message;

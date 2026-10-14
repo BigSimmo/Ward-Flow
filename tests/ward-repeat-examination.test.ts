@@ -132,7 +132,7 @@ describe("PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9
     expect(movement(collected, TARGET).stage).toBe("moving");
   });
 
-  it("allows collection once the flagged bed has actually been released", () => {
+  it("refuses collection on revoked-exam hold, and RELEASE_HELD_BED safely closes the movement (DEC-L5-01)", () => {
     const TARGET = "WF-012";
     const enRoute = atEnRoute(TARGET);
     const flagged = wardFlowReducer(enRoute, {
@@ -144,25 +144,26 @@ describe("PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9
     });
     expect(examinationRevokedWhileBedHeld(movement(flagged, TARGET))).toBe(true);
 
-    // The bed has been released (`admissionId` cleared) — the same fact
-    // `examinationRevokedWhileBedHeld`'s own "clears once STEP_BACK_STAGE then RELEASE_PULL"
-    // test above proves is reachable through the ordinary release path. Spliced directly here to
-    // isolate PATIENT_COLLECTED's own guard from the unrelated stage guard STEP_BACK_STAGE would
-    // otherwise also trip (stepping back leaves stage at `pulled`, not `handover_ready`).
-    const released = {
-      ...flagged,
-      movements: flagged.movements.map((m) => (m.id === TARGET ? { ...m, admissionId: undefined } : m)),
-    };
-    expect(examinationRevokedWhileBedHeld(movement(released, TARGET))).toBe(false);
-
-    const collected = wardFlowReducer(released, {
+    // Collection is refused while examination was revoked
+    const collectedAttempt = wardFlowReducer(flagged, {
       type: "PATIENT_COLLECTED",
       role: "officer",
+      now: NOW + 2,
+      movementId: TARGET,
+    });
+    expect(collectedAttempt.rejections).toHaveLength(1);
+    expect(collectedAttempt.rejections[0]?.reason).toContain("revoked");
+
+    // Explicit RELEASE_HELD_BED releases the bed and closes the movement
+    const released = wardFlowReducer(flagged, {
+      type: "RELEASE_HELD_BED",
+      role: "coordinator",
       now: NOW + 3,
       movementId: TARGET,
     });
-    expect(collected.rejections.slice(released.rejections.length)).toEqual([]);
-    expect(movement(collected, TARGET).stage).toBe("moving");
+    expect(released.rejections).toHaveLength(0);
+    expect(movement(released, TARGET).closure?.outcome).toBe("did_not_proceed");
+    expect(movement(released, TARGET).admissionId).toBeUndefined();
   });
 });
 
@@ -355,7 +356,7 @@ describe("examinationRevokedWhileBedHeld — derived from records, never from mo
     expect(examinationRevokedWhileBedHeld(movement(revoked, TARGET))).toBe(true);
   });
 
-  it("survives RECORD_MOVEMENT_BLOCKER and TRANSPORT_ACCEPTED overwriting the prose blocker", () => {
+  it("refuses generic blocker edits on revoked holds under DEC-L5-01", () => {
     const TARGET = "WF-012";
     const revoked = wardFlowReducer(atHandoverReady(TARGET), {
       type: "RECORD_EXAMINATION",
@@ -367,34 +368,31 @@ describe("examinationRevokedWhileBedHeld — derived from records, never from mo
     expect(revoked.rejections).toEqual([]);
     expect(examinationRevokedWhileBedHeld(movement(revoked, TARGET))).toBe(true);
 
-    const blockerOverwritten = wardFlowReducer(revoked, {
+    const blockerAttempt = wardFlowReducer(revoked, {
       type: "RECORD_MOVEMENT_BLOCKER",
       role: "coordinator",
       now: NOW + 2,
       movementId: TARGET,
       blocker: "Awaiting a single room",
     });
-    expect(blockerOverwritten.rejections).toEqual([]);
-    // Non-vacuity: the prose really no longer mentions the revoked examination, so the flag below
-    // cannot be passing by reading the very sentence this test overwrote.
-    expect(movement(blockerOverwritten, TARGET).blocker).not.toMatch(/revoked/i);
-    expect(examinationRevokedWhileBedHeld(movement(blockerOverwritten, TARGET))).toBe(true);
+    // DEC-L5-01: generic blocker edits are refused on revoked-exam holds
+    expect(blockerAttempt.rejections).toHaveLength(1);
+    expect(blockerAttempt.rejections[0]?.reason).toMatch(/cannot change blocker.*examination was revoked/i);
 
-    const transportAccepted = wardFlowReducer(blockerOverwritten, {
+    const transportAccepted = wardFlowReducer(revoked, {
       type: "TRANSPORT_ACCEPTED",
       role: "officer",
       now: NOW + 3,
       movementId: TARGET,
     });
     // Product-correct: transport must not advance while the examination is revoked and the bed
-    // is still held. The prose blocker can still be overwritten; the derived flag is the gate.
+    // is still held.
     expect(transportAccepted.rejections).toHaveLength(1);
     expect(transportAccepted.rejections[0]).toMatchObject({
       attempted: "TRANSPORT_ACCEPTED",
       movementId: TARGET,
     });
     expect(transportAccepted.rejections[0].reason).toMatch(/examination was revoked/i);
-    expect(movement(transportAccepted, TARGET).blocker).not.toMatch(/revoked/i);
     expect(examinationRevokedWhileBedHeld(movement(transportAccepted, TARGET))).toBe(true);
   });
 

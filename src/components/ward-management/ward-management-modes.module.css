@@ -92,7 +92,8 @@
   white-space: nowrap;
 }
 
-.modeTitle h1 {
+.modeTitleText {
+  display: block;
   color: var(--ward-heading);
   font-size: var(--text-lg);
   font-weight: 680;
