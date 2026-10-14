@@ -219,19 +219,20 @@ export function toHandoverRow(
       at: decline.at,
     })),
     pullExpiresAt: movement.pullExpiresAt,
-    transport: isStoppedTransportAwaitingRelease(movement)
-      ? {
-          provider: movement.transport?.provider ?? "Transport stopped",
-          escort: movement.transport?.escortRequired ?? false,
-          leg: "Stopped",
-        }
-      : movement.transport === undefined || leg === "Cancelled"
-        ? undefined
-        : {
+    transport:
+      movement.transport !== undefined && isStoppedTransportAwaitingRelease(movement)
+        ? {
             provider: movement.transport.provider,
             escort: movement.transport.escortRequired,
-            leg: movement.transport.cancelledAt !== undefined ? "Stopped" : leg,
-          },
+            leg: "Stopped",
+          }
+        : movement.transport === undefined || leg === "Cancelled"
+          ? undefined
+          : {
+              provider: movement.transport.provider,
+              escort: movement.transport.escortRequired,
+              leg: movement.transport.cancelledAt !== undefined ? "Stopped" : leg,
+            },
     escalated: movement.escalation !== undefined,
     urgent: movement.flaggedUrgent,
     eta: movement.arrivalDetails?.estimatedArrivalAt ?? movement.transport?.estimatedAt,
@@ -367,15 +368,18 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
     (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
   ) {
     // Audit A4-3: the one bed-hold rule. Under an hour left carries the amber at-risk dot (not Act now).
-    const hold = bedHold(row.pullExpiresAt!, now)!;
-    if (hold.state === "lapsed") {
-      return { when: durMinutes(hold.minutes), what: "Pull expired" };
+    // A pull time that is not a real instant (NaN, Infinity) yields no hold; fall through to the form.
+    const hold = bedHold(row.pullExpiresAt, now);
+    if (hold !== null) {
+      if (hold.state === "lapsed") {
+        return { when: durMinutes(hold.minutes), what: "Pull expired" };
+      }
+      return {
+        when: formatInstantWithDay(hold.expiresAt, now),
+        what: "Pull ends",
+        ...(hold.state === "at-risk" ? { atRisk: true } : {}),
+      };
     }
-    return {
-      when: formatInstantWithDay(row.pullExpiresAt!, now),
-      what: "Pull ends",
-      ...(hold.state === "at-risk" ? { atRisk: true } : {}),
-    };
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };

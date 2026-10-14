@@ -2460,13 +2460,15 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
 function withdrawAllLiveRequestsForReferrer(
   movement: Movement,
   now: Instant,
+  /** Who ended the referral. A coordinator withdrawing it is recorded as such, not as the referrer. */
+  reason: "referrer_withdrew" | "coordinator_withdrew" = "referrer_withdrew",
 ): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals"> {
   return {
     acceptedUnitId: undefined,
     referredUnitIds: [],
     withdrawnReferrals: [
       ...movement.withdrawnReferrals,
-      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason: "referrer_withdrew" as const })),
+      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason })),
     ],
   };
 }
@@ -4623,7 +4625,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const hadLiveTransport = liveTransport !== undefined;
       const updated: Movement = {
         ...movement,
-        ...withdrawAllLiveRequestsForReferrer(movement, event.now),
+        ...withdrawAllLiveRequestsForReferrer(
+          movement,
+          event.now,
+          event.role === "coordinator" ? "coordinator_withdrew" : "referrer_withdrew",
+        ),
         transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
         closure: {
           at: event.now,

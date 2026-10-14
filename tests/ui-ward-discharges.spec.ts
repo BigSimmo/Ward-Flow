@@ -234,6 +234,9 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       document.body.appendChild(anchor);
       anchor.click();
     }, UNIT_ID);
+    // The click only starts the navigation; the staged-content count below means nothing until the
+    // board's own address is in place and the document has finished loading.
+    await page.waitForURL(`**/mockups/ward-flow/board/${UNIT_ID}`, { waitUntil: "load" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
