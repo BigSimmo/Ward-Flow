@@ -8668,7 +8668,7 @@ Target: Local task-detail and history ledger synchronisation following completio
 - **PR #274 (`codex/pr265-rebuild-20261013`)**: Validated batches, derivations, and comprehensive runtime reducer guard scan.
 - **PR #276 (`claude/phone-tap-sizes-stp74x`)**: Mobile tap ergonomics: text fields and Delays filter chips upgraded to full 44px minimum tap boundaries.
 - **PR #277 (`ui/275-ui-polish`)**: Modular UI-only ergonomics and layout polish.
-- **PR #278 (`codex/backend-foreign-schema-grant-preflight`)**: Runtime role read grant security restriction refusing queries outside `ward_flow` schema.
+- **PR #278 (`codex/backend-foreign-schema-grant-preflight`)**: Startup grant preflight: refuses to start when the runtime database role holds unexpected read grants outside the `ward_flow` schema. It checks the role's grants once at startup (it does not inspect individual queries) and permits `pg_catalog`, `information_schema` and four allowlisted extension/cron relations.
 - **PR #279 (`feat/group-a-clinical-fixes`)**: Group A clinical, legal, and operational defect remediation:
   - **S1-4 & S2-4**: Dispatches cancellation notices to transport officers (`{ role: "officer" }`) upon referral withdrawal; sends pre-acceptance revocation notices to receiving wards.
   - **A3-10 & S2-7**: Stopped-transport held beds surfaced in Handover under actionable placements to eliminate indefinitely stranded psychiatric beds.
@@ -8684,7 +8684,7 @@ Target: Local task-detail and history ledger synchronisation following completio
 
 - **PR #284 (`feat/engine-and-screen-fixes`)**:
   - **Status**: **Merged** to `origin/main` as `36e68bf`. It was green across all 18 CI shards before merge. Per-fix detail is in §7.79.
-  - **Scope (19 Engine & Screen Remediations)**:
+  - **Scope (19 Engine & Screen Remediations; the 13 below are the headline items, and all 19 are listed individually in §7.79)**:
     - **A3-4**: Corrects delay cause evaluation order in `delays-derivations.ts` so unreferred patients with no eligible bed network-wide (`WF-308`) retain the `no_eligible_bed` severe delay category, while referrable unreferred patients classify under `awaiting_coordinator`.
     - **A3-12**: Incorporates `examinationRevokedWhileBedHeld(movement)` in `causeOf` to correctly route community order and revoked exam holds to the coordinator rather than stranding under `awaiting_transport`.
     - **A3-7**: Records per-destination `referredAt` on queued referral addressings (`RECEIVE_REFERRAL`); derives silence reminders from the oldest live awaiting arm, with synchronised type declarations in `statistics-claims-register.ts`.
@@ -8701,7 +8701,7 @@ Target: Local task-detail and history ledger synchronisation following completio
 
 ### 3. Open Estate Tasks & Unresolved Work (14 October 2026)
 
-The following items constitute the active, prioritized open backlog:
+The following items are the prioritised open backlog as of this snapshot. This list is not exhaustive: other unresolved work stays active in the earlier register entries (Group 7 of the register, in the 13 October entries around §7.75-§7.77) and in §7.79, including SPEC-005 (queue ordering), M-DEAD (retired `ward-chrome-header` module), M-TOKENS (the remaining `.btnPrimary` definitions), the remaining remediation tasks and hosted-state verification. Nothing in those entries is closed by this section.
 
 1. **PR #283 (`feat/group-b-ui-perf-accessibility`)**:
    - **Status**: **Merged** to `origin/main` as `a974d04` (accessibility, focus traps, bundle code-splitting, search responsiveness). Nothing further to do except the physical-device check in item 3.
