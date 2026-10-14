@@ -77,7 +77,7 @@ function ModeHeader({
           <small>Synthetic patient-flow prototype</small>
         </span>
         <div className={styles.modeTitle}>
-          <span>{copy.title}</span>
+          <span className={styles.modeTitleText}>{copy.title}</span>
           <p>{copy.description}</p>
         </div>
       </div>
