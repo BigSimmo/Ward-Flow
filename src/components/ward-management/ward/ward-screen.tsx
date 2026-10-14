@@ -1038,7 +1038,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * from the five-state bed grid's own arithmetic". The band-filtered list exists only so the
    * stamp names a release from the same population as the number above it.
    */
-  const releasesCountedToday = pendingBedReleases.filter((release) => dayOf(release.expectedAt) === dayOf(now));
+  const releasesCountedToday = pendingBedReleases.filter((release) => releaseBand(release, now) !== "beyond-today");
 
   // Task 5, spec D12: every REQUEST_CAPACITY_REFRESH raised against this unit, live from the
   // provider. `refreshRequests` only ever grows (the reducer never removes an entry), so the last
