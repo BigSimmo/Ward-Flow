@@ -1,4 +1,4 @@
-import { filterCommandPaletteItems, type CommandPaletteItem } from "@/components/wf";
+import { filterCommandPaletteItems } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   DEFAULT_BROADCAST_DURATION_MINUTES,
