@@ -1278,7 +1278,7 @@ export function ShortlistPanel({
                   </span>
                   {!movement.referredUnitIds.includes(acceptedUnit.id) ? (
                     <Link
-                      href={`/mockups/ward-flow/ward?unit=${encodeURIComponent(acceptedUnit.id)}`}
+                      href={`/mockups/ward-flow/ward/${encodeURIComponent(acceptedUnit.id)}`}
                       data-testid={`ward-shortlist-open-ward-desk-${acceptedUnit.id}`}
                       className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                       onClick={() => {
