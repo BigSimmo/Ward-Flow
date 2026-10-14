@@ -105,27 +105,8 @@ export function changesSinceLastLook(
     const movement = movementById.get(id);
     return movement !== undefined && isOpen(movement) && movement.referralId === undefined;
   });
-
-  const bedsFreed: BedsFreed[] = [];
-  for (const unit of world.units) {
-    const before = previous.readyByUnit[unit.id];
-    const after = current.readyByUnit[unit.id];
-    if (before === undefined || after === undefined || after <= before) continue;
-    bedsFreed.push({ unitId: unit.id, unitName: unit.name, count: after - before });
-  }
-
-  // One row per movement: a movement that moved from one delay to another is new in the cause it
-  // now sits under. Titles come from the delays screen's own copy, never written here.
-  const newDelays: NewDelay[] = [];
-  const counted = new Set<string>();
-  for (const key of current.delayKeys) {
-    if (seenDelays.has(key)) continue;
-    const separator = key.lastIndexOf(":");
-    const movementId = key.slice(0, separator);
-    if (counted.has(movementId)) continue;
-    counted.add(movementId);
-    newDelays.push({ movementId, title: delayTitle(key.slice(separator + 1)) });
-  }
+  const bedsFreed = bedsFreedRows(world.units, previous, current);
+  const newDelays = newDelayRows(current.delayKeys, seenDelays);
 
   return {
     since: previous.at,
@@ -195,16 +176,56 @@ export function hasAnyChange(changes: ChangesSinceLastLook): boolean {
 export function parseLastLookSnapshot(raw: string | null): LastLookSnapshot | undefined {
   if (!raw) return undefined;
   try {
-    const value: unknown = JSON.parse(raw);
-    if (typeof value !== "object" || value === null) return undefined;
-    const v = value as Record<string, unknown>;
-    const stringArray = (field: unknown) => Array.isArray(field) && field.every((entry) => typeof entry === "string");
-    if (v.version !== 1 || typeof v.at !== "number" || typeof v.scenario !== "string") return undefined;
-    if (![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray)) return undefined;
-    if (typeof v.readyByUnit !== "object" || v.readyByUnit === null) return undefined;
-    if (!Object.values(v.readyByUnit).every((count) => typeof count === "number")) return undefined;
-    return value as LastLookSnapshot;
+    return parsedSnapshot(JSON.parse(raw));
   } catch {
     return undefined;
   }
+}
+function bedsFreedRows(
+  units: LastLookWorld["units"],
+  previous: LastLookSnapshot,
+  current: LastLookSnapshot,
+): BedsFreed[] {
+  const bedsFreed: BedsFreed[] = [];
+  for (const unit of units) {
+    const before = previous.readyByUnit[unit.id];
+    const after = current.readyByUnit[unit.id];
+    if (before === undefined || after === undefined || after <= before) continue;
+    bedsFreed.push({ unitId: unit.id, unitName: unit.name, count: after - before });
+  }
+  return bedsFreed;
+}
+function newDelayRows(keys: string[], seenDelays: Set<string>): NewDelay[] {
+  // One row per movement: a movement that moved from one delay to another is new in the cause it
+  // now sits under. Titles come from the delays screen's own copy, never written here.
+  const newDelays: NewDelay[] = [];
+  const counted = new Set<string>();
+  for (const key of keys) {
+    if (seenDelays.has(key)) continue;
+    const separator = key.lastIndexOf(":");
+    const movementId = key.slice(0, separator);
+    if (counted.has(movementId)) continue;
+    counted.add(movementId);
+    newDelays.push({ movementId, title: delayTitle(key.slice(separator + 1)) });
+  }
+  return newDelays;
+}
+function stringArray(field: unknown): boolean {
+  return Array.isArray(field) && field.every((entry) => typeof entry === "string");
+}
+function snapshotHeaderInvalid(v: Record<string, unknown>): boolean {
+  return v.version !== 1 || typeof v.at !== "number" || !Number.isFinite(v.at) || typeof v.scenario !== "string";
+}
+function snapshotListsInvalid(v: Record<string, unknown>): boolean {
+  return ![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray);
+}
+function snapshotReadyCountsInvalid(v: Record<string, unknown>): boolean {
+  if (typeof v.readyByUnit !== "object" || v.readyByUnit === null || Array.isArray(v.readyByUnit)) return true;
+  return !Object.values(v.readyByUnit).every((count) => Number.isSafeInteger(count) && (count as number) >= 0);
+}
+function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const v = value as Record<string, unknown>;
+  if (snapshotHeaderInvalid(v) || snapshotListsInvalid(v) || snapshotReadyCountsInvalid(v)) return undefined;
+  return value as LastLookSnapshot;
 }
