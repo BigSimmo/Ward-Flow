@@ -1,3 +1,4 @@
+import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
 import type { AuditDecision } from "../ward-audit";
 import { enumValue, finiteInstant } from "../ward-audit";
 import type { Instant } from "../ward-clock";
@@ -140,6 +141,13 @@ export function reduceBroadcastAlertEvent(
       // (`src/app/mockups/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
       // acknowledges as `COORDINATOR_DESK_ACKNOWLEDGER_ID` — the one non-unit sender this
       // refusal exempts. Every other unrecognised unitId is still refused.
+      if (event.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID && event.role !== "coordinator") {
+        return reject(
+          state,
+          event,
+          "ACKNOWLEDGE_BROADCAST_ALERT coordinator desk acknowledgement requires coordinator role",
+        );
+      }
       if (event.unitId !== COORDINATOR_DESK_ACKNOWLEDGER_ID && !isRealDesk(state, event.unitId)) {
         return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT unitId ${event.unitId} does not name a real unit`);
       }
@@ -336,4 +344,25 @@ export function reduceBroadcastAlertEvent(
     default:
       return null;
   }
+}
+
+/**
+ * Convenience wrapper for tests and direct callers.
+ * Returns undefined if the event is rejected.
+ */
+export function reduceBroadcastEvent(state: WardFlowState, event: WardFlowEvent): WardFlowState | undefined {
+  // Same role gate as normal dispatch, so a direct caller cannot skip it.
+  if (!EVENT_ROLE[event.type]?.includes(event.role)) return undefined;
+  let rejected = false;
+  const decision: AuditDecision = { outcome: "accepted", reasonCode: "none" };
+  const reject: RejectFn = () => {
+    rejected = true;
+    decision.outcome = "denied";
+    return state;
+  };
+  const next = reduceBroadcastAlertEvent(state, event, decision, reject);
+  if (rejected || decision.outcome === "denied" || !next) {
+    return undefined;
+  }
+  return next;
 }

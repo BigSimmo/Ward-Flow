@@ -209,10 +209,10 @@ export function StatisticsServicesIndexScreen() {
                 value={
                   <span className={phone.flagged}>
                     {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {entry.waiting}
+                    {entry.departments === 0 ? "No ED" : entry.waiting}
                   </span>
                 }
-                time="in ED"
+                time={entry.departments === 0 ? undefined : "in ED"}
                 href={serviceStatisticsHref(entry.service)}
               />
             ))}

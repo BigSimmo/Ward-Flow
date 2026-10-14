@@ -7,12 +7,17 @@ import {
   STAGE_TRANSITION_BLOCKERS,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { changeAudit, handoverSnapshot } from "../src/components/ward-management/ward-derivations";
+import {
+  changeAudit,
+  handoverSnapshot,
+  isStoppedTransportAwaitingRelease,
+} from "../src/components/ward-management/ward-derivations";
 import { changeReasonLabels } from "../src/components/ward-management/ward-change-reasons";
+import { toHandoverRow, dueParts, dueShort, isActNow } from "../src/components/ward-management/handover/handover-model";
+import { type Movement } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { logger } from "../src/lib/logger";
-import { CONTINUATION_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
-import { auditSubject } from "../src/components/ward-management/ward-audit";
+import { auditSubject, AUDITABLE_FORM_CODES } from "../src/components/ward-management/ward-audit";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
 const NOW = NOW_ANCHOR;
@@ -127,6 +132,101 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(addedNotices.map((n) => n.to.placeId).sort()).toEqual(unitIds.sort());
     });
 
+    it("pre-acceptance withdrawal by coordinator sends notices to all referred wards", () => {
+      let state = seedWardFlowState();
+      const movementId = "WF-001";
+      const unitIds = ["scgh-adult-open", "arm-adult-open"];
+
+      state = wardFlowReducer(state, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW,
+        movementId,
+        unitIds,
+      });
+
+      const beforeNotices = state.notices.length;
+      state = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "coordinator",
+        now: NOW + 10,
+        movementId,
+      });
+
+      expect(state.rejections).toHaveLength(0);
+      const mv = state.movements.find((m) => m.id === movementId)!;
+      expect(mv.closure?.outcome).toBe("did_not_proceed");
+      expect(mv.closure?.reason).toBe("The coordinator withdrew the referral");
+      expect(mv.referredUnitIds).toHaveLength(0);
+
+      const addedNotices = state.notices.slice(beforeNotices);
+      const wardNotices = addedNotices.filter((n) => n.kind === "ward_request_withdrawn");
+      expect(wardNotices).toHaveLength(2);
+      expect(wardNotices.map((n) => n.to.placeId).sort()).toEqual(unitIds.sort());
+    });
+
+    it("post-acceptance revocation by coordinator with booked transport notifies the officer and accepting ward", () => {
+      let state = seedWardFlowState();
+      const movementId = "WF-001";
+      const unitId = "scgh-adult-open";
+
+      state = wardFlowReducer(state, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW,
+        movementId,
+        unitIds: [unitId],
+      });
+      state = wardFlowReducer(state, {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now: NOW + 5,
+        movementId,
+        unitId,
+      });
+      state = wardFlowReducer(state, {
+        type: "PULL_PATIENT",
+        role: "ward",
+        now: NOW + 10,
+        movementId,
+        unitId,
+      });
+      state = wardFlowReducer(state, {
+        type: "BOOK_TRANSPORT",
+        role: "ed",
+        now: NOW + 15,
+        movementId,
+        provider: "Ambulance service",
+        escortRequired: false,
+        cadNumber: "CAD-COORD-001",
+        transportLegalStatus: "voluntary",
+        estimatedAt: NOW + 60,
+      });
+
+      const beforeNotices = state.notices.length;
+      state = wardFlowReducer(state, {
+        type: "WITHDRAW_REFERRAL",
+        role: "coordinator",
+        now: NOW + 20,
+        movementId,
+      });
+
+      expect(state.rejections).toHaveLength(0);
+      const mv = state.movements.find((m) => m.id === movementId)!;
+      expect(mv.closure?.outcome).toBe("did_not_proceed");
+      expect(mv.closure?.reason).toBe("The coordinator revoked the accepted referral");
+      expect(mv.transport?.cancelledAt).toBe(NOW + 20);
+
+      const addedNotices = state.notices.slice(beforeNotices);
+      const wardNotice = addedNotices.find((n) => n.kind === "referral_revoked_ward");
+      expect(wardNotice).toBeDefined();
+      expect(wardNotice?.to).toEqual({ role: "ward", placeId: unitId });
+
+      const officerNotice = addedNotices.find((n) => n.kind === "transport_cancelled_officer");
+      expect(officerNotice).toBeDefined();
+      expect(officerNotice?.to).toEqual({ role: "officer" });
+      expect(officerNotice?.sentence).toContain("coordinator");
+    });
     it("RECORD_REFERRER_WITHDRAWAL cascade clears open movements, cancels transport, and dispatches notices (S2-4)", () => {
       const state = seedWardFlowState();
       // Receive a front-door referral addressed to SCGH ED
@@ -270,6 +370,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       const stoppedMv = state.movements.find((m) => m.id === movementId)!;
       expect(stoppedMv.closure?.outcome).toBe("did_not_proceed");
       expect(stoppedMv.blocker).toBe(STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease);
+      expect(isStoppedTransportAwaitingRelease(stoppedMv)).toBe(true);
 
       // Verify handover derivation surfaces stopped movement awaiting release in placementGoneWrong
       const snapshot = handoverSnapshot(state.movements, state.units, NOW + 25);
@@ -295,6 +396,8 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       });
       expect(state.rejections).toHaveLength(0);
 
+      const releasedMv = state.movements.find((m) => m.id === movementId)!;
+      expect(isStoppedTransportAwaitingRelease(releasedMv)).toBe(false);
       const unitAfter = state.units.find((u) => u.id === acceptingUnitId)!;
       expect(unitAfter.allocatable.value).toBe(unitBefore.allocatable.value + 1);
 
@@ -346,41 +449,143 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(stationaryEntry).toBeDefined();
       expect(stationaryEntry.expired).toBe(true);
     });
+    it("suppresses 'Pull expired' and Act Now false alarms on handover board for in-transit patients", () => {
+      const state = seedWardFlowState();
+      const inTransitMovement: Movement = {
+        ...state.movements[0],
+        id: "WF-INTRANSIT" as const,
+        stage: "moving" as const,
+        acceptedUnitId: "scgh-adult-open",
+        pullExpiresAt: NOW - 60, // expired 60 minutes ago
+        transport: {
+          id: "TJ-INTRANSIT",
+          provider: "Ambulance service" as const,
+          escortRequired: false,
+          cadNumber: "CAD-999",
+          transportLegalStatus: "voluntary" as const,
+          acceptedAt: NOW - 90,
+          enRouteAt: NOW - 80,
+          collectedAt: NOW - 30,
+        },
+      };
+
+      const row = toHandoverRow(inTransitMovement, state.units, state.patients, state.referrals);
+      expect(row.stage).toBe("moving");
+
+      // Verify dueParts does not say "Pull expired"
+      const parts = dueParts(row, NOW);
+      expect(parts?.what).toBe("Collected");
+      expect(parts?.when).toBe("In transit");
+
+      // Verify dueShort does not say "Pull expired"
+      const short = dueShort(row, NOW);
+      expect(short).toBe("In transit");
+
+      // Verify isActNow does not flag false alarm for in-transit bed hold
+      expect(isActNow(row, NOW)).toBe(false);
+    });
+
+    it("preserves statutory form due times for in-transit patients instead of hiding them behind 'In transit'", () => {
+      const state = seedWardFlowState();
+      const inTransitMovementWithForm: Movement = {
+        ...state.movements[0],
+        id: "WF-INTRANSIT-FORM" as const,
+        stage: "moving" as const,
+        acceptedUnitId: "scgh-adult-open",
+        pullExpiresAt: NOW - 60, // expired 60 minutes ago
+        legalForm: { code: "1A", dueAt: NOW + 120 },
+        transport: {
+          id: "TJ-INTRANSIT-2",
+          provider: "Ambulance service" as const,
+          escortRequired: false,
+          cadNumber: "CAD-998",
+          transportLegalStatus: "involuntary" as const,
+          acceptedAt: NOW - 90,
+          enRouteAt: NOW - 80,
+          collectedAt: NOW - 30,
+        },
+      };
+
+      const row = toHandoverRow(inTransitMovementWithForm, state.units, state.patients, state.referrals);
+      expect(row.stage).toBe("moving");
+
+      // Verify dueParts shows the form due time, not "In transit"
+      const parts = dueParts(row, NOW);
+      expect(parts?.what).toBe("1A due");
+
+      // Verify dueShort shows the form due time, not "In transit"
+      const short = dueShort(row, NOW);
+      expect(short).toContain("1A due");
+    });
+
+    it("identifies collected patients as in transit even when pullExpiresAt is undefined", () => {
+      const state = seedWardFlowState();
+      const inTransitMovementNoPull: Movement = {
+        ...state.movements[0],
+        id: "WF-INTRANSIT-NOPULL" as const,
+        stage: "moving" as const,
+        acceptedUnitId: "scgh-adult-open",
+        pullExpiresAt: undefined,
+        legalForm: undefined,
+        transport: {
+          id: "TJ-INTRANSIT-3",
+          provider: "Ambulance service" as const,
+          escortRequired: false,
+          cadNumber: "CAD-997",
+          transportLegalStatus: "voluntary" as const,
+          acceptedAt: NOW - 90,
+          enRouteAt: NOW - 80,
+          collectedAt: NOW - 30,
+        },
+      };
+
+      const row = toHandoverRow(inTransitMovementNoPull, state.units, state.patients, state.referrals);
+      expect(row.stage).toBe("moving");
+
+      const parts = dueParts(row, NOW);
+      expect(parts?.when).toBe("In transit");
+
+      const short = dueShort(row, NOW);
+      expect(short).toBe("In transit");
+    });
   });
 
   describe("Fix A1-4: Statutory continuation legal forms in audit trail", () => {
-    it("retains Form 5B in audit trail subject during RECORD_LEGAL_FORM_CONTINUATION", () => {
-      expect(CONTINUATION_LEGAL_FORMS.some((f) => f.code === "5B")).toBe(true);
+    it.each(["5B", "3C", "6B", "6C"] as const)(
+      "retains Form %s in audit trail details during RECORD_LEGAL_FORM_CONTINUATION",
+      (formCode) => {
+        expect(AUDITABLE_FORM_CODES.includes(formCode)).toBe(true);
 
-      const state = seedWardFlowState();
-      const movementId = state.movements[0].id;
-      // Set Form 5A on the movement so 5B can continue it
-      const with5A: WardFlowState = {
-        ...state,
-        movements: state.movements.map((m) =>
-          m.id === movementId
-            ? { ...m, legalForm: { code: "5A" as const, formedAt: NOW - 100 }, closure: undefined }
-            : m,
-        ),
-      };
+        const state = seedWardFlowState();
+        const movementId = state.movements[0].id;
+        // Set Form 5A on the movement so continuation can continue it
+        const with5A: WardFlowState = {
+          ...state,
+          movements: state.movements.map((m) =>
+            m.id === movementId
+              ? { ...m, legalForm: { code: "5A" as const, formedAt: NOW - 100 }, closure: undefined }
+              : m,
+          ),
+        };
 
-      const auditedState = wardFlowReducer(with5A, {
-        type: "RECORD_LEGAL_FORM_CONTINUATION",
-        role: "ward",
-        now: NOW,
-        movementId,
-        formCode: "5B",
-        startedAt: NOW,
-        paperExpiresAt: NOW + 1000,
-      });
+        const auditedState = wardFlowReducer(with5A, {
+          type: "RECORD_LEGAL_FORM_CONTINUATION",
+          role: "ward",
+          now: NOW,
+          movementId,
+          formCode,
+          startedAt: NOW,
+          paperExpiresAt: NOW + 1000,
+        });
 
-      expect(auditedState.rejections).toHaveLength(0);
-      const auditEvent = auditedState.auditEvents.find((a) => a.action === "RECORD_LEGAL_FORM_CONTINUATION");
-      expect(auditEvent).toBeDefined();
-      if (auditEvent && auditEvent.action === "RECORD_LEGAL_FORM_CONTINUATION") {
-        expect(auditEvent.details.formCode).toBe("5B");
-      }
-    });
+        expect(auditedState.rejections).toHaveLength(0);
+        const auditEvent = auditedState.auditEvents.find((a) => a.action === "RECORD_LEGAL_FORM_CONTINUATION");
+        expect(auditEvent).toBeDefined();
+        if (auditEvent && auditEvent.action === "RECORD_LEGAL_FORM_CONTINUATION") {
+          expect(auditEvent.details.formCode).toBe(formCode);
+        }
+      },
+    );
   });
 
   describe("Fix A1-6: Walk-in patient identity in movement audit trail", () => {

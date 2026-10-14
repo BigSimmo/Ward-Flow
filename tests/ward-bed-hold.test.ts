@@ -112,6 +112,7 @@ describe("Ward page (A1-3)", () => {
 
   it("counts lapsed holds as one Act now row", () => {
     expect(wardActNowCount({ alerts: 0, incoming: 0, heldUp: 0, rollupOverdue: false, lapsedHolds: 2 })).toBe(1);
+    expect(wardActNowCount({ alerts: 0, incoming: 0, heldUp: 0, rollupOverdue: false, stoppedHolds: 2 })).toBe(1);
     expect(wardActNowCount({ alerts: 0, incoming: 0, heldUp: 0, rollupOverdue: false })).toBe(0);
     // Audit A3-1: each absence on an order is its own Act now row, as on the shared task list.
     expect(wardActNowCount({ alerts: 0, incoming: 0, heldUp: 0, rollupOverdue: false, absences: 2 })).toBe(2);
