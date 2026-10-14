@@ -21,6 +21,37 @@ export function setForceDynamicLoading(force: boolean) {
   forceDynamicLoading = force;
 }
 
+vi.mock("@azure/msal-browser", () => ({
+  PublicClientApplication: class {
+    initialize = async () => {};
+    handleRedirectPromise = async () => null;
+    getActiveAccount = () => null;
+    getAllAccounts = () => [];
+    setActiveAccount = () => {};
+    acquireTokenSilent = async () => ({ accessToken: "" });
+    loginRedirect = async () => {};
+    logoutRedirect = async () => {};
+  },
+}));
+
+vi.mock("next/link", async () => {
+  const React = await import("react");
+  return {
+    default: React.forwardRef<
+      HTMLAnchorElement,
+      Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
+        href?: string | { pathname?: string };
+        prefetch?: boolean;
+      }
+    >(function Link(props, ref) {
+      const { href, prefetch: _, children, ...rest } = props;
+      void _;
+      const resolvedHref = typeof href === "string" ? href : href?.pathname;
+      return React.createElement("a", { ref, href: resolvedHref, ...rest }, children);
+    }),
+  };
+});
+
 vi.mock("next/dynamic", async () => {
   const React = await import("react");
   return {

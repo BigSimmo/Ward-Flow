@@ -1,12 +1,16 @@
 import { chromium } from "playwright";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { newestPreinstalledChromiumHeadlessShell } from "../playwright-browser-preflight.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "../..");
-const browsersRoot = path.join(process.env.LOCALAPPDATA || "C:/Users/joshs/AppData/Local", "ms-playwright");
+const browsersRoot = path.join(
+  process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
+  "ms-playwright",
+);
 const BROWSER_PATH = newestPreinstalledChromiumHeadlessShell(browsersRoot);
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3605";
