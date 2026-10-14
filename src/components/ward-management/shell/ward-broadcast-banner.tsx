@@ -82,14 +82,17 @@ function answerText(reply: BroadcastReply, now: Instant): string {
   return label;
 }
 
+function toControlledMinutes(val: string | Instant): number {
+  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+  const parsed = Date.parse(val);
+  if (Number.isNaN(parsed)) return 0;
+  return Math.floor(parsed / 60_000);
+}
+
 function computeControlledRemainingMinutes(expiresAt: string | Instant, now?: string | Instant): number {
-  if (typeof expiresAt === "number") {
-    const ref = typeof now === "number" ? now : 0;
-    return expiresAt - ref;
-  }
-  const expMs = Date.parse(expiresAt);
-  const nowMs = typeof now === "string" ? Date.parse(now) : Date.now();
-  return Math.floor((expMs - nowMs) / 60_000);
+  const expMin = toControlledMinutes(expiresAt);
+  const nowMin = now !== undefined ? toControlledMinutes(now) : Math.floor(Date.now() / 60_000);
+  return expMin - nowMin;
 }
 
 /**
@@ -122,6 +125,13 @@ function ControlledBroadcastBanner({
   onExtend?: () => void;
   onClear?: () => void;
 }) {
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    if (now !== undefined || !activeAlert) return;
+    const timer = window.setInterval(() => setClockTick((t) => t + 1), 30_000);
+    return () => window.clearInterval(timer);
+  }, [activeAlert, now]);
+
   if (!activeAlert || activeAlert.status === "stood_down" || activeAlert.status === "expired") {
     return null;
   }

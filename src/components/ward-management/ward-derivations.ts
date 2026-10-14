@@ -2257,15 +2257,16 @@ export function deriveTopCompatibleWards(
   movement: Movement,
   units: readonly Unit[],
   maxCount: number = PARALLEL_REFERRAL_CAP,
-  now: Instant = toInstantMinutes(new Date().toISOString()) as Instant,
+  now?: Instant,
 ): CompatibleWardCandidate[] {
   const cap = Math.max(0, Math.min(maxCount, PARALLEL_REFERRAL_CAP));
   if (cap === 0) return [];
+  const effectiveNow = (now ?? Math.max(movement.openedAt, ...units.map((u) => u.allocatable.confirmedAt))) as Instant;
   const originService = movementHealthService(movement);
   const scored = units
     .filter((u) => !movement.referredUnitIds.includes(u.id))
     .map((unit) => {
-      const check = eligibility(movement, unit, now);
+      const check = eligibility(movement, unit, effectiveNow);
       const { available } = boundedBedAvailability(unit);
       const isOutOfArea = Boolean(originService && siteByCode(unit.siteCode)?.service !== originService);
       const failingGates = (check.gates ?? []).filter((g) => !g.pass).map((g) => g.gate);
@@ -2361,9 +2362,10 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
     const latestReferralChange = [...(m.stageChanges ?? [])]
       .reverse()
       .find((c) => c.to === "destination_review" || c.to === "placement_requested");
-    const sentAt = latestReferralChange
-      ? latestReferralChange.at
-      : (m.referralDecisionOpenedAt ?? m.referredAt ?? m.openedAt ?? 0);
+    const sentAt =
+      m.referralDecisionOpenedAt ??
+      m.referredAt ??
+      (latestReferralChange ? latestReferralChange.at : (m.openedAt ?? 0));
     const elapsedMinutes = Math.max(0, nowMin - sentAt);
     if (elapsedMinutes < 120) continue;
 
@@ -2380,8 +2382,5 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
       });
     }
   }
-  return results;
-}
-
   return results;
 }

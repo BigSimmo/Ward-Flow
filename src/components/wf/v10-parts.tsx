@@ -1,5 +1,5 @@
 import { ChevronDown, Copy } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "./button";
 import { CardHead } from "./card";
@@ -636,22 +636,24 @@ export function UndoHairline({
   onExpire,
   className,
 }: UndoHairlineProps) {
-  const [tick, setTick] = useState(0);
   const effectiveInitialMs = remainingMs ?? durationMs ?? windowMs;
-  const deadlineRef = useRef(Date.now() + effectiveInitialMs);
-  useEffect(() => {
-    deadlineRef.current = Date.now() + effectiveInitialMs;
-  }, [effectiveInitialMs]);
+  const [elapsedMs, setElapsedMs] = useState(0);
   useEffect(() => {
     if (!active || remainingMs !== undefined) return;
-    const timer = window.setInterval(() => setTick(Date.now()), 250);
-    return () => window.clearInterval(timer);
-  }, [active, remainingMs]);
-  const effectiveRemainingMs = remainingMs ?? Math.max(0, deadlineRef.current - (tick || Date.now()));
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setElapsedMs(Math.max(0, Date.now() - startedAt));
+    }, 250);
+    return () => {
+      window.clearInterval(timer);
+      setElapsedMs(0);
+    };
+  }, [active, remainingMs, effectiveInitialMs]);
+  const effectiveRemainingMs = remainingMs ?? Math.max(0, effectiveInitialMs - elapsedMs);
   const effectiveWindowMs = durationMs ?? windowMs;
   if (!active || effectiveRemainingMs <= 0) {
-    return onExpire && active ? (
-      <UndoHairlineExpiryEffect active={active} remainingMs={effectiveRemainingMs} onExpire={onExpire} />
+    return onExpire && active && (remainingMs ?? effectiveInitialMs) <= 0 ? (
+      <UndoHairlineExpiryEffect active={active} remainingMs={0} onExpire={onExpire} />
     ) : null;
   }
   const secondsLeft = Math.max(1, Math.ceil(effectiveRemainingMs / 1000));
@@ -663,7 +665,7 @@ export function UndoHairline({
   return (
     <div className={cx(styles.undoHairline, className)} role="status" aria-live="polite" data-testid="wf-undo-hairline">
       {onExpire ? (
-        <UndoHairlineExpiryEffect active={active} remainingMs={effectiveRemainingMs} onExpire={onExpire} />
+        <UndoHairlineExpiryEffect active={active} remainingMs={remainingMs ?? effectiveInitialMs} onExpire={onExpire} />
       ) : null}
       <div
         className={styles.undoHairlineTrack}

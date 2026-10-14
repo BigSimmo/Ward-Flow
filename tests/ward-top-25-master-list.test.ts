@@ -122,10 +122,14 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     expect(opened.availableBeds).toBe(2);
     expect(opened.preparingBeds).toBe(1);
     expect(opened.allocatable).toBe(2);
+    // Repeated completion for the same bedId is an idempotent no-op
+    const repeated = completeCleanAndOpenBed(opened, "bed-ghost-1");
+    expect(repeated.availableBeds).toBe(2);
+    expect(repeated.preparingBeds).toBe(1);
   });
 
   it("#5 T-Minus 24h Discharge Prep & Early Barrier Tagging", () => {
-    expect(DISCHARGE_DELAY_REASONS.length).toBeGreaterThanOrEqual(8);
+    expect(DISCHARGE_DELAY_REASONS).toHaveLength(8);
     for (const code of DISCHARGE_DELAY_REASONS) {
       expect(dischargeDelayReasonLabels[code]).toBeTruthy();
       expect(dischargeDelayMetadata[code].code).toBe(code);
@@ -183,11 +187,12 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
       [
         { id: "fsh-open", securityLevel: "Open", availableBeds: 2, cohort: "Adult" },
         { id: "fsh-full", securityLevel: "Open", availableBeds: 0, cohort: "Adult" },
+        { id: "rph-unit-obj", security: "Open", allocatable: { value: 1 }, ageBand: "Adult" },
       ],
     );
     expect(matches).toHaveLength(1);
     expect(matches[0]!.candidateId).toBe("cand-ready");
-    expect(matches[0]!.compatibleOpenUnitIds).toEqual(["fsh-open"]);
+    expect(matches[0]!.compatibleOpenUnitIds).toEqual(["fsh-open", "rph-unit-obj"]);
   });
 
   it("#9 Criteria-Led Discharge (CLD) Weekend & Morning Unlocker", () => {
@@ -241,6 +246,15 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     expect(missing.warningActive).toBe(true);
     expect(missing.blocksDischarge).toBe(false);
     expect(missing.missingFields).toEqual(["assignedCaseManager", "followUpAppointmentAt"]);
+
+    const placeholderFollowUp = deriveCtoFollowUpHandshake({
+      admissionId: "adm-placeholder",
+      isCto: true,
+      assignedCaseManager: "Mirrabooka CMHT",
+      followUpAppointmentAt: "TBD",
+    });
+    expect(placeholderFollowUp.warningActive).toBe(true);
+    expect(placeholderFollowUp.missingFields).toEqual(["followUpAppointmentAt"]);
 
     const complete = deriveCtoFollowUpHandshake({
       admissionId: "adm-2",
@@ -337,6 +351,7 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
         awaitingAfternoonTransport: true,
         highRisk: false,
         seclusion: false,
+        legalStatus: "voluntary",
       },
       {
         id: "p-2",
@@ -345,13 +360,18 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
         awaitingAfternoonTransport: true,
         highRisk: true,
         seclusion: false,
+        legalStatus: "voluntary",
       },
     ]);
     expect(eligible.map((c) => c.id)).toEqual(["p-1"]);
 
-    const updated = releaseBedToDischargeLounge({ id: "u-1", availableBeds: 0, loungeOccupied: 1 });
+    const updated = releaseBedToDischargeLounge({ id: "u-1", availableBeds: 0, loungeOccupied: 1 }, "p-1");
     expect(updated.availableBeds).toBe(1);
     expect(updated.loungeOccupied).toBe(2);
+    // Repeated release for same candidate is idempotent
+    const repeated = releaseBedToDischargeLounge(updated, "p-1");
+    expect(repeated.availableBeds).toBe(1);
+    expect(repeated.loungeOccupied).toBe(2);
   });
 
   it("#19 Paper-Form Statutory Expiry Radar (4h Amber / 1h Red)", () => {
@@ -370,9 +390,9 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
 
   it("#20 Marooned Long-Stay Patient Escalation Dossier", () => {
     const dossier = deriveMaroonedPatientDossier([
-      { id: "m-21", daysDelayed: 21, barrierCategory: "ndis_sil_funding", clinicallyReadyForDischarge: true },
+      { id: "m-21", daysDelayed: 21, barrierCategory: "ndis_support", clinicallyReadyForDischarge: true },
       { id: "m-35", daysDelayed: 35, barrierCategory: "sat_hearing", clinicallyReadyForDischarge: true },
-      { id: "m-3", daysDelayed: 3, barrierCategory: "transport_escort", clinicallyReadyForDischarge: true },
+      { id: "m-3", daysDelayed: 3, barrierCategory: "transport", clinicallyReadyForDischarge: true },
     ]);
     expect(dossier.map((d) => d.id)).toEqual(["m-35", "m-21"]);
     expect(dossier[0]!.estimatedBedDaysSaved).toBe(35);

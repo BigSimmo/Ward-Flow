@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import {
   Badge,
   Button,
@@ -151,10 +151,20 @@ export function PhoneWalkRoundSheet({
                 </span>
               </div>
               <div className={styles.cardActions}>
-                <Button className={styles.mobileTapTarget} size="sm" variant={done ? "ghost" : "pri"} onClick={() => handleAction(row)}>
+                <Button
+                  className={styles.mobileTapTarget}
+                  size="sm"
+                  variant={done ? "ghost" : "pri"}
+                  onClick={() => handleAction(row)}
+                >
                   {done ? "Completed" : row.primaryActionLabel}
                 </Button>
-                <Button className={styles.mobileTapTarget} size="sm" variant="ghost" onClick={() => setSelectedRow(row)}>
+                <Button
+                  className={styles.mobileTapTarget}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSelectedRow(row)}
+                >
                   Sheet
                 </Button>
               </div>
@@ -210,10 +220,16 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
   const [fannedOutUnitIds, setFannedOutUnitIds] = useState<string[]>([]);
 
   // #4 Ghost Preparing Bed State
-  const [ghostUnitState, setGhostUnitState] = useState({
+  const [ghostUnitState, setGhostUnitState] = useState<{
+    id: string;
+    availableBeds: number;
+    preparingBeds: number;
+    cleanedBedIds?: string[];
+  }>({
     id: state.units[0]?.id ?? "rph-adult-open",
     availableBeds: state.units[0]?.allocatable.value ?? 2,
     preparingBeds: 1,
+    cleanedBedIds: [],
   });
 
   // #5 Early Barrier Selection
@@ -243,12 +259,19 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       durationMs: 8000,
     }),
   );
+  const clearUndoWindow = useCallback(() => setUndoWindow(null), []);
 
   // #18 Discharge Lounge State
-  const [loungeUnit, setLoungeUnit] = useState({
+  const [loungeUnit, setLoungeUnit] = useState<{
+    id: string;
+    availableBeds: number;
+    loungeOccupied: number;
+    releasedCandidateIds?: string[];
+  }>({
     id: "scgh-adult-open",
     availableBeds: 1,
     loungeOccupied: 0,
+    releasedCandidateIds: [],
   });
 
   // #22 Global Command Palette State
@@ -410,7 +433,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
   const maroonedDossier = useMemo(
     () =>
       deriveMaroonedPatientDossier([
-        { id: "mp-28d", daysDelayed: 28, barrierCategory: "ndis_sil_funding", clinicallyReadyForDischarge: true },
+        { id: "mp-28d", daysDelayed: 28, barrierCategory: "ndis_support", clinicallyReadyForDischarge: true },
         { id: "mp-14d", daysDelayed: 14, barrierCategory: "sat_hearing", clinicallyReadyForDischarge: true },
       ]),
     [],
@@ -461,20 +484,29 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             }),
           ),
       },
+      ...state.units.slice(0, 5).map((u) => ({
+        id: `cmd-unit-${u.id}`,
+        label: `Jump to ${u.name}`,
+        category: "Ward",
+        keywords: [u.siteCode, u.cohort],
+        onSelect: () =>
+          setUndoWindow(
+            createUndoWindowState({
+              actionId: `undo-jump-${u.id}`,
+              label: `Jumped to ${u.name}`,
+              createdAtMs: Date.now(),
+            }),
+          ),
+      })),
     ],
     [topCompatibleWards, afternoonDischarges, state.units],
   );
 
+  const loungeCandidateId = loungeEligible[0]?.id ?? "dl-1";
+  const isLoungeCandidateReleased = Boolean(loungeUnit.releasedCandidateIds?.includes(loungeCandidateId));
+
   return (
     <div className={styles.cockpit} data-testid="ward-top25-cockpit">
-      {/* #25 Broadcast Alert Auto-Expiry & Stand-Down Banner */}
-      <WardBroadcastBanner
-        activeAlert={broadcastState.activeAlert}
-        now="2026-10-15T08:30:00.000Z"
-        onExtend={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "EXTEND_BROADCAST_ALERT" }))}
-        onClear={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "CLEAR_BROADCAST_ALERT" }))}
-      />
-
       <div className={styles.header}>
         <div className={styles.headerTitleGroup}>
           <span className={styles.eyebrow}>Perfected Master List · 25 High-Yield Flow Improvements</span>
@@ -521,8 +553,8 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
         <UndoHairline
           message={undoWindow.label}
           durationMs={undoWindow.durationMs}
-          onUndo={() => setUndoWindow(null)}
-          onExpire={() => setUndoWindow(null)}
+          onUndo={clearUndoWindow}
+          onExpire={clearUndoWindow}
         />
       ) : null}
 
@@ -637,6 +669,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             <Button
               size="sm"
               variant="pri"
+              disabledReason={ghostAlerts.length === 0 ? "Preparing bed already cleared" : undefined}
               onClick={() => setGhostUnitState((prev) => completeCleanAndOpenBed(prev, "bed-prep-101"))}
             >
               Cleaning Complete — Open Bed
@@ -859,7 +892,12 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             immediately.
           </p>
           <div className={styles.cardActions}>
-            <Button size="sm" variant="pri" onClick={() => setLoungeUnit((prev) => releaseBedToDischargeLounge(prev))}>
+            <Button
+              size="sm"
+              variant="pri"
+              disabledReason={isLoungeCandidateReleased ? "Patient already moved to transit lounge" : undefined}
+              onClick={() => setLoungeUnit((prev) => releaseBedToDischargeLounge(prev, loungeCandidateId))}
+            >
               Move to Discharge Lounge & Release Bed
             </Button>
           </div>
@@ -923,12 +961,30 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             {awolSummary.nextOfKinNotified ? "Yes" : "Pending"}
           </p>
         </article>
+
+        {/* #25 Broadcast Alert Auto-Expiry & Stand-Down Lifecycle */}
+        <article className={styles.card} data-testid="top25-item-25">
+          <div className={styles.cardHeader}>
+            <span className={styles.cardRank}>#25</span>
+            <h3 className={styles.cardTitle}>Broadcast Alert Auto-Expiry & Stand-Down Lifecycle</h3>
+            <Chip tone={broadcastState.activeAlert ? "danger" : "ok"}>
+              {broadcastState.activeAlert ? "Active Surge Alert" : "Stood Down"}
+            </Chip>
+          </div>
+          <WardBroadcastBanner
+            activeAlert={broadcastState.activeAlert}
+            now="2026-10-15T08:30:00.000Z"
+            onExtend={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "EXTEND_BROADCAST_ALERT" }))}
+            onClear={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "CLEAR_BROADCAST_ALERT" }))}
+          />
+        </article>
       </div>
 
       {/* #22 Global Command Palette Modal */}
       <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
+        enableGlobalShortcut={false}
         items={commandItems}
         placeholder="Jump to ward, patient, or flow action (Ctrl+K)..."
       />

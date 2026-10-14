@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button } from "./button";
 import { cx } from "./cx";
 import { Kbd } from "./primitives";
@@ -27,6 +27,7 @@ export type CommandPaletteProps = {
   onClose?: () => void;
   onOpenChange?: (open: boolean) => void;
   onOpenRequest?: () => void;
+  enableGlobalShortcut?: boolean;
   placeholder?: string;
   className?: string;
 };
@@ -42,11 +43,14 @@ export function CommandPalette({
   onClose,
   onOpenChange,
   onOpenRequest,
+  enableGlobalShortcut = true,
   placeholder = "Search UMRN, ward name, or quick action…",
   className,
 }: CommandPaletteProps) {
   const titleId = useId();
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -61,7 +65,11 @@ export function CommandPalette({
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (open && event.key === "Tab") {
-        const focusable = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="wf-command-palette"] button, [data-testid="wf-command-palette"] input'));
+        const focusable = Array.from(
+          document.querySelectorAll<HTMLElement>(
+            '[data-testid="wf-command-palette"] button, [data-testid="wf-command-palette"] input',
+          ),
+        );
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (first && last && (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
@@ -113,7 +121,7 @@ export function CommandPalette({
     }
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [open, onClose, onOpenChange, onOpenRequest]);
+  }, [enableGlobalShortcut, open, onClose, onOpenChange, onOpenRequest]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -221,16 +229,21 @@ export function UndoHairlineExpiryEffect({
   remainingMs: number;
   onExpire?: () => void;
 }) {
+  const onExpireRef = useRef(onExpire);
   useEffect(() => {
-    if (!active || !onExpire) return;
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    if (!active || !onExpireRef.current) return;
     if (remainingMs <= 0) {
-      onExpire();
+      onExpireRef.current();
       return;
     }
     const timer = window.setTimeout(() => {
-      onExpire();
+      onExpireRef.current?.();
     }, remainingMs);
     return () => window.clearTimeout(timer);
-  }, [active, remainingMs, onExpire]);
+  }, [active, remainingMs]);
   return null;
 }

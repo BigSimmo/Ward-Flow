@@ -685,11 +685,6 @@ export const DISCHARGE_DELAY_REASONS = [
   "family_carer",
   "sat_hearing",
   "public_guardian",
-  "ndis_sil_funding",
-  "supported_accommodation",
-  "pharmacy_tto",
-  "transport_escort",
-  "carer_family_arrangement",
 ] as const;
 
 export type DischargeDelayReason = (typeof DISCHARGE_DELAY_REASONS)[number];
@@ -703,11 +698,6 @@ export const dischargeDelayReasonLabels: Record<DischargeDelayReason, string> = 
   family_carer: "Family or carer collection arrangement pending",
   sat_hearing: "State Administrative Tribunal (SAT) hearing pending",
   public_guardian: "Public Guardian / Public Advocate determination pending",
-  ndis_sil_funding: "NDIS or SIL funding approval pending",
-  supported_accommodation: "Supported accommodation placement pending",
-  pharmacy_tto: "Discharge scripts (TTO) awaiting pharmacy preparation",
-  transport_escort: "Regional or hospital transport booking pending",
-  carer_family_arrangement: "Family or carer collection arrangement pending",
 };
 
 export interface DischargeDelayMetadata {
@@ -776,40 +766,5 @@ export const dischargeDelayMetadata: Record<DischargeDelayReason, DischargeDelay
     label: "Public Guardian",
     clinicalDescription:
       "Office of the Public Advocate / Public Guardian application, appointment, or accommodation determination pending.",
-  },
-  ndis_sil_funding: {
-    code: "ndis_sil_funding",
-    category: "funding_accommodation",
-    categoryLabel: "Funding & Accommodation",
-    label: "NDIS / SIL Funding",
-    clinicalDescription: "NDIS plan review or Supported Independent Living package approval pending.",
-  },
-  supported_accommodation: {
-    code: "supported_accommodation",
-    category: "funding_accommodation",
-    categoryLabel: "Funding & Accommodation",
-    label: "Supported Accommodation",
-    clinicalDescription: "Transitional housing, step-down bed, or residential placement confirmation pending.",
-  },
-  pharmacy_tto: {
-    code: "pharmacy_tto",
-    category: "operational_prep",
-    categoryLabel: "Operational Preparation",
-    label: "Pharmacy TTO",
-    clinicalDescription: "Discharge scripts and blister pack dispensing pending pharmacy sign-off.",
-  },
-  transport_escort: {
-    code: "transport_escort",
-    category: "operational_prep",
-    categoryLabel: "Operational Preparation",
-    label: "Transport / Escort",
-    clinicalDescription: "Hospital transport, regional flight, or escort booking confirmation pending.",
-  },
-  carer_family_arrangement: {
-    code: "carer_family_arrangement",
-    category: "operational_prep",
-    categoryLabel: "Operational Preparation",
-    label: "Carer / Family Arrangement",
-    clinicalDescription: "Carer notification or family collection time confirmation pending.",
   },
 };

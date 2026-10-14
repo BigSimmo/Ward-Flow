@@ -156,10 +156,15 @@ export function completeCleanAndOpenBed<
     empty?: number;
     openBedsNow?: number;
     preparing?: boolean;
+    cleanedBedIds?: string[];
   },
 >(unit: T, bedId?: string): T {
   const next = { ...unit };
-  const hasPreparingBed = next.preparingBeds === undefined || next.preparingBeds > 0 || next.preparing === true;
+  if (bedId && Array.isArray(next.cleanedBedIds) && next.cleanedBedIds.includes(bedId)) {
+    return unit;
+  }
+  const hasPreparingBed =
+    (typeof next.preparingBeds === "number" ? next.preparingBeds > 0 : false) || next.preparing === true;
   if (!hasPreparingBed) return unit;
   if (typeof next.availableBeds === "number") {
     next.availableBeds = next.availableBeds + 1;
@@ -175,6 +180,9 @@ export function completeCleanAndOpenBed<
   }
   if ("preparing" in next && typeof next.preparing === "boolean" && (!bedId || bedId === next.id)) {
     next.preparing = false;
+  }
+  if (bedId) {
+    next.cleanedBedIds = [...(next.cleanedBedIds ?? []), bedId];
   }
   return next;
 }
@@ -263,7 +271,7 @@ export interface StepDownTargetUnitInput {
   securityLevel?: string;
   security?: string;
   availableBeds?: number;
-  allocatable?: number;
+  allocatable?: number | { value: number };
   cohort?: string;
   ageBand?: string;
 }
@@ -294,8 +302,12 @@ export function deriveStepDownPullBoard(
             ? u.availableBeds
             : "allocatable" in u && typeof u.allocatable === "number"
               ? u.allocatable
-              : "allocatable" in u && u.allocatable && typeof u.allocatable === "object" && "available" in u.allocatable && typeof u.allocatable.available === "number"
-                ? u.allocatable.available
+              : "allocatable" in u &&
+                  u.allocatable &&
+                  typeof u.allocatable === "object" &&
+                  "value" in u.allocatable &&
+                  typeof u.allocatable.value === "number"
+                ? u.allocatable.value
                 : 0;
         const unitCohort = "cohort" in u && u.cohort ? u.cohort : "ageBand" in u ? u.ageBand : "Adult";
         return sec === "Open" && avail > 0 && unitCohort === cand.cohort;
@@ -653,8 +665,15 @@ export function releaseBedToDischargeLounge<
     loungeOccupied?: number;
     allocatable?: number;
     cleaningNotified?: boolean;
+    releasedCandidateIds?: string[];
   },
->(unit: T): T {
+>(unit: T, candidateId?: string): T {
+  if (candidateId && Array.isArray(unit.releasedCandidateIds) && unit.releasedCandidateIds.includes(candidateId)) {
+    return unit;
+  }
+  if (!candidateId && unit.cleaningNotified === true) {
+    return unit;
+  }
   const next = { ...unit, cleaningNotified: true };
   if (typeof next.availableBeds === "number") {
     next.availableBeds += 1;
@@ -664,6 +683,9 @@ export function releaseBedToDischargeLounge<
   }
   if (typeof next.allocatable === "number") {
     next.allocatable += 1;
+  }
+  if (candidateId) {
+    next.releasedCandidateIds = [...(unit.releasedCandidateIds ?? []), candidateId];
   }
   return next;
 }
