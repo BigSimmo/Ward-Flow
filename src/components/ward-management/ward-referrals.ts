@@ -116,23 +116,48 @@ export function referralSenderRole(referral: Referral): "ed" | "community" {
   return referral.source === "ed_medical" ? "ed" : "community";
 }
 
+export const NON_WITHDRAWABLE_STAGES = ["moving", "arrived", "closed"] as const;
+
+/**
+ * S2-14: Whether a movement is still in a withdrawable state.
+ * Refuses once the patient is in transit ("moving"), arrived, or closed,
+ * or if transport has physically collected the patient.
+ */
+export function movementWithdrawable(movement: Movement): boolean {
+  if (movement.closure !== undefined) return false;
+  if (movement.transport?.collectedAt !== undefined) return false;
+  if ((NON_WITHDRAWABLE_STAGES as readonly string[]).includes(movement.stage)) return false;
+  return true;
+}
+
+export const isMovementWithdrawable = movementWithdrawable;
+
 /**
  * Whether the whole-referral withdrawal (`RECORD_REFERRER_WITHDRAWAL` with no `destinationKind`)
- * would be accepted — the reducer's own three refusals, read once so a screen does not offer a
+ * would be accepted — the reducer's own refusals, read once so a screen does not offer a
  * control the reducer would refuse.
  */
-export function referralWithdrawable(referral: Referral): boolean {
+export function referralWithdrawable(referral: Referral, movements?: readonly Movement[]): boolean {
+  if (movements) {
+    const linkedMovements = movements.filter((m) => m.referralId === referral.id);
+    if (linkedMovements.some((m) => !movementWithdrawable(m))) {
+      return false;
+    }
+  }
+
   if (referralState(referral) === "accepted") return false;
   if (
-    referral.destinations.some(
+    referral.destinations?.some(
       (addressing) => addressing.destination.kind !== "community_team" && addressing.withdrawnAt !== undefined,
     )
   ) {
     return false;
   }
-  return referral.destinations.some(
-    (addressing) => addressing.state === "queued" && addressing.withdrawnAt === undefined,
-  );
+  const nonWithdrawn = referral.destinations?.filter((addressing) => addressing.withdrawnAt === undefined) ?? [];
+  if (nonWithdrawn.length === 0 || nonWithdrawn.every((addressing) => addressing.state !== "queued")) {
+    return false;
+  }
+  return true;
 }
 
 export function referralState(referral: Referral): ReferralState {

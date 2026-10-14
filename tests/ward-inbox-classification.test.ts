@@ -59,6 +59,9 @@ function movementsCoveringEveryCategory(): Movement[] {
     movementFrom("WF-T03", { stage: "pulled", pullExpiresAt: NOW - 30 }),
     // destinations_declined — the real fixture movement that already carries five declines.
     wardMovements.find((movement) => movement.id === "WF-009")!,
+    // no_eligible_bed — the real fixture movement for which no ward in its cohort can take or be referred
+    // to (WF-009 has a ward that failed only a prior decline, so it does not raise this row).
+    wardMovements.find((movement) => movement.id === "WF-308")!,
     // transport_awaiting_departure — the real fixture movement whose transport has not set off.
     wardMovements.find((movement) => movement.id === "WF-005")!,
     // Stream A, 9 Oct 2026: the three decision-target categories, each long past its default.
