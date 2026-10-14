@@ -929,7 +929,7 @@ function WardFlowWorld({
   // Item #17 (D-18 privacy lock protection): when savingOnDevice === false because free text triggered
   // the D-18 device-storage privacy lock, warn before an accidental browser refresh loses walkthrough state.
   useEffect(() => {
-    if (savingOnDevice || !container.typedTextSeen) return;
+    if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
     if (typeof window === "undefined") return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
