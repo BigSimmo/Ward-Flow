@@ -159,7 +159,8 @@ export function localProjectRequestIdentityPayload(request: Request): LocalProje
     }
     // If a Host header is explicitly present on a local request and its hostname is NOT a loopback hostname
     // (or cannot be parsed as a valid host), the guard immediately rejects with reason: "non-local-host" (A4-13).
-    if ((!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) && isLocalUrl(requestUrl)) {
+    const localDevelopmentBind = isLocalUrl(requestUrl) || requestUrl.hostname === "0.0.0.0";
+    if ((!parsedHost || !parsedHost.hostname || !isLocalUrl(parsedHost)) && localDevelopmentBind) {
       return {
         ...payload,
         reason: "non-local-host",
