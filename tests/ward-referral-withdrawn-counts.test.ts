@@ -1,7 +1,8 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { searchPatients } from "@/components/ward-management/ward-derivations";
+import { handoverSnapshot, searchPatients } from "@/components/ward-management/ward-derivations";
+import { decidedReferrals } from "@/components/ward-management/ward-referrals";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -85,5 +86,91 @@ describe("WF-13 T11 — the patient-search referral figure drops when a referral
     expect(after.rejections.length, "the withdrawal itself was rejected").toBe(seed.rejections.length);
 
     expect(searchReferralCount(after)).toBe(before - 1);
+  });
+});
+
+describe("A3-8 / A3-9: Referral Withdrawal vs Multi-Ward Decline", () => {
+  it("all addressings withdrawn surfaces in decidedReferrals and not declined_by_all in placementGoneWrong", () => {
+    const seed = seedWardFlowState();
+    expect(decidedReferrals(seed.referrals).some((r) => r.id === REFERRAL_ID)).toBe(false);
+
+    const after = withdraw(seed, REFERRAL_ID);
+    expect(decidedReferrals(after.referrals).some((r) => r.id === REFERRAL_ID)).toBe(true);
+
+    const snapshot = handoverSnapshot(after.movements, after.units, NOW_ANCHOR);
+    expect(
+      snapshot.placementGoneWrong.some(
+        (entry) => entry.movement.referralId === REFERRAL_ID && entry.kind === "declined_by_all",
+      ),
+    ).toBe(false);
+  });
+
+  it("Ward A declined + Ward B withdrawn does not classify as declined_by_all in placementGoneWrong", () => {
+    const seed = seedWardFlowState();
+    const raised = wardFlowReducer(seed, {
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      now: NOW_ANCHOR,
+      edId: "jhc-ed",
+      draft: {
+        cohort: "Adult",
+        security: "Secure",
+        sex: "Male",
+        gender: "Male",
+        specialling: false,
+        highAcuity: false,
+        legalStatus: "Voluntary",
+        urgency: 2,
+        legalFormCode: null,
+      },
+    });
+    expect(raised.rejections).toHaveLength(0);
+    const movementId = raised.movements[raised.movements.length - 1].id;
+
+    // Refer to Ward A and Ward B
+    let state = wardFlowReducer(raised, {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: NOW_ANCHOR + 1,
+      movementId,
+      unitIds: ["rph-adult-secure", "fsh-adult-secure"],
+    });
+    expect(state.rejections).toHaveLength(0);
+
+    // Ward A declines
+    state = wardFlowReducer(state, {
+      type: "DECLINE",
+      role: "ward",
+      now: NOW_ANCHOR + 2,
+      movementId,
+      unitId: "rph-adult-secure",
+      reason: "out_of_catchment",
+    });
+    expect(state.rejections).toHaveLength(0);
+
+    // Ward B is withdrawn by the coordinator
+    state = wardFlowReducer(state, {
+      type: "WITHDRAW_WARD_REQUEST",
+      role: "coordinator",
+      now: NOW_ANCHOR + 3,
+      movementId,
+      unitId: "fsh-adult-secure",
+      reason: "another_reason",
+    });
+    expect(state.rejections).toHaveLength(0);
+
+    const movement = state.movements.find((m) => m.id === movementId)!;
+    expect(movement.referredUnitIds).toHaveLength(0);
+    expect(movement.declines).toHaveLength(1);
+    expect(movement.withdrawnReferrals).toHaveLength(1);
+
+    const snapshot = handoverSnapshot(state.movements, state.units, NOW_ANCHOR + 4);
+    const goneWrongEntry = snapshot.placementGoneWrong.find((entry) => entry.movement.id === movementId);
+    expect(goneWrongEntry?.kind).not.toBe("declined_by_all");
+    expect(
+      snapshot.placementGoneWrong.filter(
+        (entry) => entry.movement.id === movementId && entry.kind === "declined_by_all",
+      ),
+    ).toHaveLength(0);
   });
 });

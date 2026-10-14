@@ -514,6 +514,33 @@ export function clearWardFlowDemoState(): boolean {
   }
 }
 
+let sharedBroadcastChannel: BroadcastChannel | null = null;
+
+function getSharedBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") {
+    return null;
+  }
+  try {
+    if (!sharedBroadcastChannel) {
+      sharedBroadcastChannel = new window.BroadcastChannel("ward-flow-sync");
+    }
+    return sharedBroadcastChannel;
+  } catch {
+    return null;
+  }
+}
+
+function broadcastDispatchEvent(eventType: string): void {
+  try {
+    const channel = getSharedBroadcastChannel();
+    if (channel) {
+      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType });
+    }
+  } catch {
+    sharedBroadcastChannel = null;
+  }
+}
+
 /**
  * Audit finding ISSUE-P1-83, defect 3c: `OPEN_DISCHARGE_RECORD` requests are identified by a
  * monotonically increasing `requestId` (`WardFlowWorld`'s `openRequestSequence` below), and
@@ -766,15 +793,7 @@ function WardFlowWorld({
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
       dispatchContainer(event);
-      if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
-        try {
-          const channel = new BroadcastChannel("ward-flow-sync");
-          channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
-          channel.close();
-        } catch {
-          // BroadcastChannel unavailable in this environment
-        }
-      }
+      broadcastDispatchEvent(event.type);
     },
     [dispatchContainer, sharedEnabled, dispatchShared],
   );
@@ -823,6 +842,10 @@ function WardFlowWorld({
   useEffect(() => {
     nowRef.current = now;
   }, [now]);
+  const elapsedRef = useRef(elapsed);
+  useEffect(() => {
+    elapsedRef.current = elapsed;
+  }, [elapsed]);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -998,7 +1021,9 @@ function WardFlowWorld({
       return;
     }
     if (storageUnavailable) return;
-    if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed))) setStorageUnavailable(true);
+    if (!tryWriteDemoState(state, dayZero, nowRef.current, mountedAtAbsolute + Math.max(0, elapsedRef.current))) {
+      setStorageUnavailable(true);
+    }
   }, [
     state,
     container.typedTextSeen,
@@ -1006,8 +1031,6 @@ function WardFlowWorld({
     initialNow,
     mountedAtAbsolute,
     dayZero,
-    now,
-    elapsed,
     storageUnavailable,
     shared.enabled,
   ]);
