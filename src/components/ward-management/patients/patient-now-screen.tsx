@@ -24,6 +24,7 @@ import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocum
 import { PatientRecordOverview } from "./patient-record-overview";
 import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-header";
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -2312,14 +2313,19 @@ export function PatientNowScreen({
               <button
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
-                disabled={!clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed}
+                aria-disabled={
+                  !clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed ? "true" : undefined
+                }
                 aria-describedby={
                   clearanceGate.allowed && (!clearanceDraft || !clearanceAttested)
                     ? "clearanceSaveReason"
                     : clearanceGate.buttonProps["aria-describedby"]
                 }
-                onClick={() => {
-                  if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
+                onClick={(e) => {
+                  if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) {
+                    ignoreUnavailableActivation(e);
+                    return;
+                  }
                   dispatch({
                     type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
                     role: routeRole,

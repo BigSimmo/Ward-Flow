@@ -269,6 +269,19 @@ export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
 }
 
 /**
+ * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
+ * Surfaced to clinicians so the held bed is visible and can be released.
+ */
+export function isStoppedTransportAwaitingRelease(movement?: Movement | null): boolean {
+  if (!movement) return false;
+  return (
+    movement.transport?.stoppedAt !== undefined &&
+    (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
+      movement.admissionId !== undefined)
+  );
+}
+
+/**
  * T8 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the fixed sentence both the
  * ED screen and the movement console render when `examinationRevokedWhileBedHeld` is true. One
  * shared constant rather than two hand-typed strings, so the two screens cannot drift apart —
@@ -1563,18 +1576,6 @@ export function allDeclines(movements: Movement[]): DeclineEntry[] {
           !decline.reason.includes("waitlist"),
       )
       .map((decline) => ({ movement, decline })),
-  );
-}
-
-/**
- * A movement whose transport was stopped mid-journey but whose held bed has not yet been released.
- * Surfaced to clinicians so the held bed is visible and can be released.
- */
-export function isStoppedTransportAwaitingRelease(movement: Movement): boolean {
-  return (
-    movement.transport?.stoppedAt !== undefined &&
-    (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
-      movement.admissionId !== undefined)
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
 
@@ -61,9 +62,14 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { FlushRow, Follow } from "./statistics-layout";
-import { StatisticsJourneyView } from "./statistics-journey-view";
-import { StatisticsMapView } from "./statistics-map-view";
 import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
+
+import { StatisticsJourneyView } from "./statistics-journey-view";
+
+const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
+  ssr: false,
+  loading: () => <p role="status">Loading map view…</p>,
+});
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";

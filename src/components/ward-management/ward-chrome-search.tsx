@@ -16,13 +16,14 @@ import {
   type ReactNode,
 } from "react";
 
-import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
+import { searchWardFlow, shouldDeriveSearchTasks } from "@/components/ward-management/search/ward-smart-search";
+import { useDebouncedValue } from "./search/use-debounced-value";
+import { buildActionInbox, destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
 export type WardChromeSearchProps = {
   movements?: Movement[];
@@ -100,22 +101,45 @@ export function WardChromeSearch({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
+  const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
+  const debouncedTrimmed = debouncedQuery.trim();
+  const searchPending = debouncedTrimmed !== trimmed;
+  // Reset the highlighted option when the query changes, during render rather than in an
+  // effect (react.dev: "Adjusting some state when a prop changes").
+  const [prevTrimmed, setPrevTrimmed] = useState(trimmed);
+  if (prevTrimmed !== trimmed) {
+    setPrevTrimmed(trimmed);
+    setActiveIndex(-1);
+  }
+
+  const now = useWardFlowClock(0);
+  const plannedAdmissions = context?.plannedAdmissions;
+
+  const precomputedTasks = useMemo(
+    () =>
+      debouncedTrimmed.length === 0 || !shouldDeriveSearchTasks(debouncedTrimmed)
+        ? undefined
+        : buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions ? { plannedAdmissions } : undefined),
+    [debouncedTrimmed, movements, now, plannedAdmissions, units],
+  );
 
   const smartResults = useMemo(
     () =>
-      trimmed.length === 0
+      debouncedTrimmed.length === 0
         ? null
         : searchWardFlow({
-            query: trimmed,
+            query: debouncedTrimmed,
             patients,
             movements,
             units,
             referrals,
+            now,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
             plannedAdmissions: context?.plannedAdmissions,
+            precomputedTasks,
           }),
-    [trimmed, patients, movements, units, referrals, context?.plannedAdmissions],
+    [debouncedTrimmed, patients, movements, units, referrals, now, context?.plannedAdmissions, precomputedTasks],
   );
 
   const groups = useMemo(() => {
@@ -251,7 +275,7 @@ export function WardChromeSearch({
     return g;
   }, [smartResults, units]);
 
-  const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+  const options = useMemo(() => (searchPending ? [] : groups.flatMap((g) => g.items)), [groups, searchPending]);
   const showPopup = open && trimmed.length > 0;
 
   const optionsKey = useMemo(() => options.map((option) => option.href).join("|"), [options]);
@@ -506,7 +530,13 @@ export function WardChromeSearch({
       </span>
 
       <p className="sr-only" role="status" aria-live="polite">
-        {trimmed.length === 0 ? "" : options.length === 0 ? "No matches." : `${options.length} invented results found.`}
+        {trimmed.length === 0
+          ? ""
+          : searchPending
+            ? "Searching…"
+            : options.length === 0
+              ? "No matches."
+              : `${options.length} invented results found.`}
       </p>
 
       {showPopup ? (
@@ -534,7 +564,9 @@ export function WardChromeSearch({
             fontVariantNumeric: "tabular-nums",
           }}
         >
-          {options.length === 0 ? (
+          {searchPending ? (
+            <p style={{ margin: 0, padding: "1rem 1.25rem" }}>Searching…</p>
+          ) : options.length === 0 ? (
             <p
               data-testid="ward-chrome-search-empty"
               style={{

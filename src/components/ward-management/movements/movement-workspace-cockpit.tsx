@@ -82,6 +82,7 @@ import {
   examinationRevokedWhileBedHeld,
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   isOpen,
+  isStoppedTransportAwaitingRelease,
   movementHealthService,
   orphanedTransport,
   restrictionNotice,
@@ -1561,7 +1562,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
 
             {/* 6. RELEASE HELD BED (AFTER STOP TRANSPORT) */}
-            {movement.transport?.stoppedAt !== undefined && movement.admissionId !== undefined ? (
+            {isStoppedTransportAwaitingRelease(movement) ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-held-bed">
                 <h3 className={styles.actionSectionTitle}>Release the held bed</h3>
                 <p className={styles.actionSay}>

@@ -146,9 +146,11 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
                 Loading, not live yet. Taps work once this goes.
               </p>
-              <WardBroadcastBanner />
-              <WardOfflineBanner />
-              <WardDemoNotSavedNote />
+              <div style={{ contain: "layout style", minHeight: 0 }}>
+                <WardBroadcastBanner />
+                <WardOfflineBanner />
+                <WardDemoNotSavedNote />
+              </div>
               <WardPhoneDesktopOnly />
               <WardGround>{children}</WardGround>
             </div>

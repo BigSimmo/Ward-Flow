@@ -214,6 +214,20 @@ type WardFlowContextValue = {
 export type { WardFlowContextValue };
 export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
+export const WardClockContext = createContext<Instant | null>(null);
+
+export function useWardClock(fallback?: Instant): Instant {
+  const clock = useContext(WardClockContext);
+  const flowClock = useContext(WardFlowClockContext);
+  const wardFlow = useContext(WardFlowContext);
+  if (clock !== null) return clock;
+  if (flowClock !== null) return flowClock;
+  if (wardFlow) return wardFlow.now;
+  if (fallback !== undefined) return fallback;
+  throw new Error("useWardClock must be used within WardFlowProvider.");
+}
+
+const EMPTY_ARRAY = Object.freeze([]) as never[];
 
 type WardFlowProviderProps = {
   children: ReactNode;
@@ -805,6 +819,11 @@ function WardFlowWorld({
       ? shared.snapshot.now
       : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
+  const nowRef = useRef(now);
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
+
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!shared.enabled) return;
@@ -850,7 +869,6 @@ function WardFlowWorld({
   }, [shared.enabled, shared.snapshot, anchorOffsetMinutes]);
 
   useEffect(() => {
-    if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -880,7 +898,7 @@ function WardFlowWorld({
       if (timeoutTimer) clearTimeout(timeoutTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [initialNow, mountedAtAbsolute, shared.enabled]);
+  }, [initialNow, mountedAtAbsolute]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
@@ -934,8 +952,8 @@ function WardFlowWorld({
             saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
           // A saved day identical to the seed already on screen (nothing was changed before the
           // reload) only moves the clock; the screens keep their nodes and their state.
-          if (JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] }))
-            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
+          const isSameWorld = JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
+          if (isSameWorld) return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
@@ -999,12 +1017,12 @@ function WardFlowWorld({
   // memo on every render regardless of whether anything the memo actually reads had changed.
   const resetDemoState = useCallback(() => {
     if (!shared.enabled) clearWardFlowDemoState();
-    dispatch({ type: "RESET_SCENARIO", role: "demo", now });
-  }, [dispatch, now, shared.enabled]);
+    dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
+  }, [dispatch, shared.enabled]);
 
   const saveScenarioFile = useCallback(
-    () => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
-    [state, now],
+    () => buildScenarioFile(state, nowRef.current, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
+    [state],
   );
 
   const loadScenarioFile = useCallback(
@@ -1049,13 +1067,20 @@ function WardFlowWorld({
       recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
         const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
         if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
-          dispatch({ type: "RECORD_LEAVING", role: "ward", now, admissionId, actingUnitId, leavingDestination });
+          dispatch({
+            type: "RECORD_LEAVING",
+            role: "ward",
+            now: nowRef.current,
+            admissionId,
+            actingUnitId,
+            leavingDestination,
+          });
           return;
         }
         dispatch({
           type: "RECORD_PATIENT_DISCHARGE",
           role: "ward",
-          now,
+          now: nowRef.current,
           admissionId,
           actingUnitId,
           leavingDestination,
@@ -1080,7 +1105,7 @@ function WardFlowWorld({
         dispatch({
           ...declaredActor,
           type: "OPEN_DISCHARGE_RECORD",
-          now,
+          now: nowRef.current,
           admissionId,
           expectedGeneration: handle.generation,
           requestId: handle.requestId,
@@ -1095,8 +1120,8 @@ function WardFlowWorld({
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
       refreshRequests: state.refreshRequests,
-      handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [],
-      repatriations: Array.isArray(state.repatriations) ? state.repatriations : [],
+      handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : EMPTY_ARRAY,
+      repatriations: Array.isArray(state.repatriations) ? state.repatriations : EMPTY_ARRAY,
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,
@@ -1118,10 +1143,10 @@ function WardFlowWorld({
       dayZero,
       scenario: state.scenario,
       configuration: state.configuration,
-      broadcastAlerts: state.broadcastAlerts ?? [],
-      plannedAdmissions: state.plannedAdmissions ?? [],
-      supportNotifications: state.supportNotifications ?? [],
-      eventLog: shared.enabled ? (shared.eventLog ?? []) : (container.eventLog ?? []),
+      broadcastAlerts: state.broadcastAlerts ?? EMPTY_ARRAY,
+      plannedAdmissions: state.plannedAdmissions ?? EMPTY_ARRAY,
+      supportNotifications: state.supportNotifications ?? EMPTY_ARRAY,
+      eventLog: shared.enabled ? (shared.eventLog ?? EMPTY_ARRAY) : (container.eventLog ?? EMPTY_ARRAY),
       dispatch,
       focusMovementId,
       setFocusMovementId,
@@ -1145,45 +1170,49 @@ function WardFlowWorld({
       container.eventLog,
       shared.enabled,
       shared.eventLog,
-      now,
       dayZero,
       dispatch,
       focusMovementId,
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
+      now,
     ],
   );
 
   return (
     <WardFlowContext.Provider value={value}>
-      {(storageUnavailable || container.recoveryNotice) && (
-        <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
-      )}
-      <WardDemoNotSavedContext.Provider value={!shared.enabled && initialNow === undefined && container.typedTextSeen}>
-        <ToastDeviceSaveContext.Provider value={savesOnDevice}>
-          <WardFlowClockContext.Provider value={now}>
-            {/*
-             * Remounts the screens once, and only when a saved day that differs from the seed was
-             * restored: screens initialise drafts and selections from provider data once
-             * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-             * must start again from the restored world rather than keep the seed's. A first visit, or a
-             * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-             */}
-            <WardSharedAccess
-              connection={
-                shared.enabled && container.sharedRevision === undefined
-                  ? { ...shared, snapshot: null }
-                  : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-                    ? { ...shared, status: "saving" }
-                    : shared
-              }
-            >
-              <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
-            </WardSharedAccess>
-          </WardFlowClockContext.Provider>
-        </ToastDeviceSaveContext.Provider>
-      </WardDemoNotSavedContext.Provider>
+      <WardClockContext.Provider value={now}>
+        {(storageUnavailable || container.recoveryNotice) && (
+          <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
+        )}
+        <WardDemoNotSavedContext.Provider
+          value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+        >
+          <ToastDeviceSaveContext.Provider value={savesOnDevice}>
+            <WardFlowClockContext.Provider value={now}>
+              {/*
+               * Remounts the screens once, and only when a saved day that differs from the seed was
+               * restored: screens initialise drafts and selections from provider data once
+               * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+               * must start again from the restored world rather than keep the seed's. A first visit, or a
+               * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+               */}
+              <WardSharedAccess
+                connection={
+                  shared.enabled && container.sharedRevision === undefined
+                    ? { ...shared, snapshot: null }
+                    : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+                      ? { ...shared, status: "saving" }
+                      : shared
+                }
+              >
+                <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+              </WardSharedAccess>
+            </WardFlowClockContext.Provider>
+          </ToastDeviceSaveContext.Provider>
+        </WardDemoNotSavedContext.Provider>
+      </WardClockContext.Provider>
     </WardFlowContext.Provider>
   );
 }
@@ -1214,7 +1243,11 @@ export function WardFlowClockProvider({
 
   const now = NOW_ANCHOR + anchorOffsetMinutes + elapsed + clockOffsetMinutes;
 
-  return <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>;
+  return (
+    <WardClockContext.Provider value={now}>
+      <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
+    </WardClockContext.Provider>
+  );
 }
 
 /** Conservative failure: a screen rendered outside the provider must fail loudly, never fall

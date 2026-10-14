@@ -426,7 +426,8 @@ describe("who may raise which event", () => {
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-    RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],
+    // A1-5 (13 Oct 2026): restricted to ED and coordinator, matching RECORD_LEGAL_FORM_EXPIRY.
+    RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
     RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
     RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
     EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],

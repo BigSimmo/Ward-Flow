@@ -250,16 +250,15 @@ describe("a withdrawal reason cannot name the ward that won", () => {
      * RECORD_ED_OUTCOME plus REFER_TO_COMMUNITY_TEAM, each withdrawing any live requests when the
      * department ends the bed search. Every one of the four real causes has its own code.
      *
-     * 6 TO 7 ON 2026-09-25 (test fixer): RECORD_REPATRIATION (53105ca6ea) creates a return movement
-     * initialised with `withdrawnReferrals: []` — a second EMPTY initialisation, recording no cause,
-     * so no reason code is involved.
+     * 7 to 8 by RECORD_EXAMINATION (Option S1-5) which un-assigns referred units and records
+     * their withdrawal when closing with did_not_proceed, reusing ed_outcome_recorded.
      */
     expect(
       writes.length,
       "a new write to withdrawnReferrals appeared. If it records a DIFFERENT cause then the existing " +
         "reason codes are no longer true of every entry: add a member to WITHDRAWAL_REASONS for it " +
         "rather than reusing one, and update this count.",
-    ).toBe(7);
+    ).toBe(8);
     expect(stripped, "one of the six writes is the empty initialisation, which records no cause").toContain(
       "withdrawnReferrals: []",
     );

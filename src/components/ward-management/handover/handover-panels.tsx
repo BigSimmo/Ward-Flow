@@ -14,10 +14,10 @@ import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
   isbarLines,
+  isCollected,
   legalLong,
   nextStep,
   obsLong,
-  isCollected,
   pullHasLapsed,
   STAGE_LABEL,
   wardIsStale,

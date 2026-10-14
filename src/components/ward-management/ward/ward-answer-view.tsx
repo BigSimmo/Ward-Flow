@@ -23,7 +23,8 @@ import {
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
@@ -144,46 +145,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       ? newestRejection
       : undefined;
 
-  // Escape and Tab key containment handler for modal
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (!acceptModalOpen) return;
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setAcceptModalOpen(false);
-        (openerRef.current ?? triggerRef.current)?.focus();
-        return;
-      }
-      if (event.key === "Tab" && modalRef.current) {
-        const focusable = Array.from(
-          modalRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-          ),
-        ).filter((el) => !el.hasAttribute("disabled"));
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
-          last.focus();
-          event.preventDefault();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          first.focus();
-          event.preventDefault();
-        }
-      }
-    }
-    if (acceptModalOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-      queueMicrotask(() => {
-        const first = modalRef.current?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        first?.focus();
-      });
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [acceptModalOpen]);
+  useWardModalFocus(acceptModalOpen, modalRef, () => {
+    setAcceptModalOpen(false);
+    (openerRef.current ?? triggerRef.current)?.focus();
+  });
 
   function triggerToast(message: string) {
     setToastMessage({ message });
@@ -297,7 +262,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: currentUnit.id, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: currentUnit.id,
+      actingUnitId: currentUnit.id,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
@@ -311,7 +284,15 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       return;
     }
     setDeclineNudge(false);
-    dispatch({ type: "DECLINE", role: "ward", now, movementId, unitId: currentUnit.id, reason: declineReason });
+    dispatch({
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId,
+      unitId: currentUnit.id,
+      actingUnitId: currentUnit.id,
+      reason: declineReason,
+    });
     setDeclineOpenFor(undefined);
     setDeclineReason(undefined);
     triggerToast("Referral declined.");
@@ -323,7 +304,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     // v10 pass 3: Accept, then Undo on the toast (`UNDO_ACCEPT_IN_PRINCIPLE`, this ward's own).
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
     runStep(
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId: unitIdHere },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId: unitIdHere, actingUnitId: unitIdHere },
       {
         success: "Accepted in principle.",
         undo: (at) => ({
@@ -356,6 +337,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         now,
         movementId,
         unitId: currentUnit.id,
+        actingUnitId: currentUnit.id,
         overrideReason,
       });
     } else {
@@ -365,6 +347,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         now,
         movementId,
         unitId: currentUnit.id,
+        actingUnitId: currentUnit.id,
         overrideReason,
         numConsulted: isAcuityRefusal && numConsulted ? true : undefined,
       });
@@ -1343,7 +1326,11 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         key={bedNum}
                         className={cellClass}
                         onClick={(e) => {
-                          if (isVacant && activeMovement) {
+                          if (!isVacant) {
+                            ignoreUnavailableActivation(e);
+                            return;
+                          }
+                          if (activeMovement) {
                             openerRef.current = e.currentTarget;
                             setAcceptModalOpen(true);
                           }
@@ -1351,7 +1338,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         aria-label={`Bed ${bedNum} ${statusLabel}`}
                         aria-describedby={isVacant ? undefined : `ward-answer-bed-reason-${unit.id}`}
                         title={isVacant ? undefined : "Only a ready bed can take a request"}
-                        disabled={!isVacant}
+                        aria-disabled={!isVacant ? "true" : undefined}
                       >
                         <span className={styles.bedNum}>{bedNum}</span>
                         <span>{statusLabel}</span>

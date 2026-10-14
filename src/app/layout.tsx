@@ -37,7 +37,21 @@ const geistMono = localFont({
   // never in initial/LCP text, so don't preload it on every route — it competes
   // for the critical-path connection. It still loads on-demand via `swap` when
   // first painted, while the body sans face remains preloaded for LCP text.
+  // Fallback font metrics and tabular feature declarations prevent late reflow
+  // across tabular figures, bed numbers, and timestamps when the font swaps in.
   preload: false,
+  fallback: [
+    "ui-monospace",
+    "SFMono-Regular",
+    "Roboto Mono",
+    "Menlo",
+    "Monaco",
+    "Consolas",
+    "Liberation Mono",
+    "Courier New",
+    "monospace",
+  ],
+  declarations: [{ prop: "font-feature-settings", value: "'tnum' 1, 'zero' 1" }],
 });
 
 const baseMetadata: Metadata = {
