@@ -9,7 +9,11 @@ import {
 } from "../src/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
-import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  STAGE_TRANSITION_BLOCKERS,
+} from "../src/components/ward-management/ward-flow-reducer";
 import { SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -2096,5 +2100,109 @@ describe("bed release privacy", () => {
     for (const release of everyRelease) {
       expect(Object.keys(release).sort()).toEqual(ALLOWED_BED_RELEASE_FIELDS);
     }
+  });
+
+  describe("statutory and clinical authority safety regressions", () => {
+    it("A1-2: refuses WITHDRAW_REFERRAL from non-referrer, non-coordinator role on unaccepted referral", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find(
+        (m) => m.stage === "destination_review" && m.referredUnitIds.length > 0 && !m.acceptedUnitId,
+      )!;
+      expect(movement).toBeDefined();
+
+      const wardAttempt = wardFlowReducer(seeded, {
+        type: "WITHDRAW_REFERRAL",
+        role: "ward",
+        now: NOW,
+        movementId: movement.id,
+      });
+      expect(wardAttempt.rejections).toHaveLength(1);
+      expect(wardAttempt.rejections[0].reason).toContain("only the referrer or the coordinator may withdraw");
+
+      const edSuccess = wardFlowReducer(seeded, {
+        type: "WITHDRAW_REFERRAL",
+        role: "ed",
+        actingPlaceId: movement.originEdId,
+        now: NOW,
+        movementId: movement.id,
+      });
+      expect(edSuccess.rejections).toHaveLength(0);
+      expect(edSuccess.movements.find((m) => m.id === movement.id)?.closure?.outcome).toBe("did_not_proceed");
+    });
+
+    it("S2-2: refuses CLEAR_MOVEMENT_BLOCKER when examination was revoked while holding a bed", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find((m) => m.stage === "pulled" && m.admissionId !== undefined)!;
+      expect(movement).toBeDefined();
+
+      // Put into revoked examination state while holding bed
+      const withRevoked: ReturnType<typeof seedWardFlowState> = {
+        ...seeded,
+        movements: seeded.movements.map((m) =>
+          m.id === movement.id
+            ? {
+                ...m,
+                examination: { at: NOW, by: "doctor", outcome: "revoked" },
+                blocker: STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease,
+              }
+            : m,
+        ),
+      };
+
+      const after = wardFlowReducer(withRevoked, {
+        type: "CLEAR_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+      });
+      expect(after.rejections).toHaveLength(1);
+      expect(after.rejections[0].reason).toContain("cannot clear statutory hold");
+    });
+
+    it("S2-8: refuses STEP_BACK_STAGE when target stage is not in MOVEMENT_STAGES", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find((m) => m.stage === "pulled")!;
+      expect(movement).toBeDefined();
+
+      const after = wardFlowReducer(seeded, {
+        type: "STEP_BACK_STAGE",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+        to: "pullled" as unknown as typeof movement.stage,
+        reason: "recorded_in_error",
+      });
+      expect(after.rejections).toHaveLength(1);
+      expect(after.rejections[0].reason).toContain("STEP_BACK_STAGE target must be chosen from MOVEMENT_STAGES");
+    });
+
+    it("S2-7: records acceptance_withdrawn unwind and notifies ward on RELEASE_AND_REOPEN_SEARCH without pulled bed", () => {
+      const seeded = seedWardFlowState();
+      const movement = seeded.movements.find((m) => m.stage === "accepted_awaiting_bed")!;
+      expect(movement).toBeDefined();
+      const previousUnit = movement.acceptedUnitId;
+
+      const after = wardFlowReducer(seeded, {
+        type: "RELEASE_AND_REOPEN_SEARCH",
+        role: "coordinator",
+        now: NOW,
+        movementId: movement.id,
+        actingUnitId: previousUnit ?? "scgh-adult-open",
+        reason: "patient_no_longer_coming",
+      });
+      expect(after.rejections).toHaveLength(0);
+      const updated = after.movements.find((m) => m.id === movement.id)!;
+      expect(updated.stage).toBe("placement_requested");
+      const lastUnwind = updated.unwinds.at(-1)!;
+      expect(lastUnwind.kind).toBe("acceptance_withdrawn");
+      expect(lastUnwind.unitId).toBe(previousUnit);
+
+      // Verify notices to ED and Ward
+      const newNotices = after.notices.slice(seeded.notices.length);
+      expect(newNotices.some((n) => n.to.role === "ed" && n.about.unitId === previousUnit)).toBe(true);
+      if (previousUnit) {
+        expect(newNotices.some((n) => n.to.role === "ward" && n.to.placeId === previousUnit)).toBe(true);
+      }
+    });
   });
 });

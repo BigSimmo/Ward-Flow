@@ -121,7 +121,13 @@ describe("patient and movement routes share lifecycle truth", () => {
         movementId: f.movement.id,
         unitIds: ["scgh-adult-open"],
       });
-    f.send({ type: "WITHDRAW_REFERRAL", role: "ed", now: NOW_ANCHOR, movementId: f.movement.id });
+    f.send({
+      type: "WITHDRAW_REFERRAL",
+      role: "ed",
+      actingPlaceId: f.movement.originEdId,
+      now: NOW_ANCHOR,
+      movementId: f.movement.id,
+    });
     expect(f.state.rejections).toHaveLength(0);
     const closure = f.state.movements.find((m) => m.id === f.movement.id)!.closure!;
     for (const id of [f.patient.id, f.movement.id]) {

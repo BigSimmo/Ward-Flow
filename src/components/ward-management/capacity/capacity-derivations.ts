@@ -31,6 +31,7 @@ import type {
   Unit,
   BedRelease,
 } from "@/components/ward-management/ward-model";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /**
  * The four bed kinds a coordinator actually reasons about, in the order the design lock fixes
@@ -80,15 +81,23 @@ function bedKindOfMovement(cohort: Cohort, security: Security): BedKindId {
  * disappear behind a bed nobody may actually place a detained patient in.
  */
 function bedsOfKindAtUnit(unit: Unit, kind: BedKindId): number {
+  // A closed or zero-bed ward supplies no bed of any kind (R-B-09, owner ruling 13 Oct 2026).
+  // Kind supply never exceeds the ward's bounded Ready (qodo, 13 Oct): a feed reporting more
+  // allocatable beds than are empty or physically present cannot show more fitting beds than Ready.
+  const available = boundedBedAvailability(unit).available;
+  if (available === 0) return 0;
   switch (kind) {
     case "locked_adult":
-      return unit.cohort === "Adult" ? lockedBedsFree(unit) : 0;
+      return unit.cohort === "Adult" ? Math.min(lockedBedsFree(unit), available) : 0;
     case "open_adult":
-      return unit.cohort === "Adult" ? openBedsFree(unit) : 0;
+      // Locked beds take their share of Ready first, so locked + open never exceed it.
+      return unit.cohort === "Adult"
+        ? Math.min(openBedsFree(unit), available - Math.min(lockedBedsFree(unit), available))
+        : 0;
     case "older_adult":
-      return unit.cohort === "Older adult" ? lockedBedsFree(unit) + openBedsFree(unit) : 0;
+      return unit.cohort === "Older adult" ? Math.min(lockedBedsFree(unit) + openBedsFree(unit), available) : 0;
     case "youth":
-      return unit.cohort === "Youth" ? lockedBedsFree(unit) + openBedsFree(unit) : 0;
+      return unit.cohort === "Youth" ? Math.min(lockedBedsFree(unit) + openBedsFree(unit), available) : 0;
   }
 }
 
@@ -390,8 +399,8 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
   const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
   return {
     unit,
-    ready: lockedBedsFree(unit) + openBedsFree(unit),
-    lockedReady: lockedBedsFree(unit),
+    ready: cap.available,
+    lockedReady: Math.min(lockedBedsFree(unit), cap.available),
     freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
     dischargesDueToday: dischargesDueToday(unit.id, admissions, now),
     ...wardReleaseFigures(unit, inputs),

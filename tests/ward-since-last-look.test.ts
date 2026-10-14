@@ -127,5 +127,7 @@ describe("what changed since you last looked", () => {
       const raw = JSON.stringify({ ...snapshot, readyByUnit: { u1: 0 } }).replace('"u1":0', `"u1":${bad}`);
       expect(parseLastLookSnapshot(raw), `ready count ${bad}`).toBeUndefined();
     }
+    // An array (even an empty one) is not a map of ready counts by unit.
+    expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, readyByUnit: [] }))).toBeUndefined();
   });
 });

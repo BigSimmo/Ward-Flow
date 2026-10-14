@@ -220,7 +220,7 @@ function snapshotListsInvalid(v: Record<string, unknown>): boolean {
   return ![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray);
 }
 function snapshotReadyCountsInvalid(v: Record<string, unknown>): boolean {
-  if (typeof v.readyByUnit !== "object" || v.readyByUnit === null) return true;
+  if (typeof v.readyByUnit !== "object" || v.readyByUnit === null || Array.isArray(v.readyByUnit)) return true;
   return !Object.values(v.readyByUnit).every((count) => Number.isSafeInteger(count) && (count as number) >= 0);
 }
 function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {

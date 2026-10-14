@@ -84,6 +84,7 @@ function closeMovement(state: WardFlowState, movementId: string): WardFlowState 
   return wardFlowReducer(referred, {
     type: "WITHDRAW_REFERRAL",
     role: "ed",
+    actingPlaceId: referred.movements.find((movement) => movement.id === movementId)!.originEdId,
     now: NOW,
     movementId,
   });
@@ -352,6 +353,7 @@ describe("ACCEPT_REFERRAL (ward arm) refuses while a linked movement is open", (
     const closed = wardFlowReducer(referredToUnit, {
       type: "WITHDRAW_REFERRAL",
       role: "ed",
+      actingPlaceId: linkedMovement.originEdId,
       now: NOW + 1,
       movementId: linkedMovement.id,
     });

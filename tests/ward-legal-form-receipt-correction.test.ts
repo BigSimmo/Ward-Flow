@@ -172,6 +172,7 @@ describe("CORRECT_LEGAL_FORM_RECEIPT — the undo RECORD_LEGAL_FORM_RECEIVED has
     const withdrawn = wardFlowReducer(referred, {
       type: "WITHDRAW_REFERRAL",
       role: "ed",
+      actingPlaceId: referred.movements.find((movement) => movement.id === movementId)!.originEdId,
       now: NOW + 30,
       movementId,
     });

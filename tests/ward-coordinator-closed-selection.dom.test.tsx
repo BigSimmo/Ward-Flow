@@ -49,7 +49,15 @@ function Probe() {
       <button
         type="button"
         data-testid="withdraw-referral"
-        onClick={() => dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now: NOW, movementId: TARGET!.id })}
+        onClick={() =>
+          dispatch({
+            type: "WITHDRAW_REFERRAL",
+            role: "ed",
+            actingPlaceId: TARGET!.originEdId,
+            now: NOW,
+            movementId: TARGET!.id,
+          })
+        }
       >
         withdraw referral
       </button>

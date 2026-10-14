@@ -304,8 +304,11 @@ export function executeBatch({ root, args, environment, timeoutMs, logFile, guar
       interrupted = true;
       cancel();
     };
-    process.once("SIGINT", interrupt);
-    process.once("SIGTERM", interrupt);
+    // Persistent listeners (removed in `finish`): a second signal during the termination grace period
+    // must still be handled here rather than falling through to Node's default, which would exit
+    // without writing a result record and could orphan the owned child.
+    process.on("SIGINT", interrupt);
+    process.on("SIGTERM", interrupt);
     child.once("error", (error) => {
       clearTimeout(timer);
       clearTimeout(grace);
@@ -316,8 +319,21 @@ export function executeBatch({ root, args, environment, timeoutMs, logFile, guar
     child.once("close", (code) => {
       const exitCode = guarded ? code : (completion?.status ?? null);
       const proven = guarded || Boolean(completion && !completion.error);
+      // A cancelled run is only "interrupted" / "timed_out" when the owning guardian reported that the
+      // nested test process and its descendants have stopped. The guardian closing without that proof
+      // (for example it was killed itself) leaves the work possibly running, so record the unknown
+      // termination instead of claiming a clean stop.
+      const cancelled = interrupted || timedOut;
       finish(
-        interrupted ? "interrupted" : timedOut ? "timed_out" : proven && exitCode === 0 ? "passed" : "failed",
+        cancelled && !proven
+          ? "termination_failed"
+          : interrupted
+            ? "interrupted"
+            : timedOut
+              ? "timed_out"
+              : proven && exitCode === 0
+                ? "passed"
+                : "failed",
         exitCode,
       );
     });

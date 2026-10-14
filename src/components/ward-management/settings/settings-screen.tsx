@@ -273,11 +273,92 @@ function readTabFromHash(): SettingsTab | null {
   return SETTINGS_TABS.some((tab) => tab.id === hash) ? (hash as SettingsTab) : null;
 }
 
+export function maskDiagnosticPatient(patient: DiagnosticPatientInput): { id?: string } {
+  return {
+    ...(patient.id !== undefined ? { id: patient.id } : {}),
+  };
+}
+
+export function maskDiagnosticMovement(movement: DiagnosticMovementInput): {
+  id: string;
+  stage?: unknown;
+  originEdId?: unknown;
+  acceptedUnitId?: unknown;
+  admissionId?: unknown;
+  openedAt?: unknown;
+  acceptedAt?: unknown;
+  pulledAt?: unknown;
+  arrivedAt?: unknown;
+} {
+  const allowed = [
+    "stage",
+    "originEdId",
+    "acceptedUnitId",
+    "admissionId",
+    "openedAt",
+    "acceptedAt",
+    "pulledAt",
+    "arrivedAt",
+  ] as const;
+  return {
+    id: movement.id,
+    ...Object.fromEntries(allowed.flatMap((key) => (movement[key] !== undefined ? [[key, movement[key]]] : []))),
+  };
+}
+
+export type DiagnosticPatientInput = {
+  id?: string;
+  umrn?: string;
+  mrn?: string;
+  givenName?: string;
+  familyName?: string;
+  preferredName?: string;
+  displayName?: string;
+  name?: string;
+  [key: string]: unknown;
+};
+
+export type DiagnosticMovementInput = {
+  id: string;
+  patientName?: string;
+  patientUmrn?: string;
+  patientMrn?: string;
+  mrn?: string;
+  [key: string]: unknown;
+};
+
+export async function copySettingsDiagnostics(state: {
+  configuration: WardConfiguration;
+  movements?: readonly DiagnosticMovementInput[];
+  patients?: readonly DiagnosticPatientInput[];
+}): Promise<string> {
+  const maskedPatients = (state.patients ?? []).map(maskDiagnosticPatient);
+  const maskedMovements = (state.movements ?? []).map(maskDiagnosticMovement);
+
+  const payload = {
+    product: "Ward Flow Statewide Bed Coordination",
+    version: 6,
+    exportedAt: new Date().toISOString(),
+    configuration: state.configuration,
+    movementCount: (state.movements ?? []).length,
+    patientCount: (state.patients ?? []).length,
+    movements: maskedMovements,
+    patients: maskedPatients,
+  };
+
+  const text = JSON.stringify(payload, null, 2);
+  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+    throw new Error("Clipboard is unavailable");
+  }
+  await navigator.clipboard.writeText(text);
+  return text;
+}
+
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents } = useWardFlow();
+  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents, patients } = useWardFlow();
   const now = useWardFlowClock();
   const thresholds = publishedThresholds(movements, now, configuration);
 
@@ -503,6 +584,19 @@ export function SettingsScreen() {
       showToast("Rules exported.");
     } catch {
       showToast("Rules could not be exported.");
+    }
+  };
+
+  const handleCopyDiagnostics = async () => {
+    try {
+      await copySettingsDiagnostics({
+        configuration,
+        movements,
+        patients,
+      });
+      showToast("Diagnostics copied to clipboard (records masked).");
+    } catch {
+      showToast("Diagnostics could not be copied.");
     }
   };
 
@@ -1202,6 +1296,7 @@ export function SettingsScreen() {
         eventCount={eventLog.length}
         thresholds={thresholds}
         onExport={handleExport}
+        onCopyDiagnostics={handleCopyDiagnostics}
         onImport={handleImport}
         onClearSession={handleClearSession}
         onRestore={() => {

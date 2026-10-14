@@ -25,8 +25,10 @@ function hasRuntimeBinding(clause: ts.ImportClause): boolean {
 }
 
 function importPath(file: string, name: string): string {
-  if (name.startsWith("@/")) return path.join("src", `${name.slice(2)}.ts`);
-  if (name.startsWith(".")) return path.join(path.dirname(file), `${name}.ts`);
+  // An import that already names its TypeScript extension must not gain a second one.
+  const withExtension = (target: string) => (/\.tsx?$/u.test(target) ? target : `${target}.ts`);
+  if (name.startsWith("@/")) return path.join("src", withExtension(name.slice(2)));
+  if (name.startsWith(".")) return path.join(path.dirname(file), withExtension(name));
   throw new Error(`Reducer import is outside the local source tree: ${name}`);
 }
 
