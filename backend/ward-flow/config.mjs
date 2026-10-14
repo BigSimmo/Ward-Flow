@@ -18,8 +18,20 @@ const PLACEHOLDER_IDS = new Set([
 ]);
 
 export function readConfig(env = process.env) {
-  const databaseProvider = env.WARD_DATABASE_PROVIDER || "azure";
-  const authProvider = env.WARD_AUTH_PROVIDER || "entra";
+  const legacyAzurePreset =
+    !env.WARD_SUPABASE_PROJECT_REF &&
+    !env.WARD_SUPABASE_DATABASE_URL &&
+    !env.WARD_SUPABASE_URL &&
+    Boolean(
+      env.AZURE_TENANT_ID ||
+      env.WARD_ALLOWED_OBJECT_ID ||
+      env.WARD_API_AUDIENCE ||
+      env.AzureWebJobsStorage__accountName ||
+      env.AZURE_STORAGE_ACCOUNT ||
+      env.WARD_PG_HOST,
+    );
+  const databaseProvider = env.WARD_DATABASE_PROVIDER || (legacyAzurePreset ? "azure" : "supabase");
+  const authProvider = env.WARD_AUTH_PROVIDER || (legacyAzurePreset ? "entra" : "supabase");
   if (!["azure", "supabase", "postgres"].includes(databaseProvider) || !["entra", "supabase"].includes(authProvider))
     throw new Error("Invalid provider configuration");
   const required = authProvider === "entra" ? ["AZURE_TENANT_ID", "WARD_API_AUDIENCE", "WARD_ALLOWED_OBJECT_ID"] : [];

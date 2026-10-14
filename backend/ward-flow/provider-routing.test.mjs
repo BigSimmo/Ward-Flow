@@ -169,10 +169,19 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
   }
 }
 
-test("omitted selectors retain Azure/Entra and invalid or live configuration is refused", () => {
+test("omitted selectors default to Supabase, retain legacy Azure/Entra fallback, and refuse invalid or live configuration", () => {
+  const supabaseDefault = environment("supabase", "supabase");
+  delete supabaseDefault.WARD_DATABASE_PROVIDER;
+  delete supabaseDefault.WARD_AUTH_PROVIDER;
+  assert.equal(readConfig(supabaseDefault).databaseProvider, "supabase");
+  assert.equal(readConfig(supabaseDefault).authProvider, "supabase");
+
   const env = environment("azure", "entra");
   delete env.WARD_DATABASE_PROVIDER;
   delete env.WARD_AUTH_PROVIDER;
+  delete env.WARD_SUPABASE_PROJECT_REF;
+  delete env.WARD_SUPABASE_URL;
+  delete env.WARD_SUPABASE_DATABASE_URL;
   assert.equal(readConfig(env).databaseProvider, "azure");
   assert.equal(readConfig(env).authProvider, "entra");
   for (const patch of [

@@ -59,3 +59,14 @@ GRANT USAGE, SELECT ON SEQUENCE ward_flow.audit_sequence_seq TO wardflow_backend
 GRANT SELECT, INSERT, UPDATE ON ward_flow.push_baselines TO wardflow_backend;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_subscriptions, ward_flow.push_deliveries TO wardflow_backend;
 GRANT USAGE, SELECT ON SEQUENCE ward_flow.push_subscriptions_id_seq TO wardflow_backend;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM PUBLIC;
+DO $$ DECLARE browser_role text; BEGIN
+  FOR browser_role IN SELECT rolname FROM pg_roles WHERE rolname IN ('anon','authenticated') LOOP
+    EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM %I', browser_role);
+    EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM %I', browser_role);
+  END LOOP;
+END $$;
+ALTER ROLE wardflow_backend SET statement_timeout = '10s';
+ALTER ROLE wardflow_backend SET idle_in_transaction_session_timeout = '10s';
+ALTER ROLE wardflow_backend SET lock_timeout = '5s';

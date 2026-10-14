@@ -1,5 +1,5 @@
 {
-  "name": "ward-flow-azure-backend",
+  "name": "ward-flow-backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,6 +13,7 @@
     "build:engine": "node build-engine.mjs",
     "migrate": "node --env-file-if-exists=.env migrate.mjs",
     "migrate:postgres": "node --env-file-if-exists=.env migrate-postgres.mjs",
+    "migrate:supabase": "node --env-file-if-exists=.env migrate-supabase.mjs",
     "package:deployment": "node package-deployment.mjs",
     "azure:inspect": "node azure-setup.mjs inspect",
     "azure:provision": "node azure-setup.mjs provision",
