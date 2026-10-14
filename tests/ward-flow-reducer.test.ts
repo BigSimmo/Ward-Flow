@@ -2285,13 +2285,14 @@ describe("bed release privacy", () => {
       // BOOK_TRANSPORT & RECORD_TRANSPORT_NEED: ward role rejected if actingUnitId !== originUnitId
       const transferMovement: ReturnType<typeof seedWardFlowState>["movements"][0] = {
         ...movement,
+        referralId: seeded.referrals[0].id,
         stage: "pulled",
       };
       const stateWithTransfer: ReturnType<typeof seedWardFlowState> = {
         ...seeded,
         movements: seeded.movements.map((m) => (m.id === movement.id ? transferMovement : m)),
         referrals: seeded.referrals.map((r) =>
-          r.id === movement.referralId ? { ...r, source: "psychiatric_ward", originUnitId: "scgh-adult-open" } : r,
+          r.id === seeded.referrals[0].id ? { ...r, source: "psychiatric_ward", originUnitId: "scgh-adult-open" } : r,
         ),
       };
 
