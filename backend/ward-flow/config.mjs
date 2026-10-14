@@ -81,8 +81,7 @@ export function readConfig(env = process.env) {
   if (coordinatorIds.some((id) => !UUID.test(id) || PLACEHOLDER_IDS.has(id)))
     throw new Error("Invalid coordinator configuration");
   let postgres = null;
-  if (databaseProvider === "supabase" || databaseProvider === "postgres") {
-    if (!shared) throw new Error("Database provider requires the shared workspace");
+  if ((databaseProvider === "supabase" || databaseProvider === "postgres") && shared) {
     postgres = databaseProvider === "supabase" ? readSupabaseDatabaseConfig(env) : readPortablePostgresConfig(env);
     if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
       throw new Error("Invalid workspace configuration");
