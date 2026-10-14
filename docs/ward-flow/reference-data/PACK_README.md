@@ -32,5 +32,5 @@
   - `scripts/ward-flow/build-reference-teams.mjs` compiles published community-service contact details from `entities.json` into `src/components/ward-management/reference/ward-reference-teams.ts`.
 - **Runtime imports & site/unit counts:**
   - The generated modules are imported by the Ward Flow runtime (`src/components/ward-management/` / `src/lib/ward-flow/`).
-  - `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) includes **10 public EDs** (including specialist EDs `KEMH` and `PCH`) and **13 runtime inpatient units (266 operational beds)** vs **279 reference-pack beds** (which include the 13-bed `SCGH-MHOA` observation area; alongside the 22-unit standard synthetic network in `STANDARD_WARD_SITES`).
+  - `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) includes **10 public EDs** (including specialist EDs `KEMH` and `PCH`) and a default `STANDARD_WARD_SITES` network of **23 inpatient units and 304 synthetic/sample beds**. Reference-pack capacity assertions are not imported into the runtime fixture.
   - All runtime bed counts remain synthetic/sample figures, and regional travel bands in `ward-travel-bands.ts` retain `TRAVEL_BANDS_ARE_INVENTED = true`.

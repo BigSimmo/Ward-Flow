@@ -11,7 +11,9 @@ ward line at 00d72ca371. When a site answers, change `ward-sites.ts` in its own 
 and tick the line here.
 
 > [!NOTE]
-> **Runtime vs reference-pack bed count reconciliation (`266` vs `279`):** `WARD_UNITS` in `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) models **266 runtime operational beds** across the 13 core inpatient units (`DEFAULT_BEDS` in `ward-seed.ts`), whereas the external WA Health reference-data pack (`docs/ward-flow/reference-data/wa_wards_master.json` / `capacity_assertions.json`) records **279 gazetted/assertion beds**—a 13-bed difference accounted for by the SCGH Mental Health Observation Area (`SCGH-MHOA`, 13 beds), which is tracked separately from the 13 runtime inpatient units.
+> The default `STANDARD_WARD_SITES` network contains 23 inpatient units and 304 synthetic/sample
+> beds. These are not gazetted capacities: the runtime fixture does not import bed counts from
+> the external reference pack (`docs/ward-flow/reference-data/capacity_assertions.json`).
 
 Already settled, so not asked again: Broome's Mabu Liyan is not forensic (owner ruling 1A,
 25 Sept 2026), and CAHS includes Perth Children's.
