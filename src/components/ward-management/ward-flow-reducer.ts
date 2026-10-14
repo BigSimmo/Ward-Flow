@@ -4235,6 +4235,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // case falls through to the harmless re-assertion below rather than a refusal about zero
       // wards.
       if (newUnitIds.length > 0 && permitted.length === 0) return withHeldBack;
+      if (event.overrideReason !== undefined && permitted.length === 0) {
+        return reject(withHeldBack, event, "cannot record a placement override when no new units are referred");
+      }
 
       // Re-referral: this movement is ALREADY at `destination_review`, so adding wards is not a
       // fresh transition — see the `stageChanges` field below.
@@ -4263,7 +4266,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // recorded. Appended rather than replaced, because a movement can be overridden more than
         // once and the earlier one is not undone by the later.
         overrides:
-          event.overrideReason === undefined || permitted.length === 0
+          event.overrideReason === undefined
             ? movement.overrides
             : [
                 ...movement.overrides,

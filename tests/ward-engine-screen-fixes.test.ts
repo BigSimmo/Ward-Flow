@@ -102,6 +102,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
 
       const updatedMov = result.movements.find((m) => m.id === mov.id);
       expect(updatedMov?.overrides.length).toBe(initialOverridesCount);
+      expect(result.rejections.length).toBeGreaterThan(state.rejections.length);
     });
 
     it("S2-5: rejects SET_ARRIVAL_DETAILS on closed movements", () => {
