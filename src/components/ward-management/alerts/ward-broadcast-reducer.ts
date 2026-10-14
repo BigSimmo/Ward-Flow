@@ -385,10 +385,10 @@ export function extendBroadcastAlert(
   }
   const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
   const target = existingAlerts.find((a) => a.id === alertId);
-  if (!target || target.status !== "active") {
+  if (!target || target.status !== "active" || target.expiresAt <= now) {
     return state;
   }
-  const baseExpiry = Math.max(target.expiresAt, now);
+  const baseExpiry = target.expiresAt;
   return {
     ...state,
     broadcastAlerts: existingAlerts.map((a) =>
