@@ -45,6 +45,15 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   }, [key]);
 
   useEffect(() => {
+    const navigationConfirm = () => !isDirty || window.confirm(confirmMessage ?? "You have unsaved changes. Are you sure you want to leave?");
+    const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
+    globalWindow.__wardFlowConfirmNavigation = navigationConfirm;
+    return () => {
+      if (globalWindow.__wardFlowConfirmNavigation === navigationConfirm) delete globalWindow.__wardFlowConfirmNavigation;
+    };
+  }, [isDirty, confirmMessage]);
+
+  useEffect(() => {
     if (!isDirty) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();

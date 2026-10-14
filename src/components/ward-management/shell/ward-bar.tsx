@@ -1076,6 +1076,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
+      const globalWindow = typeof window !== "undefined" ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }) : null;
+      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
       router.push(
         href ??
           `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
@@ -1093,6 +1095,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
+      const globalWindow = typeof window !== "undefined" ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }) : null;
+      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
       router.push(dischargeHref(admissionId));
     },
     [router],
