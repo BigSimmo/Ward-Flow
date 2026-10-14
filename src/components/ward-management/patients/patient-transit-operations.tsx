@@ -58,7 +58,10 @@ export function PatientTransitOperations({
   // names who acted rather than a borrowed ward, ED or officer.
   const routeRole = useRouteRole();
   // A ward acts for the ward the patient is accepted at; the other roles name no unit.
-  const wardActing = routeRole === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {};
+  const wardActing =
+    routeRole === "ward"
+      ? { actingUnitId: (movement as { originUnitId?: string }).originUnitId ?? admissions.find((admission) => admission.id === movement.admissionId)?.unitId }
+      : {};
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const holdGate = gate("PULL_PATIENT");
   const bookGate = gate("BOOK_TRANSPORT");
