@@ -142,7 +142,7 @@ describe("the tasks drawer", () => {
   });
 
   it("closes on Escape key press", () => {
-    const { onClose, dispatch } = renderDrawer();
+    const { onClose, dispatch } = renderDrawer({ withBackdrop: true });
     fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(dispatch).not.toHaveBeenCalled();

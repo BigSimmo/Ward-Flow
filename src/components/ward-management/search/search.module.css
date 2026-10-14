@@ -1997,7 +1997,13 @@
   font-weight: 600;
   height: 28px;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
   white-space: nowrap;
   text-decoration: none !important;
   border: 1px solid var(--line);

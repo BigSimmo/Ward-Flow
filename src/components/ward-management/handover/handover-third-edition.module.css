@@ -124,7 +124,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
   white-space: nowrap;
 }
 
@@ -213,7 +219,13 @@
   gap: 6px;
   position: relative;
   white-space: nowrap;
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease,
+    opacity 0.12s ease;
   min-height: 28px;
 }
 

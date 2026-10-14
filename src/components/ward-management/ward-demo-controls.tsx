@@ -18,9 +18,9 @@ import styles from "./ward-demo-controls.module.css";
  * surface ever raised either event, so `pullExpiresAt` (always `now + 60`) could never actually be
  * watched expiring, the one thing §5 says the control exists to demonstrate.
  *
- * Mounted once in `ClinicalRail` (`ward-management-navigation.tsx`, next to `WardRoleSwitcher`),
- * so it is present on every `/mockups/ward-flow/*` route without any per-screen wiring — the clock
- * is shared state, not a per-screen concern.
+ * Mounted once in the shared navigation chrome (`WardBar`, formerly `ClinicalRail`),
+ * next to `WardRoleSwitcher`, so it is present on every `/mockups/ward-flow/*` route
+ * without any per-screen wiring — the clock is shared state, not a per-screen concern.
  *
  * **This must never be mistaken for a clinical action.** Three distinct signals carry that,
  * deliberately redundant rather than resting on any one of them:

@@ -551,7 +551,13 @@
   font-weight: 600;
   border-radius: var(--r2);
   cursor: pointer;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .transportCancelButton:hover {
@@ -1546,7 +1552,13 @@
   box-shadow: 0 10px 30px rgb(var(--ward-shadow-rgb) / 0.22) !important;
   z-index: 120 !important;
   opacity: 0 !important;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
   pointer-events: none !important;
   display: flex !important;
   align-items: center !important;
@@ -1893,7 +1905,13 @@ button.searchBox:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.4375rem;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s,
+    opacity 0.15s;
   white-space: nowrap;
 }
 
@@ -2101,7 +2119,13 @@ button.searchBox:hover {
   font-size: var(--t-1);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .chipFilterBtn:hover {
@@ -2274,7 +2298,13 @@ button.searchBox:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .btnSmSec:hover {
@@ -2354,7 +2384,13 @@ button.searchBox:hover {
   font-weight: 500;
   border-radius: var(--r2);
   cursor: pointer;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .btnSmSec:hover {
@@ -2378,7 +2414,13 @@ button.searchBox:hover {
   display: flex;
   flex-direction: column;
   gap: 0.4375rem;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .staffCard:hover {
@@ -2535,7 +2577,13 @@ button.searchBox:hover {
   justify-content: center;
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .drawerClose:hover {
@@ -2648,7 +2696,13 @@ button.searchBox:hover {
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
-  transition: all 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s,
+    opacity 0.12s;
 }
 
 .modalCloseBtn:hover {

@@ -31,6 +31,7 @@ function Harness() {
       dispatch={vi.fn()}
       onClose={() => setOpen(false)}
       onSelectMovement={() => {}}
+      withBackdrop
     />
   ) : null;
 }
@@ -38,13 +39,13 @@ async function afterFrames() {
   await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 }
 
-it("keeps focus on the connected opener after a no-backdrop drawer closes and unmounts", async () => {
+it("keeps focus on the connected opener after a modal drawer closes and unmounts", async () => {
   const previous = opener();
   render(<Harness />);
-  const drawer = screen.getByRole("complementary", { name: "Tasks" });
+  const drawer = screen.getByRole("dialog", { name: "Tasks" });
   expect(drawer.contains(document.activeElement)).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Close tasks panel" }));
-  expect(screen.queryByRole("complementary", { name: "Tasks" })).toBeNull();
+  expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
   expect(previous).toHaveFocus();
   await afterFrames();
   expect(previous).toHaveFocus();
@@ -53,7 +54,7 @@ it("keeps focus on the connected opener after a no-backdrop drawer closes and un
 it("does not attempt to restore focus to an opener removed while the drawer is open", async () => {
   const previous = opener();
   render(<Harness />);
-  expect(screen.getByRole("complementary", { name: "Tasks" }).contains(document.activeElement)).toBe(true);
+  expect(screen.getByRole("dialog", { name: "Tasks" }).contains(document.activeElement)).toBe(true);
   previous.remove();
   fireEvent.click(screen.getByRole("button", { name: "Close tasks panel" }));
   await afterFrames();

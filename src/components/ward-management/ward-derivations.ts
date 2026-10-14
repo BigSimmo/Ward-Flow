@@ -271,7 +271,9 @@ export function isOpen(movement: Movement): boolean {
 export function examinationRevokedWhileBedHeld(movement: Movement): boolean {
   const outcome = movement.examination?.outcome;
   if (outcome !== "community_order" && outcome !== "revoked") return false;
-  return movement.admissionId !== undefined;
+  if (movement.admissionId !== undefined) return true;
+  if (movement.closure !== undefined) return false;
+  return movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving";
 }
 
 /**
@@ -1638,11 +1640,20 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     const latestWithdrawalAt = movement.unwinds
       .filter((unwind) => unwind.kind === "acceptance_withdrawn")
       .reduce((latest, unwind) => Math.max(latest, unwind.at), -Infinity);
+    const latestRequestWithdrawalAt = movement.withdrawnReferrals.reduce(
+      (latest, w) => Math.max(latest, w.at),
+      -Infinity,
+    );
     // Owner decision, 2026-09-17 (item 20 / WF-R2): an acceptance later withdrawn is not
     // "declined by all" — UNLESS a decline landed after that withdrawal, which puts the movement
     // back in front of a network that has since refused it again.
+    // A3-8 / A3-9: Similarly, if a request to a destination was withdrawn (e.g. Ward A declined
+    // and Ward B was withdrawn by the referrer), the movement was NOT declined by all.
     if (latestWithdrawalAt > latestDeclineAt) {
       acceptanceWithdrawn.push({ movement, kind: "acceptance_withdrawn" });
+    } else if (latestRequestWithdrawalAt >= latestDeclineAt) {
+      // A withdrawal at or newer than the last decline is not a network refusal.
+      continue;
     } else {
       declinedByAll.push({ movement, kind: "declined_by_all" });
     }

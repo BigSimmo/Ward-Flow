@@ -403,7 +403,8 @@ describe("who may raise which event", () => {
      * be named by it.
      */
     // Owner, 4 October 2026: the referrer's own side may record it too, scoped in the reducer.
-    RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed"],
+    // DEC-L5-03: ward may also withdraw its own psychiatric_ward referral.
+    RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed", "ward"],
     // Q004 Task 3: ward-owned patient discharge; bounded record access; coordinator audit review.
     // Keep this independent of EVENT_ROLE so widening any domain role still fails here.
     RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
@@ -424,7 +425,7 @@ describe("who may raise which event", () => {
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
-    RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
+    RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
     // A1-5 (13 Oct 2026): restricted to ED and coordinator, matching RECORD_LEGAL_FORM_EXPIRY.
     RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
