@@ -1780,6 +1780,12 @@
   color: var(--ink);
   font: inherit;
 }
+/* Phone: 16px so iOS Safari does not zoom the page on focus. */
+@media (max-width: 48rem) {
+  .clearanceField select {
+    font-size: max(1rem, 16px);
+  }
+}
 .clearanceAttestation {
   display: flex;
   align-items: center;
@@ -2826,14 +2832,50 @@
   gap: 6px;
 }
 
+/* F-05 (phone review, Oct 2026): a movement's eyebrow may take two lines, so the observation level
+ * (its own chip) is never cut off under the Live chip. */
+.phMoveEyebrow {
+  display: inline;
+}
+
+.phObsChip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  margin-left: var(--wf-s-2);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+@media (max-width: 48rem) {
+  .v6Hero :has(> .phMoveEyebrow) {
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 24px;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
 .phIdSub {
-  display: block;
+  /* F-05: the place at the end of the identity line wraps to a second line, not an ellipsis. */
+  display: -webkit-box;
   min-width: 0;
   max-width: calc(100vw - 2 * var(--wf-s-4));
   overflow: hidden;
   font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .phMoreRow {

@@ -4488,6 +4488,15 @@
     opacity: 0.55;
   }
 
+  /* F-05 (phone review, Oct 2026): the bay and destination wrap to a second line rather than
+     losing the ward's name ("to Bunbury Acute Psychiatri…"). */
+  .phoneBoardRow [class*="rowMeta"] {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
   .phoneBoardRow [class*="rowValue"] {
     display: inline-flex;
     align-items: center;

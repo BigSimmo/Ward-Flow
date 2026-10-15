@@ -2443,6 +2443,10 @@ function WardReferralDrawerContent({
                                 value={newPatient.familyName}
                                 maxLength={100}
                                 autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="words"
+                                spellCheck={false}
+                                enterKeyHint="done"
                                 onChange={(e) => setNewPatient((p) => ({ ...p, familyName: e.target.value }))}
                               />
                             </Field>
@@ -2453,6 +2457,10 @@ function WardReferralDrawerContent({
                                 value={newPatient.givenName}
                                 maxLength={100}
                                 autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="words"
+                                spellCheck={false}
+                                enterKeyHint="done"
                                 onChange={(e) => setNewPatient((p) => ({ ...p, givenName: e.target.value }))}
                               />
                             </Field>
@@ -2472,6 +2480,10 @@ function WardReferralDrawerContent({
                                 value={newPatient.umrn}
                                 maxLength={20}
                                 autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="characters"
+                                spellCheck={false}
+                                enterKeyHint="done"
                                 onChange={(e) => setNewPatient((p) => ({ ...p, umrn: e.target.value }))}
                               />
                             </Field>
@@ -2500,6 +2512,8 @@ function WardReferralDrawerContent({
                                 value={newPatient.suburb}
                                 maxLength={100}
                                 autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="words"
                                 onChange={(e) => setNewPatient((p) => ({ ...p, suburb: e.target.value }))}
                               />
                             </Field>
@@ -2536,6 +2550,9 @@ function WardReferralDrawerContent({
                             className={styles.patientSearchInput}
                             aria-label="Find a patient"
                             placeholder="Find a patient by name or UMRN"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            enterKeyHint="search"
                             value={searchQuery}
                             onChange={(e) => {
                               setSearchQuery(e.target.value);
@@ -2847,6 +2864,8 @@ function WardReferralDrawerContent({
                               id={`${sectionId}-suburb`}
                               className={styles.fieldInput}
                               list={`${sectionId}-suburbs`}
+                              autoComplete="off"
+                              autoCorrect="off"
                               value={catchmentSuburb}
                               onChange={(e) => {
                                 setCatchmentSuburb(e.target.value);
@@ -2861,6 +2880,8 @@ function WardReferralDrawerContent({
                               id={`${sectionId}-team`}
                               className={styles.fieldInput}
                               list={`${sectionId}-teams`}
+                              autoComplete="off"
+                              autoCorrect="off"
                               value={catchmentTeam}
                               maxLength={200}
                               onChange={(e) => {
@@ -3051,6 +3072,8 @@ function WardReferralDrawerContent({
                               id={`${sectionId}-sending`}
                               className={styles.fieldInput}
                               list={`${sectionId}-teams`}
+                              autoComplete="off"
+                              autoCorrect="off"
                               value={sendingTeam}
                               maxLength={200}
                               onChange={(e) => setSendingTeam(e.target.value)}
@@ -3200,6 +3223,9 @@ function WardReferralDrawerContent({
                             id="refDocInput"
                             maxLength={1000}
                             placeholder="Why this service is needed"
+                            autoCorrect="off"
+                            autoCapitalize="sentences"
+                            enterKeyHint="done"
                             value={doctorNote}
                             onChange={(e) => setDoctorNote(e.target.value)}
                             data-gramm="false"

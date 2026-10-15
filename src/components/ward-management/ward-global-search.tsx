@@ -1447,6 +1447,8 @@ export function WardGlobalSearch({
           className={styles.input}
           type="text"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
           enterKeyHint="search"
           spellCheck={false}
           aria-haspopup="listbox"

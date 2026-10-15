@@ -440,7 +440,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       link.href = url;
       link.download = "ward-flow-synthetic-out-of-area.csv";
       link.click();
-      URL.revokeObjectURL(url);
+      // F-17: iPhone Safari starts the download after click() returns; revoking at once can cancel it.
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
       setToolNote("Export is not available in this browser");
     }
@@ -505,7 +506,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       const record = recordOf(entry.admission.id);
       return {
         entry,
-        name: info.displayName,
+        // F-06 (phone review, Oct 2026): family name first, as on the census.
+        name: info.formalName,
         umrn: info.umrn,
         profileHref: getPatientProfileHref(info),
         legal: legalOf(entry),

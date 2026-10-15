@@ -764,7 +764,7 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
       "the hub is asserting that invented figures reconcile, over a check array that does not exist",
     ).not.toBeInTheDocument();
     // v6: the hero's Live chip is the one "Live" on the page; nothing else may claim live figures.
-    const liveChip = screen.getByRole("button", { name: "Pause demo updates" }).parentElement;
+    const liveChip = screen.getByRole("button", { name: /pause demo updates$/ }).parentElement;
     const outsideChip = (document.body.textContent ?? "").replace(liveChip?.textContent ?? "", "");
     expect(outsideChip).not.toMatch(/Live/);
   });

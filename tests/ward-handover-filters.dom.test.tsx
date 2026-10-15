@@ -85,7 +85,7 @@ describe("Act now outside the scope", () => {
     renderHandover();
     await selectScope(user, "Royal Perth Hospital Emergency Department");
     const footer = screen.getByTestId("ward-handover-urgent-outside-filter").textContent ?? "";
-    expect(footer).toContain(wf018Identity.displayName);
+    expect(footer).toContain(wf018Identity.formalName);
     expect(footer).toContain(wf018Identity.umrn);
     expect(footer).not.toContain("WF-018");
   });
@@ -95,6 +95,6 @@ describe("Act now outside the scope", () => {
     renderHandover();
     await selectScope(user, "Sir Charles Gairdner Hospital Emergency Department");
     const footer = screen.queryByTestId("ward-handover-urgent-outside-filter")?.textContent ?? "";
-    expect(footer).not.toContain(wf018Identity.displayName);
+    expect(footer).not.toContain(wf018Identity.formalName);
   });
 });

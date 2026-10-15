@@ -1618,9 +1618,12 @@
 }
 
 @media (max-width: 48rem) {
+  /* Phone review F-31: square corners, so the divider is a straight rule. The kit's figure keeps a
+   * 12px radius, which bent this left border into a bracket. */
   .heroPills > .heroPill:not(.deskOnly) {
     padding: 0 var(--wf-s-3);
     border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    border-radius: 0;
   }
 
   .heroPills > .heroPill:first-child {

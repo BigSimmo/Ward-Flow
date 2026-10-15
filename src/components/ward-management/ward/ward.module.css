@@ -4128,6 +4128,19 @@
   }
 }
 
+/* F-18: the phone's 32px ward switch reaches 44px on touch through a hit area, not a bigger face. */
+@media (max-width: 48rem) and (pointer: coarse) {
+  .phoneHeroTitle .wardSwitch {
+    position: relative;
+  }
+
+  .phoneHeroTitle .wardSwitch::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+}
+
 /* Phone (v10): the views pin under the stable header on the canvas, full
    bleed, as on Home. The class renders only on phone. */
 .phoneTabBar {

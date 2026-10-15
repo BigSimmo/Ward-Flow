@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { ToastProvider, WfServerPhoneProvider, guessPhoneFromRequest } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
+import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
 import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
@@ -129,6 +130,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
           <WardRowDensity />
           <WardLiveRegion />
           <WardActNowNotifier />
+          <WardPwaRegistration />
           <WardOfflineLinks />
           <div className={styles.shellRow}>
             <WardRail />

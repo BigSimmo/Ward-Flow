@@ -584,10 +584,13 @@ export function sortCensusRows(rows: readonly CensusRow[], sort: CensusSort, lif
   return [...rows].sort((a, b) => Number(lifted(b)) - Number(lifted(a)) || by(a, b) || a.name.localeCompare(b.name));
 }
 
-/** "16/07/1987", "16.7.1987" or "1987-07-16" as ISO, or `null` when it is not a whole date yet. */
+/**
+ * "16/07/1987", "16.7.1987", "1987-07-16" or digits only "16071987" (DDMMYYYY, because the iPhone
+ * number pad has no "/") as ISO, or `null` when it is not a whole date yet.
+ */
 export function parseDob(text: string): string | null {
   const trimmed = text.trim();
-  const dmy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  const dmy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/) ?? trimmed.match(/^(\d{2})(\d{2})(\d{4})$/);
   if (dmy) return `${dmy[3]}-${dmy[2]!.padStart(2, "0")}-${dmy[1]!.padStart(2, "0")}`;
   return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
 }

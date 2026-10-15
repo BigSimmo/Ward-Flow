@@ -15,6 +15,7 @@ import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import {
   StatisticsCompareScreen,
+  shortPlaceName,
   shortWardLabels,
 } from "@/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
@@ -24,6 +25,8 @@ import { StatisticsScreen } from "@/components/ward-management/statistics/statis
 import { STATISTICS_OVERVIEW_HREF } from "@/components/ward-management/statistics/statistics-sections";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { LONG_WAIT_HOURS } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, allEmergencyDepartments, allUnits } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
@@ -102,16 +105,43 @@ describe("Statistics ED page on a phone (stats-8)", () => {
 });
 
 describe("Compare chart ward labels (stats-13)", () => {
-  it("gives every ward a short, unique label of site code and cohort, or its name on a clash", () => {
+  it("gives every ward a short, unique label of place and cohort, or its name on a clash", () => {
     const units = allUnits();
     const labels = shortWardLabels(units);
     const values = units.map((unit) => labels.get(unit.id)!);
     expect(new Set(values).size).toBe(values.length);
     for (const unit of units) {
       const label = labels.get(unit.id)!;
-      if (label !== unit.name) expect(label).toMatch(new RegExp(`^${unit.siteCode} (Adult|Secure|Older|Youth)$`, "u"));
+      if (label !== unit.name)
+        expect(label).toMatch(new RegExp(`^${shortPlaceName(unit.siteCode)} (Adult|Secure|Older|Youth)$`, "u"));
     }
     expect(values.filter((value, index) => value === units[index]!.name).length).toBeLessThan(units.length / 2);
+  });
+});
+
+describe("Amber dot keys on the phone lists (phone review F-25)", () => {
+  it("states what the dot means from the existing alert line, not a typed number", () => {
+    asPhone();
+    const { unmount } = renderInProvider(<StatisticsOverviewScreen />);
+    expect(screen.getByTestId("ward-statistics-overview-dot-key")).toHaveTextContent(
+      `Amber dot: ${BED_ALERT_THRESHOLD_PERCENT}% or more of beds in use`,
+    );
+    unmount();
+    renderInProvider(<StatisticsServicesIndexScreen />);
+    expect(screen.getByTestId("ward-statistics-services-dot-key")).toHaveTextContent(`past ${LONG_WAIT_HOURS} hours`);
+  });
+});
+
+describe("Compare chart place names (phone review F-24)", () => {
+  it("names a place from the site data and keeps the code only when the name is too long", () => {
+    expect(shortPlaceName("ALB")).toBe("Albany");
+    expect(shortPlaceName("BUN")).toBe("Bunbury");
+    expect(shortPlaceName("GER")).toBe("Geraldton");
+    expect(shortPlaceName("FRE")).toBe("Fremantle");
+    expect(shortPlaceName("SJGS")).toBe("SJOG Subiaco");
+    expect(shortPlaceName("SJGM")).toBe("SJOG Midland");
+    expect(shortPlaceName("SCGH")).toBe("SCGH");
+    expect(shortPlaceName("NOPE")).toBe("NOPE");
   });
 });
 
@@ -145,7 +175,8 @@ describe("Statistics phone polish (batch 4)", () => {
   it("prints the network figure to one decimal place on the hub (stats-20)", () => {
     asPhone();
     renderInProvider(<StatisticsScreen />);
-    expect(screen.getByText(/^\d+\.\d% in use$/u)).toBeInTheDocument();
+    // Phone review F-26: the figure's label names it ("Beds in use, 85.2%").
+    expect(screen.getByText(/^Beds in use, \d+\.\d%$/u)).toBeInTheDocument();
   });
 
   it("writes a nought as 0, never none, on the Services phone list (stats-21)", () => {
