@@ -1548,6 +1548,15 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
   return {
     ...withUnit,
     admissions: withUnit.admissions.filter((candidate) => candidate.id !== movement.admissionId),
+    // A Bed board placement on the removed stay has nothing left to undo, and a saved world still
+    // naming that stay is refused on reload (found by tests/ward-engine-safety.test.ts).
+    ...(withUnit.undoRecords === undefined
+      ? {}
+      : {
+          undoRecords: withUnit.undoRecords.filter(
+            (record) => record.kind !== "bed-placement" || record.admissionId !== movement.admissionId,
+          ),
+        }),
     dischargeRevisions: Object.fromEntries(
       Object.entries(withUnit.dischargeRevisions).filter(([id]) => id !== movement.admissionId),
     ),
