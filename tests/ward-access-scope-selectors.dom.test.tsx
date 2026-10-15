@@ -1,10 +1,16 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { memo } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { WardFlowProvider, useWardFlow, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  WardFlowProvider,
+  useWardFlow,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -25,6 +31,31 @@ function Probe() {
       <span data-testid="whole-admissions">{whole.admissions.length}</span>
       <span data-testid="field-rejections">{rejections.length}</span>
     </p>
+  );
+}
+
+const renders = { lists: 0 };
+
+/** Reads two scoped lists: one the scope always empties, one it filters to the desk's wards. */
+const ListReader = memo(function ListReader() {
+  const { rejections, bedReleases } = useWardFlowSelect("rejections", "bedReleases");
+  // eslint-disable-next-line react-hooks/immutability -- counts this reader's renders for the test
+  renders.lists += 1;
+  return <span>{rejections.length + bedReleases.length}</span>;
+});
+
+/** Outside the scope: sends an event the reducer refuses, which changes only the rejection log. */
+function RefusedDriver() {
+  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
+  const now = useWardFlowClock();
+  return (
+    <button
+      type="button"
+      data-testid="refused"
+      onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "ward", now, minutes: 15 })}
+    >
+      <span data-testid="refusals">{rejections.length}</span>
+    </button>
   );
 }
 
@@ -61,5 +92,24 @@ describe("role access scope and field readers", () => {
     renderScoped();
     expect(screen.getByTestId("field-admissions").textContent).toBe(String(seedWardFlowState().admissions.length));
     expect(screen.getByTestId("whole-admissions").textContent).toBe(String(seedWardFlowState().admissions.length));
+  });
+
+  it("a scoped desk's list readers do not re-render for an unrelated change", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [unitId] } });
+    });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RefusedDriver />
+        <WardAccessScope>
+          <ListReader />
+        </WardAccessScope>
+      </WardFlowProvider>,
+    );
+    const before = renders.lists;
+    fireEvent.click(screen.getByTestId("refused"));
+    expect(screen.getByTestId("refusals").textContent).toBe("1");
+    expect(renders.lists).toBe(before);
   });
 });
