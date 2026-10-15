@@ -48,79 +48,81 @@ function renderBarWithAdvance(minutes = 0) {
   return result;
 }
 
-describe("Figures in the Tools workspace", () => {
+describe("Figures in the Tools sheet", () => {
   beforeEach(() => {
     resetWardLiveRegionForTests();
   });
 
-  function openTools(minutes = 0) {
+  // The Tools sheet is a `next/dynamic` import, so its first paint waits for that chunk. Testing
+  // Library's default 1 s wait was too short on a loaded CI runner (shard 4, 9 Oct 2026): content
+  // arrived late, not missing. Wait for it as long as it takes.
+  async function openTools(minutes = 0) {
     renderBarWithAdvance(minutes);
-    expect(within(screen.getByTestId("ward-bar")).queryByTestId("ward-bar-figures-trigger")).toBeNull();
+    expect(within(screen.getByTestId("ward-bar")).queryByTestId("ward-tools-service-now")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
-    return screen.getByRole("dialog", { name: "Tools" });
+    const tools = screen.getByRole("dialog", { name: "Tools" });
+    await within(tools).findByTestId("ward-tools-service-now", {}, { timeout: 15_000 });
+    return tools;
   }
 
-  it("removes Figures from the header and offers it inside Tools", () => {
-    const tools = openTools();
-    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Figures");
+  it("keeps Figures out of the header and shows Service now at the top of Tools", async () => {
+    const tools = await openTools();
+    const glance = within(tools).getByTestId("ward-tools-service-now");
+    expect(glance).toHaveTextContent("Ready now");
+    expect(glance).toHaveTextContent("Whole network, synthetic figures.");
     // Audit A3-4 (13 Oct 2026): the seeded form at exactly 60 minutes is inside the first warning,
-    // the same rule Forms and Delays use, so Figures flags it.
-    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("1 due within 1h");
+    // the same rule Forms and Delays use, so Service now flags it.
+    const dueSoon = within(glance)
+      .getByText(/^Due within 1h/u)
+      .closest("div");
+    expect(dueSoon).toHaveAttribute("data-flagged", "true");
+    expect(dueSoon).toHaveTextContent("1");
   });
 
-  it("keeps deadline status reactive when the shared clock advances", () => {
-    const tools = openTools();
+  it("keeps deadline status reactive when the shared clock advances", async () => {
+    const tools = await openTools();
     fireEvent.click(screen.getByTestId("test-advance-clock"));
-    expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/deadline passed|due within/i);
+    const glance = within(tools).getByTestId("ward-tools-service-now");
+    expect(glance.querySelector('[data-flagged="true"]')?.textContent).toMatch(/deadline passed|due within/i);
   });
 
-  it("shows deadline flags and all figure clusters within the same Tools dialog", async () => {
-    const tools = openTools(70);
-    const launch = within(tools).getByTestId("ward-bar-figures-trigger");
-    expect(launch.textContent).toMatch(/deadline passed|due within/i);
-    fireEvent.click(launch);
-    expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
-    // `NetworkFigures` is a `next/dynamic` import of the Tools workspace module, so its first paint
-    // waits for that chunk. Testing Library's default 1 s wait was too short on a loaded CI runner
-    // (shard 4, 9 Oct 2026): the heading arrived late, not missing. Wait for it as long as it takes.
-    expect(await within(tools).findByRole("heading", { name: "Beds and capacity" }, { timeout: 15_000 })).toBeVisible();
+  it("opens all figure clusters in place within the same Tools dialog", async () => {
+    const tools = await openTools(70);
+    const toggle = within(tools).getByTestId("ward-tools-toggle-figures");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
     for (const heading of ["Waits and recorded limits", "Beds and capacity", "Flow and discharges"]) {
       expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
     }
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
-    expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
   });
 
-  it("keeps compact utilities and scenario controls in the shift desk", async () => {
-    const tools = openTools();
-    fireEvent.click(within(tools).getByRole("button", { name: "Utilities" }));
-    expect(within(tools).getByText("Catchment resolver")).toBeVisible();
-    expect(within(tools).getByText("Form date review")).toBeVisible();
-    fireEvent.click(within(tools).getByRole("button", { name: "Shift desk" }));
-    expect(await within(tools).findByRole("link", { name: /Shift handover/ })).toBeVisible();
-    expect(within(tools).queryByRole("button", { name: "Demo" })).toBeNull();
-    expect(within(tools).getByTestId("ward-demo-controls-trigger")).toBeVisible();
+  it("keeps catchment, form times and the one demo panel in the same sheet, with no tab bar", async () => {
+    const tools = await openTools();
+    expect(within(tools).queryByRole("group", { name: "Tools sections" })).toBeNull();
+    expect(within(tools).queryByRole("button", { name: "Shift desk" })).toBeNull();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-form-times"));
+    expect(within(tools).getByTestId("ward-form-times")).toBeVisible();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-catchment"));
+    expect(await within(tools).findByTestId("ward-catchment-resolver", {}, { timeout: 15_000 })).toBeVisible();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-demo"));
+    const demo = within(tools).getByTestId("ward-tools-demo-panel");
+    expect(within(demo).getByRole("radiogroup", { name: "Demo scenario" })).toBeVisible();
+    expect(within(tools).queryByTestId("ward-demo-controls-trigger")).toBeNull();
   });
 
-  it("filters the directory without losing its navigation links", async () => {
-    const tools = openTools();
-    fireEvent.click(within(tools).getByRole("button", { name: "Directory" }));
-    const search = await within(tools).findByRole("searchbox", { name: "Search contact directory" });
-    fireEvent.click(within(tools).getByRole("button", { name: "Wards" }));
-    const wardList = within(tools).getByRole("list", { name: "Contact directory" });
-    const firstLink = within(wardList).getAllByRole("link")[0];
-    const name = firstLink.querySelector("strong")!.textContent!;
-    const href = firstLink.getAttribute("href");
-    fireEvent.change(search, { target: { value: name } });
-    expect(within(wardList).getByRole("link", { name: new RegExp(name) })).toHaveAttribute("href", href);
-    fireEvent.change(search, { target: { value: "no-such-unit" } });
-    expect(within(wardList).queryAllByRole("link")).toHaveLength(0);
-    expect(within(tools).getByText("No matching contacts")).toBeVisible();
+  it("searches contacts without losing the On-call link", async () => {
+    const tools = await openTools();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-contacts"));
+    const search = within(tools).getByRole("searchbox", { name: "Search contacts" });
+    fireEvent.change(search, { target: { value: "no-such-team" } });
+    expect(within(tools).getByText("No contact matches.")).toBeVisible();
+    expect(within(tools).getByRole("link", { name: "Open On-call and contacts" })).toBeVisible();
   });
 
-  it("closes Tools from Figures without leaving a second drawer open", async () => {
-    const tools = openTools();
-    fireEvent.click(within(tools).getByTestId("ward-bar-figures-trigger"));
+  it("closes Tools from All figures without leaving a second drawer open", async () => {
+    const tools = await openTools();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-figures"));
     fireEvent.click(within(tools).getByRole("button", { name: /^close$/i }));
     // Closing steps Back through the drawer's own history entry; the sheet stays until popstate.
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
