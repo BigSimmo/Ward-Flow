@@ -6,7 +6,7 @@
  * as well as dynamic fallback structures for any patient or movement in the system.
  */
 
-import { dayOf, formatInstant } from "@/components/ward-management/ward-clock";
+import { dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 
@@ -596,7 +596,7 @@ export function clock(min: number): string {
  */
 export function etaPresetText(now: number, offset: number): string {
   const target = now + offset;
-  return `${formatInstant(target)}${dayOf(target) > dayOf(now) ? " tomorrow" : ""}`;
+  return `${clock(minuteOfDay(target))}${dayOf(target) > dayOf(now) ? " tomorrow" : ""}`;
 }
 
 export function fillTemplate(
