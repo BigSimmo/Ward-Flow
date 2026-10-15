@@ -115,6 +115,13 @@ describe("retired terms", () => {
     expect(findRetiredTerms("a.md", "Azure was retired on 15 October.\nAzure Storage removed.", config)).toEqual([]);
   });
 
+  it("judges each clause on its own, so a retirement note cannot excuse live advice", () => {
+    expect(findRetiredTerms("a.md", "Azure was retired; configure Azure Storage here.", config)).toEqual([
+      { file: "a.md", line: 1, term: "azure", text: "Azure" },
+    ]);
+    expect(findRetiredTerms("a.md", "See config.mjs: Azure support was removed.", config)).toEqual([]);
+  });
+
   it("does not match words that merely start with entra", () => {
     expect(findRetiredTerms("a.md", "the entrance and entrants", config)).toEqual([]);
   });
@@ -253,6 +260,20 @@ describe("doc facts run", () => {
     const result = run({ root, base });
     expect(result.errors).toEqual([]);
     expect(result.warnings).toHaveLength(1);
+  });
+
+  it("still fails a new mention when an old one is deleted elsewhere in the file", () => {
+    const { put, git } = fixture();
+    put("docs/hosting.md", "Old Azure note\nkeep\nkeep\nkeep\nend\n");
+    run({ root, write: true });
+    git("-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qam", "facts");
+    const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    put("docs/hosting.md", "keep\nkeep\nkeep\nend\nDeploy to Azure Functions\n");
+    git("-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qam", "swap");
+
+    expect(run({ root, base }).errors).toEqual([
+      { file: "docs/hosting.md", line: 5, term: "azure", text: "Azure", isNew: true },
+    ]);
   });
 
   it("passes on this repository's current tree", () => {

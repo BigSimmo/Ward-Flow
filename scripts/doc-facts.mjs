@@ -278,21 +278,31 @@ export function findRetiredTerms(file, text, config) {
   current.split("\n").forEach((line, index) => {
     for (const term of config.terms) {
       term.regex.lastIndex = 0;
-      const match = term.regex.exec(line);
-      if (match && !term.allowRegex?.test(line)) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
+      // A clause that itself says the thing is retired is current; another clause on the line is not.
+      const match = [...line.matchAll(term.regex)].find((m) => !term.allowRegex?.test(clauseAt(line, m.index)));
+      if (match) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
     }
   });
   return hits;
 }
 
+/** The clause around `index`: split at ; ! ? and at a full stop that ends a sentence (not `.mjs`). */
+function clauseAt(line, index) {
+  const ends = [...line.matchAll(/[;!?]|\.(?=\s|$)/gu)].map((m) => m.index);
+  const start = Math.max(-1, ...ends.filter((e) => e < index)) + 1;
+  return line.slice(start, ends.find((e) => e >= index) ?? line.length);
+}
+
 /**
- * From a zero-context diff: the line numbers each file gains, and the text of the lines it loses,
- * so a reworded or re-padded line can be weighed against the line it replaced.
+ * From a zero-context diff: the line numbers each file gains and the text of the lines it loses,
+ * overall and per hunk, so a reworded or re-padded line is weighed only against the lines it replaced.
  */
 export function diffLines(diffText) {
   const added = new Map();
   const removed = new Map();
+  const hunks = new Map();
   let file = null;
+  let current = null;
   let inHunk = false;
   for (const line of diffText.split("\n")) {
     if (line.startsWith("diff --git ")) {
@@ -311,13 +321,19 @@ export function diffLines(diffText) {
       const start = +hunk[1];
       const count = hunk[2] === undefined ? 1 : +hunk[2];
       const set = added.get(file) ?? new Set();
-      for (let n = start; n < start + count; n += 1) set.add(n);
+      current = { added: new Set(), removed: [] };
+      for (let n = start; n < start + count; n += 1) {
+        set.add(n);
+        current.added.add(n);
+      }
       added.set(file, set);
+      hunks.set(file, [...(hunks.get(file) ?? []), current]);
     } else if (inHunk && file && line.startsWith("-")) {
       removed.set(file, [...(removed.get(file) ?? []), line.slice(1)]);
+      current.removed.push(line.slice(1));
     }
   }
-  return { added, removed };
+  return { added, removed, hunks };
 }
 
 /** Line numbers each Markdown file gains between base and HEAD (zero-context diff). */
@@ -358,15 +374,14 @@ export function run({ root = ROOT, write = false, base = null } = {}) {
     } else errors.push(`${FACTS_DOC} is out of date with the source.`);
   }
 
-  let added = null;
-  let removed = new Map();
+  let hunks = new Map();
   if (base) {
     const diff = execFileSync("git", ["diff", "-U0", "--no-color", `${base}...HEAD`, "--", "*.md"], {
       cwd: root,
       encoding: "utf8",
       maxBuffer: 256 * 1024 * 1024,
     });
-    ({ added, removed } = diffLines(diff));
+    ({ hunks } = diffLines(diff));
   }
 
   for (const file of trackedMarkdown(root)) {
@@ -390,13 +405,17 @@ export function run({ root = ROOT, write = false, base = null } = {}) {
     }
     if (isHistoricalPath(file, retired)) continue;
     const hits = findRetiredTerms(file, text, retired);
-    const onAddedLines = hits.filter((hit) => added?.get(file)?.has(hit.line));
-    // Rewording or re-padding a line that already named the term is not a new mention: fail only
-    // when the branch's changed lines name retired terms more often than the lines they replaced.
-    const replaced = findRetiredTerms(file, (removed.get(file) ?? []).join("\n"), retired).length;
-    const grew = onAddedLines.length > replaced;
+    // Rewording or re-padding a line that already named the term is not a new mention: within each
+    // changed block, fail only when the new lines name retired terms more often than the lines they
+    // replaced. A deletion elsewhere in the file never offsets a new mention.
+    const fresh = new Set();
+    for (const hunk of hunks.get(file) ?? []) {
+      const inHunk = hits.filter((hit) => hunk.added.has(hit.line));
+      if (inHunk.length > findRetiredTerms(file, hunk.removed.join("\n"), retired).length)
+        for (const hit of inHunk) fresh.add(hit);
+    }
     for (const hit of hits) {
-      const isNew = grew && onAddedLines.includes(hit);
+      const isNew = fresh.has(hit);
       (isNew ? errors : warnings).push({ ...hit, isNew });
     }
   }
