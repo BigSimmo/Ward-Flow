@@ -326,6 +326,10 @@
   min-width: 0;
 }
 
+.formTimesCard {
+  grid-column: 1 / -1;
+}
+
 .stripBody {
   display: flex;
   flex-direction: column;

@@ -100,7 +100,11 @@ import {
   type ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { noticeIsForWardChrome, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
+import {
+  CHROME_ROLE_LABELS,
+  noticeIsForWardChrome,
+  wardTasksAreActionableForRole,
+} from "@/components/ward-management/ward-chrome-role";
 const NetworkFigures = dynamic(() => import("../tools/ward-tools-workspace").then((m) => m.NetworkFigures));
 const ToolsContactDirectory = dynamic(() =>
   import("../tools/ward-tools-workspace").then((m) => m.ToolsContactDirectory),
@@ -114,6 +118,12 @@ const WardMhaCalculator = dynamic(
   () => import("@/components/ward-management/tools/ward-mha-calculator").then((m) => m.WardMhaCalculator),
   { ssr: false },
 );
+// Tools review mockup (15 Oct 2026): the rebuilt sheet, shown only with `?tools=new`.
+const WardToolsSheet = dynamic(() =>
+  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
+);
+import { subscribeToolsTool, useToolsPreview } from "@/components/ward-management/tools/ward-tools-preview";
+import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
@@ -611,6 +621,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const appearance = useAppearanceStore();
+  const toolsPreview = useToolsPreview();
+  const [toolsOpenRequest, setToolsOpenRequest] = useState<{ tool: ToolsSheetToolId; seq: number } | undefined>();
+  useEffect(
+    () => subscribeToolsTool((tool) => setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }))),
+    [],
+  );
   const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "operations">(
     "overview",
   );
@@ -2092,7 +2108,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         footerClassName={styles.drawerFooter}
       >
-        <div className={styles.toolsNav} role="group" aria-label="Tools sections">
+        {toolsPreview ? (
+          <WardToolsSheet
+            isPhone={isPhone}
+            roleLabel={CHROME_ROLE_LABELS[role]}
+            onNavigate={() => closePopover("tools", false)}
+            onNewReferral={() =>
+              openReferral(
+                { category: roleCategory, destination: "ward" },
+                isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
+              )
+            }
+            openRequest={toolsOpenRequest}
+          />
+        ) : null}
+        <div className={styles.toolsNav} role="group" aria-label="Tools sections" hidden={toolsPreview}>
           {(
             [
               ["overview", "Overview"],
@@ -2117,7 +2147,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         <div
           id="ward-tools-overview"
           className={`${styles.toolsPanel} ${styles.toolsOverview}`}
-          hidden={toolsPart !== "overview"}
+          hidden={toolsPreview || toolsPart !== "overview"}
         >
           <button
             type="button"
@@ -2247,10 +2277,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             </a>
           </section>
         </div>
-        <div id="ward-tools-figures" className={styles.toolsPanel} hidden={toolsPart !== "figures"}>
+        <div id="ward-tools-figures" className={styles.toolsPanel} hidden={toolsPreview || toolsPart !== "figures"}>
           <NetworkFigures />
         </div>
-        <div id="ward-tools-utilities" className={styles.toolsPanel} hidden={toolsPart !== "utilities"}>
+        <div id="ward-tools-utilities" className={styles.toolsPanel} hidden={toolsPreview || toolsPart !== "utilities"}>
           <section className={styles.toolsSection}>
             <h3 className={styles.toolsHeading}>Shortcuts</h3>
             <OperationalLinks onNavigate={() => closePopover("tools", false)} />
@@ -2271,7 +2301,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             <WardMhaCalculator />
           </section>
         </div>
-        <div id="ward-tools-operations" className={styles.toolsPanel} hidden={toolsPart !== "operations"}>
+        <div
+          id="ward-tools-operations"
+          className={styles.toolsPanel}
+          hidden={toolsPreview || toolsPart !== "operations"}
+        >
           <section className={styles.toolsSection}>
             <h3 className={styles.toolsHeading}>Shift desk</h3>
             <OperationalLinks onNavigate={() => closePopover("tools", false)} />
@@ -2285,7 +2319,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             <WardRoleSwitcher />
           </section>
         </div>
-        <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPart !== "directory"}>
+        <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPreview || toolsPart !== "directory"}>
           <ToolsContactDirectory onNavigate={() => closePopover("tools", false)} />
         </div>
       </Sheet>

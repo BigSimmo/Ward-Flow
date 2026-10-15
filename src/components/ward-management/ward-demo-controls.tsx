@@ -7,6 +7,8 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SCENARIOS, scenarioLabels } from "@/components/ward-management/ward-scenarios";
 
+import { requestToolsTool, useToolsPreview } from "@/components/ward-management/tools/ward-tools-preview";
+
 import styles from "./ward-demo-controls.module.css";
 
 /**
@@ -319,6 +321,27 @@ export function WardDemoClockPopover({
   }
 
   const clockText = formatInstant(now);
+  // Tools review mockup: with `?tools=new` the pill opens the one Demo panel in Tools instead.
+  const toolsPreview = useToolsPreview();
+
+  if (toolsPreview) {
+    return (
+      <button
+        type="button"
+        className={className}
+        title={title ?? `Board time ${clockText} AWST`}
+        aria-label={`${ariaLabel ?? `Board time ${clockText} AWST`}. Open demo controls in Tools`}
+        data-testid={testId}
+        onClick={() => requestToolsTool("demo")}
+      >
+        {children ?? (
+          <>
+            <span>Board time</span> <b>{clockText}</b> <span>AWST</span>
+          </>
+        )}
+      </button>
+    );
+  }
 
   // `styles.demo` carries the --dc-* tokens the menu and buttons read; display stays block as before.
   return (
