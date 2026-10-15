@@ -440,6 +440,14 @@ export const CLINICAL_VALUES = {
     unit: "count",
     source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
   },
+  breakGlassShift: {
+    ...SYNTHETIC,
+    name: "One shift, when counting break glass openings for a pattern, is the last",
+    group: "Access and privacy",
+    value: 12,
+    unit: "hours",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
   edHandoffWindow: {
     ...SYNTHETIC,
     name: "Emergency department keeps sight of a patient after they reach the ward for",
