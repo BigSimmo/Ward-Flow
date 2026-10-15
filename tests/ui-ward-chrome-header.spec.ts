@@ -721,7 +721,8 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await openPatient!.click();
   // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
   // its stay on the discharges board. Either way the task is reachable and the drawer closes.
-  await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
+  // D-39: the address carries a code, never the WF or AD number.
+  await expect(page).toHaveURL(/\/movements\/[0-9a-z]+(?:[?#]|$)|\/discharges\?admissionId=[0-9a-z]+/u);
   await expect(tasks).toHaveCount(0);
 });
 
