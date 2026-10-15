@@ -474,6 +474,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
   const routeRole = useRouteRole();
+  const raiseAsRouteRole = useWardRaise(routeRole);
   const setRole = useCallback(
     (nextRole: "ward") => {
       setDeskRole(nextRole, pathname);
@@ -3441,14 +3442,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onSetCriteria={
                     criteriaLedOn && criteriaGate.allowed
                       ? (admissionId, update) => {
-                          dispatch({
-                            type: "SET_DISCHARGE_CRITERIA",
-                            role: routeRole,
-                            now,
-                            actingUnitId: unitId,
-                            admissionId,
-                            ...update,
-                          });
+                          raiseAsRouteRole("SET_DISCHARGE_CRITERIA", { actingUnitId: unitId, admissionId, ...update });
                         }
                       : undefined
                   }
