@@ -1221,8 +1221,18 @@ export function MovementWorkspaceCockpit({
     const sendingUnitId =
       (movement.referralId
         ? referrals.find((referral) => referral.id === movement.referralId)?.originUnitId
-        : undefined) ?? admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId;
+        : undefined) ??
+      admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId ??
+      (movement as { originUnitId?: string }).originUnitId;
     const sendingWard = role === "ward" && sendingUnitId ? { actingUnitId: sendingUnitId } : {};
+    // A ward may cancel only the job it booked (TR-D6, WLQ-11), so other wards see why it is off.
+    const wardCannotCancel =
+      role === "ward" &&
+      !(
+        movement.transport?.bookedBy?.role === "ward" &&
+        sendingUnitId !== undefined &&
+        movement.transport.bookedBy.unitId === sendingUnitId
+      );
     const earlierStages = MOVEMENT_STAGES.slice(0, Math.max(MOVEMENT_STAGES.indexOf(movement.stage), 0));
     const acceptedStageIndex = MOVEMENT_STAGES.indexOf(movement.stage);
     const orphanedJob = orphanedTransport(movement);
@@ -1453,13 +1463,17 @@ export function MovementWorkspaceCockpit({
                     type="button"
                     className={styles.controlButton}
                     data-testid="ward-console-cancel-transport"
-                    aria-disabled={cancelTransportReason === undefined ? "true" : undefined}
+                    aria-disabled={wardCannotCancel || cancelTransportReason === undefined ? "true" : undefined}
                     aria-describedby={
-                      cancelTransportReason === undefined ? "ward-console-cancel-transport-blocked" : undefined
+                      wardCannotCancel
+                        ? "ward-console-cancel-transport-not-yours"
+                        : cancelTransportReason === undefined
+                          ? "ward-console-cancel-transport-blocked"
+                          : undefined
                     }
                     title={cancelTransportReason === undefined ? CANCEL_TRANSPORT_UNCHOSEN : undefined}
                     onClick={
-                      cancelTransportReason === undefined
+                      wardCannotCancel || cancelTransportReason === undefined
                         ? ignoreUnavailableActivation
                         : () => {
                             raise("CANCEL_TRANSPORT", {
@@ -1473,7 +1487,16 @@ export function MovementWorkspaceCockpit({
                   >
                     Cancel the transport job
                   </button>
-                  {cancelTransportReason === undefined ? (
+                  {wardCannotCancel ? (
+                    <span
+                      id="ward-console-cancel-transport-not-yours"
+                      className={styles.actionSay}
+                      data-testid="ward-console-cancel-transport-not-yours"
+                    >
+                      This ward did not book the job, so ask the flow coordinator or the referring emergency department
+                      to cancel it.
+                    </span>
+                  ) : cancelTransportReason === undefined ? (
                     <span id="ward-console-cancel-transport-blocked" className="sr-only">
                       {CANCEL_TRANSPORT_UNCHOSEN}
                     </span>
