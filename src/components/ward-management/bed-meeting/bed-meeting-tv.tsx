@@ -217,6 +217,15 @@ function gapText(gap: number): string {
 }
 
 /** "a", "a and b", "a, b and c". */
+/**
+ * The ready figure counts beds still being made ready and never subtracts them (the owner's
+ * 2026-09-01 ruling), so every ready figure on the TV says how many there are, in the wording the
+ * other screens use. An absence is silence, never "0 being made ready".
+ */
+function preparingSentence(pendingPreparation: number): string {
+  return pendingPreparation > 0 ? `. ${pendingPreparation} still being made ready` : "";
+}
+
 function listWords(words: string[]): string {
   return words.length < 2 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
 }
@@ -375,8 +384,8 @@ export function BedMeetingTvView({
             label: "Beds ready now",
             value: capacity.ready,
             detail: shortKinds.length
-              ? `${capacity.lockedReady} locked. Short of ${listWords(shortKinds.map((row) => BED_KIND_SHORT[row.id].toLowerCase()))} beds`
-              : `${capacity.lockedReady} locked, of ${capacity.beds} beds`,
+              ? `${capacity.lockedReady} locked${preparingSentence(extras.pendingPreparation)}. Short of ${listWords(shortKinds.map((row) => BED_KIND_SHORT[row.id].toLowerCase()))} beds`
+              : `${capacity.lockedReady} locked, of ${capacity.beds} beds${preparingSentence(extras.pendingPreparation)}`,
             tone: capacity.ready === 0 ? "danger" : shortKinds.length > 0 ? "warning" : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
             testId: "bed-meeting-tv-ready",
@@ -478,7 +487,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
           {
             label: "Beds ready now",
             value: capacity.ready,
-            detail: `of ${capacity.beds} beds, ${capacity.lockedReady} locked`,
+            detail: `of ${capacity.beds} beds, ${capacity.lockedReady} locked${preparingSentence(sheet.pendingPreparation)}`,
             tone: capacity.ready === 0 ? "danger" : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
             testId: "ward-tv-ready",
@@ -673,7 +682,7 @@ export function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: numb
 
         <Panel title={sheet.service ? `Beds ready in ${sheet.service}` : "Beds ready nearby"} testId="ed-tv-beds-panel">
           <p className={styles.panelFigure} data-testid="ed-tv-beds-ready">
-            <b>{sheet.readyInService}</b> ready now
+            <b>{sheet.readyInService}</b> ready now{preparingSentence(sheet.pendingPreparation)}
           </p>
           {sheet.wards.length === 0 ? (
             <Empty>No ward in this service has a bed ready.</Empty>

@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
-import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
+import { BedMeetingTvScreen, WardTvView } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import {
   TV_ROW_LIMIT,
   edTvSheet,
@@ -32,6 +32,7 @@ import { createPatientResolver } from "@/components/ward-management/ward-patient
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_BED_MEETING_TV_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { activateScenarioNetwork } from "@/components/ward-management/ward-scenarios";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
@@ -268,6 +269,55 @@ describe("the ward and ED TV views", () => {
     const after = wardTvSheet({ ...inputs, movements, unit });
     expect(after.askedCount).toBe(before.askedCount - 1);
     expect(after.coming.rows.map((row) => row.id)).not.toContain(movement.id);
+  });
+
+  it("counts a re-referral as waiting when this ward's earlier waitlist ended with a withdrawal", () => {
+    const { state, inputs } = seedInputs();
+    const movement = state.movements.find(
+      (candidate) =>
+        candidate.acceptedUnitId === undefined && candidate.referredUnitIds.length > 0 && !candidate.closure,
+    );
+    if (!movement) throw new Error("expected an unanswered referral");
+    const unit = state.units.find((candidate) => candidate.id === movement.referredUnitIds[0]);
+    if (!unit) throw new Error("expected the referred ward");
+    const service = unitHealthService(unit);
+    if (!service) throw new Error("expected the ward's health service");
+    const askedRow = (movements: typeof inputs.movements) =>
+      meetingTvExtras({ ...inputs, movements, service }).wards.find((row) => row.id === unit.id)?.asked;
+    const before = wardTvSheet({ ...inputs, unit });
+    // Waitlisted, then withdrawn, then referred to the same ward again: the reducer keeps the marker.
+    const stale = {
+      ...movement,
+      waitlistedUnitIds: [...(movement.waitlistedUnitIds ?? []), unit.id],
+      declines: [...movement.declines, { unitId: unit.id, at: NOW_ANCHOR - 120_000, reason: "no_bed" as const }],
+      withdrawnReferrals: [
+        ...movement.withdrawnReferrals,
+        { unitId: unit.id, at: NOW_ANCHOR - 60_000, reason: "coordinator_withdrew" as const },
+      ],
+    };
+    const movements = inputs.movements.map((candidate) => (candidate.id === movement.id ? stale : candidate));
+    const after = wardTvSheet({ ...inputs, movements, unit });
+    expect(after.askedCount).toBe(before.askedCount);
+    expect(after.coming.rows.map((row) => row.id)).toContain(movement.id);
+    expect(askedRow(movements)).toBe(askedRow(inputs.movements));
+  });
+
+  it("says how many ready beds are still being made ready, without taking them off the figure", () => {
+    const { state, inputs } = seedInputs();
+    const unit = state.units.find((candidate) => state.bedReleases.some((release) => release.unitId === candidate.id));
+    if (!unit) throw new Error("expected a ward with a release");
+    const target = state.bedReleases.find((release) => release.unitId === unit.id);
+    const bedReleases = inputs.bedReleases.map((release) =>
+      release === target ? { ...release, state: "discharged" as const, preparing: true } : release,
+    );
+    const sheet = wardTvSheet({ ...inputs, bedReleases, unit });
+    expect(sheet.pendingPreparation).toBe(
+      bedReleases.filter((release) => release.unitId === unit.id && release.state === "discharged" && release.preparing)
+        .length,
+    );
+    expect(sheet.pendingPreparation).toBeGreaterThan(0);
+    render(<WardTvView sheet={sheet} now={NOW_ANCHOR} scenario="Synthetic" />);
+    expect(screen.getByTestId("ward-tv-ready")).toHaveTextContent(`${sheet.pendingPreparation} still being made ready`);
   });
 
   it("shows one ED's figures from the ED board's own selectors", () => {

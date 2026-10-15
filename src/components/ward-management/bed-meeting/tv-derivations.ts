@@ -25,6 +25,8 @@ import {
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, wardServiceOrder } from "@/components/ward-management/ward-derivations";
@@ -74,15 +76,37 @@ function byWaitThenId(a: TvJourneyRow, b: TvJourneyRow): number {
   return b.waitMinutes - a.waitMinutes || a.id.localeCompare(b.id);
 }
 
+const WAITLIST_REASONS: readonly string[] = WAITLIST_INSTEAD_OF_DECLINE_REASONS;
+
+/**
+ * This ward's waitlist answer still stands. The reducer keeps the marker after the request ends, so
+ * a withdrawal or an ordinary decline newer than the last waitlist answer means the marker is left
+ * over from an earlier request, and a re-referral to this ward is waiting on a fresh answer.
+ */
+function waitlistStands(movement: Movement, unitId: string): boolean {
+  if (!(movement.waitlistedUnitIds ?? []).includes(unitId)) return false;
+  let waitlistedAt = Number.NEGATIVE_INFINITY;
+  let endedAt = Number.NEGATIVE_INFINITY;
+  for (const decline of movement.declines) {
+    if (decline.unitId !== unitId) continue;
+    if (WAITLIST_REASONS.includes(decline.reason)) waitlistedAt = Math.max(waitlistedAt, decline.at);
+    else endedAt = Math.max(endedAt, decline.at);
+  }
+  for (const withdrawal of movement.withdrawnReferrals) {
+    if (withdrawal.unitId === unitId) endedAt = Math.max(endedAt, withdrawal.at);
+  }
+  return endedAt <= waitlistedAt || endedAt === Number.NEGATIVE_INFINITY;
+}
+
 /**
  * Waiting on this ward's answer: referred here, accepted nowhere, and not already answered by this
- * ward with a waitlist (the reducer keeps a waitlisted ward in `referredUnitIds`).
+ * ward with a waitlist that still stands (the reducer keeps a waitlisted ward in `referredUnitIds`).
  */
 function waitingOnWard(movement: Movement, unitId: string): boolean {
   return (
     movement.acceptedUnitId === undefined &&
     movement.referredUnitIds.includes(unitId) &&
-    !(movement.waitlistedUnitIds ?? []).includes(unitId)
+    !waitlistStands(movement, unitId)
   );
 }
 
@@ -97,6 +121,8 @@ export type WardTvGoingRow = BedMeetingDischargeRow & { person: DailySheetPerson
 export type WardTvSheet = {
   unit: Unit;
   capacity: BedMeetingCapacity;
+  /** Ready beds still being made ready: counted in `capacity.ready`, never subtracted, always said. */
+  pendingPreparation: number;
   /** Accepted for this ward and not yet arrived, longest wait first. */
   incoming: { total: number; onTheWay: number };
   /** Asked of this ward and not yet answered by anyone. */
@@ -149,6 +175,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
   return {
     unit,
     capacity: sheet.capacity,
+    pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     incoming: { total: incoming.length, onTheWay },
     askedCount: asked.length,
     coming: { rows: coming.slice(0, TV_ROW_LIMIT), more: Math.max(0, coming.length - TV_ROW_LIMIT) },
@@ -183,6 +210,8 @@ export type EdTvSheet = {
   wards: EdTvWard[];
   moreWards: number;
   readyInService: number;
+  /** Of `readyInService`, the beds still being made ready. */
+  pendingPreparation: number;
 };
 
 export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes: number }): EdTvSheet | undefined {
@@ -231,6 +260,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
     wards: withBeds.slice(0, TV_ROW_LIMIT),
     moreWards: Math.max(0, withBeds.length - TV_ROW_LIMIT),
     readyInService: rows.reduce((sum, row) => sum + row.ready, 0),
+    pendingPreparation: serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
   };
 }
 
@@ -292,6 +322,8 @@ export type MeetingTvExtras = {
    * says so, because that meeting decides what its own service can take.
    */
   gaps: BedKindGap[];
+  /** Ready beds in scope still being made ready: counted in the ready figure, never subtracted, always said. */
+  pendingPreparation: number;
 };
 
 type MeetingInputs = TvInputs & { service: HealthService | null };
@@ -344,7 +376,7 @@ function serviceRow(input: MeetingInputs, service: HealthService): TvServiceRow 
 }
 
 export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
-  const { service, units, movements, now } = input;
+  const { service, units, movements, bedReleases, now } = input;
   const scopedUnits = service === null ? units : units.filter((unit) => unitHealthService(unit) === service);
   const scopedMovements =
     service === null ? movements : movements.filter((movement) => movementBelongsToService(movement, service, units));
@@ -352,5 +384,6 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
     gaps: bedKindGaps(scopedMovements, scopedUnits, now),
+    pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
   };
 }
