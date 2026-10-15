@@ -36,7 +36,6 @@ import {
   transportLeg,
   deriveNextWardsAfterRefusal,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   clockState,
   formatElapsed,
@@ -159,7 +158,6 @@ import { openReferralSheet } from "@/components/ward-management/shell/ward-drawe
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
