@@ -476,7 +476,7 @@ Three practices came out of it, and they apply to every remaining phase:
 ## 10. Decisions taken on the owner's behalf during Phase 1
 
 Recorded so they can be found and undone. Full text with costs in
-[`docs/archive/ward-flow-phase-handoff.md`](archive/ward-flow-phase-handoff.md).
+`docs/archive/ward-flow-phase-handoff.md` (removed in the 15 Oct 2026 docs trim).
 
 1. **`speciallingCapacity`, not the plan's `spellingCapacity` typo** — written correctly from the
    start rather than propagated through five files and fixed later.

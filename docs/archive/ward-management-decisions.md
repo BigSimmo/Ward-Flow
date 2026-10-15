@@ -2,8 +2,8 @@
 
 Decisions for the ward-management context that are hard to reverse, surprising without
 context, and the result of a real trade-off. Vocabulary lives in
-[`ward-management-context.md`](ward-management-context.md); routes and roles live in
-[`ward-management-mode-map.md`](ward-management-mode-map.md).
+`ward-management-context.md` (`docs/archive/ward-management-context.md`, removed in the 15 Oct 2026 docs trim); routes and roles live in
+`ward-management-mode-map.md` (`docs/archive/ward-management-mode-map.md`, removed in the 15 Oct 2026 docs trim).
 
 Status values: **Accepted** (decided and reflected in the build), **Proposed** (recommended,
 awaiting the product owner).

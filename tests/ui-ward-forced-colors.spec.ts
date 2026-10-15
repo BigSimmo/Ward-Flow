@@ -366,7 +366,8 @@ test.skip("@mockup does re-pointing --ward-border do anything under forced colou
 /*
  * RETIRED 26 Sept 2026 (Josh chose "Retire"): the "does repointing --ward-border under forced colours
  * change what is painted?" check. It is archived word for word, with the reason and the measurement,
- * in docs/ward-flow/archive/retired-tests/2026-09-26-forced-colours-ward-border-probe.md.
+ * in docs/ward-flow/archive/retired-tests/2026-09-26-forced-colours-ward-border-probe.md, kept in
+ * commit 26d0987 before the 15 Oct 2026 docs trim (docs/ward-flow/ARCHIVE-NOTE.md).
  */
 
 /**

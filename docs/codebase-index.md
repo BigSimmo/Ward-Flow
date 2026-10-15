@@ -62,7 +62,7 @@ provenance, not current provider/design/workflow authority; the screen map prese
 <!-- docs-script-refs:historical-start -->
 
 The former PsychSift codebase index that used to follow here is preserved, unchanged, in
-[`docs/archive/historical-psychsift-codebase-index.md`](archive/historical-psychsift-codebase-index.md).
+`docs/archive/historical-psychsift-codebase-index.md` (removed in the 15 Oct 2026 docs trim).
 It is not current Ward Flow guidance.
 
 <!-- docs-script-refs:historical-end -->
