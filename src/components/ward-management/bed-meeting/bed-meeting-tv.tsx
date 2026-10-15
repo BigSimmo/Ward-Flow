@@ -14,6 +14,7 @@ import {
 import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 
 import { bedMeetingSheet, type BedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
+import type { BedKindGap, BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -25,16 +26,23 @@ import {
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
 } from "@/components/ward-management/ward-operational-defaults";
+import type { HealthService } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
+import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
 import {
   TV_ROW_LIMIT,
   edTvSheet,
+  meetingTvExtras,
+  tvHealthServices,
+  tvServiceFromParam,
+  tvServiceParam,
   wardTvSheet,
   type EdTvSheet,
+  type MeetingTvExtras,
   type TvJourneyRow,
   type WardTvSheet,
 } from "./tv-derivations";
@@ -43,30 +51,25 @@ import styles from "./bed-meeting-tv.module.css";
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
 
 /**
- * THE TV VIEWS (Josh, 15 Oct 2026, item 10, then "one for the wards and ED as well"): the meeting
- * room screen for the whole network, and the same screen narrowed to one ward or one emergency
- * department.
+ * THE TV VIEWS (Josh, 15 Oct 2026): a bed meeting screen for the whole state or one health service,
+ * for handover meetings, and a screen for one ward's office or one emergency department.
  *
- * Read only. The network view takes every figure from `bedMeetingSheet`, the same selector the
- * printed bed meeting sheet uses; the ward and ED views take theirs from `tv-derivations.ts`, which
- * reuses the Shift brief's and the ED board's own selectors. Each re-renders with the shared clock
- * and the shared workspace, so it stays current without anyone touching it.
+ * Each screen answers its audience's questions in the order a handover asks them:
+ * - Bed meeting: who is waiting, how long, what beds are ready, what frees up, what is stuck. Then
+ *   where (each service on the state screen, each ward on a service screen), whether the beds fit
+ *   the people waiting, who has waited longest and what is holding people up.
+ * - Ward: what is ready, who is waiting on this ward's answer, who is coming, who is going, and who
+ *   is past their date.
+ * - ED: how many are waiting, how many are past the access target, the longest wait, and who has a
+ *   bed yet. Then the people, the trend, and where beds are ready in the service.
+ *
+ * Read only. Every figure comes from an existing selector: `bedMeetingSheet` (the printed bed
+ * meeting sheet), Capacity's `bedKindGaps`, and `tv-derivations.ts`, which reuses the Shift brief's
+ * and the ED board's own selectors. Each re-renders with the shared clock and workspace.
  *
  * A shared screen shows initials, never full names. Desktop only: a phone gets the "needs a larger
  * screen" card (`ward-phone-desktop-only.tsx`). Behind the `bed-meeting-tv` feature flag.
  */
-
-/**
- * The three tile designs Josh is choosing between (15 Oct 2026). `recommended` is the default;
- * `?tiles=conservative` or `?tiles=bold` shows the others for review. Once Josh picks one, the
- * other two and this switch are deleted.
- */
-export const TV_TILE_DESIGNS = ["conservative", "recommended", "bold"] as const;
-export type TvTileDesign = (typeof TV_TILE_DESIGNS)[number];
-
-export function tvTileDesign(value: string | undefined): TvTileDesign {
-  return TV_TILE_DESIGNS.find((design) => design === value) ?? "recommended";
-}
 
 type Tone = "danger" | "warning" | "good";
 
@@ -118,9 +121,9 @@ function TvTile({ label, value, detail, tone, meter, testId }: TvTileProps) {
   );
 }
 
-function TvTiles({ design, tiles }: { design: TvTileDesign; tiles: TvTileProps[] }) {
+function TvTiles({ tiles }: { tiles: TvTileProps[] }) {
   return (
-    <dl className={styles.tiles} data-design={design} aria-label="Today at a glance" data-testid="bed-meeting-tv-tiles">
+    <dl className={styles.tiles} aria-label="Today at a glance" data-testid="bed-meeting-tv-tiles">
       {tiles.map((tile) => (
         <TvTile key={tile.testId} {...tile} />
       ))}
@@ -128,10 +131,20 @@ function TvTiles({ design, tiles }: { design: TvTileDesign; tiles: TvTileProps[]
   );
 }
 
-function Panel({ title, testId, children }: { title: string; testId: string; children: ReactNode }) {
+function Panel({
+  title,
+  testId,
+  wide = false,
+  children,
+}: {
+  title: string;
+  testId: string;
+  wide?: boolean;
+  children: ReactNode;
+}) {
   const id = `${testId}-title`;
   return (
-    <section className={styles.panel} aria-labelledby={id} data-testid={testId}>
+    <section className={styles.panel} data-wide={wide || undefined} aria-labelledby={id} data-testid={testId}>
       <h2 id={id} className={styles.panelTitle}>
         {title}
       </h2>
@@ -185,45 +198,167 @@ function personLine(person: DailySheetPerson): string {
 }
 
 /* --------------------------------------------------------------------------------------------- *
- * The network view: the bed meeting.
+ * The bed meeting view: the whole state, or one health service.
  * --------------------------------------------------------------------------------------------- */
+
+/** Short names for Capacity's four bed kinds, for a narrow TV column. Locked and open are adult beds. */
+const BED_KIND_SHORT: Record<BedKindId, string> = {
+  locked_adult: "Locked",
+  open_adult: "Open",
+  older_adult: "Older",
+  youth: "Youth",
+};
+
+/** Capacity's own words for a gap: short, spare or exactly enough, never a bare sign. */
+function gapText(gap: number): string {
+  if (gap < 0) return `Short ${-gap}`;
+  if (gap === 0) return "Enough";
+  return `Spare ${gap}`;
+}
+
+/** "a", "a and b", "a, b and c". */
+function listWords(words: string[]): string {
+  return words.length < 2 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
+  return (
+    <table className={styles.table}>
+      <thead>
+        <tr>
+          <th scope="col">Bed</th>
+          <th scope="col" className={styles.num}>
+            Waiting
+          </th>
+          <th scope="col" className={styles.num}>
+            Fit
+          </th>
+          <th scope="col" className={styles.numWide}>
+            Gap
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {gaps.map((row) => (
+          <tr key={row.id} data-short={row.gap < 0 || undefined}>
+            <th scope="row">{BED_KIND_SHORT[row.id]}</th>
+            <td className={styles.num}>{row.waiting}</td>
+            <td className={styles.num}>{row.bedsThatFit}</td>
+            <td className={styles.num}>{gapText(row.gap)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
+  return (
+    <table className={styles.table}>
+      <thead>
+        <tr>
+          <th scope="col">Service</th>
+          <th scope="col" className={styles.num}>
+            In ED
+          </th>
+          <th scope="col" className={styles.numWide}>
+            Longest
+          </th>
+          <th scope="col" className={styles.num}>
+            Ready
+          </th>
+          <th scope="col" className={styles.num}>
+            Locked
+          </th>
+          <th scope="col" className={styles.num}>
+            Going
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.service} data-long={row.longestWaitMinutes > LONG_WAIT_MINUTES || undefined}>
+            <th scope="row">{healthServiceAcronym(row.service)}</th>
+            <td className={styles.num}>{row.edWaiting}</td>
+            <td className={styles.num} data-wait="">
+              {row.edWaiting === 0 ? "None" : splitDuration(row.longestWaitMinutes)}
+            </td>
+            <td className={styles.num}>{row.ready}</td>
+            <td className={styles.num}>{row.lockedReady}</td>
+            <td className={styles.num}>{row.going}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function WardTable({ rows, more }: { rows: MeetingTvExtras["wards"]; more: number }) {
+  return (
+    <>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Ward</th>
+            <th scope="col" className={styles.num}>
+              Ready
+            </th>
+            <th scope="col" className={styles.num}>
+              Locked
+            </th>
+            <th scope="col" className={styles.num}>
+              Asked
+            </th>
+            <th scope="col" className={styles.num}>
+              Coming
+            </th>
+            <th scope="col" className={styles.num}>
+              Going
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id}>
+              <th scope="row" title={row.name}>
+                {row.name}
+              </th>
+              <td className={styles.num}>{row.ready}</td>
+              <td className={styles.num}>{row.lockedReady}</td>
+              <td className={styles.num}>{row.asked}</td>
+              <td className={styles.num}>{row.coming}</td>
+              <td className={styles.num}>{row.going}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <More count={more} noun="wards" />
+    </>
+  );
+}
 
 export function BedMeetingTvView({
   sheet,
+  extras,
   now,
   scenario,
-  design = "recommended",
 }: {
   sheet: BedMeetingSheet;
+  extras: MeetingTvExtras;
   now: number;
   scenario: string;
-  design?: TvTileDesign;
 }) {
   const { capacity, discharges, ed, delays } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
   // Held up discharges are due too: the panel lists them, so the figure counts them.
   const dischargingToday = discharges.heldUp + discharges.confirmed + discharges.expected;
+  const longest = ed.longestWaits[0];
+  const shortKinds = extras.gaps.filter((row) => row.gap < 0);
 
   return (
     <>
       <TvTiles
-        design={design}
         tiles={[
-          {
-            label: "Beds ready now",
-            value: capacity.ready,
-            detail: `of ${capacity.beds} beds in ${capacity.wards} wards`,
-            tone: capacity.ready === 0 ? "danger" : undefined,
-            meter: { value: capacity.ready, max: capacity.beds },
-            testId: "bed-meeting-tv-ready",
-          },
-          {
-            label: "Locked beds ready",
-            value: capacity.lockedReady,
-            detail: `${capacity.pulled} held for someone on the way`,
-            tone: capacity.lockedReady === 0 ? "warning" : undefined,
-            testId: "bed-meeting-tv-locked",
-          },
           {
             label: "Waiting in ED",
             value: ed.waiting,
@@ -231,6 +366,23 @@ export function BedMeetingTvView({
             tone: ed.overLongWait > 0 ? "danger" : ed.waiting > 0 ? "warning" : undefined,
             meter: { value: ed.overLongWait, max: ed.waiting },
             testId: "bed-meeting-tv-ed",
+          },
+          {
+            label: "Longest ED wait",
+            value: longest ? splitDuration(longest.waitMinutes) : 0,
+            detail: longest ? `At ${edName(longest.department)}` : "Nobody waiting",
+            tone: longest && longest.waitMinutes > LONG_WAIT_MINUTES ? "danger" : undefined,
+            testId: "bed-meeting-tv-longest",
+          },
+          {
+            label: "Beds ready now",
+            value: capacity.ready,
+            detail: shortKinds.length
+              ? `${capacity.lockedReady} locked. Short of ${listWords(shortKinds.map((row) => BED_KIND_SHORT[row.id].toLowerCase()))} beds`
+              : `${capacity.lockedReady} locked, of ${capacity.beds} beds`,
+            tone: capacity.ready === 0 ? "danger" : shortKinds.length > 0 ? "warning" : undefined,
+            meter: { value: capacity.ready, max: capacity.beds },
+            testId: "bed-meeting-tv-ready",
           },
           {
             label: "Discharges due",
@@ -250,34 +402,23 @@ export function BedMeetingTvView({
         ]}
       />
 
-      <div className={styles.panels}>
-        <Panel title="Emergency departments" testId="bed-meeting-tv-ed-panel">
-          {ed.departments.length === 0 ? (
-            <Empty>Nobody waiting in an ED.</Empty>
-          ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Department</th>
-                  <th scope="col" className={styles.num}>
-                    Waiting
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Longest
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {ed.departments.map((row) => (
-                  <tr key={row.id} data-long={row.longestWaitMinutes > LONG_WAIT_MINUTES || undefined}>
-                    <th scope="row">{edName(row.department)}</th>
-                    <td className={styles.num}>{row.waiting}</td>
-                    <td className={styles.num}>{splitDuration(row.longestWaitMinutes)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <div className={styles.panels} data-layout="meeting">
+        {sheet.service === null ? (
+          <Panel title="By health service" testId="bed-meeting-tv-services-panel" wide>
+            <ServiceTable rows={extras.services} />
+          </Panel>
+        ) : (
+          <Panel title={`Wards in ${healthServiceAcronym(sheet.service)}`} testId="bed-meeting-tv-wards-panel" wide>
+            {extras.wards.length === 0 ? (
+              <Empty>No wards in this service.</Empty>
+            ) : (
+              <WardTable rows={extras.wards} more={extras.moreWards} />
+            )}
+          </Panel>
+        )}
+
+        <Panel title="Beds that fit" testId="bed-meeting-tv-fit-panel">
+          <BedsThatFit gaps={extras.gaps} />
         </Panel>
 
         <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel">
@@ -295,25 +436,6 @@ export function BedMeetingTvView({
               more={ed.morePeople}
               noun="waiting"
             />
-          )}
-        </Panel>
-
-        <Panel title="Expected discharges" testId="bed-meeting-tv-discharges-panel">
-          {discharges.rows.length === 0 ? (
-            <Empty>No discharges expected today or tomorrow.</Empty>
-          ) : (
-            <>
-              <ol className={styles.list}>
-                {discharges.rows.map((row) => (
-                  <li key={row.id} data-status={row.status}>
-                    <span className={styles.who}>{row.ward}</span>
-                    <span className={styles.where}>{row.note ?? ""}</span>
-                    <span className={styles.wait}>{row.status}</span>
-                  </li>
-                ))}
-              </ol>
-              <More count={discharges.moreRows} noun="discharges" />
-            </>
           )}
         </Panel>
 
@@ -343,17 +465,7 @@ export function BedMeetingTvView({
  * The ward view: one ward's office screen.
  * --------------------------------------------------------------------------------------------- */
 
-export function WardTvView({
-  sheet,
-  now,
-  scenario,
-  design = "recommended",
-}: {
-  sheet: WardTvSheet;
-  now: number;
-  scenario: string;
-  design?: TvTileDesign;
-}) {
+export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: number; scenario: string }) {
   const { capacity, incoming, discharges } = sheet;
   const going = discharges.heldUp + discharges.confirmed + discharges.expected;
   const stuck = [
@@ -366,7 +478,6 @@ export function WardTvView({
   return (
     <>
       <TvTiles
-        design={design}
         tiles={[
           {
             label: "Beds ready now",
@@ -377,18 +488,18 @@ export function WardTvView({
             testId: "ward-tv-ready",
           },
           {
-            label: "Coming in",
-            value: incoming.total,
-            detail: `${incoming.onTheWay} on the way now`,
-            tone: incoming.total > capacity.ready ? "warning" : undefined,
-            testId: "ward-tv-incoming",
-          },
-          {
             label: "Asked of this ward",
             value: sheet.askedCount,
             detail: sheet.askedCount === 0 ? "No referral waiting on you" : "Waiting on this ward's answer",
             tone: sheet.askedCount > 0 ? "warning" : undefined,
             testId: "ward-tv-asked",
+          },
+          {
+            label: "Coming in",
+            value: incoming.total,
+            detail: `Accepted. ${incoming.onTheWay} on the way now`,
+            tone: incoming.total > capacity.ready ? "warning" : undefined,
+            testId: "ward-tv-incoming",
           },
           {
             label: "Going out",
@@ -410,11 +521,11 @@ export function WardTvView({
       />
 
       <div className={styles.panels}>
-        <Panel title="Coming in" testId="ward-tv-incoming-panel">
-          {incoming.rows.length === 0 ? (
-            <Empty>Nobody accepted for this ward yet.</Empty>
+        <Panel title="Coming to this ward" testId="ward-tv-incoming-panel">
+          {sheet.coming.rows.length === 0 ? (
+            <Empty>Nobody asked of or accepted for this ward.</Empty>
           ) : (
-            <JourneyList rows={incoming.rows} more={incoming.more} noun="coming in" />
+            <JourneyList rows={sheet.coming.rows} more={sheet.coming.more} noun="coming" />
           )}
         </Panel>
 
@@ -443,14 +554,14 @@ export function WardTvView({
           ) : (
             <>
               <ol className={styles.list}>
-                {stuck.slice(0, 8).map(({ person, note }) => (
+                {stuck.slice(0, TV_ROW_LIMIT).map(({ person, note }) => (
                   <li key={`${person.key}-${note}`}>
                     <span className={styles.who}>{personLine(person)}</span>
                     <span className={styles.where}>{note}</span>
                   </li>
                 ))}
               </ol>
-              <More count={Math.max(0, stuck.length - 8)} noun="people" />
+              <More count={Math.max(0, stuck.length - TV_ROW_LIMIT)} noun="people" />
             </>
           )}
         </Panel>
@@ -501,17 +612,7 @@ function Trend({ values }: { values: number[] }) {
   );
 }
 
-export function EdTvView({
-  sheet,
-  now,
-  scenario,
-  design = "recommended",
-}: {
-  sheet: EdTvSheet;
-  now: number;
-  scenario: string;
-  design?: TvTileDesign;
-}) {
+export function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; scenario: string }) {
   const { summary } = sheet;
   const target =
     sheet.accessTargetMinutes % 60 === 0
@@ -521,7 +622,6 @@ export function EdTvView({
   return (
     <>
       <TvTiles
-        design={design}
         tiles={[
           {
             label: "Waiting now",
@@ -539,6 +639,13 @@ export function EdTvView({
             testId: "ed-tv-past-target",
           },
           {
+            label: "Longest wait",
+            value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
+            detail: summary.waiting === 0 ? "Nobody waiting" : "The longest anyone here has waited",
+            tone: summary.longestWaitMinutes > LONG_WAIT_MINUTES ? "danger" : undefined,
+            testId: "ed-tv-longest",
+          },
+          {
             label: "No bed yet",
             value: sheet.noBed,
             detail: "Still looking for a ward",
@@ -551,13 +658,6 @@ export function EdTvView({
             value: sheet.held,
             detail: `${sheet.leaving} leaving now`,
             testId: "ed-tv-bed-found",
-          },
-          {
-            label: "Longest wait",
-            value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
-            detail: summary.waiting === 0 ? "Nobody waiting" : "The longest anyone here has waited",
-            tone: summary.longestWaitMinutes > LONG_WAIT_MINUTES ? "danger" : undefined,
-            testId: "ed-tv-longest",
           },
         ]}
       />
@@ -630,14 +730,15 @@ function useFullscreen(target: RefObject<HTMLElement | null>) {
   return { supported, active, toggle };
 }
 
-/** Which screen to show: plain links, so a TV can be pointed at one ward or one ED for good. */
-function ScreenPicker({ current, design }: { current: string; design: TvTileDesign }) {
-  // A review link's box design follows the viewer from screen to screen.
-  const keep = (href: string) =>
-    design === "recommended" ? href : `${href}${href.includes("?") ? "&" : "?"}tiles=${design}`;
+/** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
+function ScreenPicker({ current }: { current: string }) {
   const { units } = useWardFlow();
   const wards = [...units].sort((a, b) => a.name.localeCompare(b.name));
   const eds = [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name));
+  const meetings: { key: string; label: string; service: HealthService | null }[] = [
+    { key: "all", label: "All services", service: null },
+    ...tvHealthServices(units).map((service) => ({ key: tvServiceParam(service), label: service, service })),
+  ];
   return (
     <details className={styles.picker} data-testid="bed-meeting-tv-picker">
       <summary className={styles.action}>
@@ -646,17 +747,23 @@ function ScreenPicker({ current, design }: { current: string; design: TvTileDesi
       </summary>
       <nav className={styles.pickerMenu} aria-label="TV screens">
         <div>
-          <h2 className={styles.pickerHeading}>Network</h2>
-          <Link href={keep(bedMeetingTvHref())} aria-current={current === "network" ? "page" : undefined}>
-            Bed meeting
-          </Link>
+          <h2 className={styles.pickerHeading}>Bed meetings</h2>
+          {meetings.map((meeting) => (
+            <Link
+              key={meeting.key}
+              href={bedMeetingTvHref({ service: meeting.key })}
+              aria-current={current === `service:${meeting.key}` ? "page" : undefined}
+            >
+              {meeting.label}
+            </Link>
+          ))}
         </div>
         <div>
           <h2 className={styles.pickerHeading}>Emergency departments</h2>
           {eds.map((ed) => (
             <Link
               key={ed.id}
-              href={keep(bedMeetingTvHref({ ed: ed.id }))}
+              href={bedMeetingTvHref({ ed: ed.id })}
               aria-current={current === `ed:${ed.id}` ? "page" : undefined}
             >
               {edName(ed.name)}
@@ -668,7 +775,7 @@ function ScreenPicker({ current, design }: { current: string; design: TvTileDesi
           {wards.map((unit) => (
             <Link
               key={unit.id}
-              href={keep(bedMeetingTvHref({ ward: unit.id }))}
+              href={bedMeetingTvHref({ ward: unit.id })}
               aria-current={current === `ward:${unit.id}` ? "page" : undefined}
             >
               {unit.name}
@@ -681,29 +788,33 @@ function ScreenPicker({ current, design }: { current: string; design: TvTileDesi
 }
 
 export type BedMeetingTvScreenProps = {
+  /**
+   * `?service=` a health service's acronym (`nmhs`) or `all`: that bed meeting. Without it the bed
+   * meeting follows this device's service scope, as Capacity does.
+   */
+  service?: string;
   /** `?ward=` a unit id: that ward's screen. */
   ward?: string;
   /** `?ed=` an emergency department id: that department's screen. */
   ed?: string;
-  /** `?tiles=` one of the three tile designs under review. */
-  tiles?: string;
 };
 
-export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps = {}) {
+export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeetingTvScreenProps = {}) {
   const { units, movements, bedReleases, admissions, leaveBeds, scenario, configuration } = useWardFlow();
   const now = useWardFlowClock();
-  const service = useServiceScope();
+  const deviceService = useServiceScope();
   const patientOf = usePatientOf();
   const enabled = useWardFeatureFlag("bed-meeting-tv");
   const deviceCanChange = useWardFeatureFlags()[0]?.deviceCanChange ?? false;
   const root = useRef<HTMLElement>(null);
   const fullscreen = useFullscreen(root);
-  const design = tvTileDesign(tiles);
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
   const department = ed === undefined ? undefined : edById(ed);
   const accessTarget = configuration.edAccessTargetMinutes;
+  // A pinned link wins over this device's scope, so a TV shows the same service for good.
+  const service = serviceParam === undefined ? deviceService : tvServiceFromParam(serviceParam, units);
 
   const view = useMemo(() => {
     // A shared screen in a meeting room, a ward office or a tea room: initials only.
@@ -720,7 +831,12 @@ export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps 
       if (!sheet) return { kind: "missing" as const, what: "emergency department" };
       return { kind: "ed" as const, sheet };
     }
-    return { kind: "network" as const, sheet: bedMeetingSheet({ ...inputs, service }) };
+    if (service === undefined) return { kind: "missing" as const, what: "health service" };
+    return {
+      kind: "network" as const,
+      sheet: bedMeetingSheet({ ...inputs, service }),
+      extras: meetingTvExtras({ ...inputs, service }),
+    };
   }, [
     units,
     movements,
@@ -761,7 +877,7 @@ export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps 
       : view.kind === "ed"
         ? edName(view.sheet.summary.ed.name)
         : view.kind === "network"
-          ? `Bed meeting · ${service === null ? "All services" : service}`
+          ? `Bed meeting · ${view.sheet.service === null ? "All services" : view.sheet.service}`
           : "Screen not found";
   const eyebrow =
     view.kind === "ward"
@@ -769,9 +885,17 @@ export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps 
       : view.kind === "ed"
         ? "Emergency department"
         : view.kind === "network"
-          ? "Network"
+          ? view.sheet.service === null
+            ? "State"
+            : "Health service"
           : "TV";
-  const current = unit ? `ward:${unit.id}` : department ? `ed:${department.id}` : "network";
+  const current = unit
+    ? `ward:${unit.id}`
+    : department
+      ? `ed:${department.id}`
+      : service === undefined
+        ? "missing"
+        : `service:${tvServiceParam(service)}`;
 
   return (
     <main
@@ -793,7 +917,7 @@ export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps 
           </p>
         </div>
         <div className={styles.actions}>
-          <ScreenPicker current={current} design={design} />
+          <ScreenPicker current={current} />
           {fullscreen.supported ? (
             <button
               type="button"
@@ -811,11 +935,11 @@ export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps 
         </div>
       </header>
       {view.kind === "network" ? (
-        <BedMeetingTvView sheet={view.sheet} now={now} scenario={scenarioLabel} design={design} />
+        <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={now} scenario={scenarioLabel} />
       ) : view.kind === "ward" ? (
-        <WardTvView sheet={view.sheet} now={now} scenario={scenarioLabel} design={design} />
+        <WardTvView sheet={view.sheet} now={now} scenario={scenarioLabel} />
       ) : view.kind === "ed" ? (
-        <EdTvView sheet={view.sheet} now={now} scenario={scenarioLabel} design={design} />
+        <EdTvView sheet={view.sheet} now={now} scenario={scenarioLabel} />
       ) : (
         <p className={styles.empty} data-testid="bed-meeting-tv-missing">
           This {view.what} is not in the network. Choose another screen above.

@@ -47,7 +47,8 @@ import { CapacityPhoneWards } from "./capacity-phone-wards";
 import { CapacityPhoneOverview } from "./capacity-phone-overview";
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
-import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
+import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
+import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
@@ -780,10 +781,10 @@ export function CapacityScreen() {
                   }
                 />
               )}
-              {/* The same figures on the meeting room screen, behind the `bed-meeting-tv` flag. */}
+              {/* The same figures on the meeting room screen, for this scope, behind the `bed-meeting-tv` flag. */}
               {!isPhone && bedMeetingTvOn ? (
                 <Link
-                  href={WARD_BED_MEETING_TV_HREF}
+                  href={bedMeetingTvHref({ service: tvServiceParam(service) })}
                   className={buttonClass({ variant: "onHero" })}
                   data-testid="capacity-bed-meeting-tv"
                 >

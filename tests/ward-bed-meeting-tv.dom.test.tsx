@@ -11,8 +11,16 @@ vi.mock("next/link", () => ({
 }));
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
-import { BedMeetingTvScreen, tvTileDesign } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
-import { edTvSheet, wardTvSheet } from "@/components/ward-management/bed-meeting/tv-derivations";
+import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
+import {
+  TV_ROW_LIMIT,
+  edTvSheet,
+  meetingTvExtras,
+  tvHealthServices,
+  tvServiceFromParam,
+  tvServiceParam,
+  wardTvSheet,
+} from "@/components/ward-management/bed-meeting/tv-derivations";
 import { WardDemoReset } from "@/components/ward-management/demo-reset/ward-demo-reset";
 import { isPhoneDesktopOnlyPath } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import {
@@ -78,7 +86,6 @@ describe("the bed meeting TV view", () => {
       nameOf: () => "",
     });
     expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
-    expect(figure("bed-meeting-tv-locked")).toBe(shown(sheet.capacity.lockedReady));
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
@@ -86,6 +93,78 @@ describe("the bed meeting TV view", () => {
     expect(figure("bed-meeting-tv-discharges")).toBe(shown(heldUp + confirmed + expected));
     expect(figure("bed-meeting-tv-delays")).toBe(shown(sheet.delays.total));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bed meeting · All services");
+    // The state screen reads in handover order: waiting, longest, beds, discharges, delays.
+    const labels = within(screen.getByTestId("bed-meeting-tv-tiles"))
+      .getAllByRole("term")
+      .map((term) => term.firstElementChild?.textContent);
+    expect(labels).toEqual(["Waiting in ED", "Longest ED wait", "Beds ready now", "Discharges due", "Delayed"]);
+    // Every box says its state in words as well as colour.
+    for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
+      expect(tile.textContent).toMatch(/Act now|Watch|Good|Steady/);
+    }
+  });
+
+  it("shows each health service on the state screen, from that service's own bed meeting sheet", () => {
+    const { state, inputs } = seedInputs();
+    renderTv({ service: "all" });
+    expect(screen.getByTestId("bed-meeting-tv")).toHaveAttribute("data-view", "network");
+    const services = tvHealthServices(state.units);
+    const rows = within(screen.getByTestId("bed-meeting-tv-services-panel")).getAllByRole("row").slice(1);
+    expect(rows.map((row) => row.querySelector("th")?.textContent)).toEqual(
+      services.map((service) => tvServiceParam(service).toUpperCase()),
+    );
+    for (const [index, service] of services.entries()) {
+      const sheet = bedMeetingSheet({ ...inputs, service });
+      const cells = within(rows[index])
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent);
+      expect(cells[0]).toBe(String(sheet.ed.waiting));
+      expect(cells[2]).toBe(String(sheet.capacity.ready));
+      expect(cells[3]).toBe(String(sheet.capacity.lockedReady));
+    }
+  });
+
+  it("gives every health service its own bed meeting screen with its wards", () => {
+    const { state, inputs } = seedInputs();
+    // The service with the most wards, so its table has rows.
+    const service = [...tvHealthServices(state.units)].sort(
+      (a, b) =>
+        meetingTvExtras({ ...inputs, service: b }).wards.length -
+        meetingTvExtras({ ...inputs, service: a }).wards.length,
+    )[0];
+    if (!service) throw new Error("expected a service with wards");
+    const param = tvServiceParam(service);
+    expect(tvServiceFromParam(param.toUpperCase(), state.units)).toBe(service);
+    expect(tvServiceFromParam("all", state.units)).toBeNull();
+    expect(tvServiceFromParam("nowhere", state.units)).toBeUndefined();
+    expect(bedMeetingTvHref({ service: param })).toBe(`${WARD_BED_MEETING_TV_HREF}?service=${param}`);
+
+    renderTv({ service: param });
+    const sheet = bedMeetingSheet({ ...inputs, service });
+    const extras = meetingTvExtras({ ...inputs, service });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`Bed meeting · ${service}`);
+    expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
+    expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
+    const wardRows = within(screen.getByTestId("bed-meeting-tv-wards-panel")).getAllByRole("row").slice(1);
+    expect(wardRows.map((row) => row.querySelector("th")?.textContent)).toEqual(extras.wards.map((ward) => ward.name));
+    for (const ward of extras.wards) {
+      const unit = state.units.find((candidate) => candidate.id === ward.id);
+      if (!unit) throw new Error("expected the ward");
+      expect(ward.ready).toBe(wardTvSheet({ ...inputs, unit }).capacity.ready);
+    }
+    expect(screen.queryByTestId("bed-meeting-tv-services-panel")).toBeNull();
+    const fit = within(screen.getByTestId("bed-meeting-tv-fit-panel")).getAllByRole("row").slice(1);
+    expect(fit).toHaveLength(extras.gaps.length);
+    for (const [index, row] of extras.gaps.entries()) {
+      expect(fit[index]).toHaveTextContent(
+        row.gap < 0 ? `Short ${-row.gap}` : row.gap === 0 ? "Enough" : `Spare ${row.gap}`,
+      );
+    }
+  });
+
+  it("says so when a link names a health service the network does not have", () => {
+    renderTv({ service: "nowhere" });
+    expect(screen.getByTestId("bed-meeting-tv-missing")).toHaveTextContent("This health service is not in the network");
   });
 
   it("is read only and shows initials, never full names, on the shared screen", () => {
@@ -119,22 +198,10 @@ describe("the bed meeting TV view", () => {
   it("is a desktop page: a phone gets the larger screen card", () => {
     expect(isPhoneDesktopOnlyPath(WARD_BED_MEETING_TV_HREF)).toBe(true);
   });
-
-  it("shows the recommended big box design unless a review link asks for another", () => {
-    expect(tvTileDesign(undefined)).toBe("recommended");
-    expect(tvTileDesign("bold")).toBe("bold");
-    expect(tvTileDesign("nonsense")).toBe("recommended");
-    renderTv({ tiles: "conservative" });
-    expect(screen.getByTestId("bed-meeting-tv-tiles")).toHaveAttribute("data-design", "conservative");
-    // Every box says its state in words as well as colour.
-    for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
-      expect(tile.textContent).toMatch(/Act now|Watch|Good|Steady/);
-    }
-  });
 });
 
 describe("the ward and ED TV views", () => {
-  it("links every ward and every ED from the screen picker", () => {
+  it("links every bed meeting, ward and ED from the screen picker", () => {
     expect(bedMeetingTvHref({ ward: "a b" })).toBe(`${WARD_BED_MEETING_TV_HREF}?ward=a%20b`);
     expect(bedMeetingTvHref({ ed: "peel-ed" })).toBe(`${WARD_BED_MEETING_TV_HREF}?ed=peel-ed`);
     renderTv();
@@ -145,15 +212,10 @@ describe("the ward and ED TV views", () => {
     const { state } = seedInputs();
     for (const unit of state.units) expect(hrefs).toContain(bedMeetingTvHref({ ward: unit.id }));
     for (const ed of allEmergencyDepartments()) expect(hrefs).toContain(bedMeetingTvHref({ ed: ed.id }));
-  });
-
-  it("keeps a review link's box design when changing screen", () => {
-    renderTv({ tiles: "bold" });
-    const hrefs = within(screen.getByTestId("bed-meeting-tv-picker"))
-      .getAllByRole("link")
-      .map((link) => link.getAttribute("href") ?? "");
-    expect(hrefs.length).toBeGreaterThan(0);
-    for (const href of hrefs) expect(href).toMatch(/[?&]tiles=bold$/);
+    expect(hrefs).toContain(bedMeetingTvHref({ service: "all" }));
+    for (const service of tvHealthServices(state.units)) {
+      expect(hrefs).toContain(bedMeetingTvHref({ service: tvServiceParam(service) }));
+    }
   });
 
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
@@ -174,9 +236,15 @@ describe("the ward and ED TV views", () => {
     );
     expect(figure("ward-tv-overdue")).toBe(shown(sheet.overdue.length));
     expect(sheet.incoming.total).toBeGreaterThan(0);
+    // Waiting on this ward's answer comes first, then the people already accepted.
+    expect(sheet.coming.rows.length).toBe(Math.min(TV_ROW_LIMIT, sheet.askedCount + sheet.incoming.total));
     expect(within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem").length).toBe(
-      sheet.incoming.rows.length,
+      sheet.coming.rows.length,
     );
+    const labels = within(screen.getByTestId("bed-meeting-tv-tiles"))
+      .getAllByRole("term")
+      .map((term) => term.firstElementChild?.textContent);
+    expect(labels).toEqual(["Beds ready now", "Asked of this ward", "Coming in", "Going out", "Past expected date"]);
   });
 
   it("shows one ED's figures from the ED board's own selectors", () => {

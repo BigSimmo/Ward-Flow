@@ -217,10 +217,11 @@ export const WARD_ED_HREF = "/mockups/ward-flow/ed";
 /** The bed meeting TV view (`bed-meeting/bed-meeting-tv.tsx`), behind the `bed-meeting-tv` flag. */
 export const WARD_BED_MEETING_TV_HREF = "/mockups/ward-flow/bed-meeting";
 
-/** A TV screen: the network bed meeting, or one ward (`?ward=`) or one emergency department (`?ed=`). */
-export function bedMeetingTvHref(view: { ward?: string; ed?: string } = {}): string {
+/** A TV screen: a bed meeting (`?service=` a health service or `all`), one ward (`?ward=`) or one ED (`?ed=`). */
+export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string } = {}): string {
   if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}`;
   if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}`;
+  if (view.service !== undefined) return `${WARD_BED_MEETING_TV_HREF}?service=${encodeURIComponent(view.service)}`;
   return WARD_BED_MEETING_TV_HREF;
 }
 
