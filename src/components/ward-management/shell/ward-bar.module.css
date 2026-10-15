@@ -1847,6 +1847,13 @@
   color: var(--wf-ink-1);
 }
 
+/* Phone: 16px so iOS Safari does not zoom the page when the Activity search takes focus. */
+@media (max-width: 48rem) {
+  .drawerSearch input {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .drawerSearch input::placeholder {
   color: var(--wf-ink-3);
 }

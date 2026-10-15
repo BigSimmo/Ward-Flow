@@ -784,6 +784,7 @@ export function AddPatientForm() {
             <Card aria-labelledby="apIdH">
               <CardHead
                 id="apIdH"
+                className={styles.idHead}
                 icon={UserRound}
                 title="Identity"
                 aside={
@@ -800,6 +801,10 @@ export function AddPatientForm() {
                     aria-label="UMRN (Unit Medical Record Number)"
                     aria-required="true"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     placeholder="UMRN not recorded"
                     className={styles.mono}
                     value={draft.umrn}
@@ -821,6 +826,10 @@ export function AddPatientForm() {
                     data-testid="ward-add-patient-given-name"
                     aria-required="true"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     value={draft.givenName}
                     onChange={(event) => setDraftField("givenName")(event.target.value)}
                   />
@@ -830,6 +839,10 @@ export function AddPatientForm() {
                     data-testid="ward-add-patient-family-name"
                     aria-required="true"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     value={draft.familyName}
                     onChange={(event) => setDraftField("familyName")(event.target.value)}
                   />

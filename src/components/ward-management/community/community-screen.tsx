@@ -68,7 +68,12 @@ import {
   changeReasonLabels,
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  daysBetween,
+  formatInstantWithDay,
+  minuteOfDayFromClockText,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
@@ -233,17 +238,9 @@ const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   estimatedDay: "today",
 };
 
-/** Same HH:MM parser the ED booking popup uses — local copy so this screen does not import from ed-screen. */
+/** Same HH:MM (or digits only, "0930") parser the ED booking popup uses: `minuteOfDayFromClockText`. */
 function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
+  return minuteOfDayFromClockText(value);
 }
 
 function instantFromEstimatedTimeInputs(

@@ -36,6 +36,7 @@ import {
   clockState,
   formatElapsed,
   formatInstantWithDay,
+  minuteOfDayFromClockText,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
@@ -542,8 +543,9 @@ const DEFAULT_DRAFT: ReferralDraftState = {
 };
 
 /**
- * `HH:MM` from an `<input type="time">` to minutes since midnight, or `undefined` for anything
- * this cannot read with certainty.
+ * `HH:MM` from an `<input type="time">`, or a typed "09:30" or "0930" (F-01: the iPhone number pad
+ * has no ":"), to minutes since midnight, or `undefined` for anything this cannot read with
+ * certainty. The reading itself is `minuteOfDayFromClockText` (`ward-clock.ts`).
  *
  * ⚠️ **IT REFUSES RATHER THAN GUESSES, AND THAT IS THE WHOLE POINT OF IT.** A half-typed or
  * malformed time returns `undefined`, so the referral is raised carrying NO deadline — a state
@@ -556,15 +558,7 @@ const DEFAULT_DRAFT: ReferralDraftState = {
  * invents a timezone for them.
  */
 function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
+  return minuteOfDayFromClockText(value);
 }
 
 /**
