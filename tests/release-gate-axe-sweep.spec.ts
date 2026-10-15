@@ -75,7 +75,11 @@ for (const route of ROUTES) {
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the screen is duplicated in the document",
     ).toHaveCount(0, { timeout: 15_000 });
-    await expect(page.locator("main").first()).toBeVisible({ timeout: 15_000 });
+    // A desktop-only page (the bed meeting TV) shows its "needs a larger screen" card on a phone
+    // and hides the page itself, so the phone scans that card.
+    await expect(page.locator("main:visible, [data-phone-desktop-only]:visible").first()).toBeVisible({
+      timeout: 15_000,
+    });
     await page.waitForLoadState("networkidle");
     await expectAccessible(page, testInfo, route || "/");
   });
