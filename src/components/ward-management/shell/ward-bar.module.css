@@ -133,6 +133,12 @@
  * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
  * because the portrait Menu sheet does not hold them. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
+  /* F-14: a phone on its side lands in this band, so the bar's sides clear the notch. */
+  .bar {
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(18px, env(safe-area-inset-left, 0px));
+  }
+
   /* The title keeps its full width. */
   .title {
     flex-shrink: 0;
@@ -303,6 +309,16 @@
   border-radius: 50%;
   background: var(--svc);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--svc) 16%, transparent);
+}
+
+/* F-30: on the ink band (the navy header at rest) the dot takes its service's dark-theme colour in
+   both themes, so a deep colour such as Statewide's green still shows on the navy. */
+.bar:is(
+    [data-band="ink"],
+    :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+  )
+  .scopeDot {
+  color-scheme: dark;
 }
 
 /* Each health service's own colour, as a dot beside its name (v8 G4). Statewide, or All

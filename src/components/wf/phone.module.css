@@ -233,6 +233,26 @@
   }
 }
 
+/* F-07: iOS lays the keyboard over the page, so on a phone the sheet rises above it and keeps its
+   footer in reach. The home indicator is under the keyboard then, so the footer drops that pad.
+   F-21: on a phone the sheet is the solid overlay surface with no backdrop blur, which flickers on
+   iPhone while the body scrolls (phone bars are solid, D-45). */
+@media (max-width: 48rem) {
+  .sheet {
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :global(html[data-wf-keyboard="open"]) .sheetScrim {
+    padding-bottom: var(--keyboard-height, 0px);
+  }
+
+  :global(html[data-wf-keyboard="open"]) .sheetFooter {
+    padding-bottom: var(--wf-s-3);
+  }
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .sheet {
     background-color: var(--wf-overlay);
@@ -403,8 +423,11 @@
   transition: background-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
-.rowInteractive:hover::after {
-  background: var(--wf-hover);
+/* F-28: hover only where a pointer hovers, so a tap on iPhone leaves no sticky hover. */
+@media (hover: hover) {
+  .rowInteractive:hover::after {
+    background: var(--wf-hover);
+  }
 }
 
 .rowInteractive:active::after {
@@ -460,13 +483,20 @@
   color: var(--wf-ink-3);
 }
 
-/* Truncated words show in full on focus as well as hover (v9 section 8). */
-.rowInteractive:hover .rowName,
-.rowInteractive:hover .rowMeta,
+/* Truncated words show in full on focus as well as hover (v9 section 8). F-28: hover only where a
+   pointer hovers, so a tap on iPhone does not leave the row expanded and the layout jumping. */
 .rowInteractive:focus-visible .rowName,
 .rowInteractive:focus-visible .rowMeta {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .rowInteractive:hover .rowName,
+  .rowInteractive:hover .rowMeta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .rowTrail {

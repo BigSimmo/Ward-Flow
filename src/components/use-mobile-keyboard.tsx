@@ -138,11 +138,12 @@ export function resolveMobileKeyboardBaselines(args: {
 }
 
 /**
- * Global provider for mobile keyboard viewport state.
- * Syncs the virtual keyboard height (visual viewport vs layout viewport discrepancy)
- * to a CSS variable `--keyboard-height` and exposes it via context.
+ * Tracks the on-screen keyboard from the visual viewport (iOS Safari ignores
+ * interactive-widget=resizes-content). Writes the overlay height to the CSS
+ * variable `--keyboard-height` and marks `<html data-wf-keyboard="open">` while
+ * a focused field has the keyboard up, so CSS can move fixed chrome. Mount once.
  */
-export function MobileKeyboardProvider({ children }: { children: ReactNode }) {
+export function useMobileKeyboard(): MobileKeyboardContextState {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -165,7 +166,11 @@ export function MobileKeyboardProvider({ children }: { children: ReactNode }) {
       keyboardWasOpen = next.isKeyboardOpen;
       setIsKeyboardOpen(next.isKeyboardOpen);
       setKeyboardHeight(next.keyboardHeight);
-      document.documentElement.style.setProperty("--keyboard-height", `${next.keyboardHeight}px`);
+      const root = document.documentElement;
+      root.style.setProperty("--keyboard-height", `${next.keyboardHeight}px`);
+      // CSS hides the phone dock and lifts pinned footers while this is set (F-07).
+      if (next.isKeyboardOpen) root.dataset.wfKeyboard = "open";
+      else delete root.dataset.wfKeyboard;
     }
 
     function handleResize() {
@@ -269,8 +274,20 @@ export function MobileKeyboardProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("focusin", handleResize);
       window.removeEventListener("focusout", handleResize);
       document.documentElement.style.removeProperty("--keyboard-height");
+      delete document.documentElement.dataset.wfKeyboard;
     };
   }, []);
+
+  return { isKeyboardOpen, keyboardHeight };
+}
+
+/**
+ * Global provider for mobile keyboard viewport state.
+ * Syncs the virtual keyboard height (visual viewport vs layout viewport discrepancy)
+ * to a CSS variable `--keyboard-height` and exposes it via context.
+ */
+export function MobileKeyboardProvider({ children }: { children: ReactNode }) {
+  const { isKeyboardOpen, keyboardHeight } = useMobileKeyboard();
 
   return (
     <MobileKeyboardContext.Provider value={{ isKeyboardOpen, keyboardHeight }}>

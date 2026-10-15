@@ -701,6 +701,13 @@
     scrollbar-width: none;
   }
 
+  /* F-20: on the phone the hero aside holds only the Live chip (the jump buttons are desk only), so
+     it does not scroll. As a scroller its chip's screen-reader line made it a region a keyboard
+     could not reach (axe scrollable-region-focusable). */
+  .heroAside {
+    overflow: visible;
+  }
+
   .jump {
     flex: none;
     max-width: 15rem;

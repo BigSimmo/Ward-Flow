@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { Card, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
+import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -46,6 +46,8 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
   const soonWindow = dueWindowLabel(configuration.dueSoonMinutes);
   const pressure = useMemo(() => edPressure(now, movements), [now, movements]);
   const summaries = useMemo(() => edOpenSummaries(movements, now), [movements, now]);
+  // F-19: the phone tile hides the service, so its spoken name leads without it.
+  const isPhone = useIsPhone();
 
   const scoped = service
     ? pressure.filter((row) => {
@@ -102,7 +104,8 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
           );
 
           const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
-          const visibleSummary = `${row.ed.siteCode}${serviceAcronym ? ` ${serviceAcronym}` : ""}, ${row.waiting} waiting, ${waitText}, ${deadline.text}`;
+          const shownService = serviceAcronym && !isPhone ? ` ${serviceAcronym}` : "";
+          const visibleSummary = `${row.ed.siteCode}${shownService}, ${row.waiting} waiting, ${waitText}, ${deadline.text}`;
           const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) spoken.push("no patients waiting");
           else spoken.push(`longest ${splitDuration(row.longestWaitMinutes)}`);

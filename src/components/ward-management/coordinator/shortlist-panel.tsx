@@ -1479,7 +1479,12 @@ export function ShortlistPanel({
               onClick={() => {
                 if (eligibilityDetailsRef.current) {
                   eligibilityDetailsRef.current.open = true;
-                  eligibilityDetailsRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                  // F-34: no smooth scroll for people who asked for reduced motion.
+                  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+                  eligibilityDetailsRef.current.scrollIntoView({
+                    behavior: reduce ? "auto" : "smooth",
+                    block: "nearest",
+                  });
                 }
               }}
             >

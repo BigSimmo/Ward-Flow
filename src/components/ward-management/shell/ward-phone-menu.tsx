@@ -21,6 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
+import { useMobileKeyboard } from "@/components/use-mobile-keyboard";
 import { Dot } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import {
@@ -376,6 +377,11 @@ function PageRow({
   );
 }
 
+/** F-19 (WCAG 2.5.3): with a badge showing, a dock name starts as drawn, the badge then the word. */
+function dockName(label: string, value: number | undefined, detail: string, plain: string): string {
+  return value ? `${value > 99 ? "99+" : value} ${label} ${detail}` : plain;
+}
+
 function DockFace({ icon: Icon, label, count }: { icon: typeof Plus; label: string; count: number | undefined }) {
   return (
     <>
@@ -415,7 +421,12 @@ function PhoneDock({
           href={entry.href}
           className={styles.dockItem}
           aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
-          aria-label={wardNavCountLabel(label, countIn(counts, entry.id))}
+          aria-label={dockName(
+            label,
+            countIn(counts, entry.id)?.value,
+            countIn(counts, entry.id)?.noun ?? "",
+            wardNavCountLabel(label, countIn(counts, entry.id)),
+          )}
           data-testid="ward-phone-dock-link"
           onClick={() => onGo(entry)}
         >
@@ -442,7 +453,7 @@ function PhoneDock({
       <button
         type="button"
         className={styles.dockItem}
-        aria-label={`Tasks, ${tasksCount} outstanding`}
+        aria-label={dockName("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
         aria-haspopup="dialog"
         data-testid="ward-phone-menu-tasks"
         onClick={() => onDrawer("tasks")}
@@ -452,7 +463,7 @@ function PhoneDock({
       <button
         type="button"
         className={styles.dockItem}
-        aria-label={activityUnread > 0 ? `Activity, ${activityUnread} unread` : "Activity"}
+        aria-label={dockName("Activity", activityUnread, "unread", "Activity")}
         aria-haspopup="dialog"
         data-testid="ward-phone-menu-activity"
         onClick={() => onDrawer("activity")}
@@ -666,6 +677,9 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
         value={query}
         placeholder="Go to a page or patient"
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        enterKeyHint="search"
         onChange={(event) => onQuery(event.target.value)}
         data-testid="ward-phone-menu-search"
       />
@@ -868,6 +882,8 @@ export function WardPhoneMenu({
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // F-07: marks <html data-wf-keyboard> so the dock hides and pinned footers lift over the keyboard.
+  useMobileKeyboard();
 
   useEffect(
     () =>

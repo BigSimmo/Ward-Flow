@@ -3132,7 +3132,8 @@ details.refCard > summary {
   .drawerWide[data-ph-mode] .sendReferralFoot {
     position: sticky;
     z-index: 6;
-    bottom: 0;
+    /* F-07: rests on the iOS keyboard while it is up (0px otherwise). */
+    bottom: var(--keyboard-height, 0px);
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
