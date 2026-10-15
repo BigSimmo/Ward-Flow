@@ -128,9 +128,17 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                     <tr
                       key={row.id}
                       data-cat={row.category}
-                      onClick={() => {
+                      tabIndex={0}
+                      onClick={(event) => {
+                        // A table row is not normally focusable, so retain it as the drawer opener.
+                        event.currentTarget.focus();
                         setSelectedPatientId(row.patientId);
                         setActiveDrawer("pxDrawer");
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        event.currentTarget.click();
                       }}
                       style={{ cursor: "pointer" }}
                     >
