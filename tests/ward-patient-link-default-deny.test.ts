@@ -100,6 +100,23 @@ const PATIENT_LINK_READ =
  * the two pre-existing entries; the other four are the plumbing this task adds, not a screen.
  */
 const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
+  // Role access plan, D-59 (Josh, 15 Oct 2026). These read the link to keep patients OUT of a desk's
+  // view: the scope narrows what a ward, ED or team learns and never adds a history it lacked.
+  {
+    file: "ward-access-scope.ts",
+    reason:
+      "D-59 scoping: collects the patients linked to the desk's own movements, stays and referrals so every other patient is removed before any screen reads the workspace.",
+  },
+  {
+    file: "shell/ward-access.tsx",
+    reason:
+      "D-59 gate: traces a movement address to its person so the closed page and break glass name one person, and refuses edits to a person seen only through break glass.",
+  },
+  {
+    file: "shell/ward-access-store.ts",
+    reason:
+      "D-59 break glass record: holds the one person a desk opened outside its care, in memory only, for the coordinator's review.",
+  },
   // Clinical pages audit fixes, 13 Oct 2026 (Josh approved the fixes; this boundary is flagged to
   // him on PR #267 for confirmation). Each reads one person's own link only, never a history.
   {
@@ -318,7 +335,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
     // 25 → 26 on 2026-10-15: ward-referral-visibility.ts, the community projection the team page now reads.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(26);
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(29);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

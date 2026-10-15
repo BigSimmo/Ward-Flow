@@ -103,6 +103,13 @@ describe("clinical values file", () => {
       longStayPrompt: 7,
       delayedDischargeEscalation: 72,
       readmissionWindow: 28,
+      // Role access plan (Josh, 15 Oct 2026): new synthetic access and privacy values.
+      breakGlassWindow: 60,
+      breakGlassPerShift: 3,
+      edHandoffWindow: 24,
+      wardHandoffWindow: 7,
+      idleLock: 15,
+      smallNumberHidden: 5,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

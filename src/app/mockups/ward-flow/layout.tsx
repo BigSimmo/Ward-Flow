@@ -18,6 +18,13 @@ import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offlin
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import {
+  WardAccessBanner,
+  WardAccessGate,
+  WardAccessScope,
+  WardIdleLock,
+  WardPrintFooter,
+} from "@/components/ward-management/shell/ward-access";
 import { WardRowDensity } from "@/components/ward-management/settings/row-density";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
@@ -121,54 +128,64 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   return (
     <WfServerPhoneProvider phone={phone}>
       <WardFlowProvider>
-        {/* Remembers a header tap made before the app is ready, for the header to press once it is
+        {/* Role access plan PR 1: everything below reads the workspace scoped to the desk's role and
+          place, chrome included. Does nothing while the role-access flag is off (shell/ward-access.tsx). */}
+        <WardAccessScope>
+          {/* Remembers a header tap made before the app is ready, for the header to press once it is
           (ward-early-tap.ts). It sits ahead of the header so it runs before the header is drawn. */}
-        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
-        {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
+          <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
+          {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
-        <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
-          <WardAccessibility />
-          <WardRowDensity />
-          <WardLiveRegion />
-          <WardActNowNotifier />
-          <WardPwaRegistration />
-          <WardOfflineLinks />
-          {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
-          <WardFeatureFlagLink />
-          <div className={styles.shellRow}>
-            <WardRail />
-            {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
+          <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+            <WardAccessibility />
+            <WardRowDensity />
+            <WardLiveRegion />
+            <WardActNowNotifier />
+            <WardPwaRegistration />
+            <WardOfflineLinks />
+            {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
+            <WardFeatureFlagLink />
+            <div className={styles.shellRow}>
+              <WardRail />
+              {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
-            <script
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
-            />
-            <div className={styles.shellContent} data-wf-scroller="">
-              <WardBarMount />
-              {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
+              <script
+                nonce={nonce}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
+              />
+              <div className={styles.shellContent} data-wf-scroller="">
+                <WardBarMount />
+                {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
-              <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
-                Loading, not live yet. Taps work once this goes.
-              </p>
-              <div
-                style={{
-                  position: "sticky",
-                  top: "var(--wf-header-height, 3.75rem)",
-                  zIndex: 25,
-                  contain: "layout style",
-                  minHeight: 0,
-                }}
-              >
-                <WardBroadcastBanner />
-                <WardOfflineBanner />
-                <WardDemoNotSavedNote />
+                <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
+                  Loading, not live yet. Taps work once this goes.
+                </p>
+                <div
+                  style={{
+                    position: "sticky",
+                    top: "var(--wf-header-height, 3.75rem)",
+                    zIndex: 25,
+                    contain: "layout style",
+                    minHeight: 0,
+                  }}
+                >
+                  <WardBroadcastBanner />
+                  <WardOfflineBanner />
+                  <WardDemoNotSavedNote />
+                  <WardAccessBanner />
+                </div>
+                <WardPhoneDesktopOnly />
+                {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx). */}
+                <WardAccessGate>
+                  <WardGround>{children}</WardGround>
+                </WardAccessGate>
+                <WardPrintFooter />
+                <WardIdleLock />
               </div>
-              <WardPhoneDesktopOnly />
-              <WardGround>{children}</WardGround>
             </div>
-          </div>
-        </ToastProvider>
+          </ToastProvider>
+        </WardAccessScope>
       </WardFlowProvider>
     </WfServerPhoneProvider>
   );

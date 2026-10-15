@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 
@@ -43,9 +44,12 @@ export function useWardNavCounts(): {
   const pathname = usePathname() ?? "";
   const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlow();
   const now = useWardFlowClock();
+  const routeRole = wardChromeRole(pathname);
+  // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
+  const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
   return {
-    role: wardChromeRole(pathname),
-    shellRole: WARD_SHELL_ROLE,
+    role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
+    shellRole: deskRole,
     counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
     placeId: wardPlaceIdFor(pathname),
   };

@@ -9,6 +9,7 @@ import { useCallback, useId, useSyncExternalStore, type ReactNode } from "react"
 import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
 import { dispatchPermission, type WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 
 type DeskRoleOverride = {
@@ -85,10 +86,10 @@ export function requiredRoleForPermission(
 export function useRouteRole(): WardChromeRole {
   const pathname = usePathname() ?? "";
   const override = useSyncExternalStore(subscribeDeskRole, getDeskRoleSnapshot, () => null);
-  if (override && override.pathname === pathname) {
-    return override.role;
-  }
-  return wardChromeRole(pathname);
+  const routeRole = override && override.pathname === pathname ? override.role : wardChromeRole(pathname);
+  // Role access plan: with the flag on, a non-coordinator desk acts only as its own role, whatever
+  // the route or an in-page switch says. A coordinator keeps the route-based behaviour.
+  return useAccessShellRole(routeRole);
 }
 
 export type RoleGate = {

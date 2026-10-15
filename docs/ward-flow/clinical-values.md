@@ -68,6 +68,12 @@ governance sign-off before real patient use (D-54).
 | Discharge, leave and absence | Stay long enough to prompt a discharge plan, and escalation dossier, from | 7 days | Signed for the prototype by Josh (product owner), 2026-10-15 | Ward board long stay line; no decision recorded for the Top 25 dossier | None recorded | `longStayPrompt` |
 | Discharge, leave and absence | Delayed discharge escalated, by recorded hours, after more than | 72 hours | Synthetic value | No decision recorded (Top 25 long stay dossier, 15 Oct 2026) | None recorded | `delayedDischargeEscalation` |
 | Discharge, leave and absence | Readmission flag, discharged from a ward within | 28 days | Signed for the prototype by Josh (product owner), 2026-10-15 | D-58 (15 Oct 2026), national mental health KPI for readmission within 28 days (AIHW); a prompt to look | None recorded | `readmissionWindow` |
+| Access and privacy | Patient record opened outside your care (break glass) stays open for | 1 hour | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `breakGlassWindow` |
+| Access and privacy | Break glass openings in one shift before the coordinator is told it is a pattern | 3 | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `breakGlassPerShift` |
+| Access and privacy | Emergency department keeps sight of a patient after they reach the ward for | 24 hours | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `edHandoffWindow` |
+| Access and privacy | Ward keeps sight of a patient after they leave, for the follow up, for | 7 days | Synthetic value | No decision recorded (role access plan, 15 Oct 2026); the same figure as the 7 day follow up | None recorded | `wardHandoffWindow` |
+| Access and privacy | A shared computer locks after no use for | 15 minutes | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `idleLock` |
+| Access and privacy | Planned, not applied yet: executive figures below this to show as fewer than this | 5 | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `smallNumberHidden` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->
