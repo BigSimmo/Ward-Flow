@@ -174,6 +174,13 @@
   font-size: var(--wf-fs-13);
 }
 
+/* Phone review F-33: the mono face gave the decimal point a full digit cell ("85 . 2%"). */
+@media (max-width: 48rem) {
+  .ringFigure {
+    font-family: var(--wf-font);
+  }
+}
+
 .ringWord {
   display: inline-flex;
   align-items: center;
