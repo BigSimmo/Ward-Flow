@@ -22,20 +22,16 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
-  MINUTES_PER_DAY,
   clockState,
   formatElapsed,
-  formatInstant,
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import {
-  SILENT_WARD_FIRST_REMINDER_MINUTES,
-  SILENT_WARD_SECOND_REMINDER_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
 import {
   eligibility,
   requiresAuthorisedDestination,
@@ -1231,6 +1227,14 @@ export type InboxItem = {
  */
 export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">> & {
   plannedAdmissions?: readonly PlannedAdmission[];
+  /**
+   * Top 25 item 12 (flag `top25-stuck-handover`): when set, a "Transport awaiting departure" row
+   * whose transport was accepted at least this many minutes ago is named a stuck handover for the
+   * sending team. Callers pass the configured transport booked target
+   * (`configuration.transportBookedTargetMinutes`), never a separate figure. Left out, the row is
+   * exactly as before.
+   */
+  stuckHandoverMinutes?: number;
 };
 
 export function buildActionInbox(
@@ -1347,14 +1351,22 @@ export function buildActionInbox(
   );
   for (const movement of stalledTransport) {
     if (!movement.transport) continue;
+    const acceptedAt = movement.transport.acceptedAt as Instant;
+    const stuckAfter = records?.stuckHandoverMinutes;
+    const waited = now - acceptedAt;
+    // Same id, kind and tone either way, so counts, snoozes and act-now figures never move with
+    // the flag: only the wording and the owner say the handover is stuck.
+    const stuck = stuckAfter !== undefined && waited >= stuckAfter;
     items.push({
       id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,
       tone: "warning",
       icon: Truck,
-      title: "Transport awaiting departure",
-      detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
-      owner: movement.owner,
+      title: stuck ? "Handover waiting too long" : "Transport awaiting departure",
+      detail: stuck
+        ? `${movement.id} · transport accepted ${formatInstantWithDay(acceptedAt, now)}, not left after ${splitDuration(waited)}. Target ${splitDuration(stuckAfter)}`
+        : `${movement.id} · accepted ${formatInstantWithDay(acceptedAt, now)}`,
+      owner: stuck ? "Sending team" : movement.owner,
       movementId: movement.id,
       since: movement.transport.acceptedAt,
     });
@@ -2241,18 +2253,19 @@ function toInstantMinutes(val: Instant | string): number {
 }
 
 /**
- * Afternoon Discharge & Parallel Support-Service Unblocker (#1).
- * Surfaces occupied admissions with an expected discharge today or within the next 24h window
- * so wards can trigger parallel Pharmacy (TTO), Transport, and Cleaning dispatches early.
+ * Top 25 items 1 and 5: occupied stays whose ward's own expected discharge falls from now to the
+ * discharge prep window ahead (`CLINICAL_VALUES.dischargePrepWindow`). The ward discharge prep
+ * prompt and the discharge support notices both read this one list, so they always agree.
  */
 export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant | string): Admission[] {
   const nowMin = toInstantMinutes(now);
+  const windowMinutes = CLINICAL_VALUES.dischargePrepWindow.value;
   return admissions.filter((adm) => {
     if (!bedIsOccupied(adm) || adm.expectedDischargeAt === null || !Number.isFinite(adm.expectedDischargeAt)) {
       return false;
     }
     const diff = adm.expectedDischargeAt - nowMin;
-    return diff >= 0 && diff <= MINUTES_PER_DAY;
+    return diff >= 0 && diff <= windowMinutes;
   });
 }
 
@@ -2306,102 +2319,32 @@ export function deriveTopCompatibleWards(
   return scored.slice(0, cap);
 }
 
-export interface RefusalRecoveryAction {
-  code: string;
-  title: string;
-  actionLabel: string;
-  targetFilter: "gender_compatible" | "open_or_waitlist" | "authorisation_check" | "alternative_ward";
-  description: string;
+export interface NextWardsAfterRefusal {
+  /** The most recent decline, so the screen can say why the last ward said no. */
+  latestDecline: Decline;
+  /** Eligible wards not yet asked, best first, from the same rules as `deriveTopCompatibleWards`. */
+  candidates: CompatibleWardCandidate[];
 }
 
 /**
- * Inline Refusal Recovery & Guided Next-Best Action (#3).
- * Maps a reducer rejection or ward decline reason directly to an inline recovery action chip
- * so the user is never stranded at a dead-end error message.
+ * Next best ward after a refusal (Top 25 item 3, flag `top25-next-ward`). Once a ward has declined
+ * and none has accepted, this suggests the wards nobody has asked yet that pass every eligibility
+ * gate, ranked by `deriveTopCompatibleWards`. A ward that declined or still holds a live request
+ * is never suggested. It only suggests: the coordinator still chooses and refers with
+ * `REFER_TO_UNITS`.
  */
-export function deriveRefusalRecoveryAction(refusalCode: string): RefusalRecoveryAction {
-  const normalized = refusalCode.trim().toLowerCase();
-  if (normalized.includes("gender") || normalized.includes("sex")) {
-    return {
-      code: refusalCode,
-      title: "Bed sex or gender designation mismatch",
-      actionLabel: "Show compatible wards or record coordinator ward check",
-      targetFilter: "gender_compatible",
-      description:
-        "Filter candidate shortlist to wards with matching bed designation or record a non-binary ward check.",
-    };
-  }
-  if (normalized.includes("secure") || normalized.includes("locked") || normalized.includes("no_suitable_bed")) {
-    return {
-      code: refusalCode,
-      title: "Secure or allocatable bed unavailable",
-      actionLabel: "Waitlist on preferred unit or fan out to next compatible ward",
-      targetFilter: "open_or_waitlist",
-      description:
-        "Keep request waitlisted for the next discharge or send a parallel referral to an eligible backup unit.",
-    };
-  }
-  if (normalized.includes("authoris") || normalized.includes("legal")) {
-    return {
-      code: refusalCode,
-      title: "Authorised hospital destination required",
-      actionLabel: "Filter shortlist to authorised inpatient units",
-      targetFilter: "authorisation_check",
-      description: "Only authorised psychiatric units can receive this involuntary movement.",
-    };
-  }
-  return {
-    code: refusalCode,
-    title: "Referral or stage transition refused",
-    actionLabel: "Open next compatible ward options",
-    targetFilter: "alternative_ward",
-    description: "Review alternative eligible wards or step back the movement stage to resolve the blocker.",
-  };
-}
-
-export interface SilentWardNotice {
-  movementId: string;
-  unitId: string;
-  elapsedMinutes: number;
-  escalationTier: "nudge_2h" | "escalate_4h";
-  actionLabel: string;
-}
-
-/**
- * Automated Silent-Ward Escalation & Re-Allocation Loop (#7).
- * Identifies ward referrals that have gone unanswered for >= 2 hours (120m) or >= 4 hours (240m),
- * surfacing one-tap `[Nudge NUM]` and `[Switch to Next Compatible Ward]` actions.
- */
-export function deriveSilentWards(movements: readonly Movement[], now: Instant | string): SilentWardNotice[] {
-  const nowMin = toInstantMinutes(now);
-  const results: SilentWardNotice[] = [];
-  for (const m of movements) {
-    if (!isOpen(m) || m.acceptedUnitId !== undefined) continue;
-    // Only a recorded send time can show a request as overdue. With none, nothing is escalated.
-    const sentAt = m.referralDecisionOpenedAt ?? m.referredAt;
-    if (sentAt === undefined || sentAt === null) continue;
-    const elapsedMinutes = Math.max(0, nowMin - sentAt);
-    if (elapsedMinutes < SILENT_WARD_FIRST_REMINDER_MINUTES) continue;
-
-    // `referredUnitIds` is the standing set of live requests, so a re-referred ward shows again. A ward
-    // that answered by waitlisting since the send has replied and is not silent.
-    const waitlistedSinceSend = new Set(
-      m.declines
-        .filter((d) => d.at >= sentAt && (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(d.reason))
-        .map((d) => d.unitId),
-    );
-    for (const unitId of m.referredUnitIds) {
-      if (waitlistedSinceSend.has(unitId)) continue;
-      const escalationTier = elapsedMinutes >= SILENT_WARD_SECOND_REMINDER_MINUTES ? "escalate_4h" : "nudge_2h";
-      results.push({
-        movementId: m.id,
-        unitId,
-        elapsedMinutes,
-        escalationTier,
-        actionLabel:
-          escalationTier === "escalate_4h" ? "Switch to Next Compatible Ward" : "Nudge NUM — unanswered referral",
-      });
-    }
-  }
-  return results;
+export function deriveNextWardsAfterRefusal(
+  movement: Movement,
+  units: readonly Unit[],
+  now: Instant,
+): NextWardsAfterRefusal | undefined {
+  // A ward that waitlisted (no bed yet) still holds a live request, so it is not a refusal.
+  const refusals = movement.declines.filter(
+    (decline) => !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
+  );
+  if (refusals.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
+  const latestDecline = refusals.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
+  const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
+  const notAsked = units.filter((unit) => !asked.has(unit.id));
+  return { latestDecline, candidates: deriveTopCompatibleWards(movement, notAsked, PARALLEL_REFERRAL_CAP, now) };
 }

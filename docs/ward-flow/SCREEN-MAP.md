@@ -56,7 +56,7 @@ UNMAPPED rather than disappearing.
 | `ward-flow-digest.html` | `/mockups/ward-flow-digest` | yes |
 | `movement-gantt-third-edition.html` | — | — |
 | `network-horizon-third-edition.html` | — | — |
-| `sovereign-chrome-and-drawers-perfected.html` | `/sovereign` | yes |
+| `sovereign-chrome-and-drawers-perfected.html` | — | — |
 | `perfected-activity-drawer.html` | — | — |
 | `perfected-drawers-showcase.html` | — | — |
 | `perfected-service-popover.html` | — | — |

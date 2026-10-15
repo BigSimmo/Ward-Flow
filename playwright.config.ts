@@ -13,20 +13,14 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 // Prototype /mockups journeys live in their own advisory project so a red
 // mockup can never mask a production-journey regression (PT-05). The two
-// Tag-level filters keep production and prototype journeys disjoint even when
+// tag-level filters keep production and prototype journeys disjoint even when
 // they share a spec file. Every required browser project uses the same
-// production matcher and tag exclusion.
-// `phone-scroll` carries an open `-<suffix>` arm: that coverage is split across
-// ui-phone-scroll{,-routes,-page-owned}.spec.ts so no single file can dominate a
-// `--shard` (it was 65% of shard 1 at 267s). An exact `phone-scroll` alternative
-// would silently leave the siblings uncollected, so the arm is open on purpose —
-// a future ui-phone-scroll-*.spec.ts runs rather than quietly not running.
-// `tests/playwright-project-isolation.test.ts` asserts every such file on disk is
-// matched here.
-const productionSpecPattern =
-  /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/;
+// production matcher and tag exclusion. The PsychSift spec names these patterns
+// once listed were removed on 15 October 2026: none of those specs exist here.
+// `tests/playwright-project-isolation.test.ts` asserts every spec on disk is matched.
+const productionSpecPattern = /.*api-csrf-proxy\.spec\.ts/;
 const mockupSpecPattern =
-  /.*ui-(accessible-table-mockup|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-search-mode-mockup|tools-task-directory|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit)\.spec\.ts/;
+  /.*ui-(ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit)\.spec\.ts/;
 // A bounded Ward-only cross-browser proof; keep prototype cases separate from the inherited
 // production projects. The spec checks responsive geometry and keyboard access to local scrollers.
 const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
@@ -44,7 +38,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:release-gate-(?:journeys|axe-sweep)|api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(accessible-table-mockup|smoke|stress|accessibility|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|caring-contacts-activation|caring-contacts-populated|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-show-all|tools-search-mode-mockup|tools-task-directory|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/,
+    /.*(?:release-gate-(?:journeys|axe-sweep)|api-csrf-proxy|ui-ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently

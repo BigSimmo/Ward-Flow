@@ -125,8 +125,7 @@ files.
   generic "Something went wrong" panel. Catches a throw from `src/app/mockups/layout.tsx` or
   anything above the `mockups/` segment; everything below that segment now has a nearer boundary
   (`mockups/error.tsx` above, and Ward Flow's own `ward-flow/error.tsx` for 25 routes,
-  `ward-flow/statistics/error.tsx` for the 5 statistics routes, `ward-flow/sovereign/error.tsx` for
-  the showcase route).
+  `ward-flow/statistics/error.tsx` for the 5 statistics routes).
 - **`src/lib/developer-area/headers.ts`** (74 lines) — the constants shared between `proxy.ts` and
   every Server Component gate: `WARD_FLOW_OFFLINE_HEADER`, `WARD_FLOW_PATH_PREFIX` =
   `/mockups/ward-flow`, `isWardFlowPath()`, `DEVELOPER_GATED_PATH_PREFIXES` (lines 52-58: `

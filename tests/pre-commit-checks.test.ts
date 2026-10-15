@@ -152,6 +152,9 @@ describe("signOutLogOptional", () => {
     expect(signOutLogOptional({}, "darwin")).toBe(true);
     expect(signOutLogOptional({}, "win32")).toBe(false);
     expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "/tmp/typo.md" }, "linux")).toBe(false);
+    expect(signOutLogOptional({ WARD_FLOW_LOGS: "/tmp/typo" }, "linux")).toBe(false);
+    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: "" }, "linux")).toBe(true);
+    expect(signOutLogOptional({ WARD_FLOW_LOGS: "" }, "win32")).toBe(false);
   });
 });
 
@@ -312,8 +315,10 @@ describe("the hook script end to end", () => {
     () => {
       const root = repo();
       execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
-      const env = { ...process.env };
+      // Off Windows the default log is ~/ward-flow-logs/sign-out.md, so point HOME at the fixture.
+      const env: NodeJS.ProcessEnv = { ...process.env, HOME: root };
       delete env.WARD_SIGNOUT_FILE;
+      delete env.WARD_FLOW_LOGS;
       mkdirSync(join(root, "docs", "ward-flow"), { recursive: true });
       writeFileSync(join(root, "docs/ward-flow/probe.md"), "synthetic probe\n");
       execFileSync("git", ["add", "docs/ward-flow/probe.md"], { cwd: root });
@@ -323,7 +328,7 @@ describe("the hook script end to end", () => {
         env,
       });
       expect(passed.status).toBe(0);
-      expect(passed.stderr).toContain("sign-out guard skipped (no log at D:/Repos/ward-flow-logs/sign-out.md");
+      expect(passed.stderr).toContain(`sign-out guard skipped (no log at ${root}/ward-flow-logs/sign-out.md`);
     },
   );
 });

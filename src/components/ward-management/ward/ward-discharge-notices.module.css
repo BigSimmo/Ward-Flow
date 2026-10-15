@@ -1,0 +1,32 @@
+.card {
+  margin: var(--wf-s-3) 0;
+}
+
+.lead {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.service {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.note {
+  color: var(--wf-ink-3);
+}
