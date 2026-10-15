@@ -1,3 +1,4 @@
+// @ts-check
 // Phone push for new act-now (red) items. Off unless all three VAPID settings are present.
 //
 // Lock screens are visible to anyone nearby, so a push carries a count, the hospital site and a

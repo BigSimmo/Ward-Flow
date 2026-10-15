@@ -1,3 +1,6 @@
+// @ts-check
+import { LATEST_MIGRATION } from "./migrations.mjs";
+
 // This module only reads catalogues and the bounded migration-version ledger.
 // A reserved but empty namespace is deliberately not treated as a fresh database.
 const CATALOG = `WITH namespace AS (
@@ -360,13 +363,13 @@ export async function verifyPostgresNamespace(pool, { runtimeRole = "wardflow_ba
     throw new Error("Ward Flow database namespace verification unavailable");
   }
   if (catalog.owner === null) return;
-  for (const [key, maximum] of [
+  for (const [key, maximum] of /** @type {[string, number][]} */ ([
     ["objects", 64],
     ["constraints", 128],
     ["functions", 64],
     ["triggers", 64],
     ["sequences", 64],
-  ])
+  ]))
     if (!Array.isArray(catalog[key]) || catalog[key].length > maximum) refuse();
   for (const key of ["unknown_types", "rules", "policies", "extensions"]) if (catalog[key] !== 0) refuse();
   const migrations = catalog.objects.find((object) => object.name === "migrations");
@@ -374,11 +377,18 @@ export async function verifyPostgresNamespace(pool, { runtimeRole = "wardflow_ba
   verifyColumns(migrations.columns, columns(tableColumns.migrations));
   let versions;
   try {
-    const result = await pool.query("SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 6");
+    const result = await pool.query(
+      `SELECT version FROM ward_flow.migrations ORDER BY version LIMIT ${LATEST_MIGRATION + 1}`,
+    );
     versions = result.rows.map((row) => row.version);
   } catch {
     throw new Error("Ward Flow database migration identity verification unavailable");
   }
-  if (!versions.length || versions.length > 5 || !versions.every((version, index) => version === index + 1)) refuse();
+  if (
+    !versions.length ||
+    versions.length > LATEST_MIGRATION ||
+    !versions.every((version, index) => version === index + 1)
+  )
+    refuse();
   verifyCatalog(catalog, versions.length, runtimeRole);
 }
