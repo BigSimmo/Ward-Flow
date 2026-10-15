@@ -92,8 +92,25 @@ describe("the referral's history — one field, optional, last", () => {
     expect(READS_HISTORY.test(code("/* history is prose: referral.history is never read */"))).toBe(false);
   });
 
+  /**
+   * The one bounded copy. Since 15 Oct 2026 the community team page reads the community-scoped
+   * projection (owner's choice), and that page shows the story word for word, so the projection
+   * module copies it across by name. A copy decides nothing, and this pins it to exactly that one
+   * line: any other read of the history in that module still fails the check below.
+   */
+  const DISPLAY_COPY = "    history: referral.history,\n";
+  const VISIBILITY = "src/components/ward-management/ward-referral-visibility.ts";
+
+  it("lets the projection module copy the history once, by name, for display", () => {
+    const source = code(readFileSync(VISIBILITY, "utf8"));
+    expect(source.split(DISPLAY_COPY).length - 1, "the display copy is not there exactly once").toBe(1);
+  });
+
   it("is never read by anything that decides", () => {
-    const offenders = DECIDING_MODULES.filter((path) => READS_HISTORY.test(code(readFileSync(path, "utf8"))));
+    const offenders = DECIDING_MODULES.filter((path) => {
+      const source = code(readFileSync(path, "utf8"));
+      return READS_HISTORY.test(path === VISIBILITY ? source.replace(DISPLAY_COPY, "") : source);
+    });
     expect(
       offenders,
       "a module that decides reads the referral's written history. The owner's ruling is that the " +
