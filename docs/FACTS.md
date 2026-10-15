@@ -7,8 +7,8 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 
 | Fact                | Value                                       | Meaning                                                   | Read from                       |
 | ------------------- | ------------------------------------------- | --------------------------------------------------------- | ------------------------------- |
-| `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set    | `backend/ward-flow/config.mjs`  |
-| `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set | `backend/ward-flow/config.mjs`  |
+| `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set and no legacy Azure preset is detected | `backend/ward-flow/config.mjs`  |
+| `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set and no legacy Azure preset is detected | `backend/ward-flow/config.mjs`  |
 | `latest-migration`  | 005-retention-and-indexes                   | Newest shared-workspace database migration                | `backend/ward-flow/migrations/` |
 | `migration-count`   | 5                                           | Numbered database migrations                              | `backend/ward-flow/migrations/` |
 | `ward-route-count`  | 50                                          | `page.tsx` routes under `/mockups/ward-flow`              | `src/app/mockups/ward-flow/`    |

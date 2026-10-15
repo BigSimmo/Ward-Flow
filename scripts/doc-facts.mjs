@@ -61,26 +61,12 @@ function countPages(dir) {
   return count;
 }
 
-// Operating-system variables the backend reads only to spawn tools; not Ward Flow settings.
-const OS_ENV = new Set([
-  "COMSPEC",
-  "ComSpec",
-  "SystemRoot",
-  "PATH",
-  "Path",
-  "HOME",
-  "USERPROFILE",
-  "TEMP",
-  "TMP",
-  "APPDATA",
-]);
-
 /** Backend environment variable names read by the shipped backend modules (tests excluded). */
 export function backendEnvNames(sources) {
   const names = new Set();
   for (const source of sources)
     for (const match of source.matchAll(/\benv\??\.([A-Za-z_][A-Za-z0-9_]*)/gu))
-      if (!OS_ENV.has(match[1])) names.add(match[1]);
+      if (/^(WARD_|AZURE|Azure|SUPABASE|PORT$)/u.test(match[1])) names.add(match[1]);
   return [...names].sort();
 }
 
@@ -110,13 +96,13 @@ export function collectFacts(root = ROOT) {
     {
       name: "database-provider",
       value: PROVIDER_NAMES[database] ?? database,
-      about: "Database used when `WARD_DATABASE_PROVIDER` is not set",
+      about: "Database used when `WARD_DATABASE_PROVIDER` is not set and no legacy Azure preset is detected",
       source: `${BACKEND}/config.mjs`,
     },
     {
       name: "auth-provider",
       value: AUTH_NAMES[auth] ?? auth,
-      about: "Sign-in service used when `WARD_AUTH_PROVIDER` is not set",
+      about: "Sign-in service used when `WARD_AUTH_PROVIDER` is not set and no legacy Azure preset is detected",
       source: `${BACKEND}/config.mjs`,
     },
     {
@@ -174,7 +160,6 @@ export function collectFacts(root = ROOT) {
 const escapeCell = (text) => String(text).replace(/\|/gu, "\\|");
 
 export function renderFactsDoc(facts, terms) {
-  const database = facts.find((f) => f.name === "database-provider")?.value ?? "";
   const lines = [
     "# Current facts",
     "",
@@ -198,7 +183,7 @@ export function renderFactsDoc(facts, terms) {
     "Write the marker pair with any value between them, then run `npm run docs:facts:write`:",
     "",
     "```md",
-    `Ward Flow stores its shared workspace in <!-- fact:database-provider -->${database}<!-- /fact -->.`,
+    `Ward Flow stores its shared workspace in <!-- fact:database-provider -->${facts.find((f) => f.name === "database-provider")?.value ?? ""}<!-- /fact -->.`,
     "```",
     "",
     "`npm run docs:facts` (and CI) fails when a marker or this page disagrees with the source.",
@@ -222,15 +207,6 @@ export function renderFactsDoc(facts, terms) {
 // One line only: a stray opening tag must never reach a closing tag further down the file.
 const MARKER = /<!-- fact:([a-z0-9-]+) -->([^\n]*?)<!-- \/fact -->/gu;
 
-/** Line numbers holding an opening fact tag with no closing tag on the same line. */
-export function unclosedMarkers(text) {
-  return text
-    .split("\n")
-    .map((line, index) => ({ line: line.replace(MARKER, ""), number: index + 1 }))
-    .filter(({ line }) => /<!-- fact:[a-z0-9-]+ -->/u.test(line))
-    .map(({ number }) => number);
-}
-
 /** Rewrite every fact marker to the current value. Unknown names are returned, never guessed. */
 export function applyMarkers(text, factsByName) {
   const unknown = [];
@@ -244,7 +220,9 @@ export function applyMarkers(text, factsByName) {
     if (current !== value) stale.push({ name, current, value });
     return `<!-- fact:${name} -->${value}<!-- /fact -->`;
   });
-  return { updated, unknown, stale };
+  // Remove complete pairs before checking for a stray opening or closing marker.
+  const malformed = text.replace(MARKER, "").match(/(?:<!-- fact:[a-z0-9-]+ -->|<!-- \/fact -->)/gu) ?? [];
+  return { updated, unknown, stale, malformed };
 }
 
 export function loadRetiredConfig(root = ROOT) {
@@ -252,7 +230,7 @@ export function loadRetiredConfig(root = ROOT) {
   return {
     terms: config.terms.map((t) => ({
       ...t,
-      regex: new RegExp(t.pattern, [...new Set(`${t.flags ?? ""}g`)].join("")),
+      regex: new RegExp(t.pattern, `${(t.flags ?? "").replace(/g/gu, "")}g`),
       // A line that itself says the thing is retired is current, not stale.
       allowRegex: t.allowWhen ? new RegExp(t.allowWhen, "iu") : null,
     })),
@@ -278,51 +256,38 @@ export function findRetiredTerms(file, text, config) {
   current.split("\n").forEach((line, index) => {
     for (const term of config.terms) {
       term.regex.lastIndex = 0;
-      const match = term.regex.exec(line);
-      if (match && !term.allowRegex?.test(line)) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
+      for (const match of line.matchAll(term.regex)) {
+        const start = Math.max(line.lastIndexOf(";", match.index) + 1, line.lastIndexOf(".", match.index) + 1, line.lastIndexOf("!", match.index) + 1, line.lastIndexOf("?", match.index) + 1);
+        const endMatch = /[;.!?]/u.exec(line.slice(match.index));
+        const end = endMatch ? match.index + endMatch.index : line.length;
+        const context = line.slice(start, end);
+        if (!term.allowRegex?.test(context)) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
+      }
     }
   });
   return hits;
 }
 
-/**
- * From a zero-context diff: the line numbers each file gains, and the text of the lines it loses,
- * so a reworded or re-padded line can be weighed against the line it replaced.
- */
-export function diffLines(diffText) {
+/** Line numbers each Markdown file gains between base and HEAD (zero-context diff). */
+export function addedLines(diffText) {
   const added = new Map();
-  const removed = new Map();
   let file = null;
-  let inHunk = false;
   for (const line of diffText.split("\n")) {
-    if (line.startsWith("diff --git ")) {
-      inHunk = false;
-      file = null;
+    const header = line.match(/^\+\+\+ (?:b\/)?(.+)$/u);
+    if (header) {
+      file = header[1] === "/dev/null" ? null : header[1];
       continue;
     }
-    if (!inHunk) {
-      const header = line.match(/^\+\+\+ (?:b\/)?(.+)$/u);
-      if (header) file = header[1] === "/dev/null" ? null : header[1];
-    }
     const hunk = line.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/u);
-    if (hunk) {
-      inHunk = true;
-      if (!file) continue;
+    if (hunk && file) {
       const start = +hunk[1];
       const count = hunk[2] === undefined ? 1 : +hunk[2];
       const set = added.get(file) ?? new Set();
       for (let n = start; n < start + count; n += 1) set.add(n);
       added.set(file, set);
-    } else if (inHunk && file && line.startsWith("-")) {
-      removed.set(file, [...(removed.get(file) ?? []), line.slice(1)]);
     }
   }
-  return { added, removed };
-}
-
-/** Line numbers each Markdown file gains between base and HEAD (zero-context diff). */
-export function addedLines(diffText) {
-  return diffLines(diffText).added;
+  return added;
 }
 
 function trackedMarkdown(root) {
@@ -359,24 +324,36 @@ export function run({ root = ROOT, write = false, base = null } = {}) {
   }
 
   let added = null;
-  let removed = new Map();
   if (base) {
     const diff = execFileSync("git", ["diff", "-U0", "--no-color", `${base}...HEAD`, "--", "*.md"], {
       cwd: root,
       encoding: "utf8",
       maxBuffer: 256 * 1024 * 1024,
     });
-    ({ added, removed } = diffLines(diff));
+    added = addedLines(diff);
+  }
+  const baseCounts = new Map();
+  if (base) {
+    for (const file of trackedMarkdown(root)) {
+      try {
+        const previous = execFileSync("git", ["show", `${base}:${file}`], { cwd: root, encoding: "utf8" });
+        for (const hit of findRetiredTerms(file, previous, retired)) {
+          const key = `${file}\0${hit.term}`;
+          baseCounts.set(key, (baseCounts.get(key) ?? 0) + 1);
+        }
+      } catch {
+        // New files have no base occurrences.
+      }
+    }
   }
 
   for (const file of trackedMarkdown(root)) {
     if (file === FACTS_DOC) continue;
     const text = readFileSync(path.join(root, file), "utf8");
-    if (text.includes("<!-- fact:")) {
-      for (const line of unclosedMarkers(text))
-        errors.push(`${file}:${line}: fact marker has no closing <!-- /fact --> on the same line.`);
-      const { updated, unknown, stale } = applyMarkers(text, factsByName);
+    if (text.includes("<!-- fact:") || text.includes("<!-- /fact -->")) {
+      const { updated, unknown, stale, malformed } = applyMarkers(text, factsByName);
       for (const name of unknown) errors.push(`${file}: unknown fact "${name}" (see ${FACTS_DOC}).`);
+      if (malformed.length > 0) errors.push(`${file}: incomplete or malformed fact marker.`);
       if (stale.length > 0) {
         if (write) {
           writeFileSync(path.join(root, file), updated);
@@ -388,13 +365,11 @@ export function run({ root = ROOT, write = false, base = null } = {}) {
     }
     if (isHistoricalPath(file, retired)) continue;
     const hits = findRetiredTerms(file, text, retired);
-    const onAddedLines = hits.filter((hit) => added?.get(file)?.has(hit.line));
-    // Rewording or re-padding a line that already named the term is not a new mention: fail only
-    // when the branch's changed lines name retired terms more often than the lines they replaced.
-    const replaced = findRetiredTerms(file, (removed.get(file) ?? []).join("\n"), retired).length;
-    const grew = onAddedLines.length > replaced;
+    const currentCounts = new Map();
+    for (const hit of hits) currentCounts.set(hit.term, (currentCounts.get(hit.term) ?? 0) + 1);
     for (const hit of hits) {
-      const isNew = grew && onAddedLines.includes(hit);
+      const key = `${file}\0${hit.term}`;
+      const isNew = base ? (currentCounts.get(hit.term) ?? 0) > (baseCounts.get(key) ?? 0) : added?.get(file)?.has(hit.line) ?? false;
       (isNew ? errors : warnings).push({ ...hit, isNew });
     }
   }
