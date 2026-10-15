@@ -269,7 +269,7 @@ const input = {
   reportModifiedAt: reportStat.mtime.toISOString(),
   /* The reducer the lines in that report are indexed against. A line number is a different number
    * in every tree, so this is what makes the mapping meaningful rather than coincidental. */
-  reducerSha256: digest(reducerText),
+  reducerSha256: digest(SOURCES.map((source) => source.text).join("\n")),
   /* ⚠️ PARTIAL REPORTS ARE THE NORMAL CASE, NOT AN ERROR. A report produced by a focused
    * run speaks for only the lines that run touched, so `spokenFor` drops without anything being
    * wrong. Stated here so nobody reads a smaller number as a regression. */
