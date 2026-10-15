@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import { join } from "node:path";
 
 import { createElement, type ReactNode } from "react";
@@ -101,7 +102,11 @@ function renderTeamMarkup(admissions?: Admission[], referrals?: Referral[]): str
     // eslint-disable-next-line react/no-children-prop -- WardFlowProviderProps requires `children`
     createElement(WardFlowProvider, {
       initialNow: NOW_ANCHOR,
-      children: createElement(CommunityScreen, { teamId: COMMUNITY_TEAM_PAGES[0].id, admissions, referrals }),
+      children: createElement(CommunityScreen, {
+        teamId: COMMUNITY_TEAM_PAGES[0].id,
+        admissions,
+        referrals: referrals && communityScopedReferrals(referrals),
+      }),
     }),
   );
 }

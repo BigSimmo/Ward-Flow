@@ -5,6 +5,7 @@ import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
+import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
 
 import {
   createContext,
@@ -1318,6 +1319,31 @@ export function useWardFlow(): WardFlowContextValue {
   const context = useContext(WardFlowContext);
   if (!context) throw new Error("useWardFlow must be used within WardFlowProvider.");
   return context;
+}
+
+/**
+ * FD-23: the referrals a community team may see, already projected. The community team page takes
+ * its referrals from here and never from `useWardFlow()`, so it never holds another destination.
+ */
+export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
+  const { referrals } = useWardFlow();
+  return useMemo(() => communityScopedReferrals(referrals), [referrals]);
+}
+
+/**
+ * The referral ids on `admissions` that match no referral at all. Ids only, read against the full
+ * record here so the community page can tell a broken link from a referral it may not see (FD-23).
+ */
+export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
+  const { referrals } = useWardFlow();
+  return useMemo(() => {
+    const known = new Set(referrals.map((referral) => referral.id));
+    return new Set(
+      admissions.flatMap((admission) =>
+        admission.referralId !== null && !known.has(admission.referralId) ? [admission.referralId] : [],
+      ),
+    );
+  }, [admissions, referrals]);
 }
 
 export function useWardFlowClock(fallback?: Instant): Instant {

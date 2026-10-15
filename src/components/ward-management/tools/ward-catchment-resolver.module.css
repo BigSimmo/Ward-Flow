@@ -335,7 +335,7 @@
   padding: 0.3125rem 0.75rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   border-width: 1px;
   border-style: solid;
 }

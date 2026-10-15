@@ -252,7 +252,7 @@
   display: inline-flex;
   align-items: center;
   border: 0.0625rem solid var(--line);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-ctl);
   background: var(--surface);
   padding: 0 0.625rem;
   color: var(--ink);

@@ -273,7 +273,7 @@
 .tileStatus {
   flex: none;
   padding: 0.15em 0.6em;
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--tile-accent) 18%, var(--wf-surface));
   color: var(--tile-ink);
   font-size: clamp(var(--wf-fs-11), 0.62vw, 1rem);

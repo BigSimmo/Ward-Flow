@@ -223,7 +223,7 @@ a.rankRow:focus-visible {
   align-self: flex-start;
   min-height: var(--wf-h-sm);
   padding: 0 var(--wf-s-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-accent-ink);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   text-decoration: none;
