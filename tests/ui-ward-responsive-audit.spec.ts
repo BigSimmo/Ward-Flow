@@ -320,7 +320,7 @@ test.describe("@mockup Ward scroll geometry", () => {
         .toBeGreaterThanOrEqual(11);
       const box = await panel.boundingBox();
       expect(box!.y + box!.height).toBeLessThanOrEqual(844);
-      const body = panel.getByRole("feed", { name: "Active transport legs" });
+      const body = panel.getByRole("region", { name: "Active transport legs" });
       await expect
         .poll(() => body.evaluate((element) => element.scrollHeight - element.clientHeight))
         .toBeGreaterThan(0);
