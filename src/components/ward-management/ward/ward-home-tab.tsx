@@ -634,6 +634,7 @@ export function WardHomeTab({
       row.bed.dischargeBarrier,
       row.bed.dischargeConfirmed,
       row.bed.pastDate,
+      row.bed.dischargeDateMoves,
       row.bed.awayAtEdHours != null,
       row.bed.isSpecialling,
       row.bed.preparing,
