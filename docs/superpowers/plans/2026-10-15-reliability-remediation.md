@@ -19,7 +19,7 @@
 - Use narrow red/green behavioral tests while editing, then the actual selected full gate once integrated. One broad run at a time.
 - Do not force audit fixes, downgrade framework lint, delete tests or weaken gates to obtain green results.
 - No automatic main merge, deployment, hosted database operation or provider setting change.
-- The repository's explicit Cloud reasoning gate requires `[xhigh-confirmed]` before authentication, persistence or cross-cutting architecture work. Those tasks remain pending while independent ordinary UI/tooling fixes proceed.
+- The repository's explicit Cloud reasoning gate requires `[xhigh-confirmed]` before authentication, persistence or cross-cutting architecture work. The user supplied that marker; the phase-two repairs below are now implemented and independently reviewed.
 
 ## Review focus
 
@@ -82,19 +82,19 @@
 
 Advisory policy and the actual unresolved upstream finding are documented in [dependency advisory maintenance](../../dependency-security.md).
 
-## Task E: pending higher-risk repairs
+## Task E: confirmed higher-risk repairs
 
-**Dependency:** Required `[xhigh-confirmed]` input. Do not route these to another agent to evade that rule. After confirmation, refresh source and expand each surviving item into exact-file ownership and red/green acceptance before edits.
+**Dependency satisfied:** The user supplied `[xhigh-confirmed]`. Main was refreshed to `c7801fb8a90ecf7d48e012f685fedcd54c6dab6a`, and each repair used exact claims, red/green tests and independent standards/specification review.
 
-- [ ] R02: reuse current #317 standing-waitlist fix and test same-minute withdrawal/re-referral/history.
-- [ ] R04: fix the demonstrated midnight hydration boundary without changing persistence/privacy contracts; reuse any source fix that lands first. The separate mechanical R06 lint correction is owned by Task D.
-- [ ] R12/R13: revalidate and narrowly repair optional JWT not-before and fallback-budget isolation behavior on current #319.
-- [ ] R14–R16: revalidate optional backend timeout classification, migration rollback and diagnostic closure; implement only surviving bounded defects.
-- [ ] R17–R19: validate history schema, follow-up metadata and newly introduced context readers on selected combined candidates. Preserve the existing workstreams and their reviewable boundaries.
+- [x] R02: reuse current #317 standing-waitlist fix and test same-minute withdrawal/re-referral/history.
+- [x] R04: fix the demonstrated midnight hydration boundary without changing persistence/privacy contracts; reuse any source fix that lands first. The separate mechanical R06 lint correction is owned by Task D.
+- [x] R12/R13: revalidate and narrowly repair optional JWT not-before and fallback-budget isolation behavior on current #319.
+- [x] R14–R16: revalidate optional backend timeout classification, migration rollback and diagnostic closure; implement only surviving bounded defects.
+- [x] R17–R19: validate history schema, follow-up metadata and newly introduced context readers on selected combined candidates. Preserve the existing workstreams and their reviewable boundaries.
 
 ## Task F: serial integration and final verification
 
-**Owner:** Coordinator; separate standards and spec reviewers.
+**Owner:** Coordinator; separate standards and spec reviewers. The main repair branch is `codex/reliability-remediation-integrated-20261015`; the feature interaction candidate is `codex/remediation-combined-20261015`. A feature candidate includes selected exact PR dependencies for verification and does not recommend merging unrelated feature work as a single repair PR.
 
 - [x] Inspect each exact-base patch and meaningful red/green evidence. Recheck current upstream content rather than trusting a stale report.
 - [x] Release editor claims explicitly, acquire coordinator claims, then apply selected deltas serially with recoverable bases. Preserve unmerged candidate dependencies separately from main fixes.
@@ -115,4 +115,8 @@ Advisory policy and the actual unresolved upstream finding are documented in [de
 
 Use the same private checkpoint, source pins, ownership handoffs and immutable logs. Deliver the plan, reviewed changes/patches, checks and explicit residuals. An unavailable upstream patch, required user input or physical-device environment remains a blocker/evidence gap rather than a passing result.
 
-Current checkpoint: Tasks A–D have local implementation or exact-candidate patch evidence. R07 remains explicitly upstream-blocked. The root ordinary-fix batch is being committed with normal hooks so the clean-snapshot full gate can run. Task E remains held for the required reasoning marker. The private remediation-dispositions ledger preserves every original heading and next action; completion of this checklist is not a claim that all maturity gaps have been removed.
+Current checkpoint: Tasks A–E have local implementation and exact-candidate evidence. Main-based fixes are committed with normal hooks; independent standards/specification reviews pass. The ordinary batch has passed strict lint, typecheck, 12,678 unit assertions and production build; its 150 browser journeys are still running. These earlier-source results do not replace final combined-source acceptance. R07 remains upstream-blocked: the published development dependency chain has no compatible fix, so versions are retained and scheduled reporting added.
+
+Phase-two companion patches are pinned to #302 `02dd2aa5`, #319 `73c1d232`, #320 `d0cf3b9a` and #322 `20ed0e91`. R18 additionally reconciles #321 `47c3a5bd`. R19 reuses #322's selector API and migrates seven new feature readers; it does not copy that architecture into the main-only repairs. R17 keeps #322's replacement validator plus the explicit ordered-history schema. The combined worktree is being assembled by real semantic merges; final broad checks remain pending.
+
+Acceptance receipts distinguish earlier passing inputs, final focused checks, final whole-candidate gates, unavailable hosted/device evidence and actual deployment. The complete 74-row disposition ledger retains every original concern and recommended next action. Optional product capabilities and unavailable operational evidence are not fabricated as completed defect fixes. No push, main merge, deployment or hosted database operation has occurred.
