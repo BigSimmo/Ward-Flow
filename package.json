@@ -59,6 +59,7 @@
     "test:e2e:quarantine": "node scripts/run-playwright.mjs --project=chromium --grep @quarantine --pass-with-no-tests",
     "test:e2e:mockups": "node scripts/run-playwright.mjs --project=chromium-mockups",
     "test:e2e:ward-journeys": "node scripts/run-playwright.mjs --project=chromium-mockups ui-ward-",
+    "test:e2e:release-gate": "node scripts/run-playwright.mjs --project=release-gate-desktop --project=release-gate-phone",
     "test:e2e:advisory": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups --grep \"@quarantine|@mockup\" --pass-with-no-tests",
     "test:e2e:chromium": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups",
     "worktrees:report": "node scripts/clean-worktree.mjs",
@@ -135,7 +136,6 @@
     "ward:classify": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify"
   },
   "dependencies": {
-    "@azure/msal-browser": "^5.25.0",
     "@next/env": "16.3.6",
     "lucide-react": "^1.34.0",
     "next": "^16.3.6",
@@ -163,6 +163,7 @@
     }
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@babel/parser": "^8.0.4",
     "@codspeed/vitest-plugin": "^5.7.1",
     "@next/bundle-analyzer": "^16.3.6",

@@ -40,18 +40,13 @@ export type ContentSecurityPolicyOptions = SecurityHeaderFlags & {
   sharedOrigins?: readonly string[];
 };
 
-/** Microsoft sign-in, which the shared workspace's MSAL client calls for tokens. */
-export const MICROSOFT_SIGN_IN_ORIGIN = "https://login.microsoftonline.com";
-
-/** Select the browser provider using the same legacy Entra fallback as the backend. */
-export function resolveWardAuthProvider(): "entra" | "supabase" | string {
-  const selected = process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim();
-  if (selected) return selected;
-  const legacyEntra =
-    !!process.env.NEXT_PUBLIC_WARD_TENANT_ID?.trim() &&
-    !!process.env.NEXT_PUBLIC_WARD_CLIENT_ID?.trim() &&
-    !process.env.NEXT_PUBLIC_WARD_SUPABASE_URL?.trim();
-  return legacyEntra ? "entra" : "supabase";
+/**
+ * The browser sign-in provider: Supabase is the current and only shipped provider (decision D-55),
+ * and blank selects it. Mirrors `selectWardAuthProvider` in ward-shared-access.tsx.
+ * See docs/ward-flow/DATABASE.md before adding a provider.
+ */
+export function resolveWardAuthProvider(): string {
+  return process.env.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "supabase";
 }
 
 // Browser auth and the workspace API are scoped to configured exact origins.
@@ -79,8 +74,7 @@ export function resolveSharedWorkspaceOrigins(
       return [];
     return [url.origin, "https://zakzoemeedfepxcstsou.supabase.co"];
   }
-  if (provider !== "entra" || url.protocol !== "https:") return [];
-  return [url.origin, MICROSOFT_SIGN_IN_ORIGIN];
+  return [];
 }
 
 export function buildContentSecurityPolicy({
@@ -125,11 +119,8 @@ export function buildContentSecurityPolicy({
     // monitoring SDK. logger.ts provides an optional server forwarding seam,
     // not a configured Sentry integration. Add an external origin only with
     // an explicitly configured integration and its privacy review. The one
-    // exception is the shared Azure workspace (resolveSharedWorkspaceOrigins).
+    // exception is the shared Supabase workspace (resolveSharedWorkspaceOrigins).
     `connect-src ${["'self'", ...sharedOrigins].join(" ")}; ` +
-    // No frame-src for MSAL's hidden renewal frame: it returns to this site, which refuses
-    // framing (frame-ancestors 'none', X-Frame-Options DENY), so once the refresh token lapses
-    // the coordinator signs out and in again rather than the site allowing itself to be framed.
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
     scriptSrc +

@@ -216,8 +216,8 @@ import {
 
 /**
  * Every seeded person: the hand-authored patients plus the generated ones the admission and
- * movement seeds name (owner rule, 25 Sept 2026: every record belongs to a patient who exists).
- * A person on both a pulled bed and its movement is listed once.
+ * movement seeds name (owner rule: every record belongs to a patient who exists). A person on both
+ * a pulled bed and its movement is listed once.
  */
 const wardPatients: Patient[] = [
   ...new Map(
@@ -240,68 +240,28 @@ import {
 } from "@/components/ward-management/ward-support-notifications";
 
 /**
- * Stages `REFER_TO_UNITS` accepts, exported so a UI surface can pre-check referability and gate
- * its own control before dispatching — never optimistically claim a referral happened and let
- * this be the thing that silently refuses it (Task 5 fix round 1: `ShortlistPanel` used to
- * dispatch and unconditionally render success, so a movement at, say, `pulled` — still open,
- * still offering eligible candidates — showed "Referred by a human coordinator" while nothing
- * had happened). A single shared constant, used here AND by `ward-derivations.ts`'s
- * `referralBlockedReason`, so the two checks can never drift apart.
+ * Stages `REFER_TO_UNITS` accepts, exported so a UI can pre-check referability before dispatching
+ * rather than claiming a referral that the reducer then refuses. Shared with
+ * `ward-derivations.ts`'s `referralBlockedReason` so the two checks cannot drift.
  */
 export const REFERRABLE_MOVEMENT_STAGES: readonly MovementStage[] = ["placement_requested", "destination_review"];
 
 /**
- * WHAT THE REDUCER ITSELF WRITES INTO `Movement.blocker` WHEN A MOVEMENT'S SITUATION CHANGES.
+ * What the reducer writes into `Movement.blocker` (the free-prose field, not the
+ * `BedRelease.blocker` enum) when a movement's situation changes.
  *
- * ⚠️ **`Movement.blocker` — the free-prose one. NOT `BedRelease.blocker`**, which is a
- * `BedReleaseBlocker` enum about a bed being freed and is written by `BLOCK_BED_RELEASE` /
- * `CLEAR_BED_RELEASE_BLOCK`. Two fields, one name; nothing here goes near the other.
+ * The property is "never contradicted by the record beside it", not "never older than the stage". A
+ * transition restates the blocker only where it has just been told something the standing sentence
+ * contradicts; `PULL_PATIENT` and `HANDOVER_READY` deliberately leave a ward's own observation in
+ * place.
  *
- * **Why the reducer writes anything at all.** Until 2026-09-01 this field was set once, at
- * creation, to `"Awaiting coordinator referral"`, and no transition ever touched it. That sentence
- * stopped being true the moment a coordinator referred, and it stayed on screen through
- * acceptance, transport and collection — the movement console renders it as **Response** and
- * **Current blocker**, so somebody chased a patient whose ambulance was already moving. A blocker
- * describing an earlier stage is wrong BY CONSTRUCTION, not merely out of date, so the reducer
- * restates it wherever it has just been told something the standing sentence CONTRADICTS.
+ * These sentences restate only what the model has been told and invent no fact about a ward, person
+ * or provider; richer prose is only ever written by `RECORD_MOVEMENT_BLOCKER`. A human's prose is
+ * overwritten by the next transition by design. The seed is not derived from this table and must
+ * not be: a stage does not determine this field.
  *
- * ⚠️ **THE PROPERTY IS "NEVER CONTRADICTED BY THE RECORD BESIDE IT", NOT "NEVER OLDER THAN THE
- * STAGE BESIDE IT"** — this comment claimed the second until 2026-09-01 and the code never held it.
- * `PULL_PATIENT` moves the stage to `pulled` and leaves `"Awaiting a bed at the accepting ward"`
- * standing, which falsifies the stage version outright; `HANDOVER_READY` does the same with
- * `"Awaiting a transport provider response"`. Both are CORRECT, and that is the point: a pull
- * allocates a bed without making one ready — the seed's own three `pulled` movements say "Awaiting
- * single-room clean", "Ward finalising bed clean" and "Escort provider organising secure
- * transport" — and a handover being ready does not make a provider answer. Neither event is told
- * anything that contradicts the sentence it inherits, so writing one there would overwrite a
- * ward's real observation with a vaguer machine one. The two transport legs below ARE told such a
- * thing (`acceptedAt`, then `enRouteAt`), which is why they restate and these two do not. State
- * the property that holds; do not restore the one that reads more strongly and is false.
- *
- * **What these sentences are allowed to be.** Restatements of what the model has been told, and
- * nothing more. `"Awaiting a bed at the accepting ward"` says the stage is `accepted_awaiting_bed`;
- * `"None — in transit"` says the patient has been collected. None of them invents a fact about a
- * ward, a person or a provider — the richer sentences the seed carries ("Awaiting single-room
- * clean", "Escort provider organising secure transport") are things only a human knows, and only
- * `RECORD_MOVEMENT_BLOCKER` may write those.
- *
- * ⚠️ **A HUMAN'S PROSE IS OVERWRITTEN BY THE NEXT TRANSITION, AND THAT IS THE DESIGN.** A ward
- * that recorded "Awaiting single-room clean" while the patient was pulled will see that replaced
- * when transport is booked. The situation genuinely changed; a note about the old one is exactly
- * the staleness this table exists to end. If it is still true, it is recorded again — the same way
- * a handover note is repeated at handover rather than assumed to still hold.
- *
- * ⚠️ **THE SEED IS NOT DERIVED FROM THIS TABLE AND MUST NOT BE.** The twenty-one hand-authored
- * values (`ward-movements.ts`) stay exactly as written; two of them sit at the same stage with
- * different words ("Transport escort confirming departure time" and "Awaiting transport escort",
- * both `handover_ready` with a transport job), which is direct evidence that a stage does NOT
- * determine this field. That is why deriving it was refused and why only these nine sentences are
- * ever written (across ten events — `didNotProceed` covers both closures that are not an arrival):
- * the points where the previous sentence is provably false, not merely possibly stale.
- *
- * `hasActiveBlocker` (ward-priority.ts) must recognise every "nothing is blocking" phrasing here
- * as inactive, or a settled movement scores ten points for an obstruction it does not have. The
- * three below all use the `"None — …"` shape it already matches.
+ * `hasActiveBlocker` (ward-priority.ts) must recognise every "nothing is blocking" phrasing here as
+ * inactive; they all use the `"None — …"` shape it matches.
  */
 export const STAGE_TRANSITION_BLOCKERS = {
   /** `REFER_TO_UNITS`: referrals are live and nobody has answered yet. */
@@ -310,23 +270,24 @@ export const STAGE_TRANSITION_BLOCKERS = {
   accepted: "Awaiting a bed at the accepting ward",
   /** `BOOK_TRANSPORT`: a job exists and the provider has not accepted it. */
   transportBooked: "Awaiting a transport provider response",
-  /** `CANCEL_TRANSPORT`, bed-held branch only — owner answer 30 (2026-09-17), build plan item 30:
-   *  "no automatic rebooking; a person books again." The job is removed, not replaced, so this
-   *  reads the fact the record now supports instead of `transportBooked` (false, the job is gone)
-   *  or `accepted` (also false — the bed IS still held here, unlike the no-bed-held branch, which
-   *  keeps writing `accepted`). An ACTIVE blocker: somebody still has to book again. */
+  /**
+   * `CANCEL_TRANSPORT`, bed-held branch only (owner answer 30): "no automatic rebooking; a person
+   * books again." An active blocker: somebody still has to book again.
+   */
   transportCancelled: "Transport cancelled; not booked again yet",
-  /** `TRANSPORT_ACCEPTED`: the provider ANSWERED — `transport.acceptedAt` is set — and has not set
-   *  off. Restates `acceptedAt` and nothing else: which provider and whether an escort was asked
-   *  for are on the job itself and `transportStatusLabel` already renders them. */
+  /**
+   * `TRANSPORT_ACCEPTED`: the provider answered (`transport.acceptedAt` set) and has not set off.
+   */
   transportAccepted: "Awaiting the transport provider's departure",
-  /** `TRANSPORT_EN_ROUTE`: `transport.enRouteAt` is set and `collectedAt` is not. The vehicle is
-   *  moving and the patient is still where they were; an ACTIVE blocker, deliberately, because
-   *  nobody has been collected yet — `collected` below is the first value that says otherwise. */
+  /**
+   * `TRANSPORT_EN_ROUTE`: `enRouteAt` set, `collectedAt` not. Active, because nobody has been
+   * collected yet.
+   */
   transportEnRoute: "Awaiting collection — transport is en route",
-  /** `PATIENT_COLLECTED`. One of the two "absence with its reason" values the seed already
-   *  carries, reused verbatim rather than reworded — the fixture and the reducer must not describe
-   *  one situation with two sentences. */
+  /**
+   * `PATIENT_COLLECTED`. Reuses the seed's own wording verbatim so the fixture and reducer never
+   * describe one situation with two sentences.
+   */
   collected: "None — in transit",
   /** `PATIENT_ARRIVED`. The seed's other absence-with-reason value, again verbatim. */
   arrived: "None — handover complete",
@@ -334,48 +295,34 @@ export const STAGE_TRANSITION_BLOCKERS = {
    *  Nothing is blocking because there is no longer anything to block. */
   didNotProceed: "None — the movement did not proceed",
   /**
-   * `RECORD_EXAMINATION` (`community_order`/`revoked`) at `handover_ready` or `moving` — owner
-   * ruling WLQ-4 (2026-09-15). Not "did not proceed": the movement is deliberately NOT closed at
-   * these two stages, so this sentence describes an open, active situation rather than a settled
-   * one, and it is the only value in this table written by an event that leaves the movement open.
+   * `RECORD_EXAMINATION` (`community_order`/`revoked`) at `handover_ready` or `moving` (owner
+   * ruling WLQ-4). The movement stays open here, so this describes an active situation.
    */
   examinationRevokedAwaitingRelease: "Awaiting a coordinator to release the bed, because the examination was revoked",
   /**
-   * `WITHDRAW_WARD_REQUEST` (RA1, item 18), and only when it empties `referredUnitIds` — a
-   * different active situation from `referred` above (which says referrals ARE live), so it is a
-   * SECOND value rather than a restatement. `acceptedUnitId` is never set here (that is `accepted`'s
-   * job), and the movement stays open — a coordinator must refer again before anyone is asked.
-   * Deliberately not "None — …": something IS outstanding here (a fresh REFER_TO_UNITS), so
-   * `hasActiveBlocker` (ward-priority.ts) must keep scoring it as active. Withdrawing one ward while
-   * others stay live does not touch `blocker` at all — `referred` above is still true.
+   * `WITHDRAW_WARD_REQUEST` (RA1), only when it empties `referredUnitIds`. Deliberately not "None —
+   * …": a fresh `REFER_TO_UNITS` is outstanding, so `hasActiveBlocker` must keep scoring it as
+   * active. Withdrawing one ward while others stay live does not touch `blocker`.
    */
   wardRequestWithdrawn: "No ward is being asked",
   /**
-   * `STOP_TRANSPORT` — owner answer 8 (second round, 2026-09-17): *"A stop after collection keeps
-   * the bed held until the coordinator, the ward or the referrer releases it."* Before this, a stop
-   * gave the bed back automatically (the same `releasePulledBedAndAdmission` call `RELEASE_PULL`
-   * uses) and wrote `didNotProceed`. That call is now skipped: the movement still closes
-   * `did_not_proceed` (the journey itself is over), but `acceptedUnitId`/`admissionId` are left
-   * exactly as they were, so the bed stays reserved. An ACTIVE blocker, deliberately not
-   * "None — …": a decision is still outstanding (who releases it), even though the journey has
-   * ended — `RELEASE_HELD_BED` is the event that clears it, and only it clears it.
+   * `STOP_TRANSPORT` (owner answer 8): "A stop after collection keeps the bed held until the
+   * coordinator, the ward or the referrer releases it." The movement closes `did_not_proceed` but
+   * the bed stays reserved. Active: `RELEASE_HELD_BED`, and only it, clears it.
    */
   transportStoppedAwaitingRelease:
     "Awaiting the coordinator, the ward or the referrer to release the bed, because transport was stopped",
   /**
-   * `RECORD_DIVERSION` — build plan item 29 (T4a, 2026-09-17) / OA-29: a collected journey was
-   * diverted; the bed stays held and the movement stays OPEN until `RELEASE_DIVERTED_BED`. An
-   * ACTIVE blocker, deliberately not "None — …": a release decision is still outstanding.
+   * `RECORD_DIVERSION` (OA-29): a collected journey was diverted; the bed stays held and the
+   * movement open until `RELEASE_DIVERTED_BED`. Active: a release decision is outstanding.
    */
   divertedAwaitingRelease:
     "Awaiting the coordinator, the ward or the referrer to release the bed, because the patient was diverted",
 } as const;
 
 /**
- * The whole of Task 3 onward is proved against this shape. Units live in state, not just
- * movements — the correction the design spec calls out explicitly: a ward that accepts, holds
- * and receives a patient with capacity that never moves makes the primary screen less true the
- * more it is used.
+ * Units live in state, not just movements: a ward whose capacity never moves as it accepts, holds
+ * and receives patients makes the primary screen less true the more it is used.
  */
 export type WardFlowState = WardAuditState & {
   dischargeRevisions: Record<string, number>;
@@ -388,36 +335,27 @@ export type WardFlowState = WardAuditState & {
   /** Deterministic id source for referrals raised through RAISE_REFERRAL. No Math.random(). */
   referralSequence: number;
   /**
-   * Fix round 2 (P2). Deterministic id source for leave beds raised through `RECORD_LEAVE_BED`,
-   * independent of `state.leaveBeds.length` for the same reason `referralSequence` is independent
-   * of `state.movements.length` — but here it actually matters, because `END_LEAVE_BED` REMOVES
-   * entries (referrals are never removed, so `movements.length` would have been safe too).
-   * Deriving the id from the array's length after removal makes ids repeat: record two, end the
-   * first, record a third, and the third gets the first's id back — React sees duplicate `key`s,
-   * and `END_LEAVE_BED`'s own id-filter then removes every leave bed sharing that id, silently
-   * deleting the wrong record. This field only ever increases, so an id is never reused. No
-   * `Math.random()`, same discipline as `referralSequence`.
+   * Monotonic id source for leave beds raised through `RECORD_LEAVE_BED`. Never derived from
+   * `leaveBeds.length`: `END_LEAVE_BED` removes entries, so a length-derived id would repeat and
+   * the id-filter would delete the wrong record. No `Math.random()`.
    */
   leaveBedSequence: number;
   /** Which synthetic night is seeded — `ward-scenarios.ts`'s operational-numbers-only variants. */
   scenario: WardScenario;
   /**
-   * Task 11 (spec item 9): beds expected to free up, now live reducer state rather than a frozen
-   * fixture constant — `FLAG_BED_RELEASE` appends here, so a ward's own flag actually moves
+   * Beds expected to free up. `FLAG_BED_RELEASE` appends here, so a ward's flag moves
    * `unitCapacity()`'s `potential` figure. Seeded from `ward-movements.ts`'s `bedReleases`.
    */
   bedReleases: BedRelease[];
   /**
-   * Task 3: beds occupied by someone on approved leave, live reducer state for the same reason
-   * `bedReleases` is — `RECORD_LEAVE_BED`/`END_LEAVE_BED` append to and remove from it, so a
-   * ward's own report actually moves what the capacity board shows. Seeded from
-   * `ward-movements.ts`'s `leaveBeds`. Never merged into availability (spec D4).
+   * Beds occupied by someone on approved leave. `RECORD_LEAVE_BED`/`END_LEAVE_BED` append and
+   * remove. Seeded from `ward-movements.ts`'s `leaveBeds`. Never merged into availability (spec
+   * D4).
    */
   leaveBeds: LeaveBed[];
   /**
-   * Task 3, spec D12: the one thing a coordinator may do to a ward's bed data. Recording a
-   * request changes no bed figure at all — it is a record that somebody asked, with the time and
-   * the requesting role, nothing more. `REQUEST_CAPACITY_REFRESH` appends here.
+   * Spec D12: the one thing a coordinator may do to a ward's bed data. A request changes no bed
+   * figure; it records who asked and when. `REQUEST_CAPACITY_REFRESH` appends here.
    */
   refreshRequests: CapacityRefreshRequest[];
   /** Morning bed rollup confirmations per unit. */
@@ -426,121 +364,68 @@ export type WardFlowState = WardAuditState & {
     { confirmedAt: Instant; confirmedByRole: string; expectedDischarges: number }
   >;
   /**
-   * Phase 7 Task 3 (spec "The front door", controller ruling P1): Task 1 added the `Referral`
-   * type and a hand-authored fixture for it, but nothing wired either into live state — this is
-   * that wiring. `RECEIVE_REFERRAL` appends here; `ACCEPT_REFERRAL`/`DECLINE_REFERRAL` transition
-   * an entry in place via `replaceReferral`, exactly the discipline `bedReleases` already holds to
-   * (nothing here ever REMOVES a referral, the same reason `nextReferralId` above is safe to
-   * derive from an ever-growing array — see `frontDoorReferralSequence`'s own comment for why the
-   * id source itself still does not lean on that). Seeded from `ward-movements.ts`'s `referrals`.
+   * Front-door referrals. `RECEIVE_REFERRAL` appends; `ACCEPT_REFERRAL`/`DECLINE_REFERRAL`
+   * transition an entry in place via `replaceReferral`. Nothing ever removes a referral. Seeded
+   * from `ward-movements.ts`'s `referrals`.
    */
   referrals: Referral[];
   /**
-   * Monotonic id source for `RECEIVE_REFERRAL`, mirroring `leaveBedSequence`'s own discipline:
-   * only ever increases, never derived from `state.referrals.length` — see `leaveBedSequence`'s
-   * doc comment above for the Phase 5 collision that discipline exists to prevent.
-   *
-   * Named `frontDoorReferralSequence` rather than the field the brief for this task literally
-   * names ("referralSequence") for a reason worth recording rather than silently working around:
-   * `referralSequence` already exists on this type, and already means something — it is the id
-   * source `RAISE_REFERRAL` (an ED clinician referring a patient already in the department) uses
-   * to mint `Movement` ids ("WF-9NN"). That field predates this phase by several commits and is a
-   * completely different concept from Task 1's front-door `Referral` (a request for a bed from
-   * anywhere in the network, before it is ever a `Movement`) — the two are both colloquially
-   * "referrals" but neither the record they identify nor the id namespace they mint from is the
-   * same thing. Reusing `referralSequence` for both would not corrupt any single record (the two
-   * id formats — "WF-9NN" vs "RF-9NN" — never collide even sharing one counter), but it would
-   * silently couple two independent concepts' id supplies for no reason, which is exactly the
-   * kind of muddling this model's naming discipline (`leaveBedSequence` isolated from
-   * `referralSequence` itself, `bedReleases` isolated from `leaveBeds`) exists to prevent. A
-   * distinct name costs nothing and keeps the two things as separate as they actually are.
+   * Monotonic id source for `RECEIVE_REFERRAL` ("RF-9NN"), never derived from `referrals.length`.
+   * Kept separate from `referralSequence`, which mints `Movement` ids ("WF-9NN") for
+   * `RAISE_REFERRAL`: the two are different concepts and their id supplies stay uncoupled.
    */
   frontDoorReferralSequence: number;
   /**
-   * The people in the beds. Task 17.
+   * The people in the beds. Without an admission record, a patient who reached a ward became only a
+   * closed movement and disappeared from every screen. Seeded from `ward-admissions-seed.ts`; an
+   * arrival appends a record of the same shape.
    *
-   * WHY THIS IS HERE AT ALL. Until 2026-08-30 this reducer contained the word "admission" zero
-   * times. `PATIENT_ARRIVED` closed the movement, decremented the unit's empty count and bumped its
-   * sex mix - and created no record of the person. So a patient who reached a ward became a CLOSED
-   * MOVEMENT and nothing else, and `isOpen` (`!closure && stage !== "arrived"`) removes closed
-   * movements from ten surfaces: the queue, the coordinator inbox, handover, placement, patient
-   * search, the pressure strip, the live tracker and the ED screen among them.
-   *
-   * The consequence is the owner's own foundation failing at its last step. A person gets from an
-   * emergency department to a ward - the thing this prototype exists to show - and the
-   * demonstration immediately stops being able to see them. Arrival was modelled as an ENDING with
-   * nothing on the other side of it.
-   *
-   * Seeded from `ward-admissions-seed.ts` so the beds start occupied by the same people the board
-   * already renders, and so an arrival appends a record OF THE SAME SHAPE rather than a second
-   * kind of occupant that every consumer would have to learn about.
-   */
-  /**
-   * The people. Owner ruling PD-1, 2026-08-30.
-   *
-   * Separate from `admissions` because the lifecycles are different, not because the data is. An
-   * admission is a stay in one bed - correctly born at arrival, ended when the person leaves. A
-   * patient exists before any referral, outlives every admission, and is the thing the owner's flow
-   * searches for: "search a patient, and if nobody comes up, ADD them."
-   *
-   * A record created by arrival would look right on every screen showing admitted people and be
-   * missing at exactly that moment.
+   * The people themselves (owner ruling PD-1). Separate from `admissions` because the lifecycles
+   * differ: an admission is one stay in one bed, while a patient exists before any referral and
+   * outlives every admission ("search a patient, and if nobody comes up, ADD them").
    */
   patients: Patient[];
   /** Monotonic id source for added patients - same discipline as the other sequences here: only
    *  ever increases, never derived from `state.patients.length`, which the seed makes non-zero. */
   patientSequence: number;
   admissions: Admission[];
-  /** Monotonic id source for admissions created by arrival, holding the same discipline as
-   *  `leaveBedSequence` and `frontDoorReferralSequence`: only ever increases, and never derived
-   *  from `state.admissions.length`, which the seed already makes non-zero. */
+  /**
+   * Monotonic id source for admissions created by arrival; never derived from `admissions.length`,
+   * which the seed already makes non-zero.
+   */
   admissionSequence: number;
   /**
-   * Ward-lead task, 2026-09-06: who has acknowledged which action-inbox row (`InboxItem.id`,
-   * `ward-derivations.ts`), and since when. `ACKNOWLEDGE_INBOX_ITEM` (`ward-flow-events.ts`)
-   * appends here; nothing else writes to it and nothing ever removes an entry.
+   * Who has acknowledged which action-inbox row (`InboxItem.id`), and since when.
+   * `ACKNOWLEDGE_INBOX_ITEM` appends; nothing removes an entry.
    *
-   * 🔴 **NEVER READ BY `buildActionInbox`, AND MUST NEVER BE.** Acknowledging a row must not change
-   * whether `buildActionInbox` returns it — see that event's own doc comment. A screen wanting to
-   * show "acknowledged by X since Y" reads this map ALONGSIDE the inbox's own output, keyed by the
-   * same `InboxItem.id`, never as an input the inbox computation itself consults.
+   * Never read by `buildActionInbox`, and must never be: acknowledging a row must not change
+   * whether the inbox returns it. Screens read this map alongside the inbox output.
    */
   inboxAcknowledgements: Record<string, InboxAcknowledgement[]>;
   /**
-   * Ward-lead task, 2026-09-06: the completion history of each action-inbox row, keyed by
-   * `InboxItem.id`. `COMPLETE_INBOX_ITEM` and its undo `REOPEN_INBOX_ITEM`
-   * (`ward-flow-events.ts`) both append here; see `InboxCompletionEntry` and
-   * `inboxItemCompletionState` below for why this is a history rather than a boolean.
+   * The completion history of each action-inbox row, keyed by `InboxItem.id`. `COMPLETE_INBOX_ITEM`
+   * and its undo `REOPEN_INBOX_ITEM` append here; see `InboxCompletionEntry` for why this is a
+   * history rather than a boolean.
    */
   inboxCompletions: Record<string, InboxCompletionEntry[]>;
   /**
-   * Stream A, 9 Oct 2026: who took ownership of each inbox row (`TAKE_INBOX_ITEM_OWNERSHIP`) and
-   * each row's snooze history (`SNOOZE_INBOX_ITEM`/`UNSNOOZE_INBOX_ITEM`), keyed by `InboxItem.id`.
-   * Append-only. Like the acknowledgement map, never read by `buildActionInbox`: a snooze hides a
-   * row from the active list on screen, it never changes whether the fact is true.
+   * Who took ownership of each inbox row (`TAKE_INBOX_ITEM_OWNERSHIP`) and each row's snooze
+   * history (`SNOOZE_INBOX_ITEM`/`UNSNOOZE_INBOX_ITEM`), keyed by `InboxItem.id`. Append-only.
+   * Never read by `buildActionInbox`: a snooze hides a row on screen, it never changes whether the
+   * fact is true.
    */
   inboxOwnership: Record<string, InboxOwnershipEntry[]>;
   inboxSnoozes: Record<string, InboxSnoozeEntry[]>;
   /**
-   * Communication addendum (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md`, §1.1),
-   * owner ruling D-2, 2026-09-10 — the AUTHORED list beside `buildActionInbox`'s DERIVED one. See
-   * `ward-model.ts`'s own header comment on `Notice` for why a second list is the correct shape here
-   * and not the duplicated-effort failure the addendum's §0 warns against.
-   *
-   * Appended to by exactly six event cases below (`ACCEPT_IN_PRINCIPLE`, `DECLINE`, `DECLINE_REFERRAL`,
-   * `ACCEPT_REFERRAL`, `RELEASE_PULL`, `CANCEL_TRANSPORT`), each through `appendNotices`, which is
-   * also where a `demo`-addressed notice is refused. Never read by `buildActionInbox` and never
-   * written by it — the same one-way discipline `inboxAcknowledgements`'s own doc comment states for
-   * itself, so acknowledging or completing an inbox row can never accidentally raise a notice, and a
-   * notice can never accidentally change what the derived inbox shows.
+   * Authored notices (owner ruling D-2), beside `buildActionInbox`'s derived list. Appended only
+   * through `appendNotices`, which refuses a `demo`-addressed notice. Never read or written by
+   * `buildActionInbox`, so inbox actions cannot raise a notice and a notice cannot change the
+   * derived inbox.
    */
   notices: Notice[];
   /**
-   * Task 3 of the audit-wiring plan, 2026-09-16: the coordinator-tunable figures an engine read
-   * site actually consults, replacing three anonymous literals/constants (`event.now + 60`,
-   * `ED_ACCESS_TARGET_MINUTES`, `PARALLEL_REFERRAL_CAP`) with one auditable record.
-   * `SET_CONFIGURATION` is the only event that writes here; `RESET_SCENARIO`/`SET_SCENARIO`
-   * reseed it to `defaultWardConfiguration()` along with everything else.
+   * The coordinator-tunable figures engine read sites consult. `SET_CONFIGURATION` is the only
+   * writer; `RESET_SCENARIO`/`SET_SCENARIO` reseed it to `defaultWardConfiguration()`.
    */
   configuration: WardConfiguration;
   /**
@@ -568,15 +453,15 @@ export type WardFlowState = WardAuditState & {
   /** Monotonic id source for `BOOK_PLANNED_ADMISSION` ("PA-NN"), the same discipline as the others. */
   plannedAdmissionSequence: number;
   /**
-   * Advisory carer, personal support person and MHAS notification records (9 Oct 2026).
-   * `RECORD_SUPPORT_NOTIFICATION` appends here. Optional so stored sessions from before it still
-   * load; holds typed text, so a non-empty list is never persisted (see storage validation).
+   * Advisory carer, personal support person and MHAS notification records.
+   * `RECORD_SUPPORT_NOTIFICATION` appends here. Optional so older stored sessions load; holds typed
+   * text, so a non-empty list is never persisted (see storage validation).
    */
   supportNotifications?: SupportNotificationRecord[];
   /**
-   * v10 pass 2 (Josh, 10 Oct 2026): what the newest referral decision and Bed board placement on
-   * each subject changed, so `UNDO_REFERRAL_DECISION` and `UNDO_PLACE_IN_BED` can restore it exactly
-   * (`ward-undo.ts`). Optional: absent is an empty list, so older saves and seeds need nothing.
+   * What the newest referral decision and Bed board placement on each subject changed, so
+   * `UNDO_REFERRAL_DECISION` and `UNDO_PLACE_IN_BED` can restore it exactly (`ward-undo.ts`).
+   * Optional: absent is an empty list.
    */
   undoRecords?: UndoRecord[];
 };
@@ -609,20 +494,11 @@ export type ClinicalContactRecord = {
 };
 
 /**
- * ONE ACKNOWLEDGEMENT OF ONE ACTION-INBOX ROW — ward-lead task, 2026-09-06 (making
- * `buildActionInbox`, `ward-derivations.ts`, a real to-do list). Written only by
- * `ACKNOWLEDGE_INBOX_ITEM`.
+ * One acknowledgement of one action-inbox row, written only by `ACKNOWLEDGE_INBOX_ITEM`. `by` is a
+ * role, never a person, taken from the event's own `role`.
  *
- * `by` IS A ROLE, NEVER A PERSON — the same discipline `Override.by`, `StatusChange.by` and
- * `StageChange.by` (`ward-model.ts`) already hold to, taken from the triggering event's own `role`
- * via `WARD_FLOW_ROLE_LABELS`, never supplied directly by a caller.
- *
- * ⚠️ **APPEND-ONLY, AND IDENTITY IS ARRAY POSITION, NEVER `at`.** Two acknowledgements of the same
- * row in one render carry the SAME `at` — `ADVANCE_CLOCK` is the only thing that moves `now`
- * independently, so four dispatches in one tick are four events at one instant. Nothing in this
- * file may look an entry up, sort these arrays, or deduplicate them by `at`; insertion order is the
- * only thing that tells two same-instant acknowledgements apart, exactly as it already does for
- * `Movement.overrides`, `Movement.stageChanges` and `Movement.unwinds`.
+ * Append-only, and identity is array position, never `at`: several dispatches in one tick share one
+ * instant. Never look up, sort or deduplicate entries by `at`.
  */
 export type InboxAcknowledgement = {
   at: Instant;
@@ -630,16 +506,11 @@ export type InboxAcknowledgement = {
 };
 
 /**
- * ONE ENTRY IN AN ACTION-INBOX ROW'S COMPLETION HISTORY — written by `COMPLETE_INBOX_ITEM` and its
- * undo, `REOPEN_INBOX_ITEM`. Same ward-lead task and the same append-only, position-is-identity
- * discipline as `InboxAcknowledgement` above (see that type's own doc comment for the timestamp
- * reasoning, which applies here unchanged).
+ * One entry in an action-inbox row's completion history, written by `COMPLETE_INBOX_ITEM` and its
+ * undo `REOPEN_INBOX_ITEM`. Append-only, position is identity (see `InboxAcknowledgement`).
  *
- * ⚠️ **NOT A BOOLEAN, ON PURPOSE.** "Is this row complete right now" is answered by reading the
- * LAST entry for that row (`inboxItemCompletionState` below), never by a stored flag — a flag would
- * have to be flipped in place on every completion and reversal, which is exactly the silent
- * rewrite-of-history this design refuses. Every write — completing or reopening — is its own new
- * entry; nothing already written is ever edited or removed.
+ * Not a boolean, on purpose: "is this row complete" is read from the last entry
+ * (`inboxItemCompletionState`), so no history is ever rewritten in place.
  */
 export type InboxCompletionEntry = {
   at: Instant;
@@ -657,10 +528,8 @@ export {
 } from "./ward-inbox-reducer";
 
 /**
- * Deep-copies the frozen fixture so tests (and later, screens) never alias or mutate it.
- * Defaults to the standard night so `RESET_SCENARIO` (which calls this with no argument) always
- * returns to the standard night rather than staying on whichever scenario was active — an
- * explicit product-owner decision, not an oversight.
+ * Deep-copies the frozen fixture so callers never alias or mutate it. Defaults to the standard
+ * night so `RESET_SCENARIO` always returns there (a product-owner decision).
  */
 export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlowState {
   // The EMHS demo and surge scenarios bring their own wards and linked patients
@@ -713,28 +582,13 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
 }
 
 /**
- * A FRESH SEED, ALREADY MOVED TO THE DEMONSTRATION'S CLOCK. The only door application code uses.
+ * A fresh seed, already moved to the demonstration's clock: the only door application code uses.
  *
- * ⚠️ **`shiftInstants` CARRIES NO ALREADY-SHIFTED MARKER, SO APPLYING IT TWICE DOUBLES EVERY
- * OFFSET.** Ward Board's framing is why that outranks its size: *a wrong clock looks wrong; a wrong
- * length of stay looks PLAUSIBLE.* A patient nine days in a bed reading as eighteen is not a
- * visibly broken screen — it is a believable number, on a screen whose purpose is to be believed,
- * with nothing anywhere to contradict it.
- *
- * ⚠️ **Stated honestly: no screen has ever shown that.** All three call sites passed a fresh
- * `seedWardFlowState()`, so nothing was ever double-shifted. This is a latent hazard being closed
- * because the cost of closing it is a function signature, not a live defect being repaired.
- *
- * The remedy is `TR-F3`-shaped — make the impossible state unrepresentable rather than check that
- * the reachable ones look right. **This function cannot be handed an already-shifted state because
- * it does not take a state at all**: it seeds and shifts in one step, so there is no argument a
- * caller could pass twice. `shiftInstants` stays exported for `ward-reanchor.test.ts`, which tests
- * the walker itself; `tests/ward-reanchor-single-application.test.ts` is the guard that application
- * code never reaches around this door to it.
- *
- * Offset zero returns a copy rather than the original, for the reason `shiftInstants` already
- * documents: the pinned and live paths then differ only in the offset, never in whether a copy was
- * taken, so no path exists that only a non-zero offset exercises.
+ * `shiftInstants` carries no already-shifted marker, so applying it twice doubles every offset and
+ * produces plausible but wrong lengths of stay. This function takes no state, so it cannot be
+ * handed an already-shifted one. `tests/ward-reanchor-single-application.test.ts` guards that
+ * application code never reaches around it. Offset zero still returns a copy, so the pinned and
+ * live paths differ only in the offset.
  */
 export function seedWardFlowStateAt(offsetMinutes: number, scenario: WardScenario = "standard"): WardFlowState {
   return shiftInstants(seedWardFlowState(scenario), offsetMinutes);
@@ -784,11 +638,7 @@ function subjectId(event: WardFlowEvent): string {
       return event.releaseId;
     case "RELEASE_BED":
       return event.releaseId;
-    // Their own group, never folded into the unit- or release-scoped ones above: an admission id is
-    // not a unit id and not a release id. These three are the only events in the model whose
-    // subject is a person on a ward rather than a movement, a bed release or a referral — this
-    // comment read "this event is the only one" until the two emergency-department events joined
-    // `RECORD_LEAVING` here on 2026-09-01.
+    // Admission-scoped: an admission id is not a unit or release id, so these keep their own group.
     case "RECORD_LEAVING":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
@@ -807,21 +657,16 @@ function subjectId(event: WardFlowEvent): string {
     case "ACCEPT_REFERRAL":
     case "DECLINE_REFERRAL":
     case "RECORD_LOCAL_BED_SOUGHT":
-    // Referral-scoped and carrying no `movementId`, for the same reason the two above are listed:
-    // the `default` branch would read an absent property and stamp a rejection whose subject is
-    // `undefined`, which renders as a rejection belonging to nothing rather than as an error.
+    // Referral-scoped with no `movementId`: the `default` branch would stamp a rejection whose
+    // subject is `undefined`.
     case "RECORD_REFERRER_WITHDRAWAL":
-    // RB7 (build plan item 27, 2026-09-17): also referral-scoped, carrying `referralId` and no
-    // `movementId` — the same reason `RECORD_REFERRER_WITHDRAWAL` directly above is listed rather
-    // than left to the `default` branch.
+    // RB7: referral-scoped too, carrying `referralId` and no `movementId`.
     case "ADD_REFERRAL_CORRECTION":
       return event.referralId;
     case "ADVANCE_CLOCK":
     case "RESET_SCENARIO":
     case "SET_SCENARIO":
-    // No referral yet exists to name a rejection against — the event that is rejected here is
-    // the intake itself, exactly the same reasoning ADVANCE_CLOCK/RESET_SCENARIO/SET_SCENARIO
-    // above already use.
+    // No referral exists yet to name a rejection against; the intake itself is what is rejected.
     case "RECEIVE_REFERRAL":
     // A patient is not filed against a movement, and that is the point of the record rather than an
     // omission: they exist before any movement does.
@@ -830,17 +675,12 @@ function subjectId(event: WardFlowEvent): string {
     // Referral-scoped, not movement-scoped: a clearance is recorded against the referral the
     // inbox renders, and this event carries no `movementId` to return.
     case "RECORD_MEDICAL_CLEARANCE":
-    // ⚠️ Listed here for a reason that is invisible until it breaks: this event carries NO
-    // `movementId`, so the `default` below would read an absent property and stamp a rejection with
-    // an `undefined` subject — which renders as a rejection belonging to nothing rather than as an
-    // error. A referral-scoped event that forgets this line fails silently and only on the
-    // unhappy path.
+    // This event carries no `movementId`, so without this line `default` would stamp a rejection
+    // with an `undefined` subject, and only on the unhappy path.
     case "RECORD_ARRIVED_IN_DEPARTMENT":
       return event.referralId;
-    // Ward-lead task, 2026-09-06: these three carry no `movementId` at all — the subject is the
-    // action-inbox row itself (`InboxItem.id`), which may or may not currently correspond to any
-    // open movement (the underlying condition can have resolved between the row being seen and
-    // the write landing).
+    // These carry no `movementId`: the subject is the action-inbox row (`InboxItem.id`), which may
+    // no longer match an open movement.
     case "ACKNOWLEDGE_INBOX_ITEM":
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
@@ -848,9 +688,7 @@ function subjectId(event: WardFlowEvent): string {
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM":
       return event.inboxItemId;
-    // Item 48, Q2 (owner answer 48, 2026-09-17): notice-scoped, not movement-scoped — carries no
-    // `movementId` to return, the same reason `ACKNOWLEDGE_INBOX_ITEM` and its two siblings just
-    // above are listed rather than left to fall into `default`.
+    // Notice-scoped (owner answer 48): carries no `movementId`.
     case "MARK_NOTICE_READ":
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
@@ -884,9 +722,8 @@ function subjectId(event: WardFlowEvent): string {
 }
 
 /**
- * Stable, non-random id: derived from the movement/subject, the event type and how many
- * rejections this state already carries — never a module-level counter, which would make two
- * calls with identical (state, event) produce different results and break the reducer's purity.
+ * Stable, non-random id derived from the subject, the event type and the rejection count. Never a
+ * module-level counter, which would break the reducer's purity.
  */
 function makeRejection(state: WardFlowState, event: WardFlowEvent, reason: string): Rejection {
   const subject = subjectId(event);
@@ -905,115 +742,45 @@ function reject(state: WardFlowState, event: WardFlowEvent, reason: string): War
 }
 
 /**
- * ⚠️ **THE ELIGIBILITY GATE. Owner ruling, 2026-09-02, given in three parts:** *"the engine should
- * refuse, screen checks are not enough"*, then *"refuse unless a reason is recorded"*, then
- * *"The coordinator can over ride all rules"*.
+ * The eligibility gate (owner ruling): "the engine should refuse, screen checks are not enough",
+ * "refuse unless a reason is recorded", and "The coordinator can over ride all rules". Returns the
+ * refusal message, or `null` to allow.
  *
- * Returns the refusal message, or `null` to allow.
+ * An ineligible placement is made accountable, never impossible: ineligible with no reason is
+ * refused naming the gate; ineligible with a valid reason is placed and the reason recorded; a
+ * reason outside `OVERRIDE_REASONS` is refused by membership, never truthiness. Do not tighten
+ * this: a refused override becomes an unrecorded phone call. Making a gate un-overridable reverses
+ * an owner ruling.
  *
- * ⚠️ **AN INELIGIBLE PLACEMENT IS MADE ACCOUNTABLE, NEVER IMPOSSIBLE — and the row below that looks
- * like a loophole IS THE RULING:**
+ * The boundary: "all rules" covers eligibility gates only, never the capacity refusals (allocatable
+ * beds, a bed being prepared, specialling capacity). No reason typed into a form creates a bed.
  *
- *   ineligible + no reason       -> REFUSED, naming the failing gate
- *   ineligible + valid reason    -> PLACED, and the reason recorded
- *   eligible                     -> unchanged
- *   reason outside OVERRIDE_REASONS -> refused by MEMBERSHIP, never truthiness
+ * This reducer enforces the suitability gates only. World-fact gates are refused separately and are
+ * not overridable; `prior_decline` (history) is not enforced, since beds free up and no override
+ * reason fits a re-approach. Whether a re-approach should need a recorded reason is an open owner
+ * question.
  *
- * **Do not "tighten" the second row.** An override that is refused becomes a phone call, and the
- * placement then happens outside the system where nothing is recorded. **A rule that cannot be
- * overridden does not stop the placement; it stops the RECORD of the placement.** Anyone making one
- * gate un-overridable — the forensic gate is the obvious candidate — is REVERSING AN EXPLICIT OWNER
- * RULING, not tightening a loose end.
- *
- * ⚠️ **AND THE BOUNDARY, which is why this helper is only used for eligibility:** *"all rules"*
- * covers the ELIGIBILITY GATES. It does NOT cover the capacity refusals above it — allocatable beds,
- * a bed still being prepared, one-to-one specialling capacity. **A judgement rule is not a physical
- * fact: "this ward is the wrong cohort" is a clinical judgement and is overridable; "there is no
- * bed" is a fact about the world. NO REASON TYPED INTO A FORM CREATES A BED.** Widening this to a
- * capacity check would record a placement into a bed that does not exist — a false record, which is
- * the exact harm this ruling exists to prevent.
- */
-/**
- * ⚠️ **THE GATES THIS REDUCER ENFORCES — a subset, and the subset is a JUDGEMENT that needs the
- * owner's confirmation. Ward Builder Three, 2026-09-02, flagged rather than assumed.**
- *
- * `eligibility()` returns twelve gates and they are not the same kind of thing:
- *
- *  - **SUITABILITY — does this bed suit this patient?** `cohort`, `security`, `sex_designation`,
- *    `sex_mix`, `forensic`, `legal_status`, `authorisation`, `age`. **These are clinical judgements,
- *    and these are what the owner's ruling is about.**
- *  - **THE WORLD — is there a bed at all?** `allocatable_bed`, `capacity_freshness`, `specialling`.
- *    ⚠️ **Already refused separately, above, and NOT overridable: no reason typed into a form creates
- *    a bed.** Enforcing them here would make a physical fact overridable and record a placement into
- *    a bed that does not exist.
- *  - ⚠️ **HISTORY — `prior_decline`. Neither of the above, and the reason this list exists.**
- *    A ward that declined ninety minutes ago *"because it had no bed"* is the commonest thing in bed
- *    management, and beds free up. Enforcing it would demand a recorded override every time a
- *    coordinator re-approaches a ward that once said no — **and none of the five `OVERRIDE_REASONS`
- *    fits, because they all name a MISMATCH and there is no mismatch.** Measured: enforcing it broke
- *    23 tests across 7 files, almost all of them re-referrals after a seeded decline.
- *
- * **So this reducer enforces SUITABILITY only.** The owner ruled that the engine should refuse an
- * unsuitable bed; he was not asked whether re-approaching a ward that declined should require a
- * recorded reason. ⚠️ **That is a live question for him and it is recorded as one.**
- */
-/**
- * ⚠️ THE ONE SENTENCE FRAGMENT A SCREEN MAY MATCH ON TO KNOW A REFUSAL IS ANSWERABLE.
- *
- * A refusal that a recorded reason can get past reads differently from one that nothing can, and a
- * screen has to tell them apart to know whether offering a reason control would be honest. Doing
- * that by re-typing the wording here and there would be two copies of one fact — the second would
- * survive the first being reworded, and the control would then either vanish or appear where it
- * cannot help.
- *
- * So the engine exports the fragment it speaks. `ward-screen.tsx` matches on THIS, never on a
- * literal of its own. Reword the refusals and the control follows automatically.
- *
- * ⚠️ It deliberately names a STATE, not an action. The engine says one sentence to every caller and
- * only some callers can act on it; an instruction sent a ward nurse hunting for a control that
- * exists on the coordinator's panel. The exact clinical wording is the owner's to confirm.
+ * `OVERRIDE_REASON_REQUIRED` is the one fragment a screen may match on to know a refusal is
+ * answerable. `ward-screen.tsx` matches on this export, never its own literal. It names a state,
+ * not an action; the exact clinical wording is the owner's to confirm.
  */
 export const OVERRIDE_REASON_REQUIRED = "needs a recorded override reason";
 
 /**
- * ⚠️ THE FRAGMENT UNIQUE TO ONE GATE, THE SAME DISCIPLINE AS `OVERRIDE_REASON_REQUIRED` ABOVE, ONE
- * LEVEL MORE SPECIFIC. `OVERRIDE_REASON_REQUIRED` tells a screen a refusal is answerable AT ALL; it
- * does not say which gate. `PULL_PATIENT`'s acuity block (item 10, owner answers 17 September 2026)
- * needs a SECOND fact beside the reason — "the nurse unit manager consulted" — and that tick must
- * show only beside THIS refusal, never beside the specialling refusal one guard above or an
- * eligibility refusal on `ACCEPT_IN_PRINCIPLE`. `ward-screen.tsx` matches on this exported fragment
- * for that reason, exactly as it matches on `OVERRIDE_REASON_REQUIRED` for the reason form itself —
- * never on a literal of its own that could drift from the reducer's actual wording.
+ * The fragment unique to `PULL_PATIENT`'s acuity block (item 10). That refusal needs a second fact
+ * beside the reason (the nurse unit manager consulted), shown only beside this refusal.
+ * `ward-screen.tsx` matches on this export, never its own literal.
  */
 export const HIGH_ACUITY_STAFFING_REFUSAL = "has no high-acuity nursing capacity left";
 
 /**
- * ⚠️ THE LIST OF GATES A RECORDED REASON MAY GET PAST. Two importers, both deliberate:
+ * The gates a recorded reason may get past. Imported by `tests/ward-referral-reducer.test.ts`
+ * (asserts it is disjoint from the world-fact gates) and by `ward-derivations.ts`'s
+ * `shortlistCandidates`, so the screen and engine share one list.
  *
- * 1. `tests/ward-referral-reducer.test.ts` asserts it is DISJOINT from the world-fact gates. That
- *    guard exists because the hazard it covers is silent — see the comment at `eligibilityRefusal`'s
- *    early return.
- * 2. `ward-derivations.ts`'s `shortlistCandidates`, so the coordinator's list can tell a ward that
- *    can be taken with a reason from one that cannot be taken at all.
- *
- * ⚠️ THE SECOND IMPORTER IS WHY THIS COMMENT CHANGED. It said "nothing else should import this",
- * which was true when the only thing that could act on the list was the engine. A screen that must
- * NOT offer a physical refusal as overridable needs the same list — and a second copy of it on the
- * screen is exactly how the two would drift into disagreeing about what a reason can buy.
- */
-/**
- * 🔴 TYPED SO `"gender_designation"` CANNOT BE A MEMBER, T10 (item 8, owner answer 17 September
- * 2026): *"There is no override path on the gender gate."* Until this date the array held
- * `"sex_designation"`, which WAS overridable; the rename to `gender_designation`
- * (`ward-eligibility.ts`) is also a removal here, on purpose, not a rename in place — the entry is
- * dropped rather than relabelled.
- *
- * The exported type stays `readonly EligibilityGate[]` — narrowing it to
- * `Exclude<EligibilityGate, "gender_designation">[]` would break every `.includes(gate.gate)` call
- * site below and in `ward-derivations.ts`, which compare against the FULL gate union. The
- * `satisfies` clause below does the actual work: adding `"gender_designation"` back to the array
- * literal is a compile error there, which is the guarantee this comment promises, without
- * narrowing what callers may search the array for.
+ * T10 (owner answer, item 8): "There is no override path on the gender gate." The `satisfies`
+ * clause below makes adding `"gender_designation"` a compile error, while the exported type stays
+ * the full gate union so `.includes(gate.gate)` call sites still compile.
  */
 export const SUITABILITY_GATES: readonly EligibilityGate[] = [
   "age",
@@ -1023,16 +790,10 @@ export const SUITABILITY_GATES: readonly EligibilityGate[] = [
   "legal_status",
   "security",
   "sex_mix",
-  // ⚠️ ADDED BY OWNER RULING, 2026-09-02, and it is the only gate ever moved out of the world-fact
-  // group. A stale bed count is information, not a wall: "I have confirmed the current bed state
-  // with the ward directly" is a named person taking responsibility for a fact, which is what an
-  // override reason IS. Before this it was refused at the front door with no way through and never
-  // consulted at all on the placement path, which left the owner's own approved reason — "the bed
-  // information is known to be out of date" — a dead option with nothing to answer.
-  //
-  // ⚠️ IT DOES NOT MEAN "THE WARD LOOKS FULL BUT IS NOT". The owner ruled the narrow reading
-  // explicitly: this buys past a STALE COUNT, never past `allocatable_bed`. No reason typed into a
-  // form creates a bed. See docs/ward-flow/owner-rulings-2026-09-02-staleness-and-legal-status.md.
+  // Added by owner ruling: the only gate moved out of the world-fact group. A stale bed count is
+  // information, and "I have confirmed the current bed state with the ward directly" is a named
+  // person taking responsibility. It buys past a stale count, never past `allocatable_bed`. See
+  // docs/ward-flow/owner-rulings-2026-09-02-staleness-and-legal-status.md.
   "capacity_freshness",
 ] as const satisfies readonly Exclude<EligibilityGate, "gender_designation">[];
 
@@ -1112,14 +873,9 @@ function eligibilityRefusal(
   unit: Unit,
   now: Instant,
 ): string | null {
-  /*
-   * 🔴 THE `gender_designation` CHECK RUNS FIRST, BEFORE THE OVERRIDE EARLY RETURN BELOW — T10
-   * (item 8), and this ordering is the whole of the fix rather than a stylistic preference. The
-   * `overrideReason !== undefined` branch a few lines down used to `return null` the moment a
-   * reason was present, skipping the verdict entirely; that is exactly how a typed reason would
-   * have bought past a gate the owner ruled has no override path at all. Computing the verdict
-   * here, first, and refusing on `gender_designation` before any reason is even read, is what
-   * makes "no override path" true regardless of what a caller supplies.
+  /**
+   * T10 (item 8): the `gender_designation` check runs first, before the override early return
+   * below. That ordering is the fix: no typed reason can buy past a gate with no override path.
    */
   const verdict = eligibility(movement, unit, now);
   const genderFailure = verdict.gates.find((gate) => gate.gate === "gender_designation" && !gate.pass);
@@ -1135,35 +891,15 @@ function eligibilityRefusal(
     if (!OVERRIDE_REASONS.includes(event.overrideReason)) {
       return `${event.type} overrideReason must be chosen from OVERRIDE_REASONS`;
     }
-    // ⚠️ THIS RETURN SKIPS THE VERDICT ENTIRELY, AND WHAT MAKES THAT SAFE IS NOT IN THIS FUNCTION.
+    // This return skips the verdict entirely, including physical gates (`specialling`,
+    // `prior_decline`, `capacity_freshness`, `allocatable_bed`). It is safe only because
+    // `PULL_PATIENT`, the only event that consumes a bed, refuses on allocatable beds, specialling
+    // and high-acuity capacity before it calls this function, and none of those reads
+    // `overrideReason`. `REFER_TO_UNITS` and `ACCEPT_IN_PRINCIPLE` consume no bed.
     //
-    // An earlier version of this comment said the early return was safe because every gate this
-    // function can refuse on is a judgement. THAT WAS WRONG, and wrong in the direction that
-    // reassures: `eligibility()` emits FOUR gates outside `SUITABILITY_GATES` today —
-    // `specialling`, `prior_decline`, `capacity_freshness`, `allocatable_bed` — so a recorded
-    // reason does skip physical gates here, and has always done so.
-    //
-    // It is safe because `PULL_PATIENT` is the ONLY event that consumes a bed, and it enforces the
-    // physical facts itself, before it ever calls this function:
-    //
-    //     if (unit.allocatable.value <= 0)                          -> reject
-    //     if (movement.specialling && remainingSpeciallingCapacity(unit, …) <= 0) -> reject
-    //     if (movement.highAcuity && remainingHighAcuityCapacity(unit, …) <= 0)   -> reject
-    //     eligibilityRefusal(…)                                      <- runs AFTER all three
-    //
-    // Neither of those reads `overrideReason`. `REFER_TO_UNITS` and `ACCEPT_IN_PRINCIPLE` consume
-    // no bed — an accept in principle is explicitly a promise made BEFORE one exists — so skipping
-    // the physical gates there is correct rather than merely tolerated.
-    //
-    // ⚠️ SO THE THING TO PRESERVE IS THOSE TWO GUARDS AND THEIR ORDER, NOT THIS GATE LIST. The edit
-    // that breaks it is a tidy-up: folding the bed and specialling checks into the eligibility
-    // verdict, which already computes both. That refactor looks like a simplification, leaves
-    // `SUITABILITY_GATES` untouched, and silently lets a typed reason create a bed.
-    // `tests/ward-physical-facts-are-not-overridable.test.ts` is what goes red when it happens —
-    // it asserts the refusals by their exact message, so it cannot pass on some other refusal.
-    //
-    // `referralAcceptanceRefusal` below needs none of this: it computes the verdict first and finds
-    // unbypassable gates by ABSENCE from `SUITABILITY_GATES`, so it fails closed on its own.
+    // Preserve those guards and their order. Folding them into the eligibility verdict would
+    // silently let a typed reason create a bed;
+    // `tests/ward-physical-facts-are-not-overridable.test.ts` goes red if that happens.
     return null;
   }
   // `verdict` was already computed above, before the gender check — not recomputed here.
@@ -1176,25 +912,15 @@ function eligibilityRefusal(
 }
 
 /**
- * P1-3 (Ward Lead ruling, 17 September 2026): "a gender corrected after placement is never
- * re-checked". `RECORD_MOVEMENT_GENDER` can change `movement.gender` at any open stage, but until
- * this function existed nothing re-asked the two gender judgements — `gender_designation` (no
- * override path, `eligibilityRefusal` above) and the `Non-binary` placement-record check
- * (`GENDER_PLACEMENT_REFUSAL`) — against the unit a movement is ALREADY held or accepted at.
- * `PULL_PATIENT`, `HANDOVER_READY`, `TRANSPORT_ACCEPTED` and `PATIENT_COLLECTED` all call this
- * before advancing; `PATIENT_ARRIVED` deliberately never does — blocking an arrival strands a
- * patient already in transit, and the coordinator notice `RECORD_MOVEMENT_GENDER` raises for a held
- * movement (see that case below) is the safeguard from `moving` onward.
+ * P1-3 (Ward Lead ruling): a gender corrected after placement is re-checked. Re-asks
+ * `gender_designation` (no override path) and the Non-binary placement-record check
+ * (`GENDER_PLACEMENT_REFUSAL`) against the unit a movement is already held or accepted at. Called
+ * by `PULL_PATIENT`, `HANDOVER_READY`, `TRANSPORT_ACCEPTED` and `PATIENT_COLLECTED`; never by
+ * `PATIENT_ARRIVED`, since blocking an arrival strands a patient in transit (the coordinator notice
+ * from `RECORD_MOVEMENT_GENDER` covers that).
  *
- * Checks ONLY these two judgements, never the full `SUITABILITY_GATES` list `eligibilityRefusal`
- * covers — a movement's held unit already passed cohort/security/sex_mix/etc. once, and a gender
- * correction has no bearing on any of them; re-litigating the whole list here would let an
- * unrelated world-fact change (a bed count going stale, say) block a forward step this brief never
- * asked to re-gate.
- *
- * Returns `null` when the held unit still suits, or one of the two actionable refusals above —
- * never `eligibilityRefusal`'s own front-door wording, which is misleading here: nothing about
- * accepting THIS unit again fixes it (see `GENDER_NO_LONGER_SUITS_REFUSAL`'s own doc comment).
+ * Checks only these two judgements, not the full `SUITABILITY_GATES` list. Returns `null` when the
+ * held unit still suits.
  */
 export function heldUnitGenderRefusal(
   state: Pick<WardFlowState, "units">,
@@ -1218,40 +944,16 @@ export function heldUnitGenderRefusal(
 }
 
 /**
- * The front door's half of the same ruling `eligibilityRefusal` implements for the placement path.
+ * `referralAcceptanceRefusal` below is the front door's half of the `eligibilityRefusal` ruling: a
+ * judgement about the patient is overridable by a named human with a recorded reason; a fact about
+ * the world is not.
  *
- * ⚠️ IT EXISTS BECAUSE THE TWO PATHS HELD OPPOSITE POLICIES. Until now `ACCEPT_REFERRAL` rejected
- * on the FIRST failing gate of any kind, so a referral every ward failed on one judgement gate
- * could not be accepted by anybody, with any reason, ever — while the coordinator's placement path
- * checked no judgement gate at all. One end refused everything, the other end refused nothing.
+ * Fail-closed by construction: a gate is overridable only by appearing in `SUITABILITY_GATES`, so
+ * any new gate refuses outright by default. The non-overridable set is derived (`ELIGIBILITY_GATES`
+ * minus `SUITABILITY_GATES`); do not transcribe it here.
  *
- * The rule both ends now hold: a judgement about the patient is overridable by a named human with
- * a recorded reason; a fact about the world is not. No reason typed into a form creates a bed.
- *
- * ⚠️ FAIL-CLOSED BY CONSTRUCTION, and this is the load-bearing line: a gate is overridable ONLY by
- * appearing in `SUITABILITY_GATES`. Everything else refuses outright, and tomorrow that is
- * automatically any gate someone adds to `referralEligibility` without thinking about this file.
- * The default for an unclassified gate is "no reason gets past this", never "anyone with a dropdown
- * can".
- *
- * 🔴 THIS SENTENCE USED TO NAME THE SET — "today that is `allocatable_bed`, `capacity_freshness`
- * and `specialling`" — AND IT WAS WRONG ON TWO OF THREE BY 2026-09-07. `capacity_freshness` was
- * moved INTO `SUITABILITY_GATES` by owner ruling on 2026-09-02, in an edit eighty lines above this
- * one that carries its own long comment; and `prior_decline` was never listed here at all. The
- * true set today is `allocatable_bed`, `prior_decline` and `specialling` — but it is stated here
- * only to say that it is DERIVED, never transcribed:
- *
- *     ELIGIBILITY_GATES (12, ward-eligibility.ts)  minus  SUITABILITY_GATES (9, above)
- *
- * ⚠️ A HAND-WRITTEN COPY OF A SET THAT LIVES IN TWO ARRAYS IS A THIRD SOURCE OF TRUTH, and this
- * one went stale in the same file, in the same week, as the edit that invalidated it. Compute it;
- * do not quote it. And do not restore a literal list here to be helpful — that is what this note
- * exists to prevent.
- */
-/**
- * B1 (site review, 12 Oct 2026): a ward answering a referral names itself with `actingUnitId`, and
- * is refused when the ward it answers for is not its own. The coordinator acts for any ward and
- * sends none. A ward that sends none keeps the older behaviour (the route sends one today).
+ * B1: a ward answering a referral names itself with `actingUnitId` and is refused when that ward is
+ * not its own. The coordinator acts for any ward and sends none.
  */
 function wardActingUnitRefusal(
   event: Extract<WardFlowEvent, { type: "ACCEPT_REFERRAL" | "DECLINE_REFERRAL" }>,
@@ -1265,8 +967,8 @@ function wardActingUnitRefusal(
 }
 
 /**
- * A1-1, A1-3, S2-11: a ward caller answering/pulling/declining a movement names itself with
- * `actingUnitId`, and is refused when the unit it answers for is not its own.
+ * A1-1, A1-3, S2-11: a ward caller acting on a movement names itself with `actingUnitId`, and is
+ * refused when that unit is not its own.
  */
 function wardActingMovementRefusal(
   event: Extract<WardFlowEvent, { type: "ACCEPT_IN_PRINCIPLE" | "PULL_PATIENT" | "DECLINE" }>,
@@ -1284,10 +986,8 @@ function referralAcceptanceRefusal(
   now: Instant,
 ): { refusal: string; overrideApplied?: undefined } | { refusal: null; overrideApplied: boolean } {
   const verdict = referralEligibility(referral, destination, unit, now);
-  // ⚠️ `overrideApplied: false` on a CLEAN verdict even when the event carries a reason, so a
-  // reason selected against a ward that turned out to be eligible is not filed as an override.
-  // A record saying a clinical rule was bent, on an acceptance where none was, is a false entry in
-  // the only place anyone would later go looking for the real ones.
+  // `overrideApplied: false` on a clean verdict even with a reason, so no false override record is
+  // written.
   if (verdict.eligible) return { refusal: null, overrideApplied: false };
   const failed = verdict.gates.filter((gate) => !gate.pass);
 
@@ -1334,6 +1034,44 @@ function replaceBedRelease(state: WardFlowState, releaseId: string, next: BedRel
   return {
     ...state,
     bedReleases: state.bedReleases.map((candidate) => (candidate.id === releaseId ? next : candidate)),
+  };
+}
+
+/**
+ * Keeps the stay's own discharge decision in step with its bed release. Screens that read the stay
+ * (the bed board's shift list, the patient card, the discharge board) read
+ * `Admission.dischargeConfirmedAt`; the ward's Confirm and Revert act on the release. Without this,
+ * one discharge carried two answers (release gate, 15 Oct 2026).
+ *
+ * Only the ward is named as the confirmer: "Ward manager" is the one label `DISCHARGE_ROLE_LABELS`
+ * holds, so a coordinator's confirmation records the time with the role left unrecorded rather
+ * than naming the wrong person. The change moves the stay's discharge revision, so an edit made
+ * against the record as it stood before is refused as stale.
+ */
+function withAdmissionDischargeDecision(
+  state: WardFlowState,
+  admissionId: string,
+  at: Instant | null,
+  role: WardFlowRole,
+): WardFlowState {
+  const admission = findAdmission(state, admissionId);
+  if (!admission) return state;
+  // A stay already confirmed keeps its own confirmation time: the release agrees with it, so
+  // restamping would rewrite when the discharge was decided. A revert still clears it, because the
+  // ward has said the discharge is no longer decided.
+  if (at !== null && admission.dischargeConfirmedAt !== null) return state;
+  if (at === null && admission.dischargeConfirmedAt === null) return state;
+  const withStay = replaceAdmission(state, admissionId, {
+    ...admission,
+    dischargeConfirmedAt: at,
+    dischargeConfirmedBy: at !== null && role === "ward" ? "Ward manager" : null,
+  });
+  return {
+    ...withStay,
+    dischargeRevisions: {
+      ...withStay.dischargeRevisions,
+      [admissionId]: (state.dischargeRevisions[admissionId] ?? 0) + 1,
+    },
   };
 }
 
@@ -1407,53 +1145,22 @@ function movementSourceAdmission(state: WardFlowState, movement: Movement): Admi
 }
 
 /**
- * REFUNDS A HELD BED AND DELETES THE `Admission` `PULL_PATIENT` CREATED FOR IT (if one exists) — the
- * exact inverse of `PULL_PATIENT`'s own writes (ruling P4-1), extracted so `RELEASE_PULL` and, since
- * WLQ-38 (owner, 2026-09-15), a post-acceptance `WITHDRAW_REFERRAL` and `STOP_TRANSPORT` all reuse
- * ONE implementation rather than three copies drifting apart. See `RELEASE_PULL`'s own case, which
- * carried this logic alone until this extraction, for the full history of the phantom-occupant
- * defect this guards against.
+ * `releasePulledBedAndAdmission` below refunds a held bed and deletes the `Admission`
+ * `PULL_PATIENT` created for it: the exact inverse of `PULL_PATIENT`'s writes (ruling P4-1), shared
+ * by `RELEASE_PULL`, a post-acceptance `WITHDRAW_REFERRAL` and `STOP_TRANSPORT` (WLQ-38).
  *
- * ⚠️ **THE REFUND IS GATED ON `movement.stage` OR `movement.admissionId` — NEVER ON EITHER ALONE.**
- * Gating on `admissionId` ALONE was this function's first draft, and a seeded fixture caught it
- * immediately: `admissionId` is `undefined` on every hand-authored seed movement at
- * `pulled`/`handover_ready`/`moving`, because those stages were AUTHORED rather than reached by
- * dispatching `PULL_PATIENT` — see that field's own doc comment. Gating the refund on `admissionId`
- * alone would silently skip it for every one of those, which is exactly the bed
- * `tests/ward-flow-reducer.test.ts`'s own `RELEASE_PULL` case caught going missing.
+ * A bed is held when the stage is `pulled`, `handover_ready` or `moving`, OR `admissionId` is set;
+ * never either alone. Seeded movements authored at those stages carry no `admissionId`, and
+ * `STEP_BACK_STAGE` back to `accepted_awaiting_bed` keeps both the admission and the bed (rulings
+ * E/F). Gating on either half alone leaks a bed or leaves a phantom occupant.
+ * `RECORD_EXAMINATION`'s `holdsBed` uses the same rule.
  *
- * 🔴 GATING ON `movement.stage` ALONE IS ALSO WRONG — closed by the 2026-09-16 fix round in this
- * function's body. `STEP_BACK_STAGE` from `pulled` to `accepted_awaiting_bed` keeps `admissionId` and
- * the reserved bed by design (rulings E/F — see that case's own comment), so a movement stepped back
- * to `accepted_awaiting_bed` still holds both while its stage no longer says `pulled` or later. A
- * caller reaching this helper from that stage with `stage` as the ONLY gate returned early and
- * cleared `admissionId` on the movement without ever refunding the bed here — a leaked bed and an
- * orphaned admission record, the exact PHANTOM OCCUPANT shape this helper exists to guard against.
+ * A no-op when neither half holds, or when the accepted unit is missing, so callers may call it
+ * unconditionally. Callers clear `movement.admissionId` themselves; this only touches `units`,
+ * `admissions` and `dischargeRevisions`.
  *
- * So the rule actually enforced is the OR the function body reads: `stage === "pulled"` or
- * `"handover_ready"` or `"moving"`, OR `admissionId !== undefined`. `RECORD_EXAMINATION`'s own inline
- * `holdsBed` check reads the identical OR for exactly this reason; this function matches it rather
- * than inventing a third rule.
- *
- * A no-op ONLY when NEITHER half of that OR holds — the movement's stage is `accepted_awaiting_bed`
- * or earlier AND `admissionId` is undefined, the ordinary case for a movement whose bed was never
- * pulled. `accepted_awaiting_bed` is therefore NOT unconditionally a no-op: a movement stepped back
- * to it from `pulled` still holds its bed and still gets refunded here. Every caller may still pass
- * this unconditionally rather than checking first — the no-op is a property of the movement passed
- * in, not something a caller must pre-filter for. Also a no-op when `movement.acceptedUnitId` or the
- * unit it names is missing, which the three reducer cases above each already guard against reaching
- * in the first place, but is repeated here defensively rather than assumed of every future caller.
- * The admission is deleted only when `movement.admissionId` actually names one.
- *
- * Callers remain responsible for clearing `movement.admissionId` on the MOVEMENT itself — this
- * function only touches `state.units`, `state.admissions` and `state.dischargeRevisions`, the same
- * split `RELEASE_PULL`'s own case already kept between its unit/admission writes and its movement
- * write.
- */
-/**
- * Whether a movement holds a reserved bed, by the same rule `releasePulledBedAndAdmission` uses.
- * A seeded journey hand-authored as far as `pulled` or later carries no `admissionId` (fabricating
- * one would invent an occupant), so `admissionId` alone cannot answer this (review finding S2-1).
+ * `movementHoldsBedByStage` answers the stage half: a seeded journey authored at `pulled` or later
+ * carries no `admissionId` (review finding S2-1).
  */
 function movementHoldsBedByStage(movement: Movement): boolean {
   return (
@@ -1466,16 +1173,8 @@ function movementHoldsBedByStage(movement: Movement): boolean {
 
 function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, now: Instant): WardFlowState {
   if (!movement.acceptedUnitId) return state;
-  // Fix round (2026-09-16 audit): this used to decide a bed was held from `movement.stage` alone.
-  // `STEP_BACK_STAGE` from `pulled` to `accepted_awaiting_bed` keeps `admissionId` and the reserved
-  // bed by design (rulings E/F — see that case's own comment), so a movement stepped back to
-  // `accepted_awaiting_bed` still holds both while its stage no longer says "pulled" or later. A
-  // caller reaching this helper from that stage (e.g. `WITHDRAW_REFERRAL`, `REFER_TO_COMMUNITY_TEAM`)
-  // returned early and cleared `admissionId` without ever refunding the bed — a leaked bed and an
-  // orphaned admission record, the same PHANTOM OCCUPANT shape this helper's own stage-based fix
-  // already closed for the pull-then-release-then-repull path. `RECORD_EXAMINATION`'s own inline
-  // `holdsBed` check already reads `stage === "pulled" || admissionId !== undefined` for exactly
-  // this reason; this helper now matches it.
+  // Held by stage OR `admissionId`: a movement stepped back to `accepted_awaiting_bed` still holds
+  // its bed and admission (rulings E/F). Same rule as `RECORD_EXAMINATION`'s `holdsBed`.
   const bedCurrentlyHeld =
     movement.stage === "pulled" ||
     movement.stage === "handover_ready" ||
@@ -1484,23 +1183,11 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
   if (!bedCurrentlyHeld) return state;
   const unit = findUnit(state, movement.acceptedUnitId);
   if (!unit) return state;
-  /*
-   * Item 11, owner answer 11 (17 September 2026) — the bed kind `PULL_PATIENT` took is restored
-   * here, never guessed. `admission.bedKind` is the ONLY record of which kind was taken (see
-   * `PULL_PATIENT`'s own admission literal, and `Admission.bedKind`'s own doc comment); read BEFORE
-   * the admission is filtered out below, so this is the sole point that can still see it.
-   *
-   * ⚠️ **RESIDUAL, STATED RATHER THAN GUESSED, NOT CLOSED BY THIS TASK.** Two shapes read `undefined`
-   * here and both refund `allocatable` alone, exactly as this function did before this change:
-   *   1. `movement.admissionId === undefined` — a hand-authored seed movement at
-   *      `pulled`/`handover_ready`/`moving` (see this function's own doc comment above), which was
-   *      never given a bed by dispatching `PULL_PATIENT` at all, so there is no admission to read a
-   *      kind from.
-   *   2. `movement.admissionId` resolves to a SEEDED admission — every admission in
-   *      `ward-admissions-seed.ts` predates this field and carries no `bedKind`.
-   * Neither case can say whether the bed released was one of the locked ones, so `allocatableLocked`
-   * is left untouched for both — an honest "cannot restore what was never recorded", not a defect
-   * this task's scope covers.
+  /**
+   * Item 11 (owner answer 11): restore the bed kind `PULL_PATIENT` took. `admission.bedKind` is the
+   * only record of it, so read it before the admission is filtered out below. A hand-authored seed
+   * movement with no `admissionId`, or a seeded admission without `bedKind`, cannot say whether the
+   * bed was locked, so `allocatableLocked` is left untouched for those.
    */
   const heldAdmission =
     movement.admissionId === undefined
@@ -1570,10 +1257,8 @@ function nextReferralId(sequence: number): MovementId {
 }
 
 /**
- * Fix round 2 (P2). Mirrors `nextReferralId` above, but from `leaveBedSequence` rather than
- * `state.leaveBeds.length` — see that field's own doc comment on `WardFlowState` for why the
- * length-based id `RECORD_LEAVE_BED` used to derive collides once `END_LEAVE_BED` has removed an
- * earlier entry.
+ * Mirrors `nextReferralId`, but from `leaveBedSequence`, never `leaveBeds.length` (see that field
+ * on `WardFlowState`).
  */
 function nextLeaveBedId(sequence: number): string {
   // "WL-9NN" mirrors FLAG_BED_RELEASE's own "WR-9NN" — visibly distinct from the hand-authored
@@ -1582,10 +1267,8 @@ function nextLeaveBedId(sequence: number): string {
 }
 
 /**
- * Mirrors `nextReferralId`/`nextLeaveBedId` above — derived from `frontDoorReferralSequence`,
- * never from `state.referrals.length` (see that field's own doc comment on `WardFlowState`).
- * "RF-9NN" mirrors the fixture's own "RF-00N" ids (`ward-movements.ts`) and the "9" prefix every
- * other runtime-created id in this reducer uses, visibly distinct from the hand-authored fixture.
+ * Derived from `frontDoorReferralSequence`, never `referrals.length`. "RF-9NN": the "9" prefix
+ * marks a runtime-created id, distinct from the fixture's "RF-00N".
  */
 function nextFrontDoorReferralId(sequence: number): string {
   return `RF-9${String(sequence).padStart(2, "0")}`;
@@ -1594,38 +1277,29 @@ function nextFrontDoorReferralId(sequence: number): string {
 // ── Communication addendum (docs/ward-flow/plans/2026-09-1x-communication-addendum.md) ──────────
 
 /**
- * Mirrors `subjectId` above, but reads an already-built `Notice.about` rather than an event: a
- * movement's id first, then a referral's, then a unit's, then a patient's, and `"none"` only when a
- * notice names none of the four — which nothing raised below ever does. Kept separate from
- * `subjectId` rather than folded into it, because that function reads an EVENT and this one reads a
- * DECISION already made about a notice; merging them would make a future event-shaped change to one
- * silently reach the other.
+ * Like `subjectId`, but reads an already-built `Notice.about` (movement, referral, unit, then
+ * patient). Kept separate because `subjectId` reads an event and this reads a decision about a
+ * notice.
  */
 function noticeSubject(about: Notice["about"]): string {
   return about.movementId ?? about.referralId ?? about.unitId ?? about.patientId ?? "none";
 }
 
 /**
- * A unit's display name for a notice's `sentence`, falling back to its bare id rather than a
- * neighbour or an invented label — the same conservative-failure shape `ward-place.ts`'s own doc
- * comment states for exactly this reason: a notice naming the WRONG ward is worse than one naming an
- * id a reader can still search for.
+ * A unit's display name for a notice, falling back to its bare id: a notice naming the wrong ward
+ * is worse than one naming a searchable id.
  */
 function unitName(state: WardFlowState, unitId: string): string {
   return findUnit(state, unitId)?.name ?? unitId;
 }
 
 /**
- * STABLE, NON-RANDOM, DERIVED FROM `(subject, kind, count)` — the same discipline `makeRejection`
- * above holds `Rejection.id` to, and for the same reason: a module-level counter would make two
- * calls with an identical `(state, event)` mint two different notice ids, breaking the reducer's
- * purity (communication addendum §1.1's own id rule; `Notice`'s own doc comment on `ward-model.ts`).
+ * Stable, non-random, derived from `(subject, kind, count)`, like `makeRejection`, to keep the
+ * reducer pure.
  *
- * `count` is `state.notices.length` **before** any notice raised by the current event is appended —
- * read once by the caller and passed in, rather than read from a state this function does not
- * receive. A decision that raises two notices (`ACCEPT_REFERRAL`, `CANCEL_TRANSPORT`) gives each
- * addressee its OWN `NoticeKind` for exactly this reason: two notices built from the same `count`
- * and the same `(subject, kind)` pair would collide and silently drop one.
+ * `count` is `state.notices.length` before the current event's notices are appended. An event
+ * raising two notices gives each addressee its own `NoticeKind`, or the ids would collide and one
+ * would be dropped.
  */
 function makeNotice(
   now: Instant,
@@ -1647,25 +1321,14 @@ function makeNotice(
 }
 
 /**
- * THE ONE GATE EVERY NOTICE PASSES THROUGH BEFORE IT REACHES `state.notices` — and where `demo` is
- * refused, per the addendum's §1.2: *"`demo` is a role in that union and must never receive a
- * notice… refuse it in the reducer, not in a screen."* `WardFlowRole` is exhaustive and
- * `Addressee.role` is typed to it, so nothing stops a future call site constructing one that names
- * `demo`; this is the one place that mistake is refused structurally rather than trusted to never
- * happen at every call site separately.
+ * The one gate every notice passes through before reaching `state.notices`, and where `demo` is
+ * refused (addendum §1.2: "`demo` … must never receive a notice… refuse it in the reducer, not in a
+ * screen").
  *
- * Silently drops a `demo`-addressed notice rather than rejecting the whole event: the underlying
- * decision (a bed pull released, a referral declined, a transport cancelled) is real and already
- * recorded on the movement or referral itself — only the notice, a courtesy on top of a decision
- * that already happened, is refused. Never touches `state.rejections`: `demo` is a perfectly fine
- * actor for other events, and reaching this function is not a validity failure of the dispatch.
- *
- * Fix round 1 (review finding, Important 1): exported so `tests/ward-notices.test.ts` can hand this
- * gate a `demo`-addressed `Notice` directly and prove the drop branch is actually taken. No call
- * site can construct one through the public `wardFlowReducer` API — every literal `to.role` built
- * by the six cases above is `"ed"`/`"ward"`/`"officer"`, and `EVENT_ROLE` excludes `demo` as the
- * ACTING role for all six — so this is the only way to exercise the addressee-side filter rather
- * than the (already-covered, different) acting-role gate.
+ * Silently drops a `demo`-addressed notice rather than rejecting the event: the underlying decision
+ * is real and already recorded; only the courtesy notice is refused. Never touches
+ * `state.rejections`. Exported so `tests/ward-notices.test.ts` can exercise the drop branch
+ * directly, since no public dispatch can construct such a notice.
  */
 export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
   const notifiable = notices.filter((notice) => notice.to.role !== "demo");
@@ -1674,26 +1337,13 @@ export function appendNotices(state: WardFlowState, notices: readonly Notice[]):
 }
 
 /**
- * WHO REFERRED THIS FRONT-DOOR REQUEST INTO THE NETWORK, RESOLVED TO A ROLE AT A PLACE — or
- * `undefined`, which is the ordinary answer for six of `REFERRAL_SOURCES`' seven members.
+ * Who referred this front-door request, resolved to a role at a place, or `undefined`. Only
+ * `ed_medical` resolves (to `ed` at the origin site's emergency department, which
+ * `RECEIVE_REFERRAL` guarantees exists).
  *
- * `Referral.source` names the CHANNEL a request came through (`ward-model.ts`, that field's own doc
- * comment) and carries no further identity; `Referral.originSiteCode` names the HOSPITAL it came
- * from, never a department. Only `ed_medical` resolves to both a role this application has (`ed`)
- * and a specific, safely-scoped place: `case "RECEIVE_REFERRAL"` above already REFUSES an
- * `ed_medical` referral whose origin site holds no emergency department, so every `ed_medical`
- * referral this function ever sees is guaranteed to resolve.
- *
- * ⚠️ **THE OTHER SIX SOURCES ARE LEFT UNRESOLVED ON PURPOSE, NOT AN OVERSIGHT.**
- * `community`/`crisis_service`/`ambulance`/`inter_hospital`/`gp`/`psychiatric_ward` each name a channel this
- * application has no seat for, or — `community` — a channel with no SPECIFIC team recorded on the
- * referral's own origin (only a DESTINATION arm carries a `teamName`, and that names where THIS
- * referral is going, never where it came from). Guessing a `placeId` here would either address a
- * decline's reason to a community team that never sent this referral, or address it to nobody who
- * could actually read it — and `FD-23` (communication addendum §1.3) asks for a decline to reach the
- * referrer's OWN team and no other. A wrong or invented placeId is exactly the leak that rule exists
- * to prevent, so this degrades to no notice at all rather than guess — the same conservative-failure
- * discipline `ward-place.ts` states for an id it cannot resolve: absent is safer than wrong.
+ * The other sources are left unresolved on purpose: none names a specific team this application can
+ * address, and FD-23 (addendum §1.3) requires a decline to reach the referrer's own team and no
+ * other. Absent is safer than wrong.
  */
 function referralReferrer(referral: Referral): Addressee | undefined {
   if (referral.source !== "ed_medical") return undefined;
@@ -1710,25 +1360,20 @@ function departAdmission(
   leavingDestination: LeavingDestination,
   role: WardFlowRole,
 ): WardFlowState {
-  // Owner decision 2026-09-25: a bed release is a named patient's discharge, so the pairing is by
-  // name, never by ward-wide counts. `releaseAlreadyIncremented` is true only for a state in which a
-  // release for THIS admission was completed before they left. The reducer can no longer produce that
-  // (RELEASE_BED refuses while the person is still in the bed) and storage validation refuses it. If
-  // it is ever met, NOT raising the figures again is the conservative answer: it can under-state free
-  // beds, and never over-state them.
+  // Owner decision: a bed release is a named patient's discharge, so pairing is by admission, never
+  // by ward-wide counts. `releaseAlreadyIncremented` should be unreachable (RELEASE_BED refuses
+  // while the person is in the bed, and storage validation refuses it); if met, not raising the
+  // figures again can only under-state free beds.
   const liveRelease = state.bedReleases.find((r) => r.admissionId === admission.id && r.state !== "discharged");
   const releaseAlreadyIncremented = state.bedReleases.some(
     (r) => r.admissionId === admission.id && r.state === "discharged",
   );
 
   // Item 11 / WFA-003: `PULL_PATIENT` decrements `allocatableLocked` when the bed taken was locked;
-  // departure must restore it. `RELEASE_BED` never touches that field, so the restore runs on both
-  // branches — including when empty/allocatable were already raised by a prior release.
+  // departure restores it on both branches, since `RELEASE_BED` never touches that field.
   //
-  // S2-3: When a ward took an arrival while full (unit.empty.value <= 0), it logged an entry in
-  // arrivalCapacityConflicts. A departure from this unit resolves one over-capacity arrival
-  // (either specifically for this admission if it was the over-capacity arrival, or the earliest
-  // pending conflict for the unit), so empty/allocatable beds do not falsely increment above true capacity.
+  // S2-3: a departure resolves one over-capacity arrival (this admission's, or the unit's earliest
+  // pending conflict), so bed figures do not rise above true capacity.
   const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
   const matchingConflictIndex =
     unit.arrivalCapacityConflicts?.findIndex(
@@ -1772,24 +1417,19 @@ function departAdmission(
   // into history, the same way its bed release loses its blocker below.
   const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination, blockReason: null };
   const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
-  // Owner ruling 2026-09-25: a leave bed belongs to one stay. Leaving ends it in the same write, so
-  // "on leave" never counts a bed whose occupant has gone. No bed figure moves here: the figures
-  // above already moved once, for the leaving itself.
+  // Owner ruling: a leave bed belongs to one stay, so leaving ends it in the same write. No bed
+  // figure moves here.
   const withPerson: WardFlowState = departedState.leaveBeds.some((bed) => bed.admissionId === admission.id)
     ? { ...departedState, leaveBeds: departedState.leaveBeds.filter((bed) => bed.admissionId !== admission.id) }
     : departedState;
-  // A4-24 (owner decision, Josh, 13 October 2026): a vacated bed is not instantly Ready. It goes to
-  // "Being made ready" (`preparing: true` on this stay's discharged release) and one tap of Ready
-  // (`SET_BED_PREPARATION` with `preparing: false`, ward or coordinator) makes it offerable again.
-  // This supersedes the Q4 note that preparation begins only by a separate event. When the bed
-  // figures did not rise (already raised, or an arrival still awaiting capacity) no bed came free
-  // here, so nothing is marked.
+  // A4-24 (owner decision): a vacated bed goes to "Being made ready" (`preparing: true` on the
+  // discharged release) until one tap of Ready (`SET_BED_PREPARATION`, `preparing: false`). When no
+  // bed came free here, nothing is marked.
   const bedCameFree = !releaseAlreadyIncremented && !arrivalAwaitingCapacity;
   if (!liveRelease) {
     if (!bedCameFree) return withPerson;
-    // A departure nobody flagged in advance still vacates a bed: record its release, already
-    // discharged, so the bed has somewhere to carry "Being made ready". Same id scheme as
-    // FLAG_BED_RELEASE; the array only ever grows, so its length is a collision-free source.
+    // A departure nobody flagged still vacates a bed: record its release, already discharged, to
+    // carry "Being made ready". Same id scheme as FLAG_BED_RELEASE.
     const vacated: BedRelease = {
       id: `WR-9${String(withPerson.bedReleases.length).padStart(2, "0")}`,
       unitId: unit.id,
@@ -1859,13 +1499,9 @@ function protectedRefusal(
 }
 
 /**
- * Whether a PATIENT RECORD's free-text legal status is involuntary, for the two discharge guards
- * below. `Patient.legalStatus` is free text: the seed writes "Involuntary patient (recorded)" (and
- * "… — Form 1A/3A") while these guards compared only against the movement vocabulary
- * ("Involuntary inpatient"), so thirteen seeded involuntary patients could be discharged to the
- * community with no refusal (live walkthrough code-read, 25 Sept 2026; Josh: fix the mismatch).
- * Deliberately wide: any status that starts with "Involuntary", plus "Detained awaiting
- * examination". Refusing a discharge that needs a revocation first is the conservative failure.
+ * Whether a patient record's free-text legal status is involuntary, for the two discharge guards
+ * below. Deliberately wide: anything starting "Involuntary", plus "Detained awaiting examination".
+ * Refusing a discharge that needs a revocation first is the conservative failure.
  */
 function patientRecordIsInvoluntary(legalStatus: string | undefined): boolean {
   if (legalStatus === undefined) return false;
@@ -1898,10 +1534,8 @@ function movementInTransit(movement: Movement): boolean {
 
 /**
  * The journey that makes a discharge unsafe: the stay's own inbound movement, or an open journey
- * LEAVING this stay (ward-to-ward or repatriation) that is on the road. `dischargeMovement` alone
- * finds only the inbound one, so a patient collected for a transfer could be discharged from the
- * sending ward, after which the receiving ward's arrival is refused for want of an occupied source
- * stay and the journey can never close (review finding S1-1, 8 October 2026).
+ * leaving this stay that is on the road. Otherwise a patient collected for a transfer could be
+ * discharged and the receiving ward's arrival could never close (review finding S1-1).
  */
 function dischargeBlockingTransit(state: WardFlowState, admission: Admission): Movement | undefined {
   const linked = dischargeMovement(state, admission);
@@ -2462,16 +2096,9 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   if (event.type !== "RESET_SCENARIO" && event.type !== "SET_SCENARIO") {
     next = withStepUndo(state, advanceResourceRevisions(state, next), event);
   }
-  // 🔴 `next.movements !== state.movements` ADDED here (Y4 privacy fix round 2, P3 finding 6): a
-  // genuine reseed (`seedWardFlowStateAt`) always produces a FRESH `movements` array, while every
-  // `reject()` path — including `case "SET_SCENARIO"`'s own new scenario-membership check just
-  // below — spreads `state` unchanged (`{...state, rejections: [...]}`), so `movements` keeps its
-  // ORIGINAL reference. Before this, the condition checked ROLE alone: while role was the only gate
-  // either case ever had, that was equivalent to "accepted", but `SET_SCENARIO` gaining its own
-  // internal refusal (an invalid `scenario`) broke the equivalence — a role-valid, scenario-invalid
-  // dispatch would have incremented `worldGeneration` on top of a REJECTED (not reseeded) state,
-  // which would in turn have told `trackWardFlowTypedTextDispatch` (`ward-flow-provider.tsx`) a
-  // genuine reseed happened when nothing was reseeded, wrongly clearing a live typed-text lock.
+  // `next.movements !== state.movements` (Y4 privacy fix): only a genuine reseed produces a fresh
+  // `movements` array; a rejected `SET_SCENARIO` keeps the original reference. Without it, a
+  // refused dispatch would bump `worldGeneration` and wrongly clear the provider's typed-text lock.
   if (
     (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") &&
     EVENT_ROLE[event.type].includes(event.role) &&
@@ -2740,27 +2367,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       decision.reasonCode = "none";
       return replaceAdmission(state, admission.id, updated);
     }
-    // A reset re-anchors onto the demo's CURRENT now rather than handing back a fixture authored
-    // at NOW_ANCHOR. Without this, a reset forty minutes into a demonstration returns predictions
-    // that are already lapsed against a clock that has moved on - the exact defect Task 1 exists to
-    // remove, reappearing on the one control a presenter reaches for when something looks wrong.
-    //
-    // `event.now` is the provider's now and already includes `clockOffsetMinutes`, which a reset
-    // clears. Subtracting it lands the seed on the now the board will show AFTER the reset rather
-    // than the one it showed before, so the visible clock does not jump.
+    // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
+    // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
+    // which a reset clears; subtracting it keeps the visible clock from jumping.
     case "ADD_PATIENT": {
-      /**
-       * The whole case, and it is short on purpose: adding a patient links to nothing.
-       *
-       * No movement, no referral, no unit, no admission. That is what makes the owner's flow
-       * possible - somebody searched, nobody came up, and this is the person who did not exist yet.
-       * A version of this that required any of those would be the too-late record wearing a
-       * different name.
-       */
-      // Membership-checked, never trusted from the type alone — the same discipline
-      // `RECEIVE_REFERRAL` applies to `sex` against `SEXES`. `event.gender` is optional and
-      // omitting it is the ordinary case (see the event's own doc comment); this only refuses a
-      // caller that supplied something outside the two the owner's ruling permits.
+      // Adding a patient links to nothing (no movement, referral, unit or admission): somebody
+      // searched, nobody came up, and this is the person who did not exist yet.
+      //
+      // `event.gender` is optional; membership-checked rather than trusted from the type.
       if (event.gender !== undefined && !GENDERS.includes(event.gender)) {
         return reject(state, event, "ADD_PATIENT gender must be chosen from GENDERS");
       }
@@ -2784,9 +2398,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         givenName: event.givenName,
         familyName: event.familyName,
         dateOfBirth: event.dateOfBirth,
-        // Spread-in only when supplied — "not yet recorded" per owner ruling 2026-09-09/2026-09-10
-        // is the KEY absent, never present-and-`undefined`, the same discipline `legalForm`'s
-        // `dueAt` uses above for the same reason: the two shapes must not silently mean one thing.
+        // Spread in only when supplied: "not yet recorded" is the key absent, never
+        // present-and-`undefined`.
         ...(event.gender === undefined ? {} : { gender: event.gender }),
         ...(suburb === undefined ? {} : { suburb }),
         // v10 pass 2: when the record was added, so Add patient can count "Added today".
@@ -2799,15 +2412,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR);
 
     case "SET_SCENARIO": {
-      // Y4 privacy fix round 2, P3 finding 6: `event.scenario` used to be passed straight through
-      // with no runtime check at all — trusted on `WardScenario`'s type alone, the same
-      // "union-typed (compile-time only)" gap this codebase already names for `legalStatus` /
-      // `waitingOn` / `to` elsewhere (see `ward-flow-persistence-classification.ts`'s own comment).
-      // A caller off the type system (an untyped script, a malformed dispatch) could store any
-      // string as `state.scenario`, and `isValidStoredWardFlowState` (`ward-flow-provider.tsx`) used
-      // to restore it unchecked too. Membership-checked here against the same `WARD_SCENARIOS` list
-      // the restore-side check now reads, so the two can never silently disagree about what counts
-      // as a real scenario.
+      // Y4 privacy fix: membership-checked against `WARD_SCENARIOS`, the same list the restore-side
+      // check reads, rather than trusted from the type.
       if (!WARD_SCENARIOS.includes(event.scenario)) {
         decision.reasonCode = "invalid-payload";
         return reject(state, event, `SET_SCENARIO scenario must be chosen from WARD_SCENARIOS`);
@@ -2816,20 +2422,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "ADVANCE_CLOCK": {
-      // Audit follow-up 2026-09-25: `event.minutes` used to be added to the offset unchecked,
-      // so a non-finite (NaN/Infinity) or negative amount would corrupt every downstream
-      // deadline read off the clock. `finiteInstant` already does the finiteness check this
-      // reducer uses everywhere else; reused here rather than duplicating it.
+      // Refuse a non-finite or negative amount, which would corrupt every deadline read off the
+      // clock.
       if (finiteInstant(event.minutes) === null || event.minutes < 0) {
         return reject(state, event, "ADVANCE_CLOCK minutes must be a finite, non-negative number");
       }
       return { ...state, clockOffsetMinutes: state.clockOffsetMinutes + event.minutes };
     }
 
-    // Task 3 of the audit-wiring plan, 2026-09-16: the settings screen's "Save Configuration"
-    // dispatches this once, with the whole edited draft. `validateConfiguration` is the only
-    // door — an invalid payload is refused with a reason naming the field, never partially
-    // applied field by field.
+    // The settings screen dispatches this once with the whole draft. `validateConfiguration` is the
+    // only door: an invalid payload is refused naming the field, never partially applied.
     case "SET_CONFIGURATION": {
       const requested = validateConfiguration(event.payload);
       if (!requested) {
@@ -2849,100 +2451,38 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `no emergency department found for id ${event.edId}`);
       }
       const sequence = state.referralSequence + 1;
-      // The clinician chooses the form on the intake form; nothing here derives one from
-      // `legalStatus` any more (product owner, 2026-08-24: "avoid any hard rules now please …
-      // I can choose what option in the patient selection"). `null` means the clinician chose
-      // no form, which is a real answer and not a missing one.
-      //
-      // A code the picker cannot offer is REFUSED rather than quietly dropped: silently
-      // attaching no form would discard a choice the clinician did make, and inventing a form
-      // for an unknown code is the fabrication this model exists to prevent.
+      // The clinician chooses the form; nothing derives one from `legalStatus` (product owner:
+      // "avoid any hard rules now please"). `null` means the clinician chose no form, a real
+      // answer. A code the picker cannot offer is refused rather than dropped or invented.
       const chosenCode = event.draft.legalFormCode;
       const chosenForm =
         chosenCode === null ? undefined : SELECTABLE_LEGAL_FORMS.find((form) => form.code === chosenCode);
       if (chosenCode !== null && chosenForm === undefined) {
         return reject(state, event, `no selectable legal form found for code ${chosenCode}`);
       }
-      /*
-       * 🔴 THE ONLY PLACE THIS REDUCER WRITES A `dueAt` ON CREATION, AND BEFORE 2026-09-07 THERE
-       * WAS NONE.
+      /**
+       * The only place this reducer writes a `dueAt` on creation;
+       * `tests/ward-legal-form-due-at-capture.test.ts` keeps it so. Typed by the clinician, never
+       * computed: nothing here may turn a statutory interval into a deadline (owner: "just start a
+       * clock once the patient arrives to ED").
        *
-       * Every deadline in the application was authored into the seed fixture, so a patient a
-       * coordinator raised while actually using the prototype could never have a legal clock —
-       * and every deadline-reading path (the severity ordering, the delays clock) was reachable
-       * only by seeded patients. `tests/ward-legal-form-due-at-capture.test.ts` raises a referral
-       * through this reducer specifically so that stays fixed.
-       *
-       * ⚠️ TYPED BY THE CLINICIAN, NEVER COMPUTED. The product owner answered one question on
-       * 2026-09-07 — should the screen ASK for the due time — with "Yes". Deriving one from a
-       * statutory interval is a different thing he declined on 2026-08-23: "please can you leave
-       * the legal part and just start a clock once the patient arrives to ED. Keep it simple for
-       * now." Nothing here may ever turn a duration into a deadline.
-       *
-       * 🔴 **CORRECTED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`)
-       * — "SELECTED BY `kind`, NOT BY A SECOND LIST OF CODES" IS NOW FALSE.** Struck in place
-       * rather than deleted, because the reading that made it true is what a reader will otherwise
-       * re-derive. Until this date `capturedDueAt` kept `event.draft.legalFormDueAt` only when
-       * `chosenForm?.kind` was `"transport"` or `"transfer"` — 4A and 4C, the two the owner named
-       * on 2026-08-23 — and dropped it for every other code. Owner answer 1, 2026-09-17: the
-       * clinician types the expiry written on whichever form they hold, of any code, so this no
-       * longer reads `kind` (or any other classification) at all — whatever the caller supplied on
-       * `event.draft.legalFormDueAt` survives, for any `chosenForm`, exactly as typed.
-       * `RECORD_LEGAL_FORM_EXPIRY` (below) is the event that records a further typed expiry or
-       * extension after this initial capture. `tests/ward-legal-figure-guard.test.ts` no longer
-       * allowlists by code either — see that file's own header for the provenance property that
-       * replaced it.
+       * T2 (owner answer 1): the clinician types the expiry written on whichever form they hold, of
+       * any code, so this keeps whatever was supplied regardless of the form's `kind`.
+       * `RECORD_LEGAL_FORM_EXPIRY` records later expiries or extensions.
        */
       const capturedDueAt = event.draft.legalFormDueAt;
-      /*
-       * ⚠️ THE LINK BACK TO THE FRONT DOOR — this is the ONLY writer of `Movement.referralId`.
+      /**
+       * The link back to the front door: the only writer of `Movement.referralId` (owner ruling 8:
+       * a community referral and the journey the ED raises are two linked records). It resolves
+       * rather than stores: an id naming no referral is refused, since a plausible-looking id that
+       * joins to nothing typechecks and renders.
        *
-       * Owner ruling 8, 2026-09-01: a community team's referral to an emergency department and the
-       * journey that department subsequently raises are TWO LINKED RECORDS, not one. Nothing is
-       * invented here — every fact the movement needs already arrives on `event.draft` — so this
-       * writes an id and nothing else.
+       * The referral must name this department: a journey at one ED claiming a referral addressed
+       * to another is a false join. The purpose is deliberately not checked (owner: nobody declines
+       * an ED notification on purpose).
        *
-       * ⚠️ **IT RESOLVES RATHER THAN STORES, and that is the entire difference between this field
-       *
-       * 🔴 CORRECTED 2026-09-11: EVERY FACTUAL CLAUSE ABOUT `Admission.referralId` ABOVE IS NOW FALSE.
-       * Struck in place rather than deleted, because the reading that made it true is what a reader
-       * will otherwise re-derive.
-       *
-       *     seeded Admission.referralId, non-null      10      every one RESOLVES
-       *     real Referral ids                          24      dangling: ZERO
-       *     admissions carrying literal null          257      an honest absence, not a broken join
-       *
-       * Repaired 2026-09-10 at a6e5208b85 - "seeded referralId links what is true and nulls the rest,
-       * invents nothing". ⚠️ The manufacturing by string substitution is GONE, not reduced.
-       *
-       * ✅ THE DESIGN POINT IS UNAFFECTED AND IS THE REASON THIS COMMENT EXISTS: resolve and refuse,
-       * never merely store. `"RF-QQQ"` survives every truthiness test and reads as a plausible
-       * identifier, which is exactly why an id naming no referral is refused here.
-       * and `Admission.referralId`.** That field holds ids manufactured by string substitution from
-       * the admission's own id, overlapping the real referral ids in zero places, and nothing can
-       * see it: a stored id that joins to nothing typechecks, renders and passes every test
-       * (`docs/ward-flow/fields-with-no-producer-2026-09-01.md`). So an id naming no referral is
-       * REFUSED here, in the same discipline as `RECEIVE_REFERRAL`'s `edId` and `originSiteCode`
-       * checks — and for the same reason, since `"RF-QQQ"` survives every truthiness test and reads
-       * as a plausible identifier.
-       *
-       * ⚠️ **AND THE REFERRAL MUST NAME THIS DEPARTMENT.** Under ruling 8 the patient attends the
-       * department the referral was addressed to, and that department raises the journey. A journey
-       * at Fremantle claiming a referral addressed to Broome is a false join wearing a real id —
-       * indistinguishable, once written, from a true one. The purpose (`bed`,
-       * `psychiatric_review`, `medical_assessment`) is deliberately NOT checked: a referral to an
-       * ED is a notification nobody declines on the purpose axis (owner, 2026-09-01), so gating on
-       * it would be inventing a rule nobody has given.
-       *
-       * 🔴 **CORRECTED 2026-09-17, R5 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`,
-       * WF-09) — "the addressing's state are deliberately NOT checked" IS NOW FALSE.** Struck in
-       * place rather than deleted, because the reading that made it true is what a reader will
-       * otherwise re-derive. This event had NO uniqueness guard at all: a second open movement could
-       * be raised from the same referral, and a journey could be raised from an addressing its own
-       * referrer had withdrawn or its own department had declined. Both are refused below, and
-       * neither reopens the purpose question this paragraph still correctly leaves alone — a
-       * withdrawal or a decline is a fact about whether the referral is STILL LIVE, not about what
-       * it was asking for.
+       * R5 (WF-09): a journey cannot be raised from an addressing its referrer withdrew or its
+       * department declined, and a referral cannot fund two live journeys (checked below).
        */
       let raisedFrom: Referral | undefined;
       if (event.referralId !== undefined) {
@@ -2966,12 +2506,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             `referral ${referral.id} was never addressed to ${department.name}, so a journey raised there did not come from it`,
           );
         }
-        /*
-         * ⚠️ **WITHDRAWN CHECKED SEPARATELY FROM `state`, THE SAME O-17.11 SPLIT `ACCEPT_REFERRAL`
-         * AND `DECLINE_REFERRAL` ALREADY HOLD TO.** `RECORD_REFERRER_WITHDRAWAL` stamps
-         * `withdrawnAt` and never touches `state` — a fifth state would have bought almost no
-         * compiler help, so `state` alone cannot see a withdrawal. Checked first: a withdrawn
-         * referral is dead regardless of whatever `state` still reads.
+        /**
+         * Withdrawal is checked separately from `state` (the O-17.11 split):
+         * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` and never touches `state`. Checked
+         * first: a withdrawn referral is dead whatever `state` reads.
          */
         if (addressing.withdrawnAt !== undefined) {
           return reject(
@@ -2980,11 +2518,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             `referral ${referral.id} was withdrawn by its referrer, so no journey can be raised from it`,
           );
         }
-        // Declined, specifically — not merely "not queued": `accepted` and `cancelled` are not
-        // refused here, because neither says this department turned the referral away. FD-24's own
-        // reasoning runs the other direction for this guard than it does for ACCEPT_REFERRAL: a
-        // decline there locks nobody ELSE out, but a decline HERE, on THIS destination, is exactly
-        // the fact that must stop THIS department raising a journey from it.
+        // Declined specifically: `accepted` and `cancelled` do not say this department turned the
+        // referral away. A decline on this destination is what must stop this department raising a
+        // journey from it.
         if (addressing.state === "declined") {
           return reject(
             state,
@@ -2992,33 +2528,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             `${department.name} declined referral ${referral.id}, so no journey can be raised from it`,
           );
         }
-        /*
-         * 🔴 **THE UNIQUENESS GUARD ITSELF — WF-09, and owner Q11 confirms the shape: a second
-         * journey is refused WHILE an earlier one from the same referral is still open, and
-         * permitted once that earlier one has genuinely NOT PROCEEDED.**
+        /**
+         * WF-09 / owner Q11: a second journey from the same referral is refused while an earlier
+         * one blocks, and permitted once that earlier one closed `did_not_proceed`. P2-6: an
+         * arrival also blocks, since it fulfilled the referral.
+         * `tests/ward-raise-referral-uniqueness.test.ts` covers the Q11 case.
          *
-         * 🔴 **CORRECTED, P2-6 (Ward Lead audit, 2026-09-17) — "counts as open exactly when it
-         * neither carries a `closure` nor has reached `arrived`" IS NOW TOO NARROW.** Struck in
-         * place rather than deleted, because the reading that made it true is what a reader will
-         * otherwise re-derive. `isOpen`'s own definition treated a movement that had ARRIVED as
-         * fair game for a second raise, the same as one that had genuinely `did_not_proceed` — but
-         * an arrival is the referral's purpose being FULFILLED, not abandoned, and raising a second
-         * journey from a referral that already delivered its patient is the same double-journey
-         * shape this guard exists to catch, not the re-raise owner Q11 describes. The guard now
-         * blocks on anything OTHER than a `did_not_proceed` closure — open (no closure at all) or
-         * closed by arrival both block; only a closure whose outcome IS `did_not_proceed` (the
-         * shape `WITHDRAW_REFERRAL`, `RECORD_ED_OUTCOME` and `REFER_TO_COMMUNITY_TEAM` all close
-         * with) lets a second journey through, which is what `tests/ward-raise-referral-uniqueness
-         * .test.ts`'s own Q11 case exercises via `WITHDRAW_REFERRAL`.
-         *
-         * `isOpen` (`ward-derivations.ts`) is still not imported here — that module imports
-         * `REFERRABLE_MOVEMENT_STAGES` from THIS file, and importing back would be a circular
-         * module edge, the identical reason `PULL_PATIENT`'s own `resolvedReferral` inlines its
-         * lookup rather than importing `referralForMovement`.
-         *
-         * Scoped to THIS referral's id, never to `edId` alone: the point is one referral cannot
-         * fund two live journeys at once, and a second department raising from the same referral
-         * while the first still stands is exactly the case this guard exists to catch.
+         * `isOpen` (`ward-derivations.ts`) is not imported: that module imports from this file, so
+         * importing back would be circular. Scoped to this referral's id, never `edId` alone.
          */
         const blockingLinkedMovement = state.movements.find(
           (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
@@ -3031,12 +2548,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      // Opus review round 2, 17 September 2026 (P2): `RECEIVE_REFERRAL` above membership-checks
-      // its own `gender` and `tentativeDiagnosis` fields, but this event wrote both straight from
-      // `event.draft` with no check at all — a caller bypassing the picker's own type (a lower-case
-      // `"non-binary"`, an invented diagnosis code) reached the movement unrefused. Checked here,
-      // before the movement is built, in the same membership discipline as `RECEIVE_REFERRAL`'s
-      // `gender` and `tentativeDiagnosis` checks.
+      // Membership-checked like `RECEIVE_REFERRAL`'s `gender` and `tentativeDiagnosis`, so a caller
+      // bypassing the picker's type cannot write an invented value.
       if (event.draft.gender !== undefined && !REFERRAL_GENDERS.includes(event.draft.gender)) {
         return reject(state, event, `RAISE_REFERRAL gender must be chosen from REFERRAL_GENDERS`);
       }
@@ -3049,9 +2562,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (event.draft.tentativeDiagnosis !== undefined && !isTentativeDiagnosisBlock(event.draft.tentativeDiagnosis)) {
         return reject(state, event, `RAISE_REFERRAL tentativeDiagnosis must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS`);
       }
-      // A journey raised from a referral is for that referral's patient. Naming someone else let
-      // PULL_PATIENT check one person for an existing bed and then admit the other, who could end
-      // up holding two beds (review finding S1-2, 8 October 2026).
+      // A journey raised from a referral is for that referral's patient; naming someone else could
+      // leave a person holding two beds (review finding S1-2).
       if (
         event.patientId !== undefined &&
         raisedFrom?.patientId !== undefined &&
@@ -3068,23 +2580,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         originEdId: event.edId,
         openedAt: event.now,
         patientId: event.patientId ?? raisedFrom?.patientId,
-        // `undefined` when nobody referred this person — the ordinary case, and a real answer
-        // rather than a missing one. Never a manufactured id: the guard above refuses anything
-        // that does not resolve.
+        // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
+        // guard above refuses anything that does not resolve.
         referralId: raisedFrom?.id ?? event.referralId,
-        /*
-         * ⚠️ WHY THE ABSENCE IS WRITTEN DOWN RATHER THAN LEFT EMPTY — owner ruling R-2026-09-04-D.
-         *
-         * An empty `referralId` had three causes and rendered as one: nobody raised a referral
-         * (clinical), the record predates the link (record-keeping), or the raiser was never asked
-         * (record-keeping). This branch knows which of the three it is producing. Nothing on this
-         * event asks WHICH referral a journey came from unless the caller volunteers one, so a
-         * runtime movement with no id is the third case and says so — `not_asked`, not
-         * `none_raised`. Only `RECORD_NO_REFERRAL`, where somebody actually answers the question,
-         * writes the clinical one.
-         *
-         * Exactly one of the two fields is ever set here: a resolved referral leaves the absence
-         * undefined, and an absence leaves the id undefined.
+        /**
+         * Owner ruling R-2026-09-04-D: the absence is written down, not left empty. A runtime
+         * movement with no id says `not_asked`; only `RECORD_NO_REFERRAL`, where somebody answers
+         * the question, writes `none_raised`. Exactly one of `referralId` and `referralAbsence` is
+         * ever set.
          */
         referralAbsence: raisedFrom === undefined ? { reason: "not_asked" as const, at: event.now } : undefined,
         // A newly raised movement is never flagged. The flag is an act somebody takes on a
@@ -3099,33 +2602,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         security: event.draft.security,
         sex: event.draft.sex,
         gender: event.draft.gender,
-        // T15 (item 12): the ED's own choice REPLACES whatever the linked referral carried — the
-        // 29 Aug ruling, "easy to continually adjust and refine along the way". `raisedFrom` is
-        // the same resolved referral `referralId` above already shares, so this can never disagree
-        // with which referral (if any) this movement links to.
+        // T15 (item 12): the ED's own choice replaces whatever the linked referral carried.
         tentativeDiagnosis: event.draft.tentativeDiagnosis ?? raisedFrom?.tentativeDiagnosis,
         specialling: event.draft.specialling,
         highAcuity: event.draft.highAcuity,
         legalStatus: event.draft.legalStatus,
-        // Spread-copied, never aliased: `SELECTABLE_LEGAL_FORMS`'s entries are the picker's
-        // own source and must not become mutable state hanging off a movement.
-        // The spread keeps `dueAt` OFF the object entirely when none was typed, rather than
-        // present-and-undefined: an absent deadline and a deadline explicitly set to nothing must
-        // not be two different shapes, or a reader checking `"dueAt" in form` gets a different
-        // answer from one checking `form.dueAt !== undefined`.
+        // Spread-copied, never aliased: `SELECTABLE_LEGAL_FORMS` entries must not become mutable
+        // state. The spread keeps `dueAt` off the object when none was typed, so absent and
+        // explicitly-nothing are one shape.
         legalForm:
           chosenForm === undefined
             ? undefined
             : { ...chosenForm, ...(capturedDueAt === undefined ? {} : { dueAt: capturedDueAt }) },
-        /*
-         * 🔴 T2r FIX ROUND, FINDING 2 (2026-09-17). Before this fix, a `dueAt` captured HERE never
-         * gained a history entry — only `RECORD_LEGAL_FORM_EXPIRY` wrote one — so a movement raised
-         * with a typed expiry could carry `legalForm.dueAt` while `legalFormExpiryHistory` stayed
-         * empty or undefined, silently breaking the "dueAt always equals the last history entry"
-         * invariant from the very first moment a form existed. Written only when a due time was
-         * actually captured, on the same "absent means untouched" discipline every optional array
-         * on this type already holds to — see `legalFormExpiryHistory`'s own doc comment in
-         * `ward-model.ts`.
+        /**
+         * T2r: a captured `dueAt` also gets its first history entry, so `dueAt` always equals the
+         * last `legalFormExpiryHistory` entry. Written only when a due time was captured ("absent
+         * means untouched").
          */
         legalFormExpiryHistory:
           capturedDueAt === undefined
@@ -3141,17 +2633,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         blocker: "Awaiting coordinator referral",
         withdrawnReferrals: [],
         unwinds: [],
-        // Step 1 of the track (Task 4) — `from` absent because there is no previous stage, but an
-        // entry is still written, so the creation moment lives inside this array rather than being
-        // reachable only through `openedAt` beside it.
+        // The creation moment is the first entry, with no `from`.
         stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
-        // `formedAt` is deliberately left unset. It used to be stamped in this same branch, on
-        // the strength of the status-derived Form 1A that has now been deleted; with that
-        // derivation gone there is no rule left to hang it on, and inventing a replacement one
-        // would be exactly the kind of hidden rule this change removes. When a patient was
-        // formed in the community is a fact only a clinician holds, so until there is a field
-        // for it, a runtime-raised referral has no `formedAt` and its legal clock coincides
-        // with its department clock. The fixture keeps its own authored values.
+        // `formedAt` is deliberately unset: when a patient was formed in the community is a fact
+        // only a clinician holds, and no rule may invent it. The fixture keeps its authored values.
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -3178,12 +2663,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         )
       )
         return reject(state, event, "Re-clearance must be recorded after the medical deterioration.");
-      // ⚠️ RE-RECORDING IS ALLOWED AND OVERWRITING IS THE POINT. Unlike `RECORD_EXAMINATION`
-      // above, which refuses a second examination as a data-integrity fault, a medical clearance
-      // is a CURRENT STATE that legitimately changes: a patient cleared at 09:00 can deteriorate
-      // by 11:00, and refusing the correction would leave the board asserting something the
-      // department no longer believes. The `at` stamp is the answer's own time, so the record says
-      // WHEN it was true rather than implying it always has been.
+      // Re-recording overwrites on purpose: medical clearance is a current state that changes,
+      // unlike an examination. `at` records when the answer was true.
       const updated: Referral = {
         ...referral,
         medicalClearance: { cleared: event.cleared, at: event.now },
@@ -3212,27 +2693,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * 🔴 THE ONLY WRITER OF `Referral.inDepartmentAt`, AND THE ONLY DOOR FROM "EXPECT" TO
-     * "REFERRAL".
-     *
-     * Product owner, 2026-09-07: "When expects arrive and are marked as arrived, they become
-     * referrals." Before this case existed nothing could move a patient between those lists —
-     * `triagedAt` is written only inside `RECEIVE_REFERRAL`, so a referral created without one
-     * could never acquire one, and an expects list built on triage could only ever grow.
+     * The only writer of `Referral.inDepartmentAt`, and the only door from "expect" to "referral"
+     * (product owner: "When expects arrive and are marked as arrived, they become referrals.").
      */
     case "RECORD_ARRIVED_IN_DEPARTMENT": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      /*
-       * ⚠️ IDEMPOTENT, AND THE FIRST RECORDING WINS.
-       *
-       * Two clinicians noticing the same patient is ordinary, not an error, so a second recording
-       * is a no-op rather than a rejection — a refusal would read on screen as though the first one
-       * had failed. And the EARLIER time is kept: the question this field answers is "since when
-       * has this person been in the department", so overwriting with a later observation would
-       * shorten a wait that actually happened. That is the opposite of `RECORD_MEDICAL_CLEARANCE`
-       * above, which overwrites deliberately because clearance is a current state that changes;
-       * arrival is a fact about the past and does not un-happen.
+      /**
+       * Idempotent, and the first recording wins: two clinicians noticing the same patient is
+       * ordinary, and keeping the earlier time preserves the true wait. Arrival is a fact about the
+       * past, unlike medical clearance.
        */
       if (referral.inDepartmentAt !== undefined) return state;
       const updated: Referral = { ...referral, inDepartmentAt: event.now };
@@ -3242,9 +2712,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_TRANSPORT_NEED": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // Refused once the journey is over, on `RECORD_EXAMINATION`'s reasoning above: every other
-      // movement-scoped handler refuses a closed movement, and an answer about how somebody will
-      // travel is meaningless once they have arrived or did not proceed.
+      // Refused once the journey is over, as for `RECORD_EXAMINATION`.
       if (movement.closure) {
         return reject(
           state,
@@ -3274,13 +2742,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      // ⚠️ RE-RECORDING IS ALLOWED AND OVERWRITING IS THE POINT, exactly as for a medical
-      // clearance: a patient who could walk at 09:00 may need an escort by 11:00, and refusing the
-      // correction would leave the board asserting something the sending team no longer believes.
-      // The `at` stamp is the answer's own time, so the record says when it was true.
-      // Audit 2026-09-25 §3 item 4: "not needed" used to be written onto a live booked job, which
-      // then let PATIENT_ARRIVED close the movement while the vehicle stayed booked. A booked job
-      // is cancelled through CANCEL_TRANSPORT first; this answer never silently overrides it.
+      // Re-recording overwrites on purpose, as for medical clearance. "Not needed" is refused while
+      // a booked job is live (audit §3 item 4): that job is cancelled through CANCEL_TRANSPORT
+      // first, or PATIENT_ARRIVED could close the movement with a vehicle still booked.
       if (
         !event.needed &&
         movement.transport !== undefined &&
@@ -3311,11 +2775,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot record a referral answer for a closed movement (${movement.closure.reason})`,
         );
       }
-      /*
-       * ⚠️ THE CONTRADICTION IS REFUSED RATHER THAN STORED. `referralId` and `referralAbsence`
-       * answer the same question, and a movement carrying both says a referral exists and that
-       * none does. `movementReferralLink` prefers the referral when it meets that pair, but a
-       * reader resolving a contradiction is a last line, not a licence to create one here.
+      /**
+       * The contradiction is refused rather than stored: `referralId` and `referralAbsence` answer
+       * the same question.
        */
       if (movement.referralId !== undefined) {
         return reject(
@@ -3329,13 +2791,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * RB3, item 19 (owner answers 2026-09-17). The department that holds the patient records that
-     * they no longer need a psychiatric bed search — either going home ("for discharge") or
-     * needing community follow-up rather than admission ("for community follow-up"). Unwinds
-     * exactly like `WITHDRAW_REFERRAL`'s pre-collection path: any live ward requests are withdrawn,
-     * a pulled bed and its admission are released once, and an uncollected transport job is
-     * cancelled — see that case's own comment for why the two branches (referred-but-not-accepted,
-     * accepted-but-not-collected) are handled the same way here rather than kept apart.
+     * RB3, item 19 (owner answers): the department holding the patient records that no psychiatric
+     * bed search is needed ("for discharge" or "for community follow-up"). Unwinds like
+     * `WITHDRAW_REFERRAL`'s pre-collection path: live ward requests withdrawn, a pulled bed and
+     * admission released once, an uncollected transport job cancelled.
      */
     case "RECORD_ED_OUTCOME": {
       const movement = findMovement(state, event.movementId);
@@ -3346,9 +2805,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot record an ED outcome for a closed movement (${movement.closure.reason})`);
       }
-      // Same discipline as WITHDRAW_REFERRAL's post-acceptance branch and REFER_TO_COMMUNITY_TEAM:
-      // once the patient has been physically collected this is a journey under way, not a bed
-      // search to end — STOP_TRANSPORT is the event for stopping it from here.
+      // Once the patient is collected this is a journey under way; STOP_TRANSPORT is the event for
+      // stopping it.
       if (
         movement.stage === "moving" ||
         movement.transport?.collectedAt !== undefined ||
@@ -3363,13 +2821,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id}'s patient is actively in transit; use STOP_TRANSPORT to stop the journey instead of recording an ED outcome`,
         );
       }
-      // Owner answer 1 (second round, 2026-09-17): the same gate F4 enforces for
-      // REFER_TO_COMMUNITY_TEAM, mirrored here for "for_discharge" only — "for discharge" means the
-      // bed search ends because the patient is going home, and a patient on a legal form cannot be
-      // found fit to go home before a conclusive examination outcome says so. "further_examination
-      // ordered" settles nothing, so it does not unlock this either. "for_community_follow_up"
-      // carries no such restriction, exactly as this case's own doc comment already states.
-      // Voluntary patients (on no form and no restrictive legal status) are never blocked.
+      // Owner answer 1: the F4 gate mirrored for "for_discharge" only. A patient on a legal form
+      // cannot go home before a conclusive examination outcome; "further_examination ordered"
+      // settles nothing. Voluntary patients are never blocked.
       const isOnLegalFormForDischarge =
         !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
       if (
@@ -3383,9 +2837,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} is on a legal form; a conclusive examination outcome must be recorded before recording "for discharge"`,
         );
       }
-      // Gives back a bed already pulled (and deletes the admission it created), or does nothing if
-      // no bed has been pulled yet — see this helper's own doc comment. A no-op is safe to call
-      // unconditionally, which is what "released once" means here.
+      // Gives back a pulled bed and its admission, or does nothing; safe to call unconditionally.
       const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
       // Truthful cause: the department recorded an outcome that ends the bed search, not the
       // referrer withdrawing (`WithdrawalReason.ed_outcome_recorded`, `ward-change-reasons.ts`).
@@ -3395,14 +2847,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         reason: "ed_outcome_recorded" as const,
       }));
       const reasonLabel = event.outcome === "for_discharge" ? "For discharge" : "For community follow-up";
-      // P1-4 (Ward Lead audit, 2026-09-17): captured BEFORE `updatedMovement` overwrites them, the
-      // same read-before-write discipline `REFER_TO_COMMUNITY_TEAM`'s own `acceptingUnitId` holds to
-      // a few cases below. Nobody was told when an ED outcome ended a bed search: the accepting ward
-      // kept believing it was getting this patient (`acceptedUnitId` was never even cleared, so
-      // `ed-screen.tsx`'s "Still to be moved" outbox went on showing a discharged patient as "Going
-      // to" that ward), the transport officer was never told a booked-but-uncollected job had just
-      // been cancelled, and a ward still holding a live (unaccepted) request was never told it had
-      // been dropped.
+      // P1-4 (Ward Lead audit): captured before `updatedMovement` overwrites them, so the accepting
+      // ward, the transport officer and any ward with a live request can be told the bed search
+      // ended.
       const acceptingUnitId = movement.acceptedUnitId;
       const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
       const updatedMovement: Movement = {
@@ -3414,9 +2861,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
         edOutcome: event.outcome,
-        // Any booked-but-not-collected job is cancelled in the same update that closes the
-        // movement — the same discipline WITHDRAW_REFERRAL's post-acceptance branch and
-        // REFER_TO_COMMUNITY_TEAM already hold `TransportJob.cancelledAt` to.
+        // A booked-but-uncollected job is cancelled in the same update that closes the movement.
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
             ? { ...movement.transport, cancelledAt: event.now }
@@ -3429,11 +2874,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updatedMovement);
-      // Same three-notice shape `REFER_TO_COMMUNITY_TEAM` (below) and `WITHDRAW_REFERRAL`'s
-      // post-acceptance branch (above) already raise for the identical unwind: the accepting ward
-      // (if any), the transport officer (if a job was live), and every ward still holding a live,
-      // unaccepted request (if any) — each its own `NoticeKind`, or its own `count`, so none can
-      // collide under `makeNotice`'s id rule.
+      // The same three notices as `REFER_TO_COMMUNITY_TEAM` and `WITHDRAW_REFERRAL`: the accepting
+      // ward, the transport officer, and every ward still holding a live request. Each has its own
+      // `NoticeKind` or `count`, so ids cannot collide.
       const outcomeNotices: Notice[] = [];
       let noticeCount = withoutPulledBed.notices.length;
       if (acceptingUnitId !== undefined) {
@@ -3476,12 +2919,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * Ruling 1 (2026-09-16). ED marks a Form 1A as received.
-     *
-     * 🔴 **CORRECTED 2026-09-17, T2r fix round, finding 10 — "which starts the 24-hour psychiatric
-     * examination clock" IS NOW FALSE.** That computed clock was deleted by T2 on owner answer 1:
-     * this prototype works out no legal time limits of its own. This case still records the
-     * receipt instant; nothing here starts a clock from it any longer.
+     * Ruling 1: ED marks a Form 1A as received. Records the receipt instant only; this prototype
+     * computes no legal time limits (T2, owner answer 1).
      */
     case "RECORD_LEGAL_FORM_RECEIVED": {
       const movement = findMovement(state, event.movementId);
@@ -3496,9 +2935,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.legalFormReceivedAt !== undefined) {
         return reject(state, event, `legal form for movement ${movement.id} was already marked as received`);
       }
-      // Receipt is a fact about a supported form: 1A, 3A, 3C, 3D, 6A, 6B,
-      // 6C, 5A or 5B. Recording receipt against any other code, or against no form at all, would
-      // be a fact about a form nobody holds. Refused rather than silently accepted.
+      // Receipt is a fact about a supported form (1A, 3A, 3C, 3D, 6A, 6B, 6C, 5A or 5B); any other
+      // code, or no form, is refused.
       if (!movement.legalForm || !isLegalClockFormCode(movement.legalForm.code)) {
         return reject(
           state,
@@ -3506,9 +2944,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} does not carry a receivable legal form (legal form ${movement.legalForm?.code ?? "none"}), so a legal form receipt cannot be recorded against it`,
         );
       }
-      // Ruling "form end times come from the time written on the form": receipt records only the
-      // instant of receipt. No statutory deadline is computed here — a clinician's typed expiry
-      // (`RECORD_LEGAL_FORM_EXPIRY`) is the only legitimate source of a `dueAt`.
+      // No statutory deadline is computed here: a clinician's typed expiry
+      // (`RECORD_LEGAL_FORM_EXPIRY`) is the only source of a `dueAt`.
       const updated: Movement = {
         ...movement,
         legalFormReceivedAt: event.now,
@@ -3517,12 +2954,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). The undo
-     * `RECORD_LEGAL_FORM_RECEIVED` above has never had: a clinician marked receipt in error, or
-     * against the wrong movement, and needs to correct it without losing the fact a receipt was
-     * ever recorded. Clears `legalFormReceivedAt` and appends the ORIGINAL instant, who corrected
-     * it and the fixed reason they gave to `legalFormReceiptCorrections`, so a second
-     * `RECORD_LEGAL_FORM_RECEIVED` can succeed cleanly afterwards.
+     * T4: the undo for `RECORD_LEGAL_FORM_RECEIVED`. Clears `legalFormReceivedAt` and appends the
+     * original instant, who corrected it and the reason to `legalFormReceiptCorrections`, so the
+     * fact a receipt was recorded is kept and a fresh receipt can follow.
      */
     case "CORRECT_LEGAL_FORM_RECEIPT": {
       const movement = findMovement(state, event.movementId);
@@ -3563,19 +2997,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and item
-     * 5 (regional extensions). The clinician types the expiry written on the form in front of
-     * them — for any form, not a chosen few — and, on a later occasion, a further extension
-     * written on a fresh form. This one event carries both; which it is is read off the state, not
-     * off a caller-supplied flag, exactly the discipline `RECORD_LEGAL_FORM_RECEIVED` above holds
-     * to for its own "already recorded" check.
+     * T2 (owner answer 1, item 5): the clinician types the expiry written on the form, for any
+     * form, and later any extension from a fresh form. Whether this is an extension is read off the
+     * state, never a caller flag.
      */
     case "RECORD_LEGAL_FORM_EXPIRY": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // T2r fix round, finding 11 (2026-09-17): a plain, fixed sentence — matching the other two
-      // refusals in this case, and no longer interpolating `movement.closure.reason` (a clinical
-      // string built for a different audience) into a form-control's own error text.
+      // T2r finding 11: a fixed sentence, never interpolating the clinical `closure.reason`.
       if (movement.closure) {
         return reject(state, event, "This record is closed, so no expiry can be added to it.");
       }
@@ -3584,11 +3013,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!movement.legalForm) {
         return reject(state, event, "There is no legal form on this record to add an expiry to.");
       }
-      // T2r fix round, finding 8 (2026-09-17). `Instant` is a bare `number` at the type level, so
-      // nothing stops a caller sending `NaN`/`Infinity` at runtime — the same `Number.isFinite`
-      // discipline every other instant-shaped field in this codebase already holds callers to
-      // (see e.g. `ward-discharge-dates.ts`, `ward-referrals.ts`). A non-finite value is refused
-      // before it can become a stored "expiry" nothing can compare or render.
+      // T2r finding 8: `Instant` is a bare number, so a non-finite value is refused before it
+      // becomes an expiry nothing can compare or render.
       if (!Number.isFinite(event.dueAt)) {
         return reject(state, event, "Enter the expiry written on the form.");
       }
@@ -3598,9 +3024,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const legacyCalculatedExpiry =
         movement.legalClock !== undefined && currentDueAt === movement.legalClock.expiresAt;
       const isExtension = currentDueAt !== undefined && !legacyCalculatedExpiry;
-      // An extension only ever moves an expiry LATER. Nothing here computes what "later" should
-      // be — the clinician types the new expiry off a fresh form, and this only orders it against
-      // what is already recorded. §2's exact sentence for the refusal.
+      // An extension only ever moves an expiry later; the clinician types it, this only orders it
+      // against what is recorded.
       if (isExtension && event.dueAt <= currentDueAt) {
         return reject(state, event, "An extension's new expiry must be later than the expiry already recorded.");
       }
@@ -3618,13 +3043,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * Opus review round 2, 17 September 2026 (P2): the `gender_designation` gate's own refusal
-     * text says "Record gender first", and until this case nothing on the running app could act
-     * on that — `Movement.gender` was writable only at `RAISE_REFERRAL`/`RECEIVE_REFERRAL`, both
-     * before the movement exists to correct. Membership-checked like `RECORD_LEGAL_FORM_EXPIRY`
-     * immediately above; refuses a closed movement, an off-list gender, and — unlike an ordinary
-     * correction event — an unchanged value, since a "correction" to the same gender the movement
-     * already carries is not a change this event exists to make.
+     * The `gender_designation` refusal says "Record gender first"; this is the event that does it
+     * for an existing movement. Refuses a closed movement, an off-list gender and an unchanged
+     * value.
      */
     case "RECORD_MOVEMENT_GENDER": {
       const movement = findMovement(state, event.movementId);
@@ -3649,17 +3070,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (held?.state === "pulled" && held.movementId === movement.id) {
         next = replaceAdmission(next, held.id, { ...held, gender: event.gender });
       }
-      /*
-       * P1-3 (Ward Lead ruling, 17 September 2026): a correction landing while an acceptance or a
-       * bed is already held (`accepted_awaiting_bed` through `moving`) means a unit was chosen
-       * under the gender this event just replaced — `heldUnitGenderRefusal` (above) only catches
-       * that the NEXT time the movement tries to move forward, which may be a while, or never if
-       * the movement sits at `moving` until arrival (a stage this file's own rule deliberately never
-       * re-checks). The coordinator is told immediately instead of waiting on the next dispatch.
-       *
-       * Deliberately NOT raised for `placement_requested` or `destination_review` (nothing is held
-       * yet — `REFER_TO_UNITS`/`ACCEPT_IN_PRINCIPLE` will re-ask the gate themselves) or `arrived`
-       * (the movement is closed to further placement decisions; nothing to check).
+      /**
+       * P1-3 (Ward Lead ruling): a correction while an acceptance or bed is held
+       * (`accepted_awaiting_bed` through `moving`) tells the coordinator immediately, rather than
+       * waiting for `heldUnitGenderRefusal` on the next forward step (which never comes at
+       * `moving`). Not raised earlier (nothing held; referral events re-ask the gate) or at
+       * `arrived`.
        */
       const HELD_STAGES_FOR_GENDER_NOTICE: readonly MovementStage[] = [
         "accepted_awaiting_bed",
@@ -3681,8 +3097,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * Ruling 16 (2026-09-16), Item 14 & 48 (2026-09-17). Direct ED-to-CMHT referral pathway when inpatient admission is not needed.
-     * Creates a real community referral, notifies the destination team, and records the outcome.
+     * Ruling 16, items 14 and 48: the direct ED-to-CMHT referral pathway when inpatient admission
+     * is not needed. Creates a real community referral, notifies the destination team and records
+     * the outcome.
      */
     case "REFER_TO_COMMUNITY_TEAM": {
       const movement = findMovement(state, event.movementId);
@@ -3693,11 +3110,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!communityTeamOptions().includes(event.team)) {
         return reject(state, event, `team "${event.team}" is not a valid community mental health team`);
       }
-      // Fix round (2026-09-16 audit): this used to have no collection check at all, so a `moving`
-      // movement (transport already collected) could be referred to community — freeing the bed,
-      // deleting the admission and stamping `cancelledAt` on a job that had already been collected.
-      // `WITHDRAW_REFERRAL` refuses the equivalent case and points at `STOP_TRANSPORT`; this does
-      // the same.
+      // Refused once collected, as `WITHDRAW_REFERRAL` does: use `STOP_TRANSPORT`.
       if (movement.transport?.collectedAt !== undefined) {
         return reject(
           state,
@@ -3705,13 +3118,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of referring to a community team`,
         );
       }
-      // F4 (Opus adversarial review, 2026-09-17): the same gate `communityReferralBlockedReason`
-      // (ed-screen.tsx) already advertises, now actually enforced here — before this fix the
-      // screen refused to OFFER the control on a not-yet-examined patient on a form, but nothing
-      // stopped the event itself from being dispatched. Owner answer 14: a patient on a legal
-      // form cannot be referred to a community team until a conclusive examination outcome is
-      // recorded; "further examination ordered" does not unlock it. Voluntary patients (on no
-      // form and no restrictive legal status) are never blocked by this check.
+      // F4 / owner answer 14: a patient on a legal form cannot be referred to a community team
+      // until a conclusive examination outcome is recorded ("further examination ordered" does not
+      // unlock it). Enforced here as well as by `communityReferralBlockedReason` (ed-screen.tsx).
+      // Voluntary patients are never blocked.
       const isOnForm =
         !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
       if (isOnForm && (!movement.examination || movement.examination.outcome === "further_examination_ordered")) {
@@ -3726,11 +3136,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const originEd = allEmergencyDepartments().find((d) => d.id === movement.originEdId);
       const originSite = originEd ? siteByCode(originEd.siteCode) : undefined;
 
-      // Finding 3 (2026-09-17 review): if the linked referral already carries a QUEUED arm to this
-      // exact team, this dispatch must reuse it rather than raising a second referral (or a second
-      // arm) asking the same team the same question twice. `state === "queued"` only — an already
-      // `accepted`/`declined`/`cancelled` arm is a settled outcome, not a standing request this call
-      // could be answering again.
+      // Reuse a queued arm to this exact team rather than asking the same team twice. Settled arms
+      // are not reused.
       const existingQueuedArm = linkedReferral?.destinations.find(
         (addressing) =>
           addressing.destination.kind === "community_team" &&
@@ -3744,17 +3151,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         : withoutPulledBed.frontDoorReferralSequence + 1;
       const referralId = existingQueuedArm && linkedReferral ? linkedReferral.id : nextFrontDoorReferralId(sequence);
 
-      // F6 (Opus adversarial review, 2026-09-17): with no linked referral this used to invent
-      // `suburb: { kind: "named", name: originSite?.name ?? "Perth" }` — a HOSPITAL'S name stored
-      // in a field that means "the patient's home suburb," which is not merely unrecorded, it is
-      // wrong. `ReferralSuburb`'s own `{ kind: "unknown", reason: "not_known" }` variant exists
-      // exactly for this: a stated absence rather than a fabricated value (`ward-movements.ts`'s
-      // own seed already uses it the same way). `homeRegion` has no equivalent unknown member —
-      // `HOME_REGIONS` is a closed list of ten real WA regions with no catch-all — so that field's
-      // "Perth Metropolitan" fallback is left as-is; widening the model to add one is outside this
-      // fix.
+      // F6: with no linked referral, the suburb is a stated absence (`{ kind: "unknown", reason:
+      // "not_known" }`), never a hospital's name. `HOME_REGIONS` has no unknown member, so
+      // `homeRegion` keeps its "Perth Metropolitan" fallback.
       //
-      // Finding 3: `undefined` when reusing an existing queued arm — nothing new to raise.
+      // `undefined` when reusing an existing queued arm.
       const newReferral: Referral | undefined = existingQueuedArm
         ? undefined
         : {
@@ -3776,23 +3177,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
               },
             ],
             transportNeeded: false,
-            // Finding 4 (2026-09-17 review): an unlinked movement (no `linkedReferral` at all) used
-            // to leave `history` as an empty string — a blank field reads as "nothing to say" on a
-            // community team's own screen, not as "this system holds no record", the actual state
-            // here. A stated absence, the same discipline `suburb`'s own `{ kind: "unknown", reason:
-            // "not_known" }` above already holds to for the identical "movement carries no linked
-            // referral" case. Never applied when a linked referral exists, even one whose own
-            // `history` happens to be empty — that is a real referral's own recorded fact, not this
-            // event's to overwrite.
+            // An unlinked movement states the absence rather than leaving `history` blank. A linked
+            // referral's own `history` is never overwritten, even when empty.
             history: linkedReferral
               ? linkedReferral.history
               : "Referred from the emergency department; no written referral history was recorded.",
           };
 
-      // F10 (Opus adversarial review, 2026-09-17): wording corrected to the plan's own §4 text —
-      // "{ED} referred a patient for community follow-up: referral {id}." — rather than a sentence
-      // this task invented independently. Finding 3: reusing an existing queued arm says so, rather
-      // than reading as a second, brand-new referral to the same team.
+      // F10: the plan's §4 wording. Reusing a queued arm says so.
       const communityNotice = makeNotice(
         event.now,
         withoutPulledBed.notices.length,
@@ -3804,20 +3196,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           : `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: referral ${referralId}.`,
       );
 
-      // F5 (Opus adversarial review, 2026-09-17): this used to leave `referredUnitIds` and
-      // `acceptedUnitId` untouched — a movement referred to a community team while still showing
-      // as queued or accepted at a ward, which is exactly the phantom-occupant shape
-      // `WITHDRAW_REFERRAL` already exists to prevent for its own case. Unwound the same way here:
-      // any live requests are withdrawn (recorded, not silently dropped — but with its own
-      // `ed_outcome_recorded` reason, 2026-09-17: the department recorded an outcome here, it did
-      // not withdraw a live referral the way `WITHDRAW_REFERRAL`'s own branches do), and an
-      // accepting ward is told it is no longer getting this patient, same as `WITHDRAW_REFERRAL`'s
-      // post-acceptance branch.
+      // F5: live ward requests are withdrawn (recorded with `ed_outcome_recorded`, since the
+      // department recorded an outcome rather than withdrawing) and an accepting ward is told, so
+      // the movement does not stay queued or accepted at a ward.
       const acceptingUnitId = movement.acceptedUnitId;
-      // P1-4 (Ward Lead audit, 2026-09-17): captured before `updated` overwrites it, the same
-      // read-before-write discipline `acceptingUnitId` immediately above already holds to. Neither
-      // the officer nor a ward still holding a live (unaccepted) request was ever told this journey
-      // had ended — the same gap `RECORD_ED_OUTCOME`'s own P1-4 fix closes, above.
+      // P1-4: captured before `updated` overwrites it, so the officer can be told the journey
+      // ended.
       const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
       // Truthful cause: the department recorded an outcome that ends the bed search, not the
       // referrer withdrawing (`WithdrawalReason.ed_outcome_recorded`, `ward-change-reasons.ts`).
@@ -3884,9 +3268,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ),
         );
       }
-      // P1-4: every ward still holding a live, unaccepted request is told it is not being asked any
-      // more — `WITHDRAW_WARD_REQUEST`'s own `ward_request_withdrawn` shape, reused rather than
-      // duplicated (`ward-model.ts`'s own `NoticeKind` doc comment on that kind).
+      // P1-4: every ward still holding a live request is told, reusing `WITHDRAW_WARD_REQUEST`'s
+      // `ward_request_withdrawn` shape.
       for (const unitId of movement.referredUnitIds) {
         notices.push(
           makeNotice(
@@ -3928,30 +3311,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!EXAMINATION_OUTCOMES.includes(event.outcome as (typeof EXAMINATION_OUTCOMES)[number])) {
         return reject(state, event, `RECORD_EXAMINATION outcome must be chosen from EXAMINATION_OUTCOMES`);
       }
-      // Defence in depth, added 2026-08-24. Every other movement-scoped handler already refuses a
-      // closed movement; this one did not, so an examination could be recorded against a patient
-      // who had already ARRIVED and its `did_not_proceed` closure would overwrite the arrival —
-      // reproduced by walking WF-001 to `arrived` and dispatching a `revoked` examination, which
-      // was accepted with zero rejections. Pre-existing (it was previously reachable only for a
-      // Form 1A) and widened by this change to every code and to no form at all. Not reachable
-      // from the ED screen today, which lists only open movements, so this closes the reducer
-      // path rather than a live defect.
+      // Refuse a closed movement, as every other movement-scoped handler does; otherwise a
+      // `did_not_proceed` closure could overwrite an arrival.
       if (movement.closure) {
         return reject(state, event, `cannot record an examination for a closed movement (${movement.closure.reason})`);
       }
-      // No form gate. An examination may be recorded for ANY patient, whatever form they carry
-      // and whether or not they carry one (product owner, 2026-08-24) — the software no longer
-      // decides which form a patient is on, so it has no business deciding who may be examined.
-      // The guard below is different in kind and stays: recording two examinations against one
-      // movement is a data-integrity fault, not a form rule.
+      // No form gate: an examination may be recorded for any patient, whatever form they carry
+      // (product owner). Recording two examinations is a data-integrity fault, not a form rule.
       //
-      // 🔴 Owner item 7 (2026-09-17): *"a repeat examination is a new record, with a 'further
-      // examination ordered' outcome."* A second examination is refused UNLESS the current
-      // record's own outcome is `"further_examination_ordered"` — the one outcome that settles
-      // nothing and exists only to say a repeat is coming. Superseding APPENDS the current record
-      // to `supersededExaminations` rather than discarding it, so the movement never loses the
-      // fact that an earlier examination happened; every write below carries `supersededExaminations`
-      // through unchanged when there is nothing new to append.
+      // Owner item 7: "a repeat examination is a new record, with a 'further examination ordered'
+      // outcome." A second examination is refused unless the current outcome is
+      // `further_examination_ordered`; superseding appends the current record to
+      // `supersededExaminations`, never discards it.
       const previousExamination = movement.examination;
       if (previousExamination && previousExamination.outcome !== "further_examination_ordered") {
         return reject(state, event, `movement ${movement.id} was already examined`);
@@ -3961,11 +3332,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         : movement.supersededExaminations;
 
       if (event.outcome === "inpatient_order" || event.outcome === "further_examination_ordered") {
-        // Both are recorded and NOTHING else changes. `"further_examination_ordered"` closes
-        // nothing and refunds nothing (owner item 7) — the same "record and stop" shape
-        // `"inpatient_order"` already had, which is why they share a branch. The 1A-to-3B
-        // replacement that used to happen here for `"inpatient_order"` is deleted: a form now
-        // changes only when a clinician changes it.
+        // Recorded and nothing else changes: `further_examination_ordered` and `inpatient_order`
+        // close and refund nothing (owner item 7). A form changes only when a clinician changes it.
         const updated: Movement = {
           ...movement,
           examination: { at: event.now, outcome: event.outcome },
@@ -3974,49 +3342,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return replaceMovement(state, movement.id, updated);
       }
 
-      /*
-       * 🔴 WLQ-4 (owner, 2026-09-15): *"a revoked examination after transport is booked or the
-       * patient is moving does NOT release the bed."* Before this, the `pulledStages` refund just
-       * below fired for `handover_ready` and `moving` exactly as it did for `pulled` — refunding
-       * `unit.allocatable` while the admission-deletion half (scoped to `pulled` only, see its own
-       * comment further down) did NOT run at those two stages, so the unit's own count said the bed
-       * was free while an `Admission` still stood — a PHANTOM OCCUPANT, the same shape
-       * `RELEASE_PULL`'s own fix already closed for a different event.
+      /**
+       * WLQ-4 (owner): "a revoked examination after transport is booked or the patient is moving
+       * does NOT release the bed." At `handover_ready` and `moving`, the bed is not refunded, the
+       * admission is not deleted and `movement.transport` is untouched; refunding and cancelling
+       * are coordinator judgements once transport is committed.
        *
-       * The owner's answer here is not "also delete the admission at those stages" (extending the
-       * `pulled`-only fix would still be an AUTOMATIC release, which is exactly what he refused);
-       * it is "do neither automatically once transport is already committed" — refunding the bed
-       * and cancelling the job are both judgements about a moving vehicle and an occupied admission
-       * that only a coordinator should make once transport has progressed this far.
+       * The examination is still recorded, but `movement.closure` is deliberately not set:
+       * `STEP_BACK_STAGE`, `RELEASE_PULL` and `CANCEL_TRANSPORT` all refuse a closed movement, so
+       * closing would leave a dead end. The coordinator releases via `STEP_BACK_STAGE` to `pulled`
+       * then `RELEASE_PULL`. Covered by the WLQ-4 block in `tests/ward-flow-reducer.test.ts`.
        *
-       * So at `handover_ready` and `moving`: the bed is NOT refunded, the admission is NOT deleted,
-       * and `movement.transport` is left completely untouched — no `cancelledAt`. The examination
-       * is still RECORDED, because it is a real clinical fact, but `movement.closure` is
-       * DELIBERATELY NOT SET. Closing here would be the one thing that actually builds a dead end:
-       * `STEP_BACK_STAGE` and `RELEASE_PULL` both refuse a closed movement as their own first guard
-       * (so does `CANCEL_TRANSPORT`), so a closed-but-flagged movement could never be acted on
-       * again by anybody. Leaving it open is what keeps the coordinator's release path reachable:
-       * `STEP_BACK_STAGE` to `pulled` (touches nothing but `stage` — its own doc comment), then
-       * `RELEASE_PULL` (valid again once stage is `pulled`), which refunds the bed and deletes the
-       * admission exactly as it already does for any other pulled bed. `CANCEL_TRANSPORT` is also
-       * reachable at `handover_ready` (not at `moving`, where `transport.collectedAt` is always set
-       * — see `PATIENT_COLLECTED` — and `CANCEL_TRANSPORT`'s own guard already refuses that), and
-       * lets the coordinator formally unwind the errant booking, though it is not required for the
-       * release itself. Proved end to end in `tests/ward-flow-reducer.test.ts`'s own WLQ-4 block.
+       * `TRANSPORT_ACCEPTED`, `TRANSPORT_EN_ROUTE` and `PATIENT_COLLECTED` refuse while this is
+       * unresolved; `PATIENT_ARRIVED` stays reachable (owner answer 5). This case cannot run after
+       * arrival, since arrival closes the movement.
        *
-       * ✅ **TRANSPORT PATHWAY (2026-09-20):** `TRANSPORT_ACCEPTED`, `TRANSPORT_EN_ROUTE`
-       * and `PATIENT_COLLECTED` now refuse while this flag (or a revoked/community_order examination
-       * still holding a bed) is unresolved. `PATIENT_ARRIVED` stays reachable by owner answer 5
-       * (second round, 2026-09-17) so a ward can still record physical arrival if it already happened.
-       *
-       * ⚠️ **ALSO ESTABLISHED, NOT ASSUMED: `RECORD_EXAMINATION` cannot run at all once a patient
-       * has ARRIVED.** `PATIENT_ARRIVED` unconditionally sets `movement.closure` (outcome
-       * `"arrived"`), and this case's own first guard refuses any closed movement — so the window
-       * this branch exists for is exactly `handover_ready` and `moving`, never `arrived`.
-       *
-       * 🔴 WFA-004: `STEP_BACK_STAGE` can move the stage label back to `pulled` while leaving
-       * `transport.collectedAt` set — physical collection is not erased by a stage correction.
-       * Retention therefore also keys off `collectedAt`, not stage alone.
+       * WFA-004: `STEP_BACK_STAGE` can return the stage to `pulled` while `transport.collectedAt`
+       * stays set, so retention also keys off `collectedAt`.
        */
       const patientPhysicallyCollected = movement.transport?.collectedAt !== undefined;
       const transportAlreadyCommitted =
@@ -4030,9 +3372,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
         };
         const next = replaceMovement(state, movement.id, flagged);
-        // Item 48, Q3 (owner, 2026-09-17): the accepting ward is told, but only for a `"revoked"`
-        // examination — the owner named that outcome alone, not its sibling `"community_order"`,
-        // which also reaches this branch — and only when there is an accepting ward to tell.
+        // Item 48, Q3 (owner): the accepting ward is told only for `"revoked"`, not
+        // `"community_order"`, and only when there is one.
         if (event.outcome !== "revoked" || movement.acceptedUnitId === undefined) return next;
         return appendNotices(next, [
           makeNotice(
@@ -4046,31 +3387,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ]);
       }
 
-      // community_order or revoked at any OTHER stage (in practice, `pulled` — the branch above
-      // returns first for `handover_ready`/`moving`, and an earlier stage never carries a pulled
-      // bed to refund): the patient does not proceed to an inpatient bed, so the record closes.
-      // The form is deliberately LEFT AS IT IS — clearing it here was one of the three hidden
-      // rules deleted on 2026-08-24. Everything else this closure does is unaffected and
-      // load-bearing: it has to unwind whatever downstream placement state the movement was
-      // carrying — an in-flight transport job and a bed already pulled at the accepted unit —
-      // rather than leaving both dangling: every downstream handler below now also rejects once
-      // `movement.closure` is set (the same signal `isOpenMovement` in ward-derivations.ts already
-      // treats as authoritative), but that only stops *further* progress; it does not by itself
-      // give back capacity already reserved by an earlier PULL_PATIENT.
+      // `community_order` or `revoked` at any other stage (in practice `pulled`): the patient does
+      // not proceed, so the record closes. The form is deliberately left as it is. The closure must
+      // unwind an in-flight transport job and any pulled bed, not just stop further progress.
       //
-      // 🔴 T7 (2026-09-17): now calls the shared `releasePulledBedAndAdmission` (this file,
-      // above) instead of refunding the unit and deleting the phantom admission inline** — the
-      // same helper `RELEASE_PULL` and the other release paths already share, so there is exactly
-      // one place that knows how to give a pulled bed back (see that function's own doc comment
-      // for the OR condition it checks and why). Its OR is `stage === "pulled" || "handover_ready"
-      // || "moving" || admissionId !== undefined`; the last two stages are never true here, because
-      // the `transportAlreadyCommitted` branch above already returned for both, so the net effect
-      // on this branch is identical to the inline `holdsBed` check it replaces (`stage === "pulled"
-      // || admissionId !== undefined`). The helper only touches `state.units`, `state.admissions`
-      // and `state.dischargeRevisions` — this movement's own `admissionId` is still cleared below
-      // whenever the helper would have released (any pre-collection hold, including a stage
-      // correction back past `pulled` that left `admissionId` standing — WFA-004).
-      // S1-5: Check whether a bed was actually held so the notice does not falsely claim a bed was released.
+      // T7: uses the shared `releasePulledBedAndAdmission`, the one place that knows how to give a
+      // pulled bed back. This movement's own `admissionId` is cleared below whenever the helper
+      // would have released (including after a step-back, WFA-004). S1-5: check whether a bed was
+      // held so the notice does not falsely claim a release.
       const bedWasHeld = movementHoldsBedByStage(movement);
       const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
       const acceptingUnitId = movement.acceptedUnitId;
@@ -4090,10 +3414,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // Same reasoning as `WITHDRAW_REFERRAL`'s own closure: the movement is over, so nothing is
         // holding it up.
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
-        // The record deleted above (inside the shared helper) is being un-joined here — a
-        // surviving id pointing at a deleted admission is the dangling reference this fix is
-        // about. Cleared whenever we are on this auto-release branch (post-collection retains
-        // above); stage alone must not keep a stale join after a step-back.
+        // Un-join the admission deleted inside the shared helper; stage alone must not keep a stale
+        // join after a step-back.
         admissionId: undefined,
         // S1-5: Clear acceptedUnitId and referredUnitIds so the closed movement does not linger as live.
         acceptedUnitId: undefined,
@@ -4151,21 +3473,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot refer a closed movement (${movement.closure.reason})`);
       }
-      /*
-       * RA1 (item 18, owner answer 18, 2026-09-17): re-referring ADDS wards and never silently
-       * drops one already live. `referredUnitIds` used to be REPLACED wholesale by `event.unitIds`
-       * — a re-referral that omitted a previously-referred ward dropped it with no record at all,
-       * and rewrote `referredAt` every time regardless. `liveUnitIds` is the standing set nothing
-       * below may lose; `newUnitIds` is the caller's own list minus whatever is already live — only
-       * THESE enter the eligibility gate and the cap check, so an already-live ward (the shortlist
-       * panel's own pre-selected, locked candidates) is neither re-checked nor double-counted.
+      /**
+       * RA1 (owner answer 18): re-referring adds wards and never silently drops a live one.
+       * `liveUnitIds` is the standing set; only `newUnitIds` enter the eligibility gate and cap
+       * check, so a live ward is neither re-checked nor double-counted.
        */
       const liveUnitIds = movement.referredUnitIds;
       const uniqueUnitIds = Array.from(new Set(event.unitIds));
       const newUnitIds = uniqueUnitIds.filter((unitId) => !liveUnitIds.includes(unitId));
-      // The cap now counts LIVE plus NEW, never `event.unitIds.length` alone — three wards already
-      // live plus one addition is four, over the cap of three, whether or not the caller re-sent
-      // the three live ids alongside the new one.
+      // The cap counts live plus new, whether or not the caller re-sent the live ids.
       const combinedCount = liveUnitIds.length + newUnitIds.length;
       if (combinedCount > state.configuration.parallelReferralCap) {
         return reject(
@@ -4185,27 +3501,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (unknown) {
         return reject(state, event, `no unit found for id ${unknown}`);
       }
-      // Membership-checked, not truthiness-checked -- the same discipline as every other reason
-      // in this reducer. A caller sending a reason outside the list is refused rather than having
-      // an unrecognised string written into an accountability record.
+      // Membership-checked, not truthiness-checked: an unrecognised reason is never written into an
+      // accountability record.
       if (event.overrideReason !== undefined && !OVERRIDE_REASONS.includes(event.overrideReason)) {
         return reject(state, event, `REFER_TO_UNITS overrideReason must be chosen from OVERRIDE_REASONS`);
       }
-      /*
-       * 🔴 T12 (item 9, owner answer 9): A `Non-binary` MOVEMENT MAY BE REFERRED ONLY TO UNITS A
-       * COORDINATOR HAS ALREADY CHECKED WITH THE WARD FOR, OR IS CHECKING RIGHT NOW.
+      /**
+       * T12 (owner answer 9): a Non-binary movement may be referred only to units a coordinator has
+       * already checked with the ward, or is checking now. Runs before the per-ward eligibility
+       * loop and refuses the whole event: a procedural requirement, not a suitability judgement a
+       * reason can buy past (see `GenderPlacement` in `ward-model.ts`).
        *
-       * Runs BEFORE the per-ward eligibility loop below and refuses the WHOLE event rather than
-       * holding back individual wards — this is a PROCEDURAL requirement, never a bed-suitability
-       * judgement a ward-specific reason can buy past (`GenderPlacement`'s own doc comment,
-       * `ward-model.ts`, explains why this is not an `Override`).
-       *
-       * ⚠️ **NO ROLE CHECK HERE, AND THAT IS NOT A GAP.** `EVENT_ROLE.REFER_TO_UNITS` is already
-       * `["coordinator"]`, enforced before this `switch` even runs (`event.role` cannot be
-       * anything else by the time this line executes) — a second check here would be dead code
-       * asserting a fact the dispatcher already guarantees. "Ward and ED staff cannot bypass it"
-       * (owner answer 9) is real, but it is enforced on `ACCEPT_REFERRAL` below, which — unlike
-       * this event — a ward or an ED role can actually reach.
+       * No role check here: `EVENT_ROLE.REFER_TO_UNITS` is coordinator-only. "Ward and ED staff
+       * cannot bypass it" is enforced on `ACCEPT_REFERRAL`.
        */
       let genderPlacementAddition:
         | {
@@ -4238,46 +3546,31 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             by: event.role,
             unitIds: uncovered,
             reason: event.genderPlacementReason,
-            // The event's own `genderPlacementChecked` field is `true` exactly here (validated
-            // two lines up) — `wardChecked` stores that fact on the RECORD, per `GenderPlacement`'s
-            // own doc comment on `ward-model.ts`, rather than leaving it implied by the reason text.
+            // Stores the validated `genderPlacementChecked` fact on the record rather than leaving
+            // it implied by the reason text.
             wardChecked: true,
           };
         }
       }
 
-      /*
-       * ⚠️ THE ELIGIBILITY GATE, PER WARD — and this event is NOT the same shape as the other two.
-       * It carries a LIST of wards, so "refuse if ineligible" had to be decided rather than copied.
+      /**
+       * The eligibility gate, per ward (owner ruling): the suitable wards proceed; an unsuitable
+       * one is held back unless a reason is given for it. Per ward, never per referral, and never
+       * one reason covering the whole list.
        *
-       * OWNER'S RULING, 2026-09-02, choosing between three options he was given:
-       * **the suitable wards proceed; an unsuitable one is HELD BACK unless a reason is given for
-       * it.** Per ward, never per referral.
+       * A held-back ward is recorded with its own rejection naming its failing gate, never silently
+       * dropped. If every new ward is held back, nothing is referred.
        *
-       * He rejected refusing the whole referral — that punishes a four-ward search for one bad
-       * entry, which is how a system teaches people to stop using it. He rejected one reason
-       * covering the whole list — that would wave through wards nobody looked at.
-       *
-       * ⚠️ A HELD-BACK WARD IS RECORDED, NEVER SILENTLY DROPPED. The coordinator asked for it and
-       * must be told it did not happen; a referral that quietly goes to three of four wards is the
-       * silent-failure shape this reducer already carries a warning about. So each held-back ward
-       * appends its own rejection naming its own failing gate, and the referral proceeds with the
-       * rest. If EVERY ward is held back, nothing is referred and the movement does not move.
-       *
-       * RA1: runs over `newUnitIds` ONLY. An already-live ward already passed this gate the moment
-       * it was first referred; re-running it here on every re-referral could silently drop a live
-       * referral the instant a ward's own capacity changed — exactly the silent loss item 18 exists
-       * to end. A live ward is carried forward unconditionally, below.
+       * RA1: runs over `newUnitIds` only; an already-live ward passed this gate when first referred
+       * and is carried forward unconditionally below.
        */
       const targets: NonNullable<AuditDecision["targets"]>[number][] = [];
       decision.targets = targets;
       const heldBack: string[] = [];
       const permitted: string[] = [];
-      // 🔴 Owner reversal, item 2: `genderPlacementAddition` above is the record THIS event is
-      // about to write, not yet on `movement` — the per-unit `gender_designation` gate must see it
-      // now, in the same act, or a coordinator could never clear a single-gender ward's designation
-      // gate and the placement gate in one act. Never persisted from here; `updated` below still
-      // computes the real, committed `genderPlacements` independently.
+      // Owner reversal, item 2: the per-unit `gender_designation` gate must see the placement
+      // record this event is about to write, so both gates can be cleared in one act. Never
+      // persisted from here.
       const movementForEligibility: Movement =
         genderPlacementAddition === undefined
           ? movement
@@ -4294,10 +3587,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         else permitted.push(unitId);
       }
       const withHeldBack = heldBack.reduce((carried, refusal) => reject(carried, event, refusal), state);
-      // Refuse loudly when something NEW was attempted and every one of it was held back — but a
-      // caller that attempted nothing new (every id already live) has nothing to fail, so that
-      // case falls through to the harmless re-assertion below rather than a refusal about zero
-      // wards.
+      // Refuse when something new was attempted and all of it was held back; a call that attempted
+      // nothing new falls through to the harmless re-assertion below.
       if (newUnitIds.length > 0 && permitted.length === 0) return withHeldBack;
       if (event.overrideReason !== undefined && permitted.length === 0) {
         return reject(withHeldBack, event, "cannot record a placement override when no new units are referred");
@@ -4312,23 +3603,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // RA1: the union of what was already live and what just got through the gate — never a
         // replacement. Order keeps every live ward's own position stable and appends new ones after.
         referredUnitIds: Array.from(new Set([...liveUnitIds, ...permitted])),
-        // Owner instruction 2026-09-02, RA1-preserved: the FIRST referral's own moment, never
-        // rewritten by a later re-referral — every seeded movement still carries none, and a row
-        // without it goes on saying so rather than borrowing `openedAt`.
+        // The first referral's own moment, never rewritten by a re-referral.
         referredAt: movement.referredAt ?? event.now,
-        // Stream A decision targets: open a fresh wait when this act refers into an empty live set
-        // (first referral, or re-refer after every ward declined/withdrew). Adding wards while
-        // others are still live keeps the standing clock. A decline alone never writes this field.
+        // Stream A decision targets: open a fresh wait when this act refers into an empty live set.
+        // Adding wards while others are live keeps the standing clock. A decline alone never writes
+        // this field.
         referralDecisionOpenedAt:
           permitted.length === 0
             ? movement.referralDecisionOpenedAt
             : liveUnitIds.length === 0
               ? event.now
               : (movement.referralDecisionOpenedAt ?? movement.referredAt ?? event.now),
-        // OD-3: the reason is KEPT. It used to live in the shortlist panel's own `useState` and be
-        // discarded on the next selection, while the governance page said override reasons were
-        // recorded. Appended rather than replaced, because a movement can be overridden more than
-        // once and the earlier one is not undone by the later.
+        // OD-3: the override reason is kept, appended rather than replaced, since a movement can be
+        // overridden more than once.
         overrides:
           event.overrideReason === undefined
             ? movement.overrides
@@ -4344,10 +3631,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                   ...overrideSignOffField(event),
                 },
               ],
-        // T12 (item 9): narrowed to the units this call ACTUALLY referred to (`permitted`), the
-        // same discipline `overrides.unitIds` immediately above holds to — a unit held back by
-        // eligibility was never referred, so recording it here would be a false "checked and
-        // referred" claim.
+        // T12: narrowed to the units actually referred (`permitted`); a held-back unit was never
+        // referred.
         genderPlacements:
           genderPlacementAddition === undefined
             ? movement.genderPlacements
@@ -4359,19 +3644,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                 },
               ].filter((record) => record.unitIds.length > 0),
         stage: "destination_review",
-        // The creation value, "Awaiting coordinator referral", stops being true at exactly this
-        // line — the coordinator has now referred. Restated unconditionally, including on a
-        // re-referral: adding a ward is new information that can contradict a standing sentence
-        // like `wardRequestWithdrawn` ("No ward is being asked") or a stale human note — see
-        // `STAGE_TRANSITION_BLOCKERS`'s own comment on when this table restates.
+        // Restated unconditionally, including on a re-referral: adding a ward can contradict a
+        // standing sentence such as `wardRequestWithdrawn`.
         blocker: STAGE_TRANSITION_BLOCKERS.referred,
-        // RA1: a re-referral adds wards without a fresh stage transition — the movement was already
-        // at `destination_review`, so nothing here CHANGED that a new entry would record. `DECLINE`
-        // appends unconditionally because it marks a distinct clinical fact (a ward said no) at the
-        // moment it happens; a re-referral repeats the SAME fact ("referrals are live") the first
-        // referral already recorded once. `ward-movement-stage-changes.test.ts`'s "every derived
-        // case appends exactly one entry" floor is proved against the FIRST referral only, which
-        // still transitions from `placement_requested` and still appends exactly one.
+        // RA1: a re-referral adds wards without a stage transition, so it appends no stage change.
+        // The first referral still appends exactly one (`ward-movement-stage-changes.test.ts`).
         stageChanges: isReReferral
           ? movement.stageChanges
           : [
@@ -4417,10 +3694,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const acceptedUnit = findUnit(state, event.unitId);
       if (!acceptedUnit) return reject(state, event, `no unit found for id ${event.unitId}`);
 
-      // T12 (item 9): `ACCEPT_IN_PRINCIPLE` never WRITES a gender-placement record — only
-      // `REFER_TO_UNITS` does, at the moment the coordinator chose these wards — it only refuses
-      // when nothing on the movement already names this unit. See `GenderPlacement`'s own doc
-      // comment (`ward-model.ts`) for why this cannot be bought past with a reason here.
+      // T12: `ACCEPT_IN_PRINCIPLE` never writes a gender-placement record (only `REFER_TO_UNITS`
+      // does); it refuses when nothing on the movement names this unit. See `GenderPlacement`
+      // (`ward-model.ts`).
       if (
         genderReviewNeeded(movement.gender, movement.sex) &&
         !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(event.unitId))
@@ -4428,12 +3704,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, GENDER_PLACEMENT_REFUSAL);
       }
 
-      /*
-       * ⚠️ THE ELIGIBILITY GATE — and this is the event that most needed it. `ACCEPT_IN_PRINCIPLE`
-       * is the ward saying yes to a bed, the closest thing on the movement path to a placement, and
-       * before the owner's 2026-09-02 ruling it ran NO eligibility check of any kind — only a
-       * `referredUnitIds` membership test. See `eligibilityRefusal` for the four-row contract and
-       * for why the override is not a loophole.
+      /**
+       * The eligibility gate on the ward's yes to a bed, the closest thing to a placement on the
+       * movement path. See `eligibilityRefusal` for the contract.
        */
       const acceptRefusal = eligibilityRefusal(event, movement, acceptedUnit, event.now);
       if (acceptRefusal) return reject(state, event, acceptRefusal);
@@ -4444,11 +3717,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           heldBedRefusal(state, acceptedUnit, event.bedNumber, movement.id);
         if (bedRefusal) return reject(state, event, bedRefusal);
       }
-      // An override is filed here only when it is NEW: a gate genuinely fails for this unit, and no
-      // override already on the movement covers it. A reason against a unit that passes every gate
-      // bought nothing (the rule `referralAcceptanceRefusal` follows), and the override that
-      // REFER_TO_UNITS filed for this unit already accounts for the acceptance, as PULL_PATIENT
-      // relies on. 6eec76bd85 filed one on every supplied reason (tests/ward-audit.test.ts).
+      // An override is filed only when it is new: a gate genuinely fails for this unit and no
+      // override already on the movement covers it (tests/ward-audit.test.ts).
       const overrideApplied =
         event.overrideReason !== undefined &&
         !eligibility(movement, acceptedUnit, event.now).eligible &&
@@ -4459,12 +3729,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         .map((unitId) => ({
           unitId,
           at: event.now,
-          // 🔴 FD-23, and TWO defects in one string. It read `withdrawn — placed at
-          // ${acceptedUnit.name}`, and the ward page renders this field verbatim — so the LOSING
-          // ward read the WINNER's name out of the record of its own loss. The second defect
-          // survives the first fix: "placed" asserts a transfer that has not happened, because
-          // this event leaves the movement at `accepted_awaiting_bed`. A code, never a sentence:
-          // see WITHDRAWAL_REASONS. The coordinator reads `acceptedUnitId` for the destination.
+          // FD-23: a code, never a sentence. The losing ward must not read the winner's name, and
+          // "placed" would assert a transfer that has not happened. The coordinator reads
+          // `acceptedUnitId` for the destination.
           reason: "another_unit_accepted" as const,
         }));
 
@@ -4488,30 +3755,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                 },
               ]
             : movement.overrides,
-        // Fix round 1 (Task 9): the instant this acceptance happened, recorded directly rather
-        // than left to survive only as an incidental `withdrawnReferrals` side effect of a
-        // multi-unit referral. See `Movement.acceptedAt`'s own doc comment.
+        // The instant this acceptance happened. See `Movement.acceptedAt`.
         acceptedAt: event.now,
         stage: "accepted_awaiting_bed",
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],
-        // Nobody is waiting on a destination response any more — one arrived. What is outstanding
-        // is the bed, and that is all this sentence claims: the seed's richer "Bed being made
-        // ready" is a ward's own observation and only a human may write it.
+        // A response arrived; what is outstanding is the bed. Richer prose is a ward's own
+        // observation.
         blocker: STAGE_TRANSITION_BLOCKERS.accepted,
-        // `acceptedAt` above and this entry are written together and must never diverge — see
-        // `StageChange`'s doc comment: `acceptedAt` agrees with the FIRST entry with
-        // `to: accepted_awaiting_bed`, which this always is on the acceptance path (RELEASE_PULL
-        // later adds a SECOND one without touching `acceptedAt`, and must never rewrite it here).
+        // `acceptedAt` and this entry are written together and must agree (see `StageChange`).
+        // RELEASE_PULL later adds a second entry without touching `acceptedAt`.
         stageChanges: [
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "accepted_awaiting_bed", by: event.role },
         ],
       };
       const next = replaceMovement(state, movement.id, updated);
-      // Communication addendum §1.3: "the answer to the question they asked" — the referring
-      // emergency department is told a ward has said yes in principle. `acceptedUnit` was already
-      // resolved and gated above, so it is guaranteed to exist here.
+      // Addendum §1.3: the referring emergency department is told a ward has said yes in principle.
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       decision.overrideFactRecorded = overrideApplied;
@@ -4528,30 +3788,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * THE REFERRER TAKES THE REFERRAL BACK — the second way a referral can end, and until today
-     * there was only one.
+     * The referrer takes the referral back: a patient who improved, went home or went elsewhere no
+     * longer needs a bed.
      *
-     * The only writer of `withdrawnReferrals` was `ACCEPT_IN_PRINCIPLE`, so the only way a
-     * referral ever ended was another unit winning it. A patient who improved, went home or went
-     * elsewhere left the request live in every receiving ward's list, and nobody could say it was
-     * over. That is a flow gap rather than a missing screen: the state simply had no way to exist.
-     *
-     * ⚠️ **IT WITHDRAWS EVERY LIVE REFERRAL AT ONCE, and that is the meaning rather than a
-     * shortcut.** The referrer is saying this patient no longer needs a bed, which is true of all
-     * of them or none. Withdrawing from one ward while leaving others live is a different act —
-     * changing your mind about a destination, not about the admission — and it does not exist yet.
-     *
-     * The reason code is `referrer_withdrew` and is NOT taken from the event. `WITHDRAWAL_REASONS`
-     * says adding a member is a governance decision, and the reasons a referrer would give — the
-     * patient improved, went home, went elsewhere, died — are clinical facts about a person. So the
-     * flow exists and the vocabulary is left to the owner.
+     * Withdraws every live referral at once, because the referrer is saying the patient needs no
+     * bed at all. The reason code is `referrer_withdrew`, never taken from the event: adding
+     * `WITHDRAWAL_REASONS` members is a governance decision left to the owner.
      */
     case "WITHDRAW_REFERRAL": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // Already finished, by arrival or otherwise. Withdrawing a closed movement would append a
-      // withdrawal to a record that has already ended, and every count derived from
-      // withdrawnReferrals would then include a referral that was never live at that moment.
+      // Already finished: withdrawing a closed movement would count a referral that was never live
+      // at that moment.
       if (movement.closure) {
         return reject(state, event, `movement ${movement.id} has already closed and cannot be withdrawn`);
       }
@@ -4566,10 +3814,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const callerPlaceId =
         caller.placeId ?? caller.actingPlaceId ?? (caller.role === "ward" ? caller.actingUnitId : undefined);
       const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
-      // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise the
-      // ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the sending
-      // ward (`referral.originUnitId`) may also withdraw — an ED-raised journey on a ward referral
-      // must not lock out the ED that owns it (qodo, 13 Oct). Community teams may also withdraw.
+      // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise
+      // the ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the
+      // sending ward may also withdraw. Community teams may also withdraw.
       const senders: { role: WardFlowRole; placeId: string | undefined }[] =
         movement.sourceAdmissionId !== undefined
           ? [{ role: "ward", placeId: movementSourceAdmission(state, movement)?.unitId }]
@@ -4608,19 +3855,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
 
-      /*
-       * 🔴 WLQ-38 (owner, 2026-09-15), verbatim: *"This should also be the referring doctors
-       * responsibility as well to be able to revoke the transport as well as referral in addition
-       * to the coordinator."* Before this, EVERY role was refused here once `acceptedUnitId` was
-       * set — "a bed has been given... undoing that is the ward's own decline, not a withdrawal by
-       * the referrer." That is still true of `community` and `ward`; it is no longer true of the
-       * referrer (`ed`) or the coordinator, who may now revoke an ACCEPTED referral, once, up until
-       * the patient is collected — see `STOP_TRANSPORT` for the case after collection.
+      /**
+       * WLQ-38 (owner): "This should also be the referring doctors responsibility as well to be
+       * able to revoke the transport as well as referral in addition to the coordinator." The
+       * referrer (`ed`) or the coordinator may revoke an accepted referral, once, until the patient
+       * is collected (then `STOP_TRANSPORT`). Still refused for `community` and `ward`.
        *
-       * This branch runs BEFORE the pre-acceptance `referredUnitIds.length === 0` guard below on
-       * purpose: `ACCEPT_IN_PRINCIPLE` always empties `referredUnitIds` on acceptance, so an
-       * accepted movement legitimately holds no live referral, and falling through to that guard
-       * would refuse this branch's own happy path with the wrong reason.
+       * Runs before the `referredUnitIds.length === 0` guard below: acceptance empties
+       * `referredUnitIds`, so that guard would refuse this happy path.
        */
       if (movement.acceptedUnitId) {
         if (event.role !== "coordinator" && event.role !== "ed") {
@@ -4640,9 +3882,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
 
-        // Gives back a bed already pulled (and deletes the admission it created), or does nothing
-        // if the movement is still only accepted and no bed has been pulled yet — the same shared
-        // helper `RELEASE_PULL` uses, reused rather than copied. See its own doc comment.
+        // Gives back a pulled bed and its admission, or does nothing if none was pulled. Shared
+        // with `RELEASE_PULL`.
         const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
         const revokedByCoordinator = event.role === "coordinator";
         const acceptingUnitId = movement.acceptedUnitId;
@@ -4655,11 +3896,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           // A revoked acceptance holds no ward: cleared here, as RECORD_ED_OUTCOME and
           // REFER_TO_COMMUNITY_TEAM do, so no board reads a closed movement as still going to it.
           acceptedUnitId: undefined,
-          // Any booked-but-not-collected job is cancelled in the same update that closes the
-          // movement — the same discipline `RECORD_EXAMINATION`'s own `community_order`/`revoked`
-          // branch already holds `TransportJob.cancelledAt` to (see that field's own doc comment):
-          // a closing event that left a live job behind would be the phantom job `orphanedTransport`
-          // (`ward-derivations.ts`) assumes can never happen once `movement.closure` is set.
+          // A booked-but-uncollected job is cancelled in the same update that closes the movement;
+          // `orphanedTransport` assumes no live job outlives a closure.
           transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
           closure: {
             at: event.now,
@@ -4668,17 +3906,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
               ? "The coordinator revoked the accepted referral"
               : "The referrer revoked the accepted referral",
           },
-          // Nothing is blocking a movement that is over — same reasoning as the pre-acceptance
-          // path below, and it overwrites WLQ-4's `examinationRevokedAwaitingRelease` too, if that
-          // was standing: the movement this revocation just closed no longer needs releasing.
+          // Nothing blocks a movement that is over; this also clears WLQ-4's
+          // `examinationRevokedAwaitingRelease`.
           blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
         };
         const next = replaceMovement(withoutPulledBed, movement.id, revoked);
-        // Communication addendum §1.3's own principle, extended by WLQ-38 (see `NoticeKind`'s own
-        // doc comment for the addendum-row debt this records rather than silently drifting past):
-        // a ward that believed it was getting this patient must be told it is not. `acceptingUnitId`
-        // is guaranteed to resolve — it is `movement.acceptedUnitId`, read before this handler's own
-        // writes touched it.
+        // Addendum §1.3, extended by WLQ-38: a ward that believed it was getting this patient is
+        // told it is not. `acceptingUnitId` was read before this handler's writes.
         let noticeCount = state.notices.length;
         const notices: Notice[] = [
           makeNotice(
@@ -4770,9 +4004,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot withdraw a ward request for a closed movement (${movement.closure.reason})`,
         );
       }
-      // Membership, not truthiness — the same discipline `DECLINE`/`ACCEPT_IN_PRINCIPLE` already
-      // hold to for `referredUnitIds`. An already-accepted, already-declined or already-withdrawn
-      // unit holds no live referral to take back.
+      // Membership, not truthiness: an accepted, declined or withdrawn unit holds no live referral
+      // to take back.
       if (!movement.referredUnitIds.includes(event.unitId)) {
         return reject(state, event, `${event.unitId} does not hold a live referral for movement ${movement.id}`);
       }
@@ -4784,24 +4017,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const updated: Movement = {
         ...movement,
         referredUnitIds: remainingUnitIds,
-        // `reason` says WHO — a role, never a person, the same discipline `another_unit_accepted`/
-        // `referrer_withdrew` already hold to. `detail` says WHY, from the coordinator's own §2
-        // pick — never folded into `reason`, which stays a closed three-member union.
+        // `reason` says who (a role); `detail` says why, from the coordinator's §2 pick, and is
+        // never folded into `reason`.
         withdrawnReferrals: [
           ...movement.withdrawnReferrals,
           { unitId: event.unitId, at: event.now, reason: "coordinator_withdrew", detail: event.reason },
         ],
-        // RA1: withdrawing one ward while others stay live touches `blocker` not at all —
-        // `STAGE_TRANSITION_BLOCKERS.referred` is still true while any live request stands. Only
-        // the LAST one going sets the new sentence: nothing is currently asking, and the
-        // coordinator must refer again before anyone is.
+        // RA1: only the last live request going changes `blocker`.
         blocker: remainingUnitIds.length === 0 ? STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn : movement.blocker,
       };
       const next = replaceMovement(state, movement.id, updated);
-      // Addendum §1.3's own principle, extended by RA1: a ward that was holding a live request must
-      // be told it is not being asked any more — the same "a party learns they are not coming/not
-      // needed" shape `CANCEL_TRANSPORT`'s ward half and `WITHDRAW_REFERRAL`'s WLQ-38 half already
-      // carry. Addressed to the one ward named, never to every referred ward.
+      // Addendum §1.3, extended by RA1: the one ward named is told it is no longer being asked.
       return appendNotices(next, [
         makeNotice(
           event.now,
@@ -4836,27 +4062,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was accepted at ${movement.acceptedUnitId ?? "no unit"}, not ${event.unitId}`,
         );
       }
-      // P1-3 (Ward Lead ruling, 17 September 2026): was the T12 (item 9) non-binary-only check
-      // alone — "the same defence `ACCEPT_IN_PRINCIPLE` already holds, checked again here rather
-      // than trusted from that earlier step". `heldUnitGenderRefusal` now covers that AND the
-      // binary `gender_designation` gate, because by the time a movement reaches `PULL_PATIENT` it
-      // is already accepted (`movement.acceptedUnitId` set, matched against `event.unitId` above),
-      // so EITHER gender judgement failing here means a correction landed after acceptance, not a
-      // front-door mismatch — see that function's own doc comment for why the wording differs from
-      // `eligibilityRefusal`'s.
+      // P1-3 (Ward Lead ruling): by `PULL_PATIENT` the movement is already accepted at this unit,
+      // so either gender judgement failing means a correction landed after acceptance. See
+      // `heldUnitGenderRefusal`.
       const heldGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (heldGenderRefusal) return reject(state, event, heldGenderRefusal);
-      /*
-       * A MOVEMENT THAT STILL HOLDS A BED IS RESTORED TO `pulled`, NEVER GIVEN A SECOND BED.
-       * `STEP_BACK_STAGE` keeps the bed and `admissionId` by design (rulings E/F), so a movement
-       * stepped back from `pulled` arrives here still holding both. Before 2026-09-14 this handler
-       * took another bed and orphaned the first admission; the next fix refused outright, which left
-       * the patient holding a bed with no way forward. Owner decision 2026-09-15: pulling again
-       * restores the pull on the bed already held.
+      /**
+       * A movement that still holds a bed is restored to `pulled`, never given a second bed (owner
+       * decision). `STEP_BACK_STAGE` keeps the bed and `admissionId` (rulings E/F).
        *
-       * Runs BEFORE every capacity and eligibility check, deliberately: nothing is consumed, and the
-       * held admission is itself one of the places those checks count, so re-asking them would refuse
-       * a patient for occupying their own bed.
+       * Runs before every capacity and eligibility check: nothing is consumed, and those checks
+       * would count the patient's own held bed against them.
        */
       const patientId =
         movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
@@ -4938,28 +4154,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       if (unit.allocatable.value <= 0) {
-        /*
-         * 🔴 THIS NAMED A CAUSE THE GUARD NEVER CHECKED. The parenthetical used to carry the
-         * `DECLINE_REASONS` code for a bed pulled for an earlier referral — a specific cause — while
-         * the guard tests only `unit.allocatable.value <= 0`.
-         *
-         * ⚠️ **`CONFIRM_CAPACITY` sets `allocatable.value` straight from a ward's own self-report.**
-         * So: accept in principle, the ward corrects its count to zero for an unrelated reason, then
-         * pull — and the software told the coordinator an earlier referral had taken the bed. **No
-         * pull had happened, and they would go looking for the patient who took it.**
-         *
-         * 🔴 **AND NO DISCRIMINATOR EXISTS, WHICH IS WHY THE CAUSE GOES RATHER THAN GETTING A
-         * CONDITION.** `allocatable.source` cannot separate the two: `PULL_PATIENT` decrements the
-         * value while SPREADING the existing figure, so it preserves whatever source a prior
-         * `CONFIRM_CAPACITY` set. A unit whose count reached zero by pulling still reports
-         * `source: "ward"`.
-         *
-         * ✅ The two guards immediately below show what a scoped cause looks like when one is
-         * justified — each states "ONLY WHEN X IS THE CAUSE" and checks X. This one had no such
-         * reasoning and none was available.
-         *
-         * So it reports the fact it actually read. A refusal may restate what it checked; it may not
-         * name a cause it did not.
+        /**
+         * Reports only the fact it read (`allocatable.value <= 0`), never a cause.
+         * `CONFIRM_CAPACITY` sets that value from a ward's self-report, and `allocatable.source`
+         * cannot tell a pull from a ward correction, so naming an earlier pull as the cause could
+         * be false.
          */
         return reject(
           state,
@@ -4967,31 +4166,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `no allocatable bed remains at ${unit.name} (the ward's allocatable count is ${unit.allocatable.value})`,
         );
       }
-      /*
-       * ⚠️ **A PULL IS REFUSED AGAINST A BED THAT IS NOT READY.** Owner ruling, 2026-09-01:
-       * *"A pull cannot occur unless the bed is actually available and open, not pending (i.e. being
-       * cleaned)"*.
+      /**
+       * A pull is refused against a bed that is not ready (owner ruling): "A pull cannot occur
+       * unless the bed is actually available and open, not pending (i.e. being cleaned)". The
+       * refusal lives here, not on a screen, so the transition itself cannot happen. `availableNow`
+       * is deliberately unchanged: the owner chose refusing the pull over dropping the ward's
+       * number.
        *
-       * **Before this line a patient could be pulled to a bed that was still being cleaned.** The
-       * check above reads `allocatable`, which is the ward's own claim about what it can staff, and
-       * `availableNow` reads no readiness field at all — `ward-bed-availability.ts` says so
-       * deliberately, on the reasoning that a bed being prepared is still worth counting because the
-       * pull takes hours anyway. **The owner has overruled that reasoning.**
-       *
-       * **The refusal lives HERE and not on a screen, and that is the whole point.** A test asserting
-       * that a ward's page says "pending" passes against a build in which this refusal was never
-       * written. The property that matters is that the state transition cannot happen.
-       *
-       * `availableNow` is deliberately NOT changed — he was asked whether cleaning should drop the
-       * ward's number or only refuse the pull, and chose the refusal, because the ward has not changed
-       * what it can staff and its figures should not lurch as cleaning starts and stops.
-       */
-      /*
-       * ⚠️ **ONLY WHEN PREPARATION IS THE CAUSE.** Written first as `openBedsNow(...) <= 0` alone,
-       * which also fired when the ward simply had no free bed — hijacking a different guard's case and
-       * reporting "still being made ready (0 pending)", which is untrue and hides the real reason. It
-       * broke `refuses an arrival once the unit's physically empty beds are exhausted`, which is how it
-       * was caught. A refusal must state the reason that actually applies.
+       * Only when preparation is the cause: a refusal must state the reason that actually applies,
+       * not hijack the no-free-bed case.
        */
       const pending = bedsPendingPreparation(unit.id, state.bedReleases);
       if (pending > 0 && openBedsNow(unit, state.bedReleases) <= 0) {
@@ -5001,57 +4184,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `every free bed at ${unit.name} is still being made ready (${pending} pending); a patient cannot be pulled to a bed that is not open`,
         );
       }
-      /*
-       * ⚠️ **A PULL FOR SOMEBODY NEEDING ONE-TO-ONE OBSERVATION IS REFUSED WHEN THE WARD HAS
-       * NOBODY LEFT TO WATCH THEM.** Owner ruling, 2026-09-01 (ruling 1 of fourteen): one-to-one
-       * nursing is recorded as the ward's staffing of the bed, and `Unit.speciallingCapacity` is
-       * what that recording counts.
+      /**
+       * A pull for somebody needing one-to-one observation is refused when the ward has nobody left
+       * to watch them (owner ruling 1). `eligibility()`'s `specialling` gate only asks whether the
+       * ward has any capacity at all; this asks whether any is left, derived from the beds
+       * (`remainingSpeciallingCapacity`), never a decremented counter. The refusal lives here so
+       * the transition itself cannot happen, and only when specialling is the cause.
        *
-       * **Before this line the ward handed out a bed it could not staff, without limit.** The only
-       * check that existed — `eligibility()`'s `specialling` gate — asks `speciallingCapacity > 0`,
-       * a figure authored per unit that no reducer path has ever changed. So it could say whether a
-       * ward had ANY capacity and never whether it had any LEFT: the second, third and fourth
-       * one-to-one patient all passed the same gate as the first.
-       *
-       * **The refusal lives HERE and not only on that screen, and that is the whole point.** A test
-       * asserting a ward's page shows a specialling gate passes against a build where this refusal
-       * was never written — the same reasoning the pending-preparation refusal above records. The
-       * property that matters is that the state transition cannot happen.
-       *
-       * ⚠️ **ONLY WHEN SPECIALLING IS THE CAUSE, and the guard above is the cautionary tale.** It
-       * is gated on `movement.specialling` first, so an ordinary pull into a ward with no
-       * one-to-one headroom left is untouched and still meets whichever guard actually applies. A
-       * refusal must state the reason that really applies; naming "no bed" here, or naming
-       * specialling for a movement that needs none, is a refusal that hides the real cause.
-       *
-       * The remaining figure is DERIVED from the beds — never a counter this handler decrements.
-       * See `remainingSpeciallingCapacity`.
-       */
-      /*
-       * 🔴 **OWNER RULING 2026-09-12 — THIS REFUSAL IS NOW ANSWERABLE BY A RECORDED REASON, AND
-       * THE BED CHECK ABOVE IS NOT.** He was asked the question directly: should the staffing check
-       * work like the authorisation one, or stay absolute? He ruled overridable.
-       *
-       * ⚠️ **HIS REASONING, WHICH IS THE SAME ONE THAT MADE `authorisation` OVERRIDABLE:** under
-       * pressure the placement happens anyway, and a gate nobody can pass does not stop the
-       * admission — it stops the admission being WRITTEN DOWN. An override does not permit the
-       * placement; it protects the record of who took responsibility.
-       *
-       * 🔴 **AND THIS SEPARATES SPECIALLING FROM THE BED CHECK, WHICH THEY WERE PAIRED IN.** The
-       * bed guard above is untouched and still runs FIRST and still reads no reason at all. *No
-       * reason typed into a form creates a bed* remains true and remains enforced. What changed is
-       * that "nobody free to watch this patient" is now treated as answerable by a named person
-       * taking responsibility, the way a stale bed count was in the 2026-09-02 ruling.
-       *
-       * ⚠️ **MEMBERSHIP-CHECKED, NEVER TRUTHINESS-CHECKED** — the same discipline as every other
-       * override site in this file. An unrecognised string must not buy past a clinical refusal;
-       * it falls through to `eligibilityRefusal`, which rejects it by name.
-       *
-       * ✅ **THE DELIBERATE NON-EDIT: `specialling` was NOT added to `SUITABILITY_GATES`.** That
-       * would have loosened a DIFFERENT question. `eligibility()`'s `specialling` gate asks whether
-       * the ward has ANY capacity — a static authored figure. This check asks whether any is LEFT,
-       * derived from the beds. Adding the gate name would have made the static question overridable
-       * and left this one absolute: the ruling implemented in appearance only.
+       * Owner ruling: this refusal is answerable by a recorded reason (a gate nobody can pass stops
+       * the record, not the admission); the bed check above is not and still runs first.
+       * Membership-checked, never truthiness: an unrecognised string falls through to
+       * `eligibilityRefusal`. `specialling` is deliberately not in `SUITABILITY_GATES`, which would
+       * make the static question overridable instead of this one.
        */
       const speciallingAnswered = event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
       if (!speciallingAnswered && movement.specialling && remainingSpeciallingCapacity(unit, state.admissions) <= 0) {
@@ -5062,35 +4206,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
 
-      /*
-       * 🔴 **OWNER RULING 2026-09-10 (`docs/ward-flow/owner-decisions-2026-09-09.md` §5) —
-       * HIGH-ACUITY NURSING IS ALSO A STAFFING-CAPACITY CHECK, ANSWERABLE THE SAME WAY SPECIALLING
-       * IS ABOVE.** `eligibility()`'s own `acuity` gate (`ward-eligibility.ts`) can only ask whether
-       * this ward is staffed for a high-acuity place AT ALL, from the authored total — it is handed
-       * no admissions, so it cannot know what is LEFT. `remainingHighAcuityCapacity(unit,
-       * admissions)` is the only thing that does, and until now nothing called it here: a ward
-       * staffed for exactly one high-acuity place could be pulled into without limit, the identical
-       * defect `remainingSpeciallingCapacity` closed one guard above.
+      /**
+       * Owner ruling (`docs/ward-flow/owner-decisions-2026-09-09.md` §5): high-acuity nursing is a
+       * staffing-capacity check too. `eligibility()`'s `acuity` gate only sees the authored total;
+       * `remainingHighAcuityCapacity` knows what is left. Mirrors the specialling guard, including
+       * membership-checked overrides, and `acuity` is deliberately not in `SUITABILITY_GATES`.
        *
-       * Mirrors the specialling guard exactly, including the override mechanism: a valid reason from
-       * `OVERRIDE_REASONS` answers it, an unrecognised string does not (membership, never
-       * truthiness), and `acuity` is deliberately NOT added to `SUITABILITY_GATES` — that would make
-       * `eligibility()`'s static "does this ward staff any at all" question overridable, a different
-       * question from this derived "is any LEFT" one.
-       *
-       * 🔴 **ITEM 10, OWNER ANSWERS 17 SEPTEMBER 2026 — AND THIS IS WHERE IT DIVERGES FROM
-       * SPECIALLING.** A reason alone used to be enough, exactly like specialling above, and the
-       * override was never written anywhere: `speciallingAnswered`'s own construction was copied
-       * for acuity, but nothing on this movement's update ever touched `overrides` for either gate.
-       * The owner's ruling adds a SECOND fact this one gate needs — "the nurse unit manager
-       * consulted" — and requires the answer to be written down. Specialling is deliberately
-       * untouched: `speciallingAnswered` above still reads a reason alone, because the owner's
-       * ruling names only high-acuity staffing.
-       *
-       * `acuityOverrideNeeded` is captured once, here, rather than re-derived at the movement
-       * update below: `remainingHighAcuityCapacity` reads `state.admissions`, which this handler
-       * does not mutate before that point, so re-deriving it there would only be able to agree or
-       * silently drift if that ever changed. One value, read twice, cannot drift from itself.
+       * Item 10 (owner answers): unlike specialling, this override also needs "the nurse unit
+       * manager consulted", and the answer is written to `overrides`. Captured once here so the
+       * refusal and the movement update below cannot drift.
        */
       const acuityOverrideNeeded = movement.highAcuity && remainingHighAcuityCapacity(unit, state.admissions) <= 0;
       const acuityAnswered =
@@ -5105,31 +4229,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
 
-      /*
-       * 🔴 ITEM 11, OWNER ANSWER 11 (17 SEPTEMBER 2026): *"voluntary patients take open beds first,
-       * and secure patients take locked beds first."* Read as: bed kind belongs to the REQUEST —
-       * `movement.security`, not to the patient's legal status — so "voluntary" above is taken as
-       * `security: "Open"`.
+      /**
+       * Item 11 (owner answer 11): "voluntary patients take open beds first, and secure patients
+       * take locked beds first." Bed kind belongs to the request (`movement.security`), so
+       * "voluntary" is read as `security: "Open"`.
        *
-       * ⚠️ **THIS IS A CAPACITY CHECK, NOT THE `security` SUITABILITY GATE `eligibility()` ALREADY
-       * EMITS.** That gate (`ward-eligibility.ts`) asks only whether the WARD HAS ANY LOCKED BEDS AT
-       * ALL (`unitHasLockedBeds`), a fact that never changes as beds fill — its own comment names the
-       * residual this closes: "a Secure movement passes a mixed ward whose locked beds are all
-       * occupied while its open beds are free." Before this line nothing ever asked whether one was
-       * CURRENTLY FREE, and nothing ever decremented `unit.allocatableLocked` at all — `PULL_PATIENT`
-       * decremented `allocatable` only, so `lockedBedsFree` overstated after every locked pull.
+       * A capacity check, not the `security` suitability gate, which only asks whether the ward has
+       * any locked beds. It sits with the other physical capacity checks before
+       * `eligibilityRefusal`.
        *
-       * Placed in the SAME capacity block as the specialling and acuity checks above, before
-       * `eligibilityRefusal` — physical facts about beds, not judgements about the patient, and
-       * `PULL_PATIENT` is the only event that consumes one (see `eligibilityRefusal`'s own comment
-       * on why that ordering is safe).
-       *
-       * An Open request takes an open bed while one is free, falling back to a locked one with NO
-       * override needed — a voluntary patient may be nursed in a locked bed (`eligibility()`'s own
-       * `security` gate says so already). A Secure request takes a locked bed while one is free;
-       * only when none is free does it need an override, and only then falls back to an open bed —
-       * `bedKindTaken` below computes exactly this, once, and is read by both the refusal check and
-       * the admission literal, so the two can never disagree about which kind was actually taken.
+       * An Open request takes an open bed while one is free, else a locked one with no override. A
+       * Secure request takes a locked bed while one is free; only when none is free does it need an
+       * override to fall back to an open bed. `bedKindTaken` computes this once for the refusal
+       * check, the capacity decrement and the admission literal.
        */
       const secureBedNeeded = movement.security === "Secure";
       const noLockedBedFree = lockedBedsFree(unit) <= 0;
@@ -5150,17 +4262,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ? "open"
           : "locked";
 
-      /*
-       * ⚠️ THE ELIGIBILITY GATE GOES LAST, AFTER EVERY EXISTING REFUSAL, and that ordering is a
-       * decision rather than an accident. Ward Lead's ruling, 2026-09-02: the refusals above are
-       * cheaper, more specific, and mostly about the world rather than the patient — wrong stage,
-       * no allocatable bed, a bed still being prepared, no specialling staff. **A coordinator who
-       * pulled at the wrong stage should be told THAT, not told about cohort.**
-       *
-       * ⚠️ AND IT IS WHY A RED HERE PROVES NOTHING ON ITS OWN. The specialling refusal directly
-       * above fires for a patient who fails BOTH that check and an eligibility gate, and reading it
-       * as "the engine now enforces eligibility" nearly closed this finding falsely. **Prove this
-       * gate on a pair whose ONLY failing gate is cohort.**
+      /**
+       * The eligibility gate goes last, after every existing refusal (Ward Lead ruling): a
+       * coordinator who pulled at the wrong stage should be told that, not told about cohort. Test
+       * this gate on a pair whose only failing gate is cohort, since the refusals above can fire
+       * first.
        */
       const pullRefusal = eligibilityRefusal(event, movement, unit, event.now);
       if (pullRefusal) return reject(state, event, pullRefusal);
@@ -5169,83 +4275,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ...unit,
         // Audit A1-11: a pull moves the figure; only Confirm numbers stamps it confirmed.
         allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 },
-        // Item 11, owner answer 11 — decremented ONLY when the bed taken was one of the locked
-        // ones, exactly mirroring the restore in `releasePulledBedAndAdmission`. Taking an open bed
-        // leaves this untouched: the locked ones remaining are exactly as many as before.
+        // Item 11: decremented only when a locked bed was taken, mirroring the restore in
+        // `releasePulledBedAndAdmission`.
         allocatableLocked: bedKindTaken === "locked" ? unit.allocatableLocked - 1 : unit.allocatableLocked,
       };
       /**
-       * TASK 17. The patient becomes a person in a bed, and this is the line whose absence made
-       * them vanish.
+       * The patient becomes a person in a bed, built in the same shape the seed builds so every
+       * consumer renders it.
        *
-       * Before this, arrival closed the movement and moved two numbers on the unit. `isOpen` then
-       * removed the closed movement from ten surfaces, so the demonstration lost sight of somebody
-       * at the exact moment it had succeeded in placing them. The bed count changed and the person
-       * did not exist anywhere.
+       * R4: `referralId`, `patientId` and `homeRegion` are derived from `resolvedReferral`, never
+       * invented, so a community team's referred patient stays on its team page
+       * (`admissionBelongsToTeam`). `null` is the honest answer when no referral resolves; a home
+       * region is never derived from the origin emergency department.
        *
-       * Built in the SAME SHAPE the seed builds, so every consumer that already renders an occupant
-       * renders this one too, with no second kind of occupant to learn about.
+       * `state` is `"pulled"` and `arrivedAt` is `null` (owner ruling: "a patient is not marked as
+       * arrived until the ward says they have arrived. The pull just means the bed is allocated to
+       * them."). Only `PATIENT_ARRIVED` writes `arrivedAt`, so `daysInBed` is not inflated by the
+       * transport delay. `pulledAt` is `event.now`: this event is the pull.
        *
-       * 🔴 **R4 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`), 2026-09-17 —
-       * `referralId` AND `homeRegion` USED TO BE WRITTEN `null` UNCONDITIONALLY, EVEN WHEN THE
-       * MOVEMENT CARRIED A REAL, RESOLVED `referralId`.** Every runtime admission this event ever
-       * built therefore had `referralId: null`, so `admissionBelongsToTeam`
-       * (`community/community-derivations.ts`) — which reads exactly that field — was `false` for
-       * every one of them without exception: a community team's own referred patient vanished from
-       * its team page at the exact instant the ward gave them a bed. Both fields are now DERIVED
-       * from `resolvedReferral` below, the same "resolve, never merely store" discipline
-       * `patientId` beside them already held to, and for the identical reason `RAISE_REFERRAL`
-       * refuses a dangling `referralId` rather than storing one: an id or a region that joins to
-       * nothing is worse than an honest absence.
-       *
-       * `null` remains the correct, honest answer in exactly two cases, and each still says
-       * something true rather than missing:
-       *
-       *   `referralId`  - `null` when the movement carries no `referralId` at all (a walk-in, or a
-       *                   movement whose referral answer is `referralAbsence` instead of a link) —
-       *                   this admission came from a `Movement` with no linked `Referral`, and
-       *                   minting an id pointing at nothing would be worse than saying so.
-       *   `homeRegion`  - `null` for the identical reason: no resolved referral means no fact to
-       *                   copy. Deriving one from the origin emergency department would still be
-       *                   inventing it — where somebody was admitted from is not where they live —
-       *                   so a movement with no referral link gets no home region, exactly as
-       *                   before. Every consumer says "home region not recorded" rather than
-       *                   guessing, and the out-of-area figures skip them rather than counting them
-       *                   wrongly.
-       *
-       * ⚠️ **`state` IS `"pulled"` AND `arrivedAt` IS `null`, AND UNTIL 2026-09-01 BOTH WERE WRONG.**
-       * This record was written `state: "occupied"` with `arrivedAt: event.now` — so the instant a
-       * ward gave a bed away, the system recorded that the person had ARRIVED IN IT. They had not.
-       * They were usually still in an emergency department waiting for transport that had not been
-       * booked yet: this event is three stages before `PATIENT_ARRIVED`.
-       *
-       * **Owner ruling, 2026-09-01:** *"a patient is not marked as arrived until the ward says they
-       * have arrived. The pull just means the bed is allocated to them."* `PATIENT_ARRIVED` is the
-       * ward saying so, and it is the only event that may write `arrivedAt`.
-       *
-       * **Nothing was red, and the damage was silent and one-directional.** `daysInBed` counts from
-       * `arrivedAt`, so every stay begun by a pull was inflated by the whole transport delay — a
-       * plausible number, never a broken one. `ADMISSION_STATES` has carried `"pulled"` and
-       * `bedIsOccupied` has counted it since the day it was written; the bed is still gone from this
-       * instant, so no availability figure changes. Only the claim about the PERSON does.
-       *
-       * `pulledAt` is `event.now`: this event IS the pull. It read `movement.transport?.collectedAt`,
-       * which is a second defect of the same shape — a movement at `accepted_awaiting_bed` has no
-       * transport job (`BOOK_TRANSPORT` comes two stages later), so that expression was `null` on
-       * every path that could reach it, and the field it defends against overstating was simply never
-       * written at all.
-       */
-      /*
-       * D-14 / R4. Derived, never invented — the identical resolution `referralForMovement`
-       * (`ward-derivations.ts`) already performs for `Movement.referralId`, inlined rather than
-       * imported because `ward-derivations.ts` itself imports `REFERRABLE_MOVEMENT_STAGES` from
-       * THIS file, and importing back would be a circular module edge. `undefined` when the
-       * movement carries no `referralId` at all, OR when that id does not resolve to a referral
-       * this state holds — the same discipline `RAISE_REFERRAL` already enforces on
-       * `Movement.referralId` itself, so a dangling id can never survive onto the admission it
-       * produces. Computed ONCE and shared by every field below that copies from it, so
-       * `referralId`, `patientId` and `homeRegion` can never disagree about which referral (or
-       * whether one) resolved.
+       * D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
+       * `ward-derivations.ts` would be circular). `undefined` when the movement has no `referralId`
+       * or it does not resolve. Computed once so every field below agrees.
        */
       const resolvedReferral =
         movement.referralId === undefined
@@ -5254,43 +4304,32 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const admission: Admission = {
         id: `AD-ARR-${String(state.admissionSequence + 1).padStart(2, "0")}`,
         unitId: unit.id,
-        // The ward's own commitment to staff this bed one-to-one, copied from the movement, where a
-        // person ticked it at intake. Never derived from anything else about the patient, and the
-        // only runtime writer of this field — see `Admission.specialling`.
+        // The ward's commitment to staff this bed one-to-one, copied from the movement where a
+        // person ticked it at intake. The only runtime writer; see `Admission.specialling`.
         specialling: movement.specialling,
-        // The ward's commitment of a HIGH-ACUITY PLACE to this bed, copied from the movement, which
-        // carried it from the referral, where the REFERRING CLINICIAN marked it (owner ruling
-        // 2026-09-10). The only runtime writer, and never derived from `specialling` beside it: a
-        // ward can staff a one-to-one nurse in a bed that is not one of its high-acuity places.
+        // A high-acuity place, copied from the movement, where the referring clinician marked it
+        // (owner ruling). Never derived from `specialling`.
         highAcuity: movement.highAcuity,
         referralId: resolvedReferral?.id ?? null,
         movementId: movement.id,
         patientId: resolvedReferral?.patientId ?? movement.patientId ?? event.patientId ?? null,
         sex: movement.sex,
         gender: movement.gender,
-        // R4 — the same resolved referral `referralId` and `patientId` above already share. A home
-        // region is a fact about the PERSON, carried on `Referral.homeRegion`, never invented from
-        // where the movement's emergency department happens to sit. `null` for the identical reason
-        // `referralId` is null: no resolved referral means no fact to copy.
+        // R4: a home region is a fact about the person, from the resolved referral; never invented
+        // from the emergency department's location.
         homeRegion: resolvedReferral?.homeRegion ?? null,
-        // T15 (item 12): copied from the movement — which carried it from the referral this
-        // journey was raised from, or from the ED's own choice, which replaces it — and `null`
-        // only when nobody has recorded one at all. Never the resolved referral directly: the
-        // movement is the one record `RAISE_REFERRAL` actually writes this onto, and reading the
-        // referral here instead would let a diagnosis recorded on the referral AFTER this journey
-        // was raised silently reach an admission that never carried it.
+        // T15 (item 12): copied from the movement (the referral's value, or the ED's own choice).
+        // Never read from the referral directly, so a diagnosis added to the referral later does
+        // not reach this admission.
         tentativeDiagnosis: movement.tentativeDiagnosis ?? null,
-        // Item 11, owner answer 11 — the kind of bed ACTUALLY TAKEN, computed once above and shared
-        // with the refusal check and the capacity decrement, so none of the three can disagree about
-        // which kind this admission holds. See `Admission.bedKind`'s own doc comment.
+        // Item 11: the bed kind actually taken, shared with the refusal check and the decrement.
+        // See `Admission.bedKind`.
         bedKind: bedKindTaken,
         state: "pulled",
         pulledAt: event.now,
         arrivedAt: null,
-        // Null, and it is a statement rather than a default: nobody is away at an emergency
-        // department in the sense this field means — a ward sending an occupant of ITS OWN bed out
-        // for a medical problem. This person has not reached the ward at all yet, which is what
-        // `state: "pulled"` and a null `arrivedAt` already say.
+        // Null as a statement: this person has not reached the ward, so is not away at an emergency
+        // department in this field's sense.
         awayAtEmergencyDepartmentSince: null,
         expectedDischargeAt: null,
         dischargeDateMoves: 0,
@@ -5386,24 +4425,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ]);
       }
       if (!DECLINE_REASONS.includes(event.reason)) {
-        /*
-         * Runtime membership, not merely the type — the rule `CANCEL_TRANSPORT` and
-         * `STEP_BACK_STAGE` both state and this case predates: **a type-only guarantee passes
-         * `vitest run` with no `tsc` involved.** Added 2026-09-06 with three siblings, after a
-         * source-scanning guard found that FOUR reason-carrying events had no check, not one.
-         */
-        /*
-         * ⚠️ **`DECLINE_REASONS`, NOT `REFERRAL_DECLINE_REASONS` — TWO NEAR-NAMESAKE LISTS ON TWO
-         * DIFFERENT EVENTS, AND SWAPPING THEM WOULD BE INVISIBLE.** `DECLINE` is a ward refusing a
-         * MOVEMENT and carries `DeclineReason` (`ward-model.ts`); `DECLINE_REFERRAL` is a ward
-         * refusing a REFERRAL and carries `ReferralDeclineReason`. A check naming the wrong one
-         * would refuse valid reasons and accept invalid ones **while reading as a working check**,
-         * which is why `tests/ward-reason-checks-use-their-own-list.test.ts` derives the expected
-         * pairing from each event's own declared type rather than from a hand-written table.
+        /**
+         * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
+         * no `tsc` involved.
          *
-         * ⚠️ **AND THIS ONE RENDERS WORSE THAN AN UNLABELLED REASON.** The workspace timeline reads
-         * `declineReasonLabels[decline.reason]` with no fallback, so a value outside the list
-         * printed the literal string "undefined" beside a ward's name on the audit trail.
+         * `DECLINE_REASONS`, not `REFERRAL_DECLINE_REASONS`: `DECLINE` refuses a movement,
+         * `DECLINE_REFERRAL` a referral, and swapping the lists would look like a working check.
+         * `tests/ward-reason-checks-use-their-own-list.test.ts` guards the pairing. The timeline
+         * reads `declineReasonLabels[...]` with no fallback, so an off-list value would print
+         * "undefined".
          */
         return reject(state, event, `DECLINE reason must be chosen from DECLINE_REASONS`);
       }
@@ -5413,30 +4443,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         referredUnitIds: remainingReferredUnitIds,
         declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
         stage: "destination_review",
-        // A decline that leaves the movement at the stage it was already at — ruling 4: labelled
-        // a Decline on the tracker, never a step-back, which is why `declines` above is the
-        // clinical record and this entry exists only for the derived-case-list floor (every case
-        // that assigns `stage:` appends exactly one entry, whether or not the value changes).
+        // Ruling 4: a decline leaves the stage unchanged and is labelled a Decline, never a
+        // step-back. This entry exists for the floor that every stage-assigning case appends
+        // exactly one entry.
         stageChanges: [
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "destination_review", by: event.role, reason: event.reason },
         ],
-        // Finding 2 (2026-09-17 review): the same rule `WITHDRAW_WARD_REQUEST` already holds to —
-        // `STAGE_TRANSITION_BLOCKERS.referred` ("Awaiting destination response") is only still true
-        // while a live request stands. Declining the LAST one, with nothing accepted (guaranteed
-        // here — `ACCEPT_IN_PRINCIPLE` refuses once `acceptedUnitId` is set, and this case requires
-        // `destination_review`, a stage acceptance always leaves), left the sentence claiming a
-        // destination was still being asked when nobody was being asked at all.
+        // "Awaiting destination response" is only true while a live request stands; declining the
+        // last one switches to `wardRequestWithdrawn`, as `WITHDRAW_WARD_REQUEST` does.
         blocker:
           remainingReferredUnitIds.length === 0 && !movement.acceptedUnitId
             ? STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn
             : movement.blocker,
       };
       const next = replaceMovement(state, movement.id, updated);
-      // Communication addendum §1.3 ("DECLINE_REFERRAL / DECLINE — the referrer"): the referring
-      // emergency department is told this unit said no. Shares `NoticeKind` "referral_declined"
-      // with `DECLINE_REFERRAL` below — see that kind's own doc comment (`ward-model.ts`) for why
-      // one shared kind is correct here.
+      // Addendum §1.3: the referring emergency department is told this unit said no. Shares
+      // `NoticeKind` "referral_declined" with `DECLINE_REFERRAL`.
       return appendNotices(next, [
         makeNotice(
           event.now,
@@ -5462,32 +4485,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot ready a handover at the movement's current stage (${stageCopy[movement.stage].label})`,
         );
       }
-      /*
-       * 🔴 THIS FABRICATED A TRANSPORT JOB AND ANSWERED A CLINICAL QUESTION NOBODY HAD ASKED.
-       *
-       * It created `transport` on the spot with `escortRequired: movement.legalStatus !==
-       * "Voluntary"` — a judgement made by no person, rendered on screen as though a clinician had
-       * made it, and wrong in BOTH directions: a voluntary patient can need an escort, and a
-       * detained one settled enough to travel may not. `TR-D1` names escort as one of the two facts
-       * the sending team is booking BECAUSE it knows them. The provider was fabricated too, taking
-       * `TRANSPORT_PROVIDERS[0]` whenever the event carried no choice.
-       *
-       * It survived `BOOK_TRANSPORT` landing by an hour, deliberately: removing it before a booking
-       * control existed would have dead-ended "Mark handover ready" on a screen this session does
-       * not own. The control landed at `caacf1eda` with the escort question blank and the provider
-       * unchosen, so the bridge goes.
-       *
-       * ⚠️ **HANDOVER READY NOW REQUIRES A BOOKED TRANSPORT rather than inventing one.** The two
-       * changes cannot be apart: a stage that can be reached with no transport, on a model where
-       * nothing else creates one, is a patient marked ready to hand over with no way to move them.
+      /**
+       * Handover ready requires a booked transport (or a recorded "no transport needed"); nothing
+       * here invents a job, provider or escort answer. Escort is a fact the sending team knows and
+       * books (TR-D1).
        */
       const noTransportNeeded = (movement.transportNeed?.needed ?? movement.transport?.needed) === false;
       if (!movement.transport && !noTransportNeeded) {
         return reject(state, event, `cannot ready a handover before transport is booked (BOOK_TRANSPORT)`);
       }
-      // P1-3 (Ward Lead ruling, 17 September 2026): re-run at every forward step while a bed is
-      // held — see `heldUnitGenderRefusal`'s own doc comment for why only these two judgements and
-      // why `PATIENT_ARRIVED` below is deliberately exempt.
+      // P1-3: re-run at every forward step while a bed is held; see `heldUnitGenderRefusal`.
       const handoverGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (handoverGenderRefusal) return reject(state, event, handoverGenderRefusal);
       const updated: Movement = {
@@ -5508,9 +4515,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `cannot accept transport for a closed movement (${movement.closure.reason})`);
       }
 
-      // WLQ-4 close-out (2026-09-20): while examinationRevokedAwaitingRelease (or a revoked/
-      // community_order examination still holding a bed), do not advance the transport pathway.
-      // PATIENT_COLLECTED already refused this; PATIENT_ARRIVED stays reachable by owner answer 5.
+      // WLQ-4: do not advance the transport pathway while a revoked or community_order examination
+      // still holds a bed. PATIENT_ARRIVED stays reachable (owner answer 5).
       {
         const examinationOutcome = movement.examination?.outcome;
         const examinationRevokedHoldingBed =
@@ -5542,10 +4548,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const updated: Movement = {
         ...movement,
         transport: { ...movement.transport, acceptedAt: event.now },
-        // ⚠️ THE PROVIDER HAS NOW ANSWERED, so `"Awaiting a transport provider response"` — which
-        // `BOOK_TRANSPORT` wrote and nothing had replaced — is not merely stale here, it is
-        // CONTRADICTED BY THE RECORD BESIDE IT: `acceptedAt` on the same movement, on the same
-        // screen, holds the answer the sentence says is outstanding.
+        // The provider has answered, so "Awaiting a transport provider response" is contradicted by
+        // `acceptedAt` beside it.
         blocker: STAGE_TRANSITION_BLOCKERS.transportAccepted,
       };
       return replaceMovement(state, movement.id, updated);
@@ -5558,9 +4562,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `cannot move transport for a closed movement (${movement.closure.reason})`);
       }
 
-      // WLQ-4 close-out (2026-09-20): while examinationRevokedAwaitingRelease (or a revoked/
-      // community_order examination still holding a bed), do not advance the transport pathway.
-      // PATIENT_COLLECTED already refused this; PATIENT_ARRIVED stays reachable by owner answer 5.
+      // WLQ-4: do not advance the transport pathway while a revoked or community_order examination
+      // still holds a bed. PATIENT_ARRIVED stays reachable (owner answer 5).
       {
         const examinationOutcome = movement.examination?.outcome;
         const examinationRevokedHoldingBed =
@@ -5575,26 +4578,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      /*
-       * 🔴 THIS MESSAGE USED TO NAME ONE CAUSE FOR A GUARD THAT TESTS TWO, AND IT WAS FALSE AT ONE
-       * REACHABLE STAGE. It asserted that transport had not been accepted. ⚠️ The wording is
-       * deliberately NOT spelled out, and this line says so on purpose: a comment that quotes the
-       * string it removed puts that string back in the file, so a search for the false claim finds
-       * this file and cannot tell a removal from a survival. Do not restore it for clarity.
-       *
-       * The guard is `stage !== "handover_ready" || acceptedAt === undefined`. At stage `moving` the
-       * first half fires while `transport.acceptedAt` IS set — `moving` is only reachable through
-       * `PATIENT_COLLECTED`, which requires `enRouteAt`, which requires this very event to have
-       * succeeded, which required `acceptedAt`. `transport.acceptedAt` has exactly ONE writer
-       * (`TRANSPORT_ACCEPTED`) and is never cleared; the `acceptedAt: undefined` in
-       * `WITHDRAW_ACCEPTANCE` is `Movement.acceptedAt`, the BED acceptance, a different field that
-       * looks identical.
-       *
-       * ⚠️ So a coordinator re-dispatching after the patient was already collected was told to go
-       * and get the transport accepted — which had happened, and the patient had already left.
-       *
-       * The repair reports the two facts the guard actually checked, rather than naming one of them
-       * as the cause. It cannot assert something other than what is stored.
+      /**
+       * The message reports the two facts the guard checks rather than naming one as the cause: at
+       * stage `moving`, `transport.acceptedAt` is already set. Do not restore the removed wording,
+       * even quoted.
        *
        * Instant 0 is a recorded midnight — compare with `=== undefined`, never truthiness.
        */
@@ -5613,10 +4600,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const updated: Movement = {
         ...movement,
         transport: { ...movement.transport, enRouteAt: event.now },
-        // The vehicle is moving. This is the instant the old sentence was worst: a coordinator
-        // reading "Awaiting a transport provider response" chased a patient whose ambulance was
-        // already on the road. Still an ACTIVE blocker — nobody has been collected — so the
-        // operational score is unchanged by the rewording.
+        // The vehicle is moving. Still an active blocker: nobody has been collected.
         blocker: STAGE_TRANSITION_BLOCKERS.transportEnRoute,
       };
       return replaceMovement(state, movement.id, updated);
@@ -5628,13 +4612,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot collect a patient for a closed movement (${movement.closure.reason})`);
       }
-      // T9, owner answer 5 (second round, 2026-09-17): while a withdrawn or revoked examination
-      // still holds this movement's bed, collection is refused until a person releases the bed or
-      // records a repeat examination — `PATIENT_ARRIVED` carries no such guard and must stay
-      // reachable regardless. `examinationRevokedWhileBedHeld`'s own definition
-      // (`ward-derivations.ts`), inlined for the identical reason the gender-check guard above
-      // inlines `isOpen` rather than importing `ward-derivations.ts` — that module imports FROM
-      // this file, so importing back would close a circular module edge.
+      // T9 (owner answer 5): while a withdrawn or revoked examination still holds the bed,
+      // collection is refused until someone releases the bed or records a repeat examination.
+      // `PATIENT_ARRIVED` must stay reachable. Inlines `examinationRevokedWhileBedHeld`
+      // (`ward-derivations.ts`) to avoid a circular import.
       const examinationOutcome = movement.examination?.outcome;
       const examinationRevokedHoldingBed =
         (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
@@ -5647,19 +4628,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still holds a bed — a person must release the bed first`,
         );
       }
-      /*
-       * 🔴 THE SAME DEFECT AS `TRANSPORT_EN_ROUTE` ABOVE, and false at the same stage. The old
-       * message asserted that transport was not yet en route. ⚠️ Deliberately not spelled out here,
-       * and this line says so on purpose — see the note above for why.
+      /**
+       * As for `TRANSPORT_EN_ROUTE`: at `moving`, `enRouteAt` is already set, so the message
+       * reports the facts checked rather than a cause.
        *
-       * At stage `moving` the stage half of the guard fires while `transport.enRouteAt` IS set,
-       * because reaching `moving` requires having already SUCCEEDED at this very event.
-       * `enRouteAt` has one writer and is never cleared.
-       *
-       * ⚠️ So a coordinator re-dispatching after the patient was already collected was told
-       * transport had not set off, when collection had already happened.
+       * Instant 0 is a recorded midnight — compare with `=== undefined`, never truthiness.
        */
-      // Instant 0 is a recorded midnight — compare with `=== undefined`, never truthiness.
       if (movement.stage !== "handover_ready" || movement.transport?.enRouteAt === undefined) {
         return reject(
           state,
@@ -5699,11 +4673,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "PATIENT_ARRIVED": {
-      // Audit follow-up 2026-09-25: `event.now` used to be written unchecked into
-      // `closure.at`/`transport.arrivedAt`/`stageChanges` below, so a non-finite value (NaN)
-      // reached stored state. Refused here, at the top, before any other PATIENT_ARRIVED
-      // logic runs — deliberately narrow; see the reducer's `finiteInstant` for the same check
-      // used elsewhere.
+      // Refuse a non-finite `now` before any other logic, so NaN never reaches `closure.at`,
+      // `transport.arrivedAt` or `stageChanges`.
       if (finiteInstant(event.now) === null) {
         return reject(state, event, "PATIENT_ARRIVED now must be a finite instant");
       }
@@ -5719,24 +4690,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was diverted; use RELEASE_DIVERTED_BED rather than recording arrival`,
         );
       }
-      /*
-       * OWNER ANSWER 10 (second round, 2026-09-17): *"'No transport needed' is recorded at pull,
-       * booking is skipped, and the ward records the arrival."* `RECORD_TRANSPORT_NEED(needed:
-       * false)` already exists and already refuses to overwrite a movement whose journey is over,
-       * but until now it only ever fed the informational `transportNeedState` derivation — nothing
-       * actually let a movement reach `arrived` without a transport job, so PATIENT_ARRIVED always
-       * demanded the full `moving` + `collectedAt` chain the boxed sentence below states.
-       *
-       * This is that gap closed: when a person has already recorded no transport is needed, and no
-       * transport job was ever booked, the ward may record arrival straight from `pulled` — no
-       * `HANDOVER_READY`, no vehicle, nothing to collect. Both halves are required together —
-       * `transportNeed.needed === false` alone would also match a movement that later got a job
-       * booked anyway (an override staff are free to make), and that movement must still go through
-       * the ordinary chain like any other.
-       */
-      // Audit 2026-09-25 §3 item 4: "no transport job was ever booked" is now actually checked. A
-      // live (uncancelled) job means the ordinary chain applies, whatever the need flag says, so a
-      // booked vehicle can never be left open for a patient already on the ward.
+      // Owner answer 10: "'No transport needed' is recorded at pull, booking is skipped, and the
+      // ward records the arrival." When a person recorded no transport is needed and no live job
+      // exists, the ward may record arrival straight from `pulled`. Both halves are required: a
+      // live (uncancelled) job means the ordinary chain applies, whatever the need flag says (audit
+      // §3 item 4).
       const liveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
       const noTransportNeeded =
         (movement.transportNeed?.needed ?? movement.transport?.needed) === false &&
@@ -5766,11 +4724,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!movement.acceptedUnitId) {
         return reject(state, event, `movement ${movement.id} has no accepted destination unit`);
       }
-      // Fix round (2026-09-16 audit): an omitted `actingUnitId` used to skip this check entirely
-      // — `event.actingUnitId &&` short-circuited past the comparison whenever it was absent, so a
-      // `ward` caller stating no identity at all was waved through. `BOOK_TRANSPORT` and
-      // `CANCEL_TRANSPORT` both refuse a `ward` caller with no `actingUnitId` outright; this now
-      // does the same, before the comparison that needs it to be present.
+      // A `ward` caller with no `actingUnitId` is refused outright, as `BOOK_TRANSPORT` and
+      // `CANCEL_TRANSPORT` do.
       if (event.role === "ward" && !event.actingUnitId) {
         return reject(
           state,
@@ -5788,12 +4743,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
 
-      /*
-       * Josh, 13 Oct 2026 (audit round 2, A4-16): the receiving ward closes the transfer on arrival
-       * and handover. The officer's Delivered ends the transport leg only: it records
-       * `transport.arrivedAt` and leaves the movement open at `moving`, with no bed, stay or closure
-       * written. The ward (or the coordinator) then confirms arrival with this same event, which
-       * completes the movement and keeps the officer's delivery time on the job.
+      /**
+       * A4-16 (Josh): the receiving ward closes the transfer on arrival and handover. The officer's
+       * Delivered ends the transport leg only: it records `transport.arrivedAt` and leaves the
+       * movement open at `moving`. The ward (or coordinator) then confirms arrival with this same
+       * event.
        */
       if (event.role === "officer") {
         if (movement.transport?.arrivedAt !== undefined) {
@@ -5918,9 +4872,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const updatedMovement: Movement = {
         ...movementWithoutHeldBed,
         stage: "arrived",
-        // `noTransportNeeded` (above) means no LIVE job was ever booked, but a cancelled job may
-        // still sit on `movement.transport` — this route never writes `arrivedAt` onto it. Every
-        // other path keeps writing `arrivedAt` onto the real job exactly as before.
+        // A cancelled job may still sit on `movement.transport`; this route never writes
+        // `arrivedAt` onto it.
         transport:
           movement.transport === undefined || noTransportNeeded
             ? movement.transport
@@ -5942,27 +4895,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ],
       };
       const withUnit = replaceUnit(state, unit.id, updatedUnit);
-      /*
-       * ⚠️ **THIS IS THE EVENT THAT MAY WRITE `arrivedAt`, AND IT IS THE ONLY ONE.** Owner ruling,
-       * 2026-09-01: *"a patient is not marked as arrived until the ward says they have arrived."*
-       * `PULL_PATIENT` creates the record `pulled`, with a null `arrivedAt`; this is where the ward
-       * says they got here, so this is where the person becomes `occupied` and the stay clock starts.
+      /**
+       * The only event that may write `arrivedAt` (owner ruling: "a patient is not marked as
+       * arrived until the ward says they have arrived."). The person becomes `occupied` and the
+       * stay clock starts.
        *
-       * **The admission is looked up by id, never searched for by unit and state.** Two people
-       * pulled to one ward is ordinary, and a search would flip whichever one it found first.
-       *
-       * **Absent is a real case and is left exactly alone.** A movement whose `pulled` stage was
-       * hand-authored in the seed rather than reached by dispatching `PULL_PATIENT` has no
-       * `admissionId`, so no record exists to mark. Fabricating one here would invent an occupant
-       * this reducer never created — and the seed already authors its own ward occupants.
+       * The admission is looked up by id, never by unit and state: two people pulled to one ward is
+       * ordinary. A hand-authored seed movement has no `admissionId`; no occupant is fabricated for
+       * it.
        */
       const pulledAdmission =
         movement.admissionId === undefined ? undefined : findAdmission(withUnit, movement.admissionId);
       let withPerson: WardFlowState;
-      // Audit 2026-09-25 §3 items 2, 5, 6: a branch here used to invent an "AD-ARR-" admission when
-      // none existed — locked without taking a locked bed (so the free locked count crept up on
-      // leaving), back-dated to when the referral opened, at discharge revision 1. Removed: the
-      // rule stated above stands, and an absent admission is left exactly alone.
+      // Audit §3 items 2, 5, 6: an absent admission is left alone, never invented.
       if (pulledAdmission && pulledAdmission.state === "pulled") {
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...pulledAdmission,
@@ -6016,33 +4961,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * A PATIENT LEAVES. The mirror of `PATIENT_ARRIVED` above, and deliberately written beside it.
+     * A patient leaves: the mirror of `PATIENT_ARRIVED`.
      *
-     * Until this existed the prototype could admit somebody and never discharge them. Patients
-     * arrived and stayed forever, so the second half of this project's own claim — following one
-     * person through to their bed being free again — had never been seen working.
+     * `empty` rises by one, clamped to `unit.beds` so `unitCapacity`'s reconciliation identity
+     * holds. `sexMix` falls for this person's sex, floored at zero. `allocatable` rises with
+     * `empty`, once (owner decision: leaving is the discharge, and completes the person's bed
+     * release if any).
      *
-     * WHAT IT DOES TO THE UNIT, and why it is exactly the inverse of arrival rather than more:
-     *
-     *   `empty` RISES, because a bed that was physically occupied is now physically vacant. Arrival
-     *   lowered it by one; leaving raises it by one. Clamped to `unit.beds` for the same reason
-     *   `RELEASE_BED` clamps: `unitCapacity`'s reconciliation identity depends on `empty.value`
-     *   never exceeding the ward's real bed count, and an unclamped write breaks it from the write
-     *   side rather than the read side.
-     *
-     *   `sexMix` FALLS for this person's sex, because it counts current occupants and this person
-     *   is no longer one. Floored at zero: authored data that already disagrees with itself must
-     *   not be able to drive a count negative.
-     *
-     *   `allocatable` rises with `empty`, once. Owner decision 2026-09-25: leaving is the discharge,
-     *   and it completes the person's bed release if they have one. A bed that is not ready for
-     *   another reason is recorded by the blocked and closed-bed records, and a bed being cleaned is
-     *   refused to a pull by `openBedsNow`.
-     *
-     * The admission itself is not deleted. It ends: `state: "departed"`, with the instant and the
-     * destination. Every "live admissions" reader already filters `state !== "departed"`, so the person
-     * leaves the ward's lists by ending rather than by being erased — which is what lets the board,
-     * the discharge dates and the community hub still see that they went, and where.
+     * The admission is not deleted: it ends (`state: "departed"`, with instant and destination), so
+     * the board, discharge dates and community hub can still see where they went.
      */
     case "RECORD_LEAVING": {
       if (finiteInstant(event.now) === null || !isLeavingDestination(event.leavingDestination)) {
@@ -6063,9 +4990,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (admission.state === "departed") {
         return reject(state, event, `admission ${admission.id} has already left`);
       }
-      // Only somebody who is actually in a bed can leave one. A `waitlisted` or `pulled` admission
-      // has never occupied a bed, so ending it is not a discharge — giving back a pull is
-      // `RELEASE_PULL`'s job, and routing it through here would credit the ward a bed it never lost.
+      // Only somebody in a bed can leave one. Giving back a pull is `RELEASE_PULL`'s job; routing
+      // it here would credit a bed never lost.
       if (admission.state !== "occupied") {
         return reject(
           state,
@@ -6121,87 +5047,26 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * AWAY AT AN EMERGENCY DEPARTMENT, AND BACK AGAIN — the two halves of one fact, written
-     * together because half of it is the defect.
+     * Away at an emergency department, and back again: neither case touches a unit. The ward holds
+     * the bed because the person is coming back, so no availability figure moves and a coordinator
+     * is never offered it. Pinned in `tests/ward-away-at-emergency-department.test.ts`.
      *
-     * `Admission.awayAtEmergencyDepartmentSince` shipped on 2026-08-30 with a renderer, a seed and
-     * NO EVENT AT EITHER END. Nothing could set it and nothing could clear it, so the seeded rows
-     * counted upward for as long as the demonstration ran and every occupant without the badge read
-     * as physically in their bed.
+     * `RECORD_MOVEMENT_BLOCKER` writes `Movement.blocker` (the free-prose field, not
+     * `BedRelease.blocker`): the facts a coordinator needs to read that nothing in the model can
+     * compute. Not membership-checked, deliberately (owner ruling): a fixed list cannot hold an
+     * absence with its reason, or activity by parties the model has no field for. A blank is
+     * refused. No role is recorded with it; inventing an attribution is worse than omitting one.
      *
-     * ⚠️ **NEITHER CASE TOUCHES A UNIT.** No `replaceUnit`, no `empty`, no `allocatable`, no
-     * `sexMix` — deliberately, and it is the single most important property of both. The ward is
-     * holding this bed because the person is coming back; `bedIsOccupied` counts them throughout
-     * and no availability figure moves in either direction. A coordinator must never be offered
-     * this bed. Pinned in `tests/ward-away-at-emergency-department.test.ts`.
-     */
-    /**
-     * SOMEBODY SAYS WHAT IS ACTUALLY HOLDING THIS PATIENT UP.
-     *
-     * ⚠️ **`Movement.blocker` — the free-prose one — and NOT `BedRelease.blocker`**, the
-     * `BedReleaseBlocker` enum written by `BLOCK_BED_RELEASE`/`CLEAR_BED_RELEASE_BLOCK` further
-     * down this file. Two different fields share that name and this case touches only the first.
-     *
-     * The field had ONE runtime writer, `RAISE_REFERRAL`, stamping `"Awaiting coordinator
-     * referral"` at creation, and nothing after it. `STAGE_TRANSITION_BLOCKERS` now restates it
-     * wherever a transition contradicts it; this is the other half, and it is the half that
-     * matters most, because the
-     * things a coordinator actually needs to read — a single room not yet clean, a family not yet
-     * reached, an escort provider still finding a vehicle — are facts NOTHING in this model can
-     * compute. Only a person can put them here.
-     *
-     * ⚠️ **THE VALUE IS NOT MEMBERSHIP-CHECKED, WHICH IS A DEPARTURE FROM EVERY OTHER REASON IN
-     * THIS REDUCER, AND IT IS DELIBERATE.** `BLOCK_BED_RELEASE` checks its blocker against
-     * `BED_RELEASE_BLOCKERS`; `REFER_TO_UNITS` checks its override reason against
-     * `OVERRIDE_REASONS`. This one has no list to check against, on the owner's 2026-09-01 ruling:
-     * a fixed list cannot hold an absence together with its reason (`"None — in transit"` versus
-     * `"None — handover complete"`), and it cannot hold activity by parties the model has no field
-     * for. Constraining it would lose exactly what deriving it would lose.
-     *
-     * The one check is that something was actually said. A blank is refused rather than stored:
-     * `Movement.blocker` has no null, so an empty string would be indistinguishable from a field
-     * nobody had reached, which is the ambiguity this event exists to end.
-     *
-     * ⚠️ **NO ROLE IS RECORDED ALONGSIDE IT.** Four roles may raise this and the record does not
-     * say which did — deliberately, because inventing an attribution is worse than omitting one,
-     * and this field has never claimed to be attributed. If who said it ever matters, that is a
-     * new field with its own ruling, not a quiet addition here.
-     */
-    /**
-     * THE URGENT FLAG, ON AND OFF — the mechanism the owner asked for on 2026-08-30 and that
-     * nobody could reach until 2026-09-01.
-     *
-     * `Movement.flaggedUrgent` was added with a ranking rule above it (`queueOrder` in
-     * ward-priority.ts puts it ABOVE all three urgency tiers) and a badge below it (the coordinator
-     * queue's "Flagged urgent"). The only writer was the literal `false` in `RAISE_REFERRAL`, and
-     * exactly one hand-authored movement carried `true`. **A fully built feature with no way in.**
-     *
-     * ⚠️ **BOTH HALVES, and the clearing half is the one that stops this becoming a new permanent
-     * state.** A flag nobody can remove sits above every tier for the rest of the demonstration on
-     * a patient whose situation has resolved, and the seeded `true` could never be cleared at all.
-     *
-     * ⚠️ **A REASON, AN AUTHOR AND AN INSTANT ARE NOW RECORDED TOO — item 37, 2026-09-17,** closing
-     * the part of the owner's "I will build on it later" that this pair used to leave open.
-     * `event.reason` is checked against `URGENT_MARK_REASONS` at runtime (a type-only guarantee
-     * passes `vitest run` with no `tsc` involved — the same discipline `CHANGE_URGENCY` and every
-     * other reason-carrying case in this file already hold to) and, together with `event.role` and
-     * `event.now`, is written to `Movement.urgentFlag`. Clearing stays reason-free: taking a flag
-     * back down cannot promote anybody, so there is nothing here for a reason to justify.
-     *
-     * ⚠️ **AND A HISTORY SURVIVES A CLEAR — review fix-forward item 6, 2026-09-17.** `urgentFlag`
-     * is overwritten by every raise and erased by every clear; `urgentFlagHistory` is append-only.
-     * Raising pushes a new entry with `clearedAt`/`clearedBy` both absent; clearing fills those two
-     * on the OPEN entry (the last one with no `clearedAt`) rather than pushing a second entry, so
-     * one raise-then-clear cycle is one row. `findLastIndex` rather than `find` from the front: the
-     * open entry is always the newest one, and a movement flagged, cleared, then flagged again has
-     * an OLDER closed entry ahead of it that must never be the one clearing touches.
+     * `FLAG_MOVEMENT_URGENT` / `CLEAR_MOVEMENT_URGENT`: both halves, so a flag can always be taken
+     * down. Item 37: raising records a reason (checked against `URGENT_MARK_REASONS` at runtime),
+     * role and instant on `Movement.urgentFlag`; clearing needs no reason. `urgentFlagHistory` is
+     * append-only: raising pushes an entry; clearing fills `clearedAt`/`clearedBy` on the newest
+     * open entry (`findLastIndex`), so one raise-then-clear cycle is one row.
      */
     case "FLAG_MOVEMENT_URGENT": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // A closed movement is off `queueOrder` entirely (`isOpen` removes it), so flagging one would
-      // change nothing and report that it had. Refused rather than accepted as a silent no-op, the
-      // same discipline every other movement-scoped handler here holds to.
+      // A closed movement is off `queueOrder`; refused rather than accepted as a silent no-op.
       if (movement.closure) {
         return reject(state, event, `cannot flag a closed movement as urgent (${movement.closure.reason})`);
       }
@@ -6225,10 +5090,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "CLEAR_MOVEMENT_URGENT_FLAG": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // ⚠️ NO `closure` CHECK, unlike flagging above, and the asymmetry is the point. Removing a
-      // flag can never promote anybody, so refusing it has no protective value — while a flag that
-      // could not be cleared on some future path is the exact permanent state this pair exists to
-      // prevent. The guard below is the only one needed: it proves there is something to clear.
+      // No `closure` check, unlike flagging: removing a flag can never promote anybody, and a flag
+      // that cannot be cleared is the permanent state this pair prevents.
       if (!movement.flaggedUrgent) {
         return reject(state, event, `movement ${movement.id} is not flagged urgent`);
       }
@@ -6255,9 +5118,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_MOVEMENT_BLOCKER": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // Refused for a closed movement, the same as every other movement-scoped handler here. A
-      // closed movement is off every open board and its blocker is the closing one — a later edit
-      // would describe an obstruction to something that is no longer happening.
+      // Refused for a closed movement: its blocker is the closing one.
       if (movement.closure) {
         return reject(state, event, `cannot record a blocker for a closed movement (${movement.closure.reason})`);
       }
@@ -6277,24 +5138,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (blocker.length === 0) {
         return reject(state, event, `RECORD_MOVEMENT_BLOCKER blocker must say something — a blank is not a statement`);
       }
-      /*
-       * ⚠️ A NEAR-MISS OF A "NOTHING IS BLOCKING" SENTINEL IS REFUSED, AND SENT TO THE RIGHT EVENT.
+      /**
+       * A case-insensitive near-miss of a "nothing is blocking" sentinel is refused and pointed at
+       * `CLEAR_MOVEMENT_BLOCKER`; `hasActiveBlocker` matches exactly, so it would otherwise score
+       * as an active blocker.
        *
-       * `hasActiveBlocker` (ward-priority.ts) compares against `BLOCKERS_MEANING_NOTHING_IS_BLOCKING`
-       * by exact equality, so `"none — in transit"` in lower case would be stored as an ACTIVE
-       * blocker worth ten points in `operationalScore` — a wrong score on a movement nobody is
-       * holding up, which is the computed kind of wrong rather than the displayed kind.
-       *
-       * ⚠️ **THIS IS EXACT EQUALITY IGNORING CASE AGAINST A CLOSED SET, AND MUST NEVER BECOME A
-       * PATTERN.** That boundary is the whole reason it is safe: `"None of the secure units can
-       * take him"` is not case-insensitively equal to any member, so it is stored as the real
-       * blocker it is — the case `tests/ward-priority.test.ts` pins. A `/^none/i` here would
-       * swallow it, which is precisely the fix that was refused.
-       *
-       * It does NOT catch every way of typing "nothing is blocking" and is not meant to.
-       * `"Nothing outstanding"` and `"N/A"` are still stored as obstructions, because this set does
-       * not interpret English and must not start. `CLEAR_MOVEMENT_BLOCKER` is what a person uses,
-       * and this refusal names it rather than leaving them to guess.
+       * Exact equality ignoring case against a closed set, and must never become a pattern: `"None
+       * of the secure units can take him"` is a real blocker (`tests/ward-priority.test.ts`), which
+       * `/^none/i` would swallow. This set does not interpret English.
        */
       const nearMiss = BLOCKERS_MEANING_NOTHING_IS_BLOCKING.find(
         (inactive) => inactive.toLowerCase() === blocker.toLowerCase() && inactive !== blocker,
@@ -6306,31 +5157,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `"${blocker}" differs from "${nearMiss}" only in case, and would be stored as an active blocker — use CLEAR_MOVEMENT_BLOCKER to say nothing is holding this up`,
         );
       }
-      // Trimmed, never as typed: trailing whitespace would make two identical statements compare
-      // unequal, and `hasActiveBlocker` (ward-priority.ts) trims before matching its "nothing is
-      // blocking" shapes — a stored `"None — in transit "` would score ten points there.
+      // Trimmed: `hasActiveBlocker` trims before matching, and two identical statements must
+      // compare equal.
       return replaceMovement(state, movement.id, { ...movement, blocker });
     }
 
     /**
-     * NOTHING IS HOLDING THIS PATIENT UP ANY MORE.
+     * Nothing is holding this patient up any more. Clearing is represented, not interpreted: this
+     * writes one sentinel from `BLOCKERS_MEANING_NOTHING_IS_BLOCKING`, so the recogniser only ever
+     * knows a closed set.
      *
-     * ⚠️ **CLEARING IS REPRESENTED, NOT INTERPRETED, AND THAT IS THE WHOLE POINT OF THE EVENT.**
-     * `RECORD_MOVEMENT_BLOCKER` shipped earlier the same day accepting any non-blank prose, while
-     * `hasActiveBlocker` recognised "nothing is blocking" by case-sensitive match against a small
-     * vocabulary. A person clearing a blocker by typing `"none — resolved"` or `"no blocker"` left
-     * the movement scoring ten points as obstructed in `operationalScore`, and so ranked above
-     * patients who really were blocked — silently, with nothing red.
-     *
-     * Widening the recogniser was refused: the next phrasing is missed too, and a case-insensitive
-     * `/^none/i` would swallow `"None of the secure units can take him"`, a real blocker the
-     * priority tests pin. Instead this writes ONE sentinel from
-     * `BLOCKERS_MEANING_NOTHING_IS_BLOCKING`, so the recogniser only ever knows a closed set.
-     *
-     * `"None — cleared"` rather than `"No blocker"`: an absence WITH its reason. "No blocker" means
-     * nobody ever recorded one; this means somebody looked and said it is gone. That is the same
-     * distinction `"None — in transit"` and `"None — handover complete"` exist to preserve, and it
-     * is the property the owner's ruling against deriving this field turns on.
+     * `"None — cleared"` is an absence with its reason: somebody looked and said it is gone, unlike
+     * "No blocker", which means nobody recorded one.
      */
     case "CLEAR_MOVEMENT_BLOCKER": {
       const movement = findMovement(state, event.movementId);
@@ -6350,10 +5188,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
         );
       }
-      // Refused rather than accepted as a no-op, the same discipline as the flag pair above: a
-      // control that reports success for an act that changed nothing is the untruth this prototype
-      // names as mattering most. `"None — cleared"` and the other sentinels are all already
-      // "nothing is blocking", so there is nothing to clear.
+      // Refused rather than a no-op: a control must not report success for an act that changed
+      // nothing.
       if (BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim())) {
         return reject(state, event, `movement ${movement.id} already records that nothing is holding it up`);
       }
@@ -6374,11 +5210,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
-      // Only somebody actually IN a bed can leave the ward and still have it kept for them. A
-      // `waitlisted` or `pulled` admission has never reached the ward — they are usually sitting in
-      // an emergency department already, which is the mirror image of what this field means and
-      // exactly the confusion `Admission.awayAtEmergencyDepartmentSince`'s own doc comment warns
-      // about. A `departed` admission has no bed to hold at all.
+      // Only somebody in a bed can leave the ward and have it kept. A `waitlisted` or `pulled`
+      // admission has never reached the ward; a `departed` one has no bed.
       if (admission.state !== "occupied") {
         return reject(
           state,
@@ -6386,10 +5219,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can be away from it`,
         );
       }
-      // Refused rather than treated as a no-op, the same reasoning `RECORD_LEAVING` uses for a
-      // second discharge: overwriting the instant with a later one would silently SHORTEN the
-      // recorded trip of somebody who has been in an emergency department for six hours, and the
-      // board renders that number in words.
+      // Refused rather than overwritten: a later instant would silently shorten the recorded trip.
       if (admission.awayAtEmergencyDepartmentSince !== null) {
         return reject(state, event, `admission ${admission.id} is already recorded as away at an emergency department`);
       }
@@ -6416,18 +5246,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
         );
       }
-      // Refused rather than silently written as `null`. `null` already means "on the ward", so a
-      // return recorded for somebody who was never away would be indistinguishable from a no-op —
-      // and a control that reports success for an act that did not happen is the one untruth this
-      // prototype's own history names as mattering most.
+      // Refused rather than written as `null`, which already means "on the ward": a control must
+      // not report success for an act that did not happen.
       if (admission.awayAtEmergencyDepartmentSince === null) {
         return reject(state, event, `admission ${admission.id} is not recorded as away at an emergency department`);
       }
-      // `state` is deliberately NOT checked here, unlike the event above. Somebody may only GO
-      // while occupying a bed, but the guard directly above already proves this admission is away,
-      // and refusing their return on a state check would strand the badge permanently if any future
-      // path ever moved an away admission's state. A flag nobody can clear is the defect being
-      // repaired, so the clearing half is guarded on the flag itself and nothing else.
+      // `state` is deliberately not checked: the guard above proves the admission is away, and a
+      // state check could strand the badge permanently.
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: null });
     }
 
@@ -6478,16 +5303,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "CONFIRM_CAPACITY": {
-      // The role check above only proves *a* ward raised this. It does not say *which* ward, so
-      // before this a ward user on unit A could restate unit B's allocatable count.
-      //
-      // What this check does: it compares the unit the caller said it was acting as against the
-      // unit being written to, and refuses the event when they differ. What it does not do: prove
-      // the claim. `actingUnitId` is whatever the call site put on the event — the ward screen
-      // reads it from its own `/mockups/ward-flow/ward/[unitId]` route, but nothing here verifies
-      // that, and this prototype carries no authenticated actor identity to verify it against.
-      // This is a recorded assertion by the caller, not an authorisation decision, and must not
-      // be described or extended as one.
+      // The role check proves only that a ward raised this, not which. This compares the unit the
+      // caller said it acts as against the unit written to. It does not prove the claim:
+      // `actingUnitId` is whatever the call site supplied and this prototype has no authenticated
+      // identity. A recorded assertion, not an authorisation decision; never describe or extend it
+      // as one.
       if (event.actingUnitId !== event.unitId) {
         return reject(
           state,
@@ -6497,20 +5317,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // The ward screen already bounds its own input (`min={0} max={unit.beds}`), but a screen
-      // check is bypassed by every other call site and by every hand-built event, and this reducer
-      // is the trust boundary. Without this a ward could restate more allocatable beds than the
-      // building has, and the figure would render as that ward's own confirmed claim.
+      // The reducer is the trust boundary: a screen bound is bypassed by other call sites.
       //
-      // ⚠️ THE BOUND IS `unit.beds`, NEVER `empty.value`. A ward restating what it can allocate is
-      // ALLOWED to disagree with a stale feed figure — that is what a ward confirmation is for, and
-      // `tests/ward-flow-reducer.test.ts`'s "arrival capacity floor" depends on it, restating 5
-      // against a seeded empty of 2 to prove `PATIENT_ARRIVED` still refuses once physically empty
-      // beds run out. Beds are a fact about the building; empty is a claim about right now.
-      //
-      // ⚠️ AND IT REFUSES RATHER THAN CLAMPING. Clamping 30 to 20 would record a number the ward
-      // never said and read back to them as agreement. A refusal names both figures and leaves the
-      // previous confirmation untouched, stamp included.
+      // The bound is `unit.beds`, never `empty.value`: a ward confirmation may disagree with a
+      // stale feed (`tests/ward-flow-reducer.test.ts`'s "arrival capacity floor" relies on it).
+      // Refuses rather than clamps, so no number the ward never said is recorded.
       if (!Number.isInteger(event.value) || event.value < 0) {
         return reject(
           state,
@@ -6569,10 +5380,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const constrainedUnit = findUnit(state, event.unitId);
       if (!constrainedUnit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // Chosen, never typed: a typed caller cannot construct this event with a code outside
-      // `WARD_INTAKE_CONSTRAINTS` (a required union-member array, not a plain `string[]`), and this
-      // check is the runtime half of that discipline for an untyped caller, the same pattern
-      // `FLAG_BED_RELEASE`'s `blocker` membership check uses below.
+      // Chosen, never typed: the runtime half of the union-type check, for an untyped caller.
       if (event.codes.some((code) => !WARD_INTAKE_CONSTRAINTS.includes(code))) {
         return reject(
           state,
@@ -6585,11 +5393,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "FLAG_BED_RELEASE": {
-      // Same claim-not-proof discipline as CONFIRM_CAPACITY (see that case's own comment in
-      // full): this compares what the caller SAID it was acting as against the unit the release
-      // is being written to, and refuses when they differ. It does not authenticate anything —
-      // `FLAG_BED_RELEASE` is `ward`-only, so unlike RELEASE_PULL/CANCEL_TRANSPORT there is no
-      // coordinator caller to exempt, and the comparison always runs.
+      // Claim-not-proof, as CONFIRM_CAPACITY: compares the caller's stated unit against the
+      // release's unit. `FLAG_BED_RELEASE` is `ward`-only, so the comparison always runs.
       if (event.actingUnitId !== event.unitId) {
         return reject(
           state,
@@ -6599,10 +5404,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const flaggedUnit = findUnit(state, event.unitId);
       if (!flaggedUnit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // Owner decision 2026-09-25: a bed release is a named patient's discharge. These five checks
-      // are what makes `admissionId` real rather than decorative — see `BedRelease.admissionId`'s
-      // own doc comment for why this exists and what it replaces (a ward-wide count guess with two
-      // hard-coded id exceptions).
+      // Owner decision: a bed release is a named patient's discharge. These checks make
+      // `admissionId` real; see `BedRelease.admissionId`.
       const flaggedAdmission = findAdmission(state, event.admissionId);
       if (!flaggedAdmission) {
         return reject(state, event, `no admission found for id ${event.admissionId}`);
@@ -6638,44 +5441,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `admission ${flaggedAdmission.id} already has a live bed release (${flaggedLiveRelease.id})`,
         );
       }
-      // Review Finding 1: a typed caller cannot construct this event with a `blocker` outside
-      // `BED_RELEASE_BLOCKERS` — it is a required union member, not a plain `string`. This check
-      // exists for the untyped caller anyway: "Blockers are chosen, never typed" (binding spec)
-      // is a runtime rule, not merely a compile-time one, so a defined `blocker` is checked by
-      // real membership, not by truthiness alone.
+      // "Blockers are chosen, never typed" (binding spec) is a runtime rule: checked by membership
+      // for an untyped caller.
       if (event.blocker !== undefined && !BED_RELEASE_BLOCKERS.includes(event.blocker)) {
         return reject(state, event, `FLAG_BED_RELEASE blocker must be chosen from BED_RELEASE_BLOCKERS`);
       }
-      // Bed-model rework (2026-08-28): a flag ALWAYS creates a `"expected"` release, and a
-      // blocker sets the blocked FLAG on it rather than choosing a different state. Spec D3's
-      // old "blocked xor expected" rule is gone with the fourth state it described — a bed
-      // that is coming free but currently held up is a prediction AND a block, and pretending
-      // those were alternatives is what let `capacityBreakdown` count such a release nowhere.
-      // `waitingOn` is therefore kept on both paths, because the release is expected on both.
-      // Fix round 2 (P1): `expectedAt` now carries the ward's own estimate of when the bed will
-      // actually be free (`event.expectedAt`, collected on the flag form exactly like
-      // `expectedReturn` on the leave-bed form) rather than `event.now`. Before this fix every
-      // release a ward flagged at runtime was stamped with the instant it was REPORTED, which
-      // `releaseBand()` (spec D5) then always classified `now` — the four planning bands
-      // (now / by-midday / by-1600 / tonight) only ever worked for the hand-authored fixture,
-      // never for anything a ward actually flagged.
+      // A flag always creates an `"expected"` release; a blocker sets the blocked flag on it rather
+      // than choosing a different state, so `capacityBreakdown` counts a held-up release.
+      // `waitingOn` is kept on both paths.
       //
-      // `confirmedAt` is deliberately kept as `event.now` — it is a genuinely different fact,
-      // when the ward made this report — while `expectedAt` is when the ward expects the bed to
-      // be free. The two can differ (a ward flagging now that a bed will be free by 1600), and
-      // conflating them was exactly the bug. Neither field carries anything about the departing
-      // PATIENT's own timing (binding spec §4): `expectedAt` is an operational estimate about the
-      // BED, the same category `expectedReturn` on `RECORD_LEAVE_BED` already sits in and is
-      // already permitted to carry — see that event's own doc comment and `LeaveBed`'s type.
+      // `expectedAt` is the ward's estimate of when the bed will be free (`event.expectedAt`), so
+      // `releaseBand()` can classify it; `confirmedAt` is when the ward reported. Neither carries
+      // anything about the departing patient's own timing (binding spec §4).
       const flaggingRole = recordedByLabel(event.role, flaggedUnit.name);
       const release: BedRelease = {
-        // "WR-9NN" mirrors `nextReferralId`'s own "9" prefix above — visibly distinct at a
-        // glance from the hand-authored "WR-00N" fixture ids, same reasoning as
-        // RAISE_REFERRAL's "WF-9NN". Safe to derive from `state.bedReleases.length` here
-        // (unlike `RECORD_LEAVE_BED`'s own id below, see that case's comment): nothing in
-        // this reducer ever removes an entry from `bedReleases` — every other bed-release
-        // case transitions a release in place via `replaceBedRelease`, so the array only ever
-        // grows and its length is a safe, collision-free id source.
+        // "WR-9NN": the "9" prefix marks a runtime id. Safe to derive from `bedReleases.length`:
+        // nothing ever removes a release.
         id: `WR-9${String(state.bedReleases.length).padStart(2, "0")}`,
         unitId: flaggedUnit.id,
         admissionId: flaggedAdmission.id,
@@ -6705,10 +5486,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "CONFIRM_BED_RELEASE": {
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
-      // Same claim-not-proof discipline as FLAG_BED_RELEASE (see that case's own comment in
-      // full): this compares what the caller SAID it was acting as against the unit the release
-      // belongs to, and refuses when they differ. `CONFIRM_BED_RELEASE` is `ward`-only, so unlike
-      // RELEASE_PULL/CANCEL_TRANSPORT there is no coordinator caller to exempt.
+      // Claim-not-proof, as FLAG_BED_RELEASE. `CONFIRM_BED_RELEASE` carries the acting unit, so the
+      // comparison always runs.
       if (event.actingUnitId !== release.unitId) {
         return reject(
           state,
@@ -6716,30 +5495,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `CONFIRM_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
-      // Legal transition: expected -> confirmed. Nothing else. Naming both the current state and
-      // the attempted target keeps a refusal readable without having to cross-reference the state
-      // machine comment above. (Before the 2026-08-28 rework this also accepted `blocked ->
-      // confirmed`; there is no such state now, and a blocked release is confirmed from whichever
-      // stage it is actually in, keeping its flag.)
+      // Legal transition: expected -> confirmed only. A blocked release is confirmed from whichever
+      // stage it is in, keeping its flag.
       if (release.state !== "expected") {
         return reject(state, event, `cannot move release ${release.id} from ${release.state} to confirmed`);
       }
-      // Fix round 2 (P2, spec D7): `confirmedAt` restates to `event.now` on every accepted
-      // transition, not just at creation — before this fix a transition spread `...release` and
-      // kept the ORIGINAL `confirmedAt`, so `WardFreshness` on this row kept reporting when the
-      // release was first flagged rather than when its current state was last reported, which
-      // defeats D7's whole point ("every screen states when its data was last true"). `confirmedBy`
-      // is deliberately NOT restated: the guard above already refuses this event whenever
-      // `event.actingUnitId !== release.unitId`, so the acting ward on every accepted transition
-      // is, by construction, always the same ward that produced the existing `confirmedBy` — there
-      // is no other unit's role this could ever become, so restating it would write back the exact
-      // same string it already holds.
+      // Spec D7: `confirmedAt` restates to `event.now` on every accepted transition, so freshness
+      // reports when the current state was last reported. `confirmedBy` is not restated: the guard
+      // above guarantees it is the same ward.
       //
-      // `blocker`/`blockedBy` are deliberately CARRIED THROUGH untouched (bed-model rework,
-      // 2026-08-28): "a discharge that is decided and stuck is exactly that — still confirmed,
-      // and flagged". Clearing the flag here would re-create the counting defect this rework
-      // exists to close, just from the other end, by making a confirmation quietly assert the
-      // bed is unstuck. `CLEAR_BED_RELEASE_BLOCK` is the one and only way a flag comes off.
+      // `blocker`/`blockedBy` carry through untouched: a decided but stuck discharge is still
+      // confirmed, and flagged. `CLEAR_BED_RELEASE_BLOCK` is the only way a flag comes off.
       const updated: BedRelease = {
         ...release,
         state: "confirmed",
@@ -6748,14 +5514,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updated);
+      return withAdmissionDischargeDecision(
+        replaceBedRelease(state, release.id, updated),
+        release.admissionId,
+        event.now,
+        event.role,
+      );
     }
 
     case "REVERT_BED_RELEASE": {
-      // The reversal the four-stage model forbade (bed-model rework, 2026-08-28). It is recorded
-      // exactly like every other change — `confirmedAt` restated to `event.now`, `confirmedBy`
-      // left alone for the reason CONFIRM_BED_RELEASE's own case sets out — because a reversal
-      // that cannot be recorded honestly gets recorded dishonestly instead.
+      // The reversal is recorded like every other change (`confirmedAt` restated, `confirmedBy`
+      // left alone): a reversal that cannot be recorded honestly gets recorded dishonestly instead.
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
@@ -6784,7 +5553,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, reverted);
+      return withAdmissionDischargeDecision(
+        replaceBedRelease(state, release.id, reverted),
+        release.admissionId,
+        null,
+        event.role,
+      );
     }
 
     case "BLOCK_BED_RELEASE": {
@@ -6797,31 +5571,21 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `BLOCK_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
-      // A typed caller cannot construct this event without `blocker` — it is a required field,
-      // not the optional one `FLAG_BED_RELEASE` carries. This check exists for the untyped
-      // caller anyway: "blocked with no blocker" is a contradiction in terms (spec D3) and must
-      // be refused at runtime, not merely disallowed at compile time. Review Finding 1: this used
-      // to be a truthiness test (`!event.blocker`), which refuses a missing or empty value but
-      // accepts any other non-empty string — a real membership test against
-      // `BED_RELEASE_BLOCKERS` is what "Blockers are chosen, never typed" (binding spec) actually
-      // requires.
+      // "Blocked with no blocker" is a contradiction (spec D3), and "Blockers are chosen, never
+      // typed" (binding spec): a real membership test for an untyped caller.
       if (!event.blocker || !BED_RELEASE_BLOCKERS.includes(event.blocker)) {
         return reject(state, event, `BLOCK_BED_RELEASE requires a blocker chosen from BED_RELEASE_BLOCKERS`);
       }
-      // Bed-model rework (2026-08-28): this sets a FLAG and moves no stage at all. A blocked
-      // release keeps whichever stage it was in — `expected` stays expected, and a confirmed
-      // discharge that gets stuck stays CONFIRMED and keeps counting as confirmed. Only
-      // `discharged` is refused: the bed is already free, so there is nothing left to hold up.
+      // Sets a flag and moves no stage: a blocked release keeps its stage and keeps counting as
+      // such. Only `discharged` is refused, since the bed is already free.
       const blockedUnit = findUnit(state, release.unitId);
       if (!blockedUnit) return reject(state, event, `no unit found for id ${release.unitId}`);
       if (release.state === "discharged") {
         return reject(state, event, `cannot block release ${release.id} because it is already released`);
       }
-      // Fix round 2 (P2, spec D7): same freshness restatement as CONFIRM_BED_RELEASE's own case
-      // (see its comment in full) — `confirmedAt` moves to `event.now` on this write too, and
-      // `confirmedBy` stays untouched for the same reason. `blockedBy` is a separate role field
-      // rather than a reuse of `confirmedBy` because "who says this bed is stuck" and "who last
-      // reported its stage" are different questions once a block outlives a stage change.
+      // Spec D7: same freshness restatement as CONFIRM_BED_RELEASE. `blockedBy` is separate from
+      // `confirmedBy`: "who says this bed is stuck" and "who last reported its stage" differ once a
+      // block outlives a stage change.
       const updated: BedRelease = {
         ...release,
         blocker: event.blocker,
@@ -6843,9 +5607,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `CLEAR_BED_RELEASE_BLOCK was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
-      // Refused rather than silently accepted as a no-op: "this bed is no longer stuck" is a
-      // claim about a bed that WAS stuck, and a screen offering it on an unflagged release is a
-      // defect the reducer should surface on the rejections list, not absorb.
+      // Refused rather than a silent no-op: unblocking an unflagged release is a screen defect to
+      // surface.
       if (release.blocker === null) {
         return reject(state, event, `release ${release.id} carries no blocked flag to clear`);
       }
@@ -6861,13 +5624,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "SET_BED_PREPARATION": {
-      // Q4 (2026-08-28): a bed may carry a short indication that it is being MADE READY. This
-      // writes that indication and NOTHING else — it touches no unit field, no capacity figure
-      // and no availability. `capacityBreakdown` derives `availableNow` from the unit own
-      // `allocatable`/`empty` and never reads a release, so a bed being prepared is still
-      // offered, still counted and still allocatable, exactly as the owner requires. Do not add
-      // a unit write here to "hold" a bed while it is cleaned; that is the delay his answer
-      // says does not exist.
+      // Q4: marks a bed as being made ready and nothing else. It touches no unit field or capacity
+      // figure, so the bed stays offered and counted as the owner requires. Do not add a unit write
+      // here to "hold" a bed while it is cleaned.
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
       if (event.actingUnitId !== release.unitId) {
@@ -6877,15 +5636,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `SET_BED_PREPARATION was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
-      // Membership check, same discipline as the blocker checks above: "notes are chosen, never
-      // typed" is a RUNTIME rule, not merely a compile-time one, so an untyped caller supplying
-      // anything outside `BED_PREPARATION_NOTES` is refused rather than stored.
-      //
-      // The owner supplied that list on 2026-08-28, so this now accepts the two real notes where
-      // it previously refused everything. The `string | undefined` binding and the `readonly
-      // string[]` widening are kept deliberately: they were what made this guard compile while
-      // `BedPreparationNote` was `never`, they cost nothing now, and they are what keeps the
-      // check honest if a future edit ever empties the array again.
+      // "Notes are chosen, never typed" is a runtime rule: anything outside `BED_PREPARATION_NOTES`
+      // is refused. The `string | undefined` binding and `readonly string[]` widening keep the
+      // check compiling if the list is ever emptied.
       const requestedNote: string | undefined = event.note;
       if (requestedNote !== undefined && !(BED_PREPARATION_NOTES as readonly string[]).includes(requestedNote)) {
         return reject(state, event, `SET_BED_PREPARATION note must be chosen from BED_PREPARATION_NOTES`);
@@ -6913,23 +5666,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RELEASE_BED was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
         );
       }
-      // Legal transitions: confirmed -> discharged and expected -> discharged. `discharged` is
-      // terminal, so only a release already in it is refused. The stage is `discharged` and the
-      // word "released" below belongs to the retired FOUR-stage model, kept only where it
-      // describes that model's own history — owner ruling 2026-08-30, discharged not released. Expected is accepted deliberately:
-      // "the person has left" is a statement of fact about an empty bed, not a prediction being
-      // promoted into availability, and the four-stage model already permitted the same journey
-      // via `expected -> blocked -> released`. Narrowing it during the rework would have refused
-      // a path wards could already take.
+      // Legal transitions: confirmed -> discharged and expected -> discharged; `discharged` is
+      // terminal (owner ruling: discharged, not released). Expected is accepted deliberately: "the
+      // person has left" is a fact about an empty bed.
       if (release.state === "discharged") {
         return reject(state, event, `release ${release.id} is already discharged and cannot be discharged again`);
       }
       const unit = findUnit(state, release.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${release.unitId}`);
-      // Owner decision 2026-09-25: this completes a release only once its named admission has
-      // actually left. While they are still in the bed, record the leaving instead
-      // (`RECORD_LEAVING`) — that is what now completes the release, in the same write that raises
-      // the unit's figures. See `departAdmission`'s own comment.
+      // Owner decision: this completes a release only once its named admission has left. While they
+      // are still in the bed, `RECORD_LEAVING` is what completes it. See `departAdmission`.
       const releasedAdmission = findAdmission(state, release.admissionId);
       if (!releasedAdmission) {
         return reject(
@@ -6945,12 +5691,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `release ${release.id} completes when admission ${releasedAdmission.id} is recorded as having left (RECORD_LEAVING); they are still ${releasedAdmission.state}`,
         );
       }
-      // Fix round 2 (P2, spec D7): same freshness restatement as CONFIRM_BED_RELEASE's own case
-      // (see its comment in full) — `confirmedAt` moves to `event.now` on this transition too,
-      // and `confirmedBy` stays untouched for the same reason.
-      // The blocked flag comes off here, and here only besides `CLEAR_BED_RELEASE_BLOCK`: once
-      // the bed is actually free there is nothing left being held up, so a surviving flag would
-      // be a claim about a discharge that has already happened.
+      // Spec D7: same freshness restatement as CONFIRM_BED_RELEASE. The blocked flag comes off here
+      // too: once the bed is free nothing is held up.
       const updatedRelease: BedRelease = {
         ...release,
         state: "discharged",
@@ -6959,39 +5701,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         blockedBy: null,
         confirmedAt: event.now,
       };
-      // RELEASE_BED is the one event in this six-case group that changes an actual bed count,
-      // not just a record about one — this is where the expected/confirmed expectation
-      // `FLAG_BED_RELEASE`/`CONFIRM_BED_RELEASE` only anticipated becomes the physical fact.
-      // `capacityBreakdown`'s `availableNow` is deliberately blind to `bedReleases` itself (Task
-      // 2: nothing expected or confirmed-but-unreleased may ever be added into it), so the only
-      // way a release ever moves that number is through the unit's own fields, here. Both
-      // `allocatable.value` and `empty.value` rise by one: the bed is now truly free, not merely
-      // reserved (`allocatable` alone) or physically vacant while still pulled for someone else
-      // (`empty` alone) — mirroring `PATIENT_ARRIVED`'s and `PULL_PATIENT`'s own single-field writes,
-      // just on both fields at once, because this bed had never been decremented by either of
-      // those handlers to begin with.
-      //
-      // Fix round 1 (Critical): both writes are clamped to `unit.beds`, the unit's own physical
-      // ceiling. Without this clamp, repeated legal FLAG_BED_RELEASE -> CONFIRM_BED_RELEASE ->
-      // RELEASE_BED cycles on one unit can walk `empty.value` past `unit.beds` — nothing in this
-      // handler or in `FLAG_BED_RELEASE` caps how many releases a unit accumulates against its
-      // own occupied-bed count. `unitCapacity`'s reconciliation identity
-      // (`available + held + blocked + occupied === unit.beds`, `tests/ward-capacity-reconciliation.test.ts`)
-      // depends on `empty.value` never exceeding `unit.beds` — once it does, `notEmpty` collapses
-      // to zero and the four figures stop summing to the unit's real bed count, which is exactly
-      // the sentence `ward-screen.tsx` tells a coordinator is always true. `unitCapacity` itself
-      // clamps every figure it derives so that already-over/under-counted authored data is never
-      // taken at face value; an unclamped write here broke that discipline from the write side
-      // instead of the read side. Do not remove this clamp to "simplify" the arithmetic.
-      // The person has already left (refused above otherwise), and `departAdmission` moved the
-      // figures then. This event now only records the stage. It never moves a count.
+      // The person has already left (refused above otherwise) and `departAdmission` moved the
+      // figures then; this event only records the stage and never moves a count. Any figure written
+      // must stay clamped to `unit.beds`, which `unitCapacity`'s reconciliation identity
+      // (`tests/ward-capacity-reconciliation.test.ts`) depends on.
       const departureAlreadyIncremented = true;
 
-      // `sexMix` is NOT touched here: a release does not say who left, and occupant counts follow
-      // the leaver's gender (owner rulings 2026-09-25), so the count moves when the admission
-      // departs (`departAdmission`), never by guessing a sex here. 5d7f438126's guess (decrement
-      // the larger bucket) was removed 2026-09-25; it also subtracted twice when the occupant later left.
-      // Audit A1-11: recording the stage never stamps the ward's figures as confirmed.
+      // `sexMix` is not touched: a release does not say who left, so the count moves when the
+      // admission departs (owner rulings), never by guessing here. Audit A1-11: recording the stage
+      // never stamps the ward's figures as confirmed.
       const updatedUnit: Unit = departureAlreadyIncremented
         ? unit
         : {
@@ -7105,9 +5823,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ),
         };
       }
-      // Absent straight from the ward: the bed is held the same way leave holds it. There is no
-      // expected return, so the held bed's return time is the moment the absence was recorded.
-      // Ward surfaces check `absentWithoutLeave` before showing it, so it never reads as leave.
+      // Absent straight from the ward: the bed is held as leave holds it, with the held bed's
+      // return time set to when the absence was recorded. Ward surfaces check `absentWithoutLeave`
+      // so it never reads as leave.
       const unit = findUnit(state, stay.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${stay.unitId}`);
       const sequence = state.leaveBedSequence + 1;
@@ -7165,9 +5883,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
-      // The Patient page shows an open placement or an occupied stay ahead of a CTO, so an order
-      // recorded now would save unseen. Refuse it until the placement closes or the stay ends. A
-      // waitlisted or pulled stay alone does not count: the page shows that patient as Not active.
+      // The Patient page shows an open placement or occupied stay ahead of a CTO, so an order
+      // recorded now would save unseen. Refused until the placement closes or the stay ends. A
+      // waitlisted or pulled stay alone does not count.
       const openStay = state.admissions.some((stay) => stay.patientId === patient.id && stay.state === "occupied");
       const openPlacement = state.movements.some(
         (movement) => movement.patientId === patient.id && !movement.closure && movement.stage !== "arrived",
@@ -7223,10 +5941,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "REQUEST_CAPACITY_REFRESH": {
-      // Spec D12: the one thing a coordinator may do to a ward's bed data. This changes no
-      // number at all — no field on any unit, release or leave bed is read or written below — it
-      // only records that somebody asked, with the time and the requesting role. Nothing leaves
-      // the sandbox and no message is sent.
+      // Spec D12: changes no number; it only records who asked and when. Nothing leaves the sandbox
+      // and no message is sent.
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
@@ -7238,30 +5954,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECEIVE_REFERRAL": {
       if (event.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.atsCategory))
         return reject(state, event, "RECEIVE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
-      // Fix round B (review finding I2): the role check above used to be the ONLY guard, and
-      // this reducer's own comment said so — `source`, `homeRegion`, `ageBand`, `urgency` and
-      // `originSiteCode` all passed through unvalidated. That contradicts the spec's Failure
-      // behaviour directly: "a referral missing a required field, or carrying an unknown source
+      // Spec failure behaviour: "a referral missing a required field, or carrying an unknown source
       // … → refused with a visible `Rejection`. Never silently queued, never defaulted." Every
-      // check below is a membership check (or, for `originSiteCode`, a resolution against the
-      // real site list), not a truthiness test — same discipline as `DECLINE_REFERRAL`'s own
-      // `reason` guard below, added in the same commit as the gap this closes. Each failure names
-      // what was wrong so a rejected intake is never mistaken for a silent success.
+      // check below is a membership check or a resolution against the real site list, and each
+      // names what was wrong.
       if (!COHORTS.includes(event.ageBand)) {
         return reject(state, event, `RECEIVE_REFERRAL ageBand must be chosen from COHORTS`);
       }
-      // Review finding M1: `sex` was the ONE enum-shaped field on this event with no membership
-      // check, though `SEXES` exists for exactly this. It is not a theoretical gap — a non-form
-      // caller (a demo control, a Playwright fixture, the guided tour) sending `sex: "F"` used to
-      // queue silently, after which `unit.sexMix["F"] ?? 0` is 0 everywhere and
-      // `sexDesignationAccepts("Female only", "F")` is false, so the referral matches almost
-      // nothing with plausible-looking per-unit reasons instead of being visibly refused.
+      // `sex` is membership-checked on the ward arm (review finding M1): an off-list value would
+      // otherwise match almost nothing with plausible-looking reasons.
       //
-      // Since the destination union landed, `sex` exists only on the ward arm, so the check is
-      // guarded by the arm rather than dropped: the runtime hole this closes is an untyped caller,
-      // and an untyped caller can just as easily send a malformed ward destination.
-      // FD-21: one act, several destinations, up to the cap. Each of these refusals names a
-      // different way the list can be wrong, because "invalid destinations" tells a caller nothing.
+      // FD-21: one act, several destinations, up to the cap. Each refusal names a different way the
+      // list can be wrong.
       if (event.destinations.length === 0) {
         return reject(state, event, `RECEIVE_REFERRAL needs at least one destination`);
       }
@@ -7285,32 +5989,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         new Set(recipientKeys).size !== recipientKeys.length ||
         (broadWard && kinds.filter((kind) => kind === "psychiatric_ward").length > 1)
       ) {
-        // Asking one kind twice is asking twice, not addressing two destinations. Refused rather
-        // than de-duplicated: silently collapsing it would make the cap count something other than
-        // what the referrer chose.
+        // Asking one kind twice is refused rather than de-duplicated, so the cap counts what the
+        // referrer chose.
         return reject(state, event, `RECEIVE_REFERRAL cannot address the same destination kind twice`);
       }
       if (kinds.some((kind) => !REFERRAL_DESTINATION_KINDS.includes(kind))) {
         return reject(state, event, `RECEIVE_REFERRAL destination kind must be chosen from REFERRAL_DESTINATION_KINDS`);
       }
-      /*
-       * ⚠️ THE ED ARM GETS THE SAME TREATMENT AS `originSiteCode`, FOR THE SAME REASON.
-       *
-       * That field's own comment three checks below says it: "resolved against the real network
-       * rather than merely checked for non-emptiness, so '12 Wellington St, Perth' cannot pass as a
-       * code." When the ED arm gained `edId` and `purpose` it got neither — so a referral could
-       * queue at an empty or invented department and read like an answer.
-       *
-       * ⚠️ **This is the check that would have caught the shortcut two sessions agreed must not be
-       * made.** When the arm grew required fields, three call sites stopped compiling and the
-       * tempting repair was a cast or an `edId: ""` stub — a form offering a destination the
-       * application cannot construct, while looking finished. That stub was mutation-tested and
-       * broke only new SCREEN-level guards and no pre-existing test. A screen guard is the wrong
-       * last line: it is one component away from being bypassed, and every path goes through here.
-       *
-       * ⚠️ **And non-emptiness is not the check.** `edId: "not-a-department"` is as wrong as `""`
-       * and far more convincing — it survives every truthiness test, reads as a plausible
-       * identifier, and queues a real person at a hospital that does not exist. So it resolves.
+      /**
+       * The ED arm's `edId` resolves against the real network, as `originSiteCode` does:
+       * non-emptiness is not the check, since `"not-a-department"` survives every truthiness test
+       * and would queue a real person at a hospital that does not exist. Every path goes through
+       * here, so this is the last line, not a screen guard.
        */
       const edDestination = event.destinations.find((destination) => destination.kind === "emergency_department");
       if (edDestination?.kind === "emergency_department") {
@@ -7347,18 +6037,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!REFERRAL_SOURCES.includes(event.source)) {
         return reject(state, event, `RECEIVE_REFERRAL source must be chosen from REFERRAL_SOURCES`);
       }
-      // R9 (owner item 23, 2026-09-17): "only `ed_medical` is raised as `ed`, and `ed` with any
-      // other source is refused. Everything else, including GP, stays `community`." `EVENT_ROLE`
-      // alone cannot express this — it only says role `ed` is SOMETIMES valid for this event type —
-      // so the pairing is checked here, once the source itself is known to be real. The reverse
-      // pairing (role `community` with source `ed_medical`, raised directly at the front door
-      // rather than through the ED's own screen) is left open on purpose —
-      // `tests/ward-ed-to-community-referral.test.ts` already depends on it.
-      //
-      // Checked BEFORE the psychiatric_ward-specific originUnitId check below: an `ed`-role
-      // referral naming source `psychiatric_ward` is wrong on the pairing alone, and must be
-      // refused for that reason even when `originUnitId` is also missing, rather than surfacing
-      // the unrelated originUnitId message and never reaching the pairing rule at all.
+      // R9 (owner item 23): "only `ed_medical` is raised as `ed`, and `ed` with any other source is
+      // refused. Everything else, including GP, stays `community`." Role `community` with source
+      // `ed_medical` stays open (`tests/ward-ed-to-community-referral.test.ts`). Checked before the
+      // `originUnitId` check so the pairing is reported first.
       if (event.role === "ed" && event.source !== "ed_medical") {
         return reject(
           state,
@@ -7375,16 +6057,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      // Fix round B (this task's own addition): `homeRegion` is a REGION from a fixed list —
-      // never an address, never free text. Membership-checking it here is what makes that
-      // distinction real rather than a naming convention; see `HOME_REGIONS`'s own doc comment.
+      // `homeRegion` is a region from a fixed list, never an address or free text; see
+      // `HOME_REGIONS`.
       if (!HOME_REGIONS.includes(event.homeRegion)) {
         return reject(state, event, `RECEIVE_REFERRAL homeRegion must be chosen from HOME_REGIONS`);
       }
       // The suburb is resolved against the real catchment table, never merely checked for
-      // non-emptiness — the same reason `edId` and `originSiteCode` below resolve rather than
-      // measure. "12 Wellington St, Perth" is non-empty, and letting it through would put a street
-      // address in the one field whose defence is that it is coarser than one (`PD-3`).
+      // non-emptiness: a street address must not reach the one field whose defence is that it is
+      // coarser (`PD-3`).
       if (!referralSuburbIsAnswered(event.suburb)) {
         return reject(
           state,
@@ -7401,24 +6081,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!originSite) {
         return reject(state, event, `RECEIVE_REFERRAL originSiteCode must resolve to a real site`);
       }
-      /*
-       * ⚠️ A REFERRAL FROM ED MEDICAL STAFF MUST COME FROM A HOSPITAL THAT HAS AN ED — the first
-       * check here that compares TWO fields rather than validating one.
-       *
-       * `source` and `originSiteCode` are each independently valid and were never compared, so
-       * `{ source: "ed_medical", originSiteCode: "FRE" }` passed both membership tests and
-       * described a referral from the emergency department of a hospital that has no emergency
-       * department. **Nine sites in `wardSites` have none** — Fremantle, Bentley and the country
-       * sites.
-       *
-       * ⚠️ **NOTHING DOWNSTREAM COULD HAVE CAUGHT IT, WHICH IS WHY IT BELONGS AT THE DOOR.** The
-       * row renders complete: no missing value, no blank, no implausible number. Every screen
-       * shows a source and a hospital and both are real; only their combination is impossible.
-       *
-       * ⚠️ **THE CHECK READS THE SITE'S OWN RECORD, NEVER A LIST OF CODES.** `wardSites` is where
-       * a hospital's emergency department is declared. A hand-written array of "sites that have
-       * one" here would be a second home for that fact and would go stale the first time the
-       * network changes — the failure `docs/ward-flow-changeable-data-rule.md` exists for.
+      /**
+       * A referral from ED medical staff must come from a hospital that has an ED. Each field was
+       * valid alone; only their combination is impossible, and no screen could catch it. Reads the
+       * site's own record in `wardSites`, never a hand-written list of codes
+       * (`docs/ward-flow-changeable-data-rule.md`).
        */
       if (event.source === "ed_medical" && !originSite.emergencyDepartment) {
         return reject(
@@ -7427,34 +6094,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECEIVE_REFERRAL source ed_medical requires an origin site with an emergency department`,
         );
       }
-      // A triage instant in the FUTURE would put a patient in the department before they got
-      // there, and `referralClocks` clamps at zero rather than printing a negative — so the wrong
-      // value would render as a plausible "0m" instead of an obvious error. Refused at the door.
+      // A future triage instant is refused: `referralClocks` clamps at zero, so it would render as
+      // a plausible "0m".
       if (event.triagedAt !== undefined && event.triagedAt > event.now) {
         return reject(state, event, `RECEIVE_REFERRAL triagedAt cannot be later than the referral itself`);
       }
-      /*
-       * ⚠️ THREE STATES, NOT TWO — and the guard below must only ever separate the second from
-       * the third. `event.patientId`'s own doc comment (above, on the event type) says a referral
-       * raised outside the patient flow LEGITIMATELY has nobody on file, so ABSENT is a real
-       * answer that must keep sailing through untouched — exactly as `created.patientId` below is
-       * still "COPIED THROUGH, NEVER DEFAULTED". What was never checked is the other failure
-       * shape: a `patientId` that IS present but names nobody `state.patients` holds — a fabricated
-       * link that would render as a referral belonging to a patient who is not there, the mistyped-
-       * web-address case the front door has no defence against otherwise.
-       *
-       * This is not a new standard — it matches the sibling that already does this exact job.
-       * `RAISE_REFERRAL.referralId` (this file, `case "RAISE_REFERRAL"`, the `findReferral`
-       * lookup) refuses an id naming no referral with a visible `Rejection` rather than storing
-       * it, on the same "optional because most journeys have none, resolved when present" shape
-       * this field's own doc comment cites by name. Read that guard before touching this one.
-       *
-       * So: absent → `event.patientId === undefined` short-circuits the `&&` and this line does
-       * nothing (state 1, fine). Present and real → `.some` finds it and this line does nothing
-       * (state 2, fine). Present and naming nobody → `.some` finds nothing and this REFUSES (state
-       * 3). Collapsing state 1 into state 3 — dropping the presence check — would refuse every
-       * referral raised with no person on file, which is the front door this field exists to keep
-       * open.
+      /**
+       * Three states: absent (a referral raised with nobody on file, legitimate), present and real,
+       * and present but naming nobody, which is refused. Same shape as `RAISE_REFERRAL`'s
+       * `referralId` lookup. Do not drop the presence check, or every referral with no person on
+       * file would be refused.
        */
       if (event.patientId !== undefined && !state.patients.some((patient) => patient.id === event.patientId)) {
         return reject(
@@ -7463,44 +6112,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECEIVE_REFERRAL patientId must name a patient this system already holds, and ${event.patientId} names none`,
         );
       }
-      /*
-       * ⚠️ THE WRITTEN HISTORY — THE ONLY FIELD ON THIS EVENT THE REDUCER CANNOT MEMBERSHIP-CHECK.
+      /**
+       * The written history, the only field here that cannot be membership-checked. Only two things
+       * are enforced: it is a string, and it does not exceed `REFERRAL_HISTORY_LIMITS`.
        *
-       * Every guard above resolves a value against a closed set. There is no set to check prose
-       * against, so exactly two things are enforced here and nothing else is even attempted:
+       * A blank story is a complete answer (owner ruling: one story box, optional). An over-length
+       * value is refused, never truncated: truncation silently drops the end of a risk note.
+       * Nothing else is inspected; reading meaning out of this field would be clinical decision
+       * support (see `Referral.history`).
        *
-       *   1. It is a string at all — see the shape note below.
-       *   2. It does not exceed its limit in `REFERRAL_HISTORY_LIMITS`.
-       *
-       * ⚠️ **A BLANK STORY IS NO LONGER REFUSED.** It was, until the owner's ruling of 2026-09-05:
-       * one story box, OPTIONAL. The rejection that lived here — "a referral needs an account of
-       * why it was raised" — was a good sentence about a rule this product no longer has, and the
-       * front door no longer goes inert on an empty box either. **`""` is a complete answer.**
-       *
-       * ⚠️ **AN OVER-LENGTH VALUE IS REFUSED, NEVER TRUNCATED.** `.slice(0, limit)` here would
-       * accept the referral and silently drop the tail of somebody's risk note, and the intake
-       * would report success. A refusal is visible; a truncation is not, and the part most likely
-       * to be cut is the part written last, which on a risk note is usually the part that matters.
-       *
-       * ⚠️ **NOTHING ELSE IS INSPECTED.** No keyword scan for a name, no check that it "looks
-       * clinical", no urgency inferred from its wording. The moment this reducer reads meaning out
-       * of this field, the prototype is doing clinical decision support — see `Referral.history`.
-       */
-      /*
-       * ⚠️ THE SHAPE CHECK COMES FIRST, AND IT IS NOT DEFENSIVE PROGRAMMING FOR ITS OWN SAKE.
-       *
-       * The first version of this block went straight to `.trim()`, which threw a TypeError on any
-       * caller that omitted the field — and the reducer's own commentary on `sex` describes exactly
-       * who those callers are: "a non-form caller (a demo control, a Playwright fixture, the guided
-       * tour)". Three suites found it within a minute of the field landing.
-       *
-       * **A crash and a refusal are not the same outcome.** A refusal is a `Rejection` a clinician
-       * can read; a thrown TypeError unwinds out of `dispatch`, leaves the state untouched, and
-       * presents as a button that did nothing at all — the phantom-press failure this file already
-       * has a comment about on the officer screen. Every other guard here checks membership before
-       * it uses a value, and this one must too — **and it matters MORE now the field is optional**,
-       * because an omitted field and a deliberately blank one are the same keystroke away and the
-       * loop below is the only thing that tells a caller which mistake it made.
+       * The shape check comes first: a thrown TypeError on an omitted field presents as a button
+       * that did nothing, while a refusal is a `Rejection` a clinician can read.
        */
       for (const field of Object.keys(REFERRAL_HISTORY_LIMITS) as ReferralHistoryField[]) {
         if (typeof event[field] !== "string") {
@@ -7516,18 +6138,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      /*
-       * THE SENDING TEAM'S NAME, AND BOTH REFUSALS ARE DELIBERATE.
-       *
-       * ⚠️ **A blank-but-present value is REFUSED rather than normalised to `undefined`.** Quietly
-       * turning "  " into "no team recorded" would accept a caller's bug and store a different
-       * answer from the one it sent -- and a referral that says nobody was recorded, when the
-       * front door did try to record somebody, is indistinguishable afterwards from a referral
-       * where nobody was asked.
-       *
-       * ⚠️ **An over-length value is refused rather than shortened**, the same rule `history`
-       * follows above: a truncated team name is a DIFFERENT team's name, and it renders as a clean
-       * plausible row nothing contradicts.
+      /**
+       * The sending team's name. A blank-but-present value is refused rather than normalised to
+       * `undefined`, and an over-length value is refused rather than shortened: a truncated name is
+       * a different team's name.
        */
       if (event.sendingTeamName !== undefined) {
         if (event.sendingTeamName.trim() === "") {
@@ -7548,10 +6162,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      // T15 (item 12): membership-checked exactly like every other closed-list field on this
-      // event — `isTentativeDiagnosisBlock` is the same discipline `sex`/`gender`'s own checks
-      // above hold to, never a truthiness test. Only checked when supplied at all, since absent
-      // means nobody has recorded one.
+      // T15 (item 12): membership-checked when supplied; absent means nobody has recorded one.
       if (event.tentativeDiagnosis !== undefined && !isTentativeDiagnosisBlock(event.tentativeDiagnosis)) {
         return reject(
           state,
@@ -7563,9 +6174,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const created: Referral = {
         id: nextFrontDoorReferralId(sequence),
         ...(event.intake === undefined ? {} : { intake: event.intake }),
-        // ⚠️ COPIED THROUGH, NEVER DEFAULTED. `undefined` here means the referral was raised
-        // without a person on file — which is a real case, not a gap to be filled. Inventing an id
-        // to avoid an empty field is how a referral comes to point at the wrong human being.
+        // Copied through, never defaulted: `undefined` means no person on file, and inventing an id
+        // is how a referral points at the wrong human being.
         patientId: event.patientId,
         ageBand: event.ageBand,
         // Every destination starts queued: the referrer chose them, nobody has answered yet.
@@ -7589,10 +6199,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ...(event.atsCategory === undefined ? {} : { atsCategory: event.atsCategory }),
         originSiteCode: event.originSiteCode,
         transportNeeded: event.transportNeeded,
-        // ⚠️ BYTE FOR BYTE, AND THE UNTRIMMED ORIGINAL. The blank check above trims to decide
-        // whether anything was written; it does not trim what is kept. A referrer's leading
-        // indent and paragraph breaks are part of what they wrote, and a reducer that tidies
-        // prose is a reducer that has an opinion about prose.
+        // Byte for byte, untrimmed: the blank check trims only to decide; what the referrer wrote
+        // is kept as written.
         history: event.history,
         // T15 (item 12): absent means nobody has recorded one — never defaulted, never derived
         // from anything else on the referral.
@@ -7604,46 +6212,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "ACCEPT_REFERRAL": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      /*
-       * ⚠️ THE ROLE MUST MATCH THE DESTINATION IT IS ANSWERING — the narrowing half of `FD-3`.
+      /**
+       * The role must match the destination it is answering (the narrowing half of `FD-3`). `ed`
+       * may answer a referral addressed to it, so no ED decision is ever recorded under a false
+       * `decidedBy`, but a role answers its own kind and nothing else. The coordinator is exempt
+       * (`CO-D2`): it sees the whole picture.
        *
-       * `FD-3` was superseded by the owner ("every referral is declinable, and NO CODE PATH MAY
-       * RENDER A REFERRAL WITH NO DECLINE AFFORDANCE"), so `ed` joined this event's permitted roles
-       * — the ED hub acts as `ed`, and without it an emergency department could not answer a
-       * referral addressed to it. Before that, the available workaround was to dispatch as `ward`
-       * or `coordinator`, which compiles, works, and writes a FALSE `decidedBy`: the record would
-       * say a ward refused a patient an emergency department refused. That is the exact defect
-       * `decidedBy` exists to prevent, and nothing would have failed.
-       *
-       * ⚠️ **But the widening alone is too wide.** With `ed` merely added, an emergency department
-       * could accept or refuse a PSYCHIATRIC WARD destination — deciding on a bed in a ward it has
-       * nothing to do with — and the resulting record reads as a legitimate refusal. The same hole
-       * already existed for `ward`, which could answer an emergency department's destination.
-       *
-       * So a role answers its own kind and nothing else. The coordinator is exempt because it is
-       * the only role that sees the whole picture (`CO-D2`), which is the same reason it may cancel
-       * a transport it did not book. `community_team` has no acting role yet; when one arrives it
-       * joins this map rather than widening the lists.
-       *
-       * ⚠️ **THE MAP USED TO BE `Partial`, WHICH MADE THE COORDINATOR'S EXEMPTION INDISTINGUISHABLE
-       * FROM A ROLE NOBODY HAD DECIDED ABOUT.** `answerableBy[event.role]` came back `undefined` for
-       * any role absent from the map — true of the coordinator's deliberate `CO-D2` exemption, but
-       * EQUALLY true of any role added to `WardFlowRole` in future and simply never added here.
-       * Nothing would fail; the new role would pass this guard for every destination kind,
-       * unnoticed. `answerableBy` is now a TOTAL record over `WardFlowRole` — no `Partial` — with
-       * each entry spelled `ReferralDestinationKind | "any"`. A role missing an entry is now a
-       * compiler error naming this map, not a silent bypass.
-       *
-       * `coordinator: "any"` IS `CO-D2` — written down now, rather than implied by absence.
-       * `officer`, `demo` and `community` are also `"any"` here, not because any of the three may
-       * decide a referral, but because none of them can reach this line at all: `EVENT_ROLE`
-       * (checked first, before this switch, at the top of this reducer) permits only `ward`,
-       * `coordinator` and `ed` to raise `ACCEPT_REFERRAL`/`DECLINE_REFERRAL`. Their entries exist
-       * only so the record type-checks as total — they reproduce the OLD `Partial` map's behaviour
-       * at this exact line (absent from the map → unconditional pass) rather than asserting that any
-       * of the three owns a destination. Widening `EVENT_ROLE` to let one of them reach this code is
-       * a separate, deliberate decision — the same kind of decision that added `ed`, above — and
-       * does not follow from this entry existing.
+       * A total record over `WardFlowRole`, never `Partial`, so a new role without an entry is a
+       * compile error rather than a silent bypass. `officer` and `demo` are `"any"` only because
+       * `EVENT_ROLE` stops them reaching this line; widening `EVENT_ROLE` is a separate decision.
        */
       const answerableBy: Record<WardFlowRole, ReferralDestinationKind | "any"> = {
         ward: "psychiatric_ward",
@@ -7651,16 +6228,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         coordinator: "any",
         officer: "any",
         demo: "any",
-        /*
-         * 🔴 `community_team`, NOT `"any"` — owner ruling 2026-09-06, and the comment above
-         * predicted this exact edit: "`community_team` has no acting role yet; when one arrives it
-         * joins this map rather than widening the lists."
-         *
-         * It arrived. `EVENT_ROLE.DECLINE_REFERRAL` now permits `community`, so this role CAN reach
-         * this line — and `"any"` would have let a community team decline a psychiatric ward's bed.
-         * Set in BOTH the accept and decline handlers although `community` is only permitted to
-         * decline: if the accept list is ever widened, the ownership check is already correct rather
-         * than silently open.
+        /**
+         * `community_team`, not `"any"` (owner ruling): `EVENT_ROLE.DECLINE_REFERRAL` permits
+         * `community`, and `"any"` would let a community team decline a ward's bed. Set in both the
+         * accept and decline handlers so a future widening is already correct.
          */
         community: "community_team",
         bed_manager: "any",
@@ -7711,19 +6282,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const actingRefusal = wardActingUnitRefusal(event, addressing);
       if (actingRefusal) return reject(state, event, actingRefusal);
-      // FD-22: the first acceptance ends the placement. A second destination accepting afterwards
-      // would mean two places believing they had taken the same person -- the exact outcome the
-      // automatic cancellation exists to prevent, so it is refused rather than recorded.
+      // FD-22: the first acceptance ends the placement; a second is refused rather than recorded,
+      // so two places never believe they have taken the same person.
       //
-      // 🔴 RB5 (item 16): NOT for a community arm. `referralState` already excludes a community
-      // acceptance from "the placement is settled" WHILE a ward or ED destination is still queued
-      // (see that function's own doc comment) -- but once a ward or ED HAS accepted, referralState
-      // reads "accepted" too, and a bare `referralState(referral) === "accepted"` check here would
-      // then refuse the community team's own accept, exactly the "ward and ED arms stay answerable,
-      // and the community arm stays answerable after they say yes" target this item exists for. A
-      // community answer never competes for the placement (FD-22's own exemption, below), so it is
-      // never blocked by one -- this is that same exemption, at the guard that decides whether an
-      // answer is even attempted.
+      // RB5 (item 16): not for a community arm, which never competes for the placement and stays
+      // answerable after a ward or ED says yes.
       if (event.destinationKind !== "community_team" && referralState(referral) === "accepted") {
         return reject(state, event, `referral ${referral.id} has already been accepted elsewhere`);
       }
@@ -7736,14 +6299,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `${event.destinationKind.replace(/_/g, " ")} has already answered referral ${referral.id} (${addressing.state})`,
         );
       }
-      /*
-       * ⚠️ **`RECORD_REFERRER_WITHDRAWAL` STAMPS `withdrawnAt`, NEVER `state` — O-17.11, and that is
-       * deliberate: `state` has exactly one `switch` over it in `src` with no `never` guard, so a
-       * fifth state would have bought almost no compiler help. The guard above therefore cannot see
-       * a withdrawal at all**, and this destination could still be accepted after the referrer took
-       * the whole referral back. Checked here, its own guard, not folded into the `state !== "queued"`
-       * check above: `state` and `withdrawnAt` are two different facts about this destination, and
-       * conflating them is exactly the trap O-17.11 was written to avoid on every OTHER reader too.
+      /**
+       * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt`, never `state` (O-17.11), so the guard
+       * above cannot see a withdrawal. A separate guard, because they are two different facts.
        */
       if (addressing.withdrawnAt !== undefined) {
         return reject(
@@ -7766,18 +6324,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           }
         | undefined;
       if (addressing.destination.kind === "psychiatric_ward") {
-        /*
-         * P2-6 (Ward Lead audit, 2026-09-17): a front-door referral can be addressed to a
-         * psychiatric ward AND an emergency department at once, and `RAISE_REFERRAL`'s own
-         * uniqueness guard (above) only stops a SECOND movement being raised from this referral —
-         * it says nothing about the ward arm answering while the FIRST one, raised from the ED
-         * arm, is still under way. Left unguarded, a ward could accept this referral into a bed
-         * while the ED's own movement carries on as an open journey for the same patient: two
-         * places both believing they have taken the same person, the same double-journey shape
-         * `RAISE_REFERRAL`'s guard exists to prevent from the movement side. `isOpen`'s own
-         * definition, inlined for the identical reason `RAISE_REFERRAL`'s guard inlines it rather
-         * than importing `ward-derivations.ts` (see that guard's own comment on the circular
-         * module edge).
+        /**
+         * P2-6 (Ward Lead audit): a ward must not accept this referral into a bed while a movement
+         * raised from its ED arm is still under way for the same patient. `isOpen` is inlined to
+         * avoid a circular import, as in `RAISE_REFERRAL`.
          */
         const openLinkedMovement = state.movements.find(
           (movement) => movement.referralId === referral.id && !movement.closure && movement.stage !== "arrived",
@@ -7799,11 +6349,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, undefined);
           if (bedRefusal) return reject(state, event, bedRefusal);
         }
-        /*
-         * 🔴 T12 (item 9, owner answer 9): the front door's own half of the same rule
-         * `REFER_TO_UNITS` holds on the movement path — see `GenderPlacement`'s own doc comment
-         * (`ward-model.ts`). Checked here, before the eligibility gate, and refuses the WHOLE
-         * acceptance rather than something a reason can buy past.
+        /**
+         * T12 (owner answer 9): the front door's half of the `REFER_TO_UNITS` rule (see
+         * `GenderPlacement` in `ward-model.ts`). Checked before the eligibility gate and refuses
+         * the whole acceptance.
          */
         if (
           genderReviewNeeded(addressing.destination.gender, addressing.destination.sex) &&
@@ -7832,15 +6381,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             wardChecked: true,
           };
         }
-        // The failing gate is named in the rejection, not just "ineligible" -- `referralEligibility`
-        // (ward-eligibility.ts) already produces a human-readable detail per gate; reusing it here
-        // is what keeps this refusal and the match view's own "why not here?" reading identically.
-        // 🔴 Owner reversal, item 2: same same-act fix as `REFER_TO_UNITS`'s own
-        // `movementForEligibility` above — `genderPlacementAddition` is this event's own pending
-        // write, not yet on `referral`, and the `gender_designation` gate must see it now so a
-        // coordinator can clear a single-gender ward's designation and its placement record in one
-        // acceptance. `referral` itself is committed unchanged below; only this local eligibility
-        // read is widened.
+        // The rejection names the failing gate, reusing `referralEligibility`'s per-gate detail so
+        // it reads the same as the match view.
+        //
+        // Owner reversal, item 2: the `gender_designation` gate must see this event's pending
+        // gender-placement write, so both can be cleared in one acceptance. Only this local
+        // eligibility read is widened; `referral` is committed unchanged.
         const referralForEligibility: Referral =
           genderPlacementAddition === undefined
             ? referral
@@ -7866,16 +6412,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           acceptedUnitId: unit.id,
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
-          // Written unconditionally, not only in the override branch: `...addressing` above could
-          // otherwise carry a reason forward from an earlier state onto a clean acceptance, which
-          // would read afterwards as a rule bent that nobody bent.
+          // Written unconditionally, so `...addressing` cannot carry an old reason onto a clean
+          // acceptance.
           acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,
           ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
         };
       } else {
-        // An ED, a medical ward and a community team are answered by a person or a team. There is
-        // no bed to gate on and no unit to name, so a `unitId` sent with one of these would be a
-        // caller's mistake rather than a detail to ignore.
+        // An ED, medical ward or community team has no bed and no unit, so a `unitId` here is a
+        // caller's mistake.
         if (event.unitId) {
           return reject(
             state,
@@ -7894,147 +6438,48 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         };
       }
 
-      // FD-22, and the reason it is here rather than on a screen: the first acceptance cancels
-      // every destination still waiting, automatically, with no coordination step. A DECLINED
-      // destination is left exactly as it was -- its refusal, its time and its reason stay on the
-      // record, which is the surviving half of the decision FD-24 retired.
-      /*
-       * ⚠️ **BEFORE YOU CHANGE WHAT THIS CANCELS, READ THIS. THREE CHANGES COMBINE TO HIDE A
-       * PATIENT, AND NONE OF THE THREE POINTS AT THE OTHER TWO.** Established 2026-09-01 by Ward
-       * Builder Two and Ward Verifier and re-verified against both trees by Ward Lead; recorded
-       * HERE because this is the only one of the three sites a person editing the cancellation
-       * will certainly open.
-       *
-       *   A. **The symmetry change** — an acceptance of a LEAVING destination cancels nothing,
-       *      the mirror of the community carve-out immediately below. Not made; parked on the
-       *      owner as question 7.
-       *   B. **Wiring `coordinatorWorksReferral` to a real screen.** `coordinatorWorklistReferrals`
-       *      (ward-referral-visibility.ts) is defined and used by NOTHING — measured, with a
-       *      known-positive control, at `124376628`. It will be wired later for reasons that have
-       *      nothing to do with this block.
-       *   C. **Branch 2 answering from a lone accepted arm**, ignoring anything still queued
-       *      beside it. Fixed on `claude/ward-builder-two` (`1b86cee6e`); NOT yet on this line.
-       *
-       * **Any two are harmless. All three hide a patient**: a person physically in an emergency
-       * department, still awaiting a psychiatric decision, drops off the coordinator's work list
-       * because a community team accepted their discharge follow-up — and no record says anybody
-       * refused them, because nobody did.
-       *
-       * ⚠️ **THE TRAP IS THAT A IS THE SAFE-LOOKING ONE.** A stops something being cancelled. It
-       * reads as strictly protective and, on its own today, it is. It turns harmful only in
-       * combination with a wiring step somebody does months later for unrelated reasons. **So the
-       * rule is not an order of work — it is: A and B must not both be on this line while C is.**
-       * Folding `claude/ward-builder-two` satisfies it permanently and is the simplest route.
-       *
-       * ⚠️ **AND A IS NOT A ONE-LINE CHANGE. IT TURNS A PRIVACY TEST RED IN A FILE THIS HANDLER
-       * DOES NOT OWN, AND THE RED WILL NOT LOOK LIKE YOUR CHANGE.** Established 2026-09-01 by Ward
-       * Builder Two and Ward Verifier, each refuting the other's first answer, and re-verified here.
-       *
-       * `multiDestinationReferral()` in `tests/ward-referral-visibility.test.ts` gets its
-       * `"cancelled"` marker from a coordinator accepting the community arm, which cancels the
-       * queued emergency-department arm. **After A, a leaving acceptance cancels nothing, the marker
-       * vanishes, and the positive control that proves the FD-23 privacy sweep is non-vacuous goes
-       * red.** It will present as the privacy sweep breaking. Nothing in that file points here.
-       *
-       * ⚠️ **DO NOT RESHAPE THAT FIXTURE, AND DO NOT REMOVE `"cancelled"` FROM THE MARKER LIST.**
-       * The file already names the second move as forbidden — it is making a red test green by
-       * weakening a privacy sweep — and it is exactly the move the red invites. The first move has
-       * been worked through and provably does not exist. `ELSEWHERE_MARKERS` requires BOTH
-       * `"cancelled"` and `"Flow coordinator"`, so the coordinator must decide something AND an
-       * arriving acceptance must cancel a queued sibling; with the ward declined (which that fixture
-       * must keep, because the ward saying no while somebody else says yes IS the privacy case it
-       * exists for), every arrangement fails:
-       *
-       *   coordinator accepts community  → post-A, cancels nothing
-       *   coordinator accepts ED         → only remaining sibling is community, which is protected
-       *   ward accepts                   → cancels the ED arm, but `decidedBy` is
-       *                                    `WARD_FLOW_ROLE_LABELS[event.role]`, so it writes
-       *                                    "Ward manager" and "Flow coordinator" disappears instead
-       *   a fourth destination           → refused by `PARALLEL_REFERRAL_CAP` (3)
-       *   a second emergency department  → breaks the field-set allowlists (an ED arm carries
-       *                                    `edId` and `purpose`, a community arm carries `teamName`)
-       *
-       * **The fault is one level above the fixture and A merely reveals it: one marker set is doing
-       * two jobs.** `"cancelled"` belongs to its own small fixture; this one belongs to the privacy
-       * sweep. **The repair is to split them, and it lives in that test file, not here.** Reshaping
-       * that fixture is what built the trap — it has already been reshaped twice today, both times
-       * by the two halves of the same owner ruling.
-       *
-       * ⚠️ **AND NOTHING TESTS THIS BLOCK'S CENTRAL BEHAVIOUR.** Every existing test drives a WARD
-       * acceptance; none drives a community one, so whether a community acceptance cancels the
-       * queued arriving arms is pinned by nothing at all (Ward Verifier, 2026-09-01). The test is
-       * deliberately unwritten rather than forgotten: **written today it must assert the
-       * cancellation, and after A it must assert the opposite.** Write it with A, not before it.
-       */
+      // FD-22: the first acceptance automatically cancels every destination still waiting. A
+      // declined destination keeps its refusal, time and reason (FD-24).
+      //
+      // Before changing what this cancels: making a leaving acceptance cancel nothing (owner
+      // question 7) interacts with `coordinatorWorklistReferrals` and Branch 2's lone-accepted-arm
+      // reading; together they can hide a patient still awaiting a psychiatric decision. It would
+      // also turn red the `"cancelled"` positive control in
+      // `tests/ward-referral-visibility.test.ts`'s `multiDestinationReferral()`. Do not weaken that
+      // privacy sweep's markers; split the fixture in that test file instead. No test yet drives a
+      // community acceptance; write it with that change.
       const destinations = referral.destinations.map((candidate) => {
         if (candidate === addressing) return accepted;
         if (candidate.state !== "queued") return candidate;
-        /*
-         * 🔴 **RB5 (item 16): A COMMUNITY ACCEPTANCE CANCELS NOTHING.** The exemption two lines
-         * below protects a community_team destination from being cancelled by somebody ELSE's
-         * acceptance -- it says nothing about the reverse. Before this fix, a community team
-         * accepting its OWN arm still ran this same map over every other queued destination and
-         * cancelled the ward and the ED, because neither of THEM is `community_team`. That is
-         * exactly the "cancel queued arms when a community team accepts" defect this item exists
-         * to close: a community acceptance decides nothing about the bed (see `referralState`'s own
-         * doc comment), so it must cancel nothing either -- FD-22 governs destinations competing
-         * for the SAME placement, and a follow-up team was never in that race regardless of which
-         * side of the acceptance it sits on.
+        /**
+         * RB5 (item 16): a community acceptance cancels nothing. It decides nothing about the bed,
+         * so FD-22 does not apply to it.
          */
         if (accepted.destination.kind === "community_team") return candidate;
-        /*
-         * ⚠️ **A COMMUNITY TEAM IS NEVER CANCELLED BY SOMEBODY ELSE'S ACCEPTANCE.** Owner ruling,
-         * 2026-09-01, and his definition is the reason rather than the rule: *"Community referral
-         * means a patient is about to be discharged"*.
-         *
-         * **A community referral does not COMPETE with a bed — it means the patient is on their way
-         * OUT.** So cancelling it because a ward said yes was the app cancelling DISCHARGE PLANNING at
-         * the exact moment admission was confirmed. FD-22 is about destinations racing for the same
-         * placement; a follow-up team is not in that race.
-         *
-         * ⚠️ **THIS DEFECT DISPLAYED NOWHERE, WHICH IS THE FRAGILE KIND OF CORRECT.**
-         * `admissionBelongsToTeam` reads a destination's kind and team name and never its state —
-         * deliberately, because a cancelled referral still named that team. So nothing showed it, and
-         * anyone later "tightening" the hub to respect state would have made it live and people would
-         * have vanished from team pages. Fixing it here removes the trap at source.
+        /**
+         * A community team is never cancelled by somebody else's acceptance (owner ruling:
+         * "Community referral means a patient is about to be discharged"). It does not compete with
+         * a bed, so cancelling it would cancel discharge planning when admission is confirmed.
          */
         if (candidate.destination.kind === "community_team") return candidate;
         return { ...candidate, state: "cancelled" as const, decidedAt: event.now };
       });
-      // Spec D14: acceptance decides only that the network takes this referral -- it creates NO
-      // `Movement`. Wiring an accepted referral into one needs an `originEdId`, a legal status
-      // and a stage machine, every one of which is entangled with Phase 8's geography work; that
-      // seam is deliberate, not an oversight, and `tests/ward-referral-reducer.test.ts` asserts
-      // it explicitly so a future change has to argue with a test rather than slip past.
+      // Spec D14: acceptance creates no `Movement`. That seam is deliberate;
+      // `tests/ward-referral-reducer.test.ts` asserts it.
       const next = replaceReferral(state, referral.id, {
         ...referral,
         destinations,
-        // T12 (item 9): appended only when this acceptance itself supplied a fresh clearance —
-        // absent (`undefined`) leaves `referral.genderPlacements` untouched, same "nothing to add"
-        // discipline `REFER_TO_UNITS`'s own `movement.genderPlacements` update holds to.
+        // T12: appended only when this acceptance supplied a fresh clearance.
         genderPlacements:
           genderPlacementAddition === undefined
             ? referral.genderPlacements
             : [...(referral.genderPlacements ?? []), genderPlacementAddition],
       });
-      /*
-       * Communication addendum §1.3: "ACCEPT_REFERRAL — the referrer and the receiving ward —
-       * both sides of a commitment." Two independent, optional notices, each with its own
-       * `NoticeKind` (never sharing one, so the two can never collide under `makeNotice`'s
-       * `(subject, kind, count)` id rule even though both share `about.referralId`):
-       *
-       *   - the referrer, ONLY when `referralReferrer` can resolve one safely (see that function's
-       *     own doc comment for why `REFERRAL_SOURCES`' six other members never do);
-       *   - the receiving ward, ONLY when this acceptance is a psychiatric-ward one — the only
-       *     destination kind that names a unit at all. An ED or community-team acceptance commits
-       *     a team, not a ward, and the addendum's own words name "the receiving WARD" specifically.
-       *
-       * Fix round 1 (review finding, Minor — "fix this one too"): the referrer's own sentence names
-       * the actual unit, not merely the destination KIND, whenever a unit is known. `event.unitId`
-       * is only ever present and validated to a real unit on the psychiatric-ward branch (the same
-       * guard the ward-side notice below relies on), so `unitName` never falls back to a bare id
-       * here in practice — the destination-kind wording stays only for the ED/community-team
-       * acceptances that never name a unit at all.
+      /**
+       * Addendum §1.3: "ACCEPT_REFERRAL — the referrer and the receiving ward — both sides of a
+       * commitment." Two optional notices, each with its own `NoticeKind`: the referrer only when
+       * `referralReferrer` resolves one safely, and the receiving ward only for a psychiatric-ward
+       * acceptance. The referrer's sentence names the actual unit whenever one is known.
        */
       const referralNotices: Notice[] = [];
       const referrer = referralReferrer(referral);
@@ -8074,46 +6519,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "DECLINE_REFERRAL": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      /*
-       * ⚠️ THE ROLE MUST MATCH THE DESTINATION IT IS ANSWERING — the narrowing half of `FD-3`.
-       *
-       * `FD-3` was superseded by the owner ("every referral is declinable, and NO CODE PATH MAY
-       * RENDER A REFERRAL WITH NO DECLINE AFFORDANCE"), so `ed` joined this event's permitted roles
-       * — the ED hub acts as `ed`, and without it an emergency department could not answer a
-       * referral addressed to it. Before that, the available workaround was to dispatch as `ward`
-       * or `coordinator`, which compiles, works, and writes a FALSE `decidedBy`: the record would
-       * say a ward refused a patient an emergency department refused. That is the exact defect
-       * `decidedBy` exists to prevent, and nothing would have failed.
-       *
-       * ⚠️ **But the widening alone is too wide.** With `ed` merely added, an emergency department
-       * could accept or refuse a PSYCHIATRIC WARD destination — deciding on a bed in a ward it has
-       * nothing to do with — and the resulting record reads as a legitimate refusal. The same hole
-       * already existed for `ward`, which could answer an emergency department's destination.
-       *
-       * So a role answers its own kind and nothing else. The coordinator is exempt because it is
-       * the only role that sees the whole picture (`CO-D2`), which is the same reason it may cancel
-       * a transport it did not book. `community_team` has no acting role yet; when one arrives it
-       * joins this map rather than widening the lists.
-       *
-       * ⚠️ **THE MAP USED TO BE `Partial`, WHICH MADE THE COORDINATOR'S EXEMPTION INDISTINGUISHABLE
-       * FROM A ROLE NOBODY HAD DECIDED ABOUT.** `answerableBy[event.role]` came back `undefined` for
-       * any role absent from the map — true of the coordinator's deliberate `CO-D2` exemption, but
-       * EQUALLY true of any role added to `WardFlowRole` in future and simply never added here.
-       * Nothing would fail; the new role would pass this guard for every destination kind,
-       * unnoticed. `answerableBy` is now a TOTAL record over `WardFlowRole` — no `Partial` — with
-       * each entry spelled `ReferralDestinationKind | "any"`. A role missing an entry is now a
-       * compiler error naming this map, not a silent bypass.
-       *
-       * `coordinator: "any"` IS `CO-D2` — written down now, rather than implied by absence.
-       * `officer`, `demo` and `community` are also `"any"` here, not because any of the three may
-       * decide a referral, but because none of them can reach this line at all: `EVENT_ROLE`
-       * (checked first, before this switch, at the top of this reducer) permits only `ward`,
-       * `coordinator` and `ed` to raise `ACCEPT_REFERRAL`/`DECLINE_REFERRAL`. Their entries exist
-       * only so the record type-checks as total — they reproduce the OLD `Partial` map's behaviour
-       * at this exact line (absent from the map → unconditional pass) rather than asserting that any
-       * of the three owns a destination. Widening `EVENT_ROLE` to let one of them reach this code is
-       * a separate, deliberate decision — the same kind of decision that added `ed`, above — and
-       * does not follow from this entry existing.
+      /**
+       * The role must match the destination it is answering; see the identical map on
+       * `ACCEPT_REFERRAL` above.
        */
       const answerableBy: Record<WardFlowRole, ReferralDestinationKind | "any"> = {
         ward: "psychiatric_ward",
@@ -8121,17 +6529,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         coordinator: "any",
         officer: "any",
         demo: "any",
-        /*
-         * 🔴 `community_team`, NOT `"any"` — owner ruling 2026-09-06, and the comment above
-         * predicted this exact edit: "`community_team` has no acting role yet; when one arrives it
-         * joins this map rather than widening the lists."
-         *
-         * It arrived. `EVENT_ROLE.DECLINE_REFERRAL` now permits `community`, so this role CAN reach
-         * this line — and `"any"` would have let a community team decline a psychiatric ward's bed.
-         * Set in BOTH the accept and decline handlers although `community` is only permitted to
-         * decline: if the accept list is ever widened, the ownership check is already correct rather
-         * than silently open.
-         */
+        /** `community_team`, not `"any"` (owner ruling): see `ACCEPT_REFERRAL` above. */
         community: "community_team",
         bed_manager: "any",
         executive: "any",
@@ -8190,19 +6588,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `referral ${referral.id} was withdrawn by its referrer, so ${event.destinationKind.replace(/_/g, " ")} cannot decline it`,
         );
       }
-      // Membership check, not truthiness -- same discipline as FLAG_BED_RELEASE's own comment on
-      // this exact shape of check above. Phase 5 shipped a truthiness test in this position
-      // (`!event.blocker`, which refuses a missing/empty value but accepts any other non-empty
-      // string) and review caught it; "chosen from a fixed list, never typed" is a runtime rule.
+      // Membership, not truthiness: "chosen from a fixed list, never typed" is a runtime rule.
       //
-      // ⚠️ **SCOPED TO THE DESTINATION KIND THAT IS ANSWERING, NOT TO ONE SHARED LIST — O-16.6,
-      // community-decline engine fix, 2026-09-17.** A community team's decline and a ward's decline
-      // are different acts with ZERO overlap in meaning (`COMMUNITY_DECLINE_REASONS`'s own doc
-      // comment, `ward-model.ts`, records the measurement), so checking `event.reason` against the
-      // union of every vocabulary would accept a bed-placement reason for a community refusal —
-      // exactly the wrong-reason-is-worse-than-no-reason failure that ruling exists to prevent. Each
-      // destination kind is checked only against ITS OWN list; `psychiatric_ward` keeps the full
-      // `REFERRAL_DECLINE_REASONS` it always answered from, unchanged.
+      // Scoped to the answering destination kind (O-16.6): a community decline and a ward decline
+      // have no overlap in meaning, so each kind is checked only against its own list.
+      // `psychiatric_ward` keeps `REFERRAL_DECLINE_REASONS`.
       const declineReasonsFor: Record<
         ReferralDestinationKind,
         readonly (ReferralDeclineReason | CommunityDeclineReason)[]
@@ -8223,17 +6613,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `DECLINE_REFERRAL reason must be chosen from ${declineReasonListName[event.destinationKind]}, the vocabulary for ${event.destinationKind.replace(/_/g, " ")} destinations`,
         );
       }
-      // ⚠️ **ONE FIELD, TWO VOCABULARIES, BY NECESSITY RATHER THAN CHOICE — moved here from
-      // `ReferralAddressing.declineReason`'s own doc comment (`ward-model.ts`) on 2026-09-17, so
-      // that field carries a sentence rather than this reasoning.** `ReferralAddressing` is not
-      // discriminated on `destination.kind` (see that type's own history — every arm's own fields
-      // live on `ReferralDestination` instead), so nothing on the field itself can narrow
-      // `declineReason`'s type PER destination kind without a much larger restructure. The check just
-      // above is what actually holds the two vocabularies apart at runtime, by refusing any
-      // `event.reason` not drawn from `event.destinationKind`'s own list before ever writing below —
-      // so a `community_team` addressing's `declineReason` is a `ReferralDeclineReason` only in the
-      // type system, never in fact.
-      //
+      // One field, two vocabularies: `ReferralAddressing` is not discriminated on
+      // `destination.kind`, so the check above is what holds the vocabularies apart at runtime.
       if (event.waitlist === true) {
         if (
           addressing.destination.kind !== "psychiatric_ward" ||
@@ -8248,9 +6629,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ),
         });
       }
-      // FD-24: this destination declines and NOTHING ELSE CHANGES. The other destinations stay
-      // queued, this ward is not locked out of anything later, and the refusal stays on the record
-      // with its time and its reason.
+      // FD-24: this destination declines and nothing else changes. The others stay queued, and the
+      // refusal stays on record with its time and reason.
       const destinations = referral.destinations.map((candidate) =>
         candidate === addressing
           ? {
@@ -8263,27 +6643,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           : candidate,
       );
       const next = replaceReferral(state, referral.id, { ...referral, destinations });
-      // Communication addendum §1.3 ("DECLINE_REFERRAL / DECLINE — the referrer") and FD-23: the
-      // decline reason reaches THAT referral's referrer and no other team. `referralReferrer`
-      // returns `undefined` for every source but `ed_medical` (see its own doc comment), so no
-      // notice is raised at all for the other six — no notice is safer than a wrongly-addressed
-      // one. Shares `NoticeKind` "referral_declined" with the movement-level `DECLINE` above.
+      // Addendum §1.3 and FD-23: the decline reason reaches that referral's referrer and no other
+      // team; no notice is safer than a wrongly-addressed one. Shares `NoticeKind`
+      // "referral_declined" with `DECLINE`.
       const referrer = referralReferrer(referral);
       if (referrer === undefined) return next;
-      // Fix round 1 (review finding, Important 3): the reason half of this sentence reads through
-      // `DECLINE_REASON_LABELS` — this repo's one spelling of a decline reason
-      // (`ward-referrals.ts`) — never `event.reason.replace(/_/g, " ")`. That idiom is correct for
-      // the other three reason enums, which have no label map; it is wrong here specifically
-      // because `another_reason`'s curated label ("Another reason — needs follow-up") carries real
-      // meaning the plain de-underscored text drops, and the referrer is exactly the person who
-      // must do the following up.
-      //
-      // ⚠️ **TWO LABEL MAPS NOW, ONE FOR EACH VOCABULARY — O-16.6, 2026-09-17.** `event.reason` is
-      // `ReferralDeclineReason | CommunityDeclineReason`, so a single `Record` keyed by either alone
-      // cannot index it without a cast — the same `as Record<string, string>` fallback pattern
-      // `referral-board.tsx`'s own `refusalLines` and `referralAddressingStateLabel`
-      // (`ward-referrals.ts`) already use for this identical shape, kept consistent here rather than
-      // invented afresh.
+      // The reason reads through the curated label maps (`DECLINE_REASON_LABELS`, and the community
+      // one per O-16.6), never a de-underscored code: "Another reason — needs follow-up" carries
+      // meaning the referrer must act on. The `Record<string, string>` widening matches
+      // `referral-board.tsx` and `ward-referrals.ts`.
       const declineLabel =
         (DECLINE_REASON_LABELS as Record<string, string>)[event.reason] ??
         (COMMUNITY_DECLINE_REASON_LABELS as Record<string, string>)[event.reason] ??
@@ -8301,35 +6669,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * 🔴 **FD-5 — THE REFERRER TOOK THE REFERRAL BACK (O-17.11).**
+     * FD-5: the referrer took the referral back (O-17.11). A field (`withdrawnAt`), not a fifth
+     * state: the one switch over `addressing.state` has no `never` guard, so a new state would
+     * silently count as open. The state is deliberately left untouched.
      *
-     * **A FIELD, NOT A FIFTH STATE, and the reason is the codebase's own weakness rather than a
-     * preference:** exactly one switch in `src` covers `addressing.state` and it carries no `never`
-     * guard, so a fifth state would buy almost no compiler help — every existing `=== "queued"`
-     * comparison would silently keep its old meaning and a withdrawn referral would go on counting as
-     * open, green all the way. **The state is deliberately left untouched here.**
-     *
-     * ⚠️ **UNSCOPED, EVERY WAITING DESTINATION, NOT ONE.** A decline names its destination because
-     * one service is answering. An unscoped withdrawal carries no `destinationKind` because the
-     * SENDER is taking back the whole referral. 🔴 **A destination that already answered keeps its
-     * answer** — a refusal is a recorded clinical decision and is never unmade by somebody else
-     * changing their mind.
-     *
-     * 🔴 **OWNER RULING 11 (2026-09-17) IS THE ONE NAMED EXCEPTION** — `destinationKind:
-     * "community_team"` withdraws that one arm alone, checked and returned from in its own branch
-     * below before any of the unscoped logic runs. See this event's own doc comment
-     * (`ward-flow-events.ts`) for the ruling.
+     * Unscoped: every waiting destination, because the sender takes back the whole referral. A
+     * destination that already answered keeps its answer. Owner ruling 11 is the one exception:
+     * `destinationKind: "community_team"` withdraws that arm alone, in its own branch below (see
+     * `ward-flow-events.ts`).
      */
     case "RECORD_REFERRER_WITHDRAWAL": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
 
-      /*
-       * Owner, 4 October 2026: the community team and the ED may record a withdrawal "if they are
-       * cancelling their referral" — their OWN referral, never another side's.
-       * DEC-L5-03: ward may also withdraw if referral.source === "psychiatric_ward" from its origin unit.
-       * Checked before both branches below, so it scopes the community-arm withdrawal and the whole-referral one alike.
-       * The coordinator may still record it for any referral.
+      /**
+       * Owner: the community team and the ED may withdraw only their own referral. DEC-L5-03: a
+       * ward may withdraw a `psychiatric_ward` referral from its origin unit. Checked before both
+       * branches below. The coordinator may record it for any referral.
        */
       if (event.role === "ward") {
         if (referral.source !== "psychiatric_ward") {
@@ -8392,12 +6748,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         }
       }
 
-      /*
-       * 🔴 OWNER RULING 11 (2026-09-17) — THE SCOPED BRANCH, checked first and returned from
-       * entirely separately from the whole-referral path below. See this event's own doc comment
-       * (`ward-flow-events.ts`) for the ruling. Kept as its own self-contained branch rather than
-       * woven into the unscoped logic below, so every existing whole-referral behaviour — and every
-       * test pinning it — is untouched when `destinationKind` is absent.
+      /**
+       * Owner ruling 11: the scoped community-arm branch, self-contained so every whole-referral
+       * behaviour is untouched when `destinationKind` is absent.
        */
       if (event.destinationKind === "community_team") {
         const addressing = referral.destinations.find((candidate) => candidate.destination.kind === "community_team");
@@ -8407,12 +6760,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         if (addressing.withdrawnAt !== undefined) {
           return reject(state, event, `the community team on referral ${referral.id} was already withdrawn`);
         }
-        // A team that already answered (accepted or declined) keeps its answer — the same "a
-        // destination that already answered is not withdrawn" rule the unscoped path below holds
-        // to, checked here against just this one destination rather than the whole referral, which
-        // is exactly what lets a still-queued community arm be taken back after a DIFFERENT
-        // destination (the ward) has already accepted (RB5's own DECLINE_REFERRAL exemption reads
-        // the identical way: "a community team is not in the race FD-22 governs").
+        // A team that already answered keeps its answer. A still-queued community arm can be taken
+        // back after a ward has accepted, since a community team is not in the FD-22 race.
         if (addressing.state !== "queued") {
           return reject(
             state,
@@ -8443,9 +6792,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             candidate.id === referral.id ? { ...candidate, destinations } : candidate,
           ),
         };
-        // Guaranteed by the `find` above (it only matches a `community_team` destination), read
-        // defensively rather than asserted — the same conservative-failure shape `ward-place.ts`
-        // holds throughout: an unresolvable name degrades to "no notice", never a wrong one.
+        // Read defensively: an unresolvable name degrades to no notice, never a wrong one.
         const teamName = addressing.destination.kind === "community_team" ? addressing.destination.teamName : undefined;
         if (teamName === undefined) return next;
         return appendNotices(next, [
@@ -8460,11 +6807,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ]);
       }
 
-      /*
-       * ⚠️ A referral somebody has already accepted is not withdrawable: the person has a bed, or is
-       * on their way to one. A record saying the referrer took it back would contradict an admission
-       * that is already happening — and `referralState` is the one place that question is answered,
-       * rather than a second scan over `destinations` here.
+      /**
+       * An accepted referral is not withdrawable: the person has a bed or is on the way to one.
+       * `referralState` answers that question.
        */
       if (referralState(referral) === "accepted") {
         return reject(state, event, `referral ${referral.id} has already been accepted, so it cannot be withdrawn`);
@@ -8476,10 +6821,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       ) {
         return reject(state, event, `referral ${referral.id} has already been recorded as withdrawn by its referrer`);
       }
-      /*
-       * ⚠️ Nothing left waiting means nothing to withdraw — every destination has answered. Refused
-       * rather than written as a no-op, because a silent success would put a withdrawal time on a
-       * referral where it changes no figure and later reads as evidence somebody withdrew in time.
+      /**
+       * Nothing left waiting means nothing to withdraw; refused rather than a silent success that
+       * would later read as a timely withdrawal.
        */
       const waiting = referral.destinations.filter(
         (addressing) => addressing.state === "queued" && addressing.withdrawnAt === undefined,
@@ -8493,22 +6837,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           ? { ...addressing, withdrawnAt: event.now, withdrawalRecordedBy: WARD_FLOW_ROLE_LABELS[event.role] }
           : addressing,
       );
-      /*
-       * Invariant I-07: cascade referral withdrawal to EVERY linked open movement, not only one.
+      /**
+       * Invariant I-07: cascade to every linked open movement, each unwound as `WITHDRAW_REFERRAL`
+       * and `STOP_TRANSPORT` do via `releasePulledBedAndAdmission`.
        *
-       * 🔴 FIX ROUND (2026-09-16 audit): this used to find ONE linked open movement (`.find`) and
-       * close it, releasing nothing — no bed given back, no admission deleted, no in-flight
-       * transport cancelled. Nothing here or in `RAISE_REFERRAL` prevents a referral linking to
-       * more than one open movement, and every one of them needed the same unwind
-       * `WITHDRAW_REFERRAL` and `STOP_TRANSPORT` already give a single movement — see
-       * `releasePulledBedAndAdmission`, shared with both rather than copied a third time.
-       *
-       * A linked movement whose transport has already been COLLECTED is refused outright, not
-       * guessed at: `WITHDRAW_REFERRAL` treats a collected journey as a decision only
-       * `STOP_TRANSPORT` may make, and this event has no equivalent "stop the vehicle" act to fall
-       * back on. Choosing what a referrer withdrawal should do to a vehicle already on the road is
-       * a decision this brief does not cover, so the whole event is refused — state unchanged —
-       * rather than this handler picking a behaviour for it.
+       * A linked movement already collected refuses the whole event, state unchanged: stopping a
+       * vehicle on the road is `STOP_TRANSPORT`'s decision, not this handler's.
        */
       const linkedOpenMovements = state.movements.filter((m) => m.referralId === referral.id && !m.closure);
       const collectedLinkedMovement = linkedOpenMovements.find((m) => m.transport?.collectedAt !== undefined);
@@ -8597,15 +6931,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * 🔴 **RB7 — CORRECTION NOTES, build plan item 27 (2026-09-17).** Appends a new, attributed,
-     * timestamped note to `referral.corrections`. See `Referral.corrections`'s own doc comment for
-     * why this is structurally kept apart from `history`, and note that this case body deliberately
-     * NEVER assigns `history:` — `tests/ward-referral-history-immutable.test.ts` is the static
-     * proof of that, not merely a convention followed by eye.
-     *
-     * No referral-state precondition: unlike `RECORD_REFERRER_WITHDRAWAL` above, a correction is not
-     * a decision about the referral's own outcome — it is a note added on top of whatever has
-     * already happened, at any point in a referral's life, and the plan names none.
+     * RB7 (item 27): appends an attributed, timestamped note to `referral.corrections` and never
+     * assigns `history:` (`tests/ward-referral-history-immutable.test.ts` checks this). No
+     * referral-state precondition: a correction is a note on top of whatever has happened.
      */
     case "ADD_REFERRAL_CORRECTION": {
       const referral = findReferral(state, event.referralId);
@@ -8657,20 +6985,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RECORD_LOCAL_BED_SOUGHT": {
-      // Phase 8 (spec D8-6). Optional by design: nothing requires this to have happened, nothing
-      // reads its absence as a failing, and `ACCEPT_REFERRAL` neither checks it nor cares. It is
-      // a record that a coordinator looked closer to home, and when.
+      // Spec D8-6: optional by design and never read as a failing; a record that a coordinator
+      // looked closer to home, and when.
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      // A search for a local bed is a thing done while the referral is still undecided. Recording
-      // one against an already-decided referral would be recording it after the fact, so the
-      // refused state is named exactly as `ACCEPT_REFERRAL`/`DECLINE_REFERRAL` name theirs.
+      // Only while the referral is undecided; recording it afterwards would be after the fact.
       if (referralState(referral) !== "queued") {
         return reject(state, event, `referral ${referral.id} was already decided (${referralState(referral)})`);
       }
-      // One-shot, the same discipline `ACCEPT_REFERRAL`'s already-decided guard uses: a second
-      // record would silently overwrite the first, losing the time and role of the search that
-      // actually happened.
+      // One-shot: a second record would overwrite the time and role of the search that actually
+      // happened.
       if (referral.localBedSought !== undefined) {
         return reject(state, event, `referral ${referral.id} already records a local bed search`);
       }
@@ -8703,22 +7027,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `CHANGE_URGENCY urgency must be chosen from URGENCY_LEVELS`);
       }
       if (!URGENCY_CHANGE_REASONS.includes(event.reason)) {
-        /*
-         * Runtime membership, not merely the type — the rule `CANCEL_TRANSPORT` and
-         * `STEP_BACK_STAGE` both state and this case predates: **a type-only guarantee passes
-         * `vitest run` with no `tsc` involved.** Added 2026-09-06 with three siblings, after a
-         * source-scanning guard found that FOUR reason-carrying events had no check, not one.
-         */
-        /*
-         * Renders through `changeReasonLabels[change.reason]` with no fallback, so an unlisted
-         * value printed "undefined" on the movement workspace's status-and-urgency panel — beside a
-         * tier change a clinician made.
+        /**
+         * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
+         * no `tsc` involved. `changeReasonLabels` has no fallback, so an off-list value would
+         * render "undefined".
          */
         return reject(state, event, `CHANGE_URGENCY reason must be chosen from URGENCY_CHANGE_REASONS`);
       }
-      // Nothing auto-allocates. This records who changed the tier, when and why; it never
-      // re-sorts, re-suggests, un-accepts or re-refers the patient — that rule does not bend
-      // because the trigger was a status change (Global Constraint 3, spec D2).
+      // Nothing auto-allocates: this records who changed the tier, when and why, and never
+      // re-sorts, re-suggests or re-refers (Global Constraint 3, spec D2).
       const updated: Movement = {
         ...movement,
         urgency: event.urgency,
@@ -8737,24 +7054,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `cannot change legal status for a closed movement (${movement.closure.reason})`);
       }
       if (!LEGAL_STATUS_CHANGE_REASONS.includes(event.reason)) {
-        /*
-         * Runtime membership, not merely the type — the rule `CANCEL_TRANSPORT` and
-         * `STEP_BACK_STAGE` both state and this case predates: **a type-only guarantee passes
-         * `vitest run` with no `tsc` involved.** Added 2026-09-06 with three siblings, after a
-         * source-scanning guard found that FOUR reason-carrying events had no check, not one.
-         */
-        /*
-         * ⚠️ **THE MOST CONSEQUENTIAL OF THE FOUR.** This records why a patient's status under the
-         * Mental Health Act changed. An unlisted value renders "undefined" as the reason on the
-         * legal-and-forms panel, which is the panel a reviewer reads first.
+        /**
+         * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
+         * no `tsc` involved. This records why a Mental Health Act status changed, so an off-list
+         * reason must never reach the legal-and-forms panel.
          */
         return reject(state, event, `CHANGE_LEGAL_STATUS reason must be chosen from LEGAL_STATUS_CHANGE_REASONS`);
       }
-      // A legal status change can make an already-accepted destination unlawful — see
-      // `destinationNoLongerLawful` in ward-derivations.ts, which surfaces that as an exception
-      // for a human. This handler NEVER reacts to that itself: it records the change and nothing
-      // else. `stage`, `acceptedUnitId`, `referredUnitIds`, `declines`, `transport`, `legalForm`
-      // and `pullExpiresAt` are all untouched.
+      // A legal status change can make an accepted destination unlawful;
+      // `destinationNoLongerLawful` surfaces that for a human. This handler only records the
+      // change.
       const updated: Movement = {
         ...movement,
         legalStatus: event.legalStatus,
@@ -8774,9 +7083,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot release a pull for a closed movement (${movement.closure.reason})`);
       }
-      // WFA-004: `STEP_BACK_STAGE` can put the stage label back at `pulled` while leaving
-      // `transport.collectedAt` set. Physical collection is not erased by a stage correction —
-      // releasing the bed after collection is `STOP_TRANSPORT`, never `RELEASE_PULL`.
+      // WFA-004: physical collection is not erased by a stage correction. Releasing the bed after
+      // collection is `STOP_TRANSPORT`, never `RELEASE_PULL`.
       if (movement.transport?.collectedAt !== undefined) {
         return reject(
           state,
@@ -8800,9 +7108,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot release a pull at the movement's current stage (${stageCopy[movement.stage].label})`,
         );
       }
-      // Same claim-not-proof discipline as CONFIRM_CAPACITY: this compares what the caller SAID
-      // it was acting as against the unit actually holding the bed, and refuses when they differ.
-      // Unused for a coordinator caller, who may act on behalf of any unit.
+      // Claim-not-proof, as CONFIRM_CAPACITY: the caller's stated unit against the unit holding the
+      // bed. A coordinator may act for any unit.
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
         return reject(
           state,
@@ -8811,26 +7118,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       if (!RELEASE_PULL_REASONS.includes(event.reason)) {
-        /*
-         * 🔴 **THE LAST OF FIVE. `DECLINE_REFERRAL`, `CANCEL_TRANSPORT`, `STEP_BACK_STAGE` and
-         * `WITHDRAW_ACCEPTANCE` each check their reason list at runtime; this one did not, and it
-         * is the oldest of the five.**
-         *
-         * ⚠️ **FOUND BY A TYPE ERROR NO TEST COULD SEE, WHICH IS THE WHOLE ARGUMENT FOR THE CHECK.**
-         * A test scaffold passed `bed_needed_for_a_more_urgent_patient` — not a member of
-         * `RELEASE_PULL_REASONS` — and this case ACCEPTED it. Every test passed, because
-         * `vitest run` involves no `tsc`. `CANCEL_TRANSPORT`'s own comment states the principle
-         * exactly: *"a type-only guarantee passes `vitest run` with no `tsc` involved"*, and
-         * `STEP_BACK_STAGE` repeats it. The rule was written down twice and this case predates both.
-         *
-         * ⚠️ **THE CONSEQUENCE WAS SILENT, WHICH IS WHY IT SURVIVED.** A bogus reason is written
-         * into `stageChanges` and `unwinds`, reaches the audit timeline, and
-         * `stageChangeReasonLabel` finds no map holding it — so the line renders the fact with NO
-         * reason, indistinguishable from an act nobody gave a reason for. Nothing is red, nothing
-         * looks wrong, and the record has quietly lost why a ward gave a bed back.
-         *
-         * Placed before the unit lookups below so a malformed event is refused on its own terms
-         * rather than after this case has started reasoning about beds.
+        /**
+         * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
+         * no `tsc` involved. An off-list reason would reach `stageChanges` and `unwinds` and render
+         * as no reason at all. Checked before the unit lookups below.
          */
         return reject(state, event, `RELEASE_PULL reason must be chosen from RELEASE_PULL_REASONS`);
       }
@@ -8840,76 +7131,39 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
 
-      // The EXACT inverse of PULL_PATIENT's own writes (ruling P4-1) — every field PULL_PATIENT sets,
-      // undone, and nothing else touched. PULL_PATIENT writes four fields: `unit.allocatable.value`
-      // (-1), `unit.allocatable.confirmedAt` (event.now), `movement.stage` ("pulled") and
-      // `movement.pullExpiresAt` (event.now + 60). It does NOT touch `Unit.held` — that field is
-      // seed-only data; the live held count on every screen is `unitCapacity()`'s own derivation
-      // from `empty` and `allocatable`, so giving back the bed by raising `allocatable.value` is
-      // the whole correction, on both fields PULL_PATIENT actually wrote to the unit.
+      // The exact inverse of PULL_PATIENT's writes (ruling P4-1): `allocatable` is given back, and
+      // the admission the pull created is deleted, so no phantom occupant remains. `Unit.held` is
+      // seed-only; the live held count is derived.
       //
-      // ⚠️ **AND THE PERSON THE PULL PUT IN THE BED GOES WITH IT.** Until 2026-09-01 this handler
-      // gave the bed back to the unit and left the admission standing, so a cancelled pull left a
-      // PHANTOM OCCUPANT: the ward board drew somebody in a bed nobody had pulled, `bedIsOccupied`
-      // counted them, and the movement they belonged to was back at `accepted_awaiting_bed` waiting
-      // for a bed the board said was full.
-      //
-      // ⚠️ **DELETED, NOT ENDED — and that is the one place this differs from `RECORD_LEAVING`.** A
-      // departure is a thing that HAPPENED to a person who was really there, so it ends the record
-      // (`state: "departed"`) and keeps it. A released pull is the assertion being RETRACTED: nobody
-      // was ever in this bed, so leaving a `departed` record behind would put a discharge in the
-      // ward's history for an admission that never occurred, and every discharge count would rise.
-      // `admissionSequence` is deliberately NOT rewound: it is a monotonic id source, and reusing an
-      // id a released pull already spent would give two different people the same admission id in
-      // one session.
-      //
-      // Both halves above — since WLQ-38 (owner, 2026-09-15) — are `releasePulledBedAndAdmission`
-      // (this file, above), shared with a post-acceptance `WITHDRAW_REFERRAL` and `STOP_TRANSPORT`
-      // rather than copied a second and third time. This case still resolves and validates `unit`
-      // itself above (the reject just above needs it), so the helper's own defensive `findUnit`
-      // re-lookup is redundant here and harmless.
+      // Deleted, not ended, unlike `RECORD_LEAVING`: a released pull is a retracted assertion, so
+      // no discharge is recorded. `admissionSequence` is not rewound, so no id is reused. Both
+      // halves live in `releasePulledBedAndAdmission`, shared with `WITHDRAW_REFERRAL` and
+      // `STOP_TRANSPORT` (WLQ-38).
       const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
       // Never closes the movement, never clears `legalForm`, never touches `referredUnitIds` —
       // the patient survives and keeps their acceptance; only the pull itself unwinds.
       const updatedMovement: Movement = {
         ...movement,
         stage: "accepted_awaiting_bed",
-        // 🔴 FOURTH FIX ROUND (owner follow-up, 2026-09-17): this release put the record back at
-        // `accepted_awaiting_bed` — the exact stage `ACCEPT_IN_PRINCIPLE` itself lands on — without
-        // ever writing `blocker`, so it kept reading whatever `BOOK_TRANSPORT` (or later) had last
-        // written, most often `STAGE_TRANSITION_BLOCKERS.transportBooked`: "Awaiting a transport
-        // provider response". False the moment the bed is given back — a provider answering does
-        // not get this patient a bed. `STAGE_TRANSITION_BLOCKERS`'s own doc comment is explicit that
-        // every transition overwrites the last one's prose ("the situation genuinely changed; a
-        // note about the old one is exactly the staleness this table exists to end") — this
-        // transition was simply never wired to. The record now reads exactly as it did the moment
-        // this movement first reached `accepted_awaiting_bed`, unconditionally: whether a transport
-        // job is still standing (orphaned — `orphanedTransport`, `ward-derivations.ts`, is what
-        // flags that) is a fact about the job, not about what is blocking the PATIENT, and this
-        // sentence is only ever about the latter.
+        // Restate the blocker as at first acceptance: once the bed is given back, a
+        // transport-provider sentence is false. A standing job is flagged by `orphanedTransport`,
+        // not here.
         blocker: STAGE_TRANSITION_BLOCKERS.accepted,
         pullExpiresAt: undefined,
         allocatedBed: undefined,
-        // The record the pull created was deleted above (by the shared helper), so the join to it
-        // goes with it. A surviving id pointing at a deleted admission is the dangling reference
-        // this whole fix is about.
+        // The admission the pull created was deleted by the shared helper, so the join goes too.
         admissionId: undefined,
         transport: undefined,
         unwinds: [...movement.unwinds, { at: event.now, kind: "pull_released", by: event.role, reason: event.reason }],
-        // ⚠️ THIS APPENDS A SECOND `to: accepted_awaiting_bed` ENTRY AND MUST NEVER TOUCH
-        // `acceptedAt`. `acceptedAt` agrees with the FIRST such entry (`ACCEPT_IN_PRINCIPLE`
-        // above) precisely because a release is not a re-acceptance — the patient survives and
-        // keeps their original acceptance, and the record of WHEN that happened must not move
-        // just because a bed reservation was undone. See `StageChange`'s own doc comment.
+        // Appends a second `to: accepted_awaiting_bed` entry and must never touch `acceptedAt`: a
+        // release is not a re-acceptance. See `StageChange`.
         stageChanges: [
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "accepted_awaiting_bed", by: event.role, reason: event.reason },
         ],
       };
       const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
-      // Communication addendum §1.3, the named ruling: "a referrer not told goes on believing a
-      // bed is coming." `unit` above is the ward the pull was released from, resolved before this
-      // handler's own writes touched it.
+      // Addendum §1.3: "a referrer not told goes on believing a bed is coming."
       return appendNotices(next, [
         makeNotice(
           event.now,
@@ -8928,13 +7182,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot book transport for a closed movement (${movement.closure.reason})`);
       }
-      // Owner answer 30 (2026-09-17), build plan item 30: "no automatic rebooking; a person books
-      // again" — including from `handover_ready`. Before this ruling `CANCEL_TRANSPORT` always
-      // left a replacement job standing while a bed was held, so nobody needed to book from
-      // `handover_ready`: a job was always already there. Now `CANCEL_TRANSPORT` removes the job
-      // in every case (see that case's own comment), so a cancel reached after `HANDOVER_READY`
-      // has run must be reachable here too, or the movement is stuck with a held bed and no way to
-      // book transport for it again.
+      // Owner answer 30: "no automatic rebooking; a person books again", including from
+      // `handover_ready`, since `CANCEL_TRANSPORT` now removes the job in every case.
       if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
         return reject(
           state,
@@ -8950,20 +7199,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!TRANSPORT_PROVIDERS.includes(event.provider)) {
         return reject(state, event, `BOOK_TRANSPORT provider must be chosen from TRANSPORT_PROVIDERS`);
       }
-      // ⚠️ A MISSING ESCORT ANSWER IS REFUSED RATHER THAN DEFAULTED, and that is the whole event.
-      // The control opens blank; storing `false` for a question nobody answered would put "no
-      // escort required" on screen as though a clinician had said so, which is exactly the defect
-      // `HANDOVER_READY`'s derivation commits and the reason `TR-D1` puts booking on the team that
-      // knows. `typeof` because the payload reaches this from JavaScript, where the field can be
-      // absent whatever the type says.
+      // A missing escort answer is refused, never defaulted: `false` would claim "no escort
+      // required" as though a clinician said so (TR-D1). `typeof`, because the payload may arrive
+      // from JavaScript.
       if (typeof event.escortRequired !== "boolean") {
         return reject(state, event, `BOOK_TRANSPORT escortRequired must be answered, and it has no default`);
       }
-      // Owner's third ruling, 2026-09-17: booking this control LOGS a booking already made by
-      // phone, and the three facts the caller was given on that call are all required, never
-      // defaulted — the identical "answered by a person" discipline `escortRequired` just above
-      // already holds to. `typeof`/membership checks throughout, because the payload reaches this
-      // from JavaScript, where a field can be absent or wrong-shaped whatever the type says.
+      // Owner's third ruling: this logs a booking already made by phone, and the three facts from
+      // that call are required, never defaulted.
       if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
         return reject(state, event, `BOOK_TRANSPORT cadNumber must be answered, and it has no default`);
       }
@@ -8973,17 +7216,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt)) {
         return reject(state, event, `BOOK_TRANSPORT estimatedAt must be answered, and it has no default`);
       }
-      // WLQ-11 (owner, 2026-09-15): `CANCEL_TRANSPORT`'s `ward` branch needs to tell the booking
-      // ward from any other later, so a `ward` booker must state its claim now — a booking this
-      // field cannot name could never be matched against a later cancellation claim. Same
-      // discipline as `escortRequired` just above: required and never defaulted.
+      // WLQ-11 (owner): a `ward` booker must state its unit now, so `CANCEL_TRANSPORT` can later
+      // tell the booking ward from any other.
       if (event.role === "ward" && !event.actingUnitId) {
         return reject(state, event, `BOOK_TRANSPORT raised as ward must state its actingUnitId, and it has no default`);
       }
-      // Opus adversarial review, 2026-09-17, P2 finding 1: the check above only tested PRESENCE,
-      // never that the claimed unit is real. `bookedBy.unitId` (below) is later compared against a
-      // `ward` canceller's own claim (`CANCEL_TRANSPORT`'s own comment), so an invented unit id would
-      // be stored as though it named a real ward and could never be matched against anything real.
+      // The claimed unit must be real, or `bookedBy.unitId` could never match a later cancellation
+      // claim.
       if (event.role === "ward" && event.actingUnitId !== undefined && !findUnit(state, event.actingUnitId)) {
         return reject(state, event, `BOOK_TRANSPORT actingUnitId ${event.actingUnitId} does not name a real unit`);
       }
@@ -9009,9 +7248,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      // Owner's third ruling, 2026-09-17 (answer 9): "only the community team that booked
-      // transport may cancel it" — a `community` booker must state its claim now, the identical
-      // reason and identical discipline as the `ward` pair of checks just above.
+      // Owner's third ruling (answer 9): "only the community team that booked transport may cancel
+      // it", so a `community` booker states its place now.
       if (event.role === "community" && !event.actingPlaceId) {
         return reject(
           state,
@@ -9045,17 +7283,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `BOOK_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only book transport for movements originating from its own ED (${movement.originEdId})`,
         );
       }
-      // 🔴 THIRD FIX ROUND (Opus debugger, 3b3f215ba1, via `CANCEL_TRANSPORT`'s own no-bed-held
-      // branch): a plain `${movement.id}-transport` collides with an earlier job the same movement
-      // had cancelled while no bed was held — `CANCEL_TRANSPORT` removes that job outright rather
-      // than replacing it (nothing to replace when no bed is held), so a later re-pull's booking
-      // reaches here with the identical template and would mint the SAME id a second time, even
-      // though it names a different job with its own timestamps. Counted off `unwinds`, the one
-      // append-only record already proven immune to this movement's own history (see
-      // `CANCEL_TRANSPORT`'s replacement-id counter just below, which counts the same way) —
-      // deterministic, no `Date.now`, no random value. The common case (no prior cancellation) is
-      // unchanged: the id stays exactly `${movement.id}-transport`, so every existing booking this
-      // movement has never had cancelled keeps its familiar id.
+      // The job id counts prior cancellations from `unwinds` (append-only), so a re-booking after a
+      // no-bed-held cancellation never reuses an earlier job's id. Deterministic; with no prior
+      // cancellation the id stays `${movement.id}-transport`.
       const priorTransportCancellations = movement.unwinds.filter(
         (entry) => entry.kind === "transport_cancelled",
       ).length;
@@ -9080,13 +7310,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           transportLegalStatus: event.transportLegalStatus,
           estimatedAt: event.estimatedAt,
           ...(bookingException ? { exceptions: [bookingException] } : {}),
-          // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches in
-          // HANDOVER_READY / PATIENT_ARRIVED can read a runtime-booked job the same way they read a
-          // seed-authored one.
+          // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches read a
+          // runtime-booked job as they read a seeded one.
           needed: movement.transportNeed?.needed,
-          // WLQ-11 (owner, 2026-09-15) / third ruling (2026-09-17): who booked this job. `unitId`
-          // is recorded only for a `ward` booker, `placeId` only for a `community` booker — see
-          // `TransportJob.bookedBy`'s own doc comment for why `ed` carries a role and nothing more.
+          // WLQ-11 / third ruling: who booked this job. See `TransportJob.bookedBy`.
           bookedBy: {
             role: event.role,
             ...(event.role === "ward" ? { unitId: event.actingUnitId } : {}),
@@ -9094,10 +7321,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             ...(event.role === "ed" && event.actingPlaceId ? { placeId: event.actingPlaceId } : {}),
           },
         },
-        // A job now exists and the provider has not answered it. Deliberately says only that: which
-        // provider, and whether an escort was asked for, are already on the job itself and
-        // `transportStatusLabel` renders them — restating them here would be two sentences for one
-        // fact, the drift this codebase produces most reliably.
+        // A job exists and the provider has not answered. Provider and escort are on the job
+        // itself, so they are not restated here.
         blocker: STAGE_TRANSITION_BLOCKERS.transportBooked,
       };
       return replaceMovement(state, movement.id, booked);
@@ -9121,42 +7346,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.transport.collectedAt !== undefined) {
         return reject(state, event, `cannot cancel transport for movement ${movement.id} — the patient has departed`);
       }
-      /*
-       * ⚠️ THIS CHECK USED TO BE TR-D6 INVERTED, AND IT READ AS OBVIOUSLY CORRECT.
-       *
-       * It was: `if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId)
-       * reject` — permitting a ward caller ONLY when it was the accepted unit. That is, only the
-       * RECEIVING ward: the one party the owner's ruling excludes by name. Every other ward was
-       * refused. It carried a careful comment about claim-not-proof discipline while doing exactly
-       * the wrong thing, because "a ward may act on its own patient" is such a natural sentence
-       * that it survives review.
-       *
-       * TR-D6 (owner, 2026-08-30): a transport may be cancelled by the team that BOOKED it and by
-       * the coordinator. The receiving ward may not — it did not book the job, and a booking
-       * cancelled by the destination is indistinguishable on the sending board from one that
-       * failed, so the sending team cannot tell "they changed their mind" from "it never went
-       * through". They re-book, or they wait for a vehicle nobody is sending.
-       *
-       * `ward` was then removed from `EVENT_ROLE.CANCEL_TRANSPORT` altogether, because the role
-       * gate alone could not tell the receiving ward from the booking one — excluding every ward
-       * was the only safe fix available with `BOOK_TRANSPORT` recording no booker at all.
-       *
-       * 🔴 WLQ-11 (owner, 2026-09-15): *"whoever booked transport may cancel it; the receiving
-       * ward still may not."* `ward` is back in `EVENT_ROLE.CANCEL_TRANSPORT`, and the finer
-       * distinction TR-D6 could not make is made HERE instead, against `transport.bookedBy`
-       * (`BOOK_TRANSPORT`'s own new field — see its doc comment). Same claim-not-proof discipline
-       * as everywhere else `actingUnitId` appears: this compares what the caller SAID it was
-       * acting as against who is recorded as having booked, and refuses when they differ —
-       * including when they differ because `bookedBy` is entirely absent, which is every transport
-       * job booked before this ruling existed. TR-D6's original coordinator/ED-only rule is
-       * therefore UNCHANGED for those jobs. Unused for a coordinator or `ed` caller, whose rights
-       * remain unconditional (`ed` is still the sending team on every movement today).
-       *
-       * 🔴 **`community` GAINED THE IDENTICAL CHECK, AGAINST `bookedBy.placeId`, UNDER THE OWNER'S
-       * THIRD RULING (2026-09-17, answer 9) — see that branch just below.** This paragraph used to
-       * say `community` "cannot be checked the same way"; that was true only for as long as
-       * nothing plumbed a community identity claim into `BOOK_TRANSPORT`, and the third ruling is
-       * what plumbed one (`actingPlaceId`, the same claim-not-proof discipline as `actingUnitId`).
+      /**
+       * TR-D6 (owner): a transport may be cancelled by the team that booked it and by the
+       * coordinator, never by the receiving ward. WLQ-11 (owner): "whoever booked transport may
+       * cancel it; the receiving ward still may not." A `ward` caller's claim is compared against
+       * `transport.bookedBy` (claim-not-proof); an absent `bookedBy` refuses. Coordinator and `ed`
+       * rights are unconditional. `community` gets the same check against `bookedBy.placeId` just
+       * below.
        */
       if (event.role === "ward") {
         if (
@@ -9171,11 +7367,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           );
         }
       }
-      // 🔴 Owner's third ruling, 2026-09-17 (answer 9): "only the community team that booked
-      // transport may cancel it." Same shape as the `ward` branch just above, against
-      // `bookedBy.placeId` instead of `bookedBy.unitId` — a `community` caller whose claim does
-      // not match the recorded booker is refused, including when `bookedBy` was never a
-      // `community` booking at all or predates this ruling and carries no `placeId`.
+      // Owner's third ruling (answer 9): "only the community team that booked transport may cancel
+      // it." Refused when the claim does not match, including when `bookedBy` has no `placeId`.
       if (event.role === "community") {
         if (
           movement.transport.bookedBy?.role !== "community" ||
@@ -9199,94 +7392,38 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         }
       }
       if (!CANCEL_TRANSPORT_REASONS.includes(event.reason)) {
-        /*
-         * Runtime membership, not merely the type. `reason` is declared required on the event, but
-         * a type-only guarantee passes `vitest run` with no `tsc` involved — and a caller omitting
-         * it was accepted, writing `reason: undefined` into the unwind record. TR-D6 says this must
-         * not be weakened to optional; an unenforced requirement already is.
+        /**
+         * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
+         * no `tsc` involved. TR-D6 says the reason must not become optional.
          */
         return reject(state, event, `CANCEL_TRANSPORT reason must be chosen from CANCEL_TRANSPORT_REASONS`);
       }
-      // Never closes the movement — the patient stays open, only the transport job unwinds. The
-      // cancelled job remains named in the audit trail while a clean replacement follows the
-      // ordinary acceptance path. The bed itself is untouched by this handler.
+      // Never closes the movement: only the transport job unwinds, and the bed is untouched. The
+      // cancelled job stays named in the audit trail.
       //
-      // 🔴 FIX ROUND (2026-09-16 audit): this used to set `stage: "handover_ready"` unconditionally,
-      // whatever stage the movement was actually at. `BOOK_TRANSPORT` runs at `pulled`, and nothing
-      // advances the stage to `handover_ready` except `HANDOVER_READY` itself — so a job cancelled
-      // right after booking, before the ED ever marked the handover ready, was pushed straight to
-      // `handover_ready` anyway, skipping that act entirely.
+      // The stage is left exactly as found in every reachable case: unwinding a job never changes
+      // where the patient sits in the pathway (`STEP_BACK_STAGE` and `RELEASE_PULL` can leave a
+      // booked job at `accepted_awaiting_bed`; see `tests/ward-cancel-transport-stage.test.ts`).
       //
-      // 🔴 SECOND FIX ROUND (adversarial review of 65aa7c54a6): the first repair replaced the
-      // unconditional jump with `movement.stage === "pulled" ? "pulled" : "handover_ready"`, whose
-      // own comment claimed `handover_ready` was the ONLY other stage reachable here. FALSE.
-      // `STEP_BACK_STAGE` can move a movement with a booked, uncollected transport job back to ANY
-      // strictly-earlier stage without touching `transport` at all (its own "TOUCH NOTHING ELSE"
-      // rule) — including `accepted_awaiting_bed`. `RELEASE_PULL` reaches the same stage the same
-      // way: it releases the BED, never the transport, and lands back at `accepted_awaiting_bed`
-      // with the booked job still standing. Both paths then hit this handler with
-      // `movement.stage === "accepted_awaiting_bed"`, and the ternary jumped them forward to
-      // `handover_ready` anyway — the exact defect the first fix round believed it had closed.
-      // See `tests/ward-cancel-transport-stage.test.ts` for both reproductions.
-      //
-      // The correct rule needs no case analysis at all: `CANCEL_TRANSPORT` unwinds a transport job,
-      // and nothing about unwinding a job changes where the PATIENT currently sits in the pathway.
-      // The stage is therefore left exactly as found, in every reachable case.
-      //
-      // 🔴 THIRD FIX ROUND (Opus debugger, 3b3f215ba1): a replacement job was installed
-      // UNCONDITIONALLY, even when no bed is held at all — `RELEASE_PULL` (or a `STEP_BACK_STAGE`
-      // that lands the same way) can put a movement back at a stage strictly before `pulled` while
-      // a transport job is still standing (`orphanedTransport`, `ward-derivations.ts`, is the
-      // existing name for exactly that shape). Installing a fresh replacement there kept the
-      // orphan flagged forever — every cancel just minted `-replacement-N`, the officer and the
-      // receiving ward kept being told a replacement was coming for a patient with nowhere to go,
-      // and a re-pull's `BOOK_TRANSPORT` refused with "already booked" against a job nobody wanted.
-      //
-      // `MOVEMENT_STAGES`'s own order distinguished the two branches: at or after `pulled` the bed
-      // is held (or was, moments ago); strictly before `pulled`, no bed is held. Until the fix
-      // round immediately below, only the no-bed branch removed the job — the bed-held branch kept
-      // installing a fresh `-replacement-N`, exactly the way this round's own comment describes.
-      //
-      // 🔴 FIFTH FIX ROUND, owner answer 30 (2026-09-17), build plan item 30: *"Cancelling
-      // transport while a bed is held: no automatic rebooking; a person books again."* The
-      // bed-held branch's replacement job is deleted by this round, not merely reworded — see
-      // `tests/ward-transport-cancel-no-rebook.test.ts` and the rewritten control test in
-      // `tests/ward-cancel-transport-no-bed-held.test.ts`. Both branches now remove the job for the
-      // SAME reason `orphanedTransport` already reads "no job" as "nothing to flag" on the no-bed
-      // branch: a cancelled job is gone, whichever branch cancelled it. `BOOK_TRANSPORT`'s own
-      // stage guard is widened (see its case above) so a person CAN book again from `handover_ready`
-      // as well as `pulled` — before this round nobody needed to, because a job was always already
-      // standing there.
+      // Owner answer 30: "Cancelling transport while a bed is held: no automatic rebooking; a
+      // person books again." Both branches remove the job
+      // (`tests/ward-transport-cancel-no-rebook.test.ts`,
+      // `tests/ward-cancel-transport-no-bed-held.test.ts`); `BOOK_TRANSPORT` accepts a new booking
+      // from `pulled` or `handover_ready`.
       const cancelledTransport = movement.transport;
-      // WFA-001 / same OR as `releasePulledBedAndAdmission`: `STEP_BACK_STAGE` can leave
-      // `admissionId` standing at a stage strictly before `pulled`, and the bed is still held.
-      // Stage alone is not enough — a cancelled job while the admission remains must say so.
+      // WFA-001: same OR as `releasePulledBedAndAdmission`: a stepped-back movement can hold its
+      // admission and bed before `pulled`.
       const bedIsHeld =
         movement.admissionId !== undefined ||
         MOVEMENT_STAGES.indexOf(movement.stage) >= MOVEMENT_STAGES.indexOf("pulled");
       const updatedMovement: Movement = {
         ...movement,
-        // `stage` is deliberately NOT written here — see the SECOND FIX ROUND comment above:
-        // cancelling a transport job never advances or reverts the movement's stage, in every
-        // reachable case, so the spread above already carries the right value forward.
-        //
-        // FIFTH FIX ROUND: no branch replaces the job any more — `orphanedTransport` already reads
-        // an absent job as "nothing to flag" (its own first line: `if (movement.transport ===
-        // undefined) return undefined`), and an absent job is what lets `BOOK_TRANSPORT` succeed
-        // again instead of refusing with "already booked", on the bed-held branch exactly as it
-        // already did on the no-bed one.
+        // `stage` is deliberately not written: cancelling never moves the stage. No branch replaces
+        // the job: an absent job is "nothing to flag" for `orphanedTransport` and lets
+        // `BOOK_TRANSPORT` succeed again.
         transport: undefined,
-        // 🔴 FOURTH FIX ROUND (owner follow-up, 2026-09-17), same defect and same fix as
-        // `RELEASE_PULL`'s own comment just above it in this file: on the no-bed branch the job is
-        // GONE, so whatever `blocker` last said ("Awaiting a transport provider response", or an
-        // even later provider-progress sentence) is now false; the movement reads exactly as it did
-        // the moment it first reached `accepted_awaiting_bed`.
-        //
-        // FIFTH FIX ROUND: the bed-held branch used to leave `blocker` exactly as found, which was
-        // correct only while the job survived (replaced, not removed). Now the job is gone there
-        // too, so the same discipline applies for the same reason — `STAGE_TRANSITION_BLOCKERS.
-        // transportCancelled` states the fact the record now supports: the bed is still held, and
-        // nobody has booked again yet.
+        // The job is gone, so a provider-progress sentence is now false. Bed held:
+        // `transportCancelled` (still held, not booked again). No bed: as at first acceptance.
         blocker: bedIsHeld ? STAGE_TRANSITION_BLOCKERS.transportCancelled : STAGE_TRANSITION_BLOCKERS.accepted,
         unwinds: [
           ...movement.unwinds,
@@ -9299,37 +7436,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             cadNumber: cancelledTransport.cadNumber,
           },
         ],
-        // No entry appended — `stage` never moves here (see above), so an append-only stage
-        // HISTORY recording a transition would misstate what this cancellation did. Every other
-        // writer in this file only ever appends when `to` differs from the stage it read; here
-        // `to` and `from` would always be identical, so there is nothing to record.
+        // No entry appended: `stage` never moves here, so a transition would misstate this
+        // cancellation.
         stageChanges: movement.stageChanges,
       };
       const next = replaceMovement(state, movement.id, updatedMovement);
-      /*
-       * Communication addendum §1.3: "CANCEL_TRANSPORT — the officer and the receiving ward —
-       * somebody is expecting a person who is no longer coming." Two independent notices, each
-       * its own `NoticeKind` so the two can never collide under `makeNotice`'s id rule.
+      /**
+       * Addendum §1.3: "CANCEL_TRANSPORT — the officer and the receiving ward — somebody is
+       * expecting a person who is no longer coming." Two notices, each its own `NoticeKind`. The
+       * officer is always told; the receiving ward is `movement.acceptedUnitId`, guarded rather
+       * than asserted.
        *
-       * The officer is always notified: `officer` carries no `placeId` in this model (a single
-       * role, never split by place — see `Addressee`'s own doc comment). The receiving ward is
-       * `movement.acceptedUnitId`, which every movement reaching `CANCEL_TRANSPORT` has: transport
-       * can only be booked (`BOOK_TRANSPORT`) once a movement is `pulled`, and a movement cannot
-       * reach `pulled` without an accepted unit first (`PULL_PATIENT`). Guarded rather than
-       * asserted, so a future relaxation of that chain degrades to "no ward notice" instead of a
-       * runtime crash.
-       *
-       * 🔴 THIRD FIX ROUND: "a replacement is being arranged" is false on the no-bed branch — there
-       * is nothing to arrange a replacement FOR, and telling the officer and the receiving ward
-       * otherwise is the same misleading-notice defect this whole round exists to close. Each
-       * sentence states the two facts the record actually supports instead: the job was cancelled,
-       * and nothing has been rebooked.
-       *
-       * 🔴 FIFTH FIX ROUND, owner answer 30 (2026-09-17): "a replacement is being arranged" is now
-       * ALSO false on the bed-held branch — nothing is arranging anything any more, on either
-       * branch, because this round deletes the automatic replacement outright (see the reducer's
-       * own comment above `cancelledTransport`). Wording from the build plan's exact on-screen
-       * wording table (`docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md` §4, T1).
+       * Owner answer 30: nothing arranges a replacement on either branch, so each sentence states
+       * only that the job was cancelled and nothing has been rebooked. Wording from
+       * `docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md` §4, T1.
        */
       const cancelledNote = bedIsHeld
         ? "the bed is still held and nothing has been rebooked."
@@ -9361,12 +7481,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * THE REFERRER OR THE COORDINATOR STOPS A COLLECTED JOURNEY — WLQ-38 (owner, 2026-09-15). See
-     * this event's own doc comment in `ward-flow-events.ts` for the ruling and for why `ed` is
-     * permitted by role alone. `EVENT_ROLE.STOP_TRANSPORT` already restricts the caller to
-     * `coordinator`/`ed` before this case runs, so — unlike `WITHDRAW_REFERRAL` above, which must
-     * permit four roles pre-acceptance and narrow two of them away after — nothing here re-checks
-     * `event.role`.
+     * The referrer or coordinator stops a collected journey (WLQ-38; see `ward-flow-events.ts`).
+     * `EVENT_ROLE.STOP_TRANSPORT` already restricts the caller, so the role is not re-checked.
      */
     case "STOP_TRANSPORT": {
       const movement = findMovement(state, event.movementId);
@@ -9384,10 +7500,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id}'s transport has not been collected yet; use CANCEL_TRANSPORT instead`,
         );
       }
-      // Belt and braces alongside the `movement.closure` check above: `PATIENT_ARRIVED` always sets
-      // both `transport.arrivedAt` and `movement.closure` in the same update (see `TransportJob`'s
-      // own doc comment), so this can only ever fire if that invariant is ever broken elsewhere —
-      // and if it is, refusing here on the right symptom beats silently trusting the wrong field.
+      // Belt and braces: `PATIENT_ARRIVED` sets `arrivedAt` and `closure` together, so this fires
+      // only if that invariant breaks.
       if (movement.transport.arrivedAt !== undefined) {
         return reject(state, event, `movement ${movement.id}'s patient has already arrived`);
       }
@@ -9407,27 +7521,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `STOP_TRANSPORT reason must be chosen from STOP_TRANSPORT_REASONS`);
       }
       if (!TRANSPORT_WHEREABOUTS.includes(event.whereabouts)) {
-        // Build plan item 31 (T3, 2026-09-17): the same runtime-membership discipline as the reason
-        // check just above, for the same reason — `vitest run` alone involves no `tsc`, so a type
-        // guarantee alone would never catch a hand-built or malformed dispatch.
+        // Item 31 (T3): runtime membership, since `vitest run` alone involves no `tsc`.
         return reject(state, event, `STOP_TRANSPORT whereabouts must be chosen from TRANSPORT_WHEREABOUTS`);
       }
 
-      // Owner answer 8 (second round, 2026-09-17): the bed no longer comes back automatically here
-      // — see `STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease`'s own doc comment.
-      // `acceptedUnitId` and `admissionId` are left exactly as `movement` already carries them, so
-      // whatever bed is held stays held until a `RELEASE_HELD_BED` from the coordinator, the ward,
-      // or the referrer.
+      // Owner answer 8: the bed no longer comes back automatically. `acceptedUnitId` and
+      // `admissionId` stay as they are until `RELEASE_HELD_BED`.
       const stoppedTransport = movement.transport;
       const stopped: Movement = {
         ...movement,
         transport: {
           ...stoppedTransport,
-          // Both written together: `cancelledAt` is the general "this job is over" signal every
-          // other reader (`transportStatusLabel`, `orphanedTransport`) already understands, and
-          // `stoppedAt`/`stoppedBy`/`stopReason`/`stoppedWhereabouts` are this event's own more
-          // specific record of who stopped it, why, and where the patient is — see `TransportJob`'s
-          // own doc comment on all four.
+          // `cancelledAt` is the general "this job is over" signal other readers understand; the
+          // `stopped*` fields record who stopped it, why and where the patient is. See
+          // `TransportJob`.
           cancelledAt: event.now,
           stoppedAt: event.now,
           stoppedBy: event.role,
@@ -9437,24 +7544,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         closure: {
           at: event.now,
           outcome: "did_not_proceed",
-          // The reason IS the closure reason: `STOP_TRANSPORT_REASONS`' three members are already
-          // full sentences (Ward Lead's own wording), so restating them differently here would be
-          // two strings for one fact.
+          // `STOP_TRANSPORT_REASONS` members are already full sentences, so the reason is the
+          // closure reason.
           reason: event.reason,
         },
-        // ACTIVE, not "None — …": the journey is over but the bed is still held pending a release
-        // decision — this overwrites WLQ-4's `examinationRevokedAwaitingRelease` sentence if it was
-        // standing, which is correct: that flag was about the SAME bed, and this is the newer,
-        // more specific fact about it now.
+        // Active: the journey is over but the bed is held pending a release decision. Supersedes
+        // WLQ-4's `examinationRevokedAwaitingRelease` for the same bed.
         blocker: STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease,
       };
       const next = replaceMovement(state, movement.id, stopped);
-      // Communication addendum §1.3's own principle, extended by WLQ-38 and by build plan item 31 —
-      // see `NoticeKind`'s own doc comment for the addendum-row debt this records. The officer is
-      // ALWAYS told where the patient now is (the officer is the one who reported it and the one
-      // who has to act on it, the same "no placeId, a single role" shape `transport_cancelled_officer`
-      // already holds — see `Addressee`'s own doc comment). The receiving ward, if there is one,
-      // believed a patient was on the way; it is not coming — unchanged from WLQ-38.
+      // Addendum §1.3, extended by WLQ-38 and item 31: the officer is always told where the patient
+      // now is, and the receiving ward, if any, that the patient is not coming.
       const stopNotices: Notice[] = [
         makeNotice(
           event.now,
@@ -9482,9 +7582,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * RELEASES A BED `STOP_TRANSPORT` LEFT HELD — owner answer 8 (second round, 2026-09-17). See
-     * this event's own doc comment in `ward-flow-events.ts` for the full ruling and why this is a
-     * new case rather than a loosened `RELEASE_PULL`.
+     * Releases a bed `STOP_TRANSPORT` left held (owner answer 8). See `ward-flow-events.ts` for why
+     * this is a new case rather than a loosened `RELEASE_PULL`.
      */
     case "RELEASE_HELD_BED": {
       const movement = findMovement(state, event.movementId);
@@ -9512,9 +7611,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!heldBedOutstanding) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
-      // Same claim-not-proof discipline as RELEASE_PULL and CANCEL_TRANSPORT: this compares what
-      // the caller SAID it was acting as against the unit actually holding the bed, and refuses
-      // when they differ. Unused for a coordinator or ed caller, who may act regardless.
+      // Claim-not-proof, as RELEASE_PULL and CANCEL_TRANSPORT. A coordinator or ed caller may act
+      // regardless.
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
         return reject(
           state,
@@ -9554,8 +7652,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * Build plan item 29 (T4a, 2026-09-17) / R2-7: record a diversion on a collected journey.
-     * The bed stays held and the movement stays OPEN until `RELEASE_DIVERTED_BED`.
+     * Item 29 (T4a) / R2-7: record a diversion on a collected journey. The bed stays held and the
+     * movement open until `RELEASE_DIVERTED_BED`.
      */
     case "RECORD_DIVERSION": {
       const movement = findMovement(state, event.movementId);
@@ -9630,9 +7728,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return appendNotices(next, diversionNotices);
     }
 
-    /**
-     * Build plan item 29 (T4a, 2026-09-17) / OA-29: release a bed left held by a diversion.
-     */
+    /** Item 29 (T4a) / OA-29: release a bed left held by a diversion. */
     case "RELEASE_DIVERTED_BED": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
@@ -9689,9 +7785,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * THE COORDINATOR'S OWN RECORD CORRECTION — Task 5 (ward-flow movement step-track plan,
-     * 2026-09-04), owner rulings E and F. See `STEP_BACK_STAGE`'s own doc comment in
-     * `ward-flow-events.ts` for what this is and is not.
+     * The coordinator's own record correction (owner rulings E and F). See `STEP_BACK_STAGE` in
+     * `ward-flow-events.ts`.
      */
     case "STEP_BACK_STAGE": {
       const movement = findMovement(state, event.movementId);
@@ -9719,17 +7814,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       if (!STEP_BACK_REASONS.includes(event.reason)) {
-        /*
-         * Runtime membership, not merely the type — the same discipline `CANCEL_TRANSPORT` above
-         * already states in its own comment: a type-only requirement passes `vitest run` with no
-         * `tsc` involved.
+        /**
+         * Runtime membership, not merely the type: a type-only requirement passes `vitest run` with
+         * no `tsc` involved.
          */
         return reject(state, event, `STEP_BACK_STAGE reason must be chosen from STEP_BACK_REASONS`);
       }
-      // 🔴 TOUCH NOTHING ELSE — F3 and ruling E's "does not release the bed / does not cancel the
-      // transport" in one sentence. Never write `acceptedUnitId`, `acceptedAt`, `pullExpiresAt`,
-      // `admissionId`, `transport`, or any `Unit.allocatable` field, no matter how far back
-      // `event.to` goes. The entire side effect is the two appends below and the `stage` field.
+      // Touch nothing else (F3, ruling E: "does not release the bed / does not cancel the
+      // transport"). Never write `acceptedUnitId`, `acceptedAt`, `pullExpiresAt`, `admissionId`,
+      // `transport` or any `Unit.allocatable` field. The only side effects are the two appends
+      // below and `stage`.
       const updatedMovement: Movement = {
         ...movement,
         stage: event.to,
@@ -9746,8 +7840,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * THE COORDINATOR UNDOES A WARD'S "YES" — Task 5, same plan and rulings as `STEP_BACK_STAGE`
-     * above. See `WITHDRAW_ACCEPTANCE`'s own doc comment in `ward-flow-events.ts`.
+     * The coordinator undoes a ward's "yes" (rulings E and F). See `WITHDRAW_ACCEPTANCE` in
+     * `ward-flow-events.ts`.
      */
     case "WITHDRAW_ACCEPTANCE": {
       const movement = findMovement(state, event.movementId);
@@ -9755,49 +7849,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (movement.closure) {
         return reject(state, event, `cannot withdraw an acceptance for a closed movement (${movement.closure.reason})`);
       }
-      /*
-       * 🔴 THIS MESSAGE USED TO NAME A CAUSE, AND THE CAUSE WAS FALSE AT THE TWO EARLIEST STAGES.
+      /**
+       * The message states the condition the guard tests, never a cause: five stages can reach it,
+       * and at the two earliest no bed exists. `arrived` cannot reach here, since arrival sets
+       * `closure`. Do not restore the removed wording, even quoted.
        *
-       * It named a single cause — it asserted that a bed had already been pulled. ⚠️ **That wording
-       * is deliberately NOT spelled out here, and this line says so on purpose:** a comment that
-       * quotes the string it removed puts that string back in the file, so a search for the false
-       * claim finds this file and cannot tell a removal from a survival. Do not "restore it for
-       * clarity". The guard is
-       * `!== "accepted_awaiting_bed"`, so it does not test one cause — it tests one CONDITION, and
-       * five stages can reach it:
-       *
-       *     placement_requested   before any acceptance; NO BED EXISTS TO HAVE BEEN PULLED
-       *     destination_review    before any acceptance; NO BED EXISTS TO HAVE BEEN PULLED
-       *     pulled                a bed was pulled                                  (true)
-       *     handover_ready        after `pulled`                                    (true)
-       *     moving                after `pulled`                                    (true)
-       *
-       * ⚠️ **`arrived` cannot reach here at all** — its only writer (`PATIENT_ARRIVED`) sets
-       * `closure` in the same object literal as the stage, so the `movement.closure` branch above
-       * always returns first. Five reachable, not the six a subtraction from `MOVEMENT_STAGES`
-       * suggests: what the type can express is not what the code can reach.
-       *
-       * 🔴 **SO THE OLD SENTENCE WAS TRUE THREE TIMES OUT OF FIVE, AND THAT IS WHY IT SURVIVED.**
-       * It is wrong only at the two EARLIEST stages, and right at the three where a withdrawal is
-       * most plausibly attempted — so anyone checking it from a realistic mid-pathway movement read
-       * an accurate sentence and moved on. A falsehood with a high true rate is harder to find than
-       * one with a low one, and it is concealed by the very thing that makes a manual check feel
-       * representative.
-       *
-       * ⚠️ And it was an ACTIONABLE falsehood: *"a bed has been pulled"* tells a coordinator a bed
-       * left the pool. They go looking for it, or stop chasing one they still need.
-       *
-       * The repair states the CONDITION, which is true at all five without being vague — a sentence
-       * true everywhere by saying nothing ("this cannot be withdrawn") would trade a false specific
-       * for an empty general, which is the same defect's other half.
-       *
-       * ⚠️ **`stageCopy`'s label is deliberately NOT used here, and that is a constraint rather than
-       * a preference.** `ward-derivations.ts` imports from THIS file, so importing back would close
-       * a cycle — and it also imports `lucide-react`, which would drag icon components into the
-       * reducer. This file has met that constraint before and inlined rather than imported (see the
-       * `referralForMovement` note above). `.replace(/_/g, " ")` is this file's own established
-       * idiom for the same job, used at a dozen other sites — and it yields sentence-case text,
-       * which reads better mid-sentence than a label written for a column heading.
+       * `stageCopy`'s label is not used: importing `ward-derivations.ts` would be circular (and
+       * pull in `lucide-react`). `.replace(/_/g, " ")` is this file's idiom.
        */
       if (movement.stage !== "accepted_awaiting_bed") {
         return reject(
@@ -9810,12 +7868,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!STEP_BACK_REASONS.includes(event.reason)) {
         return reject(state, event, `WITHDRAW_ACCEPTANCE reason must be chosen from STEP_BACK_REASONS`);
       }
-      /*
-       * ⚠️ A MOVEMENT STEPPED BACK FROM `pulled` IS AT THIS STAGE AND STILL HOLDS A BED. Withdrawing
-       * here cleared the acceptance and left the admission and the bed behind, orphaned. Releasing
-       * the bed instead would widen this event to a bed-holding withdrawal, which the owner kept as
-       * his own open question (ruling 2 of 2026-09-04, see the event's doc comment). So it refuses,
-       * and names the route that already exists: restore the pull, release it, then withdraw.
+      /**
+       * A movement stepped back from `pulled` is at this stage and still holds a bed. Refused,
+       * naming the existing route (restore the pull, release it, then withdraw); a bed-holding
+       * withdrawal is an open owner question (ruling 2).
        */
       if (movement.admissionId !== undefined) {
         return reject(
@@ -9824,18 +7880,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot withdraw an acceptance while movement ${movement.id} still holds a bed (admission ${movement.admissionId}); pull it again to restore it, release the pull, then withdraw`,
         );
       }
-      // Read before clearing — the whole point of `UnwindRecord.unitId` is naming which ward's
-      // acceptance this was, which nothing else on the record would say once `acceptedUnitId`
-      // below is cleared.
+      // Read before clearing: `UnwindRecord.unitId` names which ward's acceptance this was.
       const withdrawnUnitId = movement.acceptedUnitId;
       const updatedMovement: Movement = {
         ...movement,
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         stage: "destination_review",
-        // Deliberately NOT pushed back into `referredUnitIds` (owner ruling 3, 2026-09-04):
-        // withdrawing an acceptance is not the same act as re-referring, and reviving a "live
-        // referral" the ward never re-received would be a false claim on that ward's own screen.
+        // Not pushed back into `referredUnitIds` (owner ruling 3): withdrawing an acceptance is not
+        // re-referring.
         stageChanges: [
           ...movement.stageChanges,
           {
@@ -9858,13 +7911,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ],
       };
       const next = replaceMovement(state, movement.id, updatedMovement);
-      // Item 48, Q3 (owner, 2026-09-17): the ward whose acceptance was just undone must be told —
-      // the same "a party who believed something was settled learns it is not" shape
-      // `referral_revoked_ward` already carries. `withdrawnUnitId` is guaranteed to resolve: it is
-      // read from `movement.acceptedUnitId` above, before this handler's own writes cleared it,
-      // and every writer of `stage: "accepted_awaiting_bed"` sets `acceptedUnitId` in the same
-      // object literal (`ACCEPT_IN_PRINCIPLE`, `ACCEPT_REFERRAL`), which this case's own stage
-      // guard above already requires.
+      // Item 48, Q3 (owner): the ward whose acceptance was undone is told. `withdrawnUnitId` was
+      // read before this handler cleared it.
       return appendNotices(next, [
         makeNotice(
           event.now,
@@ -9878,24 +7926,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     /**
-     * ITEM 48, Q2 (owner answer 48, 2026-09-17): A NOTICE COUNTS AS READ ONLY WHEN IT IS MARKED AS
-     * READ. `Notice.readAt` (`ward-model.ts`) has existed since the communication addendum landed,
-     * but nothing before this case ever wrote it — every notice sat "unread" forever, and Activity
-     * counted every notice it could see as though nobody had ever opened it. See
-     * `MARK_NOTICE_READ`'s own doc comment in `ward-flow-events.ts` for why this is the only writer.
+     * Item 48, Q2 (owner answer 48): a notice counts as read only when it is marked as read. The
+     * only writer of `Notice.readAt`; see `MARK_NOTICE_READ` in `ward-flow-events.ts`.
      *
-     * ⚠️ **THE ADDRESSEE ITSELF, NEVER "WHOEVER CAN SEE IT."** `noticeIsForWardChrome`
-     * (`ward-chrome-role.ts`) already scopes which chrome a notice APPEARS on; visibility and the
-     * authority to act on it are different questions, so this case re-checks the claim against the
-     * record rather than trusting the role gate above alone — the same claim-not-proof discipline
-     * `actingUnitId` holds throughout this file. `event.role`/`event.actingPlaceId` must equal
-     * `notice.to.role`/`notice.to.placeId` EXACTLY, including the `undefined` case (`officer`, which
-     * has no place in this model).
-     *
-     * ⚠️ **NOT IDEMPOTENT.** A second mark is refused rather than silently re-accepted — the same
-     * "a state entered once is refused on retry" discipline `COMPLETE_INBOX_ITEM` below holds for an
-     * already-complete row — so a caller cannot overwrite an earlier `readAt`/`readBy` pair with a
-     * later one claimed under a different role.
+     * The addressee itself, never "whoever can see it": `event.role`/`event.actingPlaceId` must
+     * equal `notice.to.role`/`notice.to.placeId` exactly, including `undefined` for `officer`
+     * (claim-not-proof). Not idempotent: a second mark is refused, so an earlier `readAt`/`readBy`
+     * is never overwritten.
      */
     case "MARK_NOTICE_READ":
     case "ACKNOWLEDGE_INBOX_ITEM":
@@ -10382,10 +8419,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
               ...(movement.legalFormExpiryHistory ?? []),
               { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" as const },
             ];
-      // Owner ruling 2026-09-25: a Form 5B CONTINUES a current Form 5A (one community treatment
-      // order) rather than replacing it. The 5A record, its start (`formedAt`) and its receipt stay;
-      // the 5B is recorded as `continuedBy`, and the current end is the 5B's typed end (unknown if
-      // none was typed). The 5A's own typed end is kept on `continuedBy`. Nothing is computed.
+      // Owner ruling: a Form 5B continues a current Form 5A (one community treatment order) rather
+      // than replacing it. The 5A record, `formedAt` and receipt stay; the 5B is recorded as
+      // `continuedBy`, and the current end is the 5B's typed end. Nothing is computed.
       if (event.formCode === "5B" && movement.legalForm?.code === "5A") {
         // A second 5B updates the continuation; the 5A's own typed end is kept from the first.
         const { dueAt: currentDueAt, continuedBy: earlier, ...fiveA } = movement.legalForm;
@@ -10494,9 +8530,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
-      // A movement stepped back from `pulled` keeps its reserved bed and admission at
-      // `accepted_awaiting_bed`, so the stage alone cannot say whether a bed is being released
-      // (same rule as `releasePulledBedAndAdmission`).
+      // A stepped-back movement keeps its bed and admission at `accepted_awaiting_bed` (same rule
+      // as `releasePulledBedAndAdmission`).
       const heldBed = movement.stage === "pulled" || movement.admissionId !== undefined;
       const releasedUnitId = movement.acceptedUnitId;
       const updatedMovement: Movement = {

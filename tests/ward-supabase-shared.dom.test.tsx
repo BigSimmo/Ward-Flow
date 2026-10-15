@@ -35,9 +35,6 @@ afterEach(() => {
 describe("Supabase shared sign-in", () => {
   it.each(["entra", "supabase"])("makes no Auth, workspace or storage requests in %s demo", (provider) => {
     vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", provider);
-    vi.stubEnv("NEXT_PUBLIC_WARD_CLIENT_ID", "synthetic-client");
-    vi.stubEnv("NEXT_PUBLIC_WARD_TENANT_ID", "synthetic-tenant");
-    vi.stubEnv("NEXT_PUBLIC_WARD_API_SCOPE", "synthetic-scope");
     sessionStorage.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify({ access_token: "synthetic-expired-session" }));
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
@@ -113,19 +110,8 @@ describe("Supabase shared sign-in", () => {
       unmount();
     }
   });
-  it("reports Microsoft sign-in unavailable without network calls when entra is selected", async () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "entra");
-    const fetcher = vi.fn();
-    vi.stubGlobal("fetch", fetcher);
-    render(<Probe />);
-    expect(
-      await screen.findByText("Microsoft sign-in or shared workspace configuration is unavailable."),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign in with Microsoft" })).toBeDisabled();
-    expect(fetcher).not.toHaveBeenCalled();
-  });
-  it("rejects an unknown provider without restoring a session", async () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "unknown-provider");
+  it.each(["entra", "unknown-provider"])("rejects the %s provider without restoring a session", async (provider) => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", provider);
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
     const get = vi.spyOn(Storage.prototype, "getItem");

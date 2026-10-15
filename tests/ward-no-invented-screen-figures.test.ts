@@ -37,8 +37,10 @@ const WARD_DIR = resolve(process.cwd(), "src/components/ward-management");
  * Raised once, 9 to 12 (v10 build pass 2, 10 Oct 2026, at the build coordinator's instruction): the
  * v10 mockups introduced three invented windows (tier targets, bed-count freshness, stale downtime
  * pack) that are listed as to-do, the tier targets marked pending clinical sign-off.
+ * Lowered to 9 (15 Oct 2026): the bed-count freshness and stale-pack windows moved into
+ * `ward-clinical-values.ts` as synthetic values with "No decision recorded" as their source.
  */
-const MAX_TODO = 12;
+const MAX_TODO = 9;
 
 /** Files Josh ruled on (rule 4 only), relative to WARD_DIR, and the ruling. */
 const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = [
@@ -151,12 +153,6 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: 'How long the downtime pack shows "Taking snapshot" before the new time (v10, 10 Oct 2026); a UI pause, not a limit.',
     file: /^reports\/downtime-pack-screen\.tsx$/,
     name: /^TAKING_MS$/,
-  },
-  {
-    id: "phone-alert-release",
-    why: "How long sign-out waits for the server to release this device's phone alerts (10 Oct 2026); never shown, not a limit.",
-    file: /^ward-shared-access\.tsx$/,
-    name: /^PHONE_RELEASE_WAIT_MS$/,
   },
   {
     id: "early-header-tap",

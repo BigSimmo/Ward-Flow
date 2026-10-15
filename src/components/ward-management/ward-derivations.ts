@@ -33,6 +33,10 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import {
+  SILENT_WARD_FIRST_REMINDER_MINUTES,
+  SILENT_WARD_SECOND_REMINDER_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
+import {
   eligibility,
   requiresAuthorisedDestination,
   wardFacingGateDetail,
@@ -2377,7 +2381,7 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
     const sentAt = m.referralDecisionOpenedAt ?? m.referredAt;
     if (sentAt === undefined || sentAt === null) continue;
     const elapsedMinutes = Math.max(0, nowMin - sentAt);
-    if (elapsedMinutes < 120) continue;
+    if (elapsedMinutes < SILENT_WARD_FIRST_REMINDER_MINUTES) continue;
 
     // `referredUnitIds` is the standing set of live requests, so a re-referred ward shows again. A ward
     // that answered by waitlisting since the send has replied and is not silent.
@@ -2388,7 +2392,7 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
     );
     for (const unitId of m.referredUnitIds) {
       if (waitlistedSinceSend.has(unitId)) continue;
-      const escalationTier = elapsedMinutes >= 240 ? "escalate_4h" : "nudge_2h";
+      const escalationTier = elapsedMinutes >= SILENT_WARD_SECOND_REMINDER_MINUTES ? "escalate_4h" : "nudge_2h";
       results.push({
         movementId: m.id,
         unitId,

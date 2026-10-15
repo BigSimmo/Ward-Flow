@@ -109,8 +109,16 @@ const mockupProjectRequested =
       argument === "--project=chromium-mockups" ||
       argument === "--project=firefox-ward-responsive" ||
       argument === "--project=webkit-ward-responsive" ||
+      argument === "--project=release-gate-desktop" ||
+      argument === "--project=release-gate-phone" ||
       (argument === "--project" &&
-        ["chromium-mockups", "firefox-ward-responsive", "webkit-ward-responsive"].includes(playwrightArgs[index + 1])),
+        [
+          "chromium-mockups",
+          "firefox-ward-responsive",
+          "webkit-ward-responsive",
+          "release-gate-desktop",
+          "release-gate-phone",
+        ].includes(playwrightArgs[index + 1])),
   );
 // Fail loud on missing browser binaries before the heavy lock or production build.
 // Otherwise launch failures surface as "N failed" product tests and are easy to misread

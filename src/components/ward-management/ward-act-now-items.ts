@@ -2,7 +2,7 @@
  * ACT-NOW ITEMS AND TASKS — the one definition of "a row on the coordinator's active list".
  *
  * Pure: no React, no browser API. The open-tab notifier (`shell/ward-act-now-notifier.tsx`) and the
- * Azure backend's phone push (`backend/ward-flow/engine.ts`) both read this, so a phone is never
+ * shared backend's phone push (`backend/ward-flow/engine.ts`) both read this, so a phone is never
  * told about a different set of alerts than the screen shows. Snoozed rows are off the active
  * list; one that returns after its snooze counts as new.
  *

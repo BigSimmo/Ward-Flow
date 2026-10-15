@@ -1,10 +1,9 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "./button";
 import { cx } from "./cx";
-import { UndoHairlineExpiryEffect } from "./v10-command-palette";
 import styles from "./v10-parts.module.css";
 
 /* ── UndoHairline (Top 25 #17) ────────────────────────────────────────────────────────────── */
@@ -80,4 +79,32 @@ export function UndoHairline({
       </div>
     </div>
   );
+}
+
+function UndoHairlineExpiryEffect({
+  active,
+  remainingMs,
+  onExpire,
+}: {
+  active: boolean;
+  remainingMs: number;
+  onExpire?: () => void;
+}) {
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    if (!active || !onExpireRef.current) return;
+    if (remainingMs <= 0) {
+      onExpireRef.current();
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      onExpireRef.current?.();
+    }, remainingMs);
+    return () => window.clearTimeout(timer);
+  }, [active, remainingMs]);
+  return null;
 }

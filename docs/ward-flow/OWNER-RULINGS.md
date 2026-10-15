@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**535 rulings/items extracted, across 30 of 35 files.**
+**537 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 309 distinct IDs
+## ID index — 311 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -222,7 +222,9 @@ safe global key across 30 files.
 | `D-51` | `decisions.md`:610 | D-51. Delays filters hide rows with a stated hidden count while other queues highlight by default (10 October 2026) |
 | `D-52` | `decisions.md`:616 | D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026) |
 | `D-53` | `decisions.md`:622 | D-53. Elevate design language and Glare mode adopted for Design System v9 (10 October 2026) |
-| `D-54` | `decisions.md`:628 | D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026) |
+| `D-54` | `decisions.md`:629 | D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026) |
+| `D-55` | `decisions.md`:636 | D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026) |
+| `D-56` | `decisions.md`:642 | D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -491,13 +493,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 30 files
 
-### `decisions.md` (2026-09-07 – 2026-10-10 (mixed, see file))
+### `decisions.md` (2026-09-07 – 2026-10-15 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-54 item(s):
+56 item(s):
 
 - `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 24, heading: "D-2. Railway is disconnected"
@@ -552,7 +554,9 @@ safe global key across 30 files.
 - `D-51` — line 610, heading: "D-51. Delays filters hide rows with a stated hidden count while other queues highlight by default (10 October 2026)"
 - `D-52` — line 616, heading: "D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026)"
 - `D-53` — line 622, heading: "D-53. Elevate design language and Glare mode adopted for Design System v9 (10 October 2026)"
-- `D-54` — line 628, heading: "D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026)"
+- `D-54` — line 629, heading: "D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026)"
+- `D-55` — line 636, heading: "D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026)"
+- `D-56` — line 642, heading: "D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

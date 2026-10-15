@@ -5,7 +5,13 @@ import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { clockState, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  currentDueSoonThresholds,
+  dayOf,
+  formatInstantWithDay,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import {
   isOpen,
   movementHealthService,
@@ -2061,7 +2067,7 @@ function StageRow({
   // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
   const dueAt = currentLegalDueAt(movement);
   const isBreached = dueAt !== undefined && dueAt < now;
-  const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < 60;
+  const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < currentDueSoonThresholds().urgentMinutes;
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
