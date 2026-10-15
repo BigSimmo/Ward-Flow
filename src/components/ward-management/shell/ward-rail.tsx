@@ -240,6 +240,18 @@ const CLINICAL_PERSONAS = [
     initials: "JR",
     role: "Consultant psychiatrist",
   },
+  {
+    id: "okafor",
+    name: "A. Okafor",
+    initials: "AO",
+    role: "Transport officer",
+  },
+  {
+    id: "hart",
+    name: "L. Hart",
+    initials: "LH",
+    role: "Community team clinician",
+  },
 ] as const;
 
 const APPEARANCE_CHOICES = [
@@ -328,9 +340,11 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             ? "gallagher"
             : syncedRole === "coordinator"
               ? "chen"
-              : syncedRole === "community" || syncedRole === "officer"
-                ? "robinson"
-                : undefined;
+              : syncedRole === "community"
+                ? "hart"
+                : syncedRole === "officer"
+                  ? "okafor"
+                  : undefined;
       if (nextPersona) setActivePersona(nextPersona);
     }
     window.addEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
