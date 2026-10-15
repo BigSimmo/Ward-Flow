@@ -737,6 +737,33 @@ function useFullscreen(target: RefObject<HTMLElement | null>) {
   return { supported, active, toggle };
 }
 
+/** Keeps a wall TV from dimming while the screen is shown. Browsers drop the lock when the tab is
+ * hidden, so it is asked for again on return. Unsupported or refused requests do nothing. */
+function useScreenWakeLock(active: boolean) {
+  useEffect(() => {
+    if (!active || typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+    let sentinel: WakeLockSentinel | null = null;
+    let stopped = false;
+    const request = () => {
+      if (document.visibilityState !== "visible") return;
+      navigator.wakeLock
+        .request("screen")
+        .then((lock) => {
+          if (stopped) lock.release().catch(() => undefined);
+          else sentinel = lock;
+        })
+        .catch(() => undefined);
+    };
+    request();
+    document.addEventListener("visibilitychange", request);
+    return () => {
+      stopped = true;
+      document.removeEventListener("visibilitychange", request);
+      sentinel?.release().catch(() => undefined);
+    };
+  }, [active]);
+}
+
 /** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
 function ScreenPicker({ current }: { current: string }) {
   const { units } = useWardFlow();
@@ -815,6 +842,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   const deviceCanChange = useWardFeatureFlags()[0]?.deviceCanChange ?? false;
   const root = useRef<HTMLElement>(null);
   const fullscreen = useFullscreen(root);
+  useScreenWakeLock(enabled);
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);

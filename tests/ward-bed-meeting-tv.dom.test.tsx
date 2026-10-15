@@ -73,6 +73,26 @@ function seedInputs() {
 }
 
 describe("the bed meeting TV view", () => {
+  it("keeps the screen awake while shown, asks again on return and lets go on leaving", async () => {
+    const release = vi.fn(() => Promise.resolve());
+    const request = vi.fn(() => Promise.resolve({ release }));
+    Object.defineProperty(navigator, "wakeLock", { value: { request }, configurable: true });
+    try {
+      const view = renderTv();
+      await act(async () => {});
+      expect(request).toHaveBeenCalledWith("screen");
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await act(async () => {});
+      expect(request).toHaveBeenCalledTimes(2);
+      view.unmount();
+      expect(release).toHaveBeenCalled();
+    } finally {
+      Reflect.deleteProperty(navigator, "wakeLock");
+    }
+  });
+
   it("shows the same figures as the printed bed meeting sheet", () => {
     renderTv();
     const state = seedWardFlowStateAt(0);
