@@ -319,39 +319,45 @@ describe("a command from a desk", () => {
     expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-out" })).toMatch(/outside/);
   });
 
-  it("keeps a service coordinator to the seeded governance entries about its own service", () => {
-    const seeded = syntheticGovernanceAuditEvents(state);
-    const verdicts = [...new Set(state.units.map((unit) => unitHealthService(unit)!))].map((service) => {
-      const access: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
-      const world: WardFlowState = {
-        ...state,
-        auditReviews: seeded.map((event, index) => ({
-          id: `review-seed-${index}`,
-          eventId: event.id,
-          generation: state.worldGeneration,
-          at: NOW_ANCHOR,
-          byRole: "coordinator",
-          decision: "reviewed",
-        })),
-      };
-      const sent = new Set(scopeWardFlowState(world, access, options).state.auditReviews.map((r) => r.eventId));
-      return seeded.map((event) => {
-        const refused = commandScopeRefusal(
-          world,
-          access,
-          { type: "REVIEW_AUDIT_EVENT", role: "coordinator", eventId: event.id },
-          options,
-        );
-        // A review is sent exactly when the entry may be reviewed.
-        expect(sent.has(event.id)).toBe(refused === null);
-        return refused === null;
-      });
+  it("lets a service coordinator see and review just the seeded governance entries its own screens show", () => {
+    const withReviews = (world: WardFlowState): WardFlowState => ({
+      ...world,
+      auditReviews: syntheticGovernanceAuditEvents(world).map((event, index) => ({
+        id: `review-seed-${index}`,
+        eventId: event.id,
+        generation: world.worldGeneration,
+        at: NOW_ANCHOR,
+        byRole: "coordinator",
+        decision: "reviewed",
+      })),
     });
-    // Somewhere a seeded entry is outside a service, so the check is not passing by default.
-    expect(verdicts.flat()).toContain(false);
-    // A configuration entry is the statewide desk's, so no service may review it.
-    const configuration = seeded.findIndex((event) => event.subject.kind === "configuration");
-    if (configuration >= 0) expect(verdicts.every((row) => row[configuration] === false)).toBe(true);
+    const verdicts = (world: WardFlowState, access: WardAccess) => {
+      const sent = scopeWardFlowState(world, access, options).state;
+      // The browser derives its seeded entries from the workspace it was sent.
+      const shown = new Set(syntheticGovernanceAuditEvents(sent).map((event) => event.id));
+      return syntheticGovernanceAuditEvents(world).map((event) => {
+        const allowed =
+          commandScopeRefusal(
+            world,
+            access,
+            { type: "REVIEW_AUDIT_EVENT", role: "coordinator", eventId: event.id },
+            options,
+          ) === null;
+        expect(sent.auditReviews.some((review) => review.eventId === event.id)).toBe(shown.has(event.id));
+        expect(allowed).toBe(shown.has(event.id));
+        return { id: event.id, allowed };
+      });
+    };
+    const services = [...new Set(state.units.map((unit) => unitHealthService(unit)!))];
+    for (const service of services)
+      verdicts(withReviews(state), { role: "coordinator", scope: { kind: "service", service } });
+    // A service with no referral of its own shows no referral entry, so it is neither sent its review
+    // nor may it review it, though the whole network still has one.
+    const service = services[0];
+    const access: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+    const own = new Set(scopeWardFlowState(state, access, options).state.referrals.map((referral) => referral.id));
+    const world = withReviews({ ...state, referrals: state.referrals.filter((referral) => !own.has(referral.id)) });
+    expect(verdicts(world, access)).toContainEqual({ id: "audit-seed-referral-override", allowed: false });
   });
 
   it("is never refused for the statewide coordinator", () => {
