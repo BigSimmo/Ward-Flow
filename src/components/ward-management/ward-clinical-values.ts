@@ -134,22 +134,6 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-22 (26 Sep 2026), labelled default; the ACEM eight hour line came off screens under D-24",
   },
-  edSecondEscalation: {
-    ...SYNTHETIC,
-    name: "ED wait escalated to a state coordinator broadcast from",
-    group: "Emergency department waits",
-    value: 12 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
-  },
-  edLadderActNowEdge: {
-    ...SYNTHETIC,
-    name: "ED wait shown with the act now edge from",
-    group: "Emergency department waits",
-    value: 22 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
-  },
   longWait: {
     ...SIGNED_BY_JOSH,
     name: "Wait in hospital shown as long, and top escalation step, from",
@@ -242,24 +226,6 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-24 (26 Sep 2026), Josh's default",
     adjustable: true,
-    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "Top 25 paper form radar amber" }],
-  },
-  paperFormRadarAmber: {
-    ...SYNTHETIC,
-    name: "Paper form radar turns amber within (or the first warning, if Settings sets it longer)",
-    group: "Legal form warnings",
-    value: 4 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
-    alternatives: [{ value: 3 * MINUTES_PER_HOUR, where: "Settings first warning default (D-24)" }],
-  },
-  paperFormRadarEdge: {
-    ...SYNTHETIC,
-    name: "Paper form radar shows the act now edge within",
-    group: "Legal form warnings",
-    value: 6 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
   },
 
   // ---- Alerts and holds ----------------------------------------------------------------------
@@ -372,14 +338,6 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "Stream A, 9 Oct 2026, labelled default",
     adjustable: true,
-  },
-  handoverStuck: {
-    ...SYNTHETIC,
-    name: "Accepted patient not yet moving flagged as a stuck handover after",
-    group: "Arrivals and answers",
-    value: 1 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 stuck handover timer, 15 Oct 2026)`,
   },
   expectFlagVoluntary: {
     ...SIGNED_BY_JOSH,

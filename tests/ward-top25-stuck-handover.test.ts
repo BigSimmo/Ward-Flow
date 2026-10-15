@@ -31,9 +31,9 @@ function row(movement: Movement, stuckHandoverMinutes?: number) {
 }
 
 describe("Top 25 item 12: stuck handover on the transport awaiting departure row", () => {
-  it("uses the transport booked target, which the old handoverStuck value duplicated", () => {
+  it("uses the transport booked target, not a separate stuck handover value", () => {
     expect(target).toBe(CLINICAL_VALUES.transportBookedTarget.value);
-    expect(CLINICAL_VALUES.handoverStuck.value).toBe(CLINICAL_VALUES.transportBookedTarget.value);
+    expect("handoverStuck" in CLINICAL_VALUES).toBe(false);
   });
 
   it("names the handover stuck for the sending team once the target passes", () => {
