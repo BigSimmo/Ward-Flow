@@ -13,7 +13,7 @@ import {
  * signed: it may be Josh's product default, or a figure an earlier build typed in with no decision
  * behind it (`source` says which). **Signed** means a named person signed it on a date, and the
  * type will not accept a signed value without both. On 15 Oct 2026 Josh signed every value with a
- * recorded source (D-56), and three more with a national source (D-58). The rest stay synthetic. Signing is for
+ * recorded source (D-56), and two more with a national source (D-58). The rest stay synthetic. Signing is for
  * the prototype: real patient use still needs formal clinical governance sign-off (D-54). No value
  * is a legal limit (D-22) and none comes from the Mental Health Act: Act periods live only in
  * `legal-forms/act-periods-demo.ts` (D-29).
@@ -71,7 +71,7 @@ export type ClinicalValueEntry = ClinicalValueSignature & {
 };
 
 const SYNTHETIC = { status: "synthetic" } as const;
-/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56), and three with a national source (D-58). */
+/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56), and two with a national source (D-58). */
 const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-15" } as const;
 const NO_DECISION = "No decision recorded";
 
@@ -133,23 +133,6 @@ export const CLINICAL_VALUES = {
     value: 8 * MINUTES_PER_HOUR,
     unit: "minutes",
     source: "D-22 (26 Sep 2026), labelled default; the ACEM eight hour line came off screens under D-24",
-  },
-  edSecondEscalation: {
-    ...SIGNED_BY_JOSH,
-    name: "ED wait escalated to a state coordinator broadcast from",
-    group: "Emergency department waits",
-    value: 12 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source:
-      "D-58 (15 Oct 2026), the mark from the ACEM emergency department long stay measure. The broadcast is a local workflow choice, ACEM does not set it",
-  },
-  edLadderActNowEdge: {
-    ...SYNTHETIC,
-    name: "ED wait shown with the act now edge from",
-    group: "Emergency department waits",
-    value: 22 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
   },
   longWait: {
     ...SIGNED_BY_JOSH,
@@ -243,24 +226,6 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-24 (26 Sep 2026), Josh's default",
     adjustable: true,
-    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "Top 25 paper form radar amber" }],
-  },
-  paperFormRadarAmber: {
-    ...SYNTHETIC,
-    name: "Paper form radar turns amber within (or the first warning, if Settings sets it longer)",
-    group: "Legal form warnings",
-    value: 4 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
-    alternatives: [{ value: 3 * MINUTES_PER_HOUR, where: "Settings first warning default (D-24)" }],
-  },
-  paperFormRadarEdge: {
-    ...SYNTHETIC,
-    name: "Paper form radar shows the act now edge within",
-    group: "Legal form warnings",
-    value: 6 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
   },
 
   // ---- Alerts and holds ----------------------------------------------------------------------
@@ -373,14 +338,6 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "Stream A, 9 Oct 2026, labelled default",
     adjustable: true,
-  },
-  handoverStuck: {
-    ...SYNTHETIC,
-    name: "Accepted patient not yet moving flagged as a stuck handover after",
-    group: "Arrivals and answers",
-    value: 1 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 stuck handover timer, 15 Oct 2026)`,
   },
   expectFlagVoluntary: {
     ...SIGNED_BY_JOSH,
