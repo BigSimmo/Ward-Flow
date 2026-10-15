@@ -27,6 +27,9 @@ function canonical(value) {
  *   delivery carries on in the background after that.
  * @param retryAfterMs How long a claimed delivery waits before another attempt may claim it: the
  *   gap between retries, and how long an interrupted delivery waits for the sweep.
+ * @param demoEvents Whether the demonstration controls (advance clock, reset or set scenario) may
+ *   change the shared workspace. Off unless WARD_SHARED_DEMO_EVENTS=true: one coordinator could
+ *   otherwise reset everyone's board.
  */
 export function createWorkspaceStore(
   pool,
@@ -38,6 +41,7 @@ export function createWorkspaceStore(
     log = (event) => console.error(JSON.stringify(event)),
     deliveryWaitMs = 1500,
     retryAfterMs = 60_000,
+    demoEvents = false,
   },
 ) {
   const snapshot = (row, at) => ({
@@ -239,6 +243,15 @@ export function createWorkspaceStore(
       log({ event: "ward_backend_push_delivery_unavailable", ...counts, ...errorFields(error) });
     }
   }
+  async function read(actorId) {
+    const at = clock();
+    const { rows } = await pool.query(
+      "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+      [workspaceId],
+    );
+    if (rows[0] && engine.validWorld(rows[0].payload)) return snapshot(rows[0], at);
+    return transaction(async (client, now) => snapshot(await lock(client, actorId, now), now));
+  }
   return {
     pushEnabled: !!push,
     async ready() {
@@ -335,14 +348,33 @@ export function createWorkspaceStore(
       });
       await deliver();
     },
-    async read(actorId) {
+    read,
+    /**
+     * The 3 second poll. When the workspace is still at `knownRevision`, returns only the revision
+     * and the world clock (read from two small fields, so the whole record is not sent or checked);
+     * otherwise the full snapshot, as `read` does.
+     */
+    async poll(actorId, knownRevision) {
       const at = clock();
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
-      if (rows[0] && engine.validWorld(rows[0].payload)) return snapshot(rows[0], at);
-      return transaction(async (client, now) => snapshot(await lock(client, actorId, now), now));
+      const row = rows[0];
+      if (
+        row &&
+        Number(row.revision) === knownRevision &&
+        typeof row.started_at === "string" &&
+        Number.isFinite(Date.parse(row.started_at)) &&
+        Number.isFinite(row.clock_offset)
+      )
+        return {
+          notModified: true,
+          dataMode: row.data_mode,
+          revision: knownRevision,
+          now: engine.worldNow({ startedAt: row.started_at, state: { clockOffsetMinutes: row.clock_offset } }, at),
+        };
+      return { notModified: false, snapshot: await read(actorId) };
     },
     async audit() {
       const { rows } = await pool.query(
@@ -351,8 +383,18 @@ export function createWorkspaceStore(
       );
       return rows;
     },
-    async command(actorId, commandId, expectedRevision, event) {
+    /**
+     * `options.revisionOnly`: an accepted command (or its replay) answers without the snapshot.
+     * The client asks for this when more of its commands are queued, and reads the board once at
+     * the end. A refused or stale command always carries the snapshot.
+     */
+    async command(actorId, commandId, expectedRevision, event, { revisionOnly = false } = {}) {
       if (!engine.validCommand(event)) throw new Error("invalid-command");
+      if (!demoEvents && engine.demoOnlyCommand(event))
+        return {
+          status: 422,
+          body: { outcome: "denied", error: "Demo controls are switched off on the shared workspace." },
+        };
       const fingerprint = createHash("sha256")
         .update(JSON.stringify(canonical({ expectedRevision, event })))
         .digest("hex");
@@ -371,7 +413,14 @@ export function createWorkspaceStore(
               status: 422,
               body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at) },
             };
-          return { status: receipt.status, body: { ...receipt.result, replayed: true, snapshot: snapshot(row, at) } };
+          return {
+            status: receipt.status,
+            body: {
+              ...receipt.result,
+              replayed: true,
+              ...(revisionOnly && receipt.status === 200 ? {} : { snapshot: snapshot(row, at) }),
+            },
+          };
         }
         let outcome = "stale";
         let status = 409;
@@ -416,7 +465,10 @@ export function createWorkspaceStore(
           "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)",
           [workspaceId, actorId, commandId, fingerprint, status, result],
         );
-        return { status, body: { ...result, snapshot: snapshot(row, at) } };
+        return {
+          status,
+          body: { ...result, ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at) }) },
+        };
       });
       if (queued) {
         // Wait briefly so a quick delivery finishes in this invocation, but never hold the save

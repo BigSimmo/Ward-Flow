@@ -301,3 +301,94 @@ it("drops an uncertain command and queued actions when token refresh detects an 
   expect(requests).toHaveLength(1);
   client.dispose();
 });
+
+describe("shared workspace traffic", () => {
+  it("polls with the revision it holds and keeps its snapshot when the workspace has not changed", async () => {
+    const urls: string[] = [];
+    let view: SharedView | undefined;
+    let notModified = false;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) => {
+        urls.push(String(url));
+        return notModified
+          ? Response.json({ notModified: true, revision: 3, now: 700 })
+          : Response.json({ snapshot: snapshot(3) });
+      },
+    });
+    await client.refresh();
+    const held = view?.snapshot;
+    notModified = true;
+    await client.refresh();
+    expect(urls).toEqual(["https://example.test/v1/workspace", "https://example.test/v1/workspace?since=3"]);
+    expect(view?.status).toBe("ready");
+    expect(view?.snapshot?.revision).toBe(3);
+    expect(view?.snapshot?.now).toBe(700);
+    expect(view?.snapshot?.payload).toBe(held?.payload);
+    client.dispose();
+  });
+
+  it("refuses a not-modified answer for a revision it does not hold", async () => {
+    let view: SharedView | undefined;
+    let calls = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () =>
+        calls++ === 0
+          ? Response.json({ snapshot: snapshot(3) })
+          : Response.json({ notModified: true, revision: 4, now: 700 }),
+    });
+    await client.refresh();
+    await client.refresh();
+    expect(view?.status).toBe("unavailable");
+    client.dispose();
+  });
+
+  it("asks for revision-only replies while commands are queued, then reads the board once", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const reads: string[] = [];
+    let revision = 1;
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url, options) => {
+        if (!options?.body) {
+          reads.push(String(url));
+          return Response.json({ snapshot: snapshot(revision) });
+        }
+        const body = JSON.parse(String(options.body));
+        bodies.push(body);
+        revision += 1;
+        return body.reply === "revision"
+          ? Response.json({ outcome: "accepted", commandRevision: revision })
+          : Response.json({ outcome: "accepted", commandRevision: revision, snapshot: snapshot(revision) });
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    client.dispatch(event);
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(3));
+    // The first command leaves before the others are queued; the second has one behind it.
+    expect(bodies.map((body) => [body.expectedRevision, body.reply])).toEqual([
+      [1, undefined],
+      [2, "revision"],
+      [3, undefined],
+    ]);
+    expect(view?.snapshot?.revision).toBe(4);
+    expect(reads).toEqual(["https://example.test/v1/workspace"]);
+    client.dispose();
+  });
+});

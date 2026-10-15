@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
 import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
 import { pushPayload } from "./push.mjs";
+import { RECEIPT_RETENTION_DAYS, pruneReceipts } from "./prune-receipts.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -211,6 +212,8 @@ test(
     const outcome = { e2: "expired" };
     const logs = [];
     const store = createWorkspaceStore(pool, {
+      // The tests move the clock with the demo control, so it is switched on here.
+      demoEvents: true,
       workspaceId,
       engine,
       clock: () => at,
@@ -313,6 +316,8 @@ test(
       const sent = [];
       const logs = [];
       const store = createWorkspaceStore(pool, {
+        // The tests move the clock with the demo control, so it is switched on here.
+        demoEvents: true,
         workspaceId,
         engine: options.engine ?? engine,
         clock: () => at,
@@ -569,6 +574,94 @@ test(
           await new Promise((resolve) => setTimeout(resolve, 10));
         }
         assert.deepEqual(await statuses(workspaceId), ["s1 sent 1"]);
+      });
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+// In this file, not its own, so it never runs alongside the injected audit failure above.
+test(
+  "real PostgreSQL: lean polls, revision-only replies, demo controls and receipt pruning",
+  { skip: !url },
+  async (t) => {
+    const actor = "11111111-1111-4111-8111-111111111111";
+    const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    let at = new Date("2026-10-07T10:00:00Z");
+    const store = (options = {}) =>
+      createWorkspaceStore(pool, {
+        workspaceId: options.workspaceId ?? randomUUID(),
+        engine,
+        clock: () => at,
+        ...options,
+      });
+    try {
+      await migrate(pool);
+      await t.test("an unchanged workspace answers the poll with its revision and moving clock only", async () => {
+        const shared = store();
+        const first = await shared.read(actor);
+        const polled = await shared.poll(actor, first.revision);
+        assert.deepEqual(polled, { notModified: true, dataMode: "prototype", revision: 1, now: first.now });
+        at = new Date(at.getTime() + 5 * 60_000);
+        assert.equal((await shared.poll(actor, 1)).now, first.now + 5);
+        const stale = await shared.poll(actor, 99);
+        assert.equal(stale.notModified, false);
+        assert.equal(stale.snapshot.revision, 1);
+        assert.ok(engine.validWorld(stale.snapshot.payload));
+      });
+      await t.test("an accepted command can answer with its revision only; a replay does too", async () => {
+        const shared = store();
+        await shared.read(actor);
+        const commandId = randomUUID();
+        const lean = await shared.command(actor, commandId, 1, refresh, { revisionOnly: true });
+        assert.equal(lean.status, 200);
+        assert.equal(lean.body.commandRevision, 2);
+        assert.equal(lean.body.snapshot, undefined);
+        const replay = await shared.command(actor, commandId, 1, refresh, { revisionOnly: true });
+        assert.equal(replay.body.replayed, true);
+        assert.equal(replay.body.snapshot, undefined);
+        const full = await shared.command(actor, commandId, 1, refresh);
+        assert.equal(full.body.snapshot.revision, 2);
+        const stale = await shared.command(actor, randomUUID(), 1, refresh, { revisionOnly: true });
+        assert.equal(stale.status, 409);
+        assert.equal(stale.body.snapshot.revision, 2, "a stale command always carries the board");
+      });
+      await t.test("demo controls are refused on the shared workspace unless switched on", async () => {
+        const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
+        const off = store();
+        await off.read(actor);
+        const refused = await off.command(actor, randomUUID(), 1, jump);
+        assert.equal(refused.status, 422);
+        assert.equal(refused.body.outcome, "denied");
+        assert.equal((await off.read(actor)).revision, 1, "nothing was saved");
+        const on = store({ demoEvents: true });
+        await on.read(actor);
+        assert.equal((await on.command(actor, randomUUID(), 1, jump)).status, 200);
+      });
+      await t.test("receipts older than the retention window are pruned; newer ones stay", async () => {
+        const shared = store();
+        await shared.read(actor);
+        const old = randomUUID();
+        await shared.command(actor, old, 1, refresh);
+        await shared.command(actor, randomUUID(), 2, refresh);
+        await pool.query(
+          "UPDATE ward_flow.commands SET committed_at = now() - make_interval(days => $2) WHERE command_id=$1",
+          [old, RECEIPT_RETENTION_DAYS + 1],
+        );
+        assert.ok((await pruneReceipts(pool)) >= 1);
+        const { rows } = await pool.query(
+          "SELECT command_id FROM ward_flow.commands WHERE command_id = ANY($1::uuid[])",
+          [[old]],
+        );
+        assert.deepEqual(rows, []);
+        const kept = await pool.query(
+          "SELECT count(*)::int AS count FROM ward_flow.commands WHERE committed_at > now() - interval '1 day'",
+        );
+        assert.ok(kept.rows[0].count >= 1);
+        await assert.rejects(pruneReceipts(pool, { days: 0 }), /retention/);
       });
     } finally {
       await pool.end();
