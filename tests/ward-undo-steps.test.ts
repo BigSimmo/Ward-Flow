@@ -180,6 +180,19 @@ describe("step undos restore exactly, by the role that acted or the coordinator"
     const undone = undoOf(event, recorded, NOW + 1);
     expect(undone?.type).toBe("UNDO_SUPPORT_NOTIFICATION");
     expect(undone!.state.supportNotifications ?? []).toEqual(before.supportNotifications ?? []);
+    // Master plan 5.2: the whole world comes back, by the role that acted and by the coordinator.
+    for (const role of ["ward", "coordinator"] as const) {
+      const taken = wardFlowReducer(recorded, undoEventFor(event, role));
+      expect(lastRefusal(recorded, taken), role).toBeUndefined();
+      // The undo leaves an empty list where the seed had none, which means the same.
+      const tells = (state: WardFlowState) => ({
+        ...world(state),
+        supportNotifications: state.supportNotifications ?? [],
+      });
+      expect(tells(taken), role).toEqual(tells(before));
+      expect(taken.undoRecords ?? [], role).toEqual(before.undoRecords ?? []);
+      expect(taken.auditEvents.at(-1)!.action, role).toBe("UNDO_SUPPORT_NOTIFICATION");
+    }
   });
 });
 
