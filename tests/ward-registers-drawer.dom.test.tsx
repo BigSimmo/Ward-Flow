@@ -10,6 +10,7 @@ import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-m
 import { DECLINE_REASONS, type Rejection } from "@/components/ward-management/ward-model";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Task 5 built the coordinator's bottom bar — one register (Exceptions, refusals folded in) grown
@@ -326,7 +327,7 @@ describe("the coordinator's registers drawer", () => {
       />,
     );
     const row = screen.getByTestId("ward-exception-notify-discharge-AD-LEFT-01");
-    expect(row).toHaveAttribute("href", "/mockups/ward-flow/discharges?admissionId=AD-LEFT-01");
+    expect(row).toHaveAttribute("href", dischargeHref("AD-LEFT-01"));
     fireEvent.click(row);
     expect(onSelectDischarge).toHaveBeenCalledWith("AD-LEFT-01");
     expect(onSelectMovement).not.toHaveBeenCalled();

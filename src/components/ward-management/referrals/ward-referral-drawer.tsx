@@ -87,6 +87,7 @@ import { GENDERS, patientAgeYears, type Gender, type Patient } from "@/component
 
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, wardSites, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
@@ -137,6 +138,7 @@ import {
   clearanceChecklistWords,
   referralNeedsWords,
 } from "./referral-submission";
+import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * The legal-status choices, as bare register codes. Their visible text is built from the Chief
@@ -801,7 +803,7 @@ function WardReferralDrawerContent({
   const urlPrefill = useMemo(() => {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
-    const personId = params.get("patientId")?.trim() || undefined;
+    const personId = recordIdFromParam(params.get("patientId")?.trim()) ?? undefined;
     if (initialPatientId && personId && initialPatientId !== personId) return null;
     if (!personId && (initialPatientId || initialOriginSiteCode || initialSendingTeam || initialUnitIds?.length)) {
       return null;
@@ -1528,7 +1530,7 @@ function WardReferralDrawerContent({
       setSentAt(now);
       setSendPending(false);
 
-      announceToWardShell(`Referral ${created.id} sent to the selected locations.`);
+      announceToWardShell("Referral sent to the selected locations.");
     } else if (rejections.length > submitted.rejectionCount) {
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);
@@ -3501,9 +3503,8 @@ function WardReferralDrawerContent({
                                     arm.withdrawnAt === undefined,
                                 ),
                               ).length +
-                              movements.filter(
-                                (movement) => movement.waitlistedUnitIds?.includes(unit.unitId) && !movement.closure,
-                              ).length;
+                              movements.filter((movement) => !movement.closure && waitlistStands(movement, unit.unitId))
+                                .length;
                             return (
                               <label
                                 key={unit.unitId}

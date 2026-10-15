@@ -346,6 +346,20 @@ test("identity configuration rejects other projects and privileged key families"
   );
 });
 
+/** A shared-secret (HS256) shaped token, which the verifier can only confirm with Supabase. */
+function legacyToken(config, claims = {}) {
+  const part = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const body = {
+    sub: config.coordinatorIds[0],
+    iss: `${APPROVED_SUPABASE_URL}/auth/v1`,
+    aud: "authenticated",
+    role: "authenticated",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    ...claims,
+  };
+  return `Bearer ${part({ alg: "HS256", typ: "JWT" })}.${part(body)}.c3ludGhldGlj`;
+}
+
 function identityConfig() {
   const coordinator = randomUUID();
   const supabase = readSupabaseIdentityConfig({
@@ -367,7 +381,7 @@ test("Supabase verifier confirms the allowlisted server-returned UUID with a pri
       return Response.json({ id: config.coordinatorIds[0].toUpperCase(), role: "untrusted-browser-role" });
     },
   });
-  assert.equal(await verify("Bearer synthetic-offline-token"), config.coordinatorIds[0]);
+  assert.equal(await verify(legacyToken(config)), config.coordinatorIds[0]);
 });
 
 test("Supabase verifier separates denied credentials from outages and malformed responses", async () => {
@@ -379,7 +393,7 @@ test("Supabase verifier separates denied credentials from outages and malformed 
   ]) {
     const verify = createSupabaseAuthenticator(config, { fetch: async () => response });
     await assert.rejects(
-      verify("Bearer synthetic-offline-token"),
+      verify(legacyToken(config)),
       (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
     );
   }
@@ -396,7 +410,7 @@ test("Supabase verifier separates denied credentials from outages and malformed 
       },
     }),
   ])
-    await assert.rejects(createSupabaseAuthenticator(config, { fetch })("Bearer synthetic-offline-token"), {
+    await assert.rejects(createSupabaseAuthenticator(config, { fetch })(legacyToken(config)), {
       message: "Token verifier unavailable",
     });
 });
@@ -410,12 +424,21 @@ test("Supabase verifier rejects malformed input before fetch and bounds headers 
       return Response.json({ id: config.coordinatorIds[0] });
     },
   });
-  for (const header of [null, "Basic synthetic", "Bearer two tokens", "Bearer " + "x".repeat(16385)])
+  for (const header of [
+    null,
+    "Basic synthetic",
+    "Bearer two tokens",
+    "Bearer " + "x".repeat(16385),
+    "Bearer synthetic-offline-token",
+    legacyToken(config, { exp: Math.floor(Date.now() / 1000) - 1 }),
+    legacyToken(config, { iss: "https://otherproject.supabase.co/auth/v1" }),
+    legacyToken(config, { sub: randomUUID() }),
+  ])
     await assert.rejects(verify(header), /Unauthorised/);
   assert.equal(calls, 0);
   for (const fetch of [() => new Promise(() => {}), async () => ({ ok: true, json: () => new Promise(() => {}) })])
     await assert.rejects(
-      createSupabaseAuthenticator(config, { fetch, timeoutMs: 10 })("Bearer synthetic-offline-token"),
+      createSupabaseAuthenticator(config, { fetch, timeoutMs: 10 })(legacyToken(config)),
       VerifierUnavailableError,
     );
   for (const timeoutMs of [0, 5001, 1.5])

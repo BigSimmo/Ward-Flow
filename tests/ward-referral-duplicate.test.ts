@@ -13,6 +13,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 import { referrals as seedReferrals } from "@/components/ward-management/ward-movements";
 import { allUnits } from "@/components/ward-management/ward-sites";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * WHAT IS ALREADY OPEN FOR THIS PERSON — LANE C TASK 15.
@@ -139,7 +140,7 @@ describe("L5 — Where this case is follows the case's stage", () => {
 
   it("points at the person's own page once a referral is accepted, since the board no longer lists it", () => {
     expect(duplicateCaseHref({ patientId: SOMEONE, referrals: [referralFor(SOMEONE, "accepted")] })).toBe(
-      `/mockups/ward-flow/people/${SOMEONE}`,
+      patientHref(SOMEONE),
     );
   });
 

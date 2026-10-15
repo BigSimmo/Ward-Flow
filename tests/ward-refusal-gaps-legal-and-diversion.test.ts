@@ -254,7 +254,7 @@ describe("SET_STEP_DOWN_CANDIDATE: claim-not-proof actingUnitId (line 7886)", ()
       stepDownCandidate: true,
     });
     expect(added(seeded, after)).toEqual([
-      `SET_STEP_DOWN_CANDIDATE was raised acting as unit ${WRONG_UNIT} but admission ${ADMISSION} is at ${REAL_UNIT}`,
+      `SET_STEP_DOWN_CANDIDATE was raised acting as unit ${WRONG_UNIT} but this stay is at ${REAL_UNIT}`,
     ]);
   });
 
@@ -270,7 +270,7 @@ describe("SET_STEP_DOWN_CANDIDATE: claim-not-proof actingUnitId (line 7886)", ()
     });
     const reasons = added(seeded, after);
     expect(reasons).not.toContain(
-      `SET_STEP_DOWN_CANDIDATE was raised acting as unit ${WRONG_UNIT} but admission ${ADMISSION} is at ${REAL_UNIT}`,
+      `SET_STEP_DOWN_CANDIDATE was raised acting as unit ${WRONG_UNIT} but this stay is at ${REAL_UNIT}`,
     );
     expect(reasons).toEqual([]);
     expect(after.admissions.find((a) => a.id === ADMISSION)?.stepDownCandidate).toBe(true);
@@ -300,7 +300,7 @@ describe("SET_DISCHARGE_BARRIER: claim-not-proof actingUnitId (line 7908)", () =
       barrier: "NDIS",
     });
     expect(added(seeded, after)).toEqual([
-      `SET_DISCHARGE_BARRIER was raised acting as unit ${WRONG_UNIT} but admission ${ADMISSION} is at ${REAL_UNIT}`,
+      `SET_DISCHARGE_BARRIER was raised acting as unit ${WRONG_UNIT} but this stay is at ${REAL_UNIT}`,
     ]);
   });
 
@@ -316,7 +316,7 @@ describe("SET_DISCHARGE_BARRIER: claim-not-proof actingUnitId (line 7908)", () =
     });
     const reasons = added(seeded, after);
     expect(reasons).not.toContain(
-      `SET_DISCHARGE_BARRIER was raised acting as unit ${WRONG_UNIT} but admission ${ADMISSION} is at ${REAL_UNIT}`,
+      `SET_DISCHARGE_BARRIER was raised acting as unit ${WRONG_UNIT} but this stay is at ${REAL_UNIT}`,
     );
     expect(reasons).toEqual([]);
     expect(after.admissions.find((a) => a.id === ADMISSION)?.dischargeBarrier).toBe("NDIS");

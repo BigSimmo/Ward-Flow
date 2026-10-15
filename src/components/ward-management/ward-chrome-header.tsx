@@ -15,6 +15,7 @@ import { wardSites } from "@/components/ward-management/ward-sites";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 
 import styles from "./ward-chrome-header.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * The board-freshness sentence, from `rollupFreshness`'s own three-arm union
@@ -121,7 +122,7 @@ export function WardChromeHeader() {
       setTasksOpen(false);
       router.push(
         href ??
-          `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+          `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
     },
     [router],
