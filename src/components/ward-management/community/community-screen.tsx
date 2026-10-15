@@ -3780,7 +3780,14 @@ export function CommunityScreen({
                                 key={egr.id}
                                 data-status={isContacted ? "completed" : egr.status}
                                 data-pt-id={egr.patientId}
+                                tabIndex={0}
                                 onClick={() => {
+                                  setSelectedPatientId(egr.patientId);
+                                  setActiveDrawer("pxDrawer");
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key !== "Enter" && event.key !== " ") return;
+                                  event.preventDefault();
                                   setSelectedPatientId(egr.patientId);
                                   setActiveDrawer("pxDrawer");
                                 }}
