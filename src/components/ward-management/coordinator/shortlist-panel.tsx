@@ -29,6 +29,8 @@ import {
   wardRequestWithdrawalReasonLabels,
   type WardRequestWithdrawalReason,
   wardIntakeConstraintLabels,
+  REFERRAL_CAP_REASONS,
+  type ReferralCapReason,
 } from "@/components/ward-management/ward-change-reasons";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
@@ -439,6 +441,9 @@ export function ShortlistPanel({
   const isPhone = useIsPhone();
   const nextWardOn = useWardFeatureFlag("top25-next-ward");
   const preMatchCleaningOn = useWardFeatureFlag("top25-prematch-cleaning");
+  // Top 25 item 2: past the cap, Refer here warns and asks for a reason instead of stopping the pick.
+  // The referral sheet path (`onRefer`) keeps its own checks.
+  const capWarns = useWardFeatureFlag("top25-referral-cap") && !onRefer;
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
   const flowContext = useContext(WardFlowContext);
@@ -573,6 +578,7 @@ export function ShortlistPanel({
   // this state — see `toggleReferTarget` and the candidate list below. `REFER_TO_UNITS` now unions
   // whatever this dispatches with the movement's own live list, so re-referring can only ever ADD.
   const [referTargets, setReferTargets] = useState<string[]>([]);
+  const [capReason, setCapReason] = useState<ReferralCapReason | "">("");
   // RA1 (item 18): which live ward's "Withdraw this request" form is open, and the reason chosen
   // in it. Mirrors `releasePullOpen`/`releasePullReason` above — the form only ever renders for a
   // ward that is genuinely live, so it can never advertise an action the reducer would refuse.
@@ -796,7 +802,15 @@ export function ShortlistPanel({
     // R7 (25 September 2026): any gender or recorded sex other than female or male, not only non-binary.
     genderReviewNeeded(movement.gender, movement.sex) &&
     referTargets.some((unitId) => !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(unitId)));
-  const canRefer = hasReferSelection && allSelectedReferable && referralBlocked === undefined && !needsGenderPlacement;
+  const wardsAskedAfterSend = liveUnitIds.length + referTargets.length;
+  const overReferralCap = capWarns && wardsAskedAfterSend > parallelReferralCap;
+  const capReasonMissing = overReferralCap && capReason === "";
+  const canRefer =
+    hasReferSelection &&
+    allSelectedReferable &&
+    referralBlocked === undefined &&
+    !needsGenderPlacement &&
+    !capReasonMissing;
   // Override deliberately carries only the explicit-selection guard, NOT the stage guard above.
   // It is the "a human decided to try anyway, with a stated reason" path — for an ineligible
   // candidate (its original purpose) and, now, for a non-referable stage too. Its own success
@@ -816,9 +830,11 @@ export function ShortlistPanel({
       ? "Choose at least one candidate ward before referring — nothing is referred against a default."
       : needsGenderPlacement
         ? GENDER_PLACEMENT_REFUSAL
-        : firstIneligibleSelected
-          ? `Not eligible — ${candidateReason(firstIneligibleSelected.verdict)}. Use Override instead.`
-          : "Eligibility could not be determined for one of the selected wards.";
+        : capReasonMissing
+          ? "Choose a reason for asking more wards than usual."
+          : firstIneligibleSelected
+            ? `Not eligible — ${candidateReason(firstIneligibleSelected.verdict)}. Use Override instead.`
+            : "Eligibility could not be determined for one of the selected wards.";
   const overrideUnavailableReason =
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
@@ -841,7 +857,7 @@ export function ShortlistPanel({
     if (liveUnitIds.includes(unitId)) return;
     setReferTargets((current) => {
       if (current.includes(unitId)) return current.filter((id) => id !== unitId);
-      if (liveUnitIds.length + current.length >= parallelReferralCap) return current;
+      if (!capWarns && liveUnitIds.length + current.length >= parallelReferralCap) return current;
       return [...current, unitId];
     });
   }
@@ -860,7 +876,15 @@ export function ShortlistPanel({
       return;
     }
     if (!canRefer) return;
-    dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    dispatch({
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now,
+      movementId,
+      unitIds: [...referTargets],
+      ...(overReferralCap && capReason ? { overCapReason: capReason } : {}),
+    });
+    setCapReason("");
     setOverrideOpen(false);
   }
 
@@ -893,6 +917,7 @@ export function ShortlistPanel({
       unitIds: [...referTargets],
       genderPlacementReason: reason as GenderPlacementReason,
       genderPlacementChecked: true,
+      ...(overReferralCap && capReason ? { overCapReason: capReason } : {}),
     });
     setGenderPlacementReason("");
     setGenderPlacementChecked(false);
@@ -1800,6 +1825,25 @@ export function ShortlistPanel({
               </p>
             ) : null}
 
+            {overReferralCap ? (
+              <div data-testid="shortlist-referral-cap-warning">
+                <p role="status">
+                  This asks {wardsAskedAfterSend} wards at once, more than the usual {parallelReferralCap}. Choose a
+                  reason to go ahead.
+                </p>
+                <label>
+                  Reason for asking more wards
+                  <select value={capReason} onChange={(e) => setCapReason(e.target.value as ReferralCapReason | "")}>
+                    <option value="">Choose reason</option>
+                    {REFERRAL_CAP_REASONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
             <div className={styles.shortlistActionRow}>
               {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
               ward to refer" and takes the person to the fits list; nothing is referred against a
