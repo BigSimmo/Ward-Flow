@@ -1619,6 +1619,7 @@ export function ResultsSection({
             Movement filters only; people and waiting referrals are unchanged.
           </p>
 
+          {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
           <div
             className={styles.showFacets}
             role="tablist"

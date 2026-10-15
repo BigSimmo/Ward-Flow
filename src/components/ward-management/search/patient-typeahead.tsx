@@ -534,6 +534,7 @@ function PatientOption({
   const referralLine = referral ? referralLineText(referralState(referral), referral.id) : null;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- combobox option: the input handles the keys through aria-activedescendant
     <li
       id={domId}
       role="option"

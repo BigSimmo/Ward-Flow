@@ -1023,6 +1023,7 @@ export function WardGlobalSearch({
         data-testid="ward-global-search-scrim"
         onMouseDown={() => close()}
       />
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div
         ref={paletteRef}
         className={styles.popup}

@@ -1105,12 +1105,7 @@ export function WardHomeTab({
         </div>
         <div className={styles.flowBody}>
           <div className={styles.flowPane} data-active={flowTab === "referrals"}>
-            <section
-              id="ward-awaiting-answer"
-              aria-label="Awaiting your answer"
-              className={styles.awaitingCard}
-              tabIndex={0}
-            >
+            <section id="ward-awaiting-answer" aria-label="Awaiting your answer" className={styles.awaitingCard}>
               <div className={styles.groupHead}>
                 <h3 id="ward-awaiting-heading" className={styles.groupTitle}>
                   {presentation === "answer" ? "Bed request" : "Awaiting your answer"}

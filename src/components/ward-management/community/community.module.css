@@ -2801,6 +2801,17 @@ button.searchBox:hover {
   outline-offset: 2px;
 }
 
+.refOpen {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
 .patientIdWrap {
   white-space: nowrap !important;
   font-family: var(--mono);

@@ -334,6 +334,7 @@ export function WardMhaCalculator({
       </header>
 
       {/* Mode Selector Tabs with Official Titles Only */}
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
       <div
         role="tablist"
         aria-label="Statutory form selection"

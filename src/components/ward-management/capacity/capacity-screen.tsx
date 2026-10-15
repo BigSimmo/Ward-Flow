@@ -1945,6 +1945,7 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
           {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
         </p>
       </div>
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div
         id="capacity-ward-panel"
         role="tabpanel"

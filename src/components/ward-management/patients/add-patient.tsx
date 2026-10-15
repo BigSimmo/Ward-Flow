@@ -737,6 +737,7 @@ export function AddPatientForm() {
         )}
 
         <div className={styles.layout}>
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
           <form
             className={styles.form}
             onSubmit={handleSubmit}

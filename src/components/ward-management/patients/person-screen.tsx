@@ -351,6 +351,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
                 </section>
               </div>
 
+              {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div className={styles.tabList} role="tablist" aria-label="The record" onKeyDown={onRecordTabsKeyDown}>
                 {RECORD_TABS.map((tab) => (
                   <button

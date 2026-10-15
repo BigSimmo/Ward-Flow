@@ -3489,6 +3489,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
         {/* ─── Confirmation Modal (Confirm Capacity Figures) ───────────── */}
         {confirmNumbersOpen ? (
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
           <div
             className={`${styles.modalOverlay} ${styles.show}`}
             onClick={closeCapacityModal}
@@ -3497,6 +3498,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             aria-labelledby="modal-capacity-title"
             aria-describedby="modal-capacity-desc"
           >
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={capacityModalRef}
               className={styles.modalBox}

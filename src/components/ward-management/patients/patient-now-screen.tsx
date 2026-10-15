@@ -1689,6 +1689,7 @@ export function PatientNowScreen({
 
   /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
   const recordTabs = (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
       {(isPhone ? phoneTabs : tabs).map((tab) => (
         <button
@@ -2196,7 +2197,7 @@ export function PatientNowScreen({
         {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
 
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
-          <div className={styles.v6TabBody} id="pnBody" tabIndex={0}>
+          <div className={styles.v6TabBody} id="pnBody">
             {/* Tab 1: NOW. Only what is true at this moment: the status card, the work for this mode,
                 then why they are here, legal now and who to call. */}
             <div
@@ -2336,6 +2337,7 @@ export function PatientNowScreen({
       </div>
 
       {showClearanceModal && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
         <div
           className={styles.clearanceModalBackdrop}
           role="dialog"

@@ -419,6 +419,7 @@ export function Sheet({
   const hasSmallScreenMaxHeight = contentClassTokens.some((token) => /^sm:!?max-h-/.test(token));
 
   const sheet = (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
     <div
       ref={setBackdropRef}
       className={cn(

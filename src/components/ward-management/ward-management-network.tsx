@@ -597,6 +597,7 @@ export function WardNetworkWorkspace() {
   }
 
   const viewTabs = (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
       <button
         type="button"
@@ -1394,6 +1395,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
           className={styles.shortlistPanel}
           aria-label={selectedReferral ? "Referral placement" : "Placement"}
           aria-live="polite"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
           tabIndex={0}
         >
           {selectedReferral ? (
