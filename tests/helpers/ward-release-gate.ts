@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, type TestInfo } from "playwright/test";
 
+import { escapeForRegExp } from "./ward-place-names";
+
 /**
  * Shared steps for the four release-gate journeys (`tests/release-gate-journeys.spec.ts`).
  *
@@ -49,11 +51,6 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
     )
     .join("\n");
   expect(blocking, `serious or critical accessibility violations at "${step}":\n${summary}`).toEqual([]);
-}
-
-/** Ward names carry brackets and dots, for example "Maali (Ward 4.2) — open". */
-export function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
 /** True on the phone release-gate project (390px wide), where the header Menu replaces the rail. */
@@ -183,10 +180,7 @@ export async function openWardList(page: Page, list: "Admissions" | "Discharges"
   await openWardFlow(page, list);
   const button = list === "Admissions" ? "All arrivals" : "All discharges";
   await page.getByRole("button", { name: button, exact: true }).click();
-  await expect(page.locator(list === "Admissions" ? "#tab-coming" : "#tab-out")).toHaveAttribute(
-    "data-active",
-    "true",
-  );
+  await expect(page.locator(list === "Admissions" ? "#tab-coming" : "#tab-out")).toHaveAttribute("data-active", "true");
 }
 
 /**
@@ -248,7 +242,7 @@ export async function capacityReady(page: Page, unitId: string, unitName: string
   if (isPhoneLayout(page)) {
     const wards = page.getByRole("radio", { name: /^Wards/u });
     if ((await wards.getAttribute("aria-checked")) !== "true") await wards.click();
-    const strip = page.getByRole("img", { name: new RegExp(`^${escapeRegExp(unitName)}: `, "u") }).first();
+    const strip = page.getByRole("img", { name: new RegExp(`^${escapeForRegExp(unitName)}: `, "u") }).first();
     await expect(strip).toBeVisible();
     const match = /: (\d+) ready/u.exec((await strip.getAttribute("aria-label")) ?? "");
     return match ? Number(match[1]) : 0;

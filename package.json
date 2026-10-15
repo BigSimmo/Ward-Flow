@@ -59,6 +59,7 @@
     "test:e2e:quarantine": "node scripts/run-playwright.mjs --project=chromium --grep @quarantine --pass-with-no-tests",
     "test:e2e:mockups": "node scripts/run-playwright.mjs --project=chromium-mockups",
     "test:e2e:ward-journeys": "node scripts/run-playwright.mjs --project=chromium-mockups ui-ward-",
+    "test:e2e:release-gate": "node scripts/run-playwright.mjs --project=release-gate-desktop --project=release-gate-phone",
     "test:e2e:advisory": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups --grep \"@quarantine|@mockup\" --pass-with-no-tests",
     "test:e2e:chromium": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups",
     "worktrees:report": "node scripts/clean-worktree.mjs",

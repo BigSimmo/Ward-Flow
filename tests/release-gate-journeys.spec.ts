@@ -5,7 +5,6 @@ import { bedReleases, wardMovements } from "@/components/ward-management/ward-mo
 
 import {
   capacityReady,
-  escapeRegExp,
   expectAccessible,
   expectNoReloadSince,
   goToDesk,
@@ -19,6 +18,7 @@ import {
   wardDesk,
   wardFigure,
 } from "./helpers/ward-release-gate";
+import { escapeForRegExp } from "./helpers/ward-place-names";
 
 /**
  * The release gate: four core bed-flow journeys that must pass before a change ships.
@@ -252,7 +252,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
-      .getByRole("button", { name: new RegExp(`^${escapeRegExp(unitName)}`, "u") })
+      .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
       .first()
       .click();
     await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
