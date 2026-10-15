@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -50,7 +50,8 @@ function screenFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) return screenFiles(path);
-    return entry.name.endsWith(".tsx") ? [path] : [];
+    // The baseline keys use forward slashes, so match them on Windows too.
+    return entry.name.endsWith(".tsx") ? [path.split(sep).join("/")] : [];
   });
 }
 
