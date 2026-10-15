@@ -15,7 +15,6 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
