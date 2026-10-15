@@ -220,7 +220,9 @@ describe("RAISE_REFERRAL refuses a link it cannot resolve", () => {
     expect(after.movements).toHaveLength(seeded.movements.length);
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0].attempted).toBe("RAISE_REFERRAL");
-    expect(after.rejections[0].reason).toContain("RF-QQQ");
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(after.rejections[0].reason).not.toContain("RF-QQQ");
+    expect(after.rejections[0].reason).toContain("this referral");
   });
 
   it("refuses a referral addressed to a different emergency department", () => {
@@ -234,7 +236,9 @@ describe("RAISE_REFERRAL refuses a link it cannot resolve", () => {
     expect(after.movements).toHaveLength(referred.movements.length);
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0].attempted).toBe("RAISE_REFERRAL");
-    expect(after.rejections[0].reason).toContain(referral.id);
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(after.rejections[0].reason).not.toContain(referral.id);
+    expect(after.rejections[0].reason).toContain("this referral");
   });
 
   it("still accepts the same referral at the department it WAS addressed to", () => {
@@ -459,7 +463,9 @@ describe("RECORD_NO_REFERRAL records that nobody referred this patient", () => {
     });
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0].attempted).toBe("RECORD_NO_REFERRAL");
-    expect(after.rejections[0].reason).toContain(referral.id);
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(after.rejections[0].reason).not.toContain(referral.id);
+    expect(after.rejections[0].reason).toContain("this referral");
     // Visibly refused AND unchanged — a rejection that still wrote the field would pass the line
     // above on its own.
     expect(after.movements.find((candidate) => candidate.id === movement.id)!.referralAbsence).toBeUndefined();

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { createPatientResolver, resolveSubjectPatient } from "../src/components/ward-management/ward-patient-resolver";
+import {
+  createPatientResolver,
+  patientIdentityLine,
+  resolveSubjectPatient,
+} from "../src/components/ward-management/ward-patient-resolver";
+import { formatUmrn } from "../src/components/ward-management/ward-patients";
 import { wardPatients as patients } from "../src/components/ward-management/ward-patients-seed";
 import { wardMovements, referrals } from "../src/components/ward-management/ward-movements";
 
@@ -52,10 +57,10 @@ describe("ward-patient-resolver", () => {
     expect(resolved.patient).toBe(target);
   });
 
-  it("fails closed to Unknown Patient on duplicate patient IDs in state", () => {
+  it("fails closed to Name not recorded on duplicate patient IDs in state", () => {
     const duplicateList = [patients[0], patients[0]];
     const resolved = resolveSubjectPatient({ patientId: patients[0].id }, { patients: duplicateList });
-    expect(resolved.displayName).toBe("Unknown Patient");
+    expect(resolved.displayName).toBe("Name not recorded");
     expect(resolved.patient).toBeUndefined();
   });
 
@@ -67,7 +72,7 @@ describe("ward-patient-resolver", () => {
     };
     // Conflicting: patientId points to patients[1] while referral points to patients[0]
     const resolved = resolveSubjectPatient({ patientId: patients[1].id, referralId: conflictingReferral.id }, state);
-    expect(resolved.displayName).toBe("Unknown Patient");
+    expect(resolved.displayName).toBe("Name not recorded");
     expect(resolved.patient).toBeUndefined();
   });
 
@@ -90,10 +95,29 @@ describe("ward-patient-resolver", () => {
     expect(first).toBe(second); // Exact cached reference from index
   });
 
-  it("returns Unknown Patient safely for null, undefined, or missing subjects", () => {
+  it("returns Name not recorded safely for null, undefined, or missing subjects", () => {
     const state = { patients };
-    expect(resolveSubjectPatient(null, state).displayName).toBe("Unknown Patient");
-    expect(resolveSubjectPatient(undefined, state).displayName).toBe("Unknown Patient");
-    expect(resolveSubjectPatient({ patientId: "PT-999" }, state).displayName).toBe("Unknown Patient");
+    expect(resolveSubjectPatient(null, state).displayName).toBe("Name not recorded");
+    expect(resolveSubjectPatient(undefined, state).displayName).toBe("Name not recorded");
+    expect(resolveSubjectPatient({ patientId: "PT-999" }, state).displayName).toBe("Name not recorded");
+  });
+
+  it("writes one identity line, with a placeholder for each missing part (D-39)", () => {
+    const patientAlpha = patients[0];
+    const resolved = resolveSubjectPatient({ patientId: patientAlpha.id }, { patients });
+    expect(patientIdentityLine(resolved)).toBe(
+      `${patientAlpha.familyName}, ${patientAlpha.givenName} · ${patientAlpha.umrn}`,
+    );
+    expect(patientIdentityLine(resolveSubjectPatient(null, { patients }))).toBe(
+      "Name not recorded · UMRN not recorded",
+    );
+    expect(patientIdentityLine({ formalName: ", ", umrn: "" })).toBe("Name not recorded · UMRN not recorded");
+  });
+
+  it("labels a UMRN once, and says when none is recorded", () => {
+    expect(formatUmrn("UM100047")).toBe("UMRN UM100047");
+    expect(formatUmrn("UMRN UM100047")).toBe("UMRN UM100047");
+    expect(formatUmrn("")).toBe("UMRN not recorded");
+    expect(formatUmrn("UMRN not recorded")).toBe("UMRN not recorded");
   });
 });
