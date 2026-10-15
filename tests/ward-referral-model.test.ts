@@ -649,6 +649,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     DISPATCH_BROADCAST_ALERT: false,
     ACKNOWLEDGE_BROADCAST_ALERT: false,
     STAND_DOWN_BROADCAST_ALERT: false,
+    EXTEND_BROADCAST_ALERT: false,
     // Global alerts (10 Oct 2026). Raising asks wards to pull sooner. A ward's "Can't" answers
     // when it can pull, never whether: it leaves the acceptance and the referral as they were, and
     // no ED can send either event.
@@ -1868,7 +1869,7 @@ describe("the patient link is a pointer, and the guard still refuses everything 
     const rejection = after.rejections[after.rejections.length - 1];
     expect(rejection?.attempted, "the rejection recorded is not the RECEIVE_REFERRAL attempt").toBe("RECEIVE_REFERRAL");
     expect(rejection?.reason).toBe(
-      `RECEIVE_REFERRAL patientId must name a patient this system already holds, and ${fabricatedId} names none`,
+      "RECEIVE_REFERRAL patientId must name a patient this system already holds, and this patient names none",
     );
   });
 });
