@@ -9,7 +9,7 @@ const UNIT = "unit-under-test";
 function bareMovement(): Movement {
   const movement = seedWardFlowStateAt(0).movements[0];
   if (!movement) throw new Error("expected a seeded movement");
-  return { ...movement, waitlistedUnitIds: [], declines: [], withdrawnReferrals: [] };
+  return { ...movement, referredUnitIds: [], waitlistedUnitIds: [], declines: [], withdrawnReferrals: [] };
 }
 
 describe("waitlistStands", () => {
@@ -43,6 +43,30 @@ describe("waitlistStands", () => {
       declines: [
         { unitId: UNIT, at: 1_000, reason: "no_bed" },
         { unitId: UNIT, at: 3_000, reason: "bed_pulled_for_earlier_referral" },
+      ],
+      withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
+    };
+    expect(waitlistStands(movement, UNIT)).toBe(true);
+  });
+
+  it("ends when the withdrawal lands in the same minute as the waitlist answer", () => {
+    const movement: Movement = {
+      ...bareMovement(),
+      waitlistedUnitIds: [UNIT],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      withdrawnReferrals: [{ unitId: UNIT, at: 1_000, reason: "coordinator_withdrew" }],
+    };
+    expect(waitlistStands(movement, UNIT)).toBe(false);
+  });
+
+  it("holds when a same minute waitlist answer leaves the referral live", () => {
+    const movement: Movement = {
+      ...bareMovement(),
+      referredUnitIds: [UNIT],
+      waitlistedUnitIds: [UNIT],
+      declines: [
+        { unitId: UNIT, at: 1_000, reason: "no_bed" },
+        { unitId: UNIT, at: 2_000, reason: "no_bed" },
       ],
       withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
     };
