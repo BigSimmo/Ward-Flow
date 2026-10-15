@@ -107,6 +107,7 @@ export const SUPERSEDED = ["patient-search-console.html", "patient-search-workin
 export const ROUTE_COMPONENTS = [
   { route: "/", folder: "coordinator", react: "coordinator/coordinator-screen.tsx" },
   { route: "/alerts", folder: "alerts", react: "alerts/alerts-screen.tsx" },
+  { route: "/bed-meeting", folder: "bed-meeting", react: "bed-meeting/bed-meeting-tv.tsx" },
   { route: "/board/[unitId]", folder: "board", react: "board/ward-board.tsx" },
   { route: "/capacity", folder: "capacity", react: "capacity/capacity-screen.tsx" },
   { route: "/command", folder: "coordinator", react: null },
