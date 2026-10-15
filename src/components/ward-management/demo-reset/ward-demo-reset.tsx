@@ -1,6 +1,9 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
+import { useState } from "react";
+
+import { Button } from "@/components/wf";
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -21,14 +24,19 @@ import styles from "./ward-demo-reset.module.css";
  * same event the demo clock menu uses, so it works the same way on this device and in the shared
  * workspace, and the generated network (`ward-demo-network.ts`) is the only source of the data.
  * It is a demo tool, never a clinical action, and it says so. Behind the `demo-reset` flag.
+ *
+ * A choice asks once before it loads (15 Oct 2026, review): in the shared workspace a stray tap
+ * would replace everyone's demo data mid demonstration, and there is no undo.
  */
 export function WardDemoReset({ className, headingClassName }: { className?: string; headingClassName?: string }) {
   const enabled = useWardFeatureFlag("demo-reset");
   const { scenario, dispatch } = useWardFlow();
   const now = useWardFlowClock();
+  const [pending, setPending] = useState<WardScenario | null>(null);
   if (!enabled) return null;
 
   function load(next: WardScenario) {
+    setPending(null);
     dispatch({ type: "SET_SCENARIO", role: "demo", now, scenario: next });
     announceToWardShell(`${scenarioLabels[next]} loaded. Synthetic demo data only.`);
   }
@@ -55,7 +63,7 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
               data-testid={`ward-demo-reset-${choice}`}
               aria-describedby={`ward-demo-reset-${choice}-note`}
               aria-pressed={loaded}
-              onClick={() => load(choice)}
+              onClick={() => setPending(choice)}
             >
               <strong>{scenarioLabels[choice]}</strong>
               <span id={`ward-demo-reset-${choice}-note`}>{scenarioDescriptions[choice]}</span>
@@ -64,6 +72,22 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
           );
         })}
       </div>
+      {pending ? (
+        <div
+          className={styles.confirm}
+          role="group"
+          aria-label="Confirm demo reset"
+          data-testid="ward-demo-reset-confirm"
+        >
+          <p>Load {scenarioLabels[pending]}? This replaces the demo data for everyone in this workspace.</p>
+          <Button variant="pri" size="sm" onClick={() => load(pending)} data-testid="ward-demo-reset-confirm-load">
+            Load {scenarioLabels[pending]}
+          </Button>
+          <Button size="sm" onClick={() => setPending(null)}>
+            Cancel
+          </Button>
+        </div>
+      ) : null}
     </section>
   );
 }

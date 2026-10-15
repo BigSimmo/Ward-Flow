@@ -220,7 +220,7 @@ function ScenarioProbe() {
 }
 
 describe("the one tap demo reset", () => {
-  it("loads each scenario through the shared reducer in one tap", () => {
+  it("loads each scenario through the shared reducer after one confirm", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardDemoReset />
@@ -232,10 +232,30 @@ describe("the one tap demo reset", () => {
       ["ward-demo-reset-ed-crisis", "ed-crisis"],
       ["ward-demo-reset-quiet-day", "quiet-day"],
     ] as const) {
+      const before = screen.getByTestId("scenario").textContent;
       fireEvent.click(screen.getByTestId(testId));
+      // It asks first: the shared workspace has no undo.
+      expect(screen.getByTestId("scenario")).toHaveTextContent(before ?? "");
+      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent("replaces the demo data for everyone");
+      fireEvent.click(screen.getByTestId("ward-demo-reset-confirm-load"));
+      expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();
       expect(screen.getByTestId("scenario")).toHaveTextContent(scenario);
       expect(screen.getByTestId(testId)).toHaveAttribute("aria-pressed", "true");
     }
+  });
+
+  it("changes nothing when the reset is cancelled", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ScenarioProbe />
+        <WardDemoReset />
+      </WardFlowProvider>,
+    );
+    const before = screen.getByTestId("scenario").textContent;
+    fireEvent.click(screen.getByTestId("ward-demo-reset-ed-crisis"));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();
+    expect(screen.getByTestId("scenario").textContent).toBe(before);
   });
 
   it("is absent while its flag is off", () => {
