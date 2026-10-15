@@ -418,10 +418,10 @@ describe("ReferralBoard", () => {
     // displace RF-012/RF-013/RF-010/RF-RGHS-01 off the visible cap entirely.
     openHistory();
     const table = screen.getByTestId("ward-referral-board-decided-table");
-    const ids = within(table)
-      .getAllByRole("row")
-      .slice(1)
-      .map((row) => row.querySelector("td")?.textContent);
+    const rows = within(table).getAllByRole("row").slice(1);
+    // D-39: the first cell names the person by UMRN; the referral number stays in the test id only.
+    for (const row of rows) expect(row.querySelector("td")?.textContent).not.toMatch(/RF-/);
+    const ids = rows.map((row) => row.getAttribute("data-testid")?.replace("ward-referral-board-decided-row-", ""));
     expect(ids).toEqual([
       "RF-006",
       "RF-007",
@@ -490,7 +490,9 @@ describe("ReferralBoard", () => {
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-001"));
     const panel = screen.getByTestId("ward-referral-match-panel");
     expect(panel).toBeInTheDocument();
-    expect(panel).toHaveTextContent("RF-001");
+    // D-39: the panel names the person by UMRN, never by the referral number.
+    expect(panel).not.toHaveTextContent("RF-001");
+    expect(panel).toHaveTextContent(/UMRN (UM\d{6}|not recorded)/);
   });
 
   /**

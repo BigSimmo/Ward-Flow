@@ -142,13 +142,13 @@ describe("every seeded person links to a real patient (audit T8, expected red un
     expect(patients.length, "no patients in the seed").toBeGreaterThan(0);
   });
 
-  it("resolves every movement to a real patient, never 'Unknown Patient'", () => {
+  it("resolves every movement to a real patient, never 'Name not recorded'", () => {
     const unknown = movements.filter(
-      (movement) => resolveSubjectPatient(movement, state).displayName === "Unknown Patient",
+      (movement) => resolveSubjectPatient(movement, state).displayName === "Name not recorded",
     );
     expect(
       unknown.map((movement) => movement.id),
-      `${unknown.length} of ${movements.length} movements resolve to 'Unknown Patient': ${firstTen(unknown.map((movement) => movement.id))}`,
+      `${unknown.length} of ${movements.length} movements resolve to 'Name not recorded': ${firstTen(unknown.map((movement) => movement.id))}`,
     ).toEqual([]);
   });
 
@@ -201,12 +201,7 @@ describe("every seeded person links to a real patient (audit T8, expected red un
 
     for (const movement of movements) {
       const patient = resolveSubjectPatient(movement, state).patient;
-      if (
-        patient &&
-        isRecorded(movement.gender) &&
-        isRecorded(patient.gender) &&
-        movement.gender !== patient.gender
-      ) {
+      if (patient && isRecorded(movement.gender) && isRecorded(patient.gender) && movement.gender !== patient.gender) {
         mismatches.push(`${movement.id} (record ${movement.gender} vs patient ${patient.gender})`);
       }
     }
@@ -246,9 +241,10 @@ describe("every seeded person links to a real patient (audit T8, expected red un
 
   it("never puts one patient on two open records at two different sites", () => {
     const conflicts = openRecordConflicts(state);
-    expect(conflicts, `${conflicts.length} patients on open records at conflicting sites: ${firstTen(conflicts)}`).toEqual(
-      [],
-    );
+    expect(
+      conflicts,
+      `${conflicts.length} patients on open records at conflicting sites: ${firstTen(conflicts)}`,
+    ).toEqual([]);
   });
 
   /**

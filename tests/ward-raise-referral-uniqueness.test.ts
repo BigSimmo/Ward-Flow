@@ -203,7 +203,9 @@ describe("RAISE_REFERRAL refuses a journey from an addressing that can no longer
 
     const raised = raiseJourney(withdrawn, referral.id);
     expect(raised.rejections).toHaveLength(1);
-    expect(raised.rejections[0].reason).toContain(referral.id);
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(raised.rejections[0].reason).not.toContain(referral.id);
+    expect(raised.rejections[0].reason).toContain("this referral");
     expect(raised.movements).toHaveLength(withdrawn.movements.length);
   });
 
@@ -225,7 +227,9 @@ describe("RAISE_REFERRAL refuses a journey from an addressing that can no longer
 
     const raised = raiseJourney(declined, referral.id);
     expect(raised.rejections).toHaveLength(1);
-    expect(raised.rejections[0].reason).toContain(referral.id);
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(raised.rejections[0].reason).not.toContain(referral.id);
+    expect(raised.rejections[0].reason).toContain("this referral");
     expect(raised.movements).toHaveLength(declined.movements.length);
   });
 });

@@ -30,6 +30,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /** Raises the same `ADVANCE_CLOCK` demo event the real demo controls dispatch, so this suite can
  * move the shared clock without reaching into the reducer directly — mirrors `ClockAdvancer` in
@@ -162,7 +163,7 @@ describe("PatientSearchPage", () => {
     expect(within(results).queryByText("WF-003")).not.toBeInTheDocument();
 
     const link = within(results).getByRole("link", { name: "Open" });
-    expect(link).toHaveAttribute("href", "/mockups/ward-flow/movements/WF-003");
+    expect(link).toHaveAttribute("href", movementHref("WF-003"));
   });
 
   it('renders the explicit "No matches" note — never a bare empty table — for a query nothing fits', () => {

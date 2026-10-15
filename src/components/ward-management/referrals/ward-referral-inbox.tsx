@@ -97,7 +97,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
         return (
           <article className={styles.refCard} key={entry.id}>
             <h3 className={styles.refCardTitle}>
-              {referralInboxName(entry, patient.displayName)} · {entry.id}
+              {referralInboxName(entry, patient.displayName)} · {patient.umrn}
             </h3>
             <p className={styles.refCardSubtitle}>
               {entry.withdrawnAt !== undefined

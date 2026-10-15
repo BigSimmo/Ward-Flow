@@ -478,7 +478,7 @@ export function WardArrivalsCorridor({
           <h3>Transport stopped — release held bed</h3>
           {heldAfterStop.map((movement) => {
             const patient = resolvePatientIdentity(movement);
-            const patientDistinction = patient.umrn ? `(UMRN: ${patient.umrn})` : `(${movement.id})`;
+            const patientDistinction = patient.umrn ? `(UMRN: ${patient.umrn})` : "(UMRN not recorded)";
             return (
               <article key={movement.id} className={styles.inboundCard} data-state="warn">
                 <div className={styles.patientMeta}>

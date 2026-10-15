@@ -190,7 +190,7 @@ describe("RECORD_REFERRER_WITHDRAWAL scoped to community_team refuses a referral
       destinationKind: "community_team",
       reason: WARD_REQUEST_WITHDRAWAL_REASONS[0],
     });
-    expect(added(received, after)).toEqual([`referral ${referral.id} was not addressed to a community team`]);
+    expect(added(received, after)).toEqual(["this referral was not addressed to a community team"]);
 
     // CONTROL: the identical event against a referral that DOES carry a community_team arm is
     // accepted — proving the refusal above is genuinely about the missing arm.
@@ -235,7 +235,7 @@ describe("RECORD_REFERRER_WITHDRAWAL scoped to community_team refuses a second w
     // The second withdrawal of the SAME arm is refused with the "already withdrawn" wording.
     const secondWithdrawal = wardFlowReducer(firstWithdrawal, { ...withdrawEvent, now: NOW + 20 });
     expect(added(firstWithdrawal, secondWithdrawal)).toEqual([
-      `the community team on referral ${referral.id} was already withdrawn`,
+      "the community team on this referral was already withdrawn",
     ]);
   });
 });
@@ -266,7 +266,7 @@ describe("RECORD_REFERRER_WITHDRAWAL scoped to community_team refuses an arm tha
       reason: WARD_REQUEST_WITHDRAWAL_REASONS[0],
     });
     expect(added(declined, after)).toEqual([
-      `the community team on referral ${referral.id} has already answered (declined), so its arm cannot be withdrawn`,
+      "the community team on this referral has already answered (declined), so its arm cannot be withdrawn",
     ]);
 
     // CONTROL: the identical withdrawal against the STILL-QUEUED arm (before the decline above) is
