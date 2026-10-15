@@ -210,10 +210,11 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 `ward-discharge-board.dom.test.tsx`, `ward-discharge-column-contract.dom.test.tsx`,
 `ward-refinement-discharge-ui.dom.test.tsx`, plus repo-wide guards.
 
-- **`src/components/ward-management/discharges/discharge-board.tsx`** (1444 lines) — the discharge
-  ledger: exports `DischargeGroups` type, `groupDischarges` (114), the `DischargeBoard` screen
-  (253), and `DischargeGroupSection` (1284). Under the 1,500-line threshold so no forced outline,
-  but note it is close to it.
+- **`src/components/ward-management/discharges/discharge-board.tsx`** (934 lines) — the discharge
+  ledger: exports `DischargeGroups` type, `groupDischarges`, the `DischargeBoard` screen and
+  `DischargeGroupSection`. Split on 15 Oct 2026 (fix list 2.5) with no change to markup:
+  `discharge-board-model.ts`, `discharge-board-parts.tsx`, `use-discharge-workspace-state.tsx`,
+  `discharge-board-filters.tsx` and `discharge-detail-panes.tsx`.
 - **`src/components/ward-management/discharges/discharges-third-edition.module.css`** (1033 lines)
   — third-edition styles, imported alongside the plain module below.
 - **`src/components/ward-management/discharges/discharges.module.css`** (468 lines) — base styles;
