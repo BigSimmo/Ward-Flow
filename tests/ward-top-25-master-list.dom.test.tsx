@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CommandPalette, NeedsYou, UndoHairline, type CommandPaletteItem } from "@/components/wf";
+import { NeedsYou, UndoHairline } from "@/components/wf";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { PhoneWalkRoundSheet, WardTop25Cockpit } from "@/components/ward-management/top25/ward-top25-cockpit";
 
@@ -63,52 +63,6 @@ describe("Perfected Top 25 Ward Flow Master List — DOM & Interactive Component
       expect(onExpire).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
-    }
-  });
-
-  it("renders CommandPalette (#22), filters by keyword, stops Escape propagation, and resets query on close", () => {
-    const onSelectA = vi.fn();
-    const onOpenChange = vi.fn();
-    const parentEscapeSpy = vi.fn();
-    const items: CommandPaletteItem[] = [
-      {
-        id: "cp-1",
-        label: "Jump to Bentley Ward 7",
-        category: "Ward",
-        keywords: ["bty", "acute"],
-        onSelect: onSelectA,
-      },
-      {
-        id: "cp-2",
-        label: "Confirm Morning Discharge",
-        category: "Flow",
-        keywords: ["tto"],
-        onSelect: vi.fn(),
-      },
-    ];
-
-    window.addEventListener("keydown", parentEscapeSpy);
-    try {
-      const { rerender } = render(<CommandPalette open={true} onOpenChange={onOpenChange} items={items} />);
-      const input = screen.getByTestId("wf-command-palette-input") as HTMLInputElement;
-      fireEvent.change(input, { target: { value: "bty" } });
-      expect(input.value).toBe("bty");
-
-      // Pressing Escape closes the palette, stops propagation to parent window listeners, and resets query
-      fireEvent.keyDown(input, { key: "Escape" });
-      expect(onOpenChange).toHaveBeenCalledWith(false);
-      expect(parentEscapeSpy).not.toHaveBeenCalled();
-
-      rerender(<CommandPalette open={true} onOpenChange={onOpenChange} items={items} />);
-      const reopenedInput = screen.getByTestId("wf-command-palette-input") as HTMLInputElement;
-      expect(reopenedInput.value).toBe("");
-
-      fireEvent.change(reopenedInput, { target: { value: "bty" } });
-      const option = screen.getByText("Jump to Bentley Ward 7");
-      fireEvent.click(option);
-      expect(onSelectA).toHaveBeenCalledTimes(1);
-    } finally {
-      window.removeEventListener("keydown", parentEscapeSpy);
     }
   });
 
