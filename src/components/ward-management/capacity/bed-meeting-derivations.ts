@@ -64,7 +64,7 @@ export type BedMeetingDischarges = {
   moreRows: number;
 };
 
-export type BedMeetingEdRow = {
+type BedMeetingEdRow = {
   id: string;
   department: string;
   waiting: number;
@@ -72,9 +72,9 @@ export type BedMeetingEdRow = {
   detained: number;
 };
 
-export type BedMeetingEdPerson = { id: string; name: string; department: string; waitMinutes: number };
+type BedMeetingEdPerson = { id: string; name: string; department: string; waitMinutes: number };
 
-export type BedMeetingEd = {
+type BedMeetingEd = {
   waiting: number;
   detained: number;
   /** Waiting longer than `LONG_WAIT_MINUTES` — Josh's default (D-24), not a legal limit. */
@@ -84,11 +84,11 @@ export type BedMeetingEd = {
   morePeople: number;
 };
 
-export type BedMeetingDelayRow = { cause: DelayCause; title: string; count: number; longestWaitMinutes: number };
+type BedMeetingDelayRow = { cause: DelayCause; title: string; count: number; longestWaitMinutes: number };
 
-export type BedMeetingDelayPerson = { id: string; name: string; cause: string; waitMinutes: number };
+type BedMeetingDelayPerson = { id: string; name: string; cause: string; waitMinutes: number };
 
-export type BedMeetingDelays = {
+type BedMeetingDelays = {
   /** Every open movement that sits in a delay group. */
   total: number;
   /** Worst cause first — `delayGroups`' own ranking, never re-sorted here. */

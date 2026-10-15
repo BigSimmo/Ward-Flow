@@ -1,7 +1,4 @@
-import {
-  RATIFIED_SERVICE_ALIASES,
-  ratifiedSameServiceNames,
-} from "@/components/ward-management/community/community-ratified-aliases";
+import { ratifiedSameServiceNames } from "@/components/ward-management/community/community-ratified-aliases";
 import {
   type ReferenceTeamDetail,
   referenceTeamDetail,
@@ -221,6 +218,3 @@ export function contactDecisionFor(teamName: string): CommunityTeamContactMappin
   const sameService = new Set([wanted, ...ratifiedSameServiceNames(wanted)]);
   return COMMUNITY_TEAM_CONTACT_MAPPINGS.find((mapping) => sameService.has(mapping.teamName)) ?? null;
 }
-
-/** Non-vacuity support for tests: the ratified table this module leans on must be non-empty. */
-export const RATIFIED_GROUP_COUNT = RATIFIED_SERVICE_ALIASES.length;

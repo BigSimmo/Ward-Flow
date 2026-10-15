@@ -25,8 +25,8 @@ import {
   type SheetFocusController,
 } from "@/components/ui/sheet-focus";
 
-export type SheetMobileSize = "content" | "viewport";
-export type SheetMobileHeaderSafeArea = "none" | "padding" | "offset";
+type SheetMobileSize = "content" | "viewport";
+type SheetMobileHeaderSafeArea = "none" | "padding" | "offset";
 
 type SheetAccessibleName =
   | { title: string; labelledBy?: string; ariaLabel?: string }

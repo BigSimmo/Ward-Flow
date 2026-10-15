@@ -10,7 +10,7 @@ export type SharedSnapshot = {
   now: number;
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
 };
-export type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
+type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
 export type SharedView = {
   snapshot: SharedSnapshot | null;
   receivedAt: number;

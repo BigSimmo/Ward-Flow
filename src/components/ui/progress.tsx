@@ -60,7 +60,7 @@ export function Progress({ value, label, detail, className }: ProgressProps) {
   );
 }
 
-export type Stage = {
+type Stage = {
   id: string;
   label: string;
   state: "pending" | "active" | "done" | "failed";

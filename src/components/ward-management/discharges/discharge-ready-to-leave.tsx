@@ -13,7 +13,7 @@ import styles from "./discharge-ready-to-leave.module.css";
  * the demo (open for Josh: wording, and whether each item needs an owner and a time). Ticking is
  * page state only; it never changes a release, a record or the engine.
  */
-export const READY_TO_LEAVE_ITEMS = [
+const READY_TO_LEAVE_ITEMS = [
   { id: "crisis-plan", label: "Crisis plan" },
   { id: "medicines", label: "Medicines" },
   { id: "carer", label: "Patient and carer involved" },
@@ -25,7 +25,7 @@ export const READY_TO_LEAVE_ITEMS = [
  * S-29 (Josh, audit round 2): a person on a community treatment order gets one more line, the
  * community team or GP handover. It warns while open and never blocks the discharge.
  */
-export const CTO_HANDOVER_ITEM = { id: "cto-handover", label: "Community team or GP told" } as const;
+const CTO_HANDOVER_ITEM = { id: "cto-handover", label: "Community team or GP told" } as const;
 
 export type ReadyToLeaveItemId = (typeof READY_TO_LEAVE_ITEMS)[number]["id"] | typeof CTO_HANDOVER_ITEM.id;
 

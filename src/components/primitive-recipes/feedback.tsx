@@ -1,10 +1,6 @@
-import { Loader2, X, type LucideIcon } from "lucide-react";
+import { Loader2, type LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { cn, controlDisabled, textMuted, toneDanger, toneInfo, toneNeutral, toneSuccess, toneWarning } from "./recipes";
-
-const insetCard = "rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-inset)]";
-const iconTile =
-  "grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[color:var(--clinical-accent-soft)] text-[color:var(--clinical-accent)]";
+import { cn, controlDisabled, textMuted } from "./recipes";
 
 export type AsyncButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   busy: boolean;
@@ -63,58 +59,6 @@ export function IconButton({ label, icon: Icon, className, iconClassName, type, 
     >
       <Icon aria-hidden="true" className={cn("size-icon-md", iconClassName)} />
     </button>
-  );
-}
-
-export type NoticeTone = "success" | "warning" | "danger" | "info" | "neutral";
-
-export type InlineNoticeProps = {
-  tone: NoticeTone;
-  children: ReactNode;
-  onDismiss?: () => void;
-  dismissLabel?: string;
-  animated?: boolean;
-  className?: string;
-};
-
-function noticeToneClass(tone: NoticeTone) {
-  if (tone === "success") return toneSuccess;
-  if (tone === "danger") return toneDanger;
-  if (tone === "info") return toneInfo;
-  if (tone === "warning") return toneWarning;
-  return toneNeutral;
-}
-
-/**
- * Shared inline feedback banner used across surfaces (auth panel, action
- * notices, upload) so success/warning/error feedback looks and announces the
- * same everywhere. Success/info announce politely (role=status); warning/danger
- * assert (role=alert). Pass onDismiss to render a dismiss control.
- */
-export function InlineNotice({
-  tone,
-  children,
-  onDismiss,
-  dismissLabel = "Dismiss notification",
-  animated = false,
-  className,
-}: InlineNoticeProps) {
-  const assertive = tone === "danger" || tone === "warning";
-  return (
-    <div
-      role={assertive ? "alert" : "status"}
-      className={cn(
-        "flex items-start justify-between gap-3 rounded-xl border p-3 text-sm font-medium",
-        animated && "motion-safe:animate-fade-up",
-        noticeToneClass(tone),
-        className,
-      )}
-    >
-      <span className="min-w-0">{children}</span>
-      {onDismiss && (
-        <IconButton icon={X} label={dismissLabel} onClick={onDismiss} className="-m-2.5 opacity-70 hover:opacity-100" />
-      )}
-    </div>
   );
 }
 
@@ -202,87 +146,6 @@ export function ToggleSwitch({
 }
 
 type IconComponent = LucideIcon;
-
-export type PanelHeadingProps = {
-  icon?: IconComponent;
-  title: string;
-  description?: string;
-};
-
-export function PanelHeading({ icon: Icon, title, description }: PanelHeadingProps) {
-  return (
-    <div className="flex items-start gap-3">
-      {Icon && (
-        <span className={iconTile}>
-          <Icon aria-hidden="true" className="size-icon-md sm:size-icon-lg" />
-        </span>
-      )}
-      <div className="min-w-0">
-        <h2 className="text-base font-semibold text-[color:var(--text-heading)]">{title}</h2>
-        {description && <p className={cn("mt-1 text-sm leading-6", textMuted)}>{description}</p>}
-      </div>
-    </div>
-  );
-}
-
-export type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & { animationDelay?: string };
-
-export function Skeleton({ className, animationDelay, ...props }: SkeletonProps) {
-  return (
-    <div
-      className={cn(
-        "rounded-md bg-[color:var(--surface-subtle)] bg-no-repeat",
-        "bg-[length:200%_100%] bg-[linear-gradient(100deg,transparent_30%,color-mix(in_srgb,var(--surface-highlight)_72%,transparent)_50%,transparent_70%)]",
-        "motion-safe:animate-shimmer",
-        className,
-      )}
-      style={animationDelay ? { animationDelay } : undefined}
-      {...props}
-    />
-  );
-}
-
-export type LoadingPanelProps = {
-  label: string;
-  variant?: "spinner" | "skeleton";
-  lines?: number;
-  layout?: "panel" | "centered";
-};
-
-export function LoadingPanel({ label, variant = "spinner", lines = 3, layout = "panel" }: LoadingPanelProps) {
-  if (variant === "skeleton") {
-    return (
-      <div className={`${insetCard} mt-3 space-y-2.5 p-4`} role="status" aria-label={label}>
-        {Array.from({ length: lines }).map((_, index) => (
-          <Skeleton key={index} aria-hidden className={cn("h-4", index === lines - 1 ? "w-2/3" : "w-full")} />
-        ))}
-        <span className="sr-only">{label}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        layout === "centered"
-          ? "flex min-h-[280px] flex-col items-center justify-center gap-3 text-center text-sm font-medium text-[color:var(--text-muted)]"
-          : `${insetCard} mt-3 grid min-h-28 place-items-center p-4 text-center text-sm font-semibold text-[color:var(--text-muted)]`,
-      )}
-      role="status"
-    >
-      <div className={cn(layout === "centered" && "flex flex-col items-center gap-3")}>
-        <Loader2
-          aria-hidden="true"
-          className={cn(
-            "animate-spin text-[color:var(--clinical-accent)] motion-reduce:animate-none",
-            layout === "centered" ? "h-[34px] w-[34px]" : "mx-auto mb-2 h-4 w-4",
-          )}
-        />
-        {label}
-      </div>
-    </div>
-  );
-}
 
 export type EmptyStateProps = {
   icon?: IconComponent;

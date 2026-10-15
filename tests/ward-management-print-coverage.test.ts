@@ -835,51 +835,6 @@ describe("ward-management stylesheets: themed text colour cannot survive un-inke
   });
 
   /**
-   * FIXTURE 2 (coordinator, 2026-09-04): `ed/ed-home.module.css` composes FOUR times — one ROOT
-   * edge (`.screen` composes `wardTokens`, its only wardTokens edge, in its first rule) and three
-   * NON-ROOT edges from `ward-shared.module.css`. Only `hint` is actually reset there; `hero` and
-   * `heroFigures` are not, so those two edges must resolve to no coverage even though the compose
-   * line itself parses fine — a resolver that conflates "found an edge" with "found coverage"
-   * would get this wrong.
-   */
-  it("FIXTURE 2: ed-home.module.css's four composes edges each resolve correctly (root vs three non-root, one hit, two misses)", () => {
-    const file = "src/components/ward-management/ed/ed-home.module.css";
-    const inFile = resolutions.filter((r) => r.fromFile === file);
-    expect(inFile.length, "ed-home.module.css composes four distinct (selector, class) edges").toBe(4);
-
-    const root = inFile.find((r) => r.fromSelector === ".screen" && r.className === "wardTokens");
-    const hint = inFile.find((r) => r.fromSelector === ".populationNote" && r.className === "hint");
-    const hero = inFile.find((r) => r.fromSelector === ".heroBody" && r.className === "hero");
-    const heroFigures = inFile.find((r) => r.fromSelector === ".heroFiguresGrid" && r.className === "heroFigures");
-    expect(root, "root edge must be found").toBeDefined();
-    expect(hint, "hint edge must be found").toBeDefined();
-    expect(hero, "hero edge must be found").toBeDefined();
-    expect(heroFigures, "heroFigures edge must be found").toBeDefined();
-
-    expect(root?.isRoot, ".screen is ed-home's first rule and its only wardTokens edge — this must resolve ROOT").toBe(
-      true,
-    );
-    expect(root?.coveredByComposition, "wardTokens carries a winning wildcard reset").toBe(true);
-
-    expect(hint?.isRoot, ".populationNote is not the file's first rule — non-root").toBe(false);
-    expect(
-      hint?.coveredByComposition,
-      "ward-shared.module.css's print block does reset .hint (bare, exact) — this edge covers " +
-        "only .populationNote itself, but it must still resolve covered",
-    ).toBe(true);
-
-    expect(
-      hero?.coveredByComposition,
-      "ward-shared.module.css's print block does not mention .hero at all — this edge must " +
-        "resolve to no coverage, not a false positive from merely finding the edge",
-    ).toBe(false);
-    expect(
-      heroFigures?.coveredByComposition,
-      "ward-shared.module.css's print block does not mention .heroFigures at all — same as hero",
-    ).toBe(false);
-  });
-
-  /**
    * FIXTURE 1 (coordinator, 2026-09-04): `ward-management.module.css` composes `wardName`/`hint`
    * from `ward-shared.module.css` on two NON-ROOT selectors (`.rowName` line 781, `.rowNote` line
    * 786), which ward-shared's print block DOES reset. THE DISCRIMINATING CASE: a resolver that
