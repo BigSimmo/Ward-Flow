@@ -145,6 +145,7 @@
 .headCount {
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -235,6 +236,7 @@
   margin-right: 2px;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .edLine {
@@ -252,6 +254,7 @@
   color: var(--wf-ink-1);
   letter-spacing: -0.02em;
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .edWord {

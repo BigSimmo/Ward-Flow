@@ -45,6 +45,7 @@
     height: var(--wf-h-lg);
     padding: 0 var(--wf-s-3);
     font: inherit;
+    font-size: max(1rem, 16px);
     color: var(--wf-hero-ink);
     background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
     border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 24%, transparent);

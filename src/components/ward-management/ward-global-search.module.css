@@ -149,6 +149,12 @@
   min-height: var(--ward-tap);
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .input {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .input::placeholder {
   color: var(--ward-muted);
 }
@@ -616,6 +622,64 @@
 .actionHintIcon {
   width: 11px;
   height: 11px;
+}
+
+.quickCommands {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 10px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.commandList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 8px 0;
+}
+
+.commandBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.commandBtn:hover,
+.commandBtn:focus-visible {
+  background: var(--wf-hover);
+  border-color: var(--wf-accent);
+}
+
+.commandLabel {
+  white-space: nowrap;
+}
+
+.shortcutsSheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 6px 12px;
+  margin: 8px 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .resultsFooter {

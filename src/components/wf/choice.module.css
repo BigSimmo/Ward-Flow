@@ -324,9 +324,15 @@
 
 @media (pointer: coarse) {
   .segItem,
-  .trk .segItem {
-    height: 36px;
+  .trk .segItem,
+  .chip {
+    min-height: 2.75rem;
     position: relative;
+  }
+  .chipRemove {
+    position: relative;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
   }
   /* v9 section 5: on touch the 36px face reaches 44px through a hit area, not a bigger face. */
   .segItem::after {
@@ -344,6 +350,10 @@
   .segItem,
   .trk .segItem {
     min-height: var(--spacing-tap, 3rem);
+  }
+  .chipRemove {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
   }
 
   /* Phone (8 Oct 2026): options keep their full label and count and the row scrolls sideways,

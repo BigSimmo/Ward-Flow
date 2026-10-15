@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useId, useMemo, useState } from "react";
+import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -118,6 +118,21 @@ export function WardNotificationCenter({
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [soundEnabled, setSoundEnabled] = useAudioBuzzPreference();
   const baseId = useId();
+  const tabRefs = useRef<Map<number, HTMLButtonElement | null>>(new Map());
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const current = TABS.findIndex((item) => item.id === activeTab);
+    let next: number | null = null;
+    if (event.key === "ArrowRight") next = (current + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") next = (current - 1 + TABS.length) % TABS.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = TABS.length - 1;
+    if (next === null) return;
+    event.preventDefault();
+    tabRefs.current.get(next)?.focus();
+    const nextTab = TABS.at(next);
+    if (nextTab) setActiveTab(nextTab.id);
+  };
 
   // 1. Coordinator Buzzes matching unitId
   const matchingBuzzes = refreshRequests
@@ -224,8 +239,8 @@ export function WardNotificationCenter({
           )}
         </div>
 
-        <div role="tablist" aria-label="Notification filters" className={styles.tabList}>
-          {TABS.map((tab) => {
+        <div role="tablist" aria-label="Notification filters" className={styles.tabList} onKeyDown={handleTabKeyDown}>
+          {TABS.map((tab, index) => {
             const isSelected = activeTab === tab.id;
             let count = 0;
             if (tab.id === "all") count = totalUnreadAlerts;
@@ -236,11 +251,15 @@ export function WardNotificationCenter({
             return (
               <button
                 key={tab.id}
+                ref={(node) => {
+                  tabRefs.current.set(index, node);
+                }}
                 type="button"
                 role="tab"
                 id={`${baseId}-tab-${tab.id}`}
                 aria-controls={`${baseId}-panel-${tab.id}`}
                 aria-selected={isSelected}
+                tabIndex={isSelected ? 0 : -1}
                 className={styles.tabButton}
                 onClick={() => setActiveTab(tab.id)}
               >

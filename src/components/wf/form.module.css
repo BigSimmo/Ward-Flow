@@ -459,6 +459,16 @@
   }
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .control {
+    font-size: max(1rem, 16px);
+  }
+
+  .choice {
+    min-height: 2.75rem;
+  }
+}
+
 /* Phone (8 Oct 2026): text fields reach a 44px tap height. The input also runs over the box's 1px
    top and bottom border (13 Oct 2026), so the whole 44px takes the tap, not just the 42px inside. */
 @media (max-width: 48rem) {

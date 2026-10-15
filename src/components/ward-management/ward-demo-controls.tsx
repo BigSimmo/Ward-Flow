@@ -1,7 +1,7 @@
 "use client";
 
 import { FlaskConical } from "lucide-react";
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -38,7 +38,7 @@ import styles from "./ward-demo-controls.module.css";
  * `*BlockedReason` guard: raised with `role: "demo"`, the reducer can never refuse either.
  */
 export function WardDemoControls() {
-  const { scenario, dispatch, saveScenarioFile, loadScenarioFile } = useWardFlow();
+  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const [fileMessage, setFileMessage] = useState<string | null>(null);
@@ -143,6 +143,21 @@ export function WardDemoControls() {
           <span className={styles.clockReadout} data-testid="ward-demo-clock-readout">
             Scenario clock: {formatInstant(now)}
           </span>
+          {savingOnDevice === false ? (
+            <div className={styles.fileRow} role="status" data-testid="ward-demo-d18-lock">
+              <span className={styles.fileHint}>Device save paused (D-18 free-text lock)</span>
+              {saveScenarioFile ? (
+                <button
+                  type="button"
+                  data-testid="ward-demo-save-scenario-file"
+                  className={styles.advanceButton}
+                  onClick={saveToFile}
+                >
+                  Save scenario file
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <div className={styles.actionRow}>
             <button
               type="button"
@@ -232,6 +247,165 @@ export function WardDemoControls() {
               onClick={reset}
             >
               Reset scenario
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export type WardDemoClockPopoverProps = {
+  className?: string;
+  title?: string;
+  "aria-label"?: string;
+  children?: ReactNode;
+  testId?: string;
+};
+
+/**
+ * Compact 1-click popover on the existing clock pill (`ward-rail.tsx` / `ward-bar.tsx`):
+ * preserves all caller `aria-label`, `title`, and children on the clock display while letting
+ * the user click the clock pill to open a `.glass` popover with `+15m`, `+1h`, Scenario preset
+ * selector, D-18 save-file action when device saving is paused, and `Reset demo`.
+ */
+export function WardDemoClockPopover({
+  className,
+  title,
+  "aria-label": ariaLabel,
+  children,
+  testId = "ward-demo-clock-pill",
+}: WardDemoClockPopoverProps) {
+  const { scenario, dispatch, saveScenarioFile, savingOnDevice } = useWardFlow();
+  const now = useWardFlowClock();
+  const [open, setOpen] = useState(false);
+  const [fileMessage, setFileMessage] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function saveToFile() {
+    if (!saveScenarioFile) return;
+    const built = saveScenarioFile();
+    if (!built.ok) {
+      setFileMessage(built.reason);
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([built.json], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = built.fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setFileMessage(`Saved ${built.fileName} to your downloads.`);
+  }
+
+  const clockText = formatInstant(now);
+
+  // `styles.demo` carries the --dc-* tokens the menu and buttons read; display stays block as before.
+  return (
+    <div ref={containerRef} className={styles.demo} style={{ display: "block" }}>
+      <button
+        type="button"
+        className={className}
+        title={title ?? `Board time ${clockText} AWST`}
+        aria-label={ariaLabel ?? `Board time ${clockText} AWST`}
+        aria-expanded={open}
+        data-testid={testId}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        {children ?? (
+          <>
+            <span>Board time</span> <b>{clockText}</b> <span>AWST</span>
+          </>
+        )}
+      </button>
+      {open ? (
+        <div
+          className={`glass ${styles.menu}`}
+          role="dialog"
+          aria-label="Demo clock and scenario controls"
+          data-testid="ward-demo-clock-popover"
+        >
+          <span className={styles.clockReadout}>Scenario clock: {clockText} AWST</span>
+          {savingOnDevice === false ? (
+            <div className={styles.fileRow} role="status" data-testid="ward-demo-clock-d18-lock">
+              <span className={styles.fileHint}>Device save paused (D-18 free-text lock)</span>
+              {saveScenarioFile ? (
+                <button
+                  type="button"
+                  data-testid="ward-demo-clock-save-scenario-file"
+                  className={styles.advanceButton}
+                  onClick={saveToFile}
+                >
+                  Save scenario file
+                </button>
+              ) : null}
+              {fileMessage ? <p className={styles.fileMessage}>{fileMessage}</p> : null}
+            </div>
+          ) : null}
+          <div className={styles.actionRow}>
+            <button
+              type="button"
+              data-testid="ward-demo-clock-advance-15"
+              className={styles.advanceButton}
+              onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 15 })}
+            >
+              +15m
+            </button>
+            <button
+              type="button"
+              data-testid="ward-demo-clock-advance-60"
+              className={styles.advanceButton}
+              onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 60 })}
+            >
+              +1h
+            </button>
+          </div>
+          <div className={styles.scenarioRow} role="radiogroup" aria-label="Demo scenario preset">
+            {WARD_SCENARIOS.map((candidate) => (
+              <button
+                type="button"
+                role="radio"
+                key={candidate}
+                data-testid={`ward-demo-clock-scenario-${candidate}`}
+                className={styles.scenarioButton}
+                aria-checked={scenario === candidate}
+                onClick={() => dispatch({ type: "SET_SCENARIO", role: "demo", now, scenario: candidate })}
+              >
+                {scenarioLabels[candidate]}
+              </button>
+            ))}
+          </div>
+          <div className={styles.resetRow}>
+            <button
+              type="button"
+              data-testid="ward-demo-clock-reset"
+              className={styles.resetButton}
+              onClick={() => {
+                dispatch({ type: "RESET_SCENARIO", role: "demo", now });
+                setOpen(false);
+              }}
+            >
+              Reset demo
             </button>
           </div>
         </div>

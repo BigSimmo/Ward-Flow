@@ -1,33 +1,20 @@
 "use client";
 
+import { Copy } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-
-import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { createBrowserStore } from "@/lib/client-store-factory";
-
-import { Copy } from "lucide-react";
-import {
-  Button,
-  CheckingFoot,
-  Hero,
-  HeroStat,
-  LiveChip,
-  OccupancyRing,
-  Segmented,
-  Sheet,
-  buttonClass,
-  useOptionalToast,
-} from "@/components/wf";
-import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
-import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   allDeclines,
   allOverrides,
@@ -36,12 +23,11 @@ import {
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
-import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
-import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
@@ -50,28 +36,39 @@ import {
   referralBelongsToService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
-import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-
-import styles from "./home.module.css";
-import shortlistStyles from "./shortlist-panel.module.css";
-import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
-import { HomeBedflow } from "./home-bedflow";
-import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
-import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
-import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
 import {
-  SinceLastLookPanel,
-  SinceLastLookSheetBody,
-  sinceLastLookCount,
-  sinceHandoverText,
-  sinceSheetDescription,
-  useSinceLastLook,
-} from "./since-last-look-panel";
+  Button,
+  buttonClass,
+  CheckingFoot,
+  Hero,
+  HeroStat,
+  LiveChip,
+  OccupancyRing,
+  Segmented,
+  Sheet,
+  useOptionalToast,
+} from "@/components/wf";
+import { createBrowserStore } from "@/lib/client-store-factory";
+import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
+import styles from "./home.module.css";
+import { HomeBedflow } from "./home-bedflow";
+import { dueWindowLabel, HomeEdPressure } from "./home-ed-pressure";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
 import { HomeWardSheet } from "./home-phone-sheets";
+import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
+import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
+import shortlistStyles from "./shortlist-panel.module.css";
+import {
+  SinceLastLookPanel,
+  SinceLastLookSheetBody,
+  sinceHandoverText,
+  sinceLastLookCount,
+  sinceSheetDescription,
+  useSinceLastLook,
+} from "./since-last-look-panel";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
 
@@ -410,10 +407,21 @@ export function CoordinatorScreen() {
     setSelectedUnitId(unitId);
     const who = patientOf(movement);
     runStep(
-      { type: "REFER_TO_UNITS", role: "coordinator", now: liveNow, movementId: movement.id, unitIds: [unitId] },
+      {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: liveNow,
+        movementId: movement.id,
+        unitIds: [unitId],
+      },
       {
         success: `Offered ${unit.name} to ${who.umrn}`,
-        undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId: movement.id }),
+        undo: (at) => ({
+          type: "UNDO_REFER_TO_UNITS",
+          role: "coordinator",
+          now: at,
+          movementId: movement.id,
+        }),
         undone: `Offer withdrawn. ${unit.name} is no longer asked.`,
       },
     );
@@ -522,7 +530,15 @@ export function CoordinatorScreen() {
 
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(
-    () => wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
+    () =>
+      wardNavCounts({
+        movements,
+        units,
+        referrals,
+        bedReleases,
+        leaveBeds,
+        now,
+      }),
     [movements, units, referrals, bedReleases, leaveBeds, now],
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
@@ -591,9 +607,13 @@ export function CoordinatorScreen() {
     );
   }
 
+  // Not deferred: the placement panel's Offer and Refer act on this movement, so it must always be the one
+  // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.
+  const deferredPanelMovement = panelMovement;
+
   const bedflowNode = (
     <HomeBedflow
-      movement={panelMovement}
+      movement={deferredPanelMovement}
       units={units}
       movements={movements}
       bedReleases={bedReleases}
@@ -603,7 +623,7 @@ export function CoordinatorScreen() {
       selectedUnitId={selectedUnitId}
       onSelectUnit={(unitId) => pickUnit(selectedUnitId === unitId ? undefined : unitId)}
       onOffer={(unitId) => {
-        if (panelMovement) offer(panelMovement, unitId);
+        if (deferredPanelMovement) offer(deferredPanelMovement, unitId);
       }}
       parallelReferralCap={configuration.parallelReferralCap}
       dischargesHeldUp={counts.discharges?.value ?? 0}
@@ -664,7 +684,7 @@ export function CoordinatorScreen() {
               <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
             ) : (
               <ShortlistPanel
-                movement={panelMovement}
+                movement={deferredPanelMovement}
                 now={liveNow}
                 units={units}
                 bedReleases={bedReleases}
@@ -676,7 +696,9 @@ export function CoordinatorScreen() {
                 dispatch={dispatch}
                 parallelReferralCap={configuration.parallelReferralCap}
                 pullHoldMinutes={configuration.pullHoldMinutes}
-                onRefer={panelMovement ? (unitIds) => referFromSheet(panelMovement, unitIds) : undefined}
+                onRefer={
+                  deferredPanelMovement ? (unitIds) => referFromSheet(deferredPanelMovement, unitIds) : undefined
+                }
               />
             )}
           </aside>
@@ -905,7 +927,11 @@ export function CoordinatorScreen() {
               items={[
                 // The count is patients plus referrals, so the label says both (device audit, 11 Oct
                 // 2026: "Priority queue 77" sat beside the card's "70 of 70").
-                { id: "queue", label: "Queue and referrals", count: queue.length + referralQueue.length },
+                {
+                  id: "queue",
+                  label: "Queue and referrals",
+                  count: queue.length + referralQueue.length,
+                },
                 { id: "bedflow", label: "State bedflow", count: units.length },
               ]}
             />
@@ -957,7 +983,11 @@ export function CoordinatorScreen() {
                   onChange={setRightPanel}
                   items={[
                     { id: "placement", label: "Placement" },
-                    { id: "bedflow", label: "State bedflow", count: units.length },
+                    {
+                      id: "bedflow",
+                      label: "State bedflow",
+                      count: units.length,
+                    },
                   ]}
                 />
                 {rightPanel === "bedflow" ? bedflowNode : placementNode}

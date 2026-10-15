@@ -151,7 +151,9 @@ interface WardHomeTabProps {
   }>;
   onOpenDecisions?: () => void;
   morningRollupConfirmed?: boolean;
+  morningRollupTimeLabel?: string;
   onConfirmMorningRollup?: () => void;
+  onConfirmBedsAndMorningRollup?: () => void;
   onOpenConfirmNumbers?: () => void;
   onOpenArrival?: (movementId: string) => void;
   /** Pull a bed for an accepted patient from the Ward flow Admissions list (A1-6). */
@@ -233,7 +235,9 @@ export function WardHomeTab({
   onAcceptInPrinciple,
   liveFormAlerts,
   morningRollupConfirmed = false,
+  morningRollupTimeLabel = "09:30",
   onConfirmMorningRollup,
+  onConfirmBedsAndMorningRollup,
   onOpenConfirmNumbers,
   onOpenArrival,
   onPullPatient,
@@ -698,6 +702,7 @@ export function WardHomeTab({
     meta?: string;
     tone: WfTone;
     action?: { label: string; run: () => void };
+    secondaryAction?: { label: string; run: () => void };
     tick?: keyof typeof localChecks;
   };
   const actNow: TodoRow[] = [
@@ -786,6 +791,18 @@ export function WardHomeTab({
       detail: "Overdue, not yet confirmed",
       tone: "danger",
       action: { label: "Confirm", run: () => onConfirmMorningRollup?.() },
+      secondaryAction:
+        !capacityConfirmedThisShift && onConfirmBedsAndMorningRollup
+          ? {
+              label: `Confirm beds & morning roll-up (${morningRollupTimeLabel})`,
+              run: () => onConfirmBedsAndMorningRollup(),
+            }
+          : onOpenDischarges
+            ? {
+                label: "Review today's expected discharges →",
+                run: () => onOpenDischarges(),
+              }
+            : undefined,
     });
   }
   const laterToday: TodoRow[] = [];
@@ -804,10 +821,33 @@ export function WardHomeTab({
       detail: "Not confirmed this shift",
       tone: "neutral",
       action: { label: "Confirm", run: () => onOpenConfirmNumbers?.() },
+      secondaryAction:
+        !morningRollupConfirmed && onConfirmBedsAndMorningRollup
+          ? {
+              label: `Confirm beds & morning roll-up (${morningRollupTimeLabel})`,
+              run: () => onConfirmBedsAndMorningRollup(),
+            }
+          : onOpenDischarges
+            ? {
+                label: "Review today's expected discharges →",
+                run: () => onOpenDischarges(),
+              }
+            : undefined,
     });
   }
   if (morningRollupConfirmed) {
-    doneRows.push({ key: "rollup", title: "Morning rollup", detail: "Confirmed today", tone: "success" });
+    doneRows.push({
+      key: "rollup",
+      title: "Morning rollup",
+      detail: "Confirmed today",
+      tone: "success",
+      secondaryAction: onOpenDischarges
+        ? {
+            label: "Review today's expected discharges →",
+            run: () => onOpenDischarges(),
+          }
+        : undefined,
+    });
   } else if (!morningRollupOverdue) {
     laterToday.push({
       key: "rollup",
@@ -815,6 +855,18 @@ export function WardHomeTab({
       detail: "Still due",
       tone: "neutral",
       action: { label: "Confirm", run: () => onConfirmMorningRollup?.() },
+      secondaryAction:
+        !capacityConfirmedThisShift && onConfirmBedsAndMorningRollup
+          ? {
+              label: `Confirm beds & morning roll-up (${morningRollupTimeLabel})`,
+              run: () => onConfirmBedsAndMorningRollup(),
+            }
+          : onOpenDischarges
+            ? {
+                label: "Review today's expected discharges →",
+                run: () => onOpenDischarges(),
+              }
+            : undefined,
     });
   }
   if (referralsClear) {
@@ -831,6 +883,12 @@ export function WardHomeTab({
       detail: `${signOff} ready · ${heldUp.length} held up · ${pendingBedReleases.length} open`,
       tone: "neutral",
       action: { label: "Open", run: () => onOpenDecisions?.() },
+      secondaryAction: onOpenDischarges
+        ? {
+            label: "Review today's expected discharges →",
+            run: () => onOpenDischarges(),
+          }
+        : undefined,
     });
   }
   for (const [id, label, hint, at] of [
@@ -957,6 +1015,15 @@ export function WardHomeTab({
                   >
                     {row.action.label}
                     <SrOnly> {row.title}</SrOnly>
+                  </button>
+                ) : null}
+                {row.secondaryAction ? (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    onClick={row.secondaryAction.run}
+                  >
+                    {row.secondaryAction.label}
                   </button>
                 ) : null}
               </li>
@@ -1710,6 +1777,7 @@ export function WardHomeTab({
                     data-dim={isLit(row) ? undefined : "true"}
                     aria-haspopup="dialog"
                     aria-label={row.accessibleName}
+                    title={row.accessibleName}
                     onClick={() => {
                       onSelectBed?.(Number(row.bed.bedNumber));
                     }}

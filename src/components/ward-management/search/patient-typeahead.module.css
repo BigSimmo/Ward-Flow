@@ -89,6 +89,12 @@
   outline: none;
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .input {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .clear {
   font: inherit;
   font-size: 0.75rem;

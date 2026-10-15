@@ -141,6 +141,13 @@
   box-sizing: border-box;
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .dateInput,
+  .timeInput {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .dateInput:focus,
 .timeInput:focus {
   outline: 2px solid var(--ward-blue, var(--clinical-accent));

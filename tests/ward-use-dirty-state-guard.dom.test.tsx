@@ -276,4 +276,25 @@ describe("useDirtyStateGuard", () => {
     link.remove();
     unmount();
   });
+  it("composes navigation confirmation across mounted guards instead of letting one replace another", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const confirmNavigation = () =>
+      (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }).__wardFlowConfirmNavigation?.();
+
+    const page = renderHook(() => useDirtyStateGuard({ isDirty: true, confirmMessage: "Page has unsaved text" }));
+    // A clean guard mounted over the dirty page (the referral drawer) must not hide the page's warning.
+    const drawer = renderHook(() => useDirtyStateGuard({ isDirty: false }));
+
+    expect(confirmNavigation()).toBe(false);
+    expect(confirmSpy).toHaveBeenCalledWith("Page has unsaved text");
+
+    // Closing the clean guard leaves the page's guard in place.
+    drawer.unmount();
+    expect(confirmNavigation()).toBe(false);
+
+    page.unmount();
+    expect(
+      (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }).__wardFlowConfirmNavigation,
+    ).toBeUndefined();
+  });
 });

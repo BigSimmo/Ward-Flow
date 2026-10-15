@@ -197,6 +197,12 @@
   font-size: var(--wf-fs-12);
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .search input {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .search:focus-within {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;

@@ -1044,9 +1044,9 @@ function Registers({
       </div>
       <div className={`${styles.sideB} ${styles.sideSplit}`} hidden={part === "registers"}>
         <div className={styles.sec}>
-          <h4 className={styles.h4r}>
+          <h3 className={styles.h4r}>
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
-          </h4>
+          </h3>
           <p className={styles.mute}>Not waiting on you</p>
           {quietRows.length === 0 ? (
             <p className={styles.mute}>

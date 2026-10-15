@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
-import { ToastView, type ToastUndo } from "@/components/wf/toast";
 import overlayStyles from "@/components/wf/overlay.module.css";
+import { type ToastNextStep, type ToastUndo, ToastView } from "@/components/wf/toast";
 
 export type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -19,6 +19,8 @@ export type Toast = {
   duration?: number;
   /** One action, such as Undo. */
   action?: { label: string; onAction: () => void };
+  /** Optional 1-click next-step desk action link. */
+  nextStep?: ToastNextStep;
   /**
    * A timed Undo window with its shrinking bar. The toast stays until the window ends, then
    * closes itself, so `duration` defaults to 0 here too.
@@ -136,7 +138,10 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
         typeof navigator !== "undefined" &&
         navigator.onLine === false;
       const toast: ToastInput = offline
-        ? { ...input, body: input.body ? `${input.body} ${offlineNote}` : offlineNote }
+        ? {
+            ...input,
+            body: input.body ? `${input.body} ${offlineNote}` : offlineNote,
+          }
         : input;
       // An Undo toast is never folded into another: each action keeps its own window and callbacks.
       const duplicateIndex = toast.undo
@@ -254,6 +259,7 @@ function ToastCard({
             }
           : undefined
       }
+      nextStep={toast.nextStep}
       undo={
         toast.undo
           ? {

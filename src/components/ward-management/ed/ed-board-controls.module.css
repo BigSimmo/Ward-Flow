@@ -326,6 +326,13 @@
   color: var(--ink);
   font: 13px/1.65 var(--body);
 }
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .planInput,
+  .dialog textarea {
+    font-size: max(1rem, 16px) !important;
+  }
+}
 .dialog footer {
   display: flex;
   align-items: center;

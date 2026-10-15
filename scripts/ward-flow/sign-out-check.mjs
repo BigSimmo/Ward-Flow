@@ -15,9 +15,13 @@ import { promisify } from "node:util";
 
 const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 const root = git(["rev-parse", "--show-toplevel"]);
-const { approvedTakeoverFiles, isPublicWardFlowCheckout, scopedActiveSignOutLines, signOutConflicts } = await import(
-  pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href
-);
+const {
+  approvedTakeoverFiles,
+  isPublicWardFlowCheckout,
+  scopedActiveSignOutLines,
+  signOutConflicts,
+  unsignedWardFiles,
+} = await import(pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href);
 const standaloneWardFlow = isPublicWardFlowCheckout(root);
 const LINE = standaloneWardFlow ? "refs/remotes/origin/main" : "codex/task-ward-flow-live-state-20260831";
 const SIGN_OUT = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
@@ -101,8 +105,30 @@ const history = git([
   "--",
   ...toCheck,
 ]);
+function formatSignOutHint(targetFiles) {
+  const unsigned =
+    typeof unsignedWardFiles === "function" ? unsignedWardFiles(targetFiles, signOutText, current, root) : [];
+  if (!unsigned || unsigned.length === 0) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const normRoot = root.replace(/\\/g, "/");
+  const branchName = current || "<branch>";
+  const lineTemplate = `- ${today} | <Your Name> | ${branchName} | ${normRoot} | ${unsigned.join(", ")}. repo=BigSimmo/Ward-Flow.`;
+
+  console.log("");
+  console.log(`sign-out hint: ${unsigned.length} file(s) without your active claim in ${SIGN_OUT}:`);
+  for (const file of unsigned) {
+    console.log(`  MISSING SELF-CLAIM  ${file}`);
+  }
+  console.log("  For a single-user interactive session, bypass this check via 1-command:");
+  console.log('    SKIP_SIGNOUT_GUARD=1 git commit -m "..."');
+  console.log(`  Or add your sign-out claim to ${SIGN_OUT}:`);
+  console.log(`    ${lineTemplate}`);
+}
+
 if (!history) {
   console.log(`sign-out-check: no clash for ${toCheck.length} file(s); no unfolded task commit touches them.`);
+  formatSignOutHint(toCheck);
   process.exit(0);
 }
 
@@ -143,6 +169,7 @@ for (const [index, branch] of unfolded.entries()) {
 for (const { file, branch } of touching) console.log(`ALSO CHANGED  ${file}  on unfolded branch ${branch}`);
 if (touching.length === 0) {
   console.log(`sign-out-check: no clash for ${toCheck.length} file(s) across ${branches.length} task branches.`);
+  formatSignOutHint(toCheck);
   process.exit(0);
 }
 console.log("sign-out-check: clash found. Tell the coordinator before editing these files.");

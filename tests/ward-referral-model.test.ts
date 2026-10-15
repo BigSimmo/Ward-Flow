@@ -501,6 +501,9 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CLEAR_MOVEMENT_BLOCKER: false,
     RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: false,
     RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: false,
+    // Records or clears a chosen discharge blocker on a stay. Refuses nobody.
+    RECORD_STAY_DISCHARGE_BLOCKER: false,
+    CLEAR_STAY_DISCHARGE_BLOCKER: false,
     RAISE_REFERRAL: false,
     RECORD_EXAMINATION: false,
     RECORD_LEGAL_FORM_RECEIVED: false,

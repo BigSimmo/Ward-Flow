@@ -65,6 +65,7 @@ import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze"
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
+  type BedReleaseBlocker,
   CANCEL_TRANSPORT_REASONS,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
   LEGAL_STATUS_CHANGE_REASONS,
@@ -791,6 +792,8 @@ function subjectId(event: WardFlowEvent): string {
     case "RECORD_LEAVING":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
+    case "RECORD_STAY_DISCHARGE_BLOCKER":
+    case "CLEAR_STAY_DISCHARGE_BLOCKER":
     case "RECORD_REPATRIATION":
       return event.admissionId;
     case "END_LEAVE_BED":
@@ -1352,6 +1355,17 @@ function replaceAdmission(state: WardFlowState, admissionId: string, next: Admis
   };
 }
 
+/**
+ * One discharge blocker, two records: the release's own `blocker` and the stay's `blockReason`.
+ * Whenever a release-level event changes the first, the linked stay follows, so a blocker set on one
+ * screen is never left behind on the handover, stranded list or statistics by another screen's clear.
+ */
+function withStayBlocker(state: WardFlowState, admissionId: string, blocker: BedReleaseBlocker | null): WardFlowState {
+  const stay = findAdmission(state, admissionId);
+  if (!stay || stay.blockReason === blocker) return state;
+  return replaceAdmission(state, stay.id, { ...stay, blockReason: blocker });
+}
+
 function findLeaveBed(state: WardFlowState, leaveBedId: string): LeaveBed | undefined {
   return state.leaveBeds.find((candidate) => candidate.id === leaveBedId);
 }
@@ -1745,7 +1759,9 @@ function departAdmission(
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         };
-  const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination };
+  // Leaving ends any discharge blocker too: the stay is over, so it must not carry a "held up" reason
+  // into history, the same way its bed release loses its blocker below.
+  const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination, blockReason: null };
   const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
   // Owner ruling 2026-09-25: a leave bed belongs to one stay. Leaving ends it in the same write, so
   // "on leave" never counts a bed whose occupant has gone. No bed figure moves here: the figures
@@ -6406,6 +6422,52 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: null });
     }
 
+    case "RECORD_STAY_DISCHARGE_BLOCKER": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `RECORD_STAY_DISCHARGE_BLOCKER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      // Blockers are chosen, never typed: a membership test, not a truthiness test.
+      if (!event.blocker || !BED_RELEASE_BLOCKERS.includes(event.blocker)) {
+        return reject(
+          state,
+          event,
+          `RECORD_STAY_DISCHARGE_BLOCKER requires a blocker chosen from BED_RELEASE_BLOCKERS`,
+        );
+      }
+      // Only somebody occupying a bed has a discharge to hold up; a waitlisted or departed stay does not.
+      if (admission.state !== "occupied") {
+        return reject(
+          state,
+          event,
+          `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can have a discharge blocker`,
+        );
+      }
+      return replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+    }
+
+    case "CLEAR_STAY_DISCHARGE_BLOCKER": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `CLEAR_STAY_DISCHARGE_BLOCKER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      // Refused rather than absorbed: clearing a blocker that was never recorded is a screen defect.
+      if (admission.blockReason === null) {
+        return reject(state, event, `admission ${admission.id} carries no discharge blocker to clear`);
+      }
+      return replaceAdmission(state, admission.id, { ...admission, blockReason: null });
+    }
+
     case "CONFIRM_CAPACITY": {
       // The role check above only proves *a* ward raised this. It does not say *which* ward, so
       // before this a ward user on unit A could restate unit B's allocatable count.
@@ -6611,8 +6673,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         state: "expected",
         expectedAt: event.expectedAt,
         waitingOn: event.waitingOn,
-        blocker: event.blocker ?? null,
-        blockedBy: event.blocker !== undefined ? flaggingRole : null,
+        // A blocker already recorded on the stay carries over when the flag supplies none.
+        blocker: event.blocker ?? flaggedAdmission.blockReason ?? null,
+        blockedBy: event.blocker !== undefined || flaggedAdmission.blockReason !== null ? flaggingRole : null,
         // A bed nobody has yet left is not being made ready. Preparation only ever begins after
         // `RELEASE_BED`, and only through `SET_BED_PREPARATION` — see that case.
         preparing: false,
@@ -6622,7 +6685,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return { ...state, bedReleases: [...state.bedReleases, release] };
+      // The stay's reason follows the release's blocker, so an explicit blocker on the flag is not left off the stay.
+      return withStayBlocker(
+        { ...state, bedReleases: [...state.bedReleases, release] },
+        flaggedAdmission.id,
+        release.blocker,
+      );
     }
 
     case "CONFIRM_BED_RELEASE": {
@@ -6753,7 +6821,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updated);
+      return withStayBlocker(replaceBedRelease(state, release.id, updated), release.admissionId, event.blocker);
     }
 
     case "CLEAR_BED_RELEASE_BLOCK": {
@@ -6780,7 +6848,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, unblocked);
+      return withStayBlocker(replaceBedRelease(state, release.id, unblocked), release.admissionId, null);
     }
 
     case "SET_BED_PREPARATION": {

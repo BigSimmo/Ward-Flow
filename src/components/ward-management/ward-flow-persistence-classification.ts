@@ -179,6 +179,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RAISE_REFERRAL",
   "RECORD_ARRIVED_IN_DEPARTMENT",
   "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+  // An admission id, the caller's own role and one choice from the closed `BED_RELEASE_BLOCKERS` list. No typed text.
+  "RECORD_STAY_DISCHARGE_BLOCKER",
+  "CLEAR_STAY_DISCHARGE_BLOCKER",
   // RB3, item 19: `movementId` (an id), `outcome` (one of two fixed strings) and the caller's own
   // `role` — no human-typed field.
   "RECORD_ED_OUTCOME",

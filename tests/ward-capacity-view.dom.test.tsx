@@ -468,6 +468,8 @@ function StaleBlockedReleaseSetup({ unitId, daysAgo }: { unitId: string; daysAgo
     (a) =>
       a.unitId === unitId &&
       a.state === "occupied" &&
+      // A stay that already records a blocker gives its new release that blocker, so use one that is not held up.
+      a.blockReason === null &&
       !bedReleases.some((r) => r.admissionId === a.id && r.state !== "discharged"),
   );
   const staleExpectedAt = now - daysAgo * MINUTES_PER_DAY;

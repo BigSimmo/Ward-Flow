@@ -101,3 +101,19 @@
 .twin[data-surface="hero"] rect[data-now="true"] {
   fill: var(--wf-hero-ink);
 }
+
+@media (forced-colors: active) {
+  .line,
+  .mean {
+    stroke: CanvasText;
+  }
+
+  .dot,
+  .twin rect {
+    fill: CanvasText;
+  }
+
+  .twin rect[data-now="true"] {
+    fill: Highlight;
+  }
+}

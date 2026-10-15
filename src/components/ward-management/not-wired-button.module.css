@@ -4,6 +4,10 @@
   display: inline-flex;
 }
 
+.button {
+  border: 1px dashed var(--wf-line-2);
+}
+
 .panel {
   position: absolute;
   top: calc(100% + 4px);

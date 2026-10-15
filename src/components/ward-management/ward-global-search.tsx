@@ -21,6 +21,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
 import {
   CORE_SEARCH_VIEWS,
@@ -39,6 +40,9 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { setDeskRole } from "@/components/ward-management/ward-role-gate";
+import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -590,6 +594,7 @@ export function WardGlobalSearch({
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const nameFor = usePatientNameDisplay();
+  const wardFlow = useOptionalWardFlow();
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -600,10 +605,13 @@ export function WardGlobalSearch({
   const [top, setTop] = useState(0);
   const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
   const [recentsVersion, setRecentsVersion] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const trimmed = deferredQuery.trim();
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const isStart = trimmed.length === 0;
+  const showQuickCommands = isStart || /^(switch|clock|reset|handover|shortcuts|\?)/i.test(trimmed);
+  const shortcutsExpanded = showShortcuts || trimmed === "?" || /^shortcuts/i.test(trimmed);
 
   const smartResults = useMemo(
     () =>
@@ -858,6 +866,7 @@ export function WardGlobalSearch({
       // An open sheet keeps its own keys: the phone referral's "/" opens its patient step. Search
       // stays live over that sheet (shell, `headerLiveOverSheet`) for a tap, not for the shortcut.
       if (event.defaultPrevented || hasOpenSheet()) return;
+      if (slashShortcut && document.querySelector('[data-testid="ward-patient-typeahead-input"]')) return;
       const target = event.target as HTMLElement | null;
       if (
         target &&
@@ -883,7 +892,19 @@ export function WardGlobalSearch({
     }
   }
 
-  function select(href: string) {
+  /**
+   * Leaving the page can unmount a form with unsaved fields. Ask the composed leave guard first
+   * (it prompts once if ANY mounted guard is dirty) and stay put when the answer is no.
+   */
+  function confirmLeave(): boolean {
+    const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
+      .__wardFlowConfirmNavigation;
+    return !confirmNavigation || confirmNavigation();
+  }
+
+  /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
+  function select(href: string, confirmed = false) {
+    if (!confirmed && !confirmLeave()) return;
     remember(href);
     close();
     if (onNavigate) onNavigate(href);
@@ -906,7 +927,8 @@ export function WardGlobalSearch({
       return;
     }
     event.preventDefault();
-    select(href);
+    // A real anchor click was already confirmed by the dirty-state guard's own click handler.
+    select(href, true);
   }
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
@@ -1181,6 +1203,161 @@ export function WardGlobalSearch({
                 ))}
               </ul>
             )}
+
+            {showQuickCommands && !refusal ? (
+              <div
+                role="group"
+                aria-label="Quick commands"
+                className={styles.quickCommands}
+                data-testid="ward-global-search-quick-commands"
+              >
+                <span className={styles.group} data-testid="ward-global-search-group-commands">
+                  <span>Quick commands</span>
+                </span>
+                <div className={styles.commandList}>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    data-testid="ward-global-search-cmd-advance-clock"
+                    onClick={() => {
+                      if (wardFlow) {
+                        wardFlow.dispatch({
+                          type: "ADVANCE_CLOCK",
+                          role: "demo",
+                          now: now ?? wardFlow.now,
+                          minutes: 15,
+                        });
+                      }
+                      close();
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Advance demo clock +15m</span>
+                    <kbd className={styles.hintKbd}>+15m</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    data-testid="ward-global-search-cmd-desk-coordinator"
+                    onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
+                      setDeskRole("coordinator", "/mockups/ward-flow");
+                      dispatchPersonaSyncForRole("coordinator");
+                      select("/mockups/ward-flow", true);
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to Coordinator desk</span>
+                    <kbd className={styles.hintKbd}>Coordinator</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    data-testid="ward-global-search-cmd-desk-ward"
+                    onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
+                      setDeskRole("ward", "/mockups/ward-flow/wards");
+                      dispatchPersonaSyncForRole("ward");
+                      select("/mockups/ward-flow/wards", true);
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to Ward desk</span>
+                    <kbd className={styles.hintKbd}>Ward</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    data-testid="ward-global-search-cmd-desk-ed"
+                    onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
+                      setDeskRole("ed", "/mockups/ward-flow/ed");
+                      dispatchPersonaSyncForRole("ed");
+                      select("/mockups/ward-flow/ed", true);
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to ED desk</span>
+                    <kbd className={styles.hintKbd}>ED</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    data-testid="ward-global-search-cmd-desk-officer"
+                    onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
+                      setDeskRole("officer", "/mockups/ward-flow/transport/officer");
+                      dispatchPersonaSyncForRole("officer");
+                      select("/mockups/ward-flow/transport/officer", true);
+                    }}
+                  >
+                    <span className={styles.commandLabel}>Switch to Transport desk</span>
+                    <kbd className={styles.hintKbd}>Transport</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    data-testid="ward-global-search-cmd-handover"
+                    onClick={() => select("/mockups/ward-flow/handover")}
+                  >
+                    <span className={styles.commandLabel}>Open Handover sheet</span>
+                    <kbd className={styles.hintKbd}>/handover</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.commandBtn}
+                    disabled={!resultsCurrent}
+                    aria-expanded={shortcutsExpanded}
+                    data-testid="ward-global-search-cmd-shortcuts"
+                    onClick={() => setShowShortcuts((prev) => !prev)}
+                  >
+                    <span className={styles.commandLabel}>Keyboard shortcuts (?)</span>
+                    <kbd className={styles.hintKbd}>?</kbd>
+                  </button>
+                </div>
+                {shortcutsExpanded ? (
+                  <div
+                    className={styles.shortcutsSheet}
+                    role="region"
+                    aria-label="Keyboard shortcuts"
+                    data-testid="ward-global-search-shortcuts-sheet"
+                  >
+                    <span className={styles.shortcutRow}>
+                      <span>Global search &amp; commands</span>
+                      <span>
+                        <kbd className={styles.hintKbd}>Ctrl+K</kbd> <kbd className={styles.hintKbd}>/</kbd>
+                      </span>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>New referral</span>
+                      <kbd className={styles.hintKbd}>Shift+R</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Tasks drawer</span>
+                      <kbd className={styles.hintKbd}>Shift+T</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Activity drawer</span>
+                      <kbd className={styles.hintKbd}>Shift+A</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Toggle navigation rail</span>
+                      <kbd className={styles.hintKbd}>[</kbd>
+                    </span>
+                    <span className={styles.shortcutRow}>
+                      <span>Dismiss / clear</span>
+                      <kbd className={styles.hintKbd}>Esc</kbd>
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           {previewItem ? (
@@ -1227,7 +1404,10 @@ export function WardGlobalSearch({
           <Link
             href={PATIENT_SEARCH_HREF}
             className={styles.fullSearch}
-            onClick={(event) => onOptionClick(event, PATIENT_SEARCH_HREF)}
+            onClick={(event) => {
+              handOffPatientSearchText(isNewTabClick(event) ? undefined : query);
+              onOptionClick(event, PATIENT_SEARCH_HREF);
+            }}
             data-testid="ward-global-search-full"
           >
             Full patient search

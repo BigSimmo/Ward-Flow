@@ -871,6 +871,13 @@
   outline-offset: 1px;
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .controlSelect,
+  .blockerInput {
+    font-size: max(1rem, 16px);
+  }
+}
+
 /* Attention List */
 .attentionList {
   display: flex;

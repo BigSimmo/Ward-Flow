@@ -614,8 +614,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           level={1}
           title={
             <>
-              <SrOnly>All wards, </SrOnly>
-              {readyNow} {readyNow === 1 ? "bed" : "beds"} ready{isPhone ? "" : " now"}
+              <SrOnly>{"All wards, "}</SrOnly>
+              {`${readyNow} ${readyNow === 1 ? "bed" : "beds"} ready${isPhone ? "" : " now"}`}
             </>
           }
           titleMeta={

@@ -29,10 +29,19 @@ type NotWiredButtonProps = Omit<ComponentPropsWithRef<"button">, "children" | "o
  * this prototype." and opens a small popover saying so — the same shape as the shell's primary
  * action in `shell/ward-bar.tsx`. Escape, a second press or a press outside closes it.
  */
-export function NotWiredButton({ label, name = label, iconOnly, icon, wrapClassName, ...rest }: NotWiredButtonProps) {
+export function NotWiredButton({
+  label,
+  name = label,
+  iconOnly,
+  icon,
+  wrapClassName,
+  className,
+  ...rest
+}: NotWiredButtonProps) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
   const panelId = useId();
+  const btnClassName = className ? `${styles.button} ${className}` : styles.button;
 
   useEffect(() => {
     if (!open) return;
@@ -48,6 +57,8 @@ export function NotWiredButton({ label, name = label, iconOnly, icon, wrapClassN
   const trigger = {
     "aria-expanded": open,
     "aria-controls": open ? panelId : undefined,
+    "data-not-wired": "preview",
+    className: btnClassName,
     onClick: () => {
       if (open) {
         setOpen(false);

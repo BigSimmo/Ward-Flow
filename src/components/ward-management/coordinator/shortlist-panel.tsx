@@ -3,10 +3,10 @@
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
-import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useContext, useMemo, useState, type Dispatch, type FormEvent } from "react";
+import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { Fragment, useCallback, useContext, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
+import { Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -436,7 +436,10 @@ export function ShortlistPanel({
   const isPhone = useIsPhone();
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
-  const flowRejections = useContext(WardFlowContext)?.rejections ?? NO_REJECTIONS;
+  const flowContext = useContext(WardFlowContext);
+  const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
+  const flowSetRole = (flowContext as { setRole?: (role: WardFlowRole) => void } | null)?.setRole;
+  const flowSetFocusMovementId = flowContext?.setFocusMovementId;
   const { run: runStep } = useUndoableStep({
     dispatch,
     rejections: flowRejections,
@@ -494,6 +497,10 @@ export function ShortlistPanel({
     () => (activeVerdict ? [...activeVerdict.gates].sort((a, b) => Number(a.pass) - Number(b.pass)) : []),
     [activeVerdict],
   );
+  const metCount = useMemo(() => sortedGates.filter((g) => g.pass).length, [sortedGates]);
+  const notMetCount = sortedGates.length - metCount;
+  const [gateFilter, setGateFilter] = useState<"all" | "open">("all");
+  const eligibilityDetailsRef = useRef<HTMLDetailsElement>(null);
 
   /**
    * The ward detail block, matching the Command mockup's `wardDetailHtml()` — that ward's own bed
@@ -638,6 +645,7 @@ export function ShortlistPanel({
     setWithdrawReason("");
     setGenderPlacementReason("");
     setGenderPlacementChecked(false);
+    setGateFilter("all");
   }
 
   if (!movement) {
@@ -849,6 +857,10 @@ export function ShortlistPanel({
     if (!canRefer) return;
     dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
     setOverrideOpen(false);
+  }
+
+  function handleQuickSend() {
+    handleRefer();
   }
 
   /**
@@ -1258,9 +1270,24 @@ export function ShortlistPanel({
           <>
             {movement.acceptedUnitId ? (
               acceptedUnit ? (
-                <span className={`${styles.shortlistAcceptedBadge} ${shortlistStyles.destLine}`} data-tone="good">
-                  Accepted destination: {acceptedUnit.name}
-                </span>
+                <>
+                  <span className={`${styles.shortlistAcceptedBadge} ${shortlistStyles.destLine}`} data-tone="good">
+                    Accepted destination: {acceptedUnit.name}
+                  </span>
+                  {!movement.referredUnitIds.includes(acceptedUnit.id) ? (
+                    <Link
+                      href={unitHref(acceptedUnit.id)}
+                      data-testid={`ward-shortlist-open-ward-desk-${acceptedUnit.id}`}
+                      className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
+                      onClick={() => {
+                        flowSetRole?.("ward");
+                        flowSetFocusMovementId?.(movementId);
+                      }}
+                    >
+                      {`Open ${acceptedUnit.name} desk →`}
+                    </Link>
+                  ) : null}
+                </>
               ) : (
                 <span className={`${styles.shortlistUnresolvedBadge} ${shortlistStyles.destLine}`} data-tone="danger">
                   Accepted destination could not be resolved.
@@ -1353,6 +1380,19 @@ export function ShortlistPanel({
                     Accept for this ward
                   </button>
                 ) : null}
+                {unit ? (
+                  <Link
+                    href={unitHref(unit.id)}
+                    data-testid={`ward-shortlist-open-ward-desk-${unit.id}`}
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
+                    onClick={() => {
+                      flowSetRole?.("ward");
+                      flowSetFocusMovementId?.(movementId);
+                    }}
+                  >
+                    {`Open ${unit.name} desk →`}
+                  </Link>
+                ) : null}
                 {withdrawUnitId === id ? (
                   <form
                     className={styles.shortlistOverrideForm}
@@ -1429,6 +1469,57 @@ export function ShortlistPanel({
             No eligible destination found yet.
           </span>
         )}
+        {activeUnit && sortedGates.length > 0 ? (
+          <div className={shortlistStyles.governanceSummaryBar} data-testid="ward-shortlist-governance-summary">
+            <button
+              type="button"
+              className={shortlistStyles.checksClearPill}
+              data-testid="ward-shortlist-checks-clear-pill"
+              data-tone={notMetCount > 0 ? "warn" : "good"}
+              onClick={() => {
+                if (eligibilityDetailsRef.current) {
+                  eligibilityDetailsRef.current.open = true;
+                  eligibilityDetailsRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+              }}
+            >
+              <Frac done={metCount} total={sortedGates.length} label="checks clear" />
+              {notMetCount > 0 ? <span className={shortlistStyles.checksClearWarn}>· {notMetCount} open</span> : null}
+            </button>
+            <div className={shortlistStyles.gateFilterGroup} role="group" aria-label="Filter eligibility checks">
+              <button
+                type="button"
+                className={shortlistStyles.gateFilterBtn}
+                data-testid="ward-shortlist-gate-filter-all"
+                aria-pressed={gateFilter === "all"}
+                aria-controls="ward-shortlist-gate-list"
+                onClick={() => {
+                  setGateFilter("all");
+                  if (eligibilityDetailsRef.current) {
+                    eligibilityDetailsRef.current.open = true;
+                  }
+                }}
+              >
+                All checks ({sortedGates.length})
+              </button>
+              <button
+                type="button"
+                className={shortlistStyles.gateFilterBtn}
+                data-testid="ward-shortlist-gate-filter-open"
+                aria-pressed={gateFilter === "open"}
+                aria-controls="ward-shortlist-gate-list"
+                onClick={() => {
+                  setGateFilter((current) => (current === "open" ? "all" : "open"));
+                  if (eligibilityDetailsRef.current) {
+                    eligibilityDetailsRef.current.open = true;
+                  }
+                }}
+              >
+                Show open gates only ({notMetCount})
+              </button>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       {movement.arrivalDetails || movement.stage === "pulled" ? (
@@ -1726,6 +1817,16 @@ export function ShortlistPanel({
                   {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
                 </button>
               )}
+              {onRefer && canRefer ? (
+                <button
+                  type="button"
+                  data-testid="ward-shortlist-quick-send"
+                  className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                  onClick={handleQuickSend}
+                >
+                  {referTargetNames.length === 1 ? `Quick send to ${referTargetNames[0]}` : "Quick send"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 data-testid="ward-shortlist-override-toggle"
@@ -1988,15 +2089,17 @@ export function ShortlistPanel({
       ) : null}
 
       {(() => {
-        const metCount = sortedGates.filter((g) => g.pass).length;
-        const notMetCount = sortedGates.filter((g) => !g.pass).length;
         const eligibilityBadge = activeUnit
           ? `${metCount} met${notMetCount > 0 ? ` · ${notMetCount} review` : ""}`
           : "Select ward";
         const eligibilityTone = activeUnit ? (notMetCount > 0 ? "warn" : "good") : "neutral";
 
         return (
-          <details className={`${shortlistStyles.detailDisclosure} source-print`} aria-label="Eligibility checks">
+          <details
+            ref={eligibilityDetailsRef}
+            className={`${shortlistStyles.detailDisclosure} source-print`}
+            aria-label="Eligibility checks"
+          >
             <summary data-badge={eligibilityBadge} data-badge-tone={eligibilityTone}>
               Eligibility checks{activeUnit ? ` · ${activeUnit.name}` : ""}
             </summary>
@@ -2089,29 +2192,39 @@ export function ShortlistPanel({
               </p>
             ) : null}
             {sortedGates.length === 0 ? (
-              <p className={styles.placeholder}>Select a candidate unit to see its eligibility checks.</p>
+              <p id="ward-shortlist-gate-list" className={styles.placeholder}>
+                Select a candidate unit to see its eligibility checks.
+              </p>
             ) : (
-              <ol className={styles.shortlistGateList}>
-                {sortedGates.map((gate) => (
-                  <li
-                    key={gate.gate}
-                    data-testid={`ward-gate-${gate.gate}`}
-                    data-pass={String(gate.pass)}
-                    className={styles.shortlistGateRow}
-                  >
-                    {gate.pass ? (
-                      <CheckCircle2 aria-hidden="true" className={styles.shortlistGateIconOk} />
-                    ) : (
-                      <CircleAlert aria-hidden="true" className={styles.shortlistGateIconBad} />
-                    )}
-                    <span className={styles.shortlistGateLabel}>{GATE_LABELS[gate.gate]}</span>
-                    <strong className={gate.pass ? styles.shortlistGateVerdictOk : styles.shortlistGateVerdictBad}>
-                      {gate.pass ? "Met" : "Not met"}
-                    </strong>
-                    <span className={styles.shortlistGateDetail}>{gate.detail}</span>
-                  </li>
-                ))}
-              </ol>
+              <>
+                <ol id="ward-shortlist-gate-list" className={styles.shortlistGateList}>
+                  {sortedGates.map((gate) => (
+                    <li
+                      key={gate.gate}
+                      data-testid={`ward-gate-${gate.gate}`}
+                      data-pass={String(gate.pass)}
+                      hidden={gateFilter === "open" && gate.pass ? true : undefined}
+                      className={styles.shortlistGateRow}
+                    >
+                      {gate.pass ? (
+                        <CheckCircle2 aria-hidden="true" className={styles.shortlistGateIconOk} />
+                      ) : (
+                        <CircleAlert aria-hidden="true" className={styles.shortlistGateIconBad} />
+                      )}
+                      <span className={styles.shortlistGateLabel}>{GATE_LABELS[gate.gate]}</span>
+                      <strong className={gate.pass ? styles.shortlistGateVerdictOk : styles.shortlistGateVerdictBad}>
+                        {gate.pass ? "Met" : "Not met"}
+                      </strong>
+                      <span className={styles.shortlistGateDetail}>{gate.detail}</span>
+                    </li>
+                  ))}
+                </ol>
+                {gateFilter === "open" && notMetCount === 0 ? (
+                  <p className={styles.placeholder} data-testid="ward-shortlist-all-gates-clear">
+                    All {sortedGates.length} eligibility checks are met.
+                  </p>
+                ) : null}
+              </>
             )}
           </details>
         );

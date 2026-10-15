@@ -96,7 +96,7 @@
      --spacing-tap floor, so the tap target never drops below 48px. */
   --wf-phone-pill-h: 32px;
   --wf-phone-pill-px: 12px;
-  --wf-phone-pill-gap: 6px;
+  --wf-phone-pill-gap: 8px;
   --wf-phone-pill-fs: var(--wf-fs-13);
   --wf-phone-pill-count-fs: var(--wf-fs-12);
   --wf-phone-pill-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-pill-h)) / 2);

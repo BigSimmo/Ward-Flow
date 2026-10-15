@@ -100,8 +100,10 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   }
 
   const etaPresets = [
-    { label: "+30 min", offset: 30 },
-    { label: "+1 hour", offset: 60 },
+    { label: "Now", offset: 0 },
+    { label: "+15m", offset: 15 },
+    { label: "+30m", offset: 30 },
+    { label: "+1h", offset: 60 },
     { label: "+2 hours", offset: 120 },
     { label: "+3 hours", offset: 180 },
     { label: "+4 hours", offset: 240 },

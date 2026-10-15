@@ -23,7 +23,7 @@ interface WardBedDossierDrawerProps {
   drawerLeavingDestination: LeavingDestination;
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
-  onUpdateBlocker?: (admissionId: string, blocker: string) => void;
+  onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   /** Steps to the bed before this one. The arrow shows only when the parent passes it. */
@@ -38,6 +38,12 @@ interface WardBedDossierDrawerProps {
   onOpenBoard?: () => void;
   /** A4-24: one tap marks a vacated bed being made ready as Ready, so it is offered again. */
   onMarkReady?: () => void;
+  /** Item #6: raises a pre-filled ward referral from the selected patient's bed dossier. */
+  onRaiseReferral?: () => void;
+  /** Item #6: deep-link to the full referral drawer pre-filled with this patient and sending site. */
+  fullReferralHref?: string;
+  /** Item #5a: role-locked notice with 1-click Switch to Ward desk action when not on Ward desk. */
+  roleLockNote?: React.ReactNode;
 }
 
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
@@ -118,6 +124,9 @@ export function WardBedDossierDrawer({
   onNextBed,
   bedDrawerRef,
   onKeyDown,
+  onRaiseReferral,
+  fullReferralHref,
+  roleLockNote,
 }: WardBedDossierDrawerProps) {
   const { admissions, resolvePatientIdentity } = useWardFlow();
   const now = useWardFlowClock();
@@ -290,6 +299,9 @@ export function WardBedDossierDrawer({
         onMove={onMove}
         onOpenBoard={onOpenBoard}
         onMarkReady={isPreparing ? onMarkReady : undefined}
+        onRaiseReferral={onRaiseReferral}
+        fullReferralHref={fullReferralHref}
+        roleLockNote={roleLockNote}
         bedDrawerRef={bedDrawerRef}
         onKeyDown={onKeyDown}
       />
@@ -477,6 +489,20 @@ export function WardBedDossierDrawer({
                       <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
                       {bedItem?.dischargeBarrier ? <Row label="Barrier">{bedItem.dischargeBarrier}</Row> : null}
                     </dl>
+                    {bedItem?.blockReason && bedItem?.admissionId && onUpdateBlocker ? (
+                      <div className={styles.editor}>
+                        <Button
+                          variant="ghost"
+                          className={styles.pill}
+                          onClick={() => {
+                            if (bedItem.admissionId) onUpdateBlocker(bedItem.admissionId, null);
+                            setQuickBlockerOpen(false);
+                          }}
+                        >
+                          Clear blocker
+                        </Button>
+                      </div>
+                    ) : null}
                     {quickBlockerOpen ? (
                       <div className={styles.editor}>
                         <select
@@ -655,6 +681,28 @@ export function WardBedDossierDrawer({
                   Move to another bed
                 </Button>
               ) : null}
+              {isOccupied && onRaiseReferral ? (
+                <Button
+                  variant="sec"
+                  size="lg"
+                  className={styles.pill}
+                  onClick={onRaiseReferral}
+                  data-testid="ward-dossier-raise-referral-btn"
+                >
+                  Raise ward referral
+                </Button>
+              ) : null}
+              {isOccupied && fullReferralHref ? (
+                <Link
+                  className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
+                  href={fullReferralHref}
+                  onClick={onClose}
+                  data-testid="ward-dossier-full-referral-link"
+                >
+                  Open full referral form…
+                </Link>
+              ) : null}
+              {roleLockNote}
             </>
           )}
           <span className={styles.footSpacer} />
@@ -719,13 +767,16 @@ interface PhoneBedSheetProps {
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onClose: () => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
-  onUpdateBlocker?: (admissionId: string, blocker: string) => void;
+  onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
   onOpenBoard?: () => void;
   /** Set only for a bed being made ready (A4-24). */
   onMarkReady?: () => void;
+  onRaiseReferral?: () => void;
+  fullReferralHref?: string | null;
+  roleLockNote?: ReactNode;
   bedDrawerRef: React.RefObject<HTMLElement | null>;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
 }
@@ -765,6 +816,9 @@ function PhoneBedSheet({
   onMove,
   onOpenBoard,
   onMarkReady,
+  onRaiseReferral,
+  fullReferralHref,
+  roleLockNote,
   bedDrawerRef,
   onKeyDown,
 }: PhoneBedSheetProps) {
@@ -878,6 +932,20 @@ function PhoneBedSheet({
                   </Row>
                 ) : null}
               </dl>
+              {bedItem?.blockReason && admissionId && onUpdateBlocker ? (
+                <div className={styles.editor}>
+                  <Button
+                    variant="ghost"
+                    className={styles.pill}
+                    onClick={() => {
+                      onUpdateBlocker(admissionId, null);
+                      setQuickBlockerOpen(false);
+                    }}
+                  >
+                    Clear blocker
+                  </Button>
+                </div>
+              ) : null}
               {quickBlockerOpen ? (
                 <div className={styles.editor}>
                   <select
@@ -966,6 +1034,27 @@ function PhoneBedSheet({
                 Review current referrals
               </Link>
             ) : null}
+            {isOccupied && onRaiseReferral ? (
+              <Button
+                variant="sec"
+                className={styles.pill}
+                onClick={onRaiseReferral}
+                data-testid="ward-dossier-raise-referral-btn"
+              >
+                Raise ward referral
+              </Button>
+            ) : null}
+            {isOccupied && fullReferralHref ? (
+              <Link
+                className={buttonClass({ variant: "ghost", className: styles.pill })}
+                href={fullReferralHref}
+                onClick={onClose}
+                data-testid="ward-dossier-full-referral-link"
+              >
+                Open full referral form…
+              </Link>
+            ) : null}
+            {roleLockNote}
             {personHref ? (
               <Link
                 className={buttonClass({ variant: "ghost", className: styles.pill })}

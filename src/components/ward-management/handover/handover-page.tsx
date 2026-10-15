@@ -35,7 +35,9 @@ import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/compone
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -203,8 +205,8 @@ export function movementObservationLabel(movement: Movement): string {
 function recordHandoverSignOff(
   dispatch: Dispatch<WardFlowEvent>,
   now: Instant,
+  role: WardFlowRole = "coordinator",
 ): { role: WardFlowRole; at: Instant } | null {
-  const role: WardFlowRole = "coordinator";
   if (!canDispatch(role, "RECORD_HANDOVER_SIGN_OFF")) return null;
   try {
     dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now });
@@ -327,6 +329,15 @@ function mmss(ms: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+function HandoverMeetingTimer({ startedAt }: { startedAt: number }) {
+  const [tick, setTick] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [startedAt]);
+  return <span className={styles.meeting}>Stop {mmss(tick - startedAt)}</span>;
+}
+
 /**
  * The Handover page, refined A (Josh, 9 Oct 2026). One grouped table in meeting order is the core,
  * held to a set height so it scrolls inside its card. The right panel is the sign-off sheet until a
@@ -389,7 +400,6 @@ export function HandoverPage() {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
   const [present, setPresent] = useState(false);
   const [meetingStartedAt, setMeetingStartedAt] = useState<number | null>(null);
-  const [meetingTick, setMeetingTick] = useState(0);
   const [meetings, setMeetings] = useState<{ at: Instant; minutes: number }[]>([]);
   const [takenAt, setTakenAt] = useState<Instant | null>(null);
   const [printOptions, setPrintOptions] = useState(DEFAULT_PRINT_OPTIONS);
@@ -397,11 +407,7 @@ export function HandoverPage() {
   const keysTriggerRef = useRef<HTMLButtonElement | null>(null);
   const signOffRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (meetingStartedAt === null) return;
-    const id = window.setInterval(() => setMeetingTick(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [meetingStartedAt]);
+  useDirtyStateGuard({ isDirty: meetingStartedAt !== null });
 
   useEffect(() => {
     if (!copied) return;
@@ -601,13 +607,16 @@ export function HandoverPage() {
   );
 
   /* sign-off */
+  const routeRole = useRouteRole();
+  const gate = useRoleGate();
+  const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
   const signedAt = handoverSignedAt(handoverSignOffs, shift, now);
   // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
   const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
-    routeRole: "coordinator",
+    routeRole,
     onMessage: announceToWardShell,
   });
   const handleSignOff = useCallback(() => {
@@ -616,16 +625,17 @@ export function HandoverPage() {
         runStep(event, {
           // Audit S-31: one short toast; the panel's own line carries the time and the record.
           success: "Handover signed off.",
-          undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: "coordinator", now: at }),
+          undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now: at }),
           undone: "Sign-off undone.",
         }),
       now,
+      routeRole,
     );
     if (recorded === null) announceToWardShell("Sign-off is not recorded.");
-  }, [runStep, now]);
+  }, [runStep, now, routeRole]);
   const handleUndoSignOff = useCallback(() => {
-    runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: "coordinator", now }, { success: "Sign-off undone." });
-  }, [runStep, now]);
+    runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now }, { success: "Sign-off undone." });
+  }, [runStep, now, routeRole]);
   const showSignOff = () => {
     setSheetOpen(false);
     setTab("pts");
@@ -638,7 +648,6 @@ export function HandoverPage() {
   const toggleMeeting = useCallback(() => {
     if (meetingStartedAt === null) {
       setMeetingStartedAt(Date.now());
-      setMeetingTick(Date.now());
       return;
     }
     const minutes = Math.max(1, Math.round((Date.now() - meetingStartedAt) / 60_000));
@@ -753,7 +762,7 @@ export function HandoverPage() {
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
       : { id: "meet", done: false, text: "Meeting not timed" },
   ];
-  const canSignOff = canDispatch("coordinator", "RECORD_HANDOVER_SIGN_OFF") && !passed;
+  const canSignOff = signOffGate.allowed && !passed;
 
   const signOffPanel = (
     <div ref={signOffRef}>
@@ -764,10 +773,11 @@ export function HandoverPage() {
         signedAt={signedAt}
         now={now}
         canSignOff={canSignOff}
-        cannotSignReason={passed ? "This handover has passed. Choose the next one." : undefined}
+        cannotSignReason={passed ? "This handover has passed. Choose the next one." : signOffGate.reason}
         onSignOff={handleSignOff}
         onUndoSignOff={handleUndoSignOff}
       />
+      {!passed ? signOffGate.note : null}
     </div>
   );
   const flowPanel = selected ? (
@@ -1003,11 +1013,7 @@ export function HandoverPage() {
             aria-pressed={meetingStartedAt !== null}
             onClick={toggleMeeting}
           >
-            {meetingStartedAt !== null ? (
-              <span className={styles.meeting}>Stop {mmss(meetingTick - meetingStartedAt)}</span>
-            ) : (
-              "Start meeting"
-            )}
+            {meetingStartedAt !== null ? <HandoverMeetingTimer startedAt={meetingStartedAt} /> : "Start meeting"}
           </Button>
           {/* Present and Print sit behind More, so the band carries one primary (device audit 11 Oct 2026). */}
           <Menu

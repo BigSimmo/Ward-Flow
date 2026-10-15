@@ -210,6 +210,8 @@ type WardFlowContextValue = {
    *  Optional so hand-built test contexts need not supply them. */
   saveScenarioFile?: () => ScenarioFileBuild;
   loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
+  /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
+  savingOnDevice?: boolean;
 };
 
 export type { WardFlowContextValue };
@@ -948,6 +950,21 @@ function WardFlowWorld({
     savesOnDeviceRef.current = savingOnDevice;
   }, [savingOnDevice, state]);
 
+  // Item #17 (D-18 privacy lock protection): when savingOnDevice === false because free text triggered
+  // the D-18 device-storage privacy lock, warn before an accidental browser refresh loses walkthrough state.
+  useEffect(() => {
+    if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
+    if (typeof window === "undefined") return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [savingOnDevice, container.typedTextSeen]);
+
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
    * `mountedAtAbsolute`. The restored state arrives through the reducer. The screens are re-keyed
@@ -1177,6 +1194,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
+      savingOnDevice: initialNow !== undefined ? !container.typedTextSeen && !storageUnavailable : savingOnDevice,
     }),
     [
       // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
@@ -1190,6 +1208,7 @@ function WardFlowWorld({
       // added, not as a reason to remove `state` and go back to naming fields one at a time.
       state,
       container.sessionAdopted,
+      container.typedTextSeen,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
       shared.enabled,
@@ -1200,8 +1219,21 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
+      savingOnDevice,
+      storageUnavailable,
+      initialNow,
       now,
     ],
+  );
+
+  const sharedConnection = useMemo(
+    () =>
+      shared.enabled && container.sharedRevision === undefined
+        ? { ...shared, snapshot: null }
+        : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+          ? { ...shared, status: "saving" as const }
+          : shared,
+    [shared, container.sharedRevision],
   );
 
   return (
@@ -1222,15 +1254,7 @@ function WardFlowWorld({
                * must start again from the restored world rather than keep the seed's. A first visit, or a
                * reload with nothing changed, never takes this path, so its tree is never rebuilt.
                */}
-              <WardSharedAccess
-                connection={
-                  shared.enabled && container.sharedRevision === undefined
-                    ? { ...shared, snapshot: null }
-                    : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-                      ? { ...shared, status: "saving" }
-                      : shared
-                }
-              >
+              <WardSharedAccess connection={sharedConnection}>
                 <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
               </WardSharedAccess>
             </WardFlowClockContext.Provider>
@@ -1272,6 +1296,10 @@ export function WardFlowClockProvider({
       <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
     </WardClockContext.Provider>
   );
+}
+
+export function useOptionalWardFlow(): WardFlowContextValue | null {
+  return useContext(WardFlowContext);
 }
 
 /** Conservative failure: a screen rendered outside the provider must fail loudly, never fall

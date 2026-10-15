@@ -710,6 +710,12 @@
   font-size: var(--wf-fs-13);
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .patientSearchInput {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .patientSearchInput::placeholder {
   color: var(--wf-ink-3);
 }
@@ -3317,4 +3323,48 @@ details.refCard > summary {
 .patientIdentity[hidden],
 .priorityGrid[hidden] {
   display: none;
+}
+
+.fastTrackBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-success);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-success-ink);
+  font-size: var(--wf-fs-12);
+}
+
+.fastTrackText {
+  font-weight: 600;
+}
+
+.fastTrackActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.fastTrackBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-success);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fastTrackBtn:hover {
+  background: var(--wf-surface-2);
 }

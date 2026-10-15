@@ -75,7 +75,13 @@ import {
 } from "@/components/ward-management/ward-transport-checks";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
-import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import {
+  requiredRoleForPermission,
+  setDeskRole,
+  useRoleGate,
+  useRouteRole,
+} from "@/components/ward-management/ward-role-gate";
+import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { usePathname } from "next/navigation";
 import {
   PatientLastSeenCard,
@@ -85,7 +91,7 @@ import {
   type ContactRow,
 } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
-import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
+import { type PatientNowRecord, STAGES, clock, dur, etaPresetText, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
@@ -1095,6 +1101,39 @@ export function PatientNowScreen({
                   }
                   data-testid="ward-patient-input-eta"
                 />
+                <div
+                  role="group"
+                  aria-label="Quick ETA presets"
+                  data-testid="ward-patient-eta-presets"
+                  style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}
+                >
+                  {(
+                    [
+                      { label: "Now", offset: 0 },
+                      { label: "+15m", offset: 15 },
+                      { label: "+30m", offset: 30 },
+                      { label: "+1h", offset: 60 },
+                    ] as const
+                  ).map((preset) => {
+                    const value = etaPresetText(now, preset.offset);
+                    const active = transportEtaDraft.trim() === value;
+                    return (
+                      <Button
+                        key={preset.label}
+                        type="button"
+                        variant={active ? "pri" : "sec"}
+                        size="sm"
+                        aria-pressed={active}
+                        onClick={() => {
+                          setTransportEtaDraft(value);
+                          setTransportFormErrors((errors) => ({ ...errors, eta: undefined }));
+                        }}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
+                </div>
                 {transportFormErrors.eta ? (
                   <span id="transport-eta-error" className={styles.transportFieldNote}>
                     <StatusGlyph tone="danger" size={9} />
@@ -1520,21 +1559,64 @@ export function PatientNowScreen({
       }
       change={
         <>
+          {isLiveBedflow &&
+          liveMovement &&
+          (!clearanceGate.allowed || (liveMovement.stage === "pulled" && !gate("HANDOVER_READY").allowed)) ? (
+            <div className="lockline" data-testid="ward-patient-role-lockline">
+              {(() => {
+                const lockedEvent: WardFlowEventType =
+                  liveMovement.stage === "pulled" && !gate("HANDOVER_READY").allowed
+                    ? "HANDOVER_READY"
+                    : "RECORD_MOVEMENT_MEDICAL_CLEARANCE";
+                const req = requiredRoleForPermission(lockedEvent, gate(lockedEvent).reason);
+                return (
+                  <button
+                    type="button"
+                    className="lockline"
+                    onClick={() => setDeskRole(req.role, pathname)}
+                    data-testid={`ward-patient-role-switch-${req.role}`}
+                  >
+                    Switch to {req.label} desk →
+                  </button>
+                );
+              })()}
+            </div>
+          ) : null}
           {mode === "ward" ? (
-            <PatientWardChangeCard
-              key={resolved.liveAdmission?.id}
-              now={now}
-              dayZero={dayZero}
-              form={wardForm}
-              onFormChange={setWardForm}
-              onRecordLeave={recordLeave}
-              onGoneToEd={goneToEd}
-              onSaveDischarge={saveDischarge}
-              dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
-              refusal={wardRefusal}
-              roleLimit={(eventType) => gate(eventType).reason}
-              leaveLegal={leaveLegal}
-            />
+            <>
+              <PatientWardChangeCard
+                key={resolved.liveAdmission?.id}
+                now={now}
+                dayZero={dayZero}
+                form={wardForm}
+                onFormChange={setWardForm}
+                onRecordLeave={recordLeave}
+                onGoneToEd={goneToEd}
+                onSaveDischarge={saveDischarge}
+                dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
+                refusal={wardRefusal}
+                roleLimit={(eventType) => gate(eventType).reason}
+                leaveLegal={leaveLegal}
+              />
+              {!gate("RECORD_LEAVE_BED").allowed ? (
+                <div className="lockline">
+                  <button
+                    type="button"
+                    className="lockline"
+                    onClick={() =>
+                      setDeskRole(
+                        requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).role,
+                        pathname,
+                      )
+                    }
+                    data-testid="ward-patient-role-switch-ward"
+                  >
+                    Switch to {requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).label}{" "}
+                    desk →
+                  </button>
+                </div>
+              ) : null}
+            </>
           ) : null}
           {mode === "leave" && stayLeaveBed ? (
             <PatientLeaveCard
@@ -1558,9 +1640,9 @@ export function PatientNowScreen({
               the hero holds the status and the steps only. The phone keeps its own card above. */}
           {isLiveBedflow && liveMovement && !phoneMovement ? (
             <section className={styles.sec} aria-labelledby="pn-journey-head">
-              <h3 id="pn-journey-head" className={styles.secH}>
+              <h2 id="pn-journey-head" className={styles.secH}>
                 Journey so far
-              </h3>
+              </h2>
               <JourneyStrip
                 label="Journey since this movement opened"
                 stages={patientJourneyStages(liveMovement, now)}
@@ -2204,6 +2286,33 @@ export function PatientNowScreen({
                 recordCtoUnavailable={gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason}
                 endCtoUnavailable={gate("END_COMMUNITY_TREATMENT_ORDER").reason}
               />
+              {!gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed ? (
+                <div className="lockline">
+                  <button
+                    type="button"
+                    className="lockline"
+                    onClick={() =>
+                      setDeskRole(
+                        requiredRoleForPermission(
+                          "RECORD_COMMUNITY_TREATMENT_ORDER",
+                          gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
+                        ).role,
+                        pathname,
+                      )
+                    }
+                    data-testid="ward-patient-role-switch-community"
+                  >
+                    Switch to{" "}
+                    {
+                      requiredRoleForPermission(
+                        "RECORD_COMMUNITY_TREATMENT_ORDER",
+                        gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
+                      ).label
+                    }{" "}
+                    desk →
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {/* Tab 4: DETAILS */}

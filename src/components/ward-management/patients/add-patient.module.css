@@ -792,3 +792,14 @@
     flex: 1 1 auto;
   }
 }
+
+.intakeHandoffNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: 1.45;
+}

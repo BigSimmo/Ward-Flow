@@ -290,75 +290,81 @@ describe("assertion 3 — drawer focus trap and Escape order", () => {
     ["Activity", "ward-bar-activity-trigger"],
     ["Tasks", "ward-bar-tasks-trigger"],
     ["Tools", "ward-bar-tools-trigger"],
-  ])("%s opens as a modal dialog and traps focus inside its panel", async (name, triggerTestId) => {
-    // 🔴 Round-1 review, Critical 3: jsdom's own `getClientRects` always returns an empty list, so
-    // `Sheet`'s own trap filter (`sheet.tsx:295`, "candidates with a rendered box") saw zero
-    // candidates and returned at `focusable.length === 0` before moving anything — and a synthetic
-    // Tab keydown never moves focus in jsdom by itself, so `dialog.contains(document.activeElement)`
-    // stayed true for the entire 50 presses whether or not the trap existed at all. This is the
-    // same idiom `tests/sheet-focus.dom.test.tsx:262-266` already uses to give the trap something
-    // to work with, applied here rather than reinvented.
-    const getClientRectsSpy = vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function (
-      this: HTMLElement,
-    ) {
-      return {
-        length: this.closest("[hidden]") ? 0 : 1,
-        item: () => null,
-        [Symbol.iterator]: function* () {
-          yield {} as DOMRect;
-        },
-      } as DOMRectList;
-    });
-
-    try {
-      const user = userEvent.setup();
-      renderShell();
-
-      const trigger = screen.getByTestId(triggerTestId);
-      await user.click(trigger);
-
-      const dialog = await screen.findByRole("dialog", { name: new RegExp(name) });
-      expect(dialog).toHaveAttribute("aria-modal", "true");
-
-      await waitFor(() => {
-        expect(dialog.contains(document.activeElement)).toBe(true);
+  ])(
+    "%s opens as a modal dialog and traps focus inside its panel",
+    async (name, triggerTestId) => {
+      // 🔴 Round-1 review, Critical 3: jsdom's own `getClientRects` always returns an empty list, so
+      // `Sheet`'s own trap filter (`sheet.tsx:295`, "candidates with a rendered box") saw zero
+      // candidates and returned at `focusable.length === 0` before moving anything — and a synthetic
+      // Tab keydown never moves focus in jsdom by itself, so `dialog.contains(document.activeElement)`
+      // stayed true for the entire 50 presses whether or not the trap existed at all. This is the
+      // same idiom `tests/sheet-focus.dom.test.tsx:262-266` already uses to give the trap something
+      // to work with, applied here rather than reinvented.
+      const getClientRectsSpy = vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function (
+        this: HTMLElement,
+      ) {
+        return {
+          length: this.closest("[hidden]") ? 0 : 1,
+          item: () => null,
+          [Symbol.iterator]: function* () {
+            yield {} as DOMRect;
+          },
+        } as DOMRectList;
       });
 
-      const focusable = focusableWithin(dialog);
-      // Anti-vacuity floor: every one of the three drawers renders at least its own close control,
-      // so an empty list here means the mock above stopped working, not that the drawer is bare.
-      expect(focusable.length).toBeGreaterThan(0);
+      try {
+        const user = userEvent.setup();
+        renderShell();
 
-      // Tab forward through the panel's own focusable order, twice around (a trap that leaks only
-      // on the SECOND lap — a stale list, an off-by-one on wraparound — is still caught). Asserting
-      // the EXACT next control, not merely "still inside the dialog", is what makes this able to
-      // fail: without a working trap, `document.activeElement` never moves at all (jsdom does not
-      // implement native Tab focus movement), so it would stop matching `focusable[expectedIndex]`
-      // on the very first press for any drawer with more than one control.
-      for (let lap = 0; lap < 2; lap += 1) {
-        for (let i = 0; i < focusable.length; i += 1) {
-          const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
-          const expectedIndex = (currentIndex + 1) % focusable.length;
-          pressTab();
-          expect(dialog.contains(document.activeElement)).toBe(true);
-          expect(document.activeElement).toBe(focusable[expectedIndex]);
-        }
-      }
+        const trigger = screen.getByTestId(triggerTestId);
+        await user.click(trigger);
 
-      // Shift+Tab must wrap the other way, landing on the PREVIOUS control each time.
-      for (let lap = 0; lap < 2; lap += 1) {
-        for (let i = 0; i < focusable.length; i += 1) {
-          const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
-          const expectedIndex = (currentIndex - 1 + focusable.length) % focusable.length;
-          pressTab(true);
+        const dialog = await screen.findByRole("dialog", { name: new RegExp(name) });
+        expect(dialog).toHaveAttribute("aria-modal", "true");
+
+        await waitFor(() => {
           expect(dialog.contains(document.activeElement)).toBe(true);
-          expect(document.activeElement).toBe(focusable[expectedIndex]);
+        });
+
+        const focusable = focusableWithin(dialog);
+        // Anti-vacuity floor: every one of the three drawers renders at least its own close control,
+        // so an empty list here means the mock above stopped working, not that the drawer is bare.
+        expect(focusable.length).toBeGreaterThan(0);
+
+        // Tab forward through the panel's own focusable order, twice around (a trap that leaks only
+        // on the SECOND lap — a stale list, an off-by-one on wraparound — is still caught). Asserting
+        // the EXACT next control, not merely "still inside the dialog", is what makes this able to
+        // fail: without a working trap, `document.activeElement` never moves at all (jsdom does not
+        // implement native Tab focus movement), so it would stop matching `focusable[expectedIndex]`
+        // on the very first press for any drawer with more than one control.
+        for (let lap = 0; lap < 2; lap += 1) {
+          for (let i = 0; i < focusable.length; i += 1) {
+            const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+            const expectedIndex = (currentIndex + 1) % focusable.length;
+            pressTab();
+            expect(dialog.contains(document.activeElement)).toBe(true);
+            expect(document.activeElement).toBe(focusable[expectedIndex]);
+          }
         }
+
+        // Shift+Tab must wrap the other way, landing on the PREVIOUS control each time.
+        for (let lap = 0; lap < 2; lap += 1) {
+          for (let i = 0; i < focusable.length; i += 1) {
+            const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+            const expectedIndex = (currentIndex - 1 + focusable.length) % focusable.length;
+            pressTab(true);
+            expect(dialog.contains(document.activeElement)).toBe(true);
+            expect(document.activeElement).toBe(focusable[expectedIndex]);
+          }
+        }
+      } finally {
+        getClientRectsSpy.mockRestore();
       }
-    } finally {
-      getClientRectsSpy.mockRestore();
-    }
-  });
+      // Each drawer walks every control twice in both directions; the Tasks and Tools drawers take
+      // about 11 s on an idle machine, so a loaded CI shard can pass the 30 s default.
+    },
+    60_000,
+  );
 
   it("Escape closes the open drawer first (the documented order's first step) and returns focus to its trigger", async () => {
     const user = userEvent.setup();

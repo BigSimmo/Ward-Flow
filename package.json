@@ -106,6 +106,7 @@
     "ward:journey:prove": "node docs/ward-flow/journey/build.mjs --prove",
     "ward:docs": "node -e \"console.log('Ward Flow docs: docs/ward-flow/README.md\\nBoot UI: docs/ward-flow/LOCAL-FIRST-RUN.md\\nCheck links: npm run check:ward-doc-links')\"",
     "ward:check-docs": "npm run check:ward-doc-links",
+    "ward:sync": "node scripts/update-docs-inventory.mjs && node scripts/ward-flow/screen-map.mjs && npm run ward:organise",
     "ward:organise": "node scripts/ward-flow/organisation.mjs --write-report --source working-tree",
     "ward:organise:check": "node scripts/ward-flow/organisation.mjs --check",
     "ward:dev": "node scripts/ward-flow/dev-with-organisation.mjs",

@@ -75,10 +75,10 @@ self-contained: only three engine files import anything from outside Ward Flow
 
 | File                   | Lines | What it is                                                                                                                                                                                                                                     |
 | ---------------------- | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ward-flow-reducer.ts` | 8,741 | The reducer `wardFlowReducer(state, event)`, `seedWardFlowState` / `seedWardFlowStateAt`, **127 event types** in `WardFlowEvent` / `EVENT_ROLE` (97 in the 25 Sept baseline plus 30 added in the 9–13 Oct passes), all guards and audit writes |
+| `ward-flow-reducer.ts` | 8,741 | The reducer `wardFlowReducer(state, event)`, `seedWardFlowState` / `seedWardFlowStateAt`, **129 event types** in `WardFlowEvent` / `EVENT_ROLE` (97 in the 25 Sept baseline plus 30 added in the 9–13 Oct passes), all guards and audit writes |
 | `ward-movements.ts`    | 3,123 | Despite the name, the **seed fixtures**: movements, bed releases, leave beds, referrals                                                                                                                                                        |
 | `ward-model.ts`        | 3,040 | Every entity type and fixed vocabulary (`Movement`, `Referral`, `Unit`, `Site`, `Decline`, `Override`, `BedRelease`, `LegalForm`, `Notice`, stages, tunables)                                                                                  |
-| `ward-flow-events.ts`  | 2,986 | The `WardFlowEvent` union (**127 event types**) and `EVENT_ROLE`, the who-may-do-what table                                                                                                                                                    |
+| `ward-flow-events.ts`  | 2,986 | The `WardFlowEvent` union (**129 event types**) and `EVENT_ROLE`, the who-may-do-what table                                                                                                                                                    |
 | `ward-derivations.ts`  | 2,034 | 53 pure selectors shared by screens (`isOpen`, `stageSummaries`, `referralBlockedReason`, …)                                                                                                                                                   |
 
 **Wiring and persistence:**
@@ -148,7 +148,7 @@ go through the provider.
 
 ### 2.3 Actions, state and guards
 
-**127 event types** (unique `type:` literals in `ward-flow-events.ts` on current `main` — 97 in the 25 Sept baseline below plus 30 added in the 9–13 October passes, including 15 `UNDO_*` events, planned admissions, global Pull Now/broadcast replies, support notifications, bed placement, and AWOL/CTO/inbox ownership events),
+**129 event types** (unique `type:` literals in `ward-flow-events.ts` on current `main` — 97 in the 25 Sept baseline below plus 30 added in the 9–13 October passes, including 15 `UNDO_*` events, planned admissions, global Pull Now/broadcast replies, support notifications, bed placement, and AWOL/CTO/inbox ownership events),
 grouped:
 
 - **Movement and bed pipeline (~21 baseline + bed placement/undo):** `RAISE_REFERRAL`, `REFER_TO_UNITS`, `ACCEPT_IN_PRINCIPLE`,

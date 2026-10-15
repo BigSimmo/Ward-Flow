@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import {
   ArrowRight,
   Check,
@@ -16,31 +14,40 @@ import {
   Settings,
   SunMoon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
+import {
+  OperatorSwitcherModal,
+  WARD_PERSONA_SYNC_EVENT,
+} from "@/components/ward-management/settings/operator-switcher-modal";
+import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
+import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import type { HealthService } from "@/components/ward-management/ward-model";
+import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
+import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
+import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
+import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { Dot, durMinutes } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
-import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { type HealthService } from "@/components/ward-management/ward-model";
-import { WARD_HOME_HREF, WARD_VIEWS, WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
-import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
-
 import {
   applyGlareToDocument,
   applyThemeToDocument,
   readStoredGlarePreference,
   readStoredThemePreference,
 } from "@/lib/theme-client";
-
-import { announceToWardShell } from "./ward-live-region";
 import { applyAppearance, useAppearanceStore, useGlareStore } from "./ward-bar";
+import { closeWardDrawer, isPhoneViewport, openWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
-import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import { announceToWardShell } from "./ward-live-region";
+import styles from "./ward-rail.module.css";
+import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
+import { isActiveRailEntry, RAIL_GROUPS, type RailEntry, railEntries } from "./ward-rail-entries";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
   bedAlertSiteLabel,
@@ -50,9 +57,6 @@ import {
   type ServiceBedAlert,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
-import { openWardDrawer, closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
-import styles from "./ward-rail.module.css";
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";
 
@@ -237,6 +241,18 @@ const CLINICAL_PERSONAS = [
     initials: "JR",
     role: "Consultant psychiatrist",
   },
+  {
+    id: "okafor",
+    name: "A. Okafor",
+    initials: "AO",
+    role: "Transport officer",
+  },
+  {
+    id: "hart",
+    name: "L. Hart",
+    initials: "LH",
+    role: "Community team clinician",
+  },
 ] as const;
 
 const APPEARANCE_CHOICES = [
@@ -249,7 +265,9 @@ const APPEARANCE_CHOICES = [
  * Retained for the layout's existing call shape. The reconciliation line this used to feed is no
  * longer mounted in the rail (Josh, 7 October 2026), so the rail takes no props today.
  */
-export type WardRailProps = Record<string, never>;
+export type WardRailProps = {
+  onOpenOperatorModal?: () => void;
+};
 
 /** One meter row: a label, a 5px track with the 85% tick, and the mono percentage. */
 function BedAlertMeter({ percent }: { percent: number }) {
@@ -285,7 +303,7 @@ function WardFlowMark({ className }: { className?: string }) {
   );
 }
 
-export function WardRail() {
+export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const pathname = usePathname() ?? "";
   const { units, bedReleases, movements, configuration, admissions } = useWardFlow();
   const now = useWardFlowClock();
@@ -309,9 +327,37 @@ export function WardRail() {
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
   const firstMoreLinkRef = useRef<HTMLAnchorElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [deskModalOpen, setDeskModalOpen] = useState(false);
   const [activePersona, setActivePersona] = useState<string>("chen");
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState<boolean>(false);
+  const [openOverlay, setOpenOverlay] = useState<"alerts" | "appearance" | "persona" | null>(null);
+
+  useEffect(() => {
+    function onPersonaSync(event: Event) {
+      const syncedRole = (event as CustomEvent<{ role?: string }>).detail?.role;
+      const nextPersona =
+        syncedRole === "ward"
+          ? "vance"
+          : syncedRole === "ed"
+            ? "gallagher"
+            : syncedRole === "coordinator"
+              ? "chen"
+              : syncedRole === "community"
+                ? "hart"
+                : syncedRole === "officer"
+                  ? "okafor"
+                  : undefined;
+      if (nextPersona) setActivePersona(nextPersona);
+    }
+    window.addEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
+    return () => window.removeEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
+  }, []);
+  const roleSwitcherOpen = openOverlay === "persona";
+  const appearanceOpen = openOverlay === "appearance";
+  const alertsOpen = openOverlay === "alerts";
   const userCardRef = useRef<HTMLDivElement>(null);
+  const personaTriggerRef = useRef<HTMLButtonElement>(null);
+  const appearanceTriggerRef = useRef<HTMLButtonElement>(null);
+  const alertsTriggerRef = useRef<HTMLButtonElement>(null);
   const isClosedRailCardViewport = useSyncExternalStore(
     subscribeToClosedRailCards,
     getClosedRailCardsSnapshot,
@@ -330,8 +376,6 @@ export function WardRail() {
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
-  const [appearanceOpen, setAppearanceOpen] = useState<boolean>(false);
-  const [alertsOpen, setAlertsOpen] = useState<boolean>(false);
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
 
@@ -401,14 +445,20 @@ export function WardRail() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        if (roleSwitcherOpen) {
-          setRoleSwitcherOpen(false);
-        }
-        if (appearanceOpen) {
-          setAppearanceOpen(false);
-        }
-        if (alertsOpen) {
-          setAlertsOpen(false);
+        if (openOverlay !== null) {
+          // An open sheet sits above this popover, so Escape closes the sheet only. The popover waits
+          // for the next press instead of both closing on one.
+          if (hasOpenSheet()) return;
+          event.preventDefault();
+          const trigger =
+            openOverlay === "persona"
+              ? personaTriggerRef.current
+              : openOverlay === "appearance"
+                ? appearanceTriggerRef.current
+                : alertsTriggerRef.current;
+          setOpenOverlay(null);
+          trigger?.focus();
+          return;
         }
         closeWardDrawer();
         return;
@@ -447,19 +497,23 @@ export function WardRail() {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, roleSwitcherOpen, appearanceOpen, alertsOpen, isTabletLandscape]);
+  }, [open, setOpen, openOverlay, isTabletLandscape]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
-      if (userCardRef.current && !userCardRef.current.contains(event.target as Node)) {
-        setRoleSwitcherOpen(false);
-      }
-      if (appearanceRef.current && !appearanceRef.current.contains(event.target as Node)) {
-        setAppearanceOpen(false);
-      }
-      if (alertsRef.current && !alertsRef.current.contains(event.target as Node)) {
-        setAlertsOpen(false);
-      }
+      const target = event.target as Node;
+      setOpenOverlay((current) => {
+        if (current === "persona" && userCardRef.current && !userCardRef.current.contains(target)) {
+          return null;
+        }
+        if (current === "appearance" && appearanceRef.current && !appearanceRef.current.contains(target)) {
+          return null;
+        }
+        if (current === "alerts" && alertsRef.current && !alertsRef.current.contains(target)) {
+          return null;
+        }
+        return current;
+      });
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
@@ -501,7 +555,11 @@ export function WardRail() {
 
   function renderEntry(
     entry: RailEntry,
-    options: { compactExtra?: boolean; sheet?: boolean; firstInSheet?: boolean } = {},
+    options: {
+      compactExtra?: boolean;
+      sheet?: boolean;
+      firstInSheet?: boolean;
+    } = {},
   ) {
     const Icon = entry.icon;
     const active = isActiveRailEntry(pathname, entry);
@@ -623,7 +681,7 @@ export function WardRail() {
           <Link
             href={WARD_HOME_HREF}
             className={styles.brandLink}
-            aria-label="Ward Flow home"
+            aria-label="Ward Flow WA — home"
             title="Ward Flow Western Australia"
           >
             <span className={styles.brandEmblem} aria-hidden="true">
@@ -690,19 +748,19 @@ export function WardRail() {
           title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
         >
           <span className={styles.shiftAvatar} aria-hidden="true">
-            BC
+            {currentPersona.initials}
           </span>
           <span className={styles.shiftMeta}>
             <span className={styles.shiftTitle}>
               {shiftProgress.shiftName}
               <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
             </span>
-            <span className={styles.shiftSub} title="Dr S. Chen · Bed coordinator">
-              Dr S. Chen · Bed coordinator
+            <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
+              {currentPersona.name} · {currentPersona.role}
             </span>
           </span>
         </div>
-        <div
+        <WardDemoClockPopover
           className={styles.shiftLiveClockRow}
           title={`Board time ${boardClock} AWST`}
           aria-label={`Board time ${boardClock} AWST`}
@@ -711,12 +769,16 @@ export function WardRail() {
           <span className={styles.shiftLiveClockLabel}>Board time</span>
           <span className={styles.shiftLiveClockTime}>{boardClock}</span>
           <span className={styles.shiftLiveTz}>AWST</span>
-        </div>
+        </WardDemoClockPopover>
         <Link
           href={handoverHref()}
           className={styles.shiftTimerLink}
           title="Open shift handover board"
-          aria-label={`Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`}
+          aria-label={
+            handoverText === null
+              ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+              : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+          }
         >
           <ClipboardList aria-hidden="true" className={styles.shiftClockIcon} strokeWidth={1.75} />
           <span className={styles.shiftTimerLabel}>Handover</span>
@@ -753,9 +815,10 @@ export function WardRail() {
               aria-label={`${metroLabel} occupied. Bed alerts: ${alertCountLabel}. ${hottestLabel}`}
               aria-expanded={alertsOpen}
               aria-haspopup="dialog"
-              onClick={() => {
+              onClick={(event) => {
+                alertsTriggerRef.current = event.currentTarget;
                 const nextOpen = !alertsOpen;
-                setAlertsOpen(nextOpen);
+                setOpenOverlay(nextOpen ? "alerts" : null);
                 if (nextOpen) announceToWardShell(`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`);
               }}
             >
@@ -775,11 +838,14 @@ export function WardRail() {
             data-open={alertsOpen ? "true" : undefined}
             data-alert={alertCount > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            aria-label={`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`}
+            aria-label={`${metroLabel} ${SERVICE_SHORT_LABEL[hottest.shortName]} ${formatOccupancyPercent(hottest.occupancyPercent)}. Bed alerts: ${alertCountLabel}. ${hottestLabel}.`}
             title={`Bed alerts: ${alertCountLabel}. Occupancy against ${BED_ALERT_THRESHOLD_PERCENT}%.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
-            onClick={() => setAlertsOpen((prev) => !prev)}
+            onClick={(event) => {
+              alertsTriggerRef.current = event.currentTarget;
+              setOpenOverlay((prev) => (prev === "alerts" ? null : "alerts"));
+            }}
           >
             {alertCount > 0 ? <Dot tone="warning" className={styles.alertLineDot} /> : null}
             <span className={styles.alertFigure}>
@@ -822,7 +888,7 @@ export function WardRail() {
                       className={styles.alertCard}
                       data-hot={index === 0 && atRisk ? "true" : undefined}
                       data-testid="ward-rail-bed-alert-row"
-                      onClick={() => setAlertsOpen(false)}
+                      onClick={() => setOpenOverlay(null)}
                     >
                       <span className={styles.alertServiceName}>{svc.shortName}</span>
                       <span className={styles.alertMetrics}>
@@ -858,7 +924,7 @@ export function WardRail() {
                   <Dot tone="warning" />
                   {BED_ALERT_THRESHOLD_PERCENT}% and over
                 </span>
-                <Link href={WARD_CAPACITY_HREF} className={styles.alertsOpenLink} onClick={() => setAlertsOpen(false)}>
+                <Link href={WARD_CAPACITY_HREF} className={styles.alertsOpenLink} onClick={() => setOpenOverlay(null)}>
                   Open Capacity
                   <ArrowRight aria-hidden="true" strokeWidth={1.75} />
                 </Link>
@@ -889,7 +955,11 @@ export function WardRail() {
                 ) : null}
               </div>
               <ul className={styles.railList}>
-                {group.entries.map((entry) => renderEntry(entry, { compactExtra: !compactPrimaryIds.has(entry.id) }))}
+                {group.entries.map((entry) =>
+                  renderEntry(entry, {
+                    compactExtra: !compactPrimaryIds.has(entry.id),
+                  }),
+                )}
               </ul>
             </section>
           ))}
@@ -958,11 +1028,12 @@ export function WardRail() {
 
             <button
               type="button"
+              ref={appearanceTriggerRef}
               className={styles.utilityLink}
               aria-label="Appearance"
               title="Appearance"
               aria-expanded={appearanceOpen}
-              onClick={() => setAppearanceOpen((prev) => !prev)}
+              onClick={() => setOpenOverlay((prev) => (prev === "appearance" ? null : "appearance"))}
               data-testid="ward-rail-appearance-toggle"
             >
               <SunMoon aria-hidden="true" strokeWidth={1.75} />
@@ -985,15 +1056,24 @@ export function WardRail() {
         <div ref={userCardRef} className={styles.userCardWrap}>
           <button
             type="button"
+            ref={personaTriggerRef}
             data-testid="ward-rail-persona-trigger"
             className={`${styles.userProfileCard} ${styles.userProfileCardBtn}`}
-            onClick={() => setRoleSwitcherOpen((prev) => !prev)}
+            onClick={() => {
+              if (onOpenOperatorModal) {
+                onOpenOperatorModal();
+                return;
+              }
+              setOpenOverlay((prev) => (prev === "persona" ? null : "persona"));
+            }}
             aria-expanded={roleSwitcherOpen}
             aria-haspopup="listbox"
             aria-label={`${currentPersona.name}, ${currentPersona.role}. Switch persona.`}
             title={`${currentPersona.name} · ${currentPersona.role}`}
           >
-            <span className={styles.userAvatar}>{currentPersona.initials}</span>
+            <span className={styles.userAvatar} aria-hidden="true">
+              {currentPersona.initials}
+            </span>
             <span className={styles.userMeta}>
               <span className={styles.userName}>{currentPersona.name}</span>
               <span className={styles.userRole}>{currentPersona.role}</span>
@@ -1005,6 +1085,23 @@ export function WardRail() {
             data-testid="ward-rail-persona-popover"
             data-show={roleSwitcherOpen ? "true" : undefined}
           >
+            {roleSwitcherOpen ? (
+              <button
+                type="button"
+                className={styles.roleOption}
+                data-testid="ward-rail-open-desk-modal"
+                onClick={() => {
+                  setOpenOverlay(null);
+                  setDeskModalOpen(true);
+                }}
+              >
+                <span className={styles.roleOptInfo}>
+                  <span className={styles.roleOptName}>Go to a desk…</span>
+                  <span className={styles.roleOptTitle}>Switch workstation and sync role</span>
+                </span>
+                <ArrowRight aria-hidden="true" className={styles.roleOptCheck} strokeWidth={1.75} />
+              </button>
+            ) : null}
             <p className={styles.roleSwitcherHead}>Switch persona</p>
             <div role="listbox" aria-label="Switch clinical persona" className={styles.roleSwitcherList}>
               {CLINICAL_PERSONAS.map((p) => {
@@ -1018,11 +1115,13 @@ export function WardRail() {
                     className={styles.roleOption}
                     onClick={() => {
                       setActivePersona(p.id);
-                      setRoleSwitcherOpen(false);
+                      setOpenOverlay(null);
                       announceToWardShell(`Switched persona to ${p.name}, ${p.role}.`);
                     }}
                   >
-                    <span className={styles.roleOptAvatar}>{p.initials}</span>
+                    <span className={styles.roleOptAvatar} aria-hidden="true">
+                      {p.initials}
+                    </span>
                     <span className={styles.roleOptInfo}>
                       <span className={styles.roleOptName}>{p.name}</span>
                       <span className={styles.roleOptTitle}>{p.role}</span>
@@ -1037,6 +1136,7 @@ export function WardRail() {
               <kbd aria-hidden="true">Esc</kbd>
             </p>
           </div>
+          {deskModalOpen ? <OperatorSwitcherModal isOpen onClose={() => setDeskModalOpen(false)} /> : null}
         </div>
 
         <div className={styles.railPolicyFoot}>
@@ -1160,7 +1260,10 @@ export function WardRail() {
               <p className={styles.eyebrow}>{group.label}</p>
               <ul className={styles.moreList}>
                 {remaining.map((entry) =>
-                  renderEntry(entry, { sheet: true, firstInSheet: entry.id === groups[0]?.entries[0]?.id }),
+                  renderEntry(entry, {
+                    sheet: true,
+                    firstInSheet: entry.id === groups[0]?.entries[0]?.id,
+                  }),
                 )}
               </ul>
             </section>

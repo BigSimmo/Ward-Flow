@@ -272,6 +272,7 @@ export function PatientSearchPage() {
     // The record drawer is modal: the search behind it stays put until it closes.
     if (detailsOpen) return;
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
         const target = e.target as HTMLElement | null;
         const tagName = target?.tagName?.toLowerCase();

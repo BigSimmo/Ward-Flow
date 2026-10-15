@@ -481,6 +481,10 @@
     height: auto;
     min-height: var(--spacing-tap, 3rem);
   }
+
+  .select {
+    font-size: max(1rem, 16px);
+  }
 }
 
 /* Phone (v10 bed sheet): one scrolling sheet, no tabs. Only rendered on phone. */

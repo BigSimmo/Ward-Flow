@@ -1,8 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import {
   BusFront,
   ChevronLeft,
@@ -17,15 +14,31 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
+import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import {
+  duplicateCandidates,
+  GENDERS,
+  type Gender,
+  type Patient,
+  patientAddedOnDayOf,
+} from "@/components/ward-management/ward-patients";
 import {
   Avatar,
   Badge,
   Button,
+  buttonClass,
   Card,
   CardBody,
   CardFoot,
   CardHead,
+  type ChoiceItem,
+  cx,
   Field,
   Frac,
   Hero,
@@ -37,24 +50,12 @@ import {
   Select,
   Sheet,
   StatusGlyph,
-  TextInput,
   Textarea,
-  buttonClass,
-  cx,
+  TextInput,
   useIsPhone,
   useIsTabletPortrait,
-  type ChoiceItem,
+  useOptionalToast,
 } from "@/components/wf";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import {
-  duplicateCandidates,
-  GENDERS,
-  patientAddedOnDayOf,
-  type Gender,
-  type Patient,
-} from "@/components/ward-management/ward-patients";
-import { useOptionalToast } from "@/components/wf";
-import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 
 import styles from "./add-patient.module.css";
@@ -77,7 +78,10 @@ type PatientDraft = {
   dateOfBirth: string;
 };
 
-const REQUIRED_FIELDS: readonly { readonly key: keyof PatientDraft; readonly name: string }[] = [
+const REQUIRED_FIELDS: readonly {
+  readonly key: keyof PatientDraft;
+  readonly name: string;
+}[] = [
   { key: "umrn", name: "Record number" },
   { key: "givenName", name: "Given name" },
   { key: "familyName", name: "Family name" },
@@ -85,7 +89,12 @@ const REQUIRED_FIELDS: readonly { readonly key: keyof PatientDraft; readonly nam
 ];
 
 function initialDraft(prefillGivenName = ""): PatientDraft {
-  return { umrn: "", givenName: prefillGivenName, familyName: "", dateOfBirth: "" };
+  return {
+    umrn: "",
+    givenName: prefillGivenName,
+    familyName: "",
+    dateOfBirth: "",
+  };
 }
 
 function unansweredFieldNames(draft: PatientDraft): string[] {
@@ -155,9 +164,18 @@ const LEGAL_ITEMS: ChoiceItem<StatutoryLegalStatus>[] = [
 
 const INDIGENOUS_STATUS_OPTIONS = [
   { value: "not-stated", label: "Not stated" },
-  { value: "neither", label: "Neither Aboriginal nor Torres Strait Islander origin" },
-  { value: "aboriginal", label: "Aboriginal but not Torres Strait Islander origin" },
-  { value: "torres-strait", label: "Torres Strait Islander but not Aboriginal origin" },
+  {
+    value: "neither",
+    label: "Neither Aboriginal nor Torres Strait Islander origin",
+  },
+  {
+    value: "aboriginal",
+    label: "Aboriginal but not Torres Strait Islander origin",
+  },
+  {
+    value: "torres-strait",
+    label: "Torres Strait Islander but not Aboriginal origin",
+  },
   { value: "both", label: "Both Aboriginal and Torres Strait Islander origin" },
 ] as const;
 
@@ -189,6 +207,24 @@ const PRESENTING_COMPLAINTS = [
   { value: "safety", label: "Acute safety risk or self-harm" },
   { value: "other", label: "Other acute presentation" },
 ] as const;
+
+const FACILITY_TO_SITE_CODE: Record<string, string> = {
+  "rph-ed": "RPH",
+  "scgh-ed": "SCGH",
+  "fsh-ed": "FSH",
+  "arm-ed": "ARM",
+  "sjgm-ed": "SJGM",
+  "rgh-ed": "RGH",
+  "jhc-ed": "JHC",
+  "peel-ed": "PEEL",
+};
+
+// Only complaints that name a diagnosis block get one. A safety risk, behavioural disturbance, an
+// assessment or "other" is not a diagnosis, so the referral's provisional diagnosis is left unset.
+const COMPLAINT_TO_DIAGNOSIS_BLOCK: Partial<Record<string, TentativeDiagnosisBlock>> = {
+  psychosis: "F20–F29",
+  mood: "F30–F39",
+};
 
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
 
@@ -238,7 +274,12 @@ export function AddPatientForm() {
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
-  const priorSubmissionRef = useRef<{ patients: typeof patients; rejectionCount: number } | null>(null);
+  const priorSubmissionRef = useRef<{
+    patients: typeof patients;
+    rejectionCount: number;
+  } | null>(null);
+  const submitIntentRef = useRef<"profile" | "refer">("profile");
+  const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
   const identityChanged =
     draft.umrn.trim().length > 0 ||
@@ -319,6 +360,8 @@ export function AddPatientForm() {
     setD4Notice(null);
     setIsSubmitting(false);
     priorSubmissionRef.current = null;
+    submitIntentRef.current = "profile";
+    setSubmitIntent("profile");
     setShowResetConfirm(false);
   };
 
@@ -376,8 +419,27 @@ export function AddPatientForm() {
       tone: "success",
       title: `${added[0].givenName} ${added[0].familyName} added, ${added[0].umrn}`,
     });
+    if (submitIntentRef.current === "refer") {
+      submitIntentRef.current = "profile";
+      const params = new URLSearchParams();
+      params.set("new", "1");
+      params.set("patientId", added[0].id);
+      const siteCode = FACILITY_TO_SITE_CODE[facility];
+      if (siteCode) {
+        params.set("site", siteCode);
+        // The site is an emergency department, so the referral comes from that ED, not a community service.
+        params.set("source", "ed");
+      }
+      if (healthService.trim()) params.set("service", healthService.trim());
+      params.set("ats", triageUrgency);
+      params.set("legal", legalStatus);
+      const diagBlock = COMPLAINT_TO_DIAGNOSIS_BLOCK[presentingComplaint];
+      if (diagBlock) params.set("complaint", diagBlock);
+      router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
+      return;
+    }
     router.push(`/mockups/ward-flow/people/${added[0].id}`);
-  }, [patients, rejections, router, toast]);
+  }, [patients, rejections, router, toast, facility, healthService, triageUrgency, legalStatus, presentingComplaint]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -388,7 +450,10 @@ export function AddPatientForm() {
     }
     setIsSubmitting(true);
     setLastRejection(undefined);
-    priorSubmissionRef.current = { patients, rejectionCount: rejections.length };
+    priorSubmissionRef.current = {
+      patients,
+      rejectionCount: rejections.length,
+    };
     const suburbTrimmed = suburb.trim();
     dispatch({
       type: "ADD_PATIENT",
@@ -401,6 +466,21 @@ export function AddPatientForm() {
       ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
       ...(suburbTrimmed.length === 0 ? {} : { suburb: suburbTrimmed }),
     });
+  }
+
+  /**
+   * Enter in a field is an implicit submit, and the browser answers it by clicking the FIRST submit
+   * button in the form, which is "Register & start referral". Enter should do the plain, primary
+   * thing (Add patient), so it is routed there. The two buttons stay the only way to start a referral.
+   */
+  function submitPlainOnEnter(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== "Enter" || event.defaultPrevented) return;
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (event.target.type === "button" || event.target.type === "submit") return;
+    event.preventDefault();
+    submitIntentRef.current = "profile";
+    setSubmitIntent("profile");
+    event.currentTarget.requestSubmit();
   }
 
   function ignoreUnavailableActivation(event: MouseEvent<HTMLButtonElement>) {
@@ -417,9 +497,24 @@ export function AddPatientForm() {
     setDraft((current) => ({ ...current, [key]: value }));
 
   const resetSummary = [
-    { key: "identity", on: identityChanged, label: "Identity", meta: "Number, names, birth date, gender" },
-    { key: "place", on: placeChanged, label: "Address and facility", meta: "Address, suburb, service" },
-    { key: "intake", on: intakeChanged, label: "Clinical intake", meta: "ATS, legal status, notes" },
+    {
+      key: "identity",
+      on: identityChanged,
+      label: "Identity",
+      meta: "Number, names, birth date, gender",
+    },
+    {
+      key: "place",
+      on: placeChanged,
+      label: "Address and facility",
+      meta: "Address, suburb, service",
+    },
+    {
+      key: "intake",
+      on: intakeChanged,
+      label: "Clinical intake",
+      meta: "ATS, legal status, notes",
+    },
   ];
 
   const duplicateCheck = (
@@ -502,7 +597,10 @@ export function AddPatientForm() {
                       {patient.suburb ? <span> · {patient.suburb}</span> : null}
                     </span>
                     <Link
-                      className={buttonClass({ size: "sm", className: styles.dupOpen })}
+                      className={buttonClass({
+                        size: "sm",
+                        className: styles.dupOpen,
+                      })}
                       href={`/mockups/ward-flow/people/${patient.id}`}
                     >
                       Use this record
@@ -535,7 +633,13 @@ export function AddPatientForm() {
             data-testid="ward-add-patient-phone-hero"
             // Device audit 11 Oct 2026: the landing shows no figures (a "0/4 Required" for a form that is
             // not shown read as a result); the short form shows only its own required count.
-            figures={[{ id: "required", value: `${answeredCount}/${REQUIRED_FIELDS.length}`, label: "Required" }]}
+            figures={[
+              {
+                id: "required",
+                value: `${answeredCount}/${REQUIRED_FIELDS.length}`,
+                label: "Required",
+              },
+            ]}
           />
         ) : null}
         <PhoneSheet
@@ -630,7 +734,12 @@ export function AddPatientForm() {
         )}
 
         <div className={styles.layout}>
-          <form className={styles.form} onSubmit={handleSubmit} data-testid="ward-add-patient-form">
+          <form
+            className={styles.form}
+            onSubmit={handleSubmit}
+            onKeyDown={submitPlainOnEnter}
+            data-testid="ward-add-patient-form"
+          >
             {carriedSearch && assignedSearch !== carriedSearch ? (
               <Card
                 variant="compact"
@@ -827,6 +936,15 @@ export function AddPatientForm() {
                 action={<span className={styles.muted}>Shows the layout only</span>}
               />
               <CardBody className={styles.intakeGrid}>
+                <p
+                  className={cx(styles.spanAll, styles.intakeHandoffNote)}
+                  data-testid="ward-add-patient-intake-handoff-note"
+                >
+                  Structured selections (presenting facility, health service, ATS category, legal status, presenting
+                  complaint) carry forward into the Referral Drawer when you choose{" "}
+                  <strong>Register &amp; start referral →</strong>. Clinical narrative is captured via the Referral
+                  Drawer&apos;s structured intake checklist (Ruling D-18: no free-text storage on patient registration).
+                </p>
                 <div className={styles.choiceField}>
                   <div className={styles.choiceLabelRow}>
                     <span className={styles.choiceLabel}>Triage category</span>
@@ -910,13 +1028,33 @@ export function AddPatientForm() {
                 </Button>
                 <Button
                   type="submit"
+                  variant="sec"
+                  icon={FileText}
+                  className={answered && !isSubmitting ? undefined : styles.submitOff}
+                  data-testid="ward-add-patient-register-and-refer"
+                  aria-disabled={answered && !isSubmitting ? undefined : "true"}
+                  aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
+                  onClick={(event) => {
+                    submitIntentRef.current = "refer";
+                    setSubmitIntent("refer");
+                    ignoreUnavailableActivation(event);
+                  }}
+                >
+                  {isSubmitting && submitIntent === "refer" ? "Starting referral..." : "Register & start referral →"}
+                </Button>
+                <Button
+                  type="submit"
                   variant="pri"
                   icon={UserPlus}
                   className={answered && !isSubmitting ? undefined : styles.submitOff}
                   data-testid="ward-add-patient-submit"
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
-                  onClick={ignoreUnavailableActivation}
+                  onClick={(event) => {
+                    submitIntentRef.current = "profile";
+                    setSubmitIntent("profile");
+                    ignoreUnavailableActivation(event);
+                  }}
                 >
                   {isSubmitting ? "Adding patient..." : "Add patient"}
                 </Button>
