@@ -343,13 +343,14 @@ const BED_RELEASE_BODY =
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather
  * than a fallback when a code matches none, and the RETURN TYPE cannot witness that: `?? siteDirectory[0]`
- * is still assignable to `Site | undefined`, so the declared signature is unchanged by exactly the
+ * is still assignable to `SiteIdentity | undefined`, so the declared signature is unchanged by exactly the
  * edit that makes the claim false. The `.find(...)` expression is what has to move.
  */
 const SITE_BY_CODE_LOOKUP =
-  "/** Returns `undefined` for an unknown code. Never falls back to a different site. */ export " +
-  "function siteByCode(code: string): Site | undefined { return siteDirectory.find((site) => site.code === " +
-  "code); }";
+  "/** Returns `undefined` for an unknown code. Never falls back to a different site. The site's " +
+  "* identity only: its wards differ by scenario, so read them through the network. */ export " +
+  "function siteByCode(code: string): SiteIdentity | undefined { return siteDirectory.find((site) => " +
+  "site.code === code); }";
 
 /** Shared by the two screens that make the site-lookup claim, so both go red together. */
 const SITE_BY_CODE_GAINS_A_FALLBACK: FalsifyingEdit = {
