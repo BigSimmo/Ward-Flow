@@ -51,7 +51,7 @@ export function toTimeInputValue(d: Date): string {
 }
 
 export function parseDateTimeInput(dateStr: string, timeStr: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || (timeStr && !/^\d{2}:\d{2}$/.test(timeStr))) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || !/^\d{2}:\d{2}$/.test(timeStr)) return null;
   const [year, month, day] = dateStr.split("-").map(Number);
   const [hours, minutes] = (timeStr || "00:00").split(":").map(Number);
   if (year < 100 || month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return null;
