@@ -24,6 +24,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   document.body.innerHTML = "";
   delete document.documentElement.dataset.wfKeyboard;
@@ -55,6 +56,7 @@ describe("useMobileKeyboard", () => {
   });
 
   it("clears the mark when the field loses focus", () => {
+    vi.useFakeTimers();
     renderHook(() => useMobileKeyboard());
     const input = focusField();
 
@@ -68,9 +70,35 @@ describe("useMobileKeyboard", () => {
     act(() => {
       input.blur();
       window.dispatchEvent(new Event("focusout"));
+      // focusout is checked once focus has settled.
+      vi.runOnlyPendingTimers();
     });
     expect(document.documentElement.dataset.wfKeyboard).toBeUndefined();
     expect(document.documentElement.style.getPropertyValue("--keyboard-height")).toBe("0px");
+  });
+
+  it("keeps the keyboard state when focus moves from one field to the next", () => {
+    vi.useFakeTimers();
+    renderHook(() => useMobileKeyboard());
+    const first = focusField();
+    act(() => {
+      window.dispatchEvent(new Event("focusin"));
+      viewport.height = 500;
+      viewport.dispatchEvent(new Event("resize"));
+    });
+    expect(document.documentElement.dataset.wfKeyboard).toBe("open");
+
+    // The iOS next arrow: focusout fires while <body> is active, then the next field takes focus.
+    // The keyboard stays up, so the visual viewport does not resize.
+    act(() => {
+      first.blur();
+      window.dispatchEvent(new Event("focusout"));
+      focusField();
+      window.dispatchEvent(new Event("focusin"));
+      vi.runOnlyPendingTimers();
+    });
+    expect(document.documentElement.dataset.wfKeyboard).toBe("open");
+    expect(document.documentElement.style.getPropertyValue("--keyboard-height")).toBe("344px");
   });
 
   it("ignores a viewport shrink with no field focused", () => {

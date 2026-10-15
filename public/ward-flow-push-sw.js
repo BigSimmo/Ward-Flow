@@ -103,8 +103,10 @@ function shortText(value, fallback, limit) {
   return typeof value === "string" && value.trim() && value.length <= limit ? value : fallback;
 }
 
+// Only hashed build files are trimmed: the offline page and icons were added first at install, so
+// trimming oldest-first across every entry would evict them before any old build file.
 async function trimStaticCache(cache) {
-  const keys = await cache.keys();
+  const keys = (await cache.keys()).filter((key) => new URL(key.url).pathname.startsWith("/_next/static/"));
   const extra = keys.length - STATIC_CACHE_LIMIT;
   if (extra > 0) await Promise.all(keys.slice(0, extra).map((key) => cache.delete(key)));
 }

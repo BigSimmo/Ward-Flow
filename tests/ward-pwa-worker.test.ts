@@ -149,6 +149,30 @@ describe("what the worker may store from a response", () => {
   });
 });
 
+describe("static cache trim", () => {
+  it("evicts only old build files, never the offline page or the icons", async () => {
+    const context: Record<string, unknown> = {
+      URL,
+      self: { location: { origin: ORIGIN }, addEventListener: () => {}, registration: {} },
+    };
+    runInNewContext(WORKER_SOURCE, context);
+    const trim = context.trimStaticCache as (cache: unknown) => Promise<void>;
+    // A top-level const is not visible on the vm context, so read the limit from the source.
+    const limit = Number(/const STATIC_CACHE_LIMIT = (\d+);/.exec(WORKER_SOURCE)?.[1]);
+    expect(limit).toBeGreaterThan(0);
+    // Insertion order, as Cache.keys() returns it: the install precache first, then build files.
+    const entries = ["/ward-flow-offline.html", "/icon.svg", "/icons/icon-192"]
+      .concat(Array.from({ length: limit + 5 }, (_, index) => `/_next/static/chunks/${index}.js`))
+      .map((path) => ({ url: new URL(path, ORIGIN).href }));
+    const deleted: string[] = [];
+    await trim({
+      keys: async () => entries,
+      delete: async (key: { url: string }) => deleted.push(new URL(key.url).pathname),
+    });
+    expect(deleted).toEqual(Array.from({ length: 5 }, (_, index) => `/_next/static/chunks/${index}.js`));
+  });
+});
+
 describe("worker lifecycle", () => {
   it("does not take over on install: a new version waits for SKIP_WAITING from the page", () => {
     expect(WORKER_SOURCE).not.toMatch(/addEventListener\("install"[\s\S]{0,400}skipWaiting\(\)/);
