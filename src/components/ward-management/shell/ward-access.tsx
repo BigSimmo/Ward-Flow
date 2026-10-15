@@ -22,7 +22,7 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { scopeWorkspace } from "@/components/ward-management/ward-access-scope";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   WardFlowContext,
   useWardFlow,
@@ -30,6 +30,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { WardGround } from "@/components/ward-management/ward-shell";
 import {
   ACCESS_ROLE_LABELS,
   BREAK_GLASS_REASONS,
@@ -265,27 +266,29 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   const { units } = useUnscopedWardFlow();
   const home = homeHrefFor(access, communityTeamSlug);
   return (
-    <main className={styles.closed} data-testid="ward-access-closed">
-      <h1 tabIndex={-1} ref={(heading) => heading?.focus()}>
-        Not part of your role
-      </h1>
-      <p>
-        {patientId
-          ? "This patient is not in your care."
-          : "This screen is not part of the " + ACCESS_ROLE_LABELS[access.role] + " desk."}{" "}
-        You are working as {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}.
-      </p>
-      <div className={styles.actions}>
-        <Link href={home} className={buttonClass({ variant: "pri" })} data-testid="ward-access-home">
-          Go to your home
-        </Link>
-        <Button variant="sec" onClick={() => setSwitching(true)} data-testid="ward-access-switch">
-          Switch desk
-        </Button>
-      </div>
-      {patientId && canBreakGlass(access.role) ? <BreakGlassForm access={access} patientId={patientId} /> : null}
-      {switching ? <OperatorSwitcherModal isOpen onClose={() => setSwitching(false)} /> : null}
-    </main>
+    <WardGround>
+      <main className={styles.closed} data-testid="ward-access-closed">
+        <h1 tabIndex={-1} ref={(heading) => heading?.focus()}>
+          Not part of your role
+        </h1>
+        <p>
+          {patientId
+            ? "This patient is not in your care."
+            : "This screen is not part of the " + ACCESS_ROLE_LABELS[access.role] + " desk."}{" "}
+          You are working as {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}.
+        </p>
+        <div className={styles.actions}>
+          <Link href={home} className={buttonClass({ variant: "pri" })} data-testid="ward-access-home">
+            Go to your home
+          </Link>
+          <Button variant="sec" onClick={() => setSwitching(true)} data-testid="ward-access-switch">
+            Switch desk
+          </Button>
+        </div>
+        {patientId && canBreakGlass(access.role) ? <BreakGlassForm access={access} patientId={patientId} /> : null}
+        {switching ? <OperatorSwitcherModal isOpen onClose={() => setSwitching(false)} /> : null}
+      </main>
+    </WardGround>
   );
 }
 
@@ -367,6 +370,7 @@ export function WardBreakGlassReview() {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const { records } = useWardAccessSnapshot();
+  const { now } = useUnscopedWardFlow();
   if (!on || access.role !== "coordinator") return null;
   const perShift = CLINICAL_VALUES.breakGlassPerShift.value;
   const counts = new Map<string, number>();
@@ -383,7 +387,7 @@ export function WardBreakGlassReview() {
             const pattern = (counts.get(record.placeLabel) ?? 0) > perShift;
             return (
               <li key={record.id}>
-                {formatInstant(record.openedAt)}, {record.roleLabel}, {record.placeLabel}. {reason}
+                {formatInstantWithDay(record.openedAt, now)}, {record.roleLabel}, {record.placeLabel}. {reason}
                 {record.otherText ? `: ${record.otherText}` : ""}
                 {pattern ? ". More than " + perShift + " this shift, check with them." : "."}
               </li>

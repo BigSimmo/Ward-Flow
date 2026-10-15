@@ -176,10 +176,11 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   <WardAccessBanner />
                 </div>
                 <WardPhoneDesktopOnly />
-                <WardGround>
-                  <WardAccessGate>{children}</WardAccessGate>
-                  <WardPrintFooter />
-                </WardGround>
+                {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx). */}
+                <WardAccessGate>
+                  <WardGround>{children}</WardGround>
+                </WardAccessGate>
+                <WardPrintFooter />
                 <WardIdleLock />
               </div>
             </div>

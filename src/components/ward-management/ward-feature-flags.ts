@@ -56,7 +56,8 @@ export const WARD_FEATURE_FLAGS = {
       "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: false, production: false },
+    // Off everywhere until Josh tries it (`?flags=role-access:on` turns it on for one device).
+    defaults: { development: false, demo: false, production: false },
     removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
   },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
