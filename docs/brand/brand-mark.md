@@ -1,12 +1,13 @@
-# The PsychSift logo
+# The Ward Flow brand mark
 
-> **SUPERSEDED — Historical Archive**
-> This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
-> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](../ward-flow/README.md), [`docs/ward-flow/STATUS.md`](../ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+> **Inherited from PsychSift.** Ward Flow draws this S from `src/lib/brand-mark.ts`. The geometry
+> came unchanged from the PsychSift logo. The construction notes below are still the record that
+> file and `tests/brand-mark-optics.test.ts` cite. The PsychSift master files, lockups and preview
+> page they mention are not in this repository. A Ward Flow mark of its own is an owner decision.
 
 <!-- docs-script-refs:historical-start -->
 
-The files in `public/brand/` are the master artwork. They are true vectors — every curve is a
+The PsychSift master artwork lived in `public/brand/`, which is not in this repository. Those files are true vectors — every curve is a
 circular arc with an exact centre and radius, so the mark is identical at 16 px and at billboard
 size, and the primary file is 863 bytes.
 
@@ -254,7 +255,7 @@ version the tagline is tracked out to finish flush with the wordmark.
 Note that the running application currently sets its interface in **Geist**, not Inter. The
 wordmark is outlined artwork and is unaffected, but a wordmark set live in Geist would not match.
 
-## The files
+## The PsychSift files (not in this repository)
 
 | File                                      | Use                                                  |
 | ----------------------------------------- | ---------------------------------------------------- |
