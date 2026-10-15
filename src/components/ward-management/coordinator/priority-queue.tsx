@@ -40,6 +40,7 @@ import { withSendingTeam } from "@/components/ward-management/referrals/referral
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
+import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./home.module.css";
 
@@ -73,8 +74,13 @@ export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue
   return { dueSoon: overdue - Math.min(60, overdue / 2), overdue };
 }
 
-/** Shown wherever the tier targets drive a figure. */
-export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, pending clinical sign-off`;
+/** Shown wherever the tier targets drive a figure. The status is read from
+ *  `ward-clinical-values.ts`, so the note changes by itself once the tier values are signed. */
+export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
+  allClinicalValuesSigned(["tierOneOverdue", "tierTwoOverdue", "tierThreeOverdue", "anyTierOverdue"])
+    ? "clinically signed"
+    : "pending clinical sign-off"
+}`;
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant) {

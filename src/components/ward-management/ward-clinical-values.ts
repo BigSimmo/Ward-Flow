@@ -1,0 +1,514 @@
+import {
+  ED_ACCESS_TARGET_MINUTES,
+  ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
+  PULL_HOLD_MINUTES,
+} from "@/components/ward-management/ward-model";
+
+/**
+ * CLINICAL VALUES — the one list of every threshold and timing that flags, colours or escalates a
+ * patient, a referral or a bed (Josh, 15 Oct 2026, item 6: "One file of signed clinical values, each
+ * marked synthetic or signed, replacing the four conflicting sets of hours").
+ *
+ * Every value carries its status. **Synthetic** means a prototype default nobody has clinically
+ * signed: it may be Josh's product default, or a figure an earlier build typed in with no decision
+ * behind it (`source` says which). **Signed** means a named clinician signed it on a date, and the
+ * type will not accept a signed value without both. Nothing here is signed yet. No value is a legal
+ * limit (D-22) and none comes from the Mental Health Act: Act periods live only in
+ * `legal-forms/act-periods-demo.ts` (D-29).
+ *
+ * Where two screens used different figures for the same rule, the figure the main app runs on was
+ * kept and the other is listed under `alternatives`, so Josh can sign one. The constants the screens
+ * import (`ward-operational-defaults.ts`, `shell/ward-service-bed-alerts.ts`, the Top 25 features
+ * and two v10 screens) now read their numbers from here. `tests/ward-clinical-values.test.ts`
+ * fails if a threshold constant is typed as a number anywhere else in the ward directory, and pins
+ * `docs/ward-flow/clinical-values.md` to this list.
+ *
+ * Three values stay written in `ward-model.ts`, where the legal figure guard keeps their provenance
+ * (`MODEL_CONSTANT_PROVENANCE`): the ED access target, the pull hold and the ED medical bed release.
+ * They are read in here so this list is complete, and their status lives here like every other.
+ *
+ * This module is pure data. It imports nothing but those three numbers.
+ */
+
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+
+export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent";
+
+/** A value is synthetic until a named clinician signs it on a date. */
+export type ClinicalValueSignature =
+  | { readonly status: "synthetic" }
+  | { readonly status: "signed"; readonly signedBy: string; readonly signedOn: string };
+
+export type ClinicalValueStatus = ClinicalValueSignature["status"];
+
+export type ClinicalValueGroup =
+  | "Referral tiers"
+  | "Emergency department waits"
+  | "Bed occupancy"
+  | "Legal form warnings"
+  | "Alerts and holds"
+  | "Arrivals and answers"
+  | "Discharge, leave and absence";
+
+/** Another figure some screen used, or a document named, for the same rule. */
+export interface ClinicalValueAlternative {
+  readonly value: number;
+  readonly where: string;
+}
+
+export type ClinicalValueEntry = ClinicalValueSignature & {
+  /** What the rule does, in the words Settings lists it under. */
+  readonly name: string;
+  readonly group: ClinicalValueGroup;
+  readonly value: number;
+  readonly unit: ClinicalValueUnit;
+  /** Where the figure came from: a decisions.md id, an owner answer, or "No decision recorded". */
+  readonly source: string;
+  /** True when a coordinator can change it in Settings; the value here is then the default. */
+  readonly adjustable?: boolean;
+  readonly alternatives?: readonly ClinicalValueAlternative[];
+};
+
+const SYNTHETIC = { status: "synthetic" } as const;
+const NO_DECISION = "No decision recorded";
+
+/**
+ * Every clinical value, keyed for typed reads (`CLINICAL_VALUES.tierOneOverdue.value`). The order
+ * is the order Settings and the doc list them in.
+ */
+export const CLINICAL_VALUES = {
+  // ---- Referral tiers ----------------------------------------------------------------------
+  tierOneOverdue: {
+    ...SYNTHETIC,
+    name: "Tier 1 referral shown as overdue after",
+    group: "Referral tiers",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-54 (10 Oct 2026); one rule since the L4 site review, 12 Oct 2026",
+    alternatives: [{ value: 8 * MINUTES_PER_HOUR, where: "Home queue before 12 Oct 2026" }],
+  },
+  tierTwoOverdue: {
+    ...SYNTHETIC,
+    name: "Tier 2 referral shown as overdue after",
+    group: "Referral tiers",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-54 (10 Oct 2026); one rule since the L4 site review, 12 Oct 2026",
+    alternatives: [{ value: 24 * MINUTES_PER_HOUR, where: "Home queue before 12 Oct 2026" }],
+  },
+  tierThreeOverdue: {
+    ...SYNTHETIC,
+    name: "Tier 3 referral shown as overdue after",
+    group: "Referral tiers",
+    value: 24 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-54 (10 Oct 2026); one rule since the L4 site review, 12 Oct 2026",
+    alternatives: [{ value: 72 * MINUTES_PER_HOUR, where: "Home queue before 12 Oct 2026" }],
+  },
+  anyTierOverdue: {
+    ...SYNTHETIC,
+    name: "Any referral shown as overdue after",
+    group: "Referral tiers",
+    value: 72 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-54 (10 Oct 2026)",
+  },
+
+  // ---- Emergency department waits -----------------------------------------------------------
+  edElevatedPressure: {
+    ...SYNTHETIC,
+    name: "ED pressure shown as elevated from a wait of",
+    group: "Emergency department waits",
+    value: 3 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-22 (26 Sep 2026), labelled default",
+  },
+  edSeverePressure: {
+    ...SYNTHETIC,
+    name: "ED pressure shown as severe, and first escalation step, from a wait of",
+    group: "Emergency department waits",
+    value: 8 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-22 (26 Sep 2026), labelled default; the ACEM eight hour line came off screens under D-24",
+  },
+  edSecondEscalation: {
+    ...SYNTHETIC,
+    name: "ED wait escalated to a state coordinator broadcast from",
+    group: "Emergency department waits",
+    value: 12 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
+  },
+  edLadderActNowEdge: {
+    ...SYNTHETIC,
+    name: "ED wait shown with the act now edge from",
+    group: "Emergency department waits",
+    value: 22 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
+  },
+  longWait: {
+    ...SYNTHETIC,
+    name: "Wait in hospital shown as long, and top escalation step, from",
+    group: "Emergency department waits",
+    value: 24 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-24 (26 Sep 2026), Josh's default, shown neutral",
+  },
+  edAccessTarget: {
+    ...SYNTHETIC,
+    name: "ED access target, counted from arrival",
+    group: "Emergency department waits",
+    value: ED_ACCESS_TARGET_MINUTES,
+    unit: "minutes",
+    source: "Owner ruling 22 Aug 2026 (ward-model.ts provenance)",
+    adjustable: true,
+    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "the original spec, superseded 22 Aug 2026" }],
+  },
+  edMedicalBedRelease: {
+    ...SYNTHETIC,
+    name: "Psychiatric bed released after a medical trip expected to last",
+    group: "Emergency department waits",
+    value: ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
+    unit: "hours",
+    source: "FD-19 (30 Aug 2026) (ward-model.ts provenance)",
+  },
+
+  // ---- Bed occupancy -------------------------------------------------------------------------
+  bedAlertLine: {
+    ...SYNTHETIC,
+    name: "Bed alert line on the rail, statistics and meters",
+    group: "Bed occupancy",
+    value: 85,
+    unit: "percent",
+    source: "Josh, v6 shell boards 02 and 03b, 7 Oct 2026; D-24 had taken the eighty five line off until sourced",
+    alternatives: [
+      { value: 90, where: "the occupancy colour band, and All wards before 11 Oct 2026" },
+      { value: 90, where: "the WEAT target line removed under D-24" },
+    ],
+  },
+  occupancyAmber: {
+    ...SYNTHETIC,
+    name: "Service occupancy colour band, amber from",
+    group: "Bed occupancy",
+    value: 90,
+    unit: "percent",
+    source: "D-22 (26 Sep 2026), labelled default",
+    alternatives: [{ value: 85, where: "the bed alert line" }],
+  },
+  occupancySurge: {
+    ...SYNTHETIC,
+    name: "Service occupancy colour band, surge from",
+    group: "Bed occupancy",
+    value: 95,
+    unit: "percent",
+    source: "D-22 (26 Sep 2026), labelled default",
+  },
+  occupancyCritical: {
+    ...SYNTHETIC,
+    name: "Service occupancy colour band, red from",
+    group: "Bed occupancy",
+    value: 98,
+    unit: "percent",
+    source: "D-22 (26 Sep 2026), labelled default",
+  },
+
+  // ---- Legal form warnings (before a typed due time; never a computed legal limit) -----------
+  dueSoonUrgent: {
+    ...SYNTHETIC,
+    name: "Typed legal due time, urgent warning before it",
+    group: "Legal form warnings",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-24 (26 Sep 2026), Josh's default",
+    adjustable: true,
+  },
+  dueSoon: {
+    ...SYNTHETIC,
+    name: "Typed legal due time, first warning before it",
+    group: "Legal form warnings",
+    value: 3 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-24 (26 Sep 2026), Josh's default",
+    adjustable: true,
+    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "Top 25 paper form radar before 15 Oct 2026" }],
+  },
+  paperFormRadarEdge: {
+    ...SYNTHETIC,
+    name: "Paper form radar shows the act now edge within",
+    group: "Legal form warnings",
+    value: 6 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
+  },
+
+  // ---- Alerts and holds ----------------------------------------------------------------------
+  pullNowAnswer: {
+    ...SYNTHETIC,
+    name: "Unanswered Pull now returns to the coordinator after",
+    group: "Alerts and holds",
+    value: 15,
+    unit: "minutes",
+    source: "Josh accepted, global alerts option A, 10 Oct 2026",
+  },
+  pullNowLive: {
+    ...SYNTHETIC,
+    name: "Pull now stays live, if nobody pulls or stands it down, for",
+    group: "Alerts and holds",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Global alerts option A, 10 Oct 2026",
+  },
+  pullHold: {
+    ...SYNTHETIC,
+    name: "Pull hold on an accepting bed lasts",
+    group: "Alerts and holds",
+    value: PULL_HOLD_MINUTES,
+    unit: "minutes",
+    source: "Owner answer 35, 17 Sep 2026 (ward-model.ts provenance)",
+    adjustable: true,
+  },
+  bedHoldReview: {
+    ...SYNTHETIC,
+    name: "Bed hold without a confirmed dispatch flagged for review after",
+    group: "Alerts and holds",
+    value: 2 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Josh, 26 Sep 2026, his default",
+  },
+  bedCountFresh: {
+    ...SYNTHETIC,
+    name: "Ward bed count named as not checked after",
+    group: "Alerts and holds",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (v10 Home, 10 Oct 2026)`,
+  },
+  downtimePackStale: {
+    ...SYNTHETIC,
+    name: "Downtime pack shown as stale after",
+    group: "Alerts and holds",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (v10 Downtime pack, 10 Oct 2026)`,
+  },
+  preparingBedStale: {
+    ...SYNTHETIC,
+    name: "Bed left as preparing or cleaning flagged after",
+    group: "Alerts and holds",
+    value: 1 * MINUTES_PER_HOUR + 1,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 ghost bed clear, 15 Oct 2026)`,
+  },
+
+  // ---- Arrivals and answers ------------------------------------------------------------------
+  lateArrivalGrace: {
+    ...SYNTHETIC,
+    name: "Arrival counted as late, past the estimate, after",
+    group: "Arrivals and answers",
+    value: 60,
+    unit: "minutes",
+    source: "D-22 (26 Sep 2026), labelled default",
+  },
+  silentWardFirstReminder: {
+    ...SYNTHETIC,
+    name: "Ward that has not answered a referral, first reminder after",
+    group: "Arrivals and answers",
+    value: 2 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-22 (26 Sep 2026), labelled default",
+  },
+  silentWardSecondReminder: {
+    ...SYNTHETIC,
+    name: "Ward that has not answered a referral, second reminder after",
+    group: "Arrivals and answers",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-22 (26 Sep 2026), labelled default",
+  },
+  wardAnswerTarget: {
+    ...SYNTHETIC,
+    name: "Decision target, ward answers a referral within",
+    group: "Arrivals and answers",
+    value: 2 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Stream A, 9 Oct 2026, labelled default",
+    adjustable: true,
+  },
+  transferAcceptanceTarget: {
+    ...SYNTHETIC,
+    name: "Decision target, transfer accepted within",
+    group: "Arrivals and answers",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Stream A, 9 Oct 2026, labelled default",
+    adjustable: true,
+  },
+  transportBookedTarget: {
+    ...SYNTHETIC,
+    name: "Decision target, transport booked within",
+    group: "Arrivals and answers",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Stream A, 9 Oct 2026, labelled default",
+    adjustable: true,
+  },
+  handoverStuck: {
+    ...SYNTHETIC,
+    name: "Accepted patient not yet moving flagged as a stuck handover after",
+    group: "Arrivals and answers",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 stuck handover timer, 15 Oct 2026)`,
+  },
+  expectFlagVoluntary: {
+    ...SYNTHETIC,
+    name: "Expected arrival flagged after waiting, voluntary",
+    group: "Arrivals and answers",
+    value: 48 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Josh, 7 Sep 2026",
+  },
+  expectFlagInvoluntary: {
+    ...SYNTHETIC,
+    name: "Expected arrival flagged after waiting, involuntary",
+    group: "Arrivals and answers",
+    value: 7 * HOURS_PER_DAY * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Josh, 7 Sep 2026",
+  },
+  expectReconsider: {
+    ...SYNTHETIC,
+    name: "Expected referral flagged to reconsider after",
+    group: "Arrivals and answers",
+    value: 72 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Josh, 7 Sep 2026",
+  },
+
+  // ---- Discharge, leave and absence ----------------------------------------------------------
+  dischargePrepWindow: {
+    ...SYNTHETIC,
+    name: "Discharge prep prompt opens before the expected discharge",
+    group: "Discharge, leave and absence",
+    value: 24 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 discharge prep, 15 Oct 2026)`,
+  },
+  leaveOpenWarning: {
+    ...SYNTHETIC,
+    name: "Leave bed flagged to consider opening, or converting to discharge, after",
+    group: "Discharge, leave and absence",
+    value: 24 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "D-23 (26 Sep 2026), Josh's default",
+  },
+  awolBedHoldWarning: {
+    ...SYNTHETIC,
+    name: "Bed held for a person absent without leave flagged for review after",
+    group: "Discharge, leave and absence",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 absence tracker, 15 Oct 2026)`,
+  },
+  ctoFollowUpWindow: {
+    ...SYNTHETIC,
+    name: "Community treatment order follow up booked within, after departure",
+    group: "Discharge, leave and absence",
+    value: 7,
+    unit: "days",
+    source: `${NO_DECISION} (Top 25 CTO handshake, 15 Oct 2026); flagged in the 15 Oct repo review`,
+  },
+  longStayPrompt: {
+    ...SYNTHETIC,
+    name: "Stay long enough to prompt a discharge plan, and escalation dossier, from",
+    group: "Discharge, leave and absence",
+    value: 7,
+    unit: "days",
+    source: "Ward board long stay line; no decision recorded for the Top 25 dossier",
+  },
+  delayedDischargeEscalation: {
+    ...SYNTHETIC,
+    name: "Delayed discharge escalated, by recorded hours, after more than",
+    group: "Discharge, leave and absence",
+    value: 72,
+    unit: "hours",
+    source: `${NO_DECISION} (Top 25 long stay dossier, 15 Oct 2026)`,
+  },
+  readmissionWindow: {
+    ...SYNTHETIC,
+    name: "Readmission flag, discharged from a ward within",
+    group: "Discharge, leave and absence",
+    value: 28,
+    unit: "days",
+    source: `${NO_DECISION}; a prompt to look, not a reporting standard`,
+  },
+} satisfies Record<string, ClinicalValueEntry>;
+
+export type ClinicalValueId = keyof typeof CLINICAL_VALUES;
+
+/** Every value as a list, with its id, in the order Settings and the doc show them. */
+export const CLINICAL_VALUE_LIST: readonly (ClinicalValueEntry & { readonly id: ClinicalValueId })[] = (
+  Object.keys(CLINICAL_VALUES) as ClinicalValueId[]
+).map((id) => ({ id, ...(CLINICAL_VALUES[id] as ClinicalValueEntry) }));
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+/** A figure in its own unit as people read it: "15 minutes", "4 hours", "7 days", "85%". */
+export function formatClinicalFigure(value: number, unit: ClinicalValueUnit): string {
+  if (unit === "percent") return `${value}%`;
+  if (unit === "days") return plural(value, "day");
+  if (unit === "hours") return plural(value, "hour");
+  if (value % (HOURS_PER_DAY * MINUTES_PER_HOUR) === 0 && value >= 7 * HOURS_PER_DAY * MINUTES_PER_HOUR)
+    return plural(value / (HOURS_PER_DAY * MINUTES_PER_HOUR), "day");
+  if (value % MINUTES_PER_HOUR === 0) return plural(value / MINUTES_PER_HOUR, "hour");
+  return plural(value, "minute");
+}
+
+/** The status as Settings shows it: "Synthetic value", or "Signed by Dr A, 1 Nov 2026". */
+export function clinicalValueStatusText(entry: ClinicalValueSignature): string {
+  return entry.status === "signed" ? `Signed by ${entry.signedBy}, ${entry.signedOn}` : "Synthetic value";
+}
+
+/** True only when every named value is signed. */
+export function allClinicalValuesSigned(ids: readonly ClinicalValueId[]): boolean {
+  return ids.every((id) => (CLINICAL_VALUES[id] as ClinicalValueEntry).status === "signed");
+}
+
+/** How many values still wait on a clinical signature. */
+export function unsignedClinicalValueCount(): number {
+  return CLINICAL_VALUE_LIST.filter((entry) => entry.status !== "signed").length;
+}
+
+/**
+ * The table `docs/ward-flow/clinical-values.md` carries between its markers. The doc is never
+ * edited by hand: `tests/ward-clinical-values.test.ts` fails when it drifts, and
+ * `UPDATE_CLINICAL_VALUES_DOC=1` on that test rewrites it.
+ */
+export function clinicalValuesMarkdownTable(): string {
+  const cell = (text: string) => text.replaceAll("|", "\\|");
+  const rows = CLINICAL_VALUE_LIST.map((entry) => {
+    const alternatives =
+      entry.alternatives?.map((alt) => `${formatClinicalFigure(alt.value, entry.unit)} (${alt.where})`).join("; ") ??
+      "";
+    return `| ${[
+      entry.group,
+      entry.name,
+      formatClinicalFigure(entry.value, entry.unit) + (entry.adjustable ? ", default, changeable in Settings" : ""),
+      clinicalValueStatusText(entry),
+      entry.source,
+      alternatives || "None recorded",
+      `\`${entry.id}\``,
+    ]
+      .map(cell)
+      .join(" | ")} |`;
+  });
+  return [
+    "| Group | Rule | Value | Status | Source | Other figures seen | Id |",
+    "| --- | --- | --- | --- | --- | --- | --- |",
+    ...rows,
+  ].join("\n");
+}

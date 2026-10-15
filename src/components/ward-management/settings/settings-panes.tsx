@@ -28,6 +28,12 @@ import { phonePushRow, type PhonePushState } from "@/components/ward-management/
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
+import {
+  CLINICAL_VALUE_LIST,
+  clinicalValueStatusText,
+  formatClinicalFigure,
+  unsignedClinicalValueCount,
+} from "@/components/ward-management/ward-clinical-values";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
 import {
   Button,
@@ -639,7 +645,7 @@ const THRESHOLD_STATE_WORDS: Record<ThresholdState, string> = {
   "nothing-reaches-it": "Nothing reaches it today",
 };
 
-export type ReferenceTab = "thresholds" | "defaults";
+export type ReferenceTab = "thresholds" | "defaults" | "clinical";
 
 export function DataPane({
   reference,
@@ -801,6 +807,7 @@ export function DataPane({
                 items={[
                   { id: "thresholds", label: "Thresholds" },
                   { id: "defaults", label: "Fixed defaults", count: OPERATIONAL_DEFAULTS.length },
+                  { id: "clinical", label: "Clinical values", count: CLINICAL_VALUE_LIST.length },
                 ]}
               />
             )
@@ -839,6 +846,47 @@ export function DataPane({
                         </span>
                       </td>
                       <td>{threshold.setBy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </TabPanel>
+        <TabPanel idPrefix="settings-reference" id="clinical" hidden={isPhone || reference !== "clinical"}>
+          {/* Josh, 15 Oct 2026 (item 6): every clinical value with its status, read from
+              `ward-clinical-values.ts`. Read only; a value is signed in that file, never here. */}
+          <div data-testid="ward-settings-clinical-values" data-setting="clinical-values">
+            <p className={styles.cardNote} data-tone="accent">
+              {unsignedClinicalValueCount()} of {CLINICAL_VALUE_LIST.length} values wait on clinical sign-off. A
+              synthetic value is a prototype default, not a clinical or legal standard.
+            </p>
+            <div className={styles.tableWrap} role="region" aria-label="Clinical values" tabIndex={0}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Rule</th>
+                    <th scope="col">Value</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CLINICAL_VALUE_LIST.map((entry) => (
+                    <tr
+                      key={entry.id}
+                      data-testid={`ward-settings-clinical-value-${entry.id}`}
+                      data-clinical-status={entry.status}
+                    >
+                      <td className={styles.cellStrong}>{entry.name}</td>
+                      <td className={styles.mono}>{formatClinicalFigure(entry.value, entry.unit)}</td>
+                      <td>
+                        <span className={styles.readout}>
+                          <StatusGlyph tone={entry.status === "signed" ? "success" : "neutral"} size={9} />
+                          {clinicalValueStatusText(entry)}
+                        </span>
+                      </td>
+                      <td>{entry.source}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -52,17 +52,5 @@
     "rule": "hour window",
     "text": "Leave bed has been away for more than 24 hours — consider opening it.",
     "owner": "Remove invented data"
-  },
-  {
-    "file": "coordinator/coordinator-screen.tsx",
-    "rule": "time constant",
-    "text": "const BED_COUNT_FRESH_MINUTES = 60;",
-    "owner": "v10 Home: invented bed-count freshness window, pending owner decision"
-  },
-  {
-    "file": "reports/downtime-pack-screen.tsx",
-    "rule": "time constant",
-    "text": "const STALE_AFTER_MINUTES = 60;",
-    "owner": "v10 Downtime pack: invented stale-pack window, pending owner decision"
   }
 ]

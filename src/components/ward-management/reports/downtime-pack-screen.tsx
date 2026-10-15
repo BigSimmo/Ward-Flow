@@ -1,6 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
@@ -45,7 +46,7 @@ import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
 /** A pack older than this reads as stale, in words and with a glyph. Nothing turns red. */
-const STALE_AFTER_MINUTES = 60;
+const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
