@@ -242,7 +242,7 @@
 .exampleTag {
   flex-shrink: 0;
   border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   padding: 0 var(--ward-space-6);
   color: var(--ward-muted);
   font-size: var(--text-xs);

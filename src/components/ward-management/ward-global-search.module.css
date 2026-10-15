@@ -174,7 +174,7 @@
   height: 1.75rem;
   padding: 0 var(--ward-space-8);
   border: 1px solid var(--ward-border);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-ctl);
   background: var(--surface-subtle);
   color: var(--ward-muted);
   cursor: pointer;

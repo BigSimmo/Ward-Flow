@@ -161,7 +161,7 @@
   font-size: var(--t-0);
   font-variant-numeric: tabular-nums;
   padding: 0.125rem 0.4375rem;
-  border-radius: var(--pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--surface-2);
   border: 0.0625rem solid var(--line);
   color: var(--muted);
@@ -804,7 +804,7 @@
   align-items: center;
   gap: var(--ward-space-4, 0.25rem);
   padding: 0.2rem 0.5rem;
-  border-radius: var(--pill, 9999px);
+  border-radius: var(--wf-r-tag);
   font-family: var(--mono);
   font-size: var(--t-0);
   font-weight: 700;

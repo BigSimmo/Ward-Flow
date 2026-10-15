@@ -579,7 +579,7 @@
   color: var(--accent-ink);
   border: 1px solid var(--accent-border);
   padding: 2px 7px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   margin-bottom: 3px;
   white-space: nowrap;
   display: inline-flex;

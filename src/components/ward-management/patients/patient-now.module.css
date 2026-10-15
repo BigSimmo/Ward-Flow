@@ -702,7 +702,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   font-size: var(--t-0);
   font-weight: 500;
   background: var(--sunk);
@@ -839,7 +839,7 @@
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   font-size: var(--t-0);
   font-weight: 700;
   border: 1px solid var(--line);
