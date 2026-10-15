@@ -439,7 +439,7 @@ export const CLINICAL_VALUES = {
     value: 7,
     unit: "days",
     source:
-      "D-58 (15 Oct 2026), 7 days from the national KPI for community care within 7 days of discharge (AIHW). The KPI counts a completed contact after any acute discharge, this check looks only for a booking for a CTO patient",
+      "D-58 (15 Oct 2026), 7 days from the national KPI for community care within 7 days of discharge (AIHW). The KPI counts a completed contact after discharge from a public acute mental health unit, this check looks only for a booking for a CTO patient",
   },
   longStayPrompt: {
     ...SIGNED_BY_JOSH,
