@@ -393,11 +393,12 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
     it("A1-7: the ward raises referrals in its own name, and only as the sending ward", () => {
       // Role access plan (15 Oct 2026). `ward` is in EVENT_ROLE now that the reducer refuses a
       // ward-raised referral under any source but psychiatric_ward
-      // (`tests/ward-referral-ward-source.test.ts`), so no borrowed pair is needed.
+      // (`tests/ward-referral-ward-source.test.ts`). The pair stays only for the New referral
+      // sheet, which still sends as the source chosen in its form.
       expect(EVENT_ROLE.RECEIVE_REFERRAL).toContain("ward");
-      expect(CROSS_ROLE_ALLOWED.some((pair) => pair.routeRole === "ward" && pair.event === "RECEIVE_REFERRAL")).toBe(
-        false,
-      );
+      expect(
+        CROSS_ROLE_ALLOWED.find((pair) => pair.routeRole === "ward" && pair.event === "RECEIVE_REFERRAL")?.reason,
+      ).toMatch(/New referral/);
       const before = seedWardFlowState();
       const unit = before.units[0];
       const after = wardFlowReducer(before, {

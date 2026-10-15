@@ -66,7 +66,12 @@ describe("canDispatch", () => {
 
 describe("CROSS_ROLE_ALLOWED", () => {
   it("lists only pairs EVENT_ROLE does not already permit, so a widening retires its entry", () => {
+    // One exception: a ward raises referrals in its own name, but the New referral sheet on a ward
+    // page still sends as ED or community, and the shared board takes that borrowed role only
+    // through this pair (`commandRefusal` in backend/ward-flow/engine.ts).
+    const keptForTheSheet = new Set(["ward:RECEIVE_REFERRAL"]);
     for (const entry of CROSS_ROLE_ALLOWED) {
+      if (keptForTheSheet.has(`${entry.routeRole}:${entry.event}`)) continue;
       expect(EVENT_ROLE[entry.event].includes(entry.routeRole), `${entry.routeRole} ${entry.event}`).toBe(false);
     }
   });
