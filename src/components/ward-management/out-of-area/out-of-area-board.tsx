@@ -440,7 +440,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       link.href = url;
       link.download = "ward-flow-synthetic-out-of-area.csv";
       link.click();
-      URL.revokeObjectURL(url);
+      // F-17: iPhone Safari starts the download after click() returns; revoking at once can cancel it.
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
       setToolNote("Export is not available in this browser");
     }

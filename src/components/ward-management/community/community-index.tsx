@@ -439,7 +439,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     link.href = url;
     link.download = "ward-flow-synthetic-community-team-list.csv";
     link.click();
-    URL.revokeObjectURL(url);
+    // F-17: iPhone Safari starts the download after click() returns; revoking at once can cancel it.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   const serviceItems = COMMUNITY_SERVICE_OPTIONS.map((option) => ({

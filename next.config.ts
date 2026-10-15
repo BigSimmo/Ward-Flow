@@ -99,6 +99,18 @@ const nextConfig: NextConfig = {
         source: "/:file([^/]+\\.html)",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
+      {
+        // PWA plan item 7: the service worker and the manifest are always revalidated, so a new
+        // version reaches an installed app on its next load rather than after a day of HTTP cache.
+        // No Service-Worker-Allowed header: the worker sits at the root, so it may already control
+        // its /mockups/ward-flow scope.
+        source: "/ward-flow-push-sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache" }],
+      },
+      {
+        source: "/manifest.webmanifest",
+        headers: [{ key: "Cache-Control", value: "no-cache" }],
+      },
     ];
   },
 };
