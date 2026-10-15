@@ -567,15 +567,15 @@ export function createWorkspaceStore(
     },
     viewer,
     /**
-     * The newest audit rows. The statewide coordinator reads them all. An access admin reads only
-     * role changes inside their own place, and break glass records when statewide. The HTTP layer
-     * refuses everyone else before this runs.
+     * The newest audit rows. The statewide coordinator reads them all, break glass included. An
+     * access admin reads only role changes inside their own place, never which patient was opened.
+     * The HTTP layer refuses everyone else before this runs.
      */
     async audit(view) {
       const whole = !view || engine.wholeNetwork(view.access);
       const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
       const { rows } = await pool.query(
-        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND (action LIKE 'ACCESS\\_%' OR action = 'BREAK_GLASS')"} ORDER BY sequence DESC LIMIT 200`,
+        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"} ORDER BY sequence DESC LIMIT 200`,
         [workspaceId],
       );
       if (whole || view.access.scope.kind === "statewide") return rows;
@@ -585,7 +585,6 @@ export function createWorkspaceStore(
       const payload = world.rows[0]?.payload;
       if (!payload || !engine.validWorld(payload)) return [];
       return rows.filter((row) => {
-        if (row.action === "BREAK_GLASS") return false;
         const access = engine.parseAccess(row.changes?.role, row.changes?.scope);
         return !!access && engine.scopeWithin(payload, access.scope, view.access.scope);
       });

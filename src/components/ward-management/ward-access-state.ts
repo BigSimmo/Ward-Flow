@@ -80,6 +80,12 @@ function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
   }
 }
 
+/** Is this team id or name the community desk's own team. */
+function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boolean {
+  const scope = access.scope;
+  return scope.kind === "team" && (teamId === scope.teamName || teamId === places.teamSlug(scope.teamName));
+}
+
 /** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
 function wholeStay(context: Context, admissionId: string): boolean {
   return context.admissionIds.has(admissionId) && !context.scoped.datesOnlyAdmissionIds.has(admissionId);
@@ -109,7 +115,9 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   morningRollupConfirmations: keep("morningRollupConfirmations"),
   // Role and time only, no person.
   handoverSignOffs: keep("handoverSignOffs"),
-  clinicalContacts: keep("clinicalContacts"),
+  // Which team was contacted and when: a team's own desk sees its own, and nobody else's.
+  clinicalContacts: (context) =>
+    context.state.clinicalContacts.filter((contact) => teamIsOwn(context.access, contact.teamId, context.places)),
   // People, through the one scoping rule.
   movements: (context) => context.scoped.movements,
   referrals: (context) => context.scoped.referrals,
@@ -279,7 +287,7 @@ function closeReferences(scoped: WardFlowState): WardFlowState {
   };
 }
 
-/** Every record id a command could name, by the list it lives in. */
+/** Every record id a command could name, by the list it lives in, audit entries and reviews included. */
 function recordIds(state: WardFlowState): Set<string> {
   return new Set<string>([
     ...state.patients.map((patient) => patient.id),
@@ -291,6 +299,8 @@ function recordIds(state: WardFlowState): Set<string> {
     ...state.leaveBeds.map((bed) => bed.id),
     ...state.notices.map((notice) => notice.id),
     ...state.broadcastAlerts.map((alert) => alert.id),
+    ...state.auditEvents.map((event) => event.id),
+    ...state.auditReviews.map((review) => review.id),
   ]);
 }
 
@@ -308,10 +318,11 @@ function commandStrings(value: unknown, into: string[] = [], depth = 0): string[
  * Why this desk may not send this command, or `null` when it may. The command may name only
  * records the desk sees in its own right: any patient, movement, stay, referral, booking, bed
  * release, leave bed, notice or alert outside its scope, or seen only through break glass, refuses
- * it. A desk acts only from its own place (`actingUnitId`, `actingPlaceId`, `actingTeamId`), and
- * every ward or ED a command aims at (`unitId`, `unitIds`) must be inside it. A service coordinator
- * therefore refers only to wards in its own service; asking wards across services is the statewide
- * coordinator's.
+ * it. A desk acts only from its own place (`actingUnitId`, `actingPlaceId`, `actingTeamId`, and the
+ * referral's origin `originUnitId` and `edId`), and every ward or ED a command aims at (`unitId`,
+ * `unitIds`) must be inside it. A service coordinator therefore refers only to wards in its own
+ * service; asking wards across services is the statewide coordinator's. A referral's destinations
+ * and the team a contact is made with are requests to another place, so they may lie outside it.
  */
 export function commandScopeRefusal(
   state: WardFlowState,
@@ -340,7 +351,11 @@ export function commandScopeRefusal(
   }
   const scope = access.scope;
   const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
+  // Where a desk acts from: its ward, ED or team, or the coordinator desk itself.
+  const actsFrom = (id: string) =>
+    placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
+  if (typeof command.originUnitId === "string" && !unitInScope(scope, command.originUnitId, places)) return outside;
   const targets = [command.unitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
   for (const target of targets)
     if (
@@ -349,12 +364,8 @@ export function commandScopeRefusal(
       !(access.role === "coordinator" && target === COORDINATOR_DESK_ACKNOWLEDGER_ID)
     )
       return outside;
-  if (typeof command.actingPlaceId === "string" && !placeIn(command.actingPlaceId)) return outside;
-  if (
-    typeof command.actingTeamId === "string" &&
-    (scope.kind !== "team" ||
-      (command.actingTeamId !== scope.teamName && command.actingTeamId !== places.teamSlug(scope.teamName)))
-  )
-    return outside;
+  for (const from of [command.actingPlaceId, command.edId])
+    if (typeof from === "string" && !actsFrom(from)) return outside;
+  if (typeof command.actingTeamId === "string" && !teamIsOwn(access, command.actingTeamId, places)) return outside;
   return null;
 }

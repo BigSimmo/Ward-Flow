@@ -56,10 +56,17 @@ GRANT USAGE, SELECT ON SEQUENCE ward_flow.audit_sequence_seq TO wardflow_backend
 GRANT SELECT, INSERT, UPDATE ON ward_flow.push_baselines TO wardflow_backend;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_subscriptions, ward_flow.push_deliveries TO wardflow_backend;
 GRANT USAGE, SELECT ON SEQUENCE ward_flow.push_subscriptions_id_seq TO wardflow_backend;
--- Role access (migration 8): memberships are read, granted and ended; break glass rows only added.
-GRANT SELECT, INSERT, UPDATE ON ward_flow.memberships TO wardflow_backend;
-GRANT SELECT, INSERT ON ward_flow.break_glass TO wardflow_backend;
-GRANT USAGE, SELECT ON SEQUENCE ward_flow.break_glass_id_seq TO wardflow_backend;
+-- Role access (migration 8): memberships are read, granted, approved and ended, and nothing else
+-- about a granted role can change; break glass rows are only added. Skipped on a database still at
+-- 5 to 7, so these grants can be re-run before 008 is applied; run them again after it.
+DO $$ BEGIN
+  IF to_regclass('ward_flow.memberships') IS NOT NULL THEN
+    GRANT SELECT, INSERT ON ward_flow.memberships TO wardflow_backend;
+    GRANT UPDATE (approved_by, approved_at, revoked_by, revoked_at) ON ward_flow.memberships TO wardflow_backend;
+    GRANT SELECT, INSERT ON ward_flow.break_glass TO wardflow_backend;
+    GRANT USAGE, SELECT ON SEQUENCE ward_flow.break_glass_id_seq TO wardflow_backend;
+  END IF;
+END $$;
 -- Remove explicit per-schema browser defaults for future tables/sequences.
 -- After each migration repeat the explicit REVOKE ALL ON ALL FUNCTIONS above and
 -- verify browser schema USAGE stays denied. A per-schema function default REVOKE

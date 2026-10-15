@@ -222,11 +222,12 @@ export function commandRefusal(
   if (access.role !== "coordinator") {
     const accepted = EVENT_ROLE[type].includes(role as WardFlowEvent["role"]);
     // A `CROSS_ROLE_ALLOWED` pair lets the desk's screen send the event under the role the event
-    // takes (the ward's Raise referral is sent as community).
-    const allowed =
-      accepted &&
-      (role === access.role ||
-        CROSS_ROLE_ALLOWED.some((entry) => entry.routeRole === access.role && entry.event === type));
+    // takes (the ward's Raise referral is sent as the referral's source, ED or community). It never
+    // lends the coordinator's role, which would write the change down as the coordinator's.
+    const borrowed =
+      role !== "coordinator" &&
+      CROSS_ROLE_ALLOWED.some((entry) => entry.routeRole === access.role && entry.event === type);
+    const allowed = accepted && (role === access.role || borrowed);
     if (!allowed) return notYours;
   }
   return commandScopeRefusal(world.state, access, supplied, {

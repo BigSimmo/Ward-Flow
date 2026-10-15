@@ -292,9 +292,10 @@ test("administrator grant failure rolls back its transaction and releases the cl
   const client = {
     query: async (sql) => {
       queries.push(sql);
+      // The grants script checks to_regclass itself, so it is matched first.
+      if (sql.includes("Runtime role flags are unsafe")) throw new Error("synthetic grant refusal");
       if (sql.includes("to_regclass")) return { rows: [{ relation: "ward_flow.migrations" }] };
       if (sql.includes("SELECT max(version)")) return { rows: [{ version: 5 }] };
-      if (sql.includes("Runtime role flags are unsafe")) throw new Error("synthetic grant refusal");
       return { rows: [] };
     },
     release: () => {

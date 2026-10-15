@@ -140,6 +140,25 @@ describe("a community team's catchment clients", () => {
   });
 });
 
+describe("clinical contacts", () => {
+  it("reach only the contacted team's own desk", () => {
+    const community = desksFor(state).community;
+    const teamName = community.scope.kind === "team" ? community.scope.teamName : "";
+    const withContacts: WardFlowState = {
+      ...state,
+      clinicalContacts: [
+        { teamId: places.teamSlug(teamName), at: NOW_ANCHOR, by: "ed" },
+        { teamId: "another-team", at: NOW_ANCHOR, by: "ed" },
+      ],
+    };
+    const contacts = (access: WardAccess) =>
+      scopeWardFlowState(withContacts, access, options).state.clinicalContacts.map((contact) => contact.teamId);
+    expect(contacts(community)).toEqual([places.teamSlug(teamName)]);
+    expect(contacts(ward)).toEqual([]);
+    expect(contacts(STATEWIDE_COORDINATOR)).toHaveLength(2);
+  });
+});
+
 describe("a command from a desk", () => {
   it("may name its own patient and stay", () => {
     expect(
@@ -214,6 +233,89 @@ describe("a command from a desk", () => {
     expect(
       commandScopeRefusal(state, ward, { type: "X", role: "ward", admissionId: otherAdmission.id }, withGrant),
     ).toMatch(/outside/);
+  });
+
+  it("acts only from its own team, ED, sending ward or the coordinator desk", () => {
+    const desks = desksFor(state);
+    const community = desks.community;
+    const teamName = community.scope.kind === "team" ? community.scope.teamName : "";
+    const ownTeam = places.teamSlug(teamName);
+    const book = (actingPlaceId: string) =>
+      commandScopeRefusal(state, community, { type: "BOOK_TRANSPORT", role: "community", actingPlaceId }, options);
+    expect(book(ownTeam)).toBeNull();
+    expect(book(teamName)).toBeNull();
+    expect(book("another-team")).toMatch(/outside/);
+    // The coordinator desk withdraws a referral as "coordinator"; a ward desk may not claim it.
+    const withdraw = (access: WardAccess, role: string) =>
+      commandScopeRefusal(state, access, { type: "WITHDRAW_REFERRAL", role, actingPlaceId: "coordinator" }, options);
+    expect(withdraw(desks.serviceCoordinator, "coordinator")).toBeNull();
+    expect(withdraw(ward, "ward")).toMatch(/outside/);
+    // A referral's origin is the desk's own ED or ward; its destinations may be anywhere.
+    const ed = desks.ed;
+    const ownEd = ed.scope.kind === "ed" ? ed.scope.edId : "";
+    const otherEd = state.movements.find((movement) => movement.originEdId !== ownEd)!.originEdId;
+    const raise = (edId: string) =>
+      commandScopeRefusal(state, ed, { type: "RAISE_REFERRAL", role: "ed", edId }, options);
+    expect(raise(ownEd)).toBeNull();
+    expect(raise(otherEd)).toMatch(/outside/);
+    const other = state.units.find((unit) => unit.id !== ownUnit)!.id;
+    const receive = (originUnitId: string) =>
+      commandScopeRefusal(
+        state,
+        ward,
+        { type: "RECEIVE_REFERRAL", role: "community", originUnitId, destinations: [{ kind: "unit", unitId: other }] },
+        options,
+      );
+    expect(receive(ownUnit)).toBeNull();
+    expect(receive(other)).toMatch(/outside/);
+  });
+
+  it("is refused when a service coordinator names an audit entry or review outside its service", () => {
+    const service = unitHealthService(state.units.find((unit) => unit.id === ownUnit)!)!;
+    const serviceCoordinator: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+    const stayIn = (inService: boolean) =>
+      state.admissions.find(
+        (admission) =>
+          admission.patientId !== null &&
+          (unitHealthService(state.units.find((unit) => unit.id === admission.unitId)!) === service) === inService,
+      )!;
+    const entry = (id: string, admission: (typeof state.admissions)[number]) =>
+      ({
+        id,
+        sequence: 1,
+        generation: state.worldGeneration,
+        at: NOW_ANCHOR,
+        actor: { role: "ward", actingUnitId: admission.unitId, attribution: "declared-prototype-role" },
+        subject: {
+          kind: "admission",
+          admissionId: admission.id,
+          unitId: admission.unitId,
+          patientId: admission.patientId,
+        },
+        outcome: "accepted",
+        reasonCode: "none",
+        origin: "captured-this-session",
+      }) as unknown as WardFlowState["auditEvents"][number];
+    const review = (id: string, eventId: string) =>
+      ({
+        id,
+        eventId,
+        generation: state.worldGeneration,
+        at: NOW_ANCHOR,
+        byRole: "coordinator",
+        decision: "reviewed",
+      }) as const;
+    const world: WardFlowState = {
+      ...state,
+      auditEvents: [entry("audit-in", stayIn(true)), entry("audit-out", stayIn(false))],
+      auditReviews: [review("review-in", "audit-in"), review("review-out", "audit-out")],
+    };
+    const send = (command: Record<string, unknown>) =>
+      commandScopeRefusal(world, serviceCoordinator, { role: "coordinator", ...command }, options);
+    expect(send({ type: "REVIEW_AUDIT_EVENT", eventId: "audit-in" })).toBeNull();
+    expect(send({ type: "REVIEW_AUDIT_EVENT", eventId: "audit-out" })).toMatch(/outside/);
+    expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-in" })).toBeNull();
+    expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-out" })).toMatch(/outside/);
   });
 
   it("is never refused for the statewide coordinator", () => {

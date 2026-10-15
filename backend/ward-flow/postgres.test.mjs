@@ -802,6 +802,8 @@ test(
       assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 5);
       await owner.query("DELETE FROM ward_flow.workspaces WHERE id=$1", [liveId]);
 
+      // The runtime grants re-run cleanly on a database still at 5, before the 008 tables exist.
+      await owner.query(await sql("./infra/postgres-runtime-role.sql"));
       // Re-applying 6 to 8 works once the runtime grants are run again, as setup does; a policy
       // removed afterwards is refused by both checks.
       await migrate(owner);
@@ -822,6 +824,32 @@ test(
     }
   },
 );
+
+test("real PostgreSQL: the Supabase runtime grants pass the runtime role check", { skip: !url }, async () => {
+  const admin = new Pool({ connectionString: url, max: 1 });
+  const database = `wardflow_supa_${randomUUID().replaceAll("-", "")}`;
+  const target = new URL(url);
+  target.pathname = `/${database}`;
+  // Supabase's browser roles, which the script revokes from by name.
+  for (const role of ["anon", "authenticated"])
+    await admin.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='${role}') THEN CREATE ROLE ${role} NOLOGIN; END IF; END $$`,
+    );
+  await admin.query(`CREATE DATABASE ${database}`);
+  const owner = new Pool({ connectionString: target.href, max: 1 });
+  const runtime = new Pool({ connectionString: target.href, max: 1, options: "-c role=wardflow_backend" });
+  try {
+    const grants = await readFile(new URL("./infra/supabase-runtime-role.sql", import.meta.url), "utf8");
+    await migrate(owner);
+    await owner.query(grants);
+    await verifyRuntimeRole(runtime, "wardflow_backend", true, "unavailable", "unsafe");
+  } finally {
+    await owner.end();
+    await runtime.end();
+    await admin.query(`DROP DATABASE ${database}`);
+    await admin.end();
+  }
+});
 
 test(
   "real PostgreSQL: roles come from memberships, every reply is scoped, and access changes are audited",
@@ -974,8 +1002,9 @@ test(
       // The access admin reads role changes only.
       const adminAudit = await store.audit(adminView);
       assert.ok(adminAudit.length > 0);
-      assert.ok(adminAudit.every((row) => row.action.startsWith("ACCESS_") || row.action === "BREAK_GLASS"));
-      assert.ok(adminAudit.some((row) => row.action === "BREAK_GLASS" && row.changes.pattern === true));
+      assert.ok(adminAudit.every((row) => row.action.startsWith("ACCESS_")));
+      // Which patient was opened, and why, is the statewide coordinator's to read.
+      assert.ok((await store.audit()).some((row) => row.action === "BREAK_GLASS" && row.changes.pattern === true));
       assert.equal((await store.listAccess(adminView)).body.memberships.length, 3);
       assert.equal((await store.listAccess(nurseView)).status, 403);
 
@@ -1034,8 +1063,12 @@ test("a ward desk may send the events its screen sends under another role, and n
   const refusal = (event) => engine.commandRefusal(world, ward, event, at);
   // The ward's Raise referral is sent as community, a pair in CROSS_ROLE_ALLOWED.
   assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
-  // A borrowed role the event does not take, or an event with no pair, is still refused.
+  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
+  // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
+  // still refused.
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);
+  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "coordinator" }), notYours);
+  assert.equal(refusal({ type: "ADD_PATIENT", role: "coordinator" }), notYours);
   assert.equal(
     refusal({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: world.state.units[0].id }),
     notYours,
