@@ -37,7 +37,7 @@
     "typecheck:source": "node scripts/run-heavy.mjs --npm-script typecheck:source:internal",
     "typecheck:source:internal": "node ./node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit",
     "test": "node scripts/run-vitest.mjs run --reporter=dot",
-    "test:backend": "npm --prefix backend/ward-flow test",
+    "test:backend": "npm --prefix backend/ward-flow run build:engine && npm --prefix backend/ward-flow test",
     "test:related": "node scripts/ward-flow/related-tests.mjs",
     "test:focused": "node scripts/test-focused.mjs",
     "test:live": "node scripts/run-live-tests.mjs",
