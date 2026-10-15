@@ -5,6 +5,7 @@ import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-m
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
 import {
   BREAK_GLASS_REASONS,
+  STATEWIDE_COORDINATOR,
   WARD_ACCESS_ROLES,
   accessIsValid,
   accessIsWholeNetwork,
@@ -174,6 +175,9 @@ export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
   return accessIsValid(access) ? access : null;
 }
 
+/** The bootstrap view: an account named in WARD_COORDINATOR_USER_IDS works as this. */
+export const STATEWIDE: WardAccess = STATEWIDE_COORDINATOR;
+
 /** True for the statewide coordinator: the whole network, every record. */
 export function wholeNetwork(access: WardAccess): boolean {
   return accessIsWholeNetwork(access);
@@ -227,9 +231,58 @@ export function commandRefusal(
   });
 }
 
+/** Who may grant, approve and remove roles: the access admin, and the statewide coordinator. */
+export function managesAccess(access: WardAccess): boolean {
+  return access.role === "admin" || accessIsWholeNetwork(access);
+}
+
+/**
+ * Whether a place names something in this workspace, so a grant never points at a ward, ED or
+ * site that does not exist. A team is any name: one with no patients simply shows nobody.
+ */
+export function scopeExists(world: SharedWorld, scope: WardAccessScope): boolean {
+  const places = wardPlaceLookup(world.state.units);
+  switch (scope.kind) {
+    case "site":
+      return world.state.units.some((unit) => places.unitSiteCode(unit.id) === scope.siteCode);
+    case "ward":
+      return scope.unitIds.every((id) => places.unitSiteCode(id) !== undefined);
+    case "ed":
+      return places.edSiteCode(scope.edId) !== undefined;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Whether `inner` lies wholly inside `outer`, so an access admin never grants, approves or removes
+ * a role wider than their own. A service admin covers that service's sites, wards and EDs only;
+ * statewide, team and jobs scopes need a statewide admin.
+ */
+export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: WardAccessScope): boolean {
+  if (outer.kind === "statewide") return true;
+  if (outer.kind !== "service") return false;
+  const places = wardPlaceLookup(world.state.units);
+  switch (inner.kind) {
+    case "service":
+      return inner.service === outer.service;
+    case "site": {
+      const units = world.state.units.filter((unit) => places.unitSiteCode(unit.id) === inner.siteCode);
+      return units.length > 0 && units.every((unit) => places.unitService(unit.id) === outer.service);
+    }
+    case "ward":
+      return inner.unitIds.every((id) => places.unitService(id) === outer.service);
+    case "ed":
+      return places.edService(inner.edId) === outer.service;
+    default:
+      return false;
+  }
+}
+
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
 export const BREAK_GLASS_MINUTES = CLINICAL_VALUES.breakGlassWindow.value;
 export const BREAK_GLASS_PER_SHIFT = CLINICAL_VALUES.breakGlassPerShift.value;
+export const BREAK_GLASS_SHIFT_HOURS = CLINICAL_VALUES.breakGlassShift.value;
 
 /**
  * Whether this desk may open this patient's record outside its care, or why not. Only clinical

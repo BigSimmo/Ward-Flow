@@ -802,3 +802,194 @@ test(
     }
   },
 );
+
+test(
+  "real PostgreSQL: roles come from memberships, every reply is scoped, and access changes are audited",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    let at = new Date("2026-10-07T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine, clock: () => at });
+    const [lead, second, nurse, admin, coordinator] = Array.from({ length: 5 }, () => randomUUID());
+    const later = new Date("2027-01-01T00:00:00Z");
+    try {
+      await migrate(pool);
+      const leadView = await store.viewer(lead, { bootstrap: true });
+      assert.equal(leadView.status, "ok");
+      assert.deepEqual(leadView.access, engine.STATEWIDE);
+      const secondView = await store.viewer(second, { bootstrap: true });
+      assert.deepEqual(await store.viewer(nurse), { status: "none" });
+
+      const full = await store.read(lead, leadView);
+      const world = full.payload;
+      const stay = world.state.admissions.find((row) => row.patientId !== null && row.leftAt === null);
+      const elsewhere = world.state.admissions.find(
+        (row) => row.unitId !== stay.unitId && row.patientId !== null && row.patientId !== stay.patientId,
+      );
+      const ward = { kind: "ward", unitIds: [stay.unitId] };
+
+      // Nobody grants themselves a role, a place must exist, and a grant needs an end date.
+      assert.equal(
+        (await store.grantAccess(leadView, { actorId: lead, role: "ward", scope: ward, expiresAt: later })).status,
+        422,
+      );
+      assert.equal(
+        (
+          await store.grantAccess(leadView, {
+            actorId: nurse,
+            role: "ward",
+            scope: { kind: "ward", unitIds: ["nowhere"] },
+            expiresAt: later,
+          })
+        ).status,
+        422,
+      );
+      assert.equal(
+        (
+          await store.grantAccess(leadView, {
+            actorId: nurse,
+            role: "ward",
+            scope: { kind: "site", siteCode: "X" },
+            expiresAt: later,
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (await store.grantAccess(leadView, { actorId: nurse, role: "ward", scope: ward, expiresAt: at })).status,
+        400,
+      );
+      const granted = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: later,
+      });
+      assert.equal(granted.status, 200);
+      assert.equal(granted.body.membership.approved, true);
+
+      // The nurse's desk is the ward, and everything sent back is that ward's part only.
+      const nurseView = await store.viewer(nurse);
+      assert.equal(nurseView.status, "ok");
+      assert.deepEqual(nurseView.access, { role: "ward", scope: ward });
+      const scoped = await store.read(nurse, nurseView);
+      assert.ok(engine.validWorld(JSON.parse(JSON.stringify(scoped.payload))));
+      assert.ok(scoped.payload.state.patients.length < world.state.patients.length);
+      assert.equal(JSON.stringify(scoped.payload).includes(JSON.stringify(elsewhere.id)), false);
+      // The HTTP layer refuses the audit to a ward; the store would give it nothing anyway.
+      assert.deepEqual(await store.audit(nurseView), []);
+
+      // A command naming another ward's stay is refused before the revision is even looked at,
+      // and the refusal is audited under the nurse's own role and place.
+      const refused = await store.command(
+        nurse,
+        randomUUID(),
+        999,
+        { type: "FLAG_BED_RELEASE", role: "ward", admissionId: elsewhere.id },
+        { view: nurseView },
+      );
+      assert.equal(refused.status, 422);
+      assert.equal(refused.body.code, "scope");
+      assert.equal(JSON.stringify(refused.body.snapshot.payload).includes(JSON.stringify(elsewhere.id)), false);
+      const { rows: nurseAudit } = await pool.query(
+        "SELECT actor_role, actor_scope, outcome FROM ward_flow.audit WHERE actor_id=$1",
+        [nurse],
+      );
+      assert.deepEqual(nurseAudit, [{ actor_role: "ward", actor_scope: ward, outcome: "denied" }]);
+
+      // Break glass: one patient, for a set time, recorded and audited; a pattern after the set
+      // number in a shift. The statewide coordinator never needs it.
+      assert.equal((await store.breakGlass(leadView, elsewhere.patientId, "handover")).status, 422);
+      assert.equal((await store.breakGlass(nurseView, elsewhere.patientId, "because")).status, 400);
+      assert.equal((await store.breakGlass(nurseView, stay.patientId, "handover")).status, 422);
+      const opened = await store.breakGlass(nurseView, elsewhere.patientId, "bed-search");
+      assert.equal(opened.status, 200);
+      assert.equal(opened.body.pattern, false);
+      assert.ok(opened.body.snapshot.payload.state.patients.some((row) => row.id === elsewhere.patientId));
+      const withGrant = await store.viewer(nurse);
+      assert.deepEqual(
+        withGrant.grants.map((grant) => grant.patientId),
+        [elsewhere.patientId],
+      );
+      // While a record is open (or has just closed) the poll sends the whole scoped workspace.
+      assert.equal((await store.poll(nurse, scoped.revision, withGrant)).notModified, false);
+      const others = world.state.patients
+        .filter((row) => !scoped.payload.state.patients.some((own) => own.id === row.id))
+        .map((row) => row.id)
+        .filter((id) => id !== elsewhere.patientId);
+      let pattern = false;
+      for (const id of others.slice(0, engine.BREAK_GLASS_PER_SHIFT))
+        pattern = (await store.breakGlass(nurseView, id, "other")).body.pattern;
+      assert.equal(pattern, true);
+      at = new Date(at.getTime() + (engine.BREAK_GLASS_MINUTES + 2) * 60_000);
+      const closed = await store.viewer(nurse);
+      assert.deepEqual(closed.grants, []);
+      assert.equal(closed.recentGrant, false);
+
+      // A coordinator or access admin role waits for a second person, never the granter or the
+      // person themselves.
+      const pending = await store.grantAccess(leadView, {
+        actorId: admin,
+        role: "admin",
+        scope: { kind: "statewide" },
+        expiresAt: later,
+      });
+      assert.equal(pending.body.membership.approved, false);
+      assert.deepEqual(await store.viewer(admin), { status: "none" });
+      assert.equal((await store.approveAccess(leadView, pending.body.membership.id)).status, 422);
+      assert.equal((await store.approveAccess(nurseView, pending.body.membership.id)).status, 403);
+      assert.equal((await store.approveAccess(secondView, pending.body.membership.id)).status, 200);
+      const adminView = await store.viewer(admin);
+      assert.equal(adminView.access.role, "admin");
+      const coordinatorGrant = await store.grantAccess(leadView, {
+        actorId: coordinator,
+        role: "coordinator",
+        scope: { kind: "statewide" },
+        expiresAt: later,
+      });
+      assert.equal((await store.approveAccess(adminView, coordinatorGrant.body.membership.id)).status, 200);
+      assert.equal((await store.viewer(coordinator)).access.role, "coordinator");
+
+      // The access admin reads role changes only.
+      const adminAudit = await store.audit(adminView);
+      assert.ok(adminAudit.length > 0);
+      assert.ok(adminAudit.every((row) => row.action.startsWith("ACCESS_") || row.action === "BREAK_GLASS"));
+      assert.ok(adminAudit.some((row) => row.action === "BREAK_GLASS" && row.changes.pattern === true));
+      assert.equal((await store.listAccess(adminView)).body.memberships.length, 3);
+      assert.equal((await store.listAccess(nurseView)).status, 403);
+
+      // Two roles: the account says which one it works as.
+      await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "community",
+        scope: { kind: "team", teamName: "Synthetic team" },
+        expiresAt: later,
+      });
+      const choose = await store.viewer(nurse);
+      assert.equal(choose.status, "choose");
+      assert.equal(choose.choices.length, 2);
+      assert.equal((await store.viewer(nurse, { workingAs: nurseView.membershipId })).access.role, "ward");
+      assert.deepEqual(await store.viewer(nurse, { workingAs: "bootstrap" }), { status: "none" });
+
+      // A removed role stops at the next request, and the audit still names it.
+      assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 200);
+      assert.equal((await store.viewer(nurse)).access.role, "community");
+      assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
+      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted.
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await assert.rejects(
+          client.query(await readFile(new URL("./infra/rollback-008-role-access.sql", import.meta.url), "utf8")),
+          /cannot be removed/,
+        );
+      } finally {
+        await client.query("ROLLBACK");
+        client.release();
+      }
+    } finally {
+      await pool.end();
+    }
+  },
+);

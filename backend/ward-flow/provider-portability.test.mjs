@@ -661,7 +661,7 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
       worldNow: (_p, at) => at,
     },
   });
-  const doc = await store.read("coordinator-1", "2026-10-14T10:00:00.000Z");
+  const doc = await store.read("coordinator-1");
   assert.equal(doc.revision, 7);
   assert.equal(seedCalls, 0);
   assert.equal(
@@ -686,7 +686,7 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
     { connect: async () => brokenClient, query: async () => ({ rows: [] }) },
     { workspaceId: randomUUID(), engine: {} },
   );
-  await assert.rejects(brokenStore.read("coordinator-1", "2026-10-14T10:00:00.000Z"), /primary query failure/);
+  await assert.rejects(brokenStore.read("coordinator-1"), /primary query failure/);
   assert.equal(releasedWith, rollbackErr);
 
   // Verify unsubscribe() immediately prunes push_deliveries for the revoked subscription ID
