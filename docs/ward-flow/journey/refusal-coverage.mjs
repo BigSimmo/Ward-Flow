@@ -45,15 +45,31 @@ const repoRoot = path.resolve(here, "../../..");
 const REDUCER = path.join(repoRoot, "src/components/ward-management/ward-flow-reducer.ts");
 const OUT = path.join(here, "refusal-coverage.json");
 
-const reducerText = fs.readFileSync(REDUCER, "utf8");
+const SOURCES = [
+  { id: "reducer", path: REDUCER, relative: "src/components/ward-management/ward-flow-reducer.ts" },
+  {
+    id: "record",
+    path: path.join(repoRoot, "src/components/ward-management/ward-flow-record-events.ts"),
+    relative: "src/components/ward-management/ward-flow-record-events.ts",
+  },
+  {
+    id: "undo",
+    path: path.join(repoRoot, "src/components/ward-management/ward-flow-undo-events.ts"),
+    relative: "src/components/ward-management/ward-flow-undo-events.ts",
+  },
+].map((source) => ({ ...source, text: fs.readFileSync(source.path, "utf8") }));
+const reducerText = SOURCES[0].text;
 const digest = (text) => crypto.createHash("sha256").update(text.split("\r\n").join("\n")).digest("hex");
+const sourceForCoverageFile = (file) => SOURCES.find((source) => file.endsWith(source.relative));
+const hitKey = (sourceId, line) => `${sourceId}:${line}`;
 
 /*
  * Where the report comes from, and what vouches for its line numbers.
  *
  * An in-repo report is measured against this very file, so nothing needs to vouch for it. An
  * outside one is only usable with the source it was measured against, and that is checked, not
- * asserted.
+ * asserted. WARD_COVERAGE_SOURCE names the reducer only, so that check does not cover the RECORD_*
+ * and UNDO_* slice files. Measure an outside report against the same commit as this worktree.
  */
 let report = null;
 let vouched = "this worktree's own report";
@@ -106,28 +122,28 @@ if (!report) {
 }
 
 /*
- * Read whichever format this is, and return one thing: for each line of the reducer the report can
- * speak for, how many times it ran. A line the report does not mention is ABSENT from this map, and
+ * Read whichever format this is, and return one thing: for each line of the engine sources the report
+ * can speak for, how many times it ran. A line the report does not mention is ABSENT from this map, and
  * absent means unknown — never zero. Collapsing those two is the whole failure this measure exists
  * to avoid.
  */
 const hitsByLine = new Map();
+const seenSources = new Set();
 const isLcov = /\.info$/i.test(report);
 
 if (isLcov) {
   const lines = fs.readFileSync(report, "utf8").split("\n");
-  let inside = false;
-  let seenFile = false;
+  let inside = null;
   for (const raw of lines) {
     const row = raw.trim();
     if (row.startsWith("SF:")) {
       const file = row.slice(3).split("\\").join("/");
-      inside = file.endsWith("src/components/ward-management/ward-flow-reducer.ts");
-      if (inside) seenFile = true;
+      inside = sourceForCoverageFile(file) || null;
+      if (inside) seenSources.add(inside.id);
       continue;
     }
     if (row === "end_of_record") {
-      inside = false;
+      inside = null;
       continue;
     }
     if (!inside || !row.startsWith("DA:")) continue;
@@ -136,38 +152,28 @@ if (isLcov) {
     const c = Number(count);
     if (!Number.isFinite(n) || !Number.isFinite(c)) continue;
     // Several records can land on one line; the line ran if any of them did.
-    hitsByLine.set(n, Math.max(hitsByLine.get(n) ?? 0, c));
-  }
-  if (!seenFile) {
-    console.log(`coverage report ${path.basename(report)} does not include the reducer — not measured`);
-    process.exit(0);
+    const key = hitKey(inside.id, n);
+    hitsByLine.set(key, Math.max(hitsByLine.get(key) ?? 0, c));
   }
 } else {
   const cov = JSON.parse(fs.readFileSync(report, "utf8"));
-  const key = Object.keys(cov).find((k) => k.split("\\").join("/").endsWith("ward-flow-reducer.ts"));
-  if (!key) {
-    console.log(`coverage report ${path.basename(report)} does not include the reducer — not measured`);
-    process.exit(0);
-  }
-  const entry = cov[key];
-  const stmts = Object.entries(entry.statementMap || {}).map(([id, m]) => ({
-    hits: entry.s[id] || 0,
-    from: m.start.line,
-    to: m.end.line,
-  }));
-  if (!stmts.length) {
-    console.error(
-      "REFUSING — the coverage report holds no statements for the reducer; it would read as 'nothing is tested'.",
-    );
-    process.exit(1);
-  }
-  // A statement whose span contains the line. v8 reports ranges, so a refusal spanning several
-  // lines is covered by whichever statement starts at or before it and ends at or after it.
-  for (const s of stmts) {
-    for (let line = s.from; line <= s.to; line++) {
-      hitsByLine.set(line, Math.max(hitsByLine.get(line) ?? 0, s.hits));
+  for (const key of Object.keys(cov)) {
+    const file = key.split("\\").join("/");
+    const source = sourceForCoverageFile(file);
+    if (!source) continue;
+    seenSources.add(source.id);
+    const entry = cov[key];
+    for (const [id, m] of Object.entries(entry.statementMap || {})) {
+      const hits = entry.s[id] || 0;
+      for (let line = m.start.line; line <= m.end.line; line++) {
+        hitsByLine.set(hitKey(source.id, line), Math.max(hitsByLine.get(hitKey(source.id, line)) ?? 0, hits));
+      }
     }
   }
+}
+if (!seenSources.has("reducer")) {
+  console.log(`coverage report ${path.basename(report)} does not include the reducer — not measured`);
+  process.exit(0);
 }
 
 if (!hitsByLine.size) {
@@ -178,19 +184,22 @@ if (!hitsByLine.size) {
   process.exit(1);
 }
 
-const src = reducerText.split("\n");
-const rejectLines = [];
-for (let i = 0; i < src.length; i++) if (/return reject\(/.test(src[i])) rejectLines.push(i + 1);
-if (!rejectLines.length) {
-  console.error("REFUSING — found no refusals in the reducer, so any coverage figure would be meaningless.");
+const refusalSites = SOURCES.flatMap((source) =>
+  source.text
+    .split("\n")
+    .flatMap((line, index) => (/return reject\(/.test(line) ? [{ file: source.id, line: index + 1 }] : [])),
+);
+if (!refusalSites.length) {
+  console.error("REFUSING — found no refusals in the reducer slices, so any coverage figure would be meaningless.");
   process.exit(1);
 }
 
-const rows = rejectLines.map((line) => {
+const rows = refusalSites.map(({ file, line }) => {
   // No record for the line at all means the report cannot speak for it — that is UNKNOWN, not
-  // "never reached". The two must not be collapsed.
-  const known = hitsByLine.has(line);
-  return { line, known, hits: known ? hitsByLine.get(line) : null };
+  // "never reached". The two must not be collapsed. Keep the file because handler line numbers
+  // are independent of the reducer's line numbers.
+  const known = hitsByLine.has(hitKey(file, line));
+  return { file, line, known, hits: known ? hitsByLine.get(hitKey(file, line)) : null };
 });
 
 /*
@@ -198,20 +207,25 @@ const rows = rejectLines.map((line) => {
  * rather than as one number for the whole file. The case a line belongs to is the nearest
  * `case "EVENT":` above it, and the bucket ends where the next one begins.
  */
-const caseStarts = [];
-for (let i = 0; i < src.length; i++) {
-  const m = src[i].match(/^\s{2,10}case "([A-Z][A-Z0-9_]*)":/);
-  if (m) caseStarts.push({ event: m[1], line: i + 1 });
-}
-if (caseStarts.length < 40) {
-  console.error(
-    `REFUSING — only ${caseStarts.length} reducer cases were found, so the per-action figures would be wrong.`,
-  );
+// Each source has its own line numbers, so each gets its own list of case starts.
+const caseStartsBySource = new Map(
+  SOURCES.map((source) => {
+    const starts = [];
+    source.text.split("\n").forEach((text, i) => {
+      const m = text.match(/^\s{2,10}case "([A-Z][A-Z0-9_]*)":/);
+      if (m) starts.push({ event: m[1], line: i + 1 });
+    });
+    return [source.id, starts];
+  }),
+);
+const caseCount = [...caseStartsBySource.values()].reduce((n, starts) => n + starts.length, 0);
+if (caseCount < 40) {
+  console.error(`REFUSING — only ${caseCount} reducer cases were found, so the per-action figures would be wrong.`);
   process.exit(1);
 }
-const eventAt = (line) => {
+const eventAt = (file, line) => {
   let found = null;
-  for (const c of caseStarts) {
+  for (const c of caseStartsBySource.get(file)) {
     if (c.line <= line) found = c.event;
     else break;
   }
@@ -219,7 +233,7 @@ const eventAt = (line) => {
 };
 const byEvent = {};
 for (const r of rows) {
-  const ev = eventAt(r.line);
+  const ev = eventAt(r.file, r.line);
   if (!ev) continue;
   byEvent[ev] = byEvent[ev] || { refusals: 0, unknown: 0, neverReached: 0 };
   byEvent[ev].refusals++;
@@ -256,7 +270,7 @@ const input = {
   reportModifiedAt: reportStat.mtime.toISOString(),
   /* The reducer the lines in that report are indexed against. A line number is a different number
    * in every tree, so this is what makes the mapping meaningful rather than coincidental. */
-  reducerSha256: digest(reducerText),
+  reducerSha256: digest(SOURCES.map((source) => source.text).join("\n")),
   /* ⚠️ PARTIAL REPORTS ARE THE NORMAL CASE, NOT AN ERROR. A report produced by a focused
    * run speaks for only the lines that run touched, so `spokenFor` drops without anything being
    * wrong. Stated here so nobody reads a smaller number as a regression. */
@@ -293,7 +307,7 @@ const out = {
   measuredAt: new Date().toISOString(),
   refusals: rows.length,
   spokenFor: measured.length,
-  neverReached: never.map((r) => r.line),
+  neverReached: never.map((r) => ({ file: r.file, line: r.line })),
   byEvent,
 };
 fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
