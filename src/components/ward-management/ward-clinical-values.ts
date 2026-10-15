@@ -140,7 +140,8 @@ export const CLINICAL_VALUES = {
     group: "Emergency department waits",
     value: 12 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: "D-58 (15 Oct 2026), the ACEM emergency department long stay measure at this same mark",
+    source:
+      "D-58 (15 Oct 2026), the mark from the ACEM emergency department long stay measure. The broadcast is a local workflow choice, ACEM does not set it",
   },
   edLadderActNowEdge: {
     ...SYNTHETIC,
