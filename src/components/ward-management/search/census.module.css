@@ -122,7 +122,7 @@
   height: 26px;
   padding: 0 10px;
   border: 0;
-  border-radius: var(--wf-r-ctl);
+  border-radius: var(--wf-r-seg-item);
   background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
@@ -176,7 +176,7 @@
   height: 26px;
   padding: 0 10px 0 8px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-2) 22%, transparent);
-  border-radius: var(--wf-r-ctl);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
