@@ -86,7 +86,7 @@ Screens are at `<printed URL>/mockups/ward-flow`. Never assume a port.
 
 Select the checks for your change from [AGENTS.md](../../../AGENTS.md) and
 [HOW-WE-WORK.md](../HOW-WE-WORK.md). For a documentation-only change, check the changed links with
-`npm run check:ward-doc-links`.
+`npm run docs:check-links`.
 
 ## Finishing a task
 

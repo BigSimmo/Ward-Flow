@@ -384,14 +384,14 @@ describe("clean-worktree fail-closed reporting", () => {
 });
 
 describe("package report-only routing", () => {
-  it("routes preflight through the explicit report command while retaining a safe compatibility alias", () => {
+  it("routes the worktree report through one explicit command with no leftover aliases", () => {
     const packageJson = JSON.parse(readFileSync(path.resolve("package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
     expect(packageJson.scripts["worktrees:report"]).toBe("node scripts/clean-worktree.mjs");
     expect(packageJson.scripts["worktrees:inventory"]).toBe("node scripts/worktree-inventory.mjs");
-    expect(packageJson.scripts["clean:worktree"]).toBe("npm run worktrees:report");
-    expect(packageJson.scripts["verify:preflight"]).toContain("npm run worktrees:report -- --self-test");
-    expect(packageJson.scripts["verify:preflight"]).not.toContain("npm run clean:worktree");
+    // The clean:worktree alias and verify:preflight were retired with the script prune (15 Oct 2026).
+    expect(packageJson.scripts["clean:worktree"]).toBeUndefined();
+    expect(packageJson.scripts["verify:preflight"]).toBeUndefined();
   });
 });

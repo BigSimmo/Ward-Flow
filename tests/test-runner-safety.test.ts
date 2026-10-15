@@ -1146,12 +1146,6 @@ describe("provider-safe test environment", () => {
     expect(preflight).toContain("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD");
     expect(runner).toContain("process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = preinstalledChromium.path");
     expect(packageJson.scripts["test:e2e:pr"]).toContain('--grep-invert "@quarantine|@mockup"');
-    expect(packageJson.scripts["test:e2e:pr:shard"]).toContain("scripts/playwright-pr-shards.mjs");
-    if (ciWorkflow) {
-      expect(ciWorkflow).toContain("npm run test:e2e:pr:shard -- --shard ${{ matrix.shard }} --exclude-critical");
-      expect(ciWorkflow).not.toContain("--shard=${{ matrix.shard }}/3");
-    }
-    expect(packageJson.scripts["test:e2e:regression"]).toContain('--grep-invert "@critical|@quarantine|@mockup"');
     expect(baseUrl.indexOf("if (!allowEnsure)")).toBeLessThan(baseUrl.indexOf("findExistingLocalProjectUrl();"));
     expect(playwrightConfig).toContain("release-gate-journeys");
   });

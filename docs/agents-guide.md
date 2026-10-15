@@ -51,7 +51,7 @@ This page only orients you; it does not duplicate those rules, so it cannot drif
   project-specific port (never assume `localhost:3000`).
 - Open `/mockups/ward-flow` at the printed dev URL.
 - Before handing off changes: run the selected checks from [`AGENTS.md`](../AGENTS.md).
-  For documentation changes, verify with `npm run check:ward-doc-links`.
+  For documentation changes, verify with `npm run docs:check-links`.
 
 ## AI tooling map
 

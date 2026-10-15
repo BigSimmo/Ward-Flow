@@ -4,8 +4,7 @@
  * Registered-worktree reporting for the Database repository.
  *
  * This module is intentionally incapable of changing files, refs, objects, registrations,
- * or worktree directories. The historical `clean:worktree` package command is retained as a
- * compatibility alias, but every CLI and exported path is report-only.
+ * or worktree directories. Every CLI and exported path is report-only.
  */
 import { spawnSync } from "node:child_process";
 import { lstatSync } from "node:fs";
@@ -751,7 +750,6 @@ export function printHelp() {
 
 Usage:
   npm run worktrees:report [-- --merged [--squashed] [--base <ref>] [--drive <letter>]]
-  npm run clean:worktree   # historical report-only compatibility alias
 
 Options:
   --merged            Report cached ancestor evidence against the base ref.

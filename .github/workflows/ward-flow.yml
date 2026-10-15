@@ -104,33 +104,18 @@ jobs:
       # These source checks need no npm install and do not assert clinical approval.
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
-      - name: Check maintained owner-ruling index
-        if: ${{ !cancelled() && steps.plan.outputs.owner_index == 'true' }}
-        run: node scripts/ward-flow/owner-rulings-index.mjs --check
-      - name: Check maintained historical lesson index
-        if: ${{ !cancelled() && steps.plan.outputs.rules_index == 'true' }}
-        run: node scripts/ward-flow/rules-index.mjs --check
-      - name: Check current organisation coverage
-        if: ${{ !cancelled() && steps.plan.outputs.organisation == 'true' }}
-        run: node scripts/ward-flow/organisation.mjs --check --source working-tree
-      - name: Check maintained document commands
-        run: npm run docs:check-scripts
-      - name: Check Ward document links
-        run: npm run check:ward-doc-links
-      - name: Check maintained document links and anchors
+      # Documentation in CI is held to three checks (fix list 10.12, 15 Oct 2026): links and
+      # anchors in every tracked Markdown file, the facts and retired terms below, and the safety
+      # wording (synthetic-data disclaimer above, legal wording later in this job). The index,
+      # inventory, organisation and command checks still run locally in the pre-commit hook.
+      - name: Check document links and anchors
         run: npm run docs:check-links
-      - name: Check maintained architecture coverage
-        run: npm run docs:check-index
-      - name: Check script inventory
-        run: npm run docs:check-inventory
       # Facts read from source must match docs/FACTS.md and every fact marker. Retired terms
       # (docs/retired-terms.json) warn on existing lines and fail only on lines this PR adds.
       - name: Check doc facts and retired terms
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/doc-facts.mjs
-      - name: Check Ward screen verification record
-        run: node scripts/ward-flow/screen-verification.mjs --check
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && steps.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0

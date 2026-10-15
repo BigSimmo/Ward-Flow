@@ -10,7 +10,7 @@ This dedicated repository (`BigSimmo/Ward-Flow`) hosts the Ward Flow bed-coordin
 
 - Product entry: [`docs/ward-flow/README.md`](docs/ward-flow/README.md)
 - Boot the UI: [`docs/ward-flow/LOCAL-FIRST-RUN.md`](docs/ward-flow/LOCAL-FIRST-RUN.md)
-- Doc/link check: `npm run check:ward-doc-links` (alias: `npm run ward:check-docs`)
+- Doc/link check: `npm run docs:check-links`
 
 ## Before contributing
 
