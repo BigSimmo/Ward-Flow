@@ -26,7 +26,6 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import {
   clockState,
   formatElapsed,
-  formatInstant,
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
