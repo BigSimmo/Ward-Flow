@@ -36,6 +36,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 afterEach(() => {
   act(() => {
     setWardFeatureFlagOnDevice("bed-meeting-tv", null);
@@ -141,6 +142,7 @@ describe("the bed meeting TV view", () => {
       admissions: state.admissions,
       leaveBeds: state.leaveBeds,
       now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
       service: null,
       nameOf: () => "",
     });
@@ -173,7 +175,7 @@ describe("the bed meeting TV view", () => {
       services.map((service) => tvServiceParam(service).toUpperCase()),
     );
     for (const [index, service] of services.entries()) {
-      const sheet = bedMeetingSheet({ ...inputs, service });
+      const sheet = bedMeetingSheet({ ...inputs, service, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
       const cells = within(rows[index])
         .getAllByRole("cell")
         .map((cell) => cell.textContent);
@@ -188,8 +190,8 @@ describe("the bed meeting TV view", () => {
     // The service with the most wards, so its table has rows.
     const service = [...tvHealthServices(state.units)].sort(
       (a, b) =>
-        meetingTvExtras({ ...inputs, service: b }).wards.length -
-        meetingTvExtras({ ...inputs, service: a }).wards.length,
+        meetingTvExtras({ ...inputs, service: b, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).wards.length -
+        meetingTvExtras({ ...inputs, service: a, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).wards.length,
     )[0];
     if (!service) throw new Error("expected a service with wards");
     const param = tvServiceParam(service);
@@ -199,8 +201,8 @@ describe("the bed meeting TV view", () => {
     expect(bedMeetingTvHref({ service: param })).toBe(`${WARD_BED_MEETING_TV_HREF}?service=${param}`);
 
     renderTv({ service: param });
-    const sheet = bedMeetingSheet({ ...inputs, service });
-    const extras = meetingTvExtras({ ...inputs, service });
+    const sheet = bedMeetingSheet({ ...inputs, service, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const extras = meetingTvExtras({ ...inputs, service, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`Bed meeting · ${service}`);
     expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
@@ -210,7 +212,7 @@ describe("the bed meeting TV view", () => {
       const unit = state.units.find((candidate) => candidate.id === ward.id);
       if (!unit) throw new Error("expected the ward");
       // The service table's one pass agrees with each ward's own TV sheet.
-      const own = wardTvSheet({ ...inputs, unit });
+      const own = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
       expect(ward.ready).toBe(own.capacity.ready);
       expect(ward.lockedReady).toBe(own.capacity.lockedReady);
       expect(ward.asked).toBe(own.askedCount);
@@ -287,9 +289,11 @@ describe("the ward and ED TV views", () => {
     const { state, inputs } = seedInputs();
     // The ward with the most people coming in, so the panels have rows.
     const unit = [...state.units].sort(
-      (a, b) => wardTvSheet({ ...inputs, unit: b }).incoming.total - wardTvSheet({ ...inputs, unit: a }).incoming.total,
+      (a, b) =>
+        wardTvSheet({ ...inputs, unit: b, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).incoming.total -
+        wardTvSheet({ ...inputs, unit: a, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).incoming.total,
     )[0];
-    const sheet = wardTvSheet({ ...inputs, unit });
+    const sheet = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     renderTv({ ward: unit.id });
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(unit.name);
     expect(screen.getByTestId("bed-meeting-tv")).toHaveAttribute("data-view", "ward");
@@ -321,10 +325,10 @@ describe("the ward and ED TV views", () => {
     if (!movement) throw new Error("expected an unanswered referral");
     const unit = state.units.find((candidate) => candidate.id === movement.referredUnitIds[0]);
     if (!unit) throw new Error("expected the referred ward");
-    const before = wardTvSheet({ ...inputs, unit });
+    const before = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     const waitlisted = { ...movement, waitlistedUnitIds: [...(movement.waitlistedUnitIds ?? []), unit.id] };
     const movements = inputs.movements.map((candidate) => (candidate.id === movement.id ? waitlisted : candidate));
-    const after = wardTvSheet({ ...inputs, movements, unit });
+    const after = wardTvSheet({ ...inputs, movements, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     expect(after.askedCount).toBe(before.askedCount - 1);
     expect(after.coming.rows.map((row) => row.id)).not.toContain(movement.id);
   });
@@ -341,8 +345,10 @@ describe("the ward and ED TV views", () => {
     const service = unitHealthService(unit);
     if (!service) throw new Error("expected the ward's health service");
     const askedRow = (movements: typeof inputs.movements) =>
-      meetingTvExtras({ ...inputs, movements, service }).wards.find((row) => row.id === unit.id)?.asked;
-    const before = wardTvSheet({ ...inputs, unit });
+      meetingTvExtras({ ...inputs, movements, service, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).wards.find(
+        (row) => row.id === unit.id,
+      )?.asked;
+    const before = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     // Waitlisted, then withdrawn, then referred to the same ward again: the reducer keeps the marker.
     const stale = {
       ...movement,
@@ -354,7 +360,7 @@ describe("the ward and ED TV views", () => {
       ],
     };
     const movements = inputs.movements.map((candidate) => (candidate.id === movement.id ? stale : candidate));
-    const after = wardTvSheet({ ...inputs, movements, unit });
+    const after = wardTvSheet({ ...inputs, movements, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     expect(after.askedCount).toBe(before.askedCount);
     expect(after.coming.rows.map((row) => row.id)).toContain(movement.id);
     expect(askedRow(movements)).toBe(askedRow(inputs.movements));
@@ -368,7 +374,7 @@ describe("the ward and ED TV views", () => {
     const bedReleases = inputs.bedReleases.map((release) =>
       release === target ? { ...release, state: "discharged" as const, preparing: true } : release,
     );
-    const sheet = wardTvSheet({ ...inputs, bedReleases, unit });
+    const sheet = wardTvSheet({ ...inputs, bedReleases, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     expect(sheet.pendingPreparation).toBe(
       bedReleases.filter((release) => release.unitId === unit.id && release.state === "discharged" && release.preparing)
         .length,
@@ -383,10 +389,12 @@ describe("the ward and ED TV views", () => {
     const accessTargetMinutes = state.configuration.edAccessTargetMinutes;
     const ed = [...allEmergencyDepartments()].sort(
       (a, b) =>
-        (edTvSheet({ ...inputs, edId: b.id, accessTargetMinutes })?.summary.waiting ?? 0) -
-        (edTvSheet({ ...inputs, edId: a.id, accessTargetMinutes })?.summary.waiting ?? 0),
+        (edTvSheet({ ...inputs, edId: b.id, accessTargetMinutes, thresholds: DEFAULT_DUE_SOON_THRESHOLDS })?.summary
+          .waiting ?? 0) -
+        (edTvSheet({ ...inputs, edId: a.id, accessTargetMinutes, thresholds: DEFAULT_DUE_SOON_THRESHOLDS })?.summary
+          .waiting ?? 0),
     )[0];
-    const sheet = edTvSheet({ ...inputs, edId: ed.id, accessTargetMinutes });
+    const sheet = edTvSheet({ ...inputs, edId: ed.id, accessTargetMinutes, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     if (!sheet) throw new Error("expected an ED sheet");
     renderTv({ ed: ed.id });
     expect(screen.getByTestId("bed-meeting-tv")).toHaveAttribute("data-view", "ed");

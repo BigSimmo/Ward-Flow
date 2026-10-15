@@ -28,6 +28,7 @@ import {
 import { referralState } from "../src/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /** The team a `community_team` addressing on `referral` names, or `undefined` if none does. */
 function communityAddressingFor(referral: Referral, teamName: string) {
   return referral.destinations.find(
@@ -178,7 +179,8 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
       referrals: seeded.referrals,
       bedReleases: seeded.bedReleases,
       leaveBeds: seeded.leaveBeds,
-      now: NOW_ANCHOR, // seedWardFlowState() carries clockOffsetMinutes: 0, so "now" is the anchor itself
+      now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS, // seedWardFlowState() carries clockOffsetMinutes: 0, so "now" is the anchor itself
     });
 
     // Queued AND still genuinely awaiting an answer (WF-13: excludes a withdrawn destination). No

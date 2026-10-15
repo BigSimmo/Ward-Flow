@@ -14,7 +14,7 @@ import {
   allClinicalValuesSigned,
   unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
-import { applyDueSoonThresholds } from "../src/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "../src/components/ward-management/ward-clock";
 import { ED_ACCESS_TARGET_MINUTES, PULL_HOLD_MINUTES } from "../src/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
@@ -157,6 +157,7 @@ describe("clinical values file", () => {
         { id: "outside", formType: "Form 3B", expiresAt: at(amber + 30) },
       ],
       now,
+      DEFAULT_DUE_SOON_THRESHOLDS,
     );
     expect(radar.find((item) => item.id === "red")?.urgency).toBe("critical_1h");
     expect(radar.find((item) => item.id === "inside")?.urgency).toBe("warning_4h");
@@ -167,12 +168,8 @@ describe("clinical values file", () => {
     const now = "2026-10-15T00:00:00.000Z";
     const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
     const forms = [{ id: "forty-five-minutes", formType: "Form 3B", expiresAt: at(45) }];
-    try {
-      applyDueSoonThresholds(15, 30);
-      expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("critical_1h");
-    } finally {
-      applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
-    }
+    const shortened = { urgentMinutes: 15, soonMinutes: 30 };
+    expect(derivePaperLegalExpiryRadar(forms, now, shortened)[0]?.urgency).toBe("critical_1h");
   });
 
   it("follows the Settings warnings when they are longer, never shorter, than the radar's amber", () => {
@@ -183,17 +180,14 @@ describe("clinical values file", () => {
       { id: "four-and-a-half-hours", formType: "Form 3B", expiresAt: at(270) },
       { id: "three-hours", formType: "Form 3B", expiresAt: at(180) },
     ];
-    const urgencyOf = (id: string) => derivePaperLegalExpiryRadar(forms, now).find((item) => item.id === id)?.urgency;
-    try {
-      applyDueSoonThresholds(120, 300);
-      expect(urgencyOf("ninety-minutes")).toBe("critical_1h");
-      expect(urgencyOf("four-and-a-half-hours")).toBe("warning_4h");
-      applyDueSoonThresholds(30, 90);
-      expect(urgencyOf("three-hours")).toBe("warning_4h");
-      expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
-    } finally {
-      applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
-    }
+    const urgencyOf = (id: string, thresholds = DEFAULT_DUE_SOON_THRESHOLDS) =>
+      derivePaperLegalExpiryRadar(forms, now, thresholds).find((item) => item.id === id)?.urgency;
+    const longer = { urgentMinutes: 120, soonMinutes: 300 };
+    expect(urgencyOf("ninety-minutes", longer)).toBe("critical_1h");
+    expect(urgencyOf("four-and-a-half-hours", longer)).toBe("warning_4h");
+    const shorter = { urgentMinutes: 30, soonMinutes: 90 };
+    expect(urgencyOf("three-hours", shorter)).toBe("warning_4h");
+    expect(urgencyOf("ninety-minutes", shorter)).toBe("warning_4h");
     expect(urgencyOf("four-and-a-half-hours")).toBe("normal");
     expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
   });
@@ -390,7 +384,7 @@ const INLINE_SHAPES: ReadonlyArray<{ rule: string; shape: RegExp }> = [
   { rule: "longStayPrompt", shape: /\.days\s*>=?\s*\d|daysInBed\([^)]*\)\s*\?\?\s*0\)\s*>=?\s*\d/ },
   { rule: "longWait", shape: /openedAt\s*>=?\s*\d{3,}/ },
   { rule: "silentWardFirstReminder or silentWardSecondReminder", shape: /elapsedMinutes\s*[<>]=?\s*\d{2,}/ },
-  { rule: "dueSoonUrgent (currentDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
+  { rule: "dueSoonUrgent (useDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
 ];
 
 function inlineThresholdsIn(source: string): string[] {

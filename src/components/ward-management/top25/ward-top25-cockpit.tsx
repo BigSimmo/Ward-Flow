@@ -60,6 +60,7 @@ import {
 } from "@/components/ward-management/ward-top25-features";
 import styles from "./ward-top25-cockpit.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 export interface WalkRoundRowItem {
   id: string;
   bedLabel: string;
@@ -274,6 +275,7 @@ export interface WardTop25CockpitProps {
  * after review (15 Oct 2026), so their cards are intentionally absent.
  */
 export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
+  const thresholds = useDueSoonThresholds();
   const state = useMemo(() => initialState ?? seedWardFlowState(), [initialState]);
   const now = state.auditCaptureStartedAt;
   const isClient = useIsClient();
@@ -445,8 +447,9 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
           { id: "form-warn", formType: "Form 3B", expiresAt: "2026-10-15T13:00:00.000Z" },
         ],
         "2026-10-15T10:00:00.000Z",
+        thresholds,
       ),
-    [],
+    [thresholds],
   );
   const maroonedDossier = useMemo(
     () =>

@@ -34,12 +34,12 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
-  clockState,
   formatElapsed,
   formatInstantWithDay,
+  type Instant,
+  isClockBreached,
   minutesUntil,
   splitDuration,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
@@ -79,7 +79,11 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
-import { useOptionalWardFlowSelect, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useOptionalWardFlowSelect,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -431,6 +435,7 @@ export function ShortlistPanel({
 }: ShortlistPanelProps) {
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. Called unconditionally,
   // ahead of the `if (!movement)` early return below, so the hook order stays fixed.
+  const thresholds = useDueSoonThresholds();
   const resolvePatientIdentity = usePatientOf();
   // Phone (v10 Home "Patient open"): a 2x2 facts card and less text. Desktop is unchanged.
   const isPhone = useIsPhone();
@@ -712,7 +717,7 @@ export function ShortlistPanel({
   // comment in ward-model.ts) — only the transport/transfer forms (4A/4C) still do, and none of
   // those are due in the past on today's fixture, so `legalBreached` is false today.
   const legalDueAt = movement.legalForm?.dueAt;
-  const legalBreached = legalDueAt !== undefined && clockState(legalDueAt, now) === "breached";
+  const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
 
   // The destination slot. An accepted unit and every outstanding referral are independent facts
   // a coordinator acts on differently (same reasoning `flow-diagram.tsx` already applies), so
@@ -817,7 +822,7 @@ export function ShortlistPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const { factors } = operationalScore(movement, now);
+  const { factors } = operationalScore(movement, now, thresholds);
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant

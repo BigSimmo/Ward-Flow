@@ -23,14 +23,14 @@ import {
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import {
-  MINUTES_PER_DAY,
-  clockState,
   formatElapsed,
   formatInstant,
   formatInstantWithDay,
   formatRemaining,
-  minutesUntil,
   type Instant,
+  isClockBreached,
+  MINUTES_PER_DAY,
+  minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import {
   SILENT_WARD_FIRST_REMINDER_MINUTES,
@@ -1271,7 +1271,7 @@ export function buildActionInbox(
   // "It is just counting how long they have been in ED determining priority. So counting up") and
   // for the 1A by the product owner on 2026-08-23. See `LegalForm`'s doc comment in ward-model.ts.
   const breachedLegal = movements.filter(
-    (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "breached",
+    (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
   );
   for (const movement of breachedLegal) {
     const dueAt = movement.legalForm?.dueAt;

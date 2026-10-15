@@ -34,13 +34,14 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import {
   clockState,
+  type DueSoonThresholds,
   formatElapsed,
   formatInstantWithDay,
+  type Instant,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
   splitDuration,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
@@ -53,7 +54,11 @@ import {
   type LegalStatusChangeReason,
   type UrgencyChangeReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   bookTransportBlockedReason,
   communityReferralBlockedReason,
@@ -805,9 +810,9 @@ function formExpiryLine(legalForm: LegalForm, now: Instant): string {
  * Returns `undefined` well clear of the expiry, or when none is recorded, so the caller renders no
  * warning row rather than an empty one.
  */
-function formExpiryWarning(legalForm: LegalForm, now: Instant): string | undefined {
+function formExpiryWarning(legalForm: LegalForm, now: Instant, thresholds: DueSoonThresholds): string | undefined {
   if (legalForm.dueAt === undefined) return undefined;
-  const state = clockState(legalForm.dueAt, now);
+  const state = clockState(legalForm.dueAt, now, thresholds);
   if (state === "breached") return "Warning: past the expiry written on the form. Check the form.";
   if (state === "critical" || state === "due") return "Warning: the expiry written on the form is close.";
   return undefined;
@@ -936,6 +941,7 @@ function edStepSaid(event: EdStepEvent): string {
 }
 
 export function EdScreen({ edId }: EdScreenProps) {
+  const thresholds = useDueSoonThresholds();
   const {
     movements,
     units,
@@ -3096,7 +3102,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 const medicalClearance = movementMedicalClearance(movement, referrals);
                 const formExpiryText = movement.legalForm ? formExpiryLine(movement.legalForm, now) : undefined;
                 const formExpiryWarningText = movement.legalForm
-                  ? formExpiryWarning(movement.legalForm, now)
+                  ? formExpiryWarning(movement.legalForm, now, thresholds)
                   : undefined;
                 const item = outstandingItem(movement);
                 // Owner, 26 Sept 2026: resolved early so the blocked-reason sentences below can

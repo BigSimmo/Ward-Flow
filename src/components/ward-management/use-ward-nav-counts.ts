@@ -2,7 +2,11 @@
 
 import { usePathname } from "next/navigation";
 
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
@@ -49,10 +53,11 @@ export function useWardNavCounts(): {
     "leaveBeds",
   );
   const now = useWardFlowClock();
+  const thresholds = useDueSoonThresholds();
   return {
     role: wardChromeRole(pathname),
     shellRole: WARD_SHELL_ROLE,
-    counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
+    counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now, thresholds }),
     placeId: wardPlaceIdFor(pathname),
   };
 }

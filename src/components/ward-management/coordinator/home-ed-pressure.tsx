@@ -4,8 +4,8 @@ import { useMemo } from "react";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
-import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
@@ -41,6 +41,7 @@ type HomeEdPressureProps = {
  */
 export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
+  const thresholds = useDueSoonThresholds();
   const { configuration } = useWardFlowSelect("configuration");
   const urgentWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
   const soonWindow = dueWindowLabel(configuration.dueSoonMinutes);
@@ -68,7 +69,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
           const serviceAcronym = healthServiceAcronym(rawService);
           const deadlines = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [])
             .filter((movement) => movement.legalForm?.dueAt !== undefined)
-            .map((movement) => clockState(movement.legalForm!.dueAt!, now));
+            .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
 

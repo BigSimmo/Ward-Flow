@@ -15,7 +15,7 @@ import {
   FileClock,
   Printer,
 } from "lucide-react";
-import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { occupiedBeds } from "../statistics/statistics-occupancy";
@@ -32,6 +32,7 @@ import styles from "./ward-tools-workspace.module.css";
 const root = "/mockups/ward-flow";
 
 export function NetworkFigures() {
+  const thresholds = useDueSoonThresholds();
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
     "units",
     "admissions",
@@ -46,15 +47,18 @@ export function NetworkFigures() {
   const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds);
   const available = capacity.reduce((sum, value) => sum + value.availableNow, 0);
   const open = movements.filter(isOpen);
-  const deadlines = standingFigures({
-    units,
-    admissions,
-    movements,
-    bedReleases,
-    leaveBeds,
-    now,
-    chromeRole: "coordinator",
-  }).filter((figure) => ["passed", "within-hour", "longest"].includes(figure.key));
+  const deadlines = standingFigures(
+    {
+      units,
+      admissions,
+      movements,
+      bedReleases,
+      leaveBeds,
+      now,
+      chromeRole: "coordinator",
+    },
+    thresholds,
+  ).filter((figure) => ["passed", "within-hour", "longest"].includes(figure.key));
   const groups = [
     {
       id: "capacity",

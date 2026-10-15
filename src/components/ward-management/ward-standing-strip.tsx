@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
-import { clockState, type Instant } from "@/components/ward-management/ward-clock";
+import { clockState, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import {
@@ -15,9 +15,10 @@ import {
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import {
-  type WardFlowContextValue,
+  useDueSoonThresholds,
   useWardFlowClock,
   useWardFlowSelect,
+  type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -76,13 +77,13 @@ type FigureInput = {
   placeId?: string;
 };
 
-function legalCounts(movements: Movement[], now: Instant) {
+function legalCounts(movements: Movement[], now: Instant, thresholds: DueSoonThresholds) {
   let passed = 0;
   let withinHour = 0;
   for (const movement of movements) {
     const dueAt = movement.legalForm?.dueAt;
     if (dueAt === undefined) continue;
-    const state = clockState(dueAt, now);
+    const state = clockState(dueAt, now, thresholds);
     if (state === "breached") passed += 1;
     else if (state === "critical") withinHour += 1;
   }
@@ -102,10 +103,10 @@ function longestOpen(open: Movement[], now: Instant): StandingFigure {
   };
 }
 
-export function standingFigures(input: FigureInput): StandingFigure[] {
+export function standingFigures(input: FigureInput, thresholds: DueSoonThresholds): StandingFigure[] {
   const { movements, units, admissions, bedReleases, leaveBeds, now, chromeRole, placeId } = input;
   const open = movements.filter(isOpen);
-  const legal = legalCounts(open, now);
+  const legal = legalCounts(open, now, thresholds);
 
   /*
    * 🔴 **A "READY" FIGURE MUST SAY HOW MANY OF THOSE BEDS ARE PENDING — owner ruling 2026-09-05, and
@@ -375,6 +376,7 @@ export function WardStatsPanel({ figures, open }: { figures: StandingFigure[]; o
  * header row and the panel beneath, which is the whole reason the two are separate exports.
  */
 export function WardStandingStrip() {
+  const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const { movements, units, admissions, bedReleases, leaveBeds } = useWardFlowSelect(
     "movements",
@@ -386,16 +388,19 @@ export function WardStandingStrip() {
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const chromeRole = wardChromeRole(pathname);
-  const figures = standingFigures({
-    movements,
-    units,
-    admissions,
-    bedReleases,
-    leaveBeds,
-    now,
-    chromeRole,
-    placeId: placeIdFrom(pathname),
-  });
+  const figures = standingFigures(
+    {
+      movements,
+      units,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      now,
+      chromeRole,
+      placeId: placeIdFrom(pathname),
+    },
+    thresholds,
+  );
   return (
     <div data-chrome-role={chromeRole} className={styles.hudAnchor}>
       <WardStatsToggle figures={figures} open={open} onToggle={() => setOpen(!open)} />

@@ -3,7 +3,7 @@ import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { wardSites } from "@/components/ward-management/ward-sites";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
 
@@ -54,10 +54,11 @@ export type WardNavCountInput = {
   bedReleases: readonly BedRelease[];
   leaveBeds: readonly LeaveBed[];
   now: Instant;
+  thresholds: DueSoonThresholds;
 };
 
 export function wardNavCounts(input: WardNavCountInput): WardNavCounts {
-  const { movements, units, referrals, bedReleases, leaveBeds, now } = input;
+  const { movements, units, referrals, bedReleases, leaveBeds, now, thresholds } = input;
 
   const open = movements.filter(isOpen);
   const rollup = serviceRollup(wardSites, units, [...bedReleases], [...leaveBeds], now);
@@ -67,7 +68,7 @@ export function wardNavCounts(input: WardNavCountInput): WardNavCounts {
    * expiring inside the hour, and a patient with nowhere lawful to go. Read from there rather than
    * restated here, so a cause the owner later promotes or demotes moves this figure with it.
    */
-  const severe = delayGroups(movements, units, now)
+  const severe = delayGroups(movements, units, now, thresholds)
     .filter((group) => SEVERE_CAUSES.includes(group.cause))
     .reduce((total, group) => total + group.movements.length, 0);
 

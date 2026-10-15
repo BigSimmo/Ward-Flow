@@ -7,12 +7,18 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 describe("Command activity from current records", () => {
   it("excludes future records and orders a new recorded refresh ahead of older events", () => {
     const state = seedWardFlowState();
     const current = { unitId: state.units[0].id, at: NOW_ANCHOR, byRole: "coordinator" };
     const future = { ...current, at: NOW_ANCHOR + 10 };
-    const result = deriveCommandActivity({ ...state, refreshRequests: [current, future], now: NOW_ANCHOR });
+    const result = deriveCommandActivity({
+      ...state,
+      refreshRequests: [current, future],
+      now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+    });
     expect(result.lastEventAt).toBe(NOW_ANCHOR);
     expect(result.content.changes[0].id).toContain(`capacity-refresh:${current.unitId}:${NOW_ANCHOR}:`);
     expect(result.content.changes.some((event) => event.id.includes(`:${NOW_ANCHOR + 10}:`))).toBe(false);
@@ -21,13 +27,14 @@ describe("Command activity from current records", () => {
 
   it("updates the movement tally when an open record is added", () => {
     const state = seedWardFlowState();
-    const before = deriveCommandActivity({ ...state, now: NOW_ANCHOR });
+    const before = deriveCommandActivity({ ...state, now: NOW_ANCHOR, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     const movement = state.movements.find((item) => item.stage === "placement_requested")!;
     expect(movement).toBeDefined();
     const after = deriveCommandActivity({
       ...state,
       movements: [...state.movements, { ...movement, id: "WF-ACTIVITY-CHECK", openedAt: NOW_ANCHOR }],
       now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
     const count = (value: typeof before) =>
       Number(value.content.tiles.find((tile) => tile.label === "Open movements")?.value);
@@ -71,6 +78,7 @@ describe("Command activity from current records", () => {
       leaveBeds: [],
       refreshRequests: [],
       now: changedAt,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 
     const openedEvent = result.content.changes.find((event) => event.id === `movement-opened:${target.id}`);
@@ -103,6 +111,7 @@ describe("Command activity from current records", () => {
       leaveBeds: [],
       refreshRequests: [],
       now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 
     const openedEvent = result.content.changes.find((event) => event.id === `movement-opened:${target.id}`);
@@ -143,6 +152,7 @@ describe("Command activity from current records", () => {
       leaveBeds: [],
       refreshRequests: [],
       now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 
     expect(result.content.changes.find((change) => change.id.startsWith("escalation:"))?.category).toBe("escalation");

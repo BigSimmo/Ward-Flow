@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { WardChromeSearch } from "@/components/ward-management/ward-chrome-search";
 import { WardStatsPanel, WardStatsToggle, standingFigures } from "@/components/ward-management/ward-standing-strip";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
@@ -80,6 +84,7 @@ function roleAction(role: WardChromeRole): { href: string; label: string } {
  * never scroll**, where sticky applies, computes correctly and silently never moves.
  */
 export function WardChromeHeader() {
+  const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const {
@@ -113,16 +118,19 @@ export function WardChromeHeader() {
   const [tasksOpen, setTasksOpen] = useState(false);
 
   const chromeRole = wardChromeRole(pathname);
-  const figures = standingFigures({
-    movements,
-    units,
-    admissions,
-    bedReleases,
-    leaveBeds,
-    now,
-    chromeRole,
-    placeId: /\/(?:ward|board|ed)\/([^/]+)/u.exec(pathname)?.[1],
-  });
+  const figures = standingFigures(
+    {
+      movements,
+      units,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      now,
+      chromeRole,
+      placeId: /\/(?:ward|board|ed)\/([^/]+)/u.exec(pathname)?.[1],
+    },
+    thresholds,
+  );
 
   const tasks = useMemo(
     () => buildActionInbox(movements.filter(isOpen), now, units, { plannedAdmissions }),

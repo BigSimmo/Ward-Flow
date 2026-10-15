@@ -36,6 +36,7 @@ import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const COORDINATOR_ROUTE = "/mockups/ward-flow";
 const WARD_ROUTE = "/mockups/ward-flow/board/rph-adult-secure";
 const ED_ROUTE = "/mockups/ward-flow/ed/peel-ed";
@@ -255,6 +256,7 @@ describe("Ward Flow sidebar, by role", () => {
       bedReleases: seed.bedReleases,
       leaveBeds: seed.leaveBeds,
       now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 
     renderRail();
@@ -335,7 +337,7 @@ describe("Ward Flow sidebar counts, against their own derivations", () => {
   const seed = seedWardFlowState();
   const rollup = serviceRollup(wardSites, seed.units, seed.bedReleases, seed.leaveBeds, NOW_ANCHOR);
   const openMovements = seed.movements.filter(isOpen).length;
-  const severeDelays = delayGroups(seed.movements, seed.units, NOW_ANCHOR)
+  const severeDelays = delayGroups(seed.movements, seed.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)
     .filter((group) => SEVERE_CAUSES.includes(group.cause))
     .reduce((total, group) => total + group.movements.length, 0);
   const queuedReferrals = seed.referrals.filter((referral) => referralState(referral) === "queued").length;

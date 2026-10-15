@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { clockState } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { isOpen, elapsedLabel } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
@@ -107,7 +107,7 @@ function expectedLegalCounts(now: number) {
   for (const movement of wardMovements.filter(isOpen)) {
     const dueAt = movement.legalForm?.dueAt;
     if (dueAt === undefined) continue;
-    const state = clockState(dueAt, now);
+    const state = clockState(dueAt, now, DEFAULT_DUE_SOON_THRESHOLDS);
     if (state === "breached") passed += 1;
     else if (state === "critical") withinHour += 1;
   }
@@ -135,14 +135,14 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
 
     const inRangeAtAnchor = openMovements.filter((movement) => {
       const dueAt = movement.legalForm?.dueAt;
-      return dueAt !== undefined && clockState(dueAt, NOW_ANCHOR) !== "clear";
+      return dueAt !== undefined && clockState(dueAt, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS) !== "clear";
     });
     expect(
       inRangeAtAnchor.length,
       "no open movement carries a legal deadline in range at NOW_ANCHOR — the legal figures are untested here",
     ).toBeGreaterThan(0);
 
-    const figures = standingFigures(baseInput(NOW_ANCHOR));
+    const figures = standingFigures(baseInput(NOW_ANCHOR), DEFAULT_DUE_SOON_THRESHOLDS);
     const nonZero = figures.filter((figure) => /[1-9]/u.test(figure.value));
     expect(
       nonZero.length,
@@ -171,7 +171,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
    * are quiet. A third figure flagged here would slip past a test that only checked the total count.
    */
   it("flags only the two legal figures at NOW_ANCHOR, where both happen to be quiet", () => {
-    const figures = standingFigures(baseInput(NOW_ANCHOR));
+    const figures = standingFigures(baseInput(NOW_ANCHOR), DEFAULT_DUE_SOON_THRESHOLDS);
     const flagged = figures.filter((figure) => figure.flagged === true);
     expect(
       flagged.length,
@@ -195,7 +195,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
   it("flags only the two legal figures, and both are lit, at the instant the fixture's own deadlines breach", () => {
     const now = NOW_ANCHOR + 70;
     const expected = expectedLegalCounts(now);
-    const figures = standingFigures(baseInput(now));
+    const figures = standingFigures(baseInput(now), DEFAULT_DUE_SOON_THRESHOLDS);
     const byKey = Object.fromEntries(figures.map((figure) => [figure.key, figure]));
 
     expect(byKey.passed.value).toBe(String(expected.passed));
@@ -237,7 +237,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
       undefined,
     );
 
-    const figures = standingFigures(baseInput(now));
+    const figures = standingFigures(baseInput(now), DEFAULT_DUE_SOON_THRESHOLDS);
     const byKey = Object.fromEntries(figures.map((figure) => [figure.key, figure]));
 
     expect(byKey.ready.value).toBe(String(rollup.service.availableNow));
@@ -347,7 +347,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
  */
 describe("the ready figures say how many beds are pending, in the words each role can act on", () => {
   const readySub = (chromeRole: "coordinator" | "ward" | "ed", placeId?: string) => {
-    const figures = standingFigures(baseInput(NOW_ANCHOR, chromeRole, placeId));
+    const figures = standingFigures(baseInput(NOW_ANCHOR, chromeRole, placeId), DEFAULT_DUE_SOON_THRESHOLDS);
     const ready = figures.find((figure) => figure.key.startsWith("ready"));
     expect(ready, `no ready figure in the ${chromeRole} set`).toBeTruthy();
     return ready!.sub;

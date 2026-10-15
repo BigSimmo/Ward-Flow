@@ -6,11 +6,13 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>()),
   useWardFlow: () => context,
   useWardFlowSelect: () => context,
   useOptionalWardFlowSelect: () => context,
+  useDueSoonThresholds: () => dueSoonThresholdsOf(context?.configuration),
   useWardFlowClock: () => NOW_ANCHOR,
 }));
 

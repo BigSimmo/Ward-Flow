@@ -30,16 +30,22 @@ import {
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   clockState,
+  type DueSoonThresholds,
   formatInstantWithDay,
   formatRemaining,
+  type Instant,
+  isClockBreached,
   minutesUntil,
   splitDuration,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -123,6 +129,7 @@ export function MovementWorkspaceCockpit({
   /** Who is acting in this cockpit — ward embeds must not attribute as coordinator. */
   role?: "ward" | "coordinator";
 }) {
+  const thresholds = useDueSoonThresholds();
   const { dispatch, movements, units, patients, referrals, admissions } = useWardFlowSelect(
     "dispatch",
     "movements",
@@ -178,7 +185,7 @@ export function MovementWorkspaceCockpit({
   const originEd = allEmergencyDepartments().find((department) => department.id === patient.originEdId);
   const service = movementHealthService(patient);
   const destinationService = destination ? siteByCode(destination.siteCode)?.service : undefined;
-  const attention = attentionItems({ movement: patient, units, now, destination, open, blockerIsActive });
+  const attention = attentionItems({ movement: patient, units, now, thresholds, destination, open, blockerIsActive });
   const reachedIndex = MOVEMENT_STAGES.indexOf(patient.stage);
 
   const answeredCount = patient.declines.length + (patient.acceptedUnitId === undefined ? 0 : 1);
@@ -195,7 +202,7 @@ export function MovementWorkspaceCockpit({
   const ranMinutes = Math.max((open ? now : (patient.closure?.at ?? now)) - patient.openedAt, 0);
 
   const deadline = patient.legalForm?.dueAt;
-  const deadlineBreached = open && deadline !== undefined && clockState(deadline, now) === "breached";
+  const deadlineBreached = open && deadline !== undefined && isClockBreached(deadline, now);
   const pullExpired = open && patient.pullExpiresAt !== undefined && patient.pullExpiresAt <= now;
 
   const { flagged, withheldFlags } = urgentFigureFlags({
@@ -840,7 +847,9 @@ export function MovementWorkspaceCockpit({
                       <ShieldCheck size={16} className={styles.readinessCardIcon} aria-hidden="true" />
                       <strong>Form readiness</strong>
                     </div>
-                    <span className={styles.readinessCardBody}>{formReadinessState(patient.legalForm, now)}</span>
+                    <span className={styles.readinessCardBody}>
+                      {formReadinessState(patient.legalForm, now, thresholds)}
+                    </span>
                     {patient.legalForm ? (
                       <span className={styles.readinessCardWhere}>
                         The form and its deadline, under Legal and forms below.
@@ -1928,10 +1937,10 @@ export function MovementWorkspaceCockpit({
   }
 }
 
-function formReadinessState(legalForm: LegalForm | undefined, now: Instant): string {
+function formReadinessState(legalForm: LegalForm | undefined, now: Instant, thresholds: DueSoonThresholds): string {
   if (!legalForm) return "Not ready — no legal form recorded.";
   if (legalForm.dueAt === undefined) return "Recorded, with no deadline on it.";
-  const state = clockState(legalForm.dueAt, now);
+  const state = clockState(legalForm.dueAt, now, thresholds);
   if (state === "breached") return "Recorded, and its deadline has passed. Needs attention says by how much.";
   if (state === "critical" || state === "due") {
     return "Recorded, and its deadline is close. Needs attention says how close.";

@@ -32,7 +32,11 @@ import {
   formatRemaining,
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
   foldPatientSearchText,
@@ -225,6 +229,7 @@ interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
+  const thresholds = useDueSoonThresholds();
   const {
     movements,
     referrals,
@@ -636,8 +641,9 @@ export function PatientSearchPage() {
   // the same records as `unifiedCaseload` above, so every search and filter that narrows that list
   // narrows these rows the same way; the bed and record rows answer the typed name or UMRN.
   const census = useMemo(
-    () => buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero }),
-    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero],
+    () =>
+      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
   );
   const isPhone = usePhoneLayout();
   const needle = isChip ? "" : foldPatientSearchText(text);

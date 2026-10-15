@@ -18,7 +18,7 @@ import {
   type DischargeDelayReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { MINUTES_PER_DAY, currentDueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
+import { type DueSoonThresholds, type Instant, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import {
   deriveAfternoonDischarges,
@@ -624,7 +624,7 @@ export function createUndoWindowState(input: {
 // #19 — Paper-Form Statutory Expiry Radar (4h Amber / 1h Red & 48h/24h/<6h)
 // ============================================================================
 // Red keeps its one-hour mark (the urgent warning default) and amber the radar's own four-hour mark
-// (`paperFormRadarAmber`). Either widens when Settings sets a longer warning (`currentDueSoonThresholds`)
+// (`paperFormRadarAmber`). Either widens when Settings sets a longer warning (the thresholds passed in)
 // and never narrows, so a form keeps every warning it had while the figures wait for sign-off.
 // `warning_4h` and `critical_1h` stay as internal names.
 
@@ -646,9 +646,10 @@ export interface PaperLegalExpiryRadarItem {
 export function derivePaperLegalExpiryRadar(
   forms: readonly PaperLegalFormInput[],
   now: Instant | string,
+  thresholds: DueSoonThresholds,
 ): PaperLegalExpiryRadarItem[] {
   const nowMin = toMinutes(now);
-  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  const { urgentMinutes, soonMinutes } = thresholds;
   const redMinutes = Math.max(CLINICAL_VALUES.dueSoonUrgent.value, urgentMinutes);
   const amberMinutes = Math.max(CLINICAL_VALUES.paperFormRadarAmber.value, soonMinutes, redMinutes);
   return forms

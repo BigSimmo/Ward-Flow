@@ -1,5 +1,5 @@
 import { DELAY_CAUSE_COPY, delayGroups } from "@/components/ward-management/delays/delays-derivations";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 
@@ -59,14 +59,18 @@ export type ChangesSinceLastLook = {
   newEscalationIds: string[];
 };
 
-export function takeLastLookSnapshot(world: LastLookWorld, now: Instant): LastLookSnapshot {
+export function takeLastLookSnapshot(
+  world: LastLookWorld,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): LastLookSnapshot {
   const open = world.movements.filter(isOpen);
   const readyByUnit: Record<string, number> = {};
   for (const unit of world.units) {
     readyByUnit[unit.id] = unitCapacity(unit, [...world.bedReleases]).available;
   }
   const delayKeys: string[] = [];
-  for (const group of delayGroups(open, [...world.units], now)) {
+  for (const group of delayGroups(open, [...world.units], now, thresholds)) {
     for (const movement of group.movements) delayKeys.push(`${movement.id}:${group.cause}`);
   }
   return {

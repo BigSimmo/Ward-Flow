@@ -18,6 +18,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 const seeded = seedWardFlowState();
 const baseMovement = seeded.movements[0];
@@ -130,6 +131,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlow: () => mockContext,
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
     useWardFlowClock: () => mockContext.now,
   };
 });

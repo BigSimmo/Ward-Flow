@@ -53,6 +53,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlow: () => mockContext,
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
     useWardFlowClock: () => mockContext.now,
     useWardClock: () => mockContext.now,
   };
@@ -63,6 +64,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { showWardTable } from "./helpers/capacity-ward-table";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const seeded = seedWardFlowState();
 const FEED_UNIT = seeded.units[0]!;
 const WARD_UNIT = seeded.units[1]!;

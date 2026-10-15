@@ -45,6 +45,7 @@ import {
   deriveTMinus24hDischargePrompts,
 } from "@/components/ward-management/ward-top25-features";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Suite", () => {
   const seeded = seedWardFlowState();
   const seededNow = seeded.auditCaptureStartedAt;
@@ -330,6 +331,7 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
         { id: "f-norm", formType: "Form 6A", expiresAt: "2026-10-15T18:00:00.000Z" },
       ],
       NOW_ISO,
+      DEFAULT_DUE_SOON_THRESHOLDS,
     );
     expect(radar.find((f) => f.id === "f-crit")?.urgency).toBe("critical_1h");
     expect(radar.find((f) => f.id === "f-warn")?.urgency).toBe("warning_4h");
@@ -582,6 +584,7 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
         { id: "f-soon", formType: "Form 3B", expiresAt: "2026-10-15T10:30:00.000Z" },
       ],
       NOW_ISO,
+      DEFAULT_DUE_SOON_THRESHOLDS,
     );
     // A date that cannot be read is "unrecorded", never a passed deadline, and sorts after the dated forms.
     expect(radar.map((r) => r.id)).toEqual(["f-soon", "f-later", "f-bad"]);

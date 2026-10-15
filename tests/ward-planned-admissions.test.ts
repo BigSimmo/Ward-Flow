@@ -9,7 +9,7 @@ import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/
 import { plannedAdmissionAgenda, plannedAdmissionDays } from "@/components/ward-management/capacity/planned-admissions";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { derivedSexMix } from "@/components/ward-management/ward-board-derivations";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { eventLogEntryFor } from "@/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -885,6 +885,7 @@ describe("review follow-up: callers beyond Alerts count the overdue booking", ()
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
       now: NOW,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     };
     const without = shellFigures(input).tasks.value;
     expect(shellFigures({ ...input, plannedAdmissions: state.plannedAdmissions }).tasks.value).toBe(without + 1);

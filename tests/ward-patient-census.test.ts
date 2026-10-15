@@ -5,6 +5,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = 642;
 const DAY_ZERO = new Date("2026-10-01T00:00:00+08:00");
 
@@ -16,6 +17,7 @@ function census(state: ReturnType<typeof seedWardFlowState>) {
     patients: state.patients,
     admissions: state.admissions,
     now: NOW,
+    thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     dayZero: DAY_ZERO,
   });
 }

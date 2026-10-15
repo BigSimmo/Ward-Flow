@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
-import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { StatusGlyph } from "@/components/wf";
 import { DELAY_CAUSE_ORDER, SEVERE_CAUSES, type DelayCause, type DelayOwnerId } from "./delays-derivations";
@@ -34,9 +34,9 @@ import {
   type RunwayBin,
 } from "./delays-board-model";
 import { BandBar, causeTitle } from "./delays-board-parts";
-import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import styles from "./delays-board.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 type Graph = "spread" | "runway" | "matrix";
 
 const SHORT_CAUSE: Record<DelayCause, string> = {
@@ -106,6 +106,7 @@ function Spread({
   lanes: "owner" | "origin";
   onTip: (event: React.MouseEvent | null, body?: ReactNode) => void;
 }) {
+  const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   // Dots are kept apart in real pixels, so measure the plot rather than assume its width.
   const measureRef = useRef<HTMLDivElement>(null);
@@ -235,7 +236,7 @@ function Spread({
                       onTip(null);
                     }}
                   >
-                    <StatusGlyph tone={rowTone(row)} size={10} />
+                    <StatusGlyph tone={rowTone(row, thresholds)} size={10} />
                   </button>
                 );
               })}
@@ -565,6 +566,7 @@ function Matrix({
 }
 
 export function DelaysBoardGraphs(props: Props) {
+  const thresholds = useDueSoonThresholds();
   const { rows, shown, filters, onFilters, onClear, onToTable } = props;
   const [graph, setGraph] = useState<Graph>("spread");
   const [lanes, setLanes] = useState<"owner" | "origin">("owner");
@@ -596,7 +598,7 @@ export function DelaysBoardGraphs(props: Props) {
     window.requestAnimationFrame(() => document.getElementById(`delays-graph-tab-${tabs[next].id}`)?.focus());
   };
 
-  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  const { urgentMinutes, soonMinutes } = thresholds;
   const legend =
     graph === "spread" ? (
       <>

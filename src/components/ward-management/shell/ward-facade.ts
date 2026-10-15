@@ -36,7 +36,7 @@
  * already resolved, so a figure computed here and a figure computed in a screen cannot be about two
  * different moments.
  */
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
@@ -115,6 +115,7 @@ export type ShellFigureInput = {
   readonly bedReleases: readonly BedRelease[];
   readonly leaveBeds: readonly LeaveBed[];
   readonly now: Instant;
+  readonly thresholds: DueSoonThresholds;
   readonly plannedAdmissions?: readonly PlannedAdmission[];
 };
 
@@ -153,6 +154,7 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     bedReleases: input.bedReleases,
     leaveBeds: input.leaveBeds,
     now: input.now,
+    thresholds: input.thresholds,
   });
 
   function required(key: "capacity" | "movements" | "delays" | "referrals"): ShellFigure {

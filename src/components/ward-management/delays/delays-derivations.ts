@@ -5,10 +5,11 @@ import type { WardBarSegment } from "@/components/ward-management/ward-bar";
 import {
   clockState,
   dayOf,
-  MINUTES_PER_DAY,
-  minuteOfDay,
-  minutesUntil,
+  type DueSoonThresholds,
   type Instant,
+  minuteOfDay,
+  MINUTES_PER_DAY,
+  minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
@@ -217,7 +218,7 @@ export function ownerOf(cause: DelayCause): DelayOwnerId {
  * group is dropped from the screen — so the failure would have looked like "nothing is wrong in
  * that category" rather than like a defect.
  */
-export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayCause {
+export function causeOf(movement: Movement, units: Unit[], now: Instant, thresholds: DueSoonThresholds): DelayCause {
   // ⚠️ CORRECTION 1. The plan wrote `clockState(...) !== "ok"`. `ClockState` has no member "ok" —
   // it is "breached" | "critical" | "due" | "clear" — so that comparison is a type error, and had
   // it compiled it would have been true for every movement carrying a dueAt, putting the whole
@@ -239,7 +240,7 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
   const legal = currentLegalDueAt(movement);
   if (legal !== undefined) {
-    const state = clockState(legal, now);
+    const state = clockState(legal, now, thresholds);
     if (state === "breached") return "legal_breached";
     if (state === "critical") return "legal_expiring";
   }
@@ -283,11 +284,16 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   return "awaiting_coordinator";
 }
 
-export function delayGroups(movements: Movement[], units: Unit[], now: Instant): DelayGroup[] {
+export function delayGroups(
+  movements: Movement[],
+  units: Unit[],
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): DelayGroup[] {
   const open = movements.filter(isOpen);
   const causeByMovementId = new Map<string, DelayCause>();
   for (const movement of open) {
-    causeByMovementId.set(movement.id, causeOf(movement, units, now));
+    causeByMovementId.set(movement.id, causeOf(movement, units, now, thresholds));
   }
 
   return ORDER.map((entry) => ({

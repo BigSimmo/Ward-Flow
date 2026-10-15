@@ -50,6 +50,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlow: () => mockContext,
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
     useWardFlowClock: () => mockContext.now,
   };
 });
@@ -59,6 +60,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const FORM_1A_NOT_FORMED_ID = "WF-001";
 const FORM_1A_FORMED_ID = "WF-005";
 const FORM_3D_NOT_FORMED_ID = "WF-TEST-3D-NOT-FORMED";

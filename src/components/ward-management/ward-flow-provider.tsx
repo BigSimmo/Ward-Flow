@@ -43,9 +43,13 @@ import {
 } from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
-import type { Instant } from "@/components/ward-management/ward-clock";
-import { absoluteWallClockMinutes, applyDueSoonThresholds, demoDayZero } from "@/components/ward-management/ward-clock";
-import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  absoluteWallClockMinutes,
+  demoDayZero,
+  type DueSoonThresholds,
+  dueSoonThresholdsOf,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
@@ -325,10 +329,11 @@ function pickWardFlow<K extends WardFlowKey>(
 /**
  * The named fields only, re-rendering when one of them changes. `null` outside any provider.
  *
- * `configuration` and `scenario` are always read as well, even when not named. Applying them sets
- * module-wide lookups during the provider's render (`applyDueSoonThresholds`, `activateScenarioNetwork`)
- * that many derivations read without naming either field, so every reader must still re-render
- * when they change. Both change rarely, so this costs nothing in ordinary use.
+ * `configuration` and `scenario` are always read as well, even when not named. The scenario points
+ * the module-wide ward lookups at its network during the provider's render (`activateScenarioNetwork`),
+ * which many derivations read without naming it, so every reader must still re-render when it
+ * changes. `configuration` doubles as the check for a real provider. Both change rarely, so this
+ * costs nothing in ordinary use.
  *
  * A hand-built `WardFlowContext.Provider` with no `WardFlowProvider` (some tests) has no field
  * contexts, so the whole value is read from it instead.
@@ -939,13 +944,6 @@ function WardFlowWorld({
   // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
   // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
   activateScenarioNetwork(state.scenario);
-  // The due-time warnings follow Settings (Josh, 26 Sept 2026, question 3) the same way: applied
-  // before any child renders, idempotent. A configuration saved before these keys existed has
-  // neither, so the defaults stand in.
-  applyDueSoonThresholds(
-    state.configuration.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
-    state.configuration.dueSoonMinutes ?? DUE_SOON_MINUTES,
-  );
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -1466,4 +1464,13 @@ export function useWardFlowClock(fallback?: Instant): Instant {
   if (wardFlow) return wardFlow.now;
   if (fallback !== undefined) return fallback;
   throw new Error("useWardFlowClock must be used within WardFlowProvider.");
+}
+
+/**
+ * The due-time warnings Settings sets (Josh, 26 Sept 2026, question 3), as an input a screen passes
+ * on: `clockState(due, now, thresholds)`. The defaults outside a provider.
+ */
+export function useDueSoonThresholds(): DueSoonThresholds {
+  const picked = useOptionalWardFlowSelect("configuration");
+  return dueSoonThresholdsOf(picked?.configuration);
 }

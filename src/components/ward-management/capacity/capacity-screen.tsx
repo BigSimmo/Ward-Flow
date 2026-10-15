@@ -10,7 +10,7 @@ import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/comp
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   FilterChip,
   Hero,
@@ -113,6 +113,7 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 };
 
 export function CapacityScreen() {
+  const thresholds = useDueSoonThresholds();
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
     useWardFlowSelect(
       "movements",
@@ -784,6 +785,7 @@ export function CapacityScreen() {
                       admissions,
                       leaveBeds,
                       now,
+                      thresholds,
                       service,
                       nameOf: (movement) => patientOf(movement).displayName,
                     })
@@ -1048,6 +1050,7 @@ export function CapacityScreen() {
                 admissions,
                 leaveBeds,
                 now,
+                thresholds,
                 service,
                 nameOf: (movement) => patientOf(movement).displayName,
               })

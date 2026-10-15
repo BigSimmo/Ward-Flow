@@ -94,6 +94,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", () => ({
   useWardFlow: () => world.current,
   useWardFlowSelect: () => world.current,
   useOptionalWardFlowSelect: () => world.current,
+  useDueSoonThresholds: () => dueSoonThresholdsOf((world.current as { configuration?: object } | null)?.configuration),
   // Screens read the ticking clock separately from the world snapshot; the mock world carries
   // `now` on the same object `useWardFlow` returns, so the clock hook reads it from there.
   useWardFlowClock: () => (world.current as { now: number } | null)?.now ?? 0,
@@ -124,7 +125,7 @@ import {
   wardBoardHref,
   wardStatisticsHref,
 } from "@/components/ward-management/shell/ward-facade";
-import { demoDayZero } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, demoDayZero, dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -315,6 +316,7 @@ function facadeFigures(state: WardFlowState) {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     now: NOW,
+    thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     plannedAdmissions: state.plannedAdmissions,
   });
 }

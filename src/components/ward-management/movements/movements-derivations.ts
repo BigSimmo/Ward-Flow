@@ -11,7 +11,13 @@
 // vocabulary (`stageCopy`, `transportLeg`) so this screen can never quietly disagree with the
 // screens it replaces about what a given patient's state actually is.
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import { clockState, dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  dayOf,
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { isOpen, stageCopy, transportLeg, type TransportLeg } from "@/components/ward-management/ward-derivations";
@@ -72,18 +78,18 @@ export type JourneyStage = {
  */
 /** 2 when the legal authority is already breached, 1 when it runs out within the hour, else 0. A
  *  breached order outranks one with time left (audit 13 Oct 2026: exactly 60m left now counts). */
-function legalUrgencyRank(movement: Movement, now: Instant): number {
+function legalUrgencyRank(movement: Movement, now: Instant, thresholds: DueSoonThresholds): number {
   // A form that ended at the examination or on arrival is history, not a live deadline (S-6).
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return 0;
-  const state = clockState(dueAt, now);
+  const state = clockState(dueAt, now, thresholds);
   return state === "breached" ? 2 : state === "critical" ? 1 : 0;
 }
 
 /** The shared ordering for both lists this file returns: an expiring legal authority first,
  *  regardless of anything else, then longest-waiting (earliest `openedAt`) first. */
-function byUrgencyThenWait(a: Movement, b: Movement, now: Instant): number {
-  return legalUrgencyRank(b, now) - legalUrgencyRank(a, now) || a.openedAt - b.openedAt;
+function byUrgencyThenWait(a: Movement, b: Movement, now: Instant, thresholds: DueSoonThresholds): number {
+  return legalUrgencyRank(b, now, thresholds) - legalUrgencyRank(a, now, thresholds) || a.openedAt - b.openedAt;
 }
 
 /**
@@ -187,12 +193,14 @@ export function reconciliationSentence({
   return `${total} moves in all, ${open} still open — ${parts.join(" and ")}.`;
 }
 
-export function journeyStages(movements: Movement[], now: Instant): JourneyStage[] {
+export function journeyStages(movements: Movement[], now: Instant, thresholds: DueSoonThresholds): JourneyStage[] {
   return MOVEMENT_STAGES.map((id) => ({
     id,
     label: stageCopy[id].label,
     blurb: STAGE_BLURBS[id],
-    movements: movements.filter((movement) => movement.stage === id).sort((a, b) => byUrgencyThenWait(a, b, now)),
+    movements: movements
+      .filter((movement) => movement.stage === id)
+      .sort((a, b) => byUrgencyThenWait(a, b, now, thresholds)),
   }));
 }
 
@@ -276,7 +284,7 @@ export type TransportLegRow = {
  * booked. These are the same patients as the stage strip above, and a coordinator reading both
  * should never see one order on one panel and a different order on the other for the same person.
  */
-export function transportLegs(movements: Movement[], now: Instant): TransportLegRow[] {
+export function transportLegs(movements: Movement[], now: Instant, thresholds: DueSoonThresholds): TransportLegRow[] {
   const legs: TransportLegRow[] = [];
   for (const movement of movements) {
     const transport = movement.transport;
@@ -291,7 +299,7 @@ export function transportLegs(movements: Movement[], now: Instant): TransportLeg
       minutesSinceBooked: now - bookedAt,
     });
   }
-  return legs.sort((a, b) => byUrgencyThenWait(a.movement, b.movement, now));
+  return legs.sort((a, b) => byUrgencyThenWait(a.movement, b.movement, now, thresholds));
 }
 
 /**
@@ -445,10 +453,10 @@ export function waitedMinutes(movement: Movement, now: Instant): number {
  * this one, on the same screen, with the reader given no way to tell which order they were looking
  * at. **One sentence covering two orderings is only honest if both honour it.**
  */
-export function byLongestWait(movements: Movement[], now: Instant): Movement[] {
+export function byLongestWait(movements: Movement[], now: Instant, thresholds: DueSoonThresholds): Movement[] {
   return [...movements].sort(
     (a, b) =>
-      legalUrgencyRank(b, now) - legalUrgencyRank(a, now) ||
+      legalUrgencyRank(b, now, thresholds) - legalUrgencyRank(a, now, thresholds) ||
       waitedMinutes(b, now) - waitedMinutes(a, now) ||
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );

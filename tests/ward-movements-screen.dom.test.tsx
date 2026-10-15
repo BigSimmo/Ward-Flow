@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { dayOf, splitDuration } from "@/components/ward-management/ward-clock";
+import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
 import { isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { causeOf, MovementsScreen } from "@/components/ward-management/movements/movements-screen";
@@ -36,9 +36,9 @@ import { edById, NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-
 const NOW = NOW_ANCHOR;
 const units = allUnits();
 const seededMovements = seedWardFlowState().movements;
-const stages = journeyStages(seededMovements, NOW);
+const stages = journeyStages(seededMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
 const openMovements = seededMovements.filter(isOpen);
-const legs = transportLegs(openMovements, NOW);
+const legs = transportLegs(openMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
 const counts = transportCounts(legs);
 
 function renderScreen() {
@@ -366,7 +366,7 @@ describe("the Movements screen", () => {
   it("shows the open-stage summary count for every stage, stating zero in words rather than a bare 0", () => {
     renderScreen();
     const panel = openShapeOfTheDay();
-    const openStages = journeyStages(openMovements, NOW);
+    const openStages = journeyStages(openMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     for (const stage of openStages) {
       const item = within(panel).getByText(stage.label).closest("li");
       expect(item, `no glance row for "${stage.label}"`).not.toBeNull();
@@ -907,7 +907,7 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
 
   function severeCauseMap(movements: Movement[]) {
     const map = new Map<string, ReturnType<typeof delayGroups>[number]["cause"]>();
-    for (const group of delayGroups(movements, units, NOW_ANCHOR)) {
+    for (const group of delayGroups(movements, units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)) {
       if (!SEVERE_CAUSES.includes(group.cause)) continue;
       for (const movement of group.movements) map.set(movement.id, group.cause);
     }

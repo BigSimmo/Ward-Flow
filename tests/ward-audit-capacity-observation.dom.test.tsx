@@ -5,6 +5,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 // The answer view's back link goes through contextual history (ContextualBackLink), which reads
 // the app router; jsdom has none mounted.
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -17,6 +18,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
   useWardFlow: () => context,
   useWardFlowSelect: () => context,
   useOptionalWardFlowSelect: () => context,
+  useDueSoonThresholds: () => dueSoonThresholdsOf(context?.configuration),
   useWardFlowClock: () => NOW_ANCHOR,
 }));
 

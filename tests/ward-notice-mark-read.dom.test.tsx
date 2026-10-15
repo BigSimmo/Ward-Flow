@@ -36,6 +36,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlow: () => mockContext,
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
     useWardFlowClock: () => mockContext.now,
   };
 });
@@ -45,6 +46,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Notice } from "@/components/ward-management/ward-model";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const UNREAD_NOTICE: Notice = {
   id: "notice:movement:transport_cancelled_ward:0",
   raisedAt: NOW_ANCHOR - 10,

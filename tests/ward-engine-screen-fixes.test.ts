@@ -21,6 +21,7 @@ import { ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS } from "../src/components/ward-m
 import { reduceBroadcastEvent } from "../src/components/ward-management/alerts/ward-broadcast-reducer";
 import { captureAuditEvent } from "../src/components/ward-management/ward-audit";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
 describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
@@ -160,7 +161,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       expect(mov, "seed must contain a matching movement").toBeDefined();
       if (!mov) return;
 
-      const cause = causeOf(mov, state.units, NOW);
+      const cause = causeOf(mov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(cause).not.toBe("no_eligible_bed");
       expect(cause).toBe("awaiting_coordinator");
     });
@@ -202,7 +203,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         },
       };
 
-      const cause = causeOf(mov, state.units, NOW);
+      const cause = causeOf(mov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(cause).toBe("awaiting_coordinator");
 
       // Also routes community_order outcome when bed is held
@@ -211,7 +212,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         admissionId: "ADM-REVOKED-1",
         examination: { outcome: "community_order", at: NOW - 100 },
       };
-      expect(causeOf(communityOrderMov, state.units, NOW)).toBe("awaiting_coordinator");
+      expect(causeOf(communityOrderMov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("awaiting_coordinator");
 
       // A held bed stepped back to stage "pulled" with revoked examination routes to coordinator, not awaiting_bed_ready
       const pulledRevokedMov: Movement = {
@@ -220,7 +221,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         admissionId: "ADM-REVOKED-1",
         examination: { outcome: "revoked", at: NOW - 100 },
       };
-      expect(causeOf(pulledRevokedMov, state.units, NOW)).toBe("awaiting_coordinator");
+      expect(causeOf(pulledRevokedMov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("awaiting_coordinator");
     });
 
     it("A3-13: answerSilenceReminder respects movement.referredUnitIds for wards added later or ED/community referrals", () => {

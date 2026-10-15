@@ -30,6 +30,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlow: () => mockContext,
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
     useWardFlowClock: () => mockContext.now,
   };
 });
@@ -40,6 +41,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const seeded = seedWardFlowState();
 const UNLINKED = seeded.movements.find(
   (movement) => movement.patientId?.startsWith("PT-G-") && !movement.referralId && movement.stage !== "arrived",
