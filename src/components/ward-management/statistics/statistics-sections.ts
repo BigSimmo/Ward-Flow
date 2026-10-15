@@ -104,7 +104,7 @@ export const STATISTICS_COMMUNITY_CHOOSER_ID = "choose-a-community-team";
 
 export const STATISTICS_COMMUNITY_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_COMMUNITY_CHOOSER_ID}`;
 
-export type StatisticsSectionId = "overview" | "compare" | "units" | "service" | "community";
+type StatisticsSectionId = "overview" | "compare" | "units" | "service" | "community";
 
 export type StatisticsSection = {
   id: StatisticsSectionId;

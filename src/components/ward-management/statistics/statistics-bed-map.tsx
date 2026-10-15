@@ -29,7 +29,7 @@ export type BedMap = {
   unplacedRecords: number;
 };
 
-export const BED_MAP_ORDER: readonly BedMapKind[] = ["occupied", "leave", "pulled", "ready", "prep", "closed"];
+const BED_MAP_ORDER: readonly BedMapKind[] = ["occupied", "leave", "pulled", "ready", "prep", "closed"];
 
 export const BED_MAP_LABELS: Record<BedMapKind, string> = {
   occupied: "Occupied",

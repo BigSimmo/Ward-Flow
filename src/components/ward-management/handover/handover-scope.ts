@@ -17,7 +17,7 @@ export type HandoverScope =
 
 export const NETWORK_SCOPE_VALUE = "network";
 
-export function isHealthService(value: string): value is HealthService {
+function isHealthService(value: string): value is HealthService {
   return (HEALTH_SERVICES as readonly string[]).includes(value);
 }
 

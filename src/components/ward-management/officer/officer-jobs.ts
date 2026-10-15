@@ -13,7 +13,7 @@ export function isOfficerJob(movement: Movement): boolean {
 }
 
 /** How far back the officer screen lists cancellation notices (minutes). */
-export const OFFICER_CANCELLATION_WINDOW = 12 * 60;
+const OFFICER_CANCELLATION_WINDOW = 12 * 60;
 
 /**
  * Owner ruling 2026-10-13 22:13 AWST (PR #279): a withdrawal that cancels a booked job closes the

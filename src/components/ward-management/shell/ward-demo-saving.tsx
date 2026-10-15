@@ -11,7 +11,7 @@ import styles from "./ward-offline-banner.module.css";
  */
 export const WardDemoNotSavedContext = createContext(false);
 
-export function useWardDemoNotSaved(): boolean {
+function useWardDemoNotSaved(): boolean {
   return useContext(WardDemoNotSavedContext);
 }
 
