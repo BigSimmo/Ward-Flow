@@ -13,6 +13,7 @@ import { GovernanceWorkbench } from "@/components/ward-management/governance-reg
 
 import styles from "./ward-management-modes.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardBreakGlassReview } from "@/components/ward-management/shell/ward-access";
 import governance from "./governance-third-edition.module.css";
 
 /**
@@ -149,6 +150,8 @@ export function GovernanceView() {
   return (
     <div className={governance.governanceRoute} data-testid="ward-governance-view">
       <GovernanceWorkbench movements={movements} units={units} now={now} api={flow} />
+      {/* Role access plan: records opened outside care, for the coordinator to review. */}
+      <WardBreakGlassReview />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
         {/* Read by assistive tech, kept out of the Tab order: the notice is visually hidden. */}
         <summary tabIndex={-1}>Synthetic prototype · not a medical device</summary>

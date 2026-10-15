@@ -1,6 +1,6 @@
 "use client";
 
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type MovementId } from "@/components/ward-management/ward-model";
 import { MovementWorkspaceCockpit } from "@/components/ward-management/movements/movement-workspace-cockpit";
 import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
@@ -45,7 +45,7 @@ export {
  * three things a person can actually do.
  */
 export function WardPatientWorkspace({ movementId }: { movementId: MovementId }) {
-  const { movements } = useWardFlow();
+  const { movements } = useWardFlowSelect("movements");
   const patient = movements.find((candidate) => candidate.id === movementId);
 
   if (!patient) {

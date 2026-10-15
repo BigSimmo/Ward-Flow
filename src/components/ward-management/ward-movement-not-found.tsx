@@ -7,6 +7,7 @@ import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-manag
 import styles from "./ward-management.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 
 // Kept apart from ward-management-console.tsx (Oct 2026 phone performance pass) so the person
 // and movement not-found routes do not pull the movement cockpit into their first-load JS.
@@ -78,7 +79,7 @@ export function WardMovementNotFound({
             list={{ href: "/mockups/ward-flow/movements", label: "All movements" }}
             extra={
               reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
-                <Link href={`/mockups/ward-flow/people/${requestedId}`}>Open their patient record</Link>
+                <Link href={patientHref(requestedId)}>Open their patient record</Link>
               ) : null
             }
           >

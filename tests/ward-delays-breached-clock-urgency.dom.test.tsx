@@ -8,6 +8,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * 🔴 **A PATIENT WHOSE LEGAL AUTHORITY HAD ALREADY LAPSED GOT A CALMER CLOCK THAN ONE WHOSE
  * AUTHORITY WAS STILL RUNNING. This file exists so that cannot come back.**
@@ -72,7 +73,7 @@ const ADVANCE_MINUTES = 12 * 60;
 
 function causesAfterAdvance(minutes: number): Set<string> {
   const now = NOW_ANCHOR + minutes * 60_000;
-  return new Set(delayGroups(wardMovements, allUnits(), now).map((group) => group.cause));
+  return new Set(delayGroups(wardMovements, allUnits(), now, DEFAULT_DUE_SOON_THRESHOLDS).map((group) => group.cause));
 }
 
 /**
@@ -82,7 +83,7 @@ function causesAfterAdvance(minutes: number): Set<string> {
  */
 function breachedMovementIds(minutes: number): string[] {
   const now = NOW_ANCHOR + minutes * 60_000;
-  return delayGroups(wardMovements, allUnits(), now)
+  return delayGroups(wardMovements, allUnits(), now, DEFAULT_DUE_SOON_THRESHOLDS)
     .filter((group) => group.cause === "legal_breached")
     .flatMap((group) => group.movements.map((movement) => movement.id));
 }
@@ -143,7 +144,7 @@ describe("a lapsed legal authority is never quieter than one still running", () 
    */
   it("breached outranks expiring in the cause ordering, not merely alongside it", () => {
     const now = NOW_ANCHOR + ADVANCE_MINUTES * 60_000;
-    const groups = delayGroups(wardMovements, allUnits(), now);
+    const groups = delayGroups(wardMovements, allUnits(), now, DEFAULT_DUE_SOON_THRESHOLDS);
     const breached = groups.findIndex((group) => group.cause === "legal_breached");
     const expiring = groups.findIndex((group) => group.cause === "legal_expiring");
     expect(breached, "no breached group to rank").toBeGreaterThanOrEqual(0);

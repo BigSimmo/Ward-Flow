@@ -24,10 +24,10 @@ import {
   type HubEntry,
 } from "@/components/ward-management/hub/hub-derivations";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
-import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 import { HOME_REGIONS } from "@/components/ward-management/ward-model";
 
-const ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR });
+const ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites });
 
 function entryById(id: string): HubEntry {
   const found = ENTRIES.find((entry) => entry.id === id);

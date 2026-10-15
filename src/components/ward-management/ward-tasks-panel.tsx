@@ -4,10 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
 import styles from "./ward-tasks-panel.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * **THE GLOBAL TASKS PANEL — what mounts `WardTasksDrawer` and what decides when it is open.**
@@ -45,7 +46,16 @@ export function WardTasksPanel() {
     inboxAcknowledgements,
     inboxCompletions,
     plannedAdmissions,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "units",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);
@@ -68,7 +78,7 @@ export function WardTasksPanel() {
       setOpen(false);
       router.push(
         href ??
-          `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+          `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
     },
     [router],

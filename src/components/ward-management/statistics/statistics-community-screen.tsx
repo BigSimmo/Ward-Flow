@@ -38,7 +38,7 @@ import {
   STATISTICS_COMMUNITY_CHOOSER_HREF,
   STATISTICS_TEAMS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { figureText, isUnmeasured, type StatisticsFigure } from "./statistics-absence";
 import { countAxisMax } from "./statistics-axis";
@@ -80,7 +80,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
-  const { dayZero } = useWardFlow();
+  const { dayZero } = useWardFlowSelect("dayZero");
   const isPhone = useIsPhone();
 
   const section = statisticsSectionById("community");
@@ -727,6 +727,9 @@ function TeamComparison({
       {view === "chart" ? (
         <CardBody
           className={`${styles.bodyStack} ${detail.scrolls}`}
+          tabIndex={0}
+          role="region"
+          aria-label="Team comparison chart"
           data-testid="statistics-community-comparison-chart"
         >
           {shown.length === 0 ? (
@@ -771,7 +774,12 @@ function TeamComparison({
           ) : null}
         </CardBody>
       ) : (
-        <div className={`${styles.tableWrap} ${detail.scrolls}`}>
+        <div
+          className={`${styles.tableWrap} ${detail.scrolls}`}
+          tabIndex={0}
+          role="region"
+          aria-label="Team comparison table"
+        >
           <table
             className={`${tableClasses.table} ${styles.table}`}
             data-testid="ward-statistics-community-comparison-table"

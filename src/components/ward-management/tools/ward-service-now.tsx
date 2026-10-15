@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { StatusGlyph } from "@/components/wf";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useDueSoonThresholds, useWardFlow, useWardFlowClock, useWardNetwork } from "../ward-flow-provider";
 import { isOpen } from "../ward-derivations";
 import { standingFigures } from "../ward-standing-strip";
 import { longestWait } from "./ward-network-figures";
@@ -23,16 +23,22 @@ const GLANCE_KEYS = ["ready", "waiting", "longest", "passed", "within-hour"] as 
 export function WardServiceNow() {
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlow();
   const now = useWardFlowClock();
+  const thresholds = useDueSoonThresholds();
+  const network = useWardNetwork();
   const figures = useMemo(() => {
-    const all = standingFigures({
-      units,
-      admissions,
-      movements,
-      bedReleases,
-      leaveBeds,
-      now,
-      chromeRole: "coordinator",
-    });
+    const all = standingFigures(
+      {
+        units,
+        admissions,
+        movements,
+        bedReleases,
+        leaveBeds,
+        now,
+        chromeRole: "coordinator",
+      },
+      thresholds,
+      network,
+    );
     // Longest wait reads exactly as it does in All figures below: a duration and the ED it began at.
     const longest = longestWait(movements.filter(isOpen), now);
     return GLANCE_KEYS.flatMap((key) =>
@@ -40,7 +46,7 @@ export function WardServiceNow() {
         .filter((figure) => figure.key === key)
         .map((figure) => (key === "longest" ? { ...figure, value: longest.value, sub: longest.sub } : figure)),
     );
-  }, [units, admissions, movements, bedReleases, leaveBeds, now]);
+  }, [units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network]);
 
   return (
     <div className={styles.glance} data-testid="ward-tools-service-now">

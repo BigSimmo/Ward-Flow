@@ -22,6 +22,7 @@ import {
   type LastLookWorld,
 } from "./since-last-look";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /**
  * Smart feature 9: the short "Since you last looked" notice at the top of the Command screen. The
  * comparison lives in `since-last-look.ts`; this file only remembers when the coordinator left and
@@ -111,7 +112,8 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
  * screen, not the panel, so the hero can count new events while the panel itself is closed.
  */
 export function useSinceLastLook(world: LastLookWorld, now: Instant) {
-  const current = useMemo(() => takeLastLookSnapshot(world, now), [world, now]);
+  const thresholds = useDueSoonThresholds();
+  const current = useMemo(() => takeLastLookSnapshot(world, now, thresholds), [world, now, thresholds]);
   const latest = useRef(current);
   useEffect(() => {
     latest.current = current;

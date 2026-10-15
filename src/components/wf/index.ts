@@ -49,8 +49,6 @@ export {
   WardCapacityRows,
   GroupHead,
   SinceYouLooked,
-  NeedsYou,
-  UndoHairline,
   type CheckingItem,
   type CheckingFootProps,
   type StepState,
@@ -58,9 +56,6 @@ export {
   type WardCapacityRowProps,
   type GroupHeadProps,
   type SinceItem,
-  type NeedsYouItem,
-  type NeedsYouProps,
-  type UndoHairlineProps,
 } from "./v10-parts";
 export {
   HeroChip,
@@ -120,6 +115,12 @@ export { Sheet, Drawer, type SheetProps } from "./sheet";
 export { Menu, Popover, type MenuItem, type MenuProps, type MenuTriggerProps, type PopoverProps } from "./menu";
 export { ToastView, type ToastViewProps, type ToastUndo } from "./toast";
 export { Dialog, type DialogProps, type DialogAction } from "./dialog";
+export {
+  useModalFocus,
+  modalFocusableIn,
+  type UseModalFocusOptions,
+  type UseModalFocusResult,
+} from "./use-modal-focus";
 export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
 export {
   ToastDeviceSaveContext,

@@ -35,9 +35,8 @@ import type {
   DischargeOpenHandle,
   WardRecordActor,
 } from "@/components/ward-management/ward-discharge-records";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
-import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "@/components/ward-management/ward-due-sort";
@@ -416,7 +415,7 @@ function RecordedDischargeMilestones({
 
 /** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
 export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: string } = {}) {
-  const { worldGeneration } = useWardFlow();
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
   // Remount clears every selected handle and DTO synchronously on a reset/scenario change.
   // This board has one fixed coordinator actor; it does not offer a role switch.
   return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} initialAdmissionId={initialAdmissionId} />;
@@ -434,7 +433,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     dispatch,
     recordWardDeparture,
     rejections,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "bedReleases",
+    "units",
+    "patients",
+    "dayZero",
+    "readDischargeRecords",
+    "openDischargeRecord",
+    "readDischargeRecord",
+    "dispatch",
+    "recordWardDeparture",
+    "rejections",
+  );
   const toast = useOptionalToast();
   const now = useWardFlowClock();
   const [population, setPopulation] = useState<Population>("releases");
@@ -477,61 +487,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     releaseId: null,
     destination: "discharged-to-the-community",
   });
-  // `undoAdmissionId` is set for a recorded departure (its toast offers Undo, as on the ward's bed
-  // drawer); an undo itself carries none, so its own toast offers nothing further.
-  const departureCheckRef = useRef<{ prior: number; who: string; undoAdmissionId?: string } | null>(null);
-  const [departureToken, setDepartureToken] = useState(0);
-  const departureNowRef = useRef(now);
-  const rejectionCountRef = useRef(rejections.length);
-  useEffect(() => {
-    departureNowRef.current = now;
-    rejectionCountRef.current = rejections.length;
-  }, [now, rejections.length]);
-  useEffect(() => {
-    const check = departureCheckRef.current;
-    if (departureToken === 0 || check === null) return;
-    departureCheckRef.current = null;
-    const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
-    const undoAdmissionId = check.undoAdmissionId;
-    const said = refused
-      ? `Not recorded: ${refused.reason}. Nothing was changed.`
-      : undoAdmissionId === undefined
-        ? `Undone. ${check.who} is back in their bed.`
-        : `Recorded: ${check.who} has left the ward.`;
-    if (!toast) {
-      announceToWardShell(said);
-      return;
-    }
-    if (refused || undoAdmissionId === undefined) {
-      toast.push({ tone: refused ? "warning" : "success", title: said });
-      return;
-    }
-    // Audit A1-12: a recorded departure offers Undo (`UNDO_DEPARTURE`), like the ward's bed drawer.
-    const undoLimit = roleLimitReason("coordinator", "UNDO_DEPARTURE");
-    toast.push({
-      tone: "success",
-      title: said,
-      ...(undoLimit
-        ? { body: `Undo: ${undoLimit}` }
-        : {
-            undo: {
-              durationMs: UNDO_TOAST_MS,
-              onUndo: () => {
-                departureCheckRef.current = { prior: rejectionCountRef.current, who: check.who };
-                dispatch({
-                  type: "UNDO_DEPARTURE",
-                  role: "coordinator",
-                  now: departureNowRef.current,
-                  admissionId: undoAdmissionId,
-                });
-                setDepartureToken((token) => token + 1);
-              },
-            },
-          }),
-    });
-    // `dispatch` is stable for the board's life; the token drives this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departureToken, rejections, toast]);
+  // Audit A1-12: a recorded departure offers Undo (`UNDO_DEPARTURE`), like the ward's bed drawer,
+  // through the shared `useUndoableStep`; with no toast region the outcome is announced instead.
+  const { offer: offerDeparture } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: "coordinator",
+    toast,
+    onMessage: announceToWardShell,
+  });
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
   // Opens the linked stay once, on arrival; after that the coordinator's own choices stand.
@@ -1823,6 +1788,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             />
           )}
           <div className={pageStyles.rightRail}>
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
             <aside
               ref={detailRef}
               className={`${pageStyles.detail}${selected || releaseId ? ` ${pageStyles.open}` : ""}`}
@@ -1886,7 +1852,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                           {activeRecord.identity.kind === "linked" && (
                             <span className={pageStyles.mono}>UMRN {activeRecord.identity.patient.umrn}</span>
                           )}
-                          <span className={pageStyles.mono}>{activeRecord.admissionId}</span>
                           <span>{unitLabel(selectedUnit, activeRecord.unitId)}</span>
                         </p>
                       </div>
@@ -2432,12 +2397,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             <dd>{detailRelease.preparationNote ?? "In progress · reason not recorded"}</dd>
                           </>
                         )}
-                        {!linkedReleaseRecord ? (
-                          <>
-                            <dt>Release ID</dt>
-                            <dd className={pageStyles.mono}>{detailRelease.id}</dd>
-                          </>
-                        ) : null}
                       </dl>
                     </div>
                   </>
@@ -2522,13 +2481,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       className={phoneClearBlocker ? undefined : pageStyles.departPri}
                       data-testid="ward-discharge-record-departure"
                       onClick={() => {
-                        departureCheckRef.current = {
-                          prior: rejections.length,
-                          who: linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person",
-                          undoAdmissionId: detailRelease.admissionId,
-                        };
-                        recordWardDeparture(detailRelease.admissionId, detailRelease.unitId, departureDestination);
-                        setDepartureToken((token) => token + 1);
+                        const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
+                        const admissionId = detailRelease.admissionId;
+                        recordWardDeparture(admissionId, detailRelease.unitId, departureDestination);
+                        // Unguarded, as the hand-built toast was: in a shared workspace the departure
+                        // may not be in state yet, so the record seen next could be an older one.
+                        offerDeparture(
+                          {
+                            success: `Recorded: ${who} has left the ward.`,
+                            undo: (at) => ({ type: "UNDO_DEPARTURE", role: "coordinator", now: at, admissionId }),
+                            undone: `Undone. ${who} is back in their bed.`,
+                          },
+                          { guard: false },
+                        );
                       }}
                     >
                       Record departure

@@ -26,9 +26,8 @@ import {
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -38,6 +37,7 @@ import {
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById, edShortName } from "@/components/ward-management/ward-sites";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 
 /**
  * THE WARD AND ED TV VIEWS (Josh, 15 Oct 2026): the bed meeting TV, narrowed to one ward or one
@@ -68,34 +68,14 @@ type TvInputs = {
   admissions: Admission[];
   leaveBeds: LeaveBed[];
   now: Instant;
+  /** The due-time warnings Settings sets (`useDueSoonThresholds`). */
+  thresholds: DueSoonThresholds;
   /** The screen's own resolver, narrowed to initials by the caller. */
   nameOf: (movement: Movement) => string;
 };
 
 function byWaitThenId(a: TvJourneyRow, b: TvJourneyRow): number {
   return b.waitMinutes - a.waitMinutes || a.id.localeCompare(b.id);
-}
-
-const WAITLIST_REASONS: readonly string[] = WAITLIST_INSTEAD_OF_DECLINE_REASONS;
-
-/**
- * This ward's waitlist answer still stands. The reducer keeps the marker after the request ends, so
- * a withdrawal or an ordinary decline newer than the last waitlist answer means the marker is left
- * over from an earlier request, and a re-referral to this ward is waiting on a fresh answer.
- */
-function waitlistStands(movement: Movement, unitId: string): boolean {
-  if (!(movement.waitlistedUnitIds ?? []).includes(unitId)) return false;
-  let waitlistedAt = Number.NEGATIVE_INFINITY;
-  let endedAt = Number.NEGATIVE_INFINITY;
-  for (const decline of movement.declines) {
-    if (decline.unitId !== unitId) continue;
-    if (WAITLIST_REASONS.includes(decline.reason)) waitlistedAt = Math.max(waitlistedAt, decline.at);
-    else endedAt = Math.max(endedAt, decline.at);
-  }
-  for (const withdrawal of movement.withdrawnReferrals) {
-    if (withdrawal.unitId === unitId) endedAt = Math.max(endedAt, withdrawal.at);
-  }
-  return endedAt <= waitlistedAt || endedAt === Number.NEGATIVE_INFINITY;
 }
 
 /**
@@ -139,7 +119,7 @@ export type WardTvSheet = {
 };
 
 export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
-  const { unit, movements, bedReleases, admissions, leaveBeds, now, nameOf } = input;
+  const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf } = input;
   const sheet = bedMeetingSheet({
     units: [unit],
     movements,
@@ -147,6 +127,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     admissions,
     leaveBeds,
     now,
+    thresholds,
     service: null,
     nameOf,
   });

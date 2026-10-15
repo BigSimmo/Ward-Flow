@@ -17,6 +17,7 @@ import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-managem
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * The morning bed-meeting sheet (Capacity → "Bed-meeting sheet"). Two properties matter:
  *   1. Every figure on the paper is the figure its own screen shows — the sheet re-derives nothing.
@@ -31,6 +32,7 @@ const input = {
   admissions: wardAdmissions,
   leaveBeds,
   now: NOW_ANCHOR,
+  thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
   service: null,
   nameOf: (movement: { id: string }) => `Person ${movement.id}`,
 };
@@ -72,7 +74,7 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
   });
 
   it("delays keep the Delays screen's causes and worst-first order", () => {
-    const groups = delayGroups(wardMovements.filter(isOpen), units, NOW_ANCHOR);
+    const groups = delayGroups(wardMovements.filter(isOpen), units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(sheet.delays.groups.map((group) => group.cause)).toEqual(groups.map((group) => group.cause));
     expect(sheet.delays.total).toBe(groups.reduce((sum, group) => sum + group.movements.length, 0));
   });
@@ -80,7 +82,7 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
   it("a chosen service narrows capacity to that service's wards", () => {
     const service = unitHealthService(units[0]);
     expect(service).toBeDefined();
-    const scoped = bedMeetingSheet({ ...input, service: service ?? null });
+    const scoped = bedMeetingSheet({ ...input, service: service ?? null, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     expect(scoped.service).toBe(service);
     expect(scoped.capacity.wards).toBe(units.filter((unit) => unitHealthService(unit) === service).length);
     expect(scoped.capacity.wards).toBeLessThan(sheet.capacity.wards);

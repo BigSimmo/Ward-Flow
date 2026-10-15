@@ -405,7 +405,7 @@
 .keyLink {
   display: inline-flex;
   align-items: center;
-  height: 26px;
+  height: 32px;
   text-decoration: none;
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-ctl);

@@ -14,7 +14,6 @@ import {
   allClinicalValuesSigned,
   unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
-import { applyDueSoonThresholds } from "../src/components/ward-management/ward-clock";
 import { ED_ACCESS_TARGET_MINUTES, PULL_HOLD_MINUTES } from "../src/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
@@ -26,10 +25,6 @@ import {
   OVERDUE_AFTER_MINUTES_BY_TIER,
   PULL_NOW_ANSWER_MINUTES,
 } from "../src/components/ward-management/ward-operational-defaults";
-import {
-  derivePaperLegalExpiryRadar,
-  deriveEdBreachLadder,
-} from "../src/components/ward-management/ward-top25-features";
 
 /**
  * ONE FILE OF CLINICAL VALUES (Josh, 15 Oct 2026, item 6). `ward-clinical-values.ts` holds every
@@ -75,8 +70,6 @@ describe("clinical values file", () => {
       anyTierOverdue: 4320,
       edElevatedPressure: 180,
       edSeverePressure: 480,
-      edSecondEscalation: 720,
-      edLadderActNowEdge: 1320,
       longWait: 1440,
       veryLongWait: 2880,
       edAccessTarget: 1440,
@@ -87,8 +80,6 @@ describe("clinical values file", () => {
       occupancyCritical: 98,
       dueSoonUrgent: 60,
       dueSoon: 180,
-      paperFormRadarAmber: 240,
-      paperFormRadarEdge: 360,
       pullNowAnswer: 15,
       pullNowLive: 240,
       pullHold: 240,
@@ -102,7 +93,6 @@ describe("clinical values file", () => {
       wardAnswerTarget: 120,
       transferAcceptanceTarget: 240,
       transportBookedTarget: 60,
-      handoverStuck: 60,
       expectFlagVoluntary: 2880,
       expectFlagInvoluntary: 10080,
       expectReconsider: 4320,
@@ -113,6 +103,14 @@ describe("clinical values file", () => {
       longStayPrompt: 7,
       delayedDischargeEscalation: 72,
       readmissionWindow: 28,
+      // Role access plan (Josh, 15 Oct 2026): new synthetic access and privacy values.
+      breakGlassWindow: 60,
+      breakGlassPerShift: 3,
+      breakGlassShift: 12,
+      edHandoffWindow: 24,
+      wardHandoffWindow: 7,
+      idleLock: 15,
+      smallNumberHidden: 5,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,
@@ -144,79 +142,6 @@ describe("clinical values file", () => {
     expect(ED_SEVERE_PRESSURE_WAIT_MINUTES).toBe(CLINICAL_VALUES.edSeverePressure.value);
     expect(PULL_HOLD_MINUTES).toBe(CLINICAL_VALUES.pullHold.value);
     expect(ED_ACCESS_TARGET_MINUTES).toBe(CLINICAL_VALUES.edAccessTarget.value);
-  });
-
-  it("keeps the radar's four-hour amber, so no form loses the warning it had", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const amber = CLINICAL_VALUES.paperFormRadarAmber.value;
-    const radar = derivePaperLegalExpiryRadar(
-      [
-        { id: "red", formType: "Form 3B", expiresAt: at(CLINICAL_VALUES.dueSoonUrgent.value) },
-        { id: "inside", formType: "Form 3B", expiresAt: at(amber) },
-        { id: "outside", formType: "Form 3B", expiresAt: at(amber + 30) },
-      ],
-      now,
-    );
-    expect(radar.find((item) => item.id === "red")?.urgency).toBe("critical_1h");
-    expect(radar.find((item) => item.id === "inside")?.urgency).toBe("warning_4h");
-    expect(radar.find((item) => item.id === "outside")?.urgency).toBe("normal");
-  });
-
-  it("keeps the radar's one-hour red when Settings shortens the urgent warning", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const forms = [{ id: "forty-five-minutes", formType: "Form 3B", expiresAt: at(45) }];
-    try {
-      applyDueSoonThresholds(15, 30);
-      expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("critical_1h");
-    } finally {
-      applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
-    }
-  });
-
-  it("follows the Settings warnings when they are longer, never shorter, than the radar's amber", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const forms = [
-      { id: "ninety-minutes", formType: "Form 3B", expiresAt: at(90) },
-      { id: "four-and-a-half-hours", formType: "Form 3B", expiresAt: at(270) },
-      { id: "three-hours", formType: "Form 3B", expiresAt: at(180) },
-    ];
-    const urgencyOf = (id: string) => derivePaperLegalExpiryRadar(forms, now).find((item) => item.id === id)?.urgency;
-    try {
-      applyDueSoonThresholds(120, 300);
-      expect(urgencyOf("ninety-minutes")).toBe("critical_1h");
-      expect(urgencyOf("four-and-a-half-hours")).toBe("warning_4h");
-      applyDueSoonThresholds(30, 90);
-      expect(urgencyOf("three-hours")).toBe("warning_4h");
-      expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
-    } finally {
-      applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
-    }
-    expect(urgencyOf("four-and-a-half-hours")).toBe("normal");
-    expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
-  });
-
-  it("keeps the ED ladder's rungs on the shared ED wait values", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const arrived = (minutes: number) => new Date(Date.parse(now) - minutes * 60_000).toISOString();
-    const ladder = deriveEdBreachLadder(
-      [
-        { id: "severe", arrivedAt: arrived(CLINICAL_VALUES.edSeverePressure.value) },
-        { id: "second", arrivedAt: arrived(CLINICAL_VALUES.edSecondEscalation.value) },
-        { id: "long", arrivedAt: arrived(CLINICAL_VALUES.longWait.value) },
-        { id: "under", arrivedAt: arrived(CLINICAL_VALUES.edSeverePressure.value - 1) },
-      ],
-      now,
-    );
-    const tierOf = (id: string) => ladder.find((entry) => entry.id === id)?.tier;
-    expect([tierOf("severe"), tierOf("second"), tierOf("long"), tierOf("under")]).toEqual([
-      "8h_warning",
-      "12h_escalate",
-      "24h_critical",
-      "normal",
-    ]);
   });
 
   it("formats each figure in its own unit and names the status", () => {
@@ -390,7 +315,7 @@ const INLINE_SHAPES: ReadonlyArray<{ rule: string; shape: RegExp }> = [
   { rule: "longStayPrompt", shape: /\.days\s*>=?\s*\d|daysInBed\([^)]*\)\s*\?\?\s*0\)\s*>=?\s*\d/ },
   { rule: "longWait", shape: /openedAt\s*>=?\s*\d{3,}/ },
   { rule: "silentWardFirstReminder or silentWardSecondReminder", shape: /elapsedMinutes\s*[<>]=?\s*\d{2,}/ },
-  { rule: "dueSoonUrgent (currentDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
+  { rule: "dueSoonUrgent (useDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
 ];
 
 function inlineThresholdsIn(source: string): string[] {

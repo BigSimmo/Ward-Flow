@@ -1,14 +1,28 @@
 "use client";
 
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
+import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+/**
+ * Top 25 item 21: the badge for a discharge date the ward has moved several times. The "several"
+ * is `deriveEddDriftBadge`'s own fixed count (three); there is no clinical value for it yet.
+ * Counts the ward's own date moves (`dischargeDateMoves`), never a measure of the person.
+ */
+export function eddMovedBadge(moves: number | null | undefined): string | null {
+  if (typeof moves !== "number") return null;
+  return deriveEddDriftBadge({ dischargeDateMoves: moves }).requiresConsultantReview
+    ? `Date moved ${moves} times`
+    : null;
+}
 
 export interface BedItem {
   bedNumber: number | string;
@@ -89,7 +103,7 @@ interface WardBedsMatrixProps {
   now?: number;
 }
 
-function formatBedAriaLabel(bed: BedItem): string {
+function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): string {
   const parts: string[] = [`${bed.bedLabel} ${bed.statusText}`];
   if (bed.patientAlias) parts.push(bed.patientAlias);
   if (bed.stayDays !== undefined && bed.stayDays !== null) parts.push(`${bed.stayDays} days in bed`);
@@ -102,6 +116,7 @@ function formatBedAriaLabel(bed: BedItem): string {
   if (bed.tentativeDiagnosis) parts.push(`Tentative diagnosis: ${bed.tentativeDiagnosis}`);
   const expectedLeave = expectedLeaveLine(bed);
   if (expectedLeave) parts.push(expectedLeave);
+  if (eddMoved) parts.push(eddMoved);
   return parts.join(". ").trim();
 }
 
@@ -206,7 +221,8 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.tentativeDiagnosis === n.tentativeDiagnosis &&
     p.notes === n.notes &&
     p.isPlannedAdmission === n.isPlannedAdmission &&
-    p.isLeave === n.isLeave
+    p.isLeave === n.isLeave &&
+    p.dischargeDateMoves === n.dischargeDateMoves
   );
 }
 
@@ -218,6 +234,8 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
   const isPulled = bed.status === "incoming" || bed.isPulled === true;
   const isAwayAtEd = bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined;
   const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
+  const eddDriftOn = useWardFeatureFlag("top25-edd-drift");
+  const eddMoved = eddDriftOn && bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
 
   // Color tint band class based on stay duration
   let bandClass = "";
@@ -252,7 +270,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
       data-admission-id={bed.admissionId}
       data-state={bed.status as string}
       onClick={handleClick}
-      aria-label={formatBedAriaLabel(bed)}
+      aria-label={formatBedAriaLabel(bed, eddMoved)}
     >
       <div className={styles.bedTopRow}>
         {bed.patientAlias && !isPulled ? (
@@ -294,11 +312,18 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
         </div>
       )}
 
-      {signal ? (
+      {signal || eddMoved ? (
         <div className={styles.bedBottomTags}>
-          <span className={isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip}>
-            {signal}
-          </span>
+          {signal ? (
+            <span className={isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip}>
+              {signal}
+            </span>
+          ) : null}
+          {eddMoved ? (
+            <span className={styles.bedCardChip} data-testid="ward-bed-edd-moved">
+              {eddMoved}
+            </span>
+          ) : null}
         </div>
       ) : null}
     </button>
@@ -319,7 +344,7 @@ export function WardBedsMatrix({
   const [shiftGroup, setShiftGroup] = useState<ShiftGroup>("all");
 
   // Optional: matrix chrome still renders in isolated tests without a provider.
-  const bedReleasesList = useContext(WardFlowContext)?.bedReleases ?? [];
+  const bedReleasesList = useOptionalWardFlowSelect("bedReleases")?.bedReleases ?? [];
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
 
   // Filter by pod / locked / open

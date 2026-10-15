@@ -4,11 +4,14 @@
 // and stops new oversized files appearing.
 //
 // When a file shrinks, lower its cap or delete its entry. Raise a cap only with a reason in the PR.
+// tests/max-lines-baseline.test.ts fails once a cap is more than MAX_LINES_HEADROOM above its file,
+// or once a file is back under MAX_LINES_DEFAULT, so the caps follow the files down.
 export const MAX_LINES_DEFAULT = 1500;
+export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
-  "src/components/ward-management/ward-flow-reducer.ts": 9150,
-  "src/components/ward-management/ed/ed-screen.tsx": 6950,
+  "src/components/ward-management/ward-flow-reducer.ts": 7200,
+  "src/components/ward-management/ed/ed-screen.tsx": 6650,
   "src/components/ward-management/community/community-screen.tsx": 6200,
   "src/components/ward-management/referrals/ward-referral-drawer.tsx": 4350,
   "src/components/ward-management/board/ward-board.tsx": 3950,
@@ -23,7 +26,7 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-management/movements/movements-screen.tsx": 2700,
   "src/components/ward-management/patients/patient-now-screen.tsx": 2700,
   "src/components/ward-management/ward-derivations.ts": 2600,
-  "src/components/ward-management/shell/ward-bar.tsx": 2550,
+  "src/components/ward-management/shell/ward-bar.tsx": 2450,
   "src/components/ward-management/statistics/statistics-claims-register.ts": 2550,
   "src/components/ward-management/officer/officer-screen.tsx": 2500,
   "src/components/ward-management/capacity/capacity-screen.tsx": 2400,

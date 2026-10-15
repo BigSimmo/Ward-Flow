@@ -4,7 +4,7 @@ import { useId, useState, type ComponentPropsWithoutRef, type ReactNode } from "
 import { Download, type LucideIcon } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, useIsPhone } from "@/components/wf";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import type { StatisticsSection } from "./statistics-sections";
@@ -103,7 +103,7 @@ export function StatisticsHero({
   /** Phone only (v10 phone): a sentence title, its subtitle, a leading ring and up to three figures. */
   phone?: StatisticsPhoneHero;
 }) {
-  const wardCount = useWardFlow().units.length;
+  const wardCount = useWardFlowSelect("units").units.length;
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
   // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads

@@ -13,6 +13,7 @@ import { createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { VerifierUnavailableError } from "./auth.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
+import { STATEWIDE_VIEW, bootstrapViewer } from "./viewer.test-support.mjs";
 
 function environment(databaseProvider, authProvider) {
   const databaseUrl =
@@ -51,6 +52,7 @@ for (const databaseProvider of Object.keys(DATABASE_PROVIDERS)) {
         return config.coordinatorIds[0];
       };
       const sharedStore = {
+        viewer: bootstrapViewer,
         ready: async () => calls.push("database-ready"),
         read: async () => ({ revision: 1, payload: {}, dataMode: "prototype" }),
         audit: async () => [{ action: "synthetic" }],
@@ -131,7 +133,13 @@ for (const databaseProvider of Object.keys(DATABASE_PROVIDERS)) {
       const response = await handler(post(body));
       assert.equal(response.status, 409);
       assert.deepEqual(await response.json(), { code: "stale", revision: 2 });
-      assert.deepEqual(calls.at(-1), [config.coordinatorIds[0], commandId.toLowerCase(), 1, body.event]);
+      assert.deepEqual(calls.at(-1), [
+        config.coordinatorIds[0],
+        commandId.toLowerCase(),
+        1,
+        body.event,
+        { revisionOnly: false, view: { ...STATEWIDE_VIEW, actorId: config.coordinatorIds[0] } },
+      ]);
       assert.equal(
         (await handler(request("/v1/workspace", { headers: { origin: "https://unapproved.invalid" } }))).status,
         403,
@@ -202,6 +210,7 @@ test("shared HTTP authorisation and verifier outages never reach the store", asy
   const config = readConfig(environment("postgres", "supabase"));
   let reads = 0;
   const sharedStore = {
+    viewer: bootstrapViewer,
     read: async () => {
       reads++;
     },

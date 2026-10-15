@@ -37,7 +37,11 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
-import { useOptionalWardFlow, useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useOptionalWardFlow,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import {
   arrivalEtaLabel,
@@ -86,7 +90,8 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { GENDERS, patientAgeYears, type Gender, type Patient } from "@/components/ward-management/ward-patients";
 
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { allEmergencyDepartments, wardSites, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
@@ -114,7 +119,7 @@ import {
   useReferralDraftAutosave,
 } from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
-import { Frac, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
+import { Frac, StatusGlyph, useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -137,6 +142,7 @@ import {
   clearanceChecklistWords,
   referralNeedsWords,
 } from "./referral-submission";
+import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * The legal-status choices, as bare register codes. Their visible text is built from the Chief
@@ -192,7 +198,7 @@ type WardReferralDrawerProps = {
   initialDestination?: "ward" | "community" | "ed";
   /** A `Patient.id` from a Refer link. Used only when the record holds that person. */
   initialPatientId?: string;
-  /** A `wardSites` code from a Refer link, for the referring site. */
+  /** A `siteDirectory` code from a Refer link, for the referring site. */
   initialOriginSiteCode?: string;
   /** The referring community team's name, when the slide-out is opened from that team's page. */
   initialSendingTeam?: string;
@@ -795,13 +801,24 @@ function WardReferralDrawerContent({
     wardReferralInbox,
     admissions,
     units,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "rejections",
+    "configuration",
+    "dayZero",
+    "dispatch",
+    "wardReferralInbox",
+    "admissions",
+    "units",
+  );
   const now = useWardFlowClock();
 
   const urlPrefill = useMemo(() => {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
-    const personId = params.get("patientId")?.trim() || undefined;
+    const personId = recordIdFromParam(params.get("patientId")?.trim()) ?? undefined;
     if (initialPatientId && personId && initialPatientId !== personId) return null;
     if (!personId && (initialPatientId || initialOriginSiteCode || initialSendingTeam || initialUnitIds?.length)) {
       return null;
@@ -1092,9 +1109,18 @@ function WardReferralDrawerContent({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  useEffect(() => {
-    if (guardOpen) guardKeepRef.current?.focus();
-  }, [guardOpen]);
+  // The close guard is a modal over the drawer, on the shared contract: the drawer behind is inert,
+  // focus starts on Keep editing, Tab wraps inside the guard, Escape closes only the guard, and focus
+  // returns to the control that asked to close. Declared before the drawer's own modal hook so it
+  // leaves the stack first when both close together.
+  const guardBoxRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: guardRootRef } = useModalFocus({
+    open: guardOpen,
+    onClose: () => setGuardOpen(false),
+    panelRef: guardBoxRef,
+    initialFocusRef: guardKeepRef,
+    focusOnOpen: "immediate",
+  });
   // Opened from an entry point with step 1 nearly answered, focus goes to what is still unanswered.
   useEffect(() => {
     if (!fromEntryPoint || activeSection !== "patient" || isPhone) return;
@@ -1354,7 +1380,7 @@ function WardReferralDrawerContent({
   function referralError() {
     if (
       !originSiteCode ||
-      !wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
+      !siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
     )
       return "Choose the location of referral.";
     if (sourceKind === "community" && !sendingTeam.trim()) return "Record the referring community service.";
@@ -1363,7 +1389,7 @@ function WardReferralDrawerContent({
   }
   const originValid =
     !!originSiteCode &&
-    wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
+    siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
   const needed: Record<DrawerSection, number> = {
     patient: [
       !patientRecord && !unidentified?.trim(),
@@ -1528,7 +1554,7 @@ function WardReferralDrawerContent({
       setSentAt(now);
       setSendPending(false);
 
-      announceToWardShell(`Referral ${created.id} sent to the selected locations.`);
+      announceToWardShell("Referral sent to the selected locations.");
     } else if (rejections.length > submitted.rejectionCount) {
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);
@@ -1579,7 +1605,7 @@ function WardReferralDrawerContent({
     suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.trim().toLowerCase());
   const originLabel = originValid
     ? sourceKind === "ed"
-      ? (wardSites.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
+      ? (siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
       : (siteByCode(originSiteCode)?.name ?? originSiteCode)
     : "";
   /** The board calls a referral overdue after this tier window, a service default (`OPERATIONAL_DEFAULT_LABEL`). */
@@ -3046,7 +3072,7 @@ function WardReferralDrawerContent({
                               onChange={(e) => setOriginSiteCode(e.target.value)}
                             >
                               <option value="">Choose location</option>
-                              {wardSites
+                              {siteDirectory
                                 .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
                                 .map((site) => (
                                   <option key={site.code} value={site.code}>
@@ -3501,9 +3527,8 @@ function WardReferralDrawerContent({
                                     arm.withdrawnAt === undefined,
                                 ),
                               ).length +
-                              movements.filter(
-                                (movement) => movement.waitlistedUnitIds?.includes(unit.unitId) && !movement.closure,
-                              ).length;
+                              movements.filter((movement) => !movement.closure && waitlistStands(movement, unit.unitId))
+                                .length;
                             return (
                               <label
                                 key={unit.unitId}
@@ -4127,8 +4152,9 @@ function WardReferralDrawerContent({
           </div>
         </div>
         {guardOpen ? (
-          <div className={styles.guard}>
+          <div ref={guardRootRef} className={styles.guard}>
             <div
+              ref={guardBoxRef}
               className={styles.guardBox}
               role="alertdialog"
               aria-modal="true"

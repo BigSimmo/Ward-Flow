@@ -14,6 +14,10 @@ vi.mock("next/link", () => ({
 const mockBack = vi.fn();
 const mockReplace = vi.fn();
 vi.mock("next/navigation", () => ({
+  // D-39: an old raw-id link is redirected; the stand-in throws so a test can read where it went.
+  redirect: (url: string) => {
+    throw new Error(`NEXT_REDIRECT ${url}`);
+  },
   usePathname: () => "/mockups/ward-flow/people/WF-009",
   useRouter: () => ({
     push: vi.fn(),
@@ -39,6 +43,8 @@ import { NOW_ANCHOR, edById, unitById } from "@/components/ward-management/ward-
 import { clock } from "@/components/ward-management/patients/patient-now-records";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 function expectedPatient(id: string) {
   const state = seedWardFlowState();
@@ -76,7 +82,8 @@ async function renderPersonRoute(
 ): Promise<ReactElement> {
   const { default: WardPersonPage } = await import("@/app/mockups/ward-flow/people/[patientId]/page");
   const element = await WardPersonPage({
-    params: Promise.resolve({ patientId: id }),
+    // D-39: links carry the address code, so the route is opened the way a link opens it.
+    params: Promise.resolve({ patientId: encodeRecordAddress(id) }),
     searchParams: Promise.resolve(searchParams),
   });
   render(<WardFlowProvider initialNow={NOW_ANCHOR}>{element as ReactElement}</WardFlowProvider>);
@@ -131,7 +138,7 @@ describe("the patient-now screen", () => {
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).getByRole("link", { name: "New referral" })).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/referrals/new?patientId=PT-005",
+      raiseReferralHref({ patientId: "PT-005" }),
     );
     // Quiet hero: nothing is open, so no stepper, no Live chip and an Overview tab in place of Now.
     expect(screen.getByTestId("ward-person-identity")).toHaveAttribute("data-quiet", "true");
@@ -324,6 +331,15 @@ describe("the patient-now screen", () => {
 });
 
 describe("the ward person route", () => {
+  it("sends an old raw-id person link on to its coded address, keeping the query (D-39)", async () => {
+    const { default: WardPersonPage } = await import("@/app/mockups/ward-flow/people/[patientId]/page");
+    await expect(
+      WardPersonPage({
+        params: Promise.resolve({ patientId: "PT-005" }),
+        searchParams: Promise.resolve({ view: "governed" }),
+      }),
+    ).rejects.toThrow(`NEXT_REDIRECT ${patientHref("PT-005")}?view=governed`);
+  });
   it("renders the governed PersonScreen for an id PATIENT_NOW_RECORDS holds no story for", async () => {
     await renderPersonRoute("PT-9999-does-not-exist");
     expect(screen.getByTestId("ward-person-missing")).toBeInTheDocument();

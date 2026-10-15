@@ -4,7 +4,7 @@ import { HeroStat, SrOnly, durMinutes } from "@/components/wf";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { dayShiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./ward-telemetry-ribbon.module.css";
@@ -53,7 +53,7 @@ export function WardTelemetryRibbon({
   onActNow,
   phone = false,
 }: WardTelemetryRibbonProps) {
-  const { bedReleases } = useWardFlow();
+  const { bedReleases } = useWardFlowSelect("bedReleases");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const shiftEnd = dayShiftEndInstant(now);
   const freeingByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;

@@ -2,8 +2,8 @@
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 
-import { useContext, useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode } from "react";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -37,6 +37,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { formatUmrn } from "@/components/ward-management/ward-patients";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   candidateAccepts,
@@ -187,12 +188,6 @@ const REJECTED_DECISION_LABELS: Record<(typeof MATCH_VIEW_DECISION_EVENTS)[numbe
   RECORD_REFERRER_WITHDRAWAL: "Withdrawal",
 };
 
-function formatUmrn(umrn: string): string {
-  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
-  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
-  return `UMRN ${umrn}`;
-}
-
 const NO_ADMISSIONS: readonly Admission[] = [];
 const NO_RELEASES: readonly BedRelease[] = [];
 
@@ -256,6 +251,7 @@ export function ReferralHistoryAndCorrections({
   dispatch: Dispatch<WardFlowEvent>;
 }) {
   const [note, setNote] = useState("");
+  const noteId = useId();
   const trimmedNote = note.trim();
 
   /**
@@ -314,11 +310,11 @@ export function ReferralHistoryAndCorrections({
           </ul>
         )}
         <div className={styles.correctionControlsWrap} data-testid="ward-referral-correction-controls">
-          <label className={styles.fieldLegend} htmlFor="ward-referral-correction-note">
+          <label className={styles.fieldLegend} htmlFor={noteId}>
             Add a correction note
           </label>
           <textarea
-            id="ward-referral-correction-note"
+            id={noteId}
             data-testid="ward-referral-correction-note"
             className={styles.correctionNote}
             value={note}
@@ -384,7 +380,7 @@ export function ReferralMatchView({
   bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
   // S2-14: linked movements gate whole-referral withdrawal (in transit, arrived or closed refuses).
-  const linkedMovements = useContext(WardFlowContext)?.movements;
+  const linkedMovements = useOptionalWardFlowSelect("movements")?.movements;
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a
@@ -604,15 +600,9 @@ export function ReferralMatchView({
           <b className={styles.v10AskWhere}>{referralDestinationLabels(referral).join(" · ")}</b>
           <span className={styles.v10AskWhat}>Psychiatric review, not answered by a bed</span>
           <p className="sr-only">
-            {patientInfo ? (
-              <>
-                {formatUmrn(patientInfo.umrn)} <span>{referral.id}</span>
-              </>
-            ) : (
-              referral.id
-            )}{" "}
-            was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
-            matching a bed. There is no bed shortlist for this referral.
+            {patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"} was sent to{" "}
+            {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by matching a
+            bed. There is no bed shortlist for this referral.
           </p>
         </div>
         {gpSourceNotice}
@@ -733,15 +723,9 @@ export function ReferralMatchView({
             {edAddressing ? "Psychiatric review, not answered by a bed" : "Answered by a team, not by a bed"}
           </span>
           <p className="sr-only">
-            {patientInfo ? (
-              <>
-                {formatUmrn(patientInfo.umrn)} <span>{referral.id}</span>
-              </>
-            ) : (
-              referral.id
-            )}{" "}
-            was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
-            matching a bed. There is no bed shortlist for this referral.
+            {patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"} was sent to{" "}
+            {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by matching a
+            bed. There is no bed shortlist for this referral.
           </p>
         </div>
         {gpSourceNotice}
@@ -1256,10 +1240,9 @@ export function ReferralMatchView({
             <>
               <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
               <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
-              <span className="sr-only">{referral.id}</span>
             </>
           ) : (
-            referral.id
+            "This referral"
           )}
         </h2>
         <p data-testid="ward-referral-match-decided">
@@ -1595,7 +1578,7 @@ export function ReferralMatchView({
     return (
       <section className={`${styles.matchPanel} ${ph.sheet}`} data-testid="ward-referral-match-panel" data-phone="true">
         <div className="sr-only">
-          <span>{referral.id}</span>
+          <span>{patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"}</span>
           <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
             {urgencyTierLabel(referral.urgency)}
           </span>
@@ -1770,10 +1753,9 @@ export function ReferralMatchView({
                   <>
                     <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
                     <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
-                    <span className="sr-only">{referral.id}</span>
                   </>
                 ) : (
-                  referral.id
+                  "This referral"
                 )}
               </h2>
               <div className={styles.matchTierRow}>
@@ -1811,7 +1793,7 @@ export function ReferralMatchView({
       ) : (
         <div className={styles.matchCompactNoticeWrap}>
           <div className="sr-only">
-            <span>{referral.id}</span>
+            <span>{patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"}</span>
             <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
               {urgencyTierLabel(referral.urgency)}
             </span>

@@ -102,13 +102,13 @@ describe("ward sites", () => {
 
   it("includes sites that have units but no emergency department", () => {
     expect(siteByCode("FRE")?.emergencyDepartment).toBeUndefined();
-    expect(siteByCode("FRE")?.units.length).toBeGreaterThan(0);
+    expect(wardSites.find((site) => site.code === "FRE")?.units.length).toBeGreaterThan(0);
     expect(siteByCode("BTY")?.emergencyDepartment).toBeUndefined();
   });
 
   it("includes emergency departments that feed elsewhere and hold no units", () => {
     expect(siteByCode("PEEL")?.emergencyDepartment).toBeDefined();
-    expect(siteByCode("PEEL")?.units).toHaveLength(0);
+    expect(wardSites.find((site) => site.code === "PEEL")?.units).toHaveLength(0);
   });
 
   it("accounts for every bed in every unit exactly once across the five-state grid", () => {

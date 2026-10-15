@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { StatusGlyph } from "@/components/wf";
 import { canSeeReadmissionFlag, wardChromeRole } from "./ward-chrome-role";
-import { useWardFlow } from "./ward-flow-provider";
+import { useWardFlowSelect } from "./ward-flow-provider";
 import { READMISSION_WINDOW_DAYS, type ReadmissionFlag as ReadmissionFlagValue } from "./ward-readmission";
 
 import styles from "./ward-readmission-flag.module.css";
@@ -56,7 +56,7 @@ export function ReadmissionFlag({
   expandable?: boolean;
   testId?: string;
 }) {
-  const { dayZero } = useWardFlow();
+  const { dayZero } = useWardFlowSelect("dayZero");
   const [open, setOpen] = useState(false);
   const visible = useReadmissionFlagVisible();
   if (!flag || !visible) return null;

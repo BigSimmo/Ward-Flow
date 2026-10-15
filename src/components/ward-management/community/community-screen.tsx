@@ -2,7 +2,7 @@
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -32,6 +32,7 @@ import {
   TextInput,
   useIsPhone,
   useOptionalToast,
+  useModalFocus,
   type SinceItem,
   type WfTone,
 } from "@/components/wf";
@@ -70,19 +71,32 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import {
   useCommunityScopedReferrals,
   useDanglingReferralIds,
-  useWardFlow,
   useWardFlowClock,
+  useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import {
+  cancelTransportBlockedReason,
+  communityDeclineBlockedReason,
+} from "@/components/ward-management/community/community-blocked-reasons";
 import type {
   CommunityScopedAddressing,
   CommunityScopedReferral,
 } from "@/components/ward-management/ward-referral-visibility";
-import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import {
+  patientIdentityLine,
+  resolveSubjectPatient,
+  NAME_NOT_RECORDED,
+  UMRN_NOT_RECORDED,
+  withUmrnInPlaceOfMovementIds,
+  type PatientResolutionSubject,
+} from "@/components/ward-management/ward-patient-resolver";
 import {
   COMMUNITY_DECLINE_REASONS,
   TRANSPORT_LEGAL_STATUSES,
@@ -135,6 +149,7 @@ import {
   DEMO_COMMUNITY_INPATIENTS,
   DEMO_COMMUNITY_EGRESS,
   DEMO_COMMUNITY_CASELOAD,
+  DEMO_COMMUNITY_UMRNS,
   DEMO_COMMUNITY_STAFF,
   resolveCommunityTeamConfig,
 } from "./community-demo-cohort";
@@ -212,8 +227,7 @@ const TEAM_TABS = [
  * screen reader (the repo's D4 wording) — for exactly as long as no reason is chosen; the same
  * "state a reason before declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
  */
-const COMMUNITY_DECLINE_REASON_UNCHOSEN = "Choose the reason this team cannot take this referral before declining it.";
-const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first. The provider is told.";
+// Its blocked-reason sentence, and the cancel-transport one, live in `community-blocked-reasons.ts`.
 
 const ESCORT_ANSWERS = [
   { value: true, label: "Escort required" },
@@ -491,14 +505,33 @@ export function CommunityScreen({
     openDischargeRecord,
     readDischargeRecord,
     dispatch,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "admissions",
+    "notices",
+    "units",
+    "movements",
+    "patients",
+    "rejections",
+    "openDischargeRecord",
+    "readDischargeRecord",
+    "dispatch",
+  );
   const liveReferrals = useCommunityScopedReferrals();
   const now = useWardFlowClock();
+  const raise = useWardRaise("community");
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
   const umrnLookup = useMemo(
     () => ({ patients, referrals: referrals ?? liveReferrals, movements }),
     [patients, referrals, liveReferrals, movements],
   );
+  // D-39: a person is named by name and UMRN through the resolver, never by a referral, admission or
+  // patient record number. The demonstration cohort holds a UMRN only on its caseload rows.
+  const identityOf = (subject: PatientResolutionSubject) =>
+    patientIdentityLine(resolveSubjectPatient(subject, umrnLookup));
+  const demoUmrnOf = (patientId: string) =>
+    DEMO_COMMUNITY_CASELOAD.find((row) => row.patientId === patientId)?.umrn ??
+    DEMO_COMMUNITY_UMRNS[patientId] ??
+    UMRN_NOT_RECORDED;
   const team =
     communityTeamById(teamId) ??
     (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
@@ -513,12 +546,11 @@ export function CommunityScreen({
   const [transportDraft, setTransportDraft] = useState<TransportDraftState>(BLANK_TRANSPORT_DRAFT);
   const [transportCancelFor, setTransportCancelFor] = useState<string | undefined>(undefined);
   const [cancelTransportReason, setCancelTransportReason] = useState<CancelTransportReason | undefined>(undefined);
+  const cancelTransportBlocked = cancelTransportBlockedReason(cancelTransportReason);
   const [activeModal, setActiveModal] = useState<{
     type: "review" | "assign";
     referral: CommunityScopedReferral;
   } | null>(null);
-  // These dialogs do not join the sheet stack, so they hold the page still themselves (phone).
-  useWardPageScrollLock(transportBookFor !== undefined || transportCancelFor !== undefined || activeModal !== null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
@@ -537,19 +569,31 @@ export function CommunityScreen({
 
   /*
    * v10 pass 3: an Accept or Decline recorded here shows a toast with Undo
-   * (`UNDO_REFERRAL_DECISION`, this team's own decision). `rejectionsRef` reads the newest count at
-   * the moment Undo is pressed, and a refused Undo says why.
+   * (`UNDO_REFERRAL_DECISION`, this team's own decision), through the shared `useUndoableStep`: a
+   * refused step or Undo says why.
    */
   const toast = useOptionalToast();
-  const rejectionsRef = useRef(rejections.length);
-  useEffect(() => {
-    rejectionsRef.current = rejections.length;
-  }, [rejections]);
+  const { run: runDecision, offer: offerDecision } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: "community",
+    toast,
+  });
+  const decisionStep = useCallback(
+    (referralId: string, word: "accepted" | "declined") => ({
+      success: `Referral ${word}`,
+      undo: (at: Instant): WardFlowEvent => ({
+        type: "UNDO_REFERRAL_DECISION",
+        role: "community",
+        now: at,
+        referralId,
+      }),
+      undone: "Decision undone. The referral is back in the queue.",
+    }),
+    [],
+  );
   const toastedAcceptRef = useRef<string | null>(null);
-  const declineCheckRef = useRef<{ referralId: string; count: number } | null>(null);
-  const [declineCheckToken, setDeclineCheckToken] = useState(0);
-  const undoCheckRef = useRef<number | null>(null);
-  const [undoCheckToken, setUndoCheckToken] = useState(0);
   const [switchOpen, setSwitchOpen] = useState(false);
   // Phone (v10): the waiting referral and the departure open as bottom sheets.
   const isPhone = useIsPhone();
@@ -566,25 +610,6 @@ export function CommunityScreen({
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const pushDecisionToast = useCallback(
-    (referralId: string, word: "accepted" | "declined") => {
-      toast?.push({
-        tone: "success",
-        title: `Referral ${word}`,
-        body: "Undo puts it back in the queue.",
-        undo: {
-          durationMs: 8000,
-          onUndo: () => {
-            undoCheckRef.current = rejectionsRef.current;
-            dispatch({ type: "UNDO_REFERRAL_DECISION", role: "community", now, referralId });
-            setUndoCheckToken((token) => token + 1);
-          },
-        },
-      });
-    },
-    [toast, dispatch, now],
-  );
-
   useEffect(() => {
     if (!pendingAcceptance || !team || toastedAcceptRef.current === pendingAcceptance.id) return;
     const names = [team.name, ...ratifiedSameServiceNames(team.name)];
@@ -593,27 +618,8 @@ export function CommunityScreen({
       addressing !== undefined && names.includes(addressing.destination.teamName) && addressing.state === "accepted";
     if (!accepted) return;
     toastedAcceptRef.current = pendingAcceptance.id;
-    pushDecisionToast(pendingAcceptance.id, "accepted");
-  }, [pendingAcceptance, liveReferrals, team, pushDecisionToast]);
-
-  useEffect(() => {
-    const check = declineCheckRef.current;
-    if (declineCheckToken === 0 || check === null) return;
-    declineCheckRef.current = null;
-    if (rejections.length > check.count) return;
-    pushDecisionToast(check.referralId, "declined");
-  }, [rejections, declineCheckToken, pushDecisionToast]);
-
-  useEffect(() => {
-    if (undoCheckToken === 0 || undoCheckRef.current === null) return;
-    if (rejections.length > undoCheckRef.current) {
-      toast?.push({ tone: "warning", title: "Undo was refused", body: rejections[rejections.length - 1].reason });
-    } else {
-      toast?.push({ tone: "info", title: "Decision undone", body: "The referral is back in the queue." });
-    }
-    undoCheckRef.current = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rejections, undoCheckToken]);
+    offerDecision(decisionStep(pendingAcceptance.id, "accepted"));
+  }, [pendingAcceptance, liveReferrals, team, decisionStep, offerDecision]);
 
   const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
   const [showCareEditor, setShowCareEditor] = useState(false);
@@ -707,7 +713,7 @@ export function CommunityScreen({
       setActiveDrawer("referralDrawer");
     } else if (action === "Assign") {
       setActiveModal({ type: "assign", referral });
-      setToastMessage(`Assign ${referral.id}: Not wired in this prototype.`);
+      setToastMessage("Assign referral: Not wired in this prototype.");
     }
   }
 
@@ -758,20 +764,21 @@ export function CommunityScreen({
   const handleConfirmDecline = useCallback(
     (referralId: string) => {
       if (declineDraft === undefined) return;
-      declineCheckRef.current = { referralId, count: rejectionsRef.current };
-      setDeclineCheckToken((token) => token + 1);
-      dispatch({
-        type: "DECLINE_REFERRAL",
-        role: "community",
-        now,
-        referralId,
-        destinationKind: "community_team",
-        reason: declineDraft,
-      });
+      runDecision(
+        {
+          type: "DECLINE_REFERRAL",
+          role: "community",
+          now,
+          referralId,
+          destinationKind: "community_team",
+          reason: declineDraft,
+        },
+        decisionStep(referralId, "declined"),
+      );
       setDeclineOpenFor(undefined);
       setDeclineDraft(undefined);
     },
-    [declineDraft, dispatch, now],
+    [declineDraft, decisionStep, now, runDecision],
   );
 
   /**
@@ -802,15 +809,12 @@ export function CommunityScreen({
       }
       setAcceptanceError(null);
       setPendingAcceptance({ id: referralId, rejectionCount: rejections.length });
-      dispatch({
-        type: "ACCEPT_REFERRAL",
-        role: "community",
-        now,
+      raise("ACCEPT_REFERRAL", {
         referralId,
         destinationKind: "community_team",
       });
     },
-    [dispatch, liveReferrals, now, rejections.length, team],
+    [raise, liveReferrals, rejections.length, team],
   );
 
   useEffect(() => {
@@ -898,6 +902,34 @@ export function CommunityScreen({
     setCancelTransportReason(undefined);
   }
 
+  // Every overlay here follows the shared modal contract (`useModalFocus`): the page behind is inert
+  // and held still, focus moves inside, Tab wraps, Escape closes only the top layer (handled first,
+  // before this screen's own Escape, which would otherwise clear every overlay at once), and focus
+  // returns to the opener. Hook order is stacking order when two open together: drawer, then dialogs.
+  const drawerPanelRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: drawerScrimRef } = useModalFocus({
+    open: activeDrawer !== null,
+    onClose: () => setActiveDrawer(null),
+    panelRef: drawerPanelRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  const noteModalRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: noteModalOverlayRef } = useModalFocus({
+    open: activeModalType !== null,
+    onClose: () => setActiveModalType(null),
+    panelRef: noteModalRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  const referralModalRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: referralModalBackdropRef } = useModalFocus({
+    open: activeModal !== null,
+    onClose: () => setActiveModal(null),
+    panelRef: referralModalRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
   const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
   useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
@@ -915,10 +947,7 @@ export function CommunityScreen({
     ) {
       return;
     }
-    dispatch({
-      type: "BOOK_TRANSPORT",
-      role: "community",
-      now,
+    raise("BOOK_TRANSPORT", {
       movementId,
       actingPlaceId: teamId,
       provider,
@@ -937,10 +966,7 @@ export function CommunityScreen({
 
   function submitCancelTransport(movementId: string) {
     if (cancelTransportReason === undefined) return;
-    dispatch({
-      type: "CANCEL_TRANSPORT",
-      role: "community",
-      now,
+    raise("CANCEL_TRANSPORT", {
       movementId,
       actingPlaceId: teamId,
       reason: cancelTransportReason,
@@ -1018,7 +1044,7 @@ export function CommunityScreen({
     (acceptanceRefusal
       ? `Referral was not accepted: ${acceptanceRefusal.reason}`
       : pendingAcceptance && acceptedAddressing?.state === "accepted"
-        ? `Referral ${pendingAcceptance.id} accepted for ${team.name} follow-up. No clinician assignment was recorded.`
+        ? `Referral for ${identityOf({ referralId: pendingAcceptance.id })} accepted for ${team.name} follow-up. No clinician assignment was recorded.`
         : pendingAcceptance
           ? "Awaiting referral acceptance result."
           : null);
@@ -1134,7 +1160,7 @@ export function CommunityScreen({
     .sort((a, b) => b.raisedAt - a.raisedAt);
   const unreadTeamNoticeCount = teamNotices.filter((notice) => notice.readAt === undefined).length;
   function markTeamNoticeRead(noticeId: string) {
-    dispatch({ type: "MARK_NOTICE_READ", role: "community", now, noticeId, actingPlaceId: teamId });
+    raise("MARK_NOTICE_READ", { noticeId, actingPlaceId: teamId });
   }
   const inBedCount = lists.currentlyAdmitted.filter((admission) => admission.state === "occupied").length;
   const bedPulledCount = lists.currentlyAdmitted.filter((admission) => admission.state === "pulled").length;
@@ -1178,8 +1204,8 @@ export function CommunityScreen({
     const oldest = waitingReferrals[0];
     attentionItems.push(
       <>
-        <strong>{oldest.id}</strong> has waited {referralWaitLine(oldest, now)} for an answer from this team — the
-        longest of the {waitingReferrals.length} referral{waitingReferrals.length === 1 ? "" : "s"} waiting.
+        <strong>{identityOf(oldest)}</strong> has waited {referralWaitLine(oldest, now)} for an answer from this team —
+        the longest of the {waitingReferrals.length} referral{waitingReferrals.length === 1 ? "" : "s"} waiting.
       </>,
     );
   }
@@ -1187,9 +1213,10 @@ export function CommunityScreen({
     const { admission, acceptedAt, arrivedAt } = shortestAcceptanceToAdmissionGap;
     attentionItems.push(
       <>
-        <strong>{admission.id}</strong> was admitted {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after
-        this team accepted them — the shortest gap of the {admittedWhileAlreadyWithTeam.length} admitted while already
-        with this team, and the one worth checking first.
+        <strong>{identityOf(admission)}</strong> was admitted{" "}
+        {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after this team accepted them — the shortest gap
+        of the {admittedWhileAlreadyWithTeam.length} admitted while already with this team, and the one worth checking
+        first.
       </>,
     );
   }
@@ -2097,7 +2124,7 @@ export function CommunityScreen({
                   id: row.key,
                   testId: `ward-community-phone-cto-${row.referralId}`,
                   name: phoneName(person, "No person on file"),
-                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? row.referralId}`,
+                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? UMRN_NOT_RECORDED}`,
                   time: caseloadRecordedExpiryLabel(row, now),
                   onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
                 };
@@ -2143,7 +2170,7 @@ export function CommunityScreen({
             : phoneDeclining
               ? {
                   label: "Decline referral",
-                  disabledReason: declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined,
+                  disabledReason: communityDeclineBlockedReason(declineDraft),
                   onAction: () => {
                     handleConfirmDecline(phoneReferral.id);
                     closePhoneReferral();
@@ -2557,7 +2584,11 @@ export function CommunityScreen({
                   <WardFigure
                     label="Longest wait"
                     value={waitingReferrals.length === 0 ? "None waiting" : referralWaitLine(waitingReferrals[0], now)}
-                    sub={waitingReferrals.length === 0 ? undefined : `${waitingReferrals[0].id} · since it was raised`}
+                    sub={
+                      waitingReferrals.length === 0
+                        ? undefined
+                        : `${identityOf(waitingReferrals[0])} · since it was raised`
+                    }
                   />
                 </WardFigureStrip>
               </div>
@@ -2821,6 +2852,7 @@ export function CommunityScreen({
                           data-testid="ward-community-waiting-list"
                         >
                           {demoVisibleReferrals.map((referral) => (
+                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
                             <li
                               key={referral.id}
                               className={styles.refCard}
@@ -2834,17 +2866,26 @@ export function CommunityScreen({
                               style={{ cursor: "pointer" }}
                             >
                               <div className={styles.refCardHead}>
-                                <span className={styles.refId}>
-                                  {referral.id} · {referral.priorityLabel}
-                                </span>
+                                <span className={styles.refId}>Referral · {referral.priorityLabel}</span>
                                 <span className={styles.refWait} data-breach={referral.isBreach ? "true" : undefined}>
                                   {referral.waitLabel}
                                 </span>
                               </div>
                               <div className={styles.refPatientRow}>
-                                <b className={styles.patientIdWrap}>
-                                  {referral.patientId} ({referral.patientDetails})
-                                </b>
+                                {/* The card click is a pointer shortcut. This button is the keyboard route. */}
+                                <button
+                                  type="button"
+                                  className={styles.refOpen}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedPatientId(referral.patientId);
+                                    setActiveDrawer("pxDrawer");
+                                  }}
+                                >
+                                  <b className={styles.patientIdWrap}>
+                                    {demoUmrnOf(referral.patientId)} ({referral.patientDetails})
+                                  </b>
+                                </button>
                                 <span className={`${styles.statusPillBadge} ${styles[referral.legalStatusTone]}`}>
                                   {referral.legalStatus}
                                 </span>
@@ -2855,12 +2896,15 @@ export function CommunityScreen({
                               >
                                 {referral.clinicalSummary}
                               </p>
+                              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                               <div className={styles.refActionsRow} onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
                                   className={styles.btnSmPrimary}
                                   onClick={() => {
-                                    setToastMessage(`Accepted ${referral.id} into community triage.`);
+                                    setToastMessage(
+                                      `Accepted the referral for ${demoUmrnOf(referral.patientId)} into community triage.`,
+                                    );
                                   }}
                                 >
                                   {referral.primaryActionLabel}
@@ -2879,7 +2923,9 @@ export function CommunityScreen({
                                   type="button"
                                   className={styles.btnSmSec}
                                   onClick={() => {
-                                    setToastMessage(`Decline option for ${referral.id} recorded.`);
+                                    setToastMessage(
+                                      `Decline option for the referral for ${demoUmrnOf(referral.patientId)} recorded.`,
+                                    );
                                   }}
                                 >
                                   {referral.declineActionLabel}
@@ -2967,8 +3013,7 @@ export function CommunityScreen({
                             const declineOpen = declineOpenFor === referral.id;
                             // Blocked only until a reason is chosen — the same "state a reason before
                             // declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
-                            const declineBlocked =
-                              declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined;
+                            const declineBlocked = communityDeclineBlockedReason(declineDraft);
                             return (
                               <li
                                 key={referral.id}
@@ -2978,9 +3023,7 @@ export function CommunityScreen({
                                 data-prio={`p${referral.urgency}${referral.source === "ed_medical" ? " ed" : ""}`}
                               >
                                 <div className={styles.refCardHead}>
-                                  <span className={styles.refId}>
-                                    {referral.id} · {urgencyTierLabel(referral.urgency)}
-                                  </span>
+                                  <span className={styles.refId}>Referral · {urgencyTierLabel(referral.urgency)}</span>
                                   <span
                                     className={styles.refWait}
                                     data-breach={referral.urgency === 1 ? "true" : undefined}
@@ -2993,8 +3036,7 @@ export function CommunityScreen({
                                   return (
                                     <div className={styles.refPatientRow}>
                                       <b className={styles.patientIdWrap}>
-                                        {referral.patientId ?? referral.id}{" "}
-                                        {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
+                                        {identityOf(referral)} {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
                                       </b>
                                       <span
                                         className={`${styles.statusPillBadge} ${referral.urgency === 1 ? styles.danger : styles.neutral}`}
@@ -3321,7 +3363,8 @@ export function CommunityScreen({
                               style={{ cursor: "pointer" }}
                             >
                               <td style={{ whiteSpace: "nowrap" }}>
-                                <b className={styles.patientIdWrap}>{inp.patientId}</b> ({inp.patientDetails})
+                                <b className={styles.patientIdWrap}>{demoUmrnOf(inp.patientId)}</b> (
+                                {inp.patientDetails})
                               </td>
                               <td>
                                 {inp.wardName} ({inp.healthService})
@@ -3431,7 +3474,7 @@ export function CommunityScreen({
                               return (
                                 <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
                                   <td style={{ whiteSpace: "nowrap" }}>
-                                    <b className={styles.patientIdWrap}>{admission.patientId ?? admission.id}</b>
+                                    <b className={styles.patientIdWrap}>{identityOf(admission)}</b>
                                     {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
                                   </td>
                                   <td>
@@ -3583,7 +3626,7 @@ export function CommunityScreen({
                               data-testid={`ward-community-accepted-before-admission-${admission.id}`}
                             >
                               <th scope="row">
-                                <span className={styles.patientIdWrap}>{admission.id}</span>
+                                <span className={styles.patientIdWrap}>{identityOf(admission)}</span>
                               </th>
                               <td>{unitName(admission.unitId, units)}</td>
                               <td>{stayLabel(admission, now)}</td>
@@ -3732,14 +3775,24 @@ export function CommunityScreen({
                                 key={egr.id}
                                 data-status={isContacted ? "completed" : egr.status}
                                 data-pt-id={egr.patientId}
+                                tabIndex={0}
                                 onClick={() => {
+                                  setSelectedPatientId(egr.patientId);
+                                  setActiveDrawer("pxDrawer");
+                                }}
+                                onKeyDown={(event) => {
+                                  // Keys from the contact button inside the row stay with that button.
+                                  if (event.target !== event.currentTarget) return;
+                                  if (event.key !== "Enter" && event.key !== " ") return;
+                                  event.preventDefault();
                                   setSelectedPatientId(egr.patientId);
                                   setActiveDrawer("pxDrawer");
                                 }}
                                 style={{ cursor: "pointer" }}
                               >
                                 <td style={{ whiteSpace: "nowrap" }}>
-                                  <b className={styles.patientIdWrap}>{egr.patientId}</b> ({egr.patientDetails})
+                                  <b className={styles.patientIdWrap}>{demoUmrnOf(egr.patientId)}</b> (
+                                  {egr.patientDetails})
                                 </td>
                                 <td>{egr.dischargingUnit}</td>
                                 <td>{egr.dischargeDatePlan}</td>
@@ -4137,7 +4190,7 @@ export function CommunityScreen({
                               style={{ cursor: "pointer" }}
                             >
                               <td>
-                                <b>{row.umrn}</b> · {row.patientId}
+                                <b>{row.umrn}</b>
                               </td>
                               <td>{row.ageSex}</td>
                               <td>
@@ -4259,10 +4312,14 @@ export function CommunityScreen({
                             return (
                               <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>
                                 <td>
-                                  <strong>{row.patientId ?? "No person on file"}</strong>
+                                  <strong>
+                                    {row.patientId === undefined || row.patientId === null
+                                      ? "No person on file"
+                                      : phoneName(phonePerson(row.patientId), NAME_NOT_RECORDED)}
+                                  </strong>
                                   {/* The age band sits under the person, as the v6 table carries it. */}
                                   <span className={styles.caseloadMeta}>
-                                    {row.umrn ?? row.referralId} · {row.ageBand}
+                                    {row.umrn ?? UMRN_NOT_RECORDED} · {row.ageBand}
                                   </span>
                                 </td>
                                 <td>
@@ -4320,6 +4377,7 @@ export function CommunityScreen({
 
         {transportBookFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={transportBookDialogRef}
               className={styles.modalDialog}
@@ -4518,6 +4576,7 @@ export function CommunityScreen({
 
         {transportCancelFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={transportCancelDialogRef}
               className={styles.modalDialog}
@@ -4573,26 +4632,26 @@ export function CommunityScreen({
                     type="button"
                     className={styles.transportConfirmButton}
                     data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
-                    aria-disabled={cancelTransportReason === undefined ? "true" : undefined}
+                    aria-disabled={cancelTransportBlocked === undefined ? undefined : "true"}
                     aria-describedby={
-                      cancelTransportReason === undefined
-                        ? `ward-community-cancel-transport-blocked-${transportCancelFor}`
-                        : undefined
+                      cancelTransportBlocked === undefined
+                        ? undefined
+                        : `ward-community-cancel-transport-blocked-${transportCancelFor}`
                     }
-                    title={cancelTransportReason === undefined ? CANCEL_TRANSPORT_UNCHOSEN : undefined}
+                    title={cancelTransportBlocked}
                     onClick={
-                      cancelTransportReason === undefined
-                        ? ignoreUnavailableActivation
-                        : () => submitCancelTransport(transportCancelFor)
+                      cancelTransportBlocked === undefined
+                        ? () => submitCancelTransport(transportCancelFor)
+                        : ignoreUnavailableActivation
                     }
                   >
                     Confirm cancel
                   </button>
-                  {cancelTransportReason === undefined ? (
+                  {cancelTransportBlocked === undefined ? null : (
                     <span id={`ward-community-cancel-transport-blocked-${transportCancelFor}`} className="sr-only">
-                      {CANCEL_TRANSPORT_UNCHOSEN}
+                      {cancelTransportBlocked}
                     </span>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
@@ -4600,8 +4659,15 @@ export function CommunityScreen({
         ) : null}
 
         {activeModal !== null && (
-          <div className={styles.modalBackdrop} role="presentation" onClick={() => setActiveModal(null)}>
+          <div
+            ref={referralModalBackdropRef}
+            className={styles.modalBackdrop}
+            role="presentation"
+            onClick={() => setActiveModal(null)}
+          >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={referralModalRef}
               className={styles.modalDialog}
               role="dialog"
               aria-modal="true"
@@ -4610,7 +4676,8 @@ export function CommunityScreen({
             >
               <div className={styles.modalHeader}>
                 <h3 id="community-modal-title" className={styles.modalTitle}>
-                  {activeModal.type === "review" ? "Review referral" : "Assign referral"}: {activeModal.referral.id}
+                  {activeModal.type === "review" ? "Review referral" : "Assign referral"}:{" "}
+                  {identityOf(activeModal.referral)}
                 </h3>
                 <button
                   type="button"
@@ -4627,7 +4694,7 @@ export function CommunityScreen({
                 </p>
                 <div className={styles.modalDetailsList}>
                   <p>
-                    <strong>Referral:</strong> {activeModal.referral.id}
+                    <strong>Patient:</strong> {identityOf(activeModal.referral)}
                   </p>
                   <p>
                     <strong>Urgency:</strong> {urgencyTierLabel(activeModal.referral.urgency)}
@@ -4652,12 +4719,15 @@ export function CommunityScreen({
         {/* ── Drawers (mounted only when activeDrawer !== null) ── */}
         {activeDrawer !== null && (
           <div
+            ref={drawerScrimRef}
             className={styles.drawerScrim}
             id="drawerScrim"
             role="presentation"
             onClick={() => setActiveDrawer(null)}
           >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={drawerPanelRef}
               className={styles.drawerPanel}
               id={
                 activeDrawer === "referral" || activeDrawer === "referralDrawer"
@@ -4698,12 +4768,12 @@ export function CommunityScreen({
                     <span id="pxDrawerHeading">
                       {selectedPatient
                         ? `Patient Dossier: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
-                        : `Patient Dossier: ${selectedPatientId || "PT-4409"}`}
+                        : `Patient Dossier: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
                     </span>
                   )}
                   {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
                     <span id="refDrawerHeading">
-                      {selectedReferral ? `Referral Triage: ${selectedReferral.id}` : "Referral unavailable"}
+                      {selectedReferral ? `Referral Triage: ${identityOf(selectedReferral)}` : "Referral unavailable"}
                     </span>
                   )}
                   {(activeDrawer === "activity" || activeDrawer === "activityDrawer") &&
@@ -4967,7 +5037,7 @@ export function CommunityScreen({
                                 })
                               }
                             >
-                              Open admission {admission.id} · {admission.state}
+                              Open admission · {unitName(admission.unitId, units)} · {admission.state}
                             </button>
                           ))}
                         {careRead?.status === "allowed" ? (
@@ -4996,14 +5066,10 @@ export function CommunityScreen({
                       <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                           <div>
-                            <b>Referral ID:</b>{" "}
-                            <span className={styles.mono} id="refDrawerId">
-                              {selectedReferral?.id ?? "Not found"}
-                            </span>
-                          </div>
-                          <div>
                             <b>Patient:</b>{" "}
-                            <span id="refDrawerPatient">{selectedReferral?.patientId ?? "Not recorded"}</span>
+                            <span id="refDrawerPatient">
+                              {selectedReferral ? identityOf(selectedReferral) : "Not recorded"}
+                            </span>
                           </div>
                           <div>
                             <b>Referring Service:</b>{" "}
@@ -5306,8 +5372,15 @@ export function CommunityScreen({
 
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         {activeModalType !== null && (
-          <div className={styles.modalOverlay} role="presentation" onClick={() => setActiveModalType(null)}>
+          <div
+            ref={noteModalOverlayRef}
+            className={styles.modalOverlay}
+            role="presentation"
+            onClick={() => setActiveModalType(null)}
+          >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={noteModalRef}
               className={styles.modalBox}
               id={
                 activeModalType === "contact"
@@ -5319,6 +5392,7 @@ export function CommunityScreen({
                       : undefined
               }
               role="dialog"
+              aria-modal="true"
               aria-labelledby={
                 activeModalType === "contact"
                   ? "contactModalTitle"
@@ -5782,7 +5856,7 @@ const REFERRAL_SOURCE_LABELS: Record<CommunityScopedReferral["source"], string> 
  * Where a referral says it came from, in words a coordinator reading this queue can act on: the
  * channel (`REFERRAL_SOURCE_LABELS`) and, where the record names one, the originating site
  * (`siteByCode`) — never a literal hospital name, which would be a second home for a fact
- * `wardSites` already owns. An unresolvable site code renders as the code itself rather than a
+ * `siteDirectory` already owns. An unresolvable site code renders as the code itself rather than a
  * blank or a guess, the same discipline `unitName` holds a few functions above.
  */
 function referralOriginLabel(referral: CommunityScopedReferral): string {

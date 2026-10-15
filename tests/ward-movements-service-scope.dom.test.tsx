@@ -17,6 +17,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task D2 (item 44 — the
  * service chooser, Movements lane). §2 "Per screen": *"the list is scoped. Figures and the 48-hour
@@ -379,7 +380,7 @@ describe("empty-worklist sentences name the chosen service (R2 item 5)", () => {
  */
 describe("the stage-summary jump prefers an in-scope member over the stage's raw first entry (R2 item 7)", () => {
   it("Destination review: first=WF-009 (outside East Metro) but WF-017 (inside) is jumped to instead", () => {
-    const stages = journeyStages(openMovements, NOW);
+    const stages = journeyStages(openMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const destinationReview = stages.find((stage) => stage.id === "destination_review");
     expect(destinationReview, "destination_review stage missing from the real seed").toBeDefined();
     const [rawFirst] = destinationReview!.movements;

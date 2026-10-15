@@ -27,13 +27,13 @@ import {
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
-import { Dot, durMinutes } from "@/components/wf";
+import { Dot, durMinutes, useIsPhone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   applyGlareToDocument,
@@ -48,6 +48,7 @@ import { announceToWardShell } from "./ward-live-region";
 import styles from "./ward-rail.module.css";
 import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
 import { isActiveRailEntry, RAIL_GROUPS, type RailEntry, railEntries } from "./ward-rail-entries";
+import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -56,6 +57,7 @@ import {
   formatOccupancyPercent,
   isBedAlert,
   type ServiceBedAlert,
+  type ServiceBedAlertsSummary,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
 
@@ -304,20 +306,31 @@ function WardFlowMark({ className }: { className?: string }) {
   );
 }
 
+const NO_BED_ALERTS: ServiceBedAlertsSummary = {
+  services: [],
+  totalFreeBeds: 0,
+  metroOccupancyPercent: null,
+  statewideOccupancyPercent: null,
+  mostPressing: null,
+};
+
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
+  const network = useWardNetwork();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlow();
+  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+    "units",
+    "bedReleases",
+    "movements",
+    "configuration",
+    "admissions",
+  );
   const now = useWardFlowClock();
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
-  const bedAlerts = deriveServiceBedAlerts(
-    units,
-    bedReleases,
-    undefined,
-    movements,
-    now,
-    accessTargetMinutes,
-    admissions,
-  );
+  const phone = useIsPhone();
+  // A phone never draws the rail (below), so it skips the bed alert figures too.
+  const bedAlerts = phone
+    ? NO_BED_ALERTS
+    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
   const open = useRailOpenStore();
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();
@@ -373,7 +386,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const hydrated = useSyncExternalStore(subscribeNever, hydratedSnapshot, notHydratedSnapshot);
   const earlyShape = hydrated ? null : readWardRailEarlyShape();
   const flagOn = useWardFeatureFlagCheck();
-  const entries = railEntries(flagOn);
+  // Role access plan: only the screens the desk's role may open, own place first.
+  const accessNav = useAccessNavFilter();
+  const entries = accessNav(railEntries(flagOn));
   const currentPersona = CLINICAL_PERSONAS.find((p) => p.id === activePersona) ?? CLINICAL_PERSONAS[0];
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);
@@ -525,6 +540,12 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     // Never render an empty landmark: a rail with nothing in it is a defect, not a smaller rail.
     return null;
   }
+
+  // A phone never shows the rail (it is hidden under 48rem and the bar's Menu holds the navigation),
+  // so it skips drawing it. The effects above still keep the theme and rail attributes in sync.
+  // Drawing every link and tooltip only to hide them was a visible part of a phone's first load
+  // (fix list 7.6, October 2026).
+  if (phone) return null;
 
   // Role-aware ordering: each entry is ranked by whichever role-order list names it. An id no list
   // names, and the whole `coordinator` role, keeps its curated `RAIL_GROUPS` position.

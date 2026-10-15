@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 import styles from "./ed.module.css";
 
@@ -15,8 +16,9 @@ export function EdMedicalPlacementControls({
   movementId: string;
   actingPlaceId: string;
 }) {
-  const { movements, referrals, rejections, dispatch } = useWardFlow();
+  const { movements, referrals, rejections } = useWardFlowSelect("movements", "referrals", "rejections");
   const now = useWardFlowClock();
+  const raise = useWardRaise("ed");
   const movement = movements.find((record) => record.id === movementId);
   const clearance = movement ? recordedMovementMedicalClearance(movement, referrals) : undefined;
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -75,10 +77,8 @@ export function EdMedicalPlacementControls({
     const kind = confirmation;
     setAttempt({ kind, at: now, rejectedBefore: rejections.length });
     setConfirmation(null);
-    if (kind === "deterioration")
-      dispatch({ type: "RECORD_ED_MEDICAL_DETERIORATION", role: "ed", now, movementId, actingPlaceId });
-    else
-      dispatch({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", now, movementId, cleared: kind === "cleared" });
+    if (kind === "deterioration") raise("RECORD_ED_MEDICAL_DETERIORATION", { movementId, actingPlaceId });
+    else raise("RECORD_MOVEMENT_MEDICAL_CLEARANCE", { movementId, cleared: kind === "cleared" });
   }
 
   return (

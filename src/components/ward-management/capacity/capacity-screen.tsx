@@ -10,7 +10,7 @@ import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/comp
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   FilterChip,
   Hero,
@@ -33,6 +33,7 @@ import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFilters } from "@/components/ward-management/ward-controls";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { WardPanel } from "@/components/ward-management/ward-panel";
+import { StepDownBoard } from "./step-down-board";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -113,11 +114,23 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 };
 
 export function CapacityScreen() {
+  const thresholds = useDueSoonThresholds();
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
-    useWardFlow();
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "bedReleases",
+      "admissions",
+      "leaveBeds",
+      "dispatch",
+      "worldGeneration",
+      "plannedAdmissions",
+    );
   const { now, paused, togglePause } = usePageLive();
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
+  // Top 25 item 8: desktop only, so the phone design is unchanged.
+  const stepDownBoardOn = useWardFeatureFlag("top25-step-down-board");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -775,6 +788,7 @@ export function CapacityScreen() {
                       admissions,
                       leaveBeds,
                       now,
+                      thresholds,
                       service,
                       nameOf: (movement) => patientOf(movement).displayName,
                     })
@@ -1018,6 +1032,7 @@ export function CapacityScreen() {
               {isPhone ? null : <PlannedAdmissionsPanel key={worldGeneration} now={now} />}
             </div>
           </div>
+          {stepDownBoardOn && !isPhone ? <StepDownBoard now={now} /> : null}
         </div>
         {isPhone ? (
           <div className={styles.plannedWrap} data-phone-hidden={phoneTab !== "planned" ? "true" : undefined}>
@@ -1039,6 +1054,7 @@ export function CapacityScreen() {
                 admissions,
                 leaveBeds,
                 now,
+                thresholds,
                 service,
                 nameOf: (movement) => patientOf(movement).displayName,
               })
@@ -1307,7 +1323,7 @@ function NetworkRow({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { refreshRequests } = useWardFlow();
+  const { refreshRequests } = useWardFlowSelect("refreshRequests");
   // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
   // A request stays outstanding until the ward next confirms its capacity. Timestamps are whole minutes, so a
   // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
@@ -1889,7 +1905,14 @@ function CapacityTabs({
 /** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
 function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack: () => void; now: Instant }) {
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
-    useWardFlow();
+    useWardFlowSelect(
+      "bedReleases",
+      "refreshRequests",
+      "dispatch",
+      "readDischargeRecords",
+      "openDischargeRecord",
+      "readDischargeRecord",
+    );
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -1945,6 +1968,7 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
           {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
         </p>
       </div>
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div
         id="capacity-ward-panel"
         role="tabpanel"

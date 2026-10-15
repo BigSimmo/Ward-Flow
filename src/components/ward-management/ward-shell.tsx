@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 
 import styles from "./ward-shell.module.css";
@@ -32,6 +32,7 @@ export function WardGround({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const groundRef = useRef<HTMLDivElement>(null);
   const positions = useRef(new Map<string, number>());
+  const mounted = useRef(false);
   const historyPath = useRef<string | null>(null);
   const currentPath = useRef(pathname);
 
@@ -49,7 +50,11 @@ export function WardGround({ children }: { children: ReactNode }) {
     currentPath.current = pathname;
     const restore = historyPath.current === pathname;
     historyPath.current = null;
-    if (!scroller) return;
+    // The first load already opens at the top. Writing scrollTop here would force a full layout of
+    // the page before its first paint, a visible cost on a phone (fix list 7.6, October 2026).
+    const firstLoad = !mounted.current;
+    mounted.current = true;
+    if (!scroller || (firstLoad && !restore)) return;
     // Next manages the document on phone/tablet. This owns the separate desktop column:
     // new routes start at the top; Back/Forward returns to the place the user left.
     const top = restore ? (positions.current.get(pathname) ?? 0) : 0;
@@ -131,7 +136,7 @@ export function WardGround({ children }: { children: ReactNode }) {
  */
 export function WardShellHeader() {
   const pathname = usePathname();
-  const { units } = useWardFlow();
+  const { units } = useWardFlowSelect("units");
   const place = wardPlaceFor(pathname, units);
   if (!place) return null;
 

@@ -45,14 +45,23 @@ vi.mock("next/link", () => ({
  */
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
-  return { ...actual, useWardFlow: () => mockContext, useWardFlowClock: () => mockContext.now };
+  return {
+    ...actual,
+    useWardFlow: () => mockContext,
+    useWardFlowSelect: () => mockContext,
+    useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
+    useWardFlowClock: () => mockContext.now,
+  };
 });
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const FORM_1A_NOT_FORMED_ID = "WF-001";
 const FORM_1A_FORMED_ID = "WF-005";
 const FORM_3D_NOT_FORMED_ID = "WF-TEST-3D-NOT-FORMED";

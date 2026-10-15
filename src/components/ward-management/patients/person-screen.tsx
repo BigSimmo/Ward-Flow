@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { type PatientId, patientAgeYears, patientDisplayName } from "@/components/ward-management/ward-patients";
@@ -11,6 +11,7 @@ import sharedStyles from "@/components/ward-management/ward-shared.module.css";
 
 import styles from "./person.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * A PERSON'S OWN SCREEN. The subject is the PERSON, not a request for a bed.
@@ -187,7 +188,7 @@ type RecordTabId = (typeof RECORD_TABS)[number]["id"];
  * compiler refuses a movement id here and a patient id there.
  */
 export function PersonScreen({ patientId }: { patientId: PatientId }) {
-  const { patients, dayZero } = useWardFlow();
+  const { patients, dayZero } = useWardFlowSelect("patients", "dayZero");
   const person = patients.find((candidate) => candidate.id === patientId);
 
   // "The record" — the tablist's own accessible name, copied from the drawing (§A3 of the
@@ -319,7 +320,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
                   <h2 className={styles.sectionHeading}>Referral</h2>
                   <Link
                     className={styles.primaryButton}
-                    href={`/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(person.id)}`}
+                    href={raiseReferralHref({ patientId: person.id })}
                     data-testid="ward-person-refer"
                   >
                     {/* "Refer Patient" is the owner's wording, ruling 9, 2026-09-03. It replaced
@@ -351,6 +352,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
                 </section>
               </div>
 
+              {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div className={styles.tabList} role="tablist" aria-label="The record" onKeyDown={onRecordTabsKeyDown}>
                 {RECORD_TABS.map((tab) => (
                   <button

@@ -14,15 +14,6 @@ import {
 import Link from "next/link";
 import { X, type LucideIcon } from "lucide-react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
-import {
-  canRestoreFocusTo,
-  isTopmostSheet,
-  popSheet,
-  pushSheet,
-  startSheetOpenFocus,
-  updateSheetRoot,
-  type SheetFocusController,
-} from "@/components/ui/sheet-focus";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
 import { useIsPhone } from "./use-is-phone";
@@ -32,6 +23,7 @@ import { Icon } from "./icon";
 import { CountBubble } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./phone.module.css";
+import { useModalFocus } from "./use-modal-focus";
 
 /*
  * v9 phone parts (design system v9 section 7, "Phone"). Phone is its own design at 390 by 844,
@@ -75,19 +67,6 @@ export type PhoneSheetProps = {
   "data-testid"?: string;
 };
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
-
-function focusableIn(panel: HTMLElement | null) {
-  return Array.from(panel?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).filter(
-    (element) =>
-      !element.hasAttribute("disabled") &&
-      element.tabIndex >= 0 &&
-      !element.closest('[aria-hidden="true"], [inert]') &&
-      element.getClientRects().length > 0,
-  );
-}
-
 /** A drag down the handle past this many pixels closes the sheet; a shorter drag snaps back. */
 const DRAG_CLOSE_PX = 96;
 
@@ -115,14 +94,11 @@ export function PhoneSheet({
   className,
   ...data
 }: PhoneSheetProps) {
-  const sheetId = useId();
   const titleId = useId();
   const descId = useId();
-  const scrimRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
-  const openFocusRef = useRef<SheetFocusController | null>(null);
   // The scrim closes the sheet only when the press starts on it, so a drag that begins inside the
   // panel and ends on the scrim does not dismiss.
   const scrimPressRef = useRef(false);
@@ -132,75 +108,15 @@ export function PhoneSheet({
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Read at close time, so a caller can retarget the return while the sheet is open.
-  const resolveReturnTarget = useCallback(() => returnFocusRef?.current ?? null, [returnFocusRef]);
-
-  const setScrimRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      scrimRef.current = node;
-      updateSheetRoot(sheetId, node);
-    },
-    [sheetId],
-  );
-
-  useEffect(() => {
-    if (!open) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-    pushSheet(sheetId, scrimRef.current);
-    openFocusRef.current = startSheetOpenFocus({
-      sheetId,
-      getPanel: () => panelRef.current,
-      resolveTarget: () =>
-        initialFocusRef?.current ??
-        panelRef.current?.querySelector<HTMLElement>('[data-sheet-autofocus="true"]') ??
-        closeRef.current ??
-        panelRef.current,
-    });
-
-    function onKeyDown(event: KeyboardEvent) {
-      // Only the top layer reacts, so a sheet under a dialog stays open on one Escape.
-      if (!isTopmostSheet(sheetId)) return;
-      if (event.key === "Escape") {
-        if (event.defaultPrevented) return;
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = focusableIn(panelRef.current);
-      event.preventDefault();
-      if (focusable.length === 0) {
-        panelRef.current?.focus();
-        return;
-      }
-      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const index = active ? focusable.indexOf(active) : -1;
-      const next =
-        index === -1
-          ? event.shiftKey
-            ? focusable.length - 1
-            : 0
-          : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
-      focusable[next].focus();
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      openFocusRef.current?.cancel();
-      openFocusRef.current = null;
-      popSheet(sheetId);
-      const target = [resolveReturnTarget(), opener].find((element): element is HTMLElement =>
-        Boolean(element?.isConnected),
-      );
-      // The panel is gone, so focus has fallen to the page. Hand it back to the opener unless
-      // another layer has taken over.
-      const active = document.activeElement;
-      const focusFell = active == null || active === document.body || !active.isConnected;
-      if (target && focusFell && canRestoreFocusTo(target)) target.focus({ preventScroll: true });
-    };
-  }, [open, sheetId, initialFocusRef, resolveReturnTarget]);
+  // Stack, inert background, opening focus, Tab wrap, top-layer Escape and focus return.
+  const { rootRef: setScrimRef } = useModalFocus({
+    open,
+    onClose,
+    panelRef,
+    initialFocusRef,
+    fallbackFocusRef: closeRef,
+    returnFocusRef,
+  });
 
   // Drag to dismiss from the handle only, so it never competes with scrolling the body.
   function onHandleDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -246,6 +162,7 @@ export function PhoneSheet({
 
   return (
     <OverlayPortal layer="modal" name={title}>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard */}
       <div
         ref={setScrimRef}
         className={styles.sheetScrim}

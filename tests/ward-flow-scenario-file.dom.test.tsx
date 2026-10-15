@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
 import {
   WARD_FLOW_DEMO_STORAGE_KEY,
   WardFlowProvider,
@@ -159,49 +159,44 @@ describe("demo scenario save and load", () => {
     expect(readScenarioFile(JSON.stringify({ ...file, stateVersion: 5, state: v6State }), 7).ok).toBe(false);
   });
 
-  it("offers Save and Load in the demo menu and reports the outcome", async () => {
+  it("offers Save and Load in the Tools demo panel and reports the outcome", async () => {
     const createObjectURL = vi.fn(() => "blob:scenario");
     const revokeObjectURL = vi.fn();
     Object.assign(URL, { createObjectURL, revokeObjectURL });
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
 
-    render(
+    const { container } = render(
       <WardFlowProvider>
         <Capture />
-        <WardDemoControls />
+        <WardDemoPanel />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByTestId("ward-demo-controls-trigger"));
+    const message = () => container.querySelector('[data-testid="ward-tools-demo-panel"] > [role="status"]');
     addTypedPatient();
-    fireEvent.click(screen.getByTestId("ward-demo-save-file"));
+    fireEvent.click(screen.getByRole("button", { name: "Save to file" }));
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId("ward-demo-file-message")).toHaveTextContent(/^Saved ward-flow-scenario-/);
+    expect(message()).toHaveTextContent(/^Saved ward-flow-scenario-/);
     const built = current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
 
-    fireEvent.click(screen.getByTestId("ward-demo-reset"));
+    fireEvent.click(screen.getByRole("button", { name: "Reset demo" }));
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(false);
 
     vi.useRealTimers();
-    fireEvent.click(screen.getByTestId("ward-demo-controls-trigger"));
-    const input = screen.getByTestId("ward-demo-load-file-input") as HTMLInputElement;
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File([built.json], "scenario.json", { type: "application/json" });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
     });
-    await waitFor(() => expect(screen.getByTestId("ward-demo-file-message")).toHaveTextContent(/Scenario loaded/));
+    await waitFor(() => expect(message()).toHaveTextContent(/Scenario loaded/));
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
 
     const bad = new File(["{}"], "notes.json", { type: "application/json" });
     await act(async () => {
       fireEvent.change(input, { target: { files: [bad] } });
     });
-    await waitFor(() =>
-      expect(screen.getByTestId("ward-demo-file-message")).toHaveTextContent(
-        "This file is not a Ward Flow demo scenario.",
-      ),
-    );
+    await waitFor(() => expect(message()).toHaveTextContent("This file is not a Ward Flow demo scenario."));
     clickSpy.mockRestore();
   });
 });

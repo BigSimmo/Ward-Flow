@@ -18,6 +18,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * The Delays board's data views (approved Delays page mockup, October 2026): the waiting table with
  * its row timeline, the search box, the Longest wait order, and the three graphs under the table.
@@ -30,7 +31,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 const state = seedWardFlowState();
 const OPEN = state.movements.filter(isOpen);
-const GROUPS = delayGroups(state.movements, allUnits(), NOW_ANCHOR);
+const GROUPS = delayGroups(state.movements, allUnits(), NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
 const ROWS = boardRows(GROUPS, NOW_ANCHOR);
 
 function renderDelays() {
@@ -120,7 +121,7 @@ describe("the Delays board's data views", () => {
     const ids = listed();
     expect(ids).toHaveLength(OPEN.length);
     const byId = new Map<string, (typeof ROWS)[number]>(ROWS.map((row) => [row.movement.id, row]));
-    const pinned = ids.filter((id) => isPinned(byId.get(id)!));
+    const pinned = ids.filter((id) => isPinned(byId.get(id)!, DEFAULT_DUE_SOON_THRESHOLDS));
     expect(ids.slice(0, pinned.length), "a pinned legal time is not at the top").toEqual(pinned);
     const rest = ids.slice(pinned.length).map((id) => byId.get(id)!.waited);
     expect(rest, "everyone else is not longest wait first").toEqual([...rest].sort((a, b) => b - a));
