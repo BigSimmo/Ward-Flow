@@ -8,11 +8,12 @@ import { activateScenarioNetwork } from "@/components/ward-management/ward-scena
 import { allUnits, NOW_ANCHOR, STANDARD_WARD_SITES, unitById } from "@/components/ward-management/ward-sites";
 
 /**
- * The EMHS demo and surge scenarios (owner rulings 2026-09-25 10:08). The rule under test is
+ * The EMHS demo and surge scenarios (owner rulings 2026-09-25 10:08), and the quiet, winter and
+ * ED crisis one-tap resets built from the same generator (15 Oct 2026). The rule under test is
  * rule 6: no standalone numbers. Every figure is derived from patient or bed records, and every
  * record belongs to a patient who exists.
  */
-const VARIANTS: readonly DemoNetworkVariant[] = ["demo", "surge"];
+const VARIANTS: readonly DemoNetworkVariant[] = ["demo", "surge", "quiet", "winter", "ed-crisis"];
 const EMHS_SITES = ["RPH", "BTY", "ARM", "SJGM"];
 const EMHS_EDS = ["rph-ed", "arm-ed", "sjgm-ed"];
 const END_OF_DAY = 24 * 60 - 1;
