@@ -964,7 +964,7 @@ function WardFlowWorld({
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [savingOnDevice, container.typedTextSeen]);
+  }, [shared.enabled, savingOnDevice, container.typedTextSeen]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied

@@ -99,9 +99,10 @@ describe("countTestCases", () => {
       "tests/guard-push-no-merge-base.test.ts": 1,
       // The two PsychSift samples that stood here (pdf-extractor, claude-cloud-profile) were deleted
       // with PsychSift on 26 September; these two Ward Flow files use the same curried modifiers
-      // (it.skipIf, describe.runIf). Counts checked against `vitest list` and a line count.
+      // (it.skipIf, describe.runIf). Counts checked against `vitest list` and a line count. The
+      // chat-control sample went with the old Database-checkout scripts on 15 October 2026.
       "tests/ward-travel-bands.test.ts": 13,
-      "tests/ward-flow-chat-control.test.ts": 44,
+      "tests/owned-formatting.test.ts": 9,
     };
     for (const [path, expected] of Object.entries(counts)) {
       const source = readFileSync(resolve(REPOSITORY_ROOT, path), "utf8");
