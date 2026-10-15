@@ -586,13 +586,19 @@ export function sortCensusRows(rows: readonly CensusRow[], sort: CensusSort, lif
 
 /**
  * "16/07/1987", "16.7.1987", "1987-07-16" or digits only "16071987" (DDMMYYYY, because the iPhone
- * number pad has no "/") as ISO, or `null` when it is not a whole date yet.
+ * number pad has no "/") as ISO, or `null` when it is not a whole date yet or is not a real date.
  */
 export function parseDob(text: string): string | null {
   const trimmed = text.trim();
   const dmy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/) ?? trimmed.match(/^(\d{2})(\d{2})(\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2]!.padStart(2, "0")}-${dmy[1]!.padStart(2, "0")}`;
-  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+  const [year, month, day] = dmy
+    ? [dmy[3]!, dmy[2]!, dmy[1]!]
+    : (trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)?.slice(1) ?? []);
+  if (!year || !month || !day) return null;
+  // A date that cannot exist ("99999999", 31 April, 29 February 1990) is refused, not searched for.
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return null;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
 
 /** "1987-07-16" as "16/07/1987". */
