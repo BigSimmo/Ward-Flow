@@ -137,9 +137,13 @@ describe("phone walk round (item 23, option D)", () => {
     const { rerender } = render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    const announce = vi.mocked(announceToWardShell);
     rerender(<Harness phone={false} />);
+    announce.mockClear();
     rerender(<Harness />);
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
+    // Coming back mid round says which bed the round is on.
+    expect(announce).toHaveBeenLastCalledWith("Now on bed 02.");
   });
 
   it("starts a finished round again from nothing", () => {

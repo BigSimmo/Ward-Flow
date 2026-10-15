@@ -96,18 +96,20 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   const current = index >= 0 ? ordered[index] : undefined;
   const firstUnreviewed = ordered.find((bed) => !reviewed.has(bed.bedNumber)) ?? ordered[0];
 
-  // Screen readers hear the move to each bed and the end of the round, politely, by bed name only.
-  const spoken = current
-    ? `Now on bed ${current.number}.`
-    : allReviewed
-      ? "Walk round finished. Every bed reviewed."
-      : null;
-  const spokenRef = useRef(spoken);
+  // Screen readers hear the bed the round is on (also when the card comes back mid round) and,
+  // when the round leaves the beds, whether it finished or went back to the list. Nothing is said
+  // for a round that has not started.
+  const currentNumber = current?.number;
+  const lastNumberRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (spoken === spokenRef.current) return;
-    spokenRef.current = spoken;
-    if (spoken) announceToWardShell(spoken);
-  }, [spoken]);
+    const was = lastNumberRef.current;
+    lastNumberRef.current = currentNumber;
+    if (currentNumber === was) return;
+    if (currentNumber !== undefined) announceToWardShell(`Now on bed ${currentNumber}.`);
+    else announceToWardShell(allReviewed ? "Walk round finished. Every bed reviewed." : "Back to the bed list.");
+    // Only a change of bed speaks; `allReviewed` is read as it is at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNumber]);
 
   const reviewAndNext = () => {
     if (!current) return;

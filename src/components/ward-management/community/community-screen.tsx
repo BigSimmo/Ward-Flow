@@ -555,7 +555,7 @@ export function CommunityScreen({
   /*
    * v10 pass 3: an Accept or Decline recorded here shows a toast with Undo
    * (`UNDO_REFERRAL_DECISION`, this team's own decision), through the shared `useUndoableStep`: a
-   * refused step or Undo says why, and Undo is refused once a newer decision replaces it.
+   * refused step or Undo says why.
    */
   const toast = useOptionalToast();
   const { run: runDecision, offer: offerDecision } = useUndoableStep({

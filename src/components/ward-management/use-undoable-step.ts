@@ -32,6 +32,11 @@ type Pending = {
   undone?: string;
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
+  /**
+   * False for `offer`: the step was dispatched elsewhere, so the record kept before it is unknown
+   * and a record seen now could be an older one. Undo then sends no record number, as before.
+   */
+  guard?: boolean;
 };
 
 type RecordWatch = { undoType: UndoStepType; subjectId: string; priorSeq?: number; seq?: number };
@@ -129,8 +134,8 @@ export function useUndoableStep({
       subjectId: undoStepSubjectId(offered),
       priorSeq: pending.priorSeq,
     };
-    watch.seq = newRecordSeq(undoRecords, watch);
-    if (watch.seq === undefined) {
+    watch.seq = pending.guard === false ? undefined : newRecordSeq(undoRecords, watch);
+    if (watch.seq === undefined && pending.guard !== false) {
       watchersRef.current.add(watch);
       setTimeout(() => watchersRef.current.delete(watch), UNDO_TOAST_MS);
     }
@@ -175,7 +180,7 @@ export function useUndoableStep({
     },
     /** Offers Undo for a step another component on the page has already recorded. */
     offer(step: UndoableStep) {
-      pendingRef.current = { prior: rejectionCountRef.current, ...step };
+      pendingRef.current = { prior: rejectionCountRef.current, ...step, guard: false };
       setToken((value) => value + 1);
     },
   };
