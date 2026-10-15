@@ -18,19 +18,6 @@ import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@azure/msal-browser", () => ({
-  PublicClientApplication: class {
-    initialize = async () => {};
-    handleRedirectPromise = async () => null;
-    getActiveAccount = () => null;
-    getAllAccounts = () => [];
-    setActiveAccount = () => {};
-    acquireTokenSilent = async () => ({ accessToken: "" });
-    loginRedirect = async () => {};
-    logoutRedirect = async () => {};
-  },
-}));
-
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardGround, WardShellHeader } from "@/components/ward-management/ward-shell";

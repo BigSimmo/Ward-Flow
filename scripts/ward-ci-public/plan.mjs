@@ -25,7 +25,7 @@ export function isMaintainedPolicy(file) {
 }
 const dependencyManifest = (file) => /(^|\/)(?:package(?:-lock)?\.json|npm-shrinkwrap\.json)$/u.test(file);
 
-// The separately packaged Azure backend: nothing under src/, tests/ or scripts/ imports it, and the
+// The separately packaged Supabase backend: nothing under src/, tests/ or scripts/ imports it, and the
 // static job runs its own tests.
 const backendOnly = (file) => file.startsWith("backend/ward-flow/");
 // Unit test files. Browser specs import only application code and Playwright, never these files.
