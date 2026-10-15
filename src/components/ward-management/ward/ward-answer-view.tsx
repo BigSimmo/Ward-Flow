@@ -1138,7 +1138,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           data-testid={`ward-decline-form-${activeMovement.id}`}
                         >
                           <fieldset className={styles.declineFieldset}>
-                            <legend className={styles.declineLegend}>Decline reason for {activeMovement.id}</legend>
+                            <legend className={styles.declineLegend}>Decline reason for this patient</legend>
                             {DECLINE_REASONS.map((reason) => (
                               <label key={reason} className={styles.declineOption}>
                                 <input
@@ -1448,7 +1448,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   type="text"
                   className={styles.formInput}
                   id="ward-answer-allocating-movement"
-                  value={`${activeMovement.id} (${activeMovement.cohort})`}
+                  value={`Incoming patient (${activeMovement.cohort})`}
                   readOnly
                 />
               </div>

@@ -1127,7 +1127,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <div className={a.panelWho}>
                       <h2 className={a.panelName}>
                         {selectedPatientInfo.displayName}
-                        <span className="sr-only"> {selectedReferral.id}</span>
+                        <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
                       <p className={a.panelMeta}>
                         {umrnCopyable ? (
@@ -1901,7 +1901,7 @@ function DecidedSection({
                         aria-pressed={referral.id === selectedId}
                         onClick={() => onSelect(referral.id)}
                       >
-                        {referral.id}
+                        {patientInfo.umrn}
                       </button>
                     </td>
                     <td>

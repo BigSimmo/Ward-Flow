@@ -45,7 +45,7 @@ import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
@@ -1523,11 +1523,13 @@ export function ResultsSection({
   selectedMovementId?: string | null;
   onPreviewReferral?: (referral: Referral) => void;
   selectedReferralId?: string | null;
-  /** For naming each movement's patient; absent, rows read "Unknown Patient", never the id. */
+  /** For naming each movement's patient; absent, rows read "Name not recorded", never the id. */
   patients?: Patient[];
   referrals?: Referral[];
 }) {
   const referralResults = results.filter((result) => result.kind === "referral");
+  // D-39: a referral row names its person by name and UMRN, never by the referral number.
+  const umrnLookup = { patients, referrals };
   const movementResults = results.filter((result) => result.kind === "movement");
 
   const [facetKey, setFacetKey] = useState<ShowFacetKey>("all");
@@ -1584,7 +1586,9 @@ export function ResultsSection({
               >
                 <div className={styles.referralHeaderCluster}>
                   <span className={`${styles.presenceTag} ${styles[presenceKey]}`}>{presenceLabel}</span>
-                  <span className={styles.referralId}>{summary.id}</span>
+                  <span className={styles.referralId}>
+                    {patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}
+                  </span>
                 </div>
                 <span className={styles.referralNote}>
                   {summary.originLine} — {summary.declineNote}

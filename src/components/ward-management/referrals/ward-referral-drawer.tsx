@@ -1532,7 +1532,7 @@ function WardReferralDrawerContent({
       setSentAt(now);
       setSendPending(false);
 
-      announceToWardShell(`Referral ${created.id} sent to the selected locations.`);
+      announceToWardShell("Referral sent to the selected locations.");
     } else if (rejections.length > submitted.rejectionCount) {
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);

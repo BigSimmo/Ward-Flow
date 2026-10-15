@@ -101,17 +101,32 @@ function initialsOnlyPatient(initials: string): ResolvedPatientInfo {
   return {
     displayName: `Initials ${initials}`,
     formalName: `Initials ${initials}`,
-    umrn: "UMRN not recorded",
+    umrn: UMRN_NOT_RECORDED,
     initials,
   };
 }
 
+/** D-39 placeholders: what a screen shows when the resolver has no name or no UMRN for a person. */
+export const NAME_NOT_RECORDED = "Name not recorded";
+export const UMRN_NOT_RECORDED = "UMRN not recorded";
+
 const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
-  displayName: "Unknown Patient",
-  formalName: "Unknown Patient",
-  umrn: "UMRN not recorded",
+  displayName: NAME_NOT_RECORDED,
+  formalName: NAME_NOT_RECORDED,
+  umrn: UMRN_NOT_RECORDED,
   initials: "UP",
 });
+
+/**
+ * One identity line, "Family, Given · UMRN", read from the resolver's fields only (D-39). A missing
+ * part shows its placeholder ("Name not recorded", "UMRN not recorded"), never a record number.
+ * Display only: nothing here accepts or stores a name or UMRN.
+ */
+export function patientIdentityLine(info: Pick<ResolvedPatientInfo, "formalName" | "umrn">): string {
+  const name = info.formalName.replace(/[\s,]+/gu, "") === "" ? NAME_NOT_RECORDED : info.formalName.trim();
+  const umrn = info.umrn.trim() === "" ? UMRN_NOT_RECORDED : info.umrn.trim();
+  return `${name} · ${umrn}`;
+}
 
 export type PatientResolutionSubject =
   | Movement

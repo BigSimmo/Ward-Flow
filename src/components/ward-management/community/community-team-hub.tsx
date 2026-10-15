@@ -127,7 +127,8 @@ export function CommunityTeamHub({
         ) : (
           forThisTeam.map((referral) => (
             <li key={referral.id}>
-              <span className={styles.id}>{referral.id}</span>
+              {/* D-39: no record number on screen, and this view holds no person to name. */}
+              <span className={styles.id}>Referral</span>
               {/*
                * 🔴 **FD-5 OPT-IN — THE ONE SITE IN THIS LANE THAT ANSWERS *KEEP IT*. Ruled 2026-09-12.**
                *

@@ -15,7 +15,7 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import { patientDisplayName, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
@@ -493,7 +493,7 @@ export function RecordPreview({
               <h4 className={styles.tieHeading}>Referral</h4>
               {referral && referralSummary ? (
                 <p className={styles.tieBody}>
-                  <strong>{referralSummary.id}</strong> — {referralStateSentence(referralState(referral))}
+                  <strong>This referral</strong> — {referralStateSentence(referralState(referral))}
                   <br />
                   {referralSummary.originLine} — {referralSummary.declineNote}
                 </p>
@@ -713,7 +713,7 @@ export function RecordPreview({
         ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
         : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";
-    const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : `Referral ${referral.id}`;
+    const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unidentified referral";
     const subjectSubtitle = linkedPatient
       ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · DOB ${linkedPatient.dateOfBirth}`
       : `Queued referral · Age cohort: ${referral.ageBand}`;
@@ -919,7 +919,7 @@ export function RecordPreview({
   const urgency = `Tier ${movement.urgency}`;
   const statutory = legalStatutoryInfo(legalStatus);
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unknown Patient";
+  const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : NAME_NOT_RECORDED;
   const subjectUrm = linkedPatient ? linkedPatient.umrn : "UMRN not recorded";
   const history = deriveClinicalHistory(linkedPatient);
   const legalClass = legalClassFor(legalStatus);
@@ -1026,7 +1026,7 @@ export function RecordPreview({
             <h4 className={styles.tieHeading}>Referral</h4>
             {referral ? (
               <p className={styles.tieBody}>
-                <strong>{referral.id}</strong> — {buildReferralSummary(referral).originLine}
+                <strong>This referral</strong> — {buildReferralSummary(referral).originLine}
               </p>
             ) : (
               <p className={styles.tieEmpty}>No referral is linked to this movement.</p>

@@ -106,11 +106,11 @@ export function personLine(movement: Movement, referrals: Referral[], patients: 
     return "No referral is recorded against this movement, so there is no person to name.";
   }
   if (referral.patientId === undefined) {
-    return `Referral ${referral.id} raised this movement and names no person, so nobody can be identified from it.`;
+    return "The referral that raised this movement names no person, so nobody can be identified from it.";
   }
   const patient = patients.find((candidate) => candidate.id === referral.patientId);
   if (patient === undefined) {
-    return `Referral ${referral.id} names ${referral.patientId}, and this system holds no record under that.`;
+    return "The referral names a person this system holds no record of. UMRN not recorded.";
   }
   return patient.umrn ? `${patientDisplayName(patient)} · UMRN: ${patient.umrn}` : patientDisplayName(patient);
 }

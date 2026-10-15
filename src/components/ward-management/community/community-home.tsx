@@ -35,6 +35,8 @@ import {
 } from "@/components/ward-management/community/community-teams-table";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import type { ReferralAddressing } from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import {
@@ -86,6 +88,8 @@ function longestWaiting(entries: readonly CommunityBoundReferral[]): CommunityBo
 export function CommunityHome() {
   const { referrals } = useWardFlow();
   const now = useWardFlowClock();
+  // D-39: each row names its person by name and UMRN, never by the referral number.
+  const patientOf = usePatientOf();
   const [scope, setScope] = useState<Scope>({ kind: "all" });
 
   const communityReferrals = useMemo<CommunityBoundReferral[]>(() => {
@@ -238,7 +242,7 @@ export function CommunityHome() {
                   );
                   return (
                     <li key={referral.id}>
-                      <span className={styles.id}>{referral.id}</span>
+                      <span className={styles.id}>{patientIdentityLine(patientOf(referral))}</span>
                       <span>{community.state}</span>
                       {others.length > 0 ? (
                         <p className={styles.otherDestinations}>

@@ -594,7 +594,7 @@ function horizonEvent(
     carrier: movement.transport?.provider ?? "",
     title: horizonEventTitle(movement, type, now),
     // Owner, 26 Sept 2026: bars carry the patient's name, not the WF journey number. Resolved only
-    // through the linked patient; an unlinked move reads the resolver's own "Unknown Patient".
+    // through the linked patient; an unlinked move reads the resolver's own "Name not recorded".
     patientName: people ? resolveSubjectPatient(movement, people).displayName : undefined,
   };
 }

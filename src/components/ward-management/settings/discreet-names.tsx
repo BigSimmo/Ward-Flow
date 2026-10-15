@@ -52,7 +52,7 @@ export function useDiscreetNamesSetting(): [boolean, (next: boolean) => void] {
   return [on, set];
 }
 
-/** A UMRN the resolver could not find; the name is then already initials or "Unknown Patient". */
+/** A UMRN the resolver could not find; the name is then already initials or "Name not recorded". */
 const NO_UMRN = /not recorded/iu;
 
 /**
@@ -68,7 +68,7 @@ export function patientInitials(name: string): string {
 
 /**
  * Initials plus UMRN for a shown name. A name with no recorded UMRN is returned unchanged: it is
- * already initials ("Initials TH") or "Unknown Patient" from the resolver.
+ * already initials ("Initials TH") or "Name not recorded" from the resolver.
  */
 export function discreetPatientName(name: string, umrn: string | undefined | null): string {
   if (!umrn || NO_UMRN.test(umrn)) return name;
