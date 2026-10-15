@@ -13,6 +13,7 @@ import {
   formatClinicalFigure,
   unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
+import { applyDueSoonThresholds } from "../src/components/ward-management/ward-clock";
 import { ED_ACCESS_TARGET_MINUTES, PULL_HOLD_MINUTES } from "../src/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
@@ -144,6 +145,19 @@ describe("clinical values file", () => {
     );
     expect(radar.find((item) => item.id === "inside")?.urgency).toBe("warning_4h");
     expect(radar.find((item) => item.id === "outside")?.urgency).toBe("normal");
+  });
+
+  it("moves the radar with the due-soon warnings Settings applies", () => {
+    const now = "2026-10-15T00:00:00.000Z";
+    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
+    const forms = [{ id: "two-hours", formType: "Form 3B", expiresAt: at(120) }];
+    try {
+      applyDueSoonThresholds(30, 90);
+      expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("normal");
+    } finally {
+      applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
+    }
+    expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("warning_4h");
   });
 
   it("keeps the ED ladder's rungs on the shared ED wait values", () => {

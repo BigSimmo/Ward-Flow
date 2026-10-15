@@ -19,7 +19,7 @@ import {
   type DischargeDelayReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, currentDueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import {
   deriveAfternoonDischarges,
@@ -719,7 +719,8 @@ export function releaseBedToDischargeLounge<
 // ============================================================================
 // #19 — Paper-Form Statutory Expiry Radar (4h Amber / 1h Red & 48h/24h/<6h)
 // ============================================================================
-// The warning marks are the Settings due-soon warnings (`ward-clinical-values.ts`, 15 Oct 2026):
+// The warning marks are the Settings due-soon warnings as configured now (`currentDueSoonThresholds`,
+// defaults in `ward-clinical-values.ts`, 15 Oct 2026), so the radar moves with every other legal clock:
 // the radar's own four-hour amber was one of the conflicting sets and is listed there for sign-off.
 // `warning_4h` and `critical_1h` stay as internal names.
 
@@ -743,6 +744,7 @@ export function derivePaperLegalExpiryRadar(
   now: Instant | string,
 ): PaperLegalExpiryRadarItem[] {
   const nowMin = toMinutes(now);
+  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
   return forms
     .map((form) => {
       const rawExpiry = form.expiresAt ?? form.dueAt;
@@ -761,9 +763,9 @@ export function derivePaperLegalExpiryRadar(
       let urgency: PaperLegalExpiryRadarItem["urgency"] = "normal";
       if (remainingMinutes <= 0) {
         urgency = "expired";
-      } else if (remainingMinutes <= CLINICAL_VALUES.dueSoonUrgent.value) {
+      } else if (remainingMinutes <= urgentMinutes) {
         urgency = "critical_1h";
-      } else if (remainingMinutes <= CLINICAL_VALUES.dueSoon.value) {
+      } else if (remainingMinutes <= soonMinutes) {
         urgency = "warning_4h";
       }
       return {
