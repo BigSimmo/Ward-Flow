@@ -1315,28 +1315,9 @@ export function useWardFlow(): WardFlowContextValue {
  * FD-23: the referrals a community team may see, already projected. The community team page takes
  * its referrals from here and never from `useWardFlow()`, so it never holds another destination.
  */
-export function useCommunityScopedReferrals(teamName?: string): CommunityScopedReferral[] {
+export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
   const { referrals } = useWardFlow();
-  return useMemo(
-    () =>
-      communityScopedReferrals(referrals).filter(
-        (referral) => teamName === undefined || referral.addressing.destination.teamName === teamName,
-      ),
-    [referrals, teamName],
-  );
-}
-
-/** Referral IDs on admissions that do not resolve in the provider's full referral record. */
-export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
-  const { referrals } = useWardFlow();
-  return useMemo(() => {
-    const referralIds = new Set(referrals.map((referral) => referral.id));
-    return new Set(
-      admissions
-        .filter((admission) => admission.referralId !== null && !referralIds.has(admission.referralId))
-        .map((admission) => admission.referralId as string),
-    );
-  }, [admissions, referrals]);
+  return useMemo(() => communityScopedReferrals(referrals), [referrals]);
 }
 
 export function useWardFlowClock(fallback?: Instant): Instant {
