@@ -197,9 +197,6 @@ const COMPONENT_ROOT = "src/components/ward-management";
  * "just in case" — an entry for a file that is actually covered fails the guard immediately.
  */
 const KNOWN_UNFIXED: Record<string, string> = {
-  "src/components/ward-management/wards/ward-overview.module.css":
-    "no importer in the repo — this stylesheet renders nowhere; retention is an owner decision, " +
-    "not a defect. Fixing it would be work on a file nothing mounts.",
   "src/components/ward-management/tools/ward-catchment-resolver.module.css":
     "new catchment resolver tool (8fde664b79, 25 Sept) ships status and caveat colours with no print " +
     "reset. Recorded 2026-09-25 by the test fixer; adding print styling is a design change for Josh.",

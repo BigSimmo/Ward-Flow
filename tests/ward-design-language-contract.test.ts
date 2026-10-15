@@ -610,7 +610,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // ADDED 2026-10-03 (PR #33): first rules are `.disclosure` (a bordered, rounded disclosure card)
     // and `.chart` (a bordered chart card). Both are components mounted inside a statistics screen's
     // own root, which paints the ground beneath them; neither file has a `.screen` root.
-    "statistics/statistics-family.module.css",
     "statistics/statistics-insight-chart.module.css",
     // ADDED 2026-10-04 (stranded-patient prompts): first rule is `.panel`, a bordered, rounded
     // disclosure the ward board mounts inside its own root, which paints the ground beneath it.

@@ -598,6 +598,13 @@
       "after": 12,
       "reason": "Retired the case pinning the print reset inside ward-sidebar.module.css, deleted with its already-removed component (scorecard leftovers item 2, wave F). The live portalled surfaces stay pinned by the rail case and the two-sided portal set in this file. A record, not a gate condition: 1 of 13 is under the per-file floor.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-statistics-compare-two-tables.dom.test.tsx",
+      "before": 20,
+      "after": 19,
+      "reason": "Retired the case that checked right-alignment rules in statistics-third-edition.module.css. The Compare screen stopped importing that sheet in the v6 rebuild, so the case guarded CSS nothing loads, and the sheet was deleted with nine other unimported stylesheets (fix list 2.4, wave F). The threshold cases in this file were re-pointed to the live statistics-compare.module.css rather than retired. Whether figures on the live Compare tables right-align is listed as a leftover. A record, not a gate condition: 1 of 20 is under the per-file floor.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }
