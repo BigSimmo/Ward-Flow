@@ -1531,7 +1531,7 @@ export type Movement = {
   overrides: Override[];
   stage: MovementStage;
   owner: string;
-  /** Units currently holding a live referral. Never longer than PARALLEL_REFERRAL_CAP. */
+  /** Units currently holding a live referral. Longer than the referral cap only with a recorded `overCapReason` (Top 25 item 2). */
   referredUnitIds: string[];
   acceptedUnitId?: string;
   /**

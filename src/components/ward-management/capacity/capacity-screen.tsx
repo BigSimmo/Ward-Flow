@@ -33,6 +33,7 @@ import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFilters } from "@/components/ward-management/ward-controls";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { WardPanel } from "@/components/ward-management/ward-panel";
+import { StepDownBoard } from "./step-down-board";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -118,6 +119,8 @@ export function CapacityScreen() {
   const { now, paused, togglePause } = usePageLive();
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
+  // Top 25 item 8: desktop only, so the phone design is unchanged.
+  const stepDownBoardOn = useWardFeatureFlag("top25-step-down-board");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -1018,6 +1021,7 @@ export function CapacityScreen() {
               {isPhone ? null : <PlannedAdmissionsPanel key={worldGeneration} now={now} />}
             </div>
           </div>
+          {stepDownBoardOn && !isPhone ? <StepDownBoard now={now} /> : null}
         </div>
         {isPhone ? (
           <div className={styles.plannedWrap} data-phone-hidden={phoneTab !== "planned" ? "true" : undefined}>
