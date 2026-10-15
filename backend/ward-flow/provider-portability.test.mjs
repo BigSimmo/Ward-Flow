@@ -445,10 +445,13 @@ test("Supabase verifier rejects malformed input before fetch and bounds headers 
     "Bearer synthetic-offline-token",
     legacyToken(config, { exp: Math.floor(Date.now() / 1000) - 1 }),
     legacyToken(config, { iss: "https://otherproject.supabase.co/auth/v1" }),
-    legacyToken(config, { sub: randomUUID() }),
   ])
     await assert.rejects(verify(header), /Unauthorised/);
   assert.equal(calls, 0);
+  // Any account may sign in (its role is the workspace's own record), but Supabase must confirm
+  // the token's own subject.
+  await assert.rejects(verify(legacyToken(config, { sub: randomUUID() })), /Unauthorised/);
+  assert.equal(calls, 1);
   for (const fetch of [() => new Promise(() => {}), async () => ({ ok: true, json: () => new Promise(() => {}) })])
     await assert.rejects(
       createSupabaseAuthenticator(config, { fetch, timeoutMs: 10 })(legacyToken(config)),

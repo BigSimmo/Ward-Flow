@@ -153,18 +153,14 @@ describe("a command from a desk", () => {
     expect(
       commandScopeRefusal(state, ward, { type: "CONFIRM_MORNING_ROLLUP", role: "ward", unitId: other }, options),
     ).toMatch(/outside/);
-    // A referral may ask wards anywhere.
-    expect(
-      commandScopeRefusal(
-        state,
-        {
-          role: "coordinator",
-          scope: { kind: "service", service: unitHealthService(state.units.find((unit) => unit.id === ownUnit)!)! },
-        },
-        { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [elsewhere] },
-        options,
-      ),
-    ).toBeNull();
+    // A service coordinator refers only to wards in its own service.
+    const service = unitHealthService(state.units.find((unit) => unit.id === ownUnit)!)!;
+    const serviceCoordinator: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+    const otherService = state.units.find((unit) => unitHealthService(unit) !== service)!.id;
+    const refer = (unitIds: string[]) =>
+      commandScopeRefusal(state, serviceCoordinator, { type: "REFER_TO_UNITS", role: "coordinator", unitIds }, options);
+    expect(refer([ownUnit, otherService])).toMatch(/outside/);
+    expect(refer([ownUnit])).toBeNull();
   });
 
   it("is refused for a patient seen only through break glass", () => {

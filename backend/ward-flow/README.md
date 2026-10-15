@@ -23,8 +23,8 @@ to `005`. These source files do not establish a current hosted connection or dep
 
 ## Roles and places (migration 8)
 
-- The server decides who each account is working as on every request, from its own record,
-  never from the browser or the sign-in token. Accounts in `WARD_COORDINATOR_USER_IDS` are the
+- Sign-in proves only who the account is. The server decides who each account is working as on
+  every request, from its own record, never from the browser or the sign-in token. Accounts in `WARD_COORDINATOR_USER_IDS` are the
   bootstrap statewide coordinators. Every other account needs an active membership in
   `ward_flow.memberships`: a role, a place and an end date.
 - An account with more than one role sends `X-Ward-Working-As` (a membership ID, or `bootstrap`).
@@ -80,11 +80,11 @@ to `005`. These source files do not establish a current hosted connection or dep
   `infra/postgres-settings.example.env` and `infra/postgres-runtime-role.sql`.
 - `auth.mjs`: the shared `VerifierUnavailableError` (a sign-in outage returns 503, a bad token 401)
   and `VerifierRateLimitedError` (too many sign-in checks from one address returns 429).
-- Sign-in checks (`supabase-auth.mjs`): a token's expiry, issuer and coordinator are checked here,
+- Sign-in checks (`supabase-auth.mjs`): a token's expiry and issuer are checked here,
   then its signature against Supabase's published keys (cached 10 minutes, never used once older).
   A signed token naming a key that is not in the current list is refused here. Any other token
   without a usable published key (a legacy shared-secret token, no key ID, an unsupported or
-  unreadable key, or while the keys cannot be read) goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per client address, 30 per coordinator and 300 in
+  unreadable key, or while the keys cannot be read) goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per client address, 30 per account and 300 in
   total, and a confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
   (`*` on Railway, which is reachable only through its proxy). A locally
@@ -108,7 +108,8 @@ to `005`. These source files do not establish a current hosted connection or dep
   - `008-role-access.sql`: memberships and break glass records, and audit rows that name every
     role and its place. Before 8 only the bootstrap accounts can sign in.
     `infra/rollback-008-role-access.sql` takes a database back to 7, and refuses once any audit row
-    names a role other than coordinator, because audit rows are never removed.
+    names a role other than coordinator or a place narrower than statewide, because audit rows are
+    never removed or changed.
 
 ## Boundaries
 

@@ -295,9 +295,10 @@ function commandStrings(value: unknown, into: string[] = [], depth = 0): string[
  * Why this desk may not send this command, or `null` when it may. The command may name only
  * records the desk sees in its own right: any patient, movement, stay, referral, booking, bed
  * release, leave bed, notice or alert outside its scope, or seen only through break glass, refuses
- * it. A desk acts only from its own place (`actingUnitId`, `actingPlaceId`, `actingTeamId`), and a
- * command aimed at one ward or ED (`unitId`) must aim inside it. `unitIds` on a referral names the
- * wards being asked, which may be anywhere, so it is left alone.
+ * it. A desk acts only from its own place (`actingUnitId`, `actingPlaceId`, `actingTeamId`), and
+ * every ward or ED a command aims at (`unitId`, `unitIds`) must be inside it. A service coordinator
+ * therefore refers only to wards in its own service; asking wards across services is the statewide
+ * coordinator's.
  */
 export function commandScopeRefusal(
   state: WardFlowState,
@@ -328,12 +329,14 @@ export function commandScopeRefusal(
   const scope = access.scope;
   const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
-  if (
-    typeof command.unitId === "string" &&
-    !placeIn(command.unitId) &&
-    !(access.role === "coordinator" && command.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID)
-  )
-    return outside;
+  const targets = [command.unitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
+  for (const target of targets)
+    if (
+      typeof target === "string" &&
+      !placeIn(target) &&
+      !(access.role === "coordinator" && target === COORDINATOR_DESK_ACKNOWLEDGER_ID)
+    )
+      return outside;
   if (typeof command.actingPlaceId === "string" && !placeIn(command.actingPlaceId)) return outside;
   if (
     typeof command.actingTeamId === "string" &&
