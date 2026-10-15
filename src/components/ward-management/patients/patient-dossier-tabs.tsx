@@ -897,7 +897,7 @@ export function PatientDocumentsTab({
                       <StatusGlyph tone={f.status === "Current" ? "success" : "closed"} size={10} />
                       {f.status}
                     </span>
-                    {f.due !== undefined && paperTimeLeft !== undefined && f.status === "Current" ? (
+                    {f.due !== undefined && paperTimeLeft !== undefined && f.status !== "Closed" ? (
                       <span className={styles.cellSub} data-testid="dossier-paper-expiry-time-left">
                         {" "}
                         <StatusGlyph tone={paperTimeLeft.tone} size={9} />

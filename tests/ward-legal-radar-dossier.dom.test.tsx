@@ -56,6 +56,25 @@ describe("paper legal form time left, one rule", () => {
     expect(line.textContent).toContain(`Within ${SOON / 60}h`);
   });
 
+  it("shows time left on a continued form, where the typed expiry sits on the original row", () => {
+    act(() => setWardFeatureFlagOnDevice("top25-legal-radar", true));
+    const continued = movement(NOW + 120);
+    continued.legalForm = {
+      ...continued.legalForm!,
+      continuedBy: { code: "5B", startedAt: NOW - 60, recordedAt: NOW - 60, by: "ward" },
+    } as Movement["legalForm"];
+    render(
+      <PatientDocumentsTab
+        record={record}
+        movement={continued}
+        movementInForce
+        now={NOW}
+        onRecordDocument={() => undefined}
+      />,
+    );
+    expect(screen.getByTestId("dossier-paper-expiry-time-left").textContent).toContain("2h 00m left");
+  });
+
   it("keeps the old line with the flag off", () => {
     act(() => setWardFeatureFlagOnDevice("top25-legal-radar", false));
     renderTab(NOW + 120);

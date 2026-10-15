@@ -130,7 +130,13 @@ export function longStaySummaries(
     const hoursPastExpected = hasDate && now > expected ? Math.floor((now - expected) / MINUTES_PER_HOUR) : undefined;
     return {
       flag,
-      blockReason: admission?.blockReason ?? null,
+      // The same effective hold `strandedFlags` reads: a live release blocker first, then the stay's.
+      blockReason:
+        flag.waitingOn ??
+        bedReleases?.find((release) => release.admissionId === flag.admissionId && release.state !== "discharged")
+          ?.blocker ??
+        admission?.blockReason ??
+        null,
       escalateAfterHours,
       escalationAt,
       hoursPastExpected,

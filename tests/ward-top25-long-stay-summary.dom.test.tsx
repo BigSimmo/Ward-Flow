@@ -39,6 +39,19 @@ describe("Top 25 item 20: long stay and delayed discharge summary", () => {
     expect(summary!.blockReason).toBe("Awaiting accommodation");
   });
 
+  it("shows the live release hold when the stay itself records none", () => {
+    const releaseOnly: Admission = { ...waiting, id: "ADM-RELEASE", blockReason: null };
+    const release = {
+      ...seeded.bedReleases[0]!,
+      admissionId: releaseOnly.id,
+      state: "confirmed",
+      blocker: "Awaiting accommodation",
+    } as (typeof seeded.bedReleases)[number];
+    const [summary] = longStaySummaries([releaseOnly], now, [release]);
+    expect(summary!.flag.waitingOn).toBe("Awaiting accommodation");
+    expect(summary!.blockReason).toBe("Awaiting accommodation");
+  });
+
   it("has no escalation point while no expected date is recorded", () => {
     const [summary] = longStaySummaries([noPlan], now, []);
     expect(summary!.flag.reasons).toEqual(["long-stay-no-plan"]);
