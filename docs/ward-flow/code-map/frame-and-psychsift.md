@@ -33,7 +33,9 @@ files.
   files for shared control recipes (`cn`, `toolbarButton`, buttons, badges) — e.g.
   `ward-management/ward/ward-screen.tsx`, `ward-management/ed/ed-screen.tsx`,
   `ward-management/ward-role-switcher.tsx`. It no longer re-exports `MetroPulseCircle` or
-  the PsychSift `clinical.tsx` recipes (that file is gone), so it pulls no PsychSift code in.
+  the PsychSift `clinical.tsx` recipes (that file is gone), so the clinical-citation code is no
+  longer reached. `recipes.ts` still re-exports `cn`, so the barrel still reaches the shared
+  `src/lib/cn.ts` and `tailwind-merge.ts` helpers (see the retirement list below).
 - **`src/lib/client-store-factory.ts`** (32 lines) — `createBrowserStore`, an SSR-safe store built
   on React's `useSyncExternalStore`. Imported by 7 Ward files: `shell/ward-bar.tsx`,
   `shell/ward-rail.tsx`, `shell/ward-service-store.ts`, `use-ward-sidebar-collapsed.ts`,
@@ -204,7 +206,8 @@ these:
 - **Former PsychSift dependency, now gone:** the barrel used to re-export
   `primitive-recipes/clinical.tsx`, which pulled in PsychSift's `src/lib/source-authority-registry.ts`
   and `src/lib/types.ts`. All three files have since been removed and the barrel narrowed, so the
-  `ui-primitives` import no longer reaches PsychSift code.
+  `ui-primitives` import no longer reaches the clinical-citation code. It still reaches `cn.ts`
+  and `tailwind-merge.ts` through `recipes.ts`.
 - Lower-risk (single or double importer, easy to patch around if removed): `ui/sheet.tsx`,
   `ui/missing-value.tsx`, `contextual-back-link.tsx`, `clinical-dashboard/brand.tsx` (only reached by
   already-retired chrome), `ui/tooltip.tsx`, `ui/sheet-focus.ts`, `lib/form-register.ts` (+ its own
