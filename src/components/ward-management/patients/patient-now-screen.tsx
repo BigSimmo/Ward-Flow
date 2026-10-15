@@ -2,7 +2,6 @@
 
 import { isTierOverdue } from "../ward-shared-figures";
 import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
@@ -112,6 +111,7 @@ import {
   StatusGlyph,
   buttonClass,
   useIsPhone,
+  useModalFocus,
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
@@ -299,7 +299,6 @@ export function PatientNowScreen({
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
-  useWardPageScrollLock(showClearanceModal);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
@@ -320,44 +319,18 @@ export function PatientNowScreen({
 
   const closeClearanceModal = useCallback(() => {
     setShowClearanceModal(false);
-    clearanceTriggerRef.current?.focus();
   }, [setShowClearanceModal]);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (!showClearanceModal) return;
-      if (event.key === "Escape") {
-        closeClearanceModal();
-        return;
-      }
-      if (event.key === "Tab" && clearanceModalRef.current) {
-        const focusable = clearanceModalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
-          last.focus();
-          event.preventDefault();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          first.focus();
-          event.preventDefault();
-        }
-      }
-    }
-    if (showClearanceModal) {
-      window.addEventListener("keydown", handleKeyDown);
-      queueMicrotask(() => {
-        const first = clearanceModalRef.current?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        first?.focus();
-      });
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showClearanceModal, closeClearanceModal]);
+  // The shared modal contract: the page behind is inert and held still, focus starts on the first
+  // control, Tab wraps inside the box, Escape closes only this top layer, and focus returns to the
+  // button that opened it.
+  const { rootRef: clearanceBackdropRef } = useModalFocus({
+    open: showClearanceModal,
+    onClose: closeClearanceModal,
+    panelRef: clearanceModalRef,
+    returnFocusRef: clearanceTriggerRef,
+    focusOnOpen: "immediate",
+  });
 
   // Synchronize document title
   useEffect(() => {
@@ -2381,6 +2354,7 @@ export function PatientNowScreen({
 
       {showClearanceModal && (
         <div
+          ref={clearanceBackdropRef}
           className={styles.clearanceModalBackdrop}
           role="dialog"
           aria-modal="true"

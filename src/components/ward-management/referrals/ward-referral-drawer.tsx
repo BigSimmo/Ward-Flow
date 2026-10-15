@@ -114,7 +114,7 @@ import {
   useReferralDraftAutosave,
 } from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
-import { Frac, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
+import { Frac, StatusGlyph, useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -1092,9 +1092,18 @@ function WardReferralDrawerContent({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  useEffect(() => {
-    if (guardOpen) guardKeepRef.current?.focus();
-  }, [guardOpen]);
+  // The close guard is a modal over the drawer, on the shared contract: the drawer behind is inert,
+  // focus starts on Keep editing, Tab wraps inside the guard, Escape closes only the guard, and focus
+  // returns to the control that asked to close. Declared before the drawer's own modal hook so it
+  // leaves the stack first when both close together.
+  const guardBoxRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: guardRootRef } = useModalFocus({
+    open: guardOpen,
+    onClose: () => setGuardOpen(false),
+    panelRef: guardBoxRef,
+    initialFocusRef: guardKeepRef,
+    focusOnOpen: "immediate",
+  });
   // Opened from an entry point with step 1 nearly answered, focus goes to what is still unanswered.
   useEffect(() => {
     if (!fromEntryPoint || activeSection !== "patient" || isPhone) return;
@@ -4127,8 +4136,9 @@ function WardReferralDrawerContent({
           </div>
         </div>
         {guardOpen ? (
-          <div className={styles.guard}>
+          <div ref={guardRootRef} className={styles.guard}>
             <div
+              ref={guardBoxRef}
               className={styles.guardBox}
               role="alertdialog"
               aria-modal="true"
