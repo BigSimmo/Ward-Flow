@@ -113,6 +113,32 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     expect(dossier).not.toHaveTextContent(/PT-4409|RF-8824|clear pathology/);
   });
 
+  it("does not open another community team's referral in this team's drawer", () => {
+    start({
+      referrals: [
+        fixture({
+          id: "other-team-referral",
+          destinations: [{ destination: { kind: "community_team", teamName: "Bentley" }, state: "queued" }],
+        }),
+      ],
+    });
+    openReferral("other-team-referral");
+    expect(screen.getByRole("dialog", { name: "Referral unavailable" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Referral Triage: other-team-referral" })).not.toBeInTheDocument();
+  });
+
+  it("still reads a broken referral link as a gap, not as an empty team", () => {
+    // The page holds only community-scoped referrals (FD-23). A referral id that matches nothing in
+    // the full record must still make the list not computable rather than measured empty.
+    const admission = { ...seed.admissions[0]!, referralId: "no-such-referral" };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CommunityScreen teamId={TEAM_ID} admissions={[admission]} referrals={[]} />
+      </WardFlowProvider>,
+    );
+    expect(document.body).toHaveTextContent("A bed carries no link back to the referral that named this team");
+  });
+
   it("keeps a withdrawn dossier current and does not report successful acceptance", () => {
     start();
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));

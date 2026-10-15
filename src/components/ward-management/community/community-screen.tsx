@@ -74,6 +74,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import {
   useCommunityScopedReferrals,
+  useDanglingReferralIds,
   useWardFlow,
   useWardFlowClock,
 } from "@/components/ward-management/ward-flow-provider";
@@ -532,7 +533,6 @@ export function CommunityScreen({
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
-  const selectedReferral = (referrals ?? liveReferrals).find((referral) => referral.id === selectedReferralId);
   const [pendingAcceptance, setPendingAcceptance] = useState<{ id: string; rejectionCount: number } | null>(null);
 
   /*
@@ -958,6 +958,7 @@ export function CommunityScreen({
   // as the admissions are. Overridable together, and from the same place, so a test cannot supply
   // one without the other and get a page that is quietly empty for the wrong reason.
   const sourceReferrals = referrals ?? liveReferrals;
+  const danglingReferralIds = useDanglingReferralIds(source);
 
   if (!team) {
     return (
@@ -974,6 +975,13 @@ export function CommunityScreen({
       </div>
     );
   }
+
+  // Only a referral addressed to this team, or a ratified same-service name, opens in the drawer.
+  const selectedReferral = sourceReferrals.find(
+    (referral) =>
+      referral.id === selectedReferralId &&
+      [team.name, ...ratifiedSameServiceNames(team.name)].includes(referral.addressing.destination.teamName),
+  );
 
   const teamConfig = resolveCommunityTeamConfig(team);
   const careActor = { role: "community", actingTeamId: team.id } as const;
@@ -1036,13 +1044,18 @@ export function CommunityScreen({
    */
   /*
    * FD-23 (owner's choice, 15 Oct 2026): this page holds only the referrals that name a community
-   * team, so it cannot tell a referral sent only to a ward or an ED from a broken link. Both mean the
-   * person is on no team's page, which `unattributable` above already counts, so membership is
-   * measured over the admissions whose referral this page can see.
+   * team. An admission whose referral went only to a ward or an ED is left out, as the page may not
+   * see it. A referral id that matches nothing at all stays in, so a broken link still reads as
+   * not computable.
    */
   const visibleReferralIds = new Set(sourceReferrals.map((referral) => referral.id));
   const resolution = communityMembershipResolution(
-    source.filter((admission) => admission.referralId === null || visibleReferralIds.has(admission.referralId)),
+    source.filter(
+      (admission) =>
+        admission.referralId === null ||
+        visibleReferralIds.has(admission.referralId) ||
+        danglingReferralIds.has(admission.referralId),
+    ),
     team,
     sourceReferrals,
   );

@@ -1320,6 +1320,22 @@ export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
   return useMemo(() => communityScopedReferrals(referrals), [referrals]);
 }
 
+/**
+ * The referral ids on `admissions` that match no referral at all. Ids only, read against the full
+ * record here so the community page can tell a broken link from a referral it may not see (FD-23).
+ */
+export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
+  const { referrals } = useWardFlow();
+  return useMemo(() => {
+    const known = new Set(referrals.map((referral) => referral.id));
+    return new Set(
+      admissions.flatMap((admission) =>
+        admission.referralId !== null && !known.has(admission.referralId) ? [admission.referralId] : [],
+      ),
+    );
+  }, [admissions, referrals]);
+}
+
 export function useWardFlowClock(fallback?: Instant): Instant {
   const clock = useContext(WardFlowClockContext);
   const wardFlow = useContext(WardFlowContext);
