@@ -1,3 +1,4 @@
+// @ts-check
 import { build } from "esbuild";
 import { fileURLToPath } from "node:url";
 await build({
