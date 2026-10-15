@@ -1534,7 +1534,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: 'data-testid="ward-statistics-compare-ward-list"',
     claim: "Site lookup returns nothing rather than a fallback site when a code matches none.",
     /** Re-pointed 2026-09-01 from the signature to the signature AND the body: `?? siteDirectory[0]` is
-     *  still assignable to the declared `Site | undefined`, so the signature alone could not fail. */
+     *  still assignable to the declared `SiteIdentity | undefined`, so the signature alone could not fail. */
     sourceFile: WARD_SITES,
     evidence: SITE_BY_CODE_LOOKUP,
     falsifiedBy: SITE_BY_CODE_GAINS_A_FALLBACK,
@@ -1635,7 +1635,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: 'data-testid="ward-statistics-ward-site"',
     claim: "Site lookup returns nothing rather than a fallback site when a code matches none.",
     /** Re-pointed 2026-09-01 from the signature to the signature AND the body: `?? siteDirectory[0]` is
-     *  still assignable to the declared `Site | undefined`, so the signature alone could not fail. */
+     *  still assignable to the declared `SiteIdentity | undefined`, so the signature alone could not fail. */
     sourceFile: WARD_SITES,
     evidence: SITE_BY_CODE_LOOKUP,
     falsifiedBy: SITE_BY_CODE_GAINS_A_FALLBACK,
