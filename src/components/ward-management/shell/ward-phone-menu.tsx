@@ -52,6 +52,8 @@ import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
+import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
@@ -166,8 +168,14 @@ function countIn(counts: CountMap, id: string): WardNavCount | undefined {
 }
 
 /** What the menu lists, for this role and these counts. Pure, so the sheet only renders it. */
-function phoneMenuModel(role: WardChromeRole, counts: CountMap, dockRole: WardChromeRole = role) {
-  const entries = railEntries();
+function phoneMenuModel(
+  role: WardChromeRole,
+  counts: CountMap,
+  dockRole: WardChromeRole = role,
+  flagOn?: Parameters<typeof railEntries>[0],
+) {
+  // A page that needs a larger screen (the bed meeting TV view) is not offered on a phone at all.
+  const entries = railEntries(flagOn).filter((entry) => !isPhoneDesktopOnlyPath(entry.href));
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const dock = DOCK_PLACES[dockRole].flatMap(([id, label]) => {
     const entry = byId.get(id);
@@ -925,7 +933,8 @@ export function WardPhoneMenu({
   // The officer's phone is the officer's own (audit round 2, A4-15): on the officer route the dock
   // holds Transport and Movements, not the coordinator's Home and Referrals.
   const dockRole = routeRole === "officer" ? routeRole : shellRole;
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole);
+  const flagOn = useWardFeatureFlagCheck();
+  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole, flagOn);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const flow = useWardFlow();
   const actNowCount = useMemo(
