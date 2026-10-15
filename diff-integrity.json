@@ -458,6 +458,13 @@
       "after": 11,
       "reason": "FIXTURE 2 used ed/ed-home.module.css as its real input, and that stylesheet was deleted on 15 Oct 2026 with its unreachable component. FIXTURE 1 and the TASK 2 negative control still prove a covered non-root edge and an uncovered edge.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-community-viewer-assumption.test.ts",
+      "before": 4,
+      "after": 3,
+      "reason": "The removed case asserted that the FD-23 screen-boundary guard lists community/community-team-hub.tsx. That screen was deleted on 15 Oct 2026 as unreachable dead code (Josh approved dead-code deletion that day). The live team page, community/community-screen.tsx, reads the full referral record, so it cannot replace the entry until that is fixed; the gap was routed to the Engine safety workstream rather than hidden by a weaker assertion.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }

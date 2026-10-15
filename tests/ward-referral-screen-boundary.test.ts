@@ -680,21 +680,14 @@ describe("FD-23 at the screen boundary", () => {
     expect(wardOnly).toContain("ward-board.tsx");
     expect(wardOnly).toContain("ward-daily-sheet.tsx");
     expect(wardOnly).toContain("ward-board-derivations.ts");
-    // `ward-referral-visibility.ts` is NOT asserted either way here, deliberately. It happens to be
-    // excluded from `wardOnly` today because `community-home.tsx` (SEES_EVERYTHING) also imports it
-    // — genuinely shared infrastructure by construction, same as `ward-model.ts` below. But that is
-    // incidental to community-home.tsx's own implementation, not a property this guard should rely
-    // on: if that import ever moved, the module would fall INTO `wardOnly` and would need the
-    // bounded exemption (`IS_THE_PROJECTION_MODULE_ITSELF`) below to stay green rather than flag its
-    // own legitimate `Referral`/`ReferralAddressing` imports as a leak. The exemption and its
-    // dedicated bounding test exist for exactly that reason and are checked unconditionally, not
-    // only when this module happens to land in `wardOnly`.
+    // `ward-referral-visibility.ts` is NOT asserted either way here, deliberately. Whether it lands
+    // in `wardOnly` depends on which SEES_EVERYTHING surfaces import it, which is incidental. If it
+    // falls INTO `wardOnly`, the bounded exemption (`IS_THE_PROJECTION_MODULE_ITSELF`) below keeps
+    // its own legitimate `Referral`/`ReferralAddressing` imports from reading as a leak. The
+    // exemption and its dedicated bounding test are checked unconditionally for that reason.
     // Shared infrastructure must be OUT of it, or the guard is red on day one and gets neutered.
     expect(wardOnly).not.toContain("ward-model.ts");
     expect(wardOnly).not.toContain("ward-flow-provider.tsx");
-    expect(wardOnly, "the coordinator's own community view leaked into the restricted set").not.toContain(
-      "community-home.tsx",
-    );
   });
 
   it("lets no ward-only module reach a referral's other destinations", () => {

@@ -290,17 +290,17 @@ describe("the Ward Flow `.table` rule set is declared in exactly one file", () =
   });
 
   /**
-   * The five migrated call sites (`discharges`, `escalation`, `handover`, `out-of-area`, `search`)
+   * The migrated call sites (`discharges`, `handover`, `out-of-area`, `search`; `escalation` was
+   * deleted with its unreachable board on 15 Oct 2026)
    * must actually compose the shared class rather than merely happening to have no local
    * redeclaration (e.g. because the file was deleted or the class renamed without anyone noticing).
    * Named from the brief's own migration list, not re-derived — the population floor above is the
    * anti-vacuity check on discovery; this is a sanity check that the migration actually happened
    * where it was supposed to.
    */
-  it("the five migrated call sites compose the shared table class", () => {
+  it("the migrated call sites compose the shared table class", () => {
     const migrated = [
       join(WARD_DIR, "discharges", "discharges.module.css"),
-      join(WARD_DIR, "escalation", "escalation.module.css"),
       join(WARD_DIR, "handover", "handover.module.css"),
       join(WARD_DIR, "out-of-area", "out-of-area.module.css"),
       join(WARD_DIR, "search", "search.module.css"),
