@@ -136,7 +136,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 | `ward-model.ts` / `ward-derivations.ts` (shared types and selectors)      | `ward-model*.test.ts`, `ward-derivations.test.ts`, plus `grep -rl` the changed export name across `tests/ward-*` first — these two files have 125 and 71 importers respectively (per the engine map), so a narrow glob under-selects     |
 | `ward-eligibility.ts`, gender/sex placement rules                         | `ward-eligibility.test.ts`, `ward-gender-*.test.ts`, `ward-non-binary-*.test.ts`, `ward-*gender*.dom.test.tsx`, `ward-referral-matching.test.ts`, `ward-physical-facts-are-not-overridable.test.ts`                                      |
 | `ward-referrals.ts`, `ward-catchment.ts`, referral screens                | `ward-referral-*.test.ts`, `ward-referral-*.dom.test.tsx`, `ward-referrals-print.test.ts`                                                                                                                                                |
-| `ward-legal-clock.ts`, legal forms, MHA vocabulary                        | `ward-legal-*.test.ts`, `ward-*legal*.dom.test.tsx`, `ward-act-section-citation-guard.test.ts`, `ward-five-gaps.test.ts`, `ward-mha-calculator.test.ts`, `ward-repeat-examination.test.ts`                                               |
+| `ward-legal-clock.ts`, legal forms, MHA vocabulary                        | `ward-legal-*.test.ts`, `ward-*legal*.dom.test.tsx`, `ward-act-section-citation-guard.test.ts`, `ward-five-gaps.test.ts`, `ward-form-time-input.test.ts`, `ward-repeat-examination.test.ts`                                              |
 | `ward-bed-availability.ts`, bed release, morning roll-up, capacity screen | `ward-capacity-*.test.ts`, `ward-capacity-*.dom.test.tsx`, `ward-bed-*.test.ts`, `ward-morning-rollup.test.ts`, `ward-pending-preparation-populations.test.ts`                                                                           |
 | One screen folder (e.g. `community/`, `ed/`, `board/`)                    | `ward-<screen>-*.test.ts`, `ward-<screen>-*.dom.test.tsx`, and check the corresponding `ward-statistics-<screen>-*` files (statistics re-reads every domain)                                                                             |
 | `shell/` (rail, top bar, drawers)                                         | `ward-shell*.dom.test.tsx`, `ward-bar*.dom.test.tsx`, `ward-chrome-*.dom.test.tsx`, `ward-sidebar*.dom.test.tsx`, `ward-tasks-drawer.dom.test.tsx`, `ward-registers-drawer.dom.test.tsx`                                                 |
@@ -411,7 +411,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-legal-forms-not-wired-and-register.dom.test.tsx`** (120 lines) — Legal forms — unwired confirm controls (F2.1)
 - **`tests/ward-legal-forms-screen.dom.test.tsx`** (185 lines) — the Legal forms screen
 - **`tests/ward-legal-language.test.ts`** (110 lines) — ward legal-language scanner
-- **`tests/ward-mha-calculator.test.ts`** (362 lines) — Mental Health Act Statutory Deadline Calculator
+- **`tests/ward-form-time-input.test.ts`** (77 lines) — Form times: typed Perth wall time
 - **`tests/ward-refusal-gaps-legal-and-diversion.test.ts`** (483 lines) — RECORD_DIVERSION: has no transport job to divert (line 7358)
 - **`tests/ward-repeat-examination.test.ts`** (434 lines) — PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9, owner answer 5, second round 2026-09-17)
 - **`tests/ward-restriction-notice.test.ts`** (35 lines) — restriction notice
