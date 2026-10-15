@@ -83,7 +83,18 @@ test("a forged, altered or wrong-audience signed token is refused without asking
   assert.deepEqual(calls, [JWKS]);
 });
 
-test("a key missing from the current list is refused without asking Supabase, and re-read at most once a minute", async () => {
+test("a key missing from a list read after the token was issued is refused, without asking Supabase", async () => {
+  const { calls, verify } = setup({ keys: { keys: [published.keys[1]] } });
+  const issued = claims({ iat: Math.floor(Date.now() / 1000) - 60 });
+  await assert.rejects(
+    verify(signed("ES256", "ec-1", issued)),
+    (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+  );
+  await assert.rejects(verify(signed("ES256", "made-up", issued)), /Unauthorised/);
+  assert.deepEqual(calls, [JWKS], "removed or made-up keys never reach /auth/v1/user");
+});
+
+test("a token newer than the key list is answered as unavailable until the list is re-read, at most once a minute", async () => {
   let at = Date.now();
   let keys = { keys: [published.keys[1]] };
   const calls = [];
@@ -94,13 +105,22 @@ test("a key missing from the current list is refused without asking Supabase, an
       return url === JWKS ? Response.json(keys) : Response.json({ id: coordinator });
     },
   });
-  for (const jti of ["first", "second"])
-    await assert.rejects(verify(signed("ES256", "ec-1", claims({ jti }))), VerifierUnavailableError);
-  assert.deepEqual(calls, [JWKS], "made-up or rotated keys never reach /auth/v1/user");
+  assert.equal(await verify(signed("RS256", "rsa-1")), coordinator);
+  at += 10_000;
+  const rotated = signed("ES256", "ec-1", claims({ iat: Math.floor(at / 1000) }));
+  await assert.rejects(verify(rotated), VerifierUnavailableError);
+  assert.deepEqual(calls, [JWKS]);
   keys = published;
   at += 61_000;
-  assert.equal(await verify(signed("ES256", "ec-1", claims({ jti: "third" }))), coordinator);
+  assert.equal(await verify(rotated), coordinator);
   assert.deepEqual(calls, [JWKS, JWKS]);
+});
+
+test("a published key that cannot be used here falls back to Supabase", async () => {
+  const unreadable = { kty: "EC", crv: "P-256", x: "AA", y: "AA", kid: "odd-1", alg: "ES256" };
+  const { calls, verify } = setup({ keys: { keys: [unreadable, ...published.keys] } });
+  assert.equal(await verify(signed("ES256", "odd-1")), coordinator);
+  assert.deepEqual(calls, [JWKS, USER]);
 });
 
 test("keys older than the cache lifetime are not used when a refresh fails", async () => {

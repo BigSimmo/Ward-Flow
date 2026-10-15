@@ -58,8 +58,9 @@ function decodeJwt(token) {
  *
  * A token is first checked here: shape, expiry, issuer and a listed coordinator, then its
  * signature against Supabase's published keys (cached). A signed token naming a key that is not in
- * the current list is refused here. Only a legacy shared-secret token, or any token while the key
- * list cannot be read, is sent to /auth/v1/user, behind a per-address limit. Junk tokens never
+ * the current list is refused here. Every other token without a usable published key (a legacy
+ * shared-secret token, no key ID, an unsupported or unreadable key, or the key list cannot be read)
+ * is sent to /auth/v1/user, behind per-address, per-coordinator and total limits. Junk tokens never
  * reach Supabase. A token verified locally stays valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
  */
@@ -100,11 +101,18 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     }
   }
 
-  const jwks = { keys: new Map(), fetchedAt: -Infinity, attemptedAt: -Infinity, pending: null };
-  /** The published key for a kid, and whether the key list is current (younger than the cache lifetime). */
+  const jwks = { keys: new Map(), listed: new Set(), fetchedAt: -Infinity, attemptedAt: -Infinity, pending: null };
+  /**
+   * The usable published key for a kid, and whether a current key list (younger than the cache
+   * lifetime) does not name the kid at all. A key that is listed but unusable here is neither.
+   */
   function cachedKey(kid) {
     const current = now() - jwks.fetchedAt < JWKS_TTL_MS;
-    return { key: current ? (jwks.keys.get(kid) ?? null) : null, current };
+    return {
+      key: current ? (jwks.keys.get(kid) ?? null) : null,
+      unlisted: current && !jwks.listed.has(kid),
+      fetchedAt: jwks.fetchedAt,
+    };
   }
   /**
    * Keys older than the cache lifetime are never used, even when a refresh fails, so a key Supabase
@@ -126,6 +134,12 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
           if (!response.ok) throw new Error("JWKS unavailable");
           const body = await response.json();
           if (!Array.isArray(body?.keys)) throw new Error("JWKS unavailable");
+          const listed = new Set(
+            body.keys
+              .slice(0, 100)
+              .map((jwk) => jwk?.kid)
+              .filter((kid) => typeof kid === "string"),
+          );
           const next = new Map();
           for (const jwk of body.keys.slice(0, 20)) {
             const alg = jwk?.alg ?? Object.keys(ALGORITHMS).find((name) => ALGORITHMS[name].kty === jwk?.kty);
@@ -137,9 +151,10 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
               // A key Node cannot read is skipped; tokens signed with it fall back to Supabase.
             }
           }
-          return next;
+          return { next, listed };
         });
-        jwks.keys = keys;
+        jwks.keys = keys.next;
+        jwks.listed = keys.listed;
         jwks.fetchedAt = at;
       } catch {
         // Keys stay usable until the cache lifetime ends. After that, tokens fall back to Supabase.
@@ -206,10 +221,16 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       throw new InvalidCredentialError("Unauthorised");
     const algorithm = ALGORITHMS[jwt.header.alg];
     if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {
-      const { key: published, current } = await publishedKey(jwt.header.kid);
-      // A current key list without this kid means Supabase does not sign with it, so the token
-      // is not sent to Supabase. Answered as unavailable, so a client retries after a rotation.
-      if (!published && current) throw new VerifierUnavailableError("Signing key not published");
+      const { key: published, unlisted, fetchedAt } = await publishedKey(jwt.header.kid);
+      // A current key list that does not name this kid means Supabase does not sign with it, so the
+      // token is not sent to Supabase. Refused outright when the list was read after the token was
+      // issued (a removed key, or a made-up one). Otherwise answered as unavailable, so a client
+      // retries once the list catches up with a new key.
+      if (!published && unlisted) {
+        const issuedAt = typeof claims.iat === "number" ? claims.iat * 1000 : -Infinity;
+        if (fetchedAt >= issuedAt) throw new InvalidCredentialError("Unauthorised");
+        throw new VerifierUnavailableError("Signing key not published");
+      }
       if (published) {
         const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
         let valid = false;
