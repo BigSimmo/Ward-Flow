@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-beds-matrix";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
   DISCHARGE_BARRIERS,
@@ -23,7 +23,17 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Button, Icon, StatusGlyph, buttonClass, cx, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  Icon,
+  StatusGlyph,
+  buttonClass,
+  cx,
+  durMinutes,
+  useIsPhone,
+  type WfTone,
+} from "@/components/wf";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -145,6 +155,7 @@ export function WardBedDossierDrawer({
   const now = useWardFlowClock();
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
+  const eddDriftOn = useWardFeatureFlag("top25-edd-drift");
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
@@ -203,6 +214,19 @@ export function WardBedDossierDrawer({
         ? `Confirmed by ${bedItem.dischargeConfirmedBy}`
         : "Confirmed"
       : "Not yet confirmed";
+
+  // Top 25 item 21: beside the discharge date when the ward has moved it several times.
+  const eddMoved = eddDriftOn ? eddMovedBadge(bedItem?.dischargeDateMoves) : null;
+  const expectedValue = eddMoved ? (
+    <>
+      {expectedPlan}{" "}
+      <Badge tone="warning" size="sm">
+        {eddMoved}
+      </Badge>
+    </>
+  ) : (
+    expectedPlan
+  );
 
   const dateMoves =
     typeof bedItem?.dischargeDateMoves === "number"
@@ -349,7 +373,7 @@ export function WardBedDossierDrawer({
         tone={tone}
         stayDays={stayDays}
         observation={observation}
-        expectedPlan={expectedPlan}
+        expectedPlan={expectedValue}
         timeline={timeline}
         now={now}
         personHref={personHref}
@@ -557,7 +581,7 @@ export function WardBedDossierDrawer({
                 <>
                   <Section title="Plan to leave">
                     <dl className={styles.kv}>
-                      <Row label="Expected">{expectedPlan}</Row>
+                      <Row label="Expected">{expectedValue}</Row>
                       <Row label="Confirmed">{confirmation}</Row>
                       {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
                       <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
@@ -829,7 +853,7 @@ interface PhoneBedSheetProps {
   tone: WfTone | null;
   stayDays: number | null;
   observation: string;
-  expectedPlan: string;
+  expectedPlan: ReactNode;
   timeline: { at: number; tone: WfTone; label: string }[];
   now: number;
   personHref: string | null;
