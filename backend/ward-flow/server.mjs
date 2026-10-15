@@ -156,7 +156,9 @@ export function listen(handler, config) {
         outgoing.writeHead(response.status, Object.fromEntries(response.headers));
         outgoing.end(Buffer.from(await response.arrayBuffer()));
       } catch (error) {
-        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", ...errorFields(error) }));
+        // Name and code only: a database or engine message can quote values from the request.
+        const { errorName, errorCode } = errorFields(error);
+        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", errorName, errorCode }));
         if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
         outgoing.end();
       }
