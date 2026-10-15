@@ -1153,7 +1153,7 @@ describe("provider-safe test environment", () => {
     }
     expect(packageJson.scripts["test:e2e:regression"]).toContain('--grep-invert "@critical|@quarantine|@mockup"');
     expect(baseUrl.indexOf("if (!allowEnsure)")).toBeLessThan(baseUrl.indexOf("findExistingLocalProjectUrl();"));
-    expect(playwrightConfig).toContain("visual-artifacts");
+    expect(playwrightConfig).toContain("release-gate-journeys");
   });
 
   it("uses webpack when shared worktree dependencies resolve outside the project", () => {
