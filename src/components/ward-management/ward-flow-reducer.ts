@@ -5037,6 +5037,15 @@ export function reduceClinicalEvent(
           );
         }
       }
+      // A ward names itself with `actingUnitId`, and may only send from that ward, as it answers
+      // only its own movements (`wardActingUnitError`). Otherwise ward A could file a referral as B.
+      if (event.role === "ward" && event.actingUnitId !== event.originUnitId) {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must send from its own ward: acting as ${event.actingUnitId ?? "no named ward"}, origin ${event.originUnitId}`,
+        );
+      }
       // `homeRegion` is a region from a fixed list, never an address or free text; see
       // `HOME_REGIONS`.
       if (!HOME_REGIONS.includes(event.homeRegion)) {

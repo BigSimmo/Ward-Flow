@@ -1614,6 +1614,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       suburb: derivedSuburb,
       source: "psychiatric_ward",
       originUnitId: unit.id,
+      actingUnitId: unit.id,
       urgency: 2,
       originSiteCode: unit.siteCode,
       transportNeeded: false,

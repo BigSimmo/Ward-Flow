@@ -1288,6 +1288,9 @@ export type WardFlowEvent =
        * occupied until arrival.
        */
       originUnitId?: string;
+      /** The ward raising it, when the role is `ward`. The reducer refuses a ward caller unless this
+       *  matches `originUnitId`, so a ward sends only in its own name. */
+      actingUnitId?: string;
       /**
        * WHICH TEAM OR SERVICE SENT IT, by name. Owner, 2026-09-12: **"Yes it should."**
        *

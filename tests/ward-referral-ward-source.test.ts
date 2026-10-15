@@ -1,7 +1,7 @@
 // Role access plan (Josh, 15 Oct 2026): a ward raises a ward-to-ward referral in its own name.
 // The reducer takes `RECEIVE_REFERRAL` from role `ward` only as source `psychiatric_ward` with a
 // real sending ward, as it takes role `ed` only as `ed_medical` (R9), so a ward cannot file a
-// referral under another source.
+// referral under another source. The sending ward must be the caller's own (`actingUnitId`).
 import { describe, expect, it } from "vitest";
 
 import {
@@ -18,7 +18,12 @@ const WARD_REFUSAL = "raised as role ward must carry source psychiatric_ward";
 
 const otherSources = REFERRAL_SOURCES.filter((source) => source !== "psychiatric_ward");
 
-function receiveFromWard(source: ReferralSource, state: WardFlowState, originUnitId?: string) {
+function receiveFromWard(
+  source: ReferralSource,
+  state: WardFlowState,
+  originUnitId?: string,
+  actingUnitId: string | undefined = originUnitId,
+) {
   const unit = state.units[0];
   return wardFlowReducer(state, {
     type: "RECEIVE_REFERRAL",
@@ -38,6 +43,7 @@ function receiveFromWard(source: ReferralSource, state: WardFlowState, originUni
     suburb: { kind: "named", name: "Armadale" },
     source,
     ...(originUnitId === undefined ? {} : { originUnitId }),
+    ...(actingUnitId === undefined ? {} : { actingUnitId }),
     urgency: 2,
     originSiteCode: unit.siteCode,
     transportNeeded: false,
@@ -76,5 +82,20 @@ describe("a ward raises a referral only as the sending ward", () => {
     const after = receiveFromWard("psychiatric_ward", before);
     expect(after.referrals.length).toBe(before.referrals.length);
     expect(newRejections(before, after).some((reason) => reason.includes("must name a real originUnitId"))).toBe(true);
+  });
+
+  it("refuses a ward referral sent in another ward's name", () => {
+    const before = seedWardFlowState();
+    const [acting, other] = before.units;
+    const after = receiveFromWard("psychiatric_ward", before, other.id, acting.id);
+    expect(after.referrals.length).toBe(before.referrals.length);
+    expect(newRejections(before, after).some((reason) => reason.includes("must send from its own ward"))).toBe(true);
+  });
+
+  it("refuses a ward referral that does not say which ward is raising it", () => {
+    const before = seedWardFlowState();
+    const after = receiveFromWard("psychiatric_ward", before, before.units[0].id, "");
+    expect(after.referrals.length).toBe(before.referrals.length);
+    expect(newRejections(before, after).some((reason) => reason.includes("must send from its own ward"))).toBe(true);
   });
 });
