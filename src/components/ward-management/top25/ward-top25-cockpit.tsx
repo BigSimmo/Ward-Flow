@@ -87,7 +87,7 @@ const DEFAULT_WALK_ROUND_ROWS: readonly WalkRoundRowItem[] = [
     bedLabel: "Bed 02 · Shared Bay A",
     statusLabel: "Overnight leave (extended)",
     eddLabel: "Leave Return Due",
-    primaryActionLabel: "Convert Leave to Discharge",
+    primaryActionLabel: "Record Return From Leave",
   },
   {
     id: "wr-bed-3",
