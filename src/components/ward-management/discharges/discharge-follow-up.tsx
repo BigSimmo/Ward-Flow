@@ -5,11 +5,30 @@ import { FOLLOW_UP_STATES, isFollowUpState, type FollowUpState } from "../ward-a
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { formatInstantWithDay } from "../ward-clock";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { activeCommunityTreatmentOrder } from "../ward-patients";
+import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import styles from "./discharges-third-edition.module.css";
 
 export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; actor: WardRecordActor }) {
-  const { dispatch, rejections } = useWardFlow();
+  const { dispatch, rejections, patients } = useWardFlow();
   const now = useWardFlowClock();
+  // Top 25 item 11: the seven day check on every discharge, with extra items on a CTO. Warns only.
+  const sevenDayOn = useWardFeatureFlag("top25-follow-up-7day");
+  const linkedPatientId = record.identity.kind === "linked" ? record.identity.patient.id : null;
+  const check = sevenDayOn
+    ? followUpWithinWindowCheck({
+        followUp: record.followUp,
+        careJourney: record.careJourney,
+        leftAt: record.leftAt,
+        expectedDischargeAt: record.expectedDischargeAt,
+        now,
+        onCto:
+          linkedPatientId !== null &&
+          activeCommunityTreatmentOrder((patients ?? []).find((patient) => patient.id === linkedPatientId)) !==
+            undefined,
+      })
+    : null;
   const [submittedAtCount, setSubmittedAtCount] = useState<number | null>(null);
   const refused =
     submittedAtCount !== null &&
@@ -30,6 +49,24 @@ export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; 
           ? `${label(record.followUp.state)} · ${record.followUp.recordedBy} · ${formatInstantWithDay(record.followUp.recordedAt, now)}`
           : "Not recorded"}
       </p>
+      {check ? (
+        <div data-testid="ward-discharge-follow-up-7day" data-warning={check.warning ? "true" : undefined}>
+          <p>
+            {check.warning ? "Check: " : "Done: "}
+            {check.sentence} This does not stop the discharge.
+          </p>
+          {check.ctoItems ? (
+            <ul aria-label="Community treatment order follow up">
+              {check.ctoItems.map((item) => (
+                <li key={item.label}>
+                  {item.done ? "Done: " : "Still to do: "}
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       <p>This records an arrangement status. It does not confirm that follow-up occurred.</p>
       {refused && <p role="alert">Follow-up status was not recorded. Reopen the current record and try again.</p>}
       {editable && (

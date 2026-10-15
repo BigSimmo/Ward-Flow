@@ -383,6 +383,41 @@
       "approvedOn": "2026-10-08"
     },
     {
+      "path": "tests/ward-top-25-master-list.test.ts",
+      "before": 24,
+      "after": 0,
+      "reason": "Josh approved deleting the hidden Sovereign showcase (/mockups/ward-flow/sovereign, sovereign-showcase-screen, top25/ward-top25-cockpit and ward-top25-features.ts) once the Top 25 items moved into the real screens behind their top25-* flags, 15 Oct 2026. This file tested only the showcase helpers in ward-top25-features.ts. Items carried into real screens are covered by the focused tests each Top 25 worker added beside the real module.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-top-25-master-list.dom.test.tsx",
+      "before": 7,
+      "after": 0,
+      "reason": "Josh approved deleting the hidden Sovereign showcase (/mockups/ward-flow/sovereign, sovereign-showcase-screen, top25/ward-top25-cockpit and ward-top25-features.ts) once the Top 25 items moved into the real screens behind their top25-* flags, 15 Oct 2026. This file rendered only the showcase cockpit (WardTop25Cockpit and PhoneWalkRoundSheet), both deleted.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-sovereign-production-gate.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Josh approved deleting the hidden Sovereign showcase (/mockups/ward-flow/sovereign, sovereign-showcase-screen, top25/ward-top25-cockpit and ward-top25-features.ts) once the Top 25 items moved into the real screens behind their top25-* flags, 15 Oct 2026. This file tested only that the deleted showcase page 404s in production. The route no longer exists at all.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-clinical-values.test.ts",
+      "before": 13,
+      "after": 9,
+      "reason": "Josh approved deleting the hidden Sovereign showcase (/mockups/ward-flow/sovereign, sovereign-showcase-screen, top25/ward-top25-cockpit and ward-top25-features.ts) once the Top 25 items moved into the real screens behind their top25-* flags, 15 Oct 2026. The four removed cases drove derivePaperLegalExpiryRadar and deriveEdBreachLadder, which lived only in the deleted features file. The value checks on CLINICAL_VALUES, including paperFormRadarAmber/Edge, stay.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ui-ward-roles.spec.ts",
+      "before": 24,
+      "after": 22,
+      "reason": "Josh approved deleting the hidden Sovereign showcase (/mockups/ward-flow/sovereign, sovereign-showcase-screen, top25/ward-top25-cockpit and ward-top25-features.ts) once the Top 25 items moved into the real screens behind their top25-* flags, 15 Oct 2026. The two removed Playwright cases drove the design system showcase page at the deleted route. Every other journey in the file is unchanged.",
+      "approvedOn": "2026-10-15"
+    },
+    {
       "path": "tests/ward-mha-calculator.test.ts",
       "before": 23,
       "after": 0,

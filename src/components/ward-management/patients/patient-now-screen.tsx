@@ -100,6 +100,7 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, etaPresetText, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   Badge,
   Button,
@@ -116,6 +117,7 @@ import {
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
+import { movementHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -245,6 +247,8 @@ export function PatientNowScreen({
 }: PatientNowScreenProps) {
   const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
+  // Top 25 item 24: time away and the held bed review warning on the absent without leave card.
+  const awolTracker = useWardFeatureFlag("top25-awol-tracker");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
@@ -847,6 +851,7 @@ export function PatientNowScreen({
 
   const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
+    awolTracker,
     movement: liveMovement,
     admission: resolved.liveAdmission,
     patient: livePatient,
@@ -864,9 +869,7 @@ export function PatientNowScreen({
         }
       : undefined,
     transportHref:
-      liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
-        ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
-        : undefined,
+      liveMovement && !pathname.includes(movementHref(liveMovement.id)) ? movementHref(liveMovement.id) : undefined,
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1518,11 +1521,7 @@ export function PatientNowScreen({
         barMain:
           isPhone && (mode === "idle" || mode === "cto") ? (
             <Link
-              href={
-                livePatient
-                  ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
-                  : "/mockups/ward-flow/referrals/new"
-              }
+              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/mockups/ward-flow/referrals/new"}
               className={buttonClass({ variant: "pri" })}
               data-testid="ward-person-refer-outpatient"
             >
@@ -2183,7 +2182,7 @@ export function PatientNowScreen({
                   <Link
                     href={
                       livePatient
-                        ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                        ? raiseReferralHref({ patientId: livePatient.id })
                         : "/mockups/ward-flow/referrals/new"
                     }
                     className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}

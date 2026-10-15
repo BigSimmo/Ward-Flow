@@ -58,6 +58,7 @@ function nested(value: unknown, depth = 0): boolean {
     "overrides",
     "declines",
     "withdrawnReferrals",
+    "referralAnswerHistory",
     "unwinds",
     "stageChanges",
     "destinations",
@@ -129,6 +130,7 @@ function nested(value: unknown, depth = 0): boolean {
     overrides: ["by", "reason"],
     declines: ["unitId", "reason"],
     withdrawnReferrals: ["unitId", "reason"],
+    referralAnswerHistory: ["unitId", "answer"],
     unwinds: ["kind", "by", "reason"],
     stageChanges: ["to", "by"],
     legalFormExpiryHistory: ["by", "basis"],
@@ -141,6 +143,13 @@ function nested(value: unknown, depth = 0): boolean {
     if (!records(value[key]) || !value[key].every((row) => finite(row.at) && fields(row, required, text))) return false;
   }
   if ("overrides" in value && !(value.overrides as RecordValue[]).every((row) => strings(row.unitIds))) return false;
+  if (
+    "referralAnswerHistory" in value &&
+    !(value.referralAnswerHistory as RecordValue[]).every((row) =>
+      ["waitlisted", "declined", "withdrawn"].includes(row.answer as string),
+    )
+  )
+    return false;
   if (
     "urgencyChanges" in value &&
     !(value.urgencyChanges as RecordValue[]).every(

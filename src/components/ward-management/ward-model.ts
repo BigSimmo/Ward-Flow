@@ -1531,7 +1531,7 @@ export type Movement = {
   overrides: Override[];
   stage: MovementStage;
   owner: string;
-  /** Units currently holding a live referral. Never longer than PARALLEL_REFERRAL_CAP. */
+  /** Units currently holding a live referral. Longer than the referral cap only with a recorded `overCapReason` (Top 25 item 2). */
   referredUnitIds: string[];
   acceptedUnitId?: string;
   /**
@@ -1717,6 +1717,16 @@ export type Movement = {
    * examination recorded, including every hand-authored fixture movement.
    */
   supersededExaminations?: { at: Instant; outcome: ExaminationOutcome }[];
+  /**
+   * Ordered ward answers, including answers recorded in the same provider minute. This is kept
+   * separately from the per-answer history below because timestamps alone cannot order a waitlist
+   * answer and a subsequent decline when both clocks report the same minute.
+   */
+  referralAnswerHistory?: {
+    unitId: string;
+    at: Instant;
+    answer: "waitlisted" | "declined" | "withdrawn";
+  }[];
   /** Referrals ended because another unit accepted. A shrinking `referredUnitIds` tells nobody. */
   /** ⚠️ `reason` is a CODE from `WITHDRAWAL_REASONS`, never free text, and it may never name a
    *  place — `FD-23`. A losing ward reads this field, and it used to carry the accepting

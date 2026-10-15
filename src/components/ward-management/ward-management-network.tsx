@@ -87,10 +87,15 @@ import {
   NetworkUnitDetail,
   type NetworkHighlight,
 } from "@/components/ward-management/network/network-overview";
-import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  movementUmrn,
+  patientIdentityLine,
+  resolveSubjectPatient,
+} from "@/components/ward-management/ward-patient-resolver";
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 type BedStateKey = "available" | "pulled" | "closed" | "confirmed" | "expected";
 
@@ -513,12 +518,12 @@ function referralClockLines(referral: Referral, now: Instant): { department: str
   };
 }
 
-function ReferralPlacementSummary({ referral, now }: { referral: Referral; now: Instant }) {
+function ReferralPlacementSummary({ referral, who, now }: { referral: Referral; who: string; now: Instant }) {
   return (
     <>
       <header className={styles.panelHeader}>
         <h2>
-          <ListChecks aria-hidden="true" /> Referral placement · {referral.id}
+          <ListChecks aria-hidden="true" /> Referral placement · {who}
         </h2>
       </header>
       <p className={styles.patientLine} data-tier={referral.urgency} data-testid="ward-network-placement-tier">
@@ -1136,7 +1141,11 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   className={styles.queueRow}
                 >
                   <span className={styles.queueTop}>
-                    <strong>{isPhone ? resolveSubjectPatient(candidate, umrnLookup).umrn : candidate.id}</strong>
+                    <strong>
+                      {isPhone
+                        ? resolveSubjectPatient(candidate, umrnLookup).umrn
+                        : patientIdentityLine(resolveSubjectPatient(candidate, umrnLookup))}
+                    </strong>
                     <span className={styles.elapsed}>{elapsedLabel(candidate, now)}</span>
                   </span>
                   <span className={styles.queueMeta}>
@@ -1182,7 +1191,11 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   className={styles.queueRow}
                 >
                   <span className={styles.queueTop}>
-                    <strong>{isPhone ? resolveSubjectPatient(referral, umrnLookup).umrn : referral.id}</strong>
+                    <strong>
+                      {isPhone
+                        ? resolveSubjectPatient(referral, umrnLookup).umrn
+                        : patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}
+                    </strong>
                     {/* The referral clock only: a queue row is about how long this has waited for a
                         decision, and the department clock is on the detail panel where there is room
                         for the comparison. It carries its own term, so a stopped clock reads as
@@ -1397,7 +1410,11 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
           tabIndex={0}
         >
           {selectedReferral ? (
-            <ReferralPlacementSummary referral={selectedReferral} now={now} />
+            <ReferralPlacementSummary
+              referral={selectedReferral}
+              who={patientIdentityLine(resolveSubjectPatient(selectedReferral, umrnLookup))}
+              now={now}
+            />
           ) : (
             <>
               <header className={styles.panelHeader}>
@@ -1575,7 +1592,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                 <span>Next action: {patient.blocker}</span>
               </div>
 
-              <Link className={styles.primaryLink} href={`/mockups/ward-flow/movements/${patient.id}`}>
+              <Link className={styles.primaryLink} href={movementHref(patient.id)}>
                 Open movement workspace
               </Link>
             </>

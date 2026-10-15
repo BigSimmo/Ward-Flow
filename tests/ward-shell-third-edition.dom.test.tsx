@@ -54,6 +54,7 @@ import {
   type WardPrimaryAction,
 } from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /** Dispatches a raw Tab keydown the same way `tests/sheet-focus.dom.test.tsx` already does —
  *  `<Sheet>`'s focus trap computes the next focusable element itself and calls
@@ -169,7 +170,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
   });
 
   it.each([
-    ["/mockups/ward-flow/movements/WF-001", "/mockups/ward-flow/movements"],
+    [movementHref("WF-001"), "/mockups/ward-flow/movements"],
     ["/mockups/ward-flow/statistics/ward/rph-adult-secure", "/mockups/ward-flow/statistics"],
     ["/mockups/ward-flow/referrals/new", "/mockups/ward-flow/referrals/new"],
   ])("highlights only the owning destination for %s", (pathname, href) => {
@@ -457,7 +458,7 @@ describe("task movement navigation", () => {
     const task = await screen.findByTestId("ward-task-bed-pull-WF-004");
     await user.click(task);
 
-    expect(mockRouterPush).toHaveBeenCalledWith("/mockups/ward-flow/movements/WF-004");
+    expect(mockRouterPush).toHaveBeenCalledWith(movementHref("WF-004"));
     expect(screen.queryByTestId("ward-bar-tasks-sheet")).not.toBeInTheDocument();
   });
 });
