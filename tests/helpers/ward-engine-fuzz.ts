@@ -520,17 +520,37 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     4,
     (state, random) => {
       const current = state.admissions.filter((stay) => stay.state === "pulled" || stay.state === "occupied");
-      // A bed held for another open journey on the stay's ward: the placement that must be refused.
+      // A bed held on the stay's ward for another open journey or an accepted referral not yet
+      // arrived there (as `heldBedRefusal` reads them): the placement that must be refused.
       const heldFor = (stay: (typeof current)[number]) =>
-        state.movements
-          .filter(
-            (movement) =>
-              movement.closure === undefined &&
-              movement.acceptedUnitId === stay.unitId &&
-              movement.admissionId !== stay.id,
-          )
-          .map((movement) => movement.heldBedNumber)
-          .filter((bed): bed is number => bed !== undefined);
+        [
+          ...state.movements
+            .filter(
+              (movement) =>
+                movement.closure === undefined &&
+                movement.acceptedUnitId === stay.unitId &&
+                movement.admissionId !== stay.id,
+            )
+            .map((movement) => movement.heldBedNumber),
+          ...state.referrals
+            .filter(
+              (referral) =>
+                !state.movements.some(
+                  (movement) =>
+                    movement.referralId === referral.id &&
+                    movement.stage === "arrived" &&
+                    movement.acceptedUnitId === stay.unitId,
+                ),
+            )
+            .flatMap((referral) => referral.destinations)
+            .filter(
+              (arm) =>
+                arm.state === "accepted" &&
+                arm.destination.kind === "psychiatric_ward" &&
+                (arm.acceptedUnitId ?? arm.destination.unitId) === stay.unitId,
+            )
+            .map((arm) => arm.heldBedNumber),
+        ].filter((bed): bed is number => bed !== undefined);
       const nearHeld = current.filter((stay) => heldFor(stay).length > 0);
       // A pulled stay of a journey in transit, so a later stop of that transport leaves a numbered
       // bed held (the stopped-transport hold rule).
