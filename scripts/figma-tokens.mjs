@@ -221,7 +221,9 @@ export function applyTokens(css, incoming) {
     const value = c.group === "Size" ? `${toPx(c.to)}px` : formatColour(toRgba(c.to));
     const night = decls.filter((d) => d.name === c.name && d.where === "night");
     const base = decls.filter((d) => d.name === c.name && d.where !== "night");
-    const targets = c.mode === "Night" ? night : base;
+    // Size imports may include both editable values and live aliases (for example the density
+    // rules that point --wf-row at --wf-row-default). Never replace an alias with a fixed value.
+    const targets = (c.mode === "Night" ? night : base).filter((target) => !target.value.includes("var("));
     if (!targets.length) {
       skipped.push(`${c.name} (${c.mode}): the CSS has no separate ${c.mode} value to change`);
       continue;

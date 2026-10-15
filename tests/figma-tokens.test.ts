@@ -67,6 +67,18 @@ describe("figma token sync", () => {
     expect(diffTokens(result.css, pulled).changes).toEqual([]);
   });
 
+  it("preserves row density aliases when applying a changed row size", () => {
+    const pulled = exportTokens(css) as Tokens;
+    pulled.Size["--wf-row"] = 48;
+
+    const result = applyTokens(css, pulled);
+    expect(result.skipped).toEqual([]);
+    expect(result.css).toContain("--wf-row: 48px;");
+    expect(result.css.match(/--wf-row: var\(--wf-row-default\);/g)).toHaveLength(2);
+    expect(result.css).toContain("--wf-row-compact: var(--wf-row-default);");
+    expect(diffTokens(result.css, pulled).changes).toEqual([]);
+  });
+
   it("refuses a Day edit that would also change Night when the CSS holds one value for both", () => {
     const pulled = exportTokens(css) as Tokens;
     pulled.Colour.Day["--wf-hero-danger"] = "#ff0000";
