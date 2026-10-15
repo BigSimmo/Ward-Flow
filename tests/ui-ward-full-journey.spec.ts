@@ -115,11 +115,11 @@ async function ensureToolsOpen(page: Page) {
   if ((await trigger.getAttribute("aria-expanded")) !== "true") {
     await trigger.click();
   }
+  // Tools review (15 Oct 2026): one sheet, Change view at its top, so no tab to pick.
   await page
     .getByRole("dialog", { name: "Tools" })
-    .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Shift desk", exact: true })
-    .click();
+    .getByRole("button", { name: /^Change view/ })
+    .waitFor();
 }
 
 /**
