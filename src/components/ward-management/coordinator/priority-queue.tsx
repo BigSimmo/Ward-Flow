@@ -67,7 +67,7 @@ const MS_PER_MINUTE = 60_000;
  * Settings ("Tier 1 overdue after 1h") and the Referrals board used 1h/4h/24h, so one patient was
  * overdue on one page and not on another. Every marker now reads the one rule,
  * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
- * in" within the hour (or half the window, if shorter) before it. Pending clinical sign-off.
+ * in" within the hour (or half the window, if shorter) before it. Signed for the prototype (D-56).
  */
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
   const overdue = tierOverdueAfterMinutes(urgency);
@@ -78,7 +78,7 @@ export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue
  *  `ward-clinical-values.ts`, so the note changes by itself once the tier values are signed. */
 export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
   allClinicalValuesSigned(["tierOneOverdue", "tierTwoOverdue", "tierThreeOverdue", "anyTierOverdue"])
-    ? "clinically signed"
+    ? "signed for the prototype"
     : "pending clinical sign-off"
 }`;
 

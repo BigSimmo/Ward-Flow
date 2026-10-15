@@ -11,9 +11,11 @@ import {
  *
  * Every value carries its status. **Synthetic** means a prototype default nobody has clinically
  * signed: it may be Josh's product default, or a figure an earlier build typed in with no decision
- * behind it (`source` says which). **Signed** means a named clinician signed it on a date, and the
- * type will not accept a signed value without both. Nothing here is signed yet. No value is a legal
- * limit (D-22) and none comes from the Mental Health Act: Act periods live only in
+ * behind it (`source` says which). **Signed** means a named person signed it on a date, and the
+ * type will not accept a signed value without both. On 15 Oct 2026 Josh signed every value with a
+ * recorded source (D-56). The values with no decision behind them stay synthetic. Signing is for
+ * the prototype: real patient use still needs formal clinical governance sign-off (D-54). No value
+ * is a legal limit (D-22) and none comes from the Mental Health Act: Act periods live only in
  * `legal-forms/act-periods-demo.ts` (D-29).
  *
  * Where two screens used different figures for the same rule, the figure the main app runs on was
@@ -71,6 +73,8 @@ export type ClinicalValueEntry = ClinicalValueSignature & {
 };
 
 const SYNTHETIC = { status: "synthetic" } as const;
+/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56). The rest stay synthetic. */
+const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-15" } as const;
 const NO_DECISION = "No decision recorded";
 
 /**
@@ -80,7 +84,7 @@ const NO_DECISION = "No decision recorded";
 export const CLINICAL_VALUES = {
   // ---- Referral tiers ----------------------------------------------------------------------
   tierOneOverdue: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Tier 1 referral shown as overdue after",
     group: "Referral tiers",
     value: 1 * MINUTES_PER_HOUR,
@@ -89,7 +93,7 @@ export const CLINICAL_VALUES = {
     alternatives: [{ value: 8 * MINUTES_PER_HOUR, where: "Home queue before 12 Oct 2026" }],
   },
   tierTwoOverdue: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Tier 2 referral shown as overdue after",
     group: "Referral tiers",
     value: 4 * MINUTES_PER_HOUR,
@@ -98,7 +102,7 @@ export const CLINICAL_VALUES = {
     alternatives: [{ value: 24 * MINUTES_PER_HOUR, where: "Home queue before 12 Oct 2026" }],
   },
   tierThreeOverdue: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Tier 3 referral shown as overdue after",
     group: "Referral tiers",
     value: 24 * MINUTES_PER_HOUR,
@@ -107,7 +111,7 @@ export const CLINICAL_VALUES = {
     alternatives: [{ value: 72 * MINUTES_PER_HOUR, where: "Home queue before 12 Oct 2026" }],
   },
   anyTierOverdue: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Any referral shown as overdue after",
     group: "Referral tiers",
     value: 72 * MINUTES_PER_HOUR,
@@ -117,7 +121,7 @@ export const CLINICAL_VALUES = {
 
   // ---- Emergency department waits -----------------------------------------------------------
   edElevatedPressure: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "ED pressure shown as elevated from a wait of",
     group: "Emergency department waits",
     value: 3 * MINUTES_PER_HOUR,
@@ -125,7 +129,7 @@ export const CLINICAL_VALUES = {
     source: "D-22 (26 Sep 2026), labelled default",
   },
   edSeverePressure: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "ED pressure shown as severe, and first escalation step, from a wait of",
     group: "Emergency department waits",
     value: 8 * MINUTES_PER_HOUR,
@@ -149,7 +153,7 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
   },
   longWait: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Wait in hospital shown as long, and top escalation step, from",
     group: "Emergency department waits",
     value: 24 * MINUTES_PER_HOUR,
@@ -165,7 +169,7 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (twice the long wait, statistics screens, 26 Sep 2026)`,
   },
   edAccessTarget: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "ED access target, counted from arrival",
     group: "Emergency department waits",
     value: ED_ACCESS_TARGET_MINUTES,
@@ -175,7 +179,7 @@ export const CLINICAL_VALUES = {
     alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "the original spec, superseded 22 Aug 2026" }],
   },
   edMedicalBedRelease: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Psychiatric bed released after a medical trip expected to last",
     group: "Emergency department waits",
     value: ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
@@ -185,7 +189,7 @@ export const CLINICAL_VALUES = {
 
   // ---- Bed occupancy -------------------------------------------------------------------------
   bedAlertLine: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Bed alert line on the rail, statistics and meters",
     group: "Bed occupancy",
     value: 85,
@@ -197,7 +201,7 @@ export const CLINICAL_VALUES = {
     ],
   },
   occupancyAmber: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Service occupancy colour band, amber from",
     group: "Bed occupancy",
     value: 90,
@@ -206,7 +210,7 @@ export const CLINICAL_VALUES = {
     alternatives: [{ value: 85, where: "the bed alert line" }],
   },
   occupancySurge: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Service occupancy colour band, surge from",
     group: "Bed occupancy",
     value: 95,
@@ -214,7 +218,7 @@ export const CLINICAL_VALUES = {
     source: "D-22 (26 Sep 2026), labelled default",
   },
   occupancyCritical: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Service occupancy colour band, red from",
     group: "Bed occupancy",
     value: 98,
@@ -224,7 +228,7 @@ export const CLINICAL_VALUES = {
 
   // ---- Legal form warnings (before a typed due time; never a computed legal limit) -----------
   dueSoonUrgent: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Typed legal due time, urgent warning before it",
     group: "Legal form warnings",
     value: 1 * MINUTES_PER_HOUR,
@@ -233,7 +237,7 @@ export const CLINICAL_VALUES = {
     adjustable: true,
   },
   dueSoon: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Typed legal due time, first warning before it",
     group: "Legal form warnings",
     value: 3 * MINUTES_PER_HOUR,
@@ -262,7 +266,7 @@ export const CLINICAL_VALUES = {
 
   // ---- Alerts and holds ----------------------------------------------------------------------
   pullNowAnswer: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Unanswered Pull now returns to the coordinator after",
     group: "Alerts and holds",
     value: 15,
@@ -270,7 +274,7 @@ export const CLINICAL_VALUES = {
     source: "Josh accepted, global alerts option A, 10 Oct 2026",
   },
   pullNowLive: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Pull now stays live, if nobody pulls or stands it down, for",
     group: "Alerts and holds",
     value: 4 * MINUTES_PER_HOUR,
@@ -278,7 +282,7 @@ export const CLINICAL_VALUES = {
     source: "Global alerts option A, 10 Oct 2026",
   },
   pullHold: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Pull hold on an accepting bed lasts",
     group: "Alerts and holds",
     value: PULL_HOLD_MINUTES,
@@ -287,7 +291,7 @@ export const CLINICAL_VALUES = {
     adjustable: true,
   },
   bedHoldReview: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Bed hold without a confirmed dispatch flagged for review after",
     group: "Alerts and holds",
     value: 2 * MINUTES_PER_HOUR,
@@ -321,7 +325,7 @@ export const CLINICAL_VALUES = {
 
   // ---- Arrivals and answers ------------------------------------------------------------------
   lateArrivalGrace: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Arrival counted as late, past the estimate, after",
     group: "Arrivals and answers",
     value: 60,
@@ -329,7 +333,7 @@ export const CLINICAL_VALUES = {
     source: "D-22 (26 Sep 2026), labelled default",
   },
   silentWardFirstReminder: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Ward that has not answered a referral, first reminder after",
     group: "Arrivals and answers",
     value: 2 * MINUTES_PER_HOUR,
@@ -337,7 +341,7 @@ export const CLINICAL_VALUES = {
     source: "D-22 (26 Sep 2026), labelled default",
   },
   silentWardSecondReminder: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Ward that has not answered a referral, second reminder after",
     group: "Arrivals and answers",
     value: 4 * MINUTES_PER_HOUR,
@@ -345,7 +349,7 @@ export const CLINICAL_VALUES = {
     source: "D-22 (26 Sep 2026), labelled default",
   },
   wardAnswerTarget: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Decision target, ward answers a referral within",
     group: "Arrivals and answers",
     value: 2 * MINUTES_PER_HOUR,
@@ -354,7 +358,7 @@ export const CLINICAL_VALUES = {
     adjustable: true,
   },
   transferAcceptanceTarget: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Decision target, transfer accepted within",
     group: "Arrivals and answers",
     value: 4 * MINUTES_PER_HOUR,
@@ -363,7 +367,7 @@ export const CLINICAL_VALUES = {
     adjustable: true,
   },
   transportBookedTarget: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Decision target, transport booked within",
     group: "Arrivals and answers",
     value: 1 * MINUTES_PER_HOUR,
@@ -380,7 +384,7 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (Top 25 stuck handover timer, 15 Oct 2026)`,
   },
   expectFlagVoluntary: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Expected arrival flagged after waiting, voluntary",
     group: "Arrivals and answers",
     value: 48 * MINUTES_PER_HOUR,
@@ -388,7 +392,7 @@ export const CLINICAL_VALUES = {
     source: "Josh, 7 Sep 2026",
   },
   expectFlagInvoluntary: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Expected arrival flagged after waiting, involuntary",
     group: "Arrivals and answers",
     value: 7 * HOURS_PER_DAY * MINUTES_PER_HOUR,
@@ -396,7 +400,7 @@ export const CLINICAL_VALUES = {
     source: "Josh, 7 Sep 2026",
   },
   expectReconsider: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Expected referral flagged to reconsider after",
     group: "Arrivals and answers",
     value: 72 * MINUTES_PER_HOUR,
@@ -414,7 +418,7 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (Top 25 discharge prep, 15 Oct 2026)`,
   },
   leaveOpenWarning: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Leave bed flagged to consider opening after",
     group: "Discharge, leave and absence",
     value: 24 * MINUTES_PER_HOUR,
@@ -438,7 +442,7 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (Top 25 CTO handshake, 15 Oct 2026); flagged in the 15 Oct repo review`,
   },
   longStayPrompt: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Stay long enough to prompt a discharge plan, and escalation dossier, from",
     group: "Discharge, leave and absence",
     value: 7,

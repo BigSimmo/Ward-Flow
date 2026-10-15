@@ -124,7 +124,7 @@ describe("clinical values file", () => {
       "anyTierOverdue",
     ]);
     expect(TIER_TARGETS_NOTE).toBe(
-      `Overdue after T1 1h, T2 4h, T3 24h, ${tiersSigned ? "clinically signed" : "pending clinical sign-off"}`,
+      `Overdue after T1 1h, T2 4h, T3 24h, ${tiersSigned ? "signed for the prototype" : "pending clinical sign-off"}`,
     );
   });
 
