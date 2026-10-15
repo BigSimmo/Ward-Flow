@@ -649,14 +649,21 @@ export type ReferenceTab = "thresholds" | "defaults" | "clinical";
 type PhoneReference = Extract<ReferenceTab, "defaults" | "clinical">;
 
 /** The clinical values on a phone: the desktop table's rows as a list, grouped the same way. */
+// D-56 signs values for the prototype only; D-54 still needs clinical governance sign-off for real use.
+function ClinicalValuesNote() {
+  return (
+    <p className={styles.cardNote} data-tone="accent">
+      {unsignedClinicalValueCount()} of {CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for
+      the prototype only. Every value still needs clinical governance sign-off before real patient use.
+    </p>
+  );
+}
+
 function PhoneClinicalValues() {
   const groups = [...new Set(CLINICAL_VALUE_LIST.map((entry) => entry.group))];
   return (
     <div data-testid="ward-settings-clinical-values-phone" data-setting="clinical-values">
-      <p className={styles.cardNote} data-tone="accent">
-        {unsignedClinicalValueCount()} of {CLINICAL_VALUE_LIST.length} values wait on clinical sign-off. A synthetic
-        value is a prototype default, not a clinical or legal standard.
-      </p>
+      <ClinicalValuesNote />
       {groups.map((group) => (
         <section key={group} className={styles.phoneClinicalGroup} aria-label={group}>
           <h3 className={styles.phoneClinicalGroupHead}>{group}</h3>
@@ -913,10 +920,7 @@ export function DataPane({
           {/* Josh, 15 Oct 2026 (item 6): every clinical value with its status, read from
               `ward-clinical-values.ts`. Read only; a value is signed in that file, never here. */}
           <div data-testid="ward-settings-clinical-values" data-setting="clinical-values">
-            <p className={styles.cardNote} data-tone="accent">
-              {unsignedClinicalValueCount()} of {CLINICAL_VALUE_LIST.length} values wait on clinical sign-off. A
-              synthetic value is a prototype default, not a clinical or legal standard.
-            </p>
+            <ClinicalValuesNote />
             <div className={styles.tableWrap} role="region" aria-label="Clinical values" tabIndex={0}>
               <table className={styles.table}>
                 <caption className={styles.srOnly}>Clinical values and sign-off status</caption>

@@ -228,7 +228,7 @@ describe("clinical values file", () => {
     expect(formatClinicalFigure(1, "days")).toBe("1 day");
     expect(clinicalValueStatusText({ status: "synthetic" })).toBe("Synthetic value");
     expect(clinicalValueStatusText({ status: "signed", signedBy: "Dr A Example", signedOn: "2026-11-01" })).toBe(
-      "Signed by Dr A Example, 2026-11-01",
+      "Signed for the prototype by Dr A Example, 2026-11-01",
     );
   });
 });

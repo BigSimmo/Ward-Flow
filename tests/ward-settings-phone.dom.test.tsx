@@ -149,7 +149,7 @@ describe("Settings on a phone", () => {
     fireEvent.click(within(list).getByRole("radio", { name: /Clinical values/ }));
     const values = screen.getByTestId("ward-settings-clinical-values-phone");
     expect(values).toHaveTextContent(
-      `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values wait on clinical sign-off`,
+      `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only`,
     );
     for (const entry of CLINICAL_VALUE_LIST) {
       const row = within(values).getByTestId(`ward-settings-clinical-value-phone-${entry.id}`);

@@ -45,7 +45,7 @@ it("lists every clinical value with its synthetic or signed status", () => {
   fireEvent.click(screen.getByRole("tab", { name: /Clinical values/ }));
   const panel = screen.getByTestId("ward-settings-clinical-values");
   expect(panel).toHaveTextContent(
-    `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values wait on clinical sign-off`,
+    `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only`,
   );
   for (const entry of CLINICAL_VALUE_LIST) {
     const row = within(panel).getByTestId(`ward-settings-clinical-value-${entry.id}`);

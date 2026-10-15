@@ -37,7 +37,7 @@ const HOURS_PER_DAY = 24;
 
 export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent";
 
-/** A value is synthetic until a named clinician signs it on a date. */
+/** A value is synthetic until a named person signs it for the prototype on a date (D-56). */
 export type ClinicalValueSignature =
   | { readonly status: "synthetic" }
   | { readonly status: "signed"; readonly signedBy: string; readonly signedOn: string };
@@ -489,9 +489,11 @@ export function formatClinicalFigure(value: number, unit: ClinicalValueUnit): st
   return plural(value, "minute");
 }
 
-/** The status as Settings shows it: "Synthetic value", or "Signed by Dr A, 1 Nov 2026". */
+/** The status as Settings shows it: "Synthetic value", or "Signed for the prototype by Dr A, 2026-11-01". */
 export function clinicalValueStatusText(entry: ClinicalValueSignature): string {
-  return entry.status === "signed" ? `Signed by ${entry.signedBy}, ${entry.signedOn}` : "Synthetic value";
+  return entry.status === "signed"
+    ? `Signed for the prototype by ${entry.signedBy}, ${entry.signedOn}`
+    : "Synthetic value";
 }
 
 /** True only when every named value is signed. */
