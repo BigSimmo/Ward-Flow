@@ -1357,7 +1357,9 @@
     gap: 5px;
     font-size: var(--t-0);
     font-weight: 500;
-    color: var(--wf-ink-2);
+    /* Set by the bar's ink rules below, so the service line follows the bar's band (release gate,
+       15 Oct 2026). */
+    color: var(--wf-bar-scope-ink, var(--wf-ink-2));
   }
 
   /* The visible line is small; the hit area still reaches 48px tall. */
@@ -3069,9 +3071,19 @@
       )
     ) {
     --wf-focus-ring: var(--wf-hero-ink);
+    --wf-bar-scope-ink: var(--wf-hero-ink-2);
     background: var(--wf-hero-1);
     border-bottom-color: var(--wf-hero-1);
     color: var(--wf-hero-ink);
+  }
+
+  /* The service line also carries the band on its own attribute. CI WebKit restyled the bar when
+     its data-band changed but left the service line's inherited ink dark on the band, so the
+     release gate failed its contrast check; a change on the button itself always restyles it. */
+  .scopeBadgeBtn[data-band="ink"],
+  .scopeBadgeBtn[data-band="ink"] .scopeBadgeLabel,
+  .scopeBadgeBtn[data-band="ink"] .scopeCaret {
+    color: var(--wf-hero-ink-2);
   }
 
   .bar:is(

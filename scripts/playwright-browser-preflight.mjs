@@ -21,6 +21,9 @@ export const playwrightProjectNames = Object.freeze({
   webkit: "webkit",
   firefoxWardResponsive: "firefox-ward-responsive",
   webkitWardResponsive: "webkit-ward-responsive",
+  // The release gate (tests/release-gate-journeys.spec.ts): desktop Chrome and phone WebKit.
+  releaseGateDesktop: "release-gate-desktop",
+  releaseGatePhone: "release-gate-phone",
 });
 
 const DEFAULT_CONFIG_PROJECTS = Object.freeze({
@@ -44,6 +47,8 @@ const PROJECT_BROWSER_FAMILIES = Object.freeze({
   [playwrightProjectNames.webkit]: "webkit",
   [playwrightProjectNames.firefoxWardResponsive]: "firefox",
   [playwrightProjectNames.webkitWardResponsive]: "webkit",
+  [playwrightProjectNames.releaseGateDesktop]: "chromium",
+  [playwrightProjectNames.releaseGatePhone]: "webkit",
 });
 
 // Mirrors Playwright's chromium-headless-shell executable table for the

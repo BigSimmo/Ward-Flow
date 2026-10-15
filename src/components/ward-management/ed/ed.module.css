@@ -2104,8 +2104,10 @@
   color: var(--ink);
 }
 
+/* "none" is the count itself, so it keeps text contrast (axe, release gate 15 Oct 2026); --wf-dim
+   measured 2.86:1 on the phone Lists tabs. */
 .departmentListTabs .tabNum[data-zero="true"] {
-  color: var(--wf-dim);
+  color: var(--muted);
 }
 
 .boardTable .outstandingItem {
