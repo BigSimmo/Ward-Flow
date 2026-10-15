@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Two-way token sync between src/app/ward-flow-v6-tokens.css (the source of truth) and the Figma
+ * Two-way token sync between src/app/ward-flow-v9-tokens.css (the source of truth) and the Figma
  * file "Ward Flow v6 live". Figma Professional has no Variables REST API, so Claude reads and
  * writes the Figma side through the Figma MCP on Josh's device. This script only handles the code side.
  * Procedure: docs/agents/figma-sync.md. Map: design/figma/figma-sync.json.
@@ -18,7 +18,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const CSS_PATH = resolve(ROOT, "src/app/ward-flow-v6-tokens.css");
+export const CSS_PATH = resolve(ROOT, "src/app/ward-flow-v9-tokens.css");
 export const TOKENS_PATH = resolve(ROOT, "design/figma/tokens.json");
 
 // Figma-only helper variables. Code derives these with color-mix, so a pull never writes them.
@@ -265,7 +265,7 @@ export function main(argv = process.argv.slice(2), { stdout = console.log, stder
         const result = applyTokens(css, incoming);
         writeAtomically(CSS_PATH, result.css);
         for (const s of result.skipped) stderr(`[figma-tokens] skipped ${s}`);
-        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v6-tokens.css`);
+        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v9-tokens.css`);
       }
       return 0;
     }

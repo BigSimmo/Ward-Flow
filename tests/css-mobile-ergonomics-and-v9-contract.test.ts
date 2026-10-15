@@ -52,8 +52,8 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     expect(Number(overrideMinHeight?.[1])).toBeGreaterThanOrEqual(2.75);
     expect(shortlistCss).not.toMatch(/min-height:\s*2\.125rem/);
 
-    const v6Tokens = readCss("src/app/ward-flow-v6-tokens.css");
-    expect(v6Tokens).toMatch(/--wf-phone-pill-gap:\s*8px/);
+    const wfTokens = readCss("src/app/ward-flow-v9-tokens.css");
+    expect(wfTokens).toMatch(/--wf-phone-pill-gap:\s*8px/);
   });
 
   it("prevents 320px horizontal overflow when DOB filter is open in census.module.css", () => {
