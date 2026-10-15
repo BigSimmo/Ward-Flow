@@ -343,6 +343,62 @@ describe("sequences the random run found", () => {
   });
 });
 
+describe("a bed held for another journey", () => {
+  it("refuses a Bed board placement into it", () => {
+    // The random run rarely aims a placement at a held bed, so this pins the refusal directly.
+    const base = seedWardFlowState();
+    const stay = base.admissions.find((admission) => admission.state === "occupied")!;
+    const other = base.movements.find(
+      (movement) => movement.closure === undefined && movement.admissionId !== stay.id,
+    )!;
+    const used = new Set(base.admissions.filter((a) => a.unitId === stay.unitId).map((a) => a.bedNumber));
+    const bed = [...Array(30).keys()].map((n) => n + 1).find((n) => !used.has(n))!;
+    const held: WardFlowState = {
+      ...base,
+      movements: base.movements.map((movement) =>
+        movement.id === other.id ? { ...movement, acceptedUnitId: stay.unitId, heldBedNumber: bed } : movement,
+      ),
+    };
+    const placed = wardFlowReducer(held, {
+      type: "PLACE_IN_BED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId: stay.id,
+      bedNumber: bed,
+    } as WardFlowEvent);
+    expect(placed.rejections.at(-1)?.reason).toMatch(/is already held for someone/);
+    expect(placed.admissions).toBe(held.admissions);
+  });
+});
+
+describe("officer Delivered with no transport leg", () => {
+  it("is refused rather than accepted as a no-op", () => {
+    // Seed 108: a journey marked "no transport needed" has no transport job, so the officer's
+    // Delivered changed nothing yet was accepted. The officer screen already refuses it.
+    const base = seedWardFlowState("standard");
+    const pulled = base.movements.find((movement) => movement.stage === "pulled" && !movement.transport)!;
+    expect(pulled, "a seeded pulled journey with no transport job").toBeDefined();
+    const noNeed = wardFlowReducer(base, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId: pulled.id,
+      needed: false,
+    } as WardFlowEvent);
+    expect(noNeed.rejections).toEqual([]);
+    const delivered = wardFlowReducer(noNeed, {
+      type: "PATIENT_ARRIVED",
+      role: "officer",
+      now: NOW_ANCHOR + 1,
+      movementId: pulled.id,
+    });
+    expect(delivered.rejections.at(-1)?.reason).toBe(
+      "No transport leg to deliver; the receiving ward confirms arrival",
+    );
+    expect(delivered.movements).toBe(noNeed.movements);
+  });
+});
+
 describe("engine safety under random event sequences", () => {
   it("starts every scenario from a world that already keeps the rules", () => {
     for (const scenario of WARD_SCENARIOS) {
