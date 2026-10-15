@@ -4,10 +4,13 @@
 // and stops new oversized files appearing.
 //
 // When a file shrinks, lower its cap or delete its entry. Raise a cap only with a reason in the PR.
+// tests/max-lines-baseline.test.ts fails once a cap is more than MAX_LINES_HEADROOM above its file,
+// or once a file is back under MAX_LINES_DEFAULT, so the caps follow the files down.
 export const MAX_LINES_DEFAULT = 1500;
+export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
-  "src/components/ward-management/ward-flow-reducer.ts": 9150,
+  "src/components/ward-management/ward-flow-reducer.ts": 7200,
   "src/components/ward-management/ed/ed-screen.tsx": 6950,
   "src/components/ward-management/community/community-screen.tsx": 6200,
   "src/components/ward-management/referrals/ward-referral-drawer.tsx": 4350,
