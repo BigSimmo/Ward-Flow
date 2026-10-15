@@ -437,8 +437,8 @@ Generators: `screen-map`, `mockup-manifest`, `owner-rulings-index`, `rules-index
 `check-clinical-governance-gate`. Dev: `dev-with-organisation`, `serve-mockups`,
 `contact-sheet`, `organisation(-core)`. Visual audits (manual, Playwright): `audit-*`,
 `adversarial-visual-audit`, `inspect-targets`, `test-drawer`, `verify-movement-horizon`,
-`table-sweep`, `token-collision-scan`. Coordination: `chat-control`, `whois`, `role-map.py`,
-`folded.sh`, `sync-lessons`, `audit-lessons`. The `audit/` subfolder is explicitly not part of
+`table-sweep`, `token-collision-scan`. Coordination: `role-map.py`, `sync-lessons`,
+`audit-lessons`. The `audit/` subfolder is explicitly not part of
 the fold gates.
 
 ---
