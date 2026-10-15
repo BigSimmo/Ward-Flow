@@ -24,7 +24,9 @@ import { isValidStoredWardFlowState } from "@/components/ward-management/ward-fl
 import { MOVEMENT_STAGES, REFERRAL_ADDRESSING_STATES } from "@/components/ward-management/ward-model";
 import { WARD_SCENARIOS, type WardScenario } from "@/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { undoStepTypeFor } from "@/components/ward-management/ward-undo";
 import { FUZZED_EVENT_TYPES, nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
+import { undoComparableWorld, undoOf } from "./helpers/ward-legal-figure-sweep";
 
 const envCount = (name: string, fallback: number) => {
   const value = Number(process.env[name]);
@@ -208,7 +210,36 @@ function applyAndCheck(
         return { rule: "a refused event changes no bed", detail: `refused ${event.type} changed ${key}` };
     }
   }
-  return bedInvariantViolation(next) ?? (checkStorage ? storageViolation(next) : null) ?? { next };
+  return (
+    bedInvariantViolation(next) ??
+    (checkStorage ? storageViolation(next) : null) ??
+    (next.rejections.length === state.rejections.length ? undoViolation(state, event, next) : null) ?? { next }
+  );
+}
+
+/** Every step type the random run took back and found restored. */
+const UNDONE_STEP_TYPES = new Set<WardFlowEvent["type"]>();
+
+/**
+ * Master plan 5.2: an accepted step that offers Undo can be taken back at once, by the role that
+ * acted, and the undo restores the world exactly as it was before the step.
+ */
+function undoViolation(before: WardFlowState, event: WardFlowEvent, applied: WardFlowState): Violation | null {
+  if (!undoStepTypeFor(event.type)) return null;
+  // A step that changed nothing leaves nothing to undo (an officer's Delivered on a journey with
+  // no transport job, for one).
+  const earlier = JSON.stringify(undoComparableWorld(before));
+  if (JSON.stringify(undoComparableWorld(applied)) === earlier) return null;
+  const undone = undoOf(event, applied, event.now + 1);
+  if (!undone)
+    return { rule: "an accepted step can be undone straight away", detail: `${event.type} could not be undone` };
+  if (JSON.stringify(undoComparableWorld(undone.state)) !== earlier)
+    return {
+      rule: "undo restores the earlier state",
+      detail: `${undone.type} did not restore the world before ${event.type}`,
+    };
+  UNDONE_STEP_TYPES.add(event.type);
+  return null;
 }
 
 /** Applies events in order from a fresh seed, checking every rule after every event. */
@@ -312,6 +343,62 @@ describe("sequences the random run found", () => {
   });
 });
 
+describe("a bed held for another journey", () => {
+  it("refuses a Bed board placement into it", () => {
+    // The random run rarely aims a placement at a held bed, so this pins the refusal directly.
+    const base = seedWardFlowState();
+    const stay = base.admissions.find((admission) => admission.state === "occupied")!;
+    const other = base.movements.find(
+      (movement) => movement.closure === undefined && movement.admissionId !== stay.id,
+    )!;
+    const used = new Set(base.admissions.filter((a) => a.unitId === stay.unitId).map((a) => a.bedNumber));
+    const bed = [...Array(30).keys()].map((n) => n + 1).find((n) => !used.has(n))!;
+    const held: WardFlowState = {
+      ...base,
+      movements: base.movements.map((movement) =>
+        movement.id === other.id ? { ...movement, acceptedUnitId: stay.unitId, heldBedNumber: bed } : movement,
+      ),
+    };
+    const placed = wardFlowReducer(held, {
+      type: "PLACE_IN_BED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId: stay.id,
+      bedNumber: bed,
+    } as WardFlowEvent);
+    expect(placed.rejections.at(-1)?.reason).toMatch(/is already held for someone/);
+    expect(placed.admissions).toBe(held.admissions);
+  });
+});
+
+describe("officer Delivered with no transport leg", () => {
+  it("is refused rather than accepted as a no-op", () => {
+    // Seed 108: a journey marked "no transport needed" has no transport job, so the officer's
+    // Delivered changed nothing yet was accepted. The officer screen already refuses it.
+    const base = seedWardFlowState("standard");
+    const pulled = base.movements.find((movement) => movement.stage === "pulled" && !movement.transport)!;
+    expect(pulled, "a seeded pulled journey with no transport job").toBeDefined();
+    const noNeed = wardFlowReducer(base, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId: pulled.id,
+      needed: false,
+    } as WardFlowEvent);
+    expect(noNeed.rejections).toEqual([]);
+    const delivered = wardFlowReducer(noNeed, {
+      type: "PATIENT_ARRIVED",
+      role: "officer",
+      now: NOW_ANCHOR + 1,
+      movementId: pulled.id,
+    });
+    expect(delivered.rejections.at(-1)?.reason).toBe(
+      "No transport leg to deliver; the receiving ward confirms arrival",
+    );
+    expect(delivered.movements).toBe(noNeed.movements);
+  });
+});
+
 describe("engine safety under random event sequences", () => {
   it("starts every scenario from a world that already keeps the rules", () => {
     for (const scenario of WARD_SCENARIOS) {
@@ -337,6 +424,8 @@ describe("engine safety under random event sequences", () => {
       expect(refused).toBeGreaterThan(total * 0.1);
       expect(refused).toBeLessThan(total * 0.9);
       expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
+      // Enough undoable steps are accepted that the undo rule is tested, not passed by default.
+      expect(UNDONE_STEP_TYPES.size).toBeGreaterThan(8);
     },
     Math.max(30_000, SEQUENCES * STEPS * 5),
   );
