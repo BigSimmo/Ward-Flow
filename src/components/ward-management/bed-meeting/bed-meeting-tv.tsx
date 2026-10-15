@@ -293,47 +293,44 @@ function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
   );
 }
 
-function WardTable({ rows, more }: { rows: MeetingTvExtras["wards"]; more: number }) {
+function WardTable({ rows }: { rows: MeetingTvExtras["wards"] }) {
   return (
-    <>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th scope="col">Ward</th>
-            <th scope="col" className={styles.num}>
-              Ready
+    <table className={styles.table}>
+      <thead>
+        <tr>
+          <th scope="col">Ward</th>
+          <th scope="col" className={styles.num}>
+            Ready
+          </th>
+          <th scope="col" className={styles.num}>
+            Locked
+          </th>
+          <th scope="col" className={styles.num}>
+            Asked
+          </th>
+          <th scope="col" className={styles.num}>
+            Coming
+          </th>
+          <th scope="col" className={styles.num}>
+            Going
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.id}>
+            <th scope="row" title={row.name}>
+              {row.name}
             </th>
-            <th scope="col" className={styles.num}>
-              Locked
-            </th>
-            <th scope="col" className={styles.num}>
-              Asked
-            </th>
-            <th scope="col" className={styles.num}>
-              Coming
-            </th>
-            <th scope="col" className={styles.num}>
-              Going
-            </th>
+            <td className={styles.num}>{row.ready}</td>
+            <td className={styles.num}>{row.lockedReady}</td>
+            <td className={styles.num}>{row.asked}</td>
+            <td className={styles.num}>{row.coming}</td>
+            <td className={styles.num}>{row.going}</td>
           </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <th scope="row" title={row.name}>
-                {row.name}
-              </th>
-              <td className={styles.num}>{row.ready}</td>
-              <td className={styles.num}>{row.lockedReady}</td>
-              <td className={styles.num}>{row.asked}</td>
-              <td className={styles.num}>{row.coming}</td>
-              <td className={styles.num}>{row.going}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <More count={more} noun="wards" />
-    </>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -409,15 +406,14 @@ export function BedMeetingTvView({
           </Panel>
         ) : (
           <Panel title={`Wards in ${healthServiceAcronym(sheet.service)}`} testId="bed-meeting-tv-wards-panel" wide>
-            {extras.wards.length === 0 ? (
-              <Empty>No wards in this service.</Empty>
-            ) : (
-              <WardTable rows={extras.wards} more={extras.moreWards} />
-            )}
+            {extras.wards.length === 0 ? <Empty>No wards in this service.</Empty> : <WardTable rows={extras.wards} />}
           </Panel>
         )}
 
-        <Panel title="Beds that fit" testId="bed-meeting-tv-fit-panel">
+        <Panel
+          title={sheet.service === null ? "Beds that fit" : `Beds that fit in ${healthServiceAcronym(sheet.service)}`}
+          testId="bed-meeting-tv-fit-panel"
+        >
           <BedsThatFit gaps={extras.gaps} />
         </Panel>
 

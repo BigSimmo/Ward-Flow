@@ -23,6 +23,7 @@ import {
   elapsedOpenMinutes,
   type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
+import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -71,6 +72,18 @@ type TvInputs = {
 
 function byWaitThenId(a: TvJourneyRow, b: TvJourneyRow): number {
   return b.waitMinutes - a.waitMinutes || a.id.localeCompare(b.id);
+}
+
+/**
+ * Waiting on this ward's answer: referred here, accepted nowhere, and not already answered by this
+ * ward with a waitlist (the reducer keeps a waitlisted ward in `referredUnitIds`).
+ */
+function waitingOnWard(movement: Movement, unitId: string): boolean {
+  return (
+    movement.acceptedUnitId === undefined &&
+    movement.referredUnitIds.includes(unitId) &&
+    !(movement.waitlistedUnitIds ?? []).includes(unitId)
+  );
 }
 
 function edLabel(edId: string): string {
@@ -127,7 +140,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     (movement) => movement.acceptedUnitId === unit.id && ED_LEAVING_STAGES.includes(movement.stage),
   ).length;
   const asked = open
-    .filter((movement) => movement.acceptedUnitId === undefined && movement.referredUnitIds.includes(unit.id))
+    .filter((movement) => waitingOnWard(movement, unit.id))
     .map((movement) => row(movement, "Waiting on this ward's answer"))
     .sort(byWaitThenId);
   const coming = [...asked, ...incoming];
@@ -271,14 +284,51 @@ export type TvWardRow = {
 export type MeetingTvExtras = {
   /** The state screen: one line per health service. Empty on a health service screen. */
   services: TvServiceRow[];
-  /** A health service screen: one line per ward, by name. Empty on the state screen. */
+  /** A health service screen: every ward, by name. A service has about a dozen at most. Empty on the state screen. */
   wards: TvWardRow[];
-  moreWards: number;
-  /** Capacity's "beds that fit" rows, narrowed to the screen's service. */
+  /**
+   * Capacity's `bedKindGaps` rows. On the state screen these are Capacity's own network figures. On
+   * a health service screen they are narrowed to that service's wards and people, and the screen
+   * says so, because that meeting decides what its own service can take.
+   */
   gaps: BedKindGap[];
 };
 
 type MeetingInputs = TvInputs & { service: HealthService | null };
+
+/**
+ * One pass for the whole service rather than a ward sheet each: ready and locked from Capacity's
+ * `networkWardRows`, discharges from the Discharges board's `groupDischarges` (the source the ward
+ * sheet's own figures come from), and asked and coming from the open movements.
+ */
+function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[] {
+  const { movements, bedReleases, admissions, leaveBeds, now } = input;
+  const unitIds = new Set(scopedUnits.map((unit) => unit.id));
+  const capacity = networkWardRows(
+    scopedUnits,
+    now,
+    bedReleases.filter((release) => unitIds.has(release.unitId)),
+    admissions,
+    leaveBeds,
+  );
+  const groups = groupDischarges(
+    bedReleases.filter((release) => unitIds.has(release.unitId)),
+    now,
+  );
+  const due = [...groups.blocked, ...groups.confirmed, ...groups.expected];
+  const open = movements.filter(isOpen);
+  return capacity
+    .map((row) => ({
+      id: row.unit.id,
+      name: row.unit.name,
+      ready: row.ready,
+      lockedReady: row.lockedReady,
+      asked: open.filter((movement) => waitingOnWard(movement, row.unit.id)).length,
+      coming: open.filter((movement) => movement.acceptedUnitId === row.unit.id).length,
+      going: due.filter((release) => release.unitId === row.unit.id).length,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
 
 function serviceRow(input: MeetingInputs, service: HealthService): TvServiceRow {
   const sheet = bedMeetingSheet({ ...input, service });
@@ -298,28 +348,9 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
   const scopedUnits = service === null ? units : units.filter((unit) => unitHealthService(unit) === service);
   const scopedMovements =
     service === null ? movements : movements.filter((movement) => movementBelongsToService(movement, service, units));
-  const wards =
-    service === null
-      ? []
-      : [...scopedUnits]
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((unit) => {
-            const sheet = wardTvSheet({ ...input, unit });
-            const { heldUp, confirmed, expected } = sheet.discharges;
-            return {
-              id: unit.id,
-              name: unit.name,
-              ready: sheet.capacity.ready,
-              lockedReady: sheet.capacity.lockedReady,
-              asked: sheet.askedCount,
-              coming: sheet.incoming.total,
-              going: heldUp + confirmed + expected,
-            };
-          });
   return {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
-    wards: wards.slice(0, TV_ROW_LIMIT),
-    moreWards: Math.max(0, wards.length - TV_ROW_LIMIT),
+    wards: service === null ? [] : serviceWardRows(input, scopedUnits),
     gaps: bedKindGaps(scopedMovements, scopedUnits, now),
   };
 }

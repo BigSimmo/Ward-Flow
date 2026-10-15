@@ -150,7 +150,13 @@ describe("the bed meeting TV view", () => {
     for (const ward of extras.wards) {
       const unit = state.units.find((candidate) => candidate.id === ward.id);
       if (!unit) throw new Error("expected the ward");
-      expect(ward.ready).toBe(wardTvSheet({ ...inputs, unit }).capacity.ready);
+      // The service table's one pass agrees with each ward's own TV sheet.
+      const own = wardTvSheet({ ...inputs, unit });
+      expect(ward.ready).toBe(own.capacity.ready);
+      expect(ward.lockedReady).toBe(own.capacity.lockedReady);
+      expect(ward.asked).toBe(own.askedCount);
+      expect(ward.coming).toBe(own.incoming.total);
+      expect(ward.going).toBe(own.discharges.heldUp + own.discharges.confirmed + own.discharges.expected);
     }
     expect(screen.queryByTestId("bed-meeting-tv-services-panel")).toBeNull();
     const fit = within(screen.getByTestId("bed-meeting-tv-fit-panel")).getAllByRole("row").slice(1);
@@ -245,6 +251,23 @@ describe("the ward and ED TV views", () => {
       .getAllByRole("term")
       .map((term) => term.firstElementChild?.textContent);
     expect(labels).toEqual(["Beds ready now", "Asked of this ward", "Coming in", "Going out", "Past expected date"]);
+  });
+
+  it("does not count a person this ward has already waitlisted as waiting on its answer", () => {
+    const { state, inputs } = seedInputs();
+    const movement = state.movements.find(
+      (candidate) =>
+        candidate.acceptedUnitId === undefined && candidate.referredUnitIds.length > 0 && !candidate.closure,
+    );
+    if (!movement) throw new Error("expected an unanswered referral");
+    const unit = state.units.find((candidate) => candidate.id === movement.referredUnitIds[0]);
+    if (!unit) throw new Error("expected the referred ward");
+    const before = wardTvSheet({ ...inputs, unit });
+    const waitlisted = { ...movement, waitlistedUnitIds: [...(movement.waitlistedUnitIds ?? []), unit.id] };
+    const movements = inputs.movements.map((candidate) => (candidate.id === movement.id ? waitlisted : candidate));
+    const after = wardTvSheet({ ...inputs, movements, unit });
+    expect(after.askedCount).toBe(before.askedCount - 1);
+    expect(after.coming.rows.map((row) => row.id)).not.toContain(movement.id);
   });
 
   it("shows one ED's figures from the ED board's own selectors", () => {
