@@ -1365,8 +1365,8 @@ export function buildActionInbox(
       icon: Truck,
       title: stuck ? "Handover waiting too long" : "Transport awaiting departure",
       detail: stuck
-        ? `${movement.id} · transport accepted ${formatInstant(acceptedAt)}, not left after ${splitDuration(waited)}. Target ${splitDuration(stuckAfter)}`
-        : `${movement.id} · accepted ${formatInstant(acceptedAt)}`,
+        ? `${movement.id} · transport accepted ${formatInstantWithDay(acceptedAt, now)}, not left after ${splitDuration(waited)}. Target ${splitDuration(stuckAfter)}`
+        : `${movement.id} · accepted ${formatInstantWithDay(acceptedAt, now)}`,
       owner: stuck ? "Sending team" : movement.owner,
       movementId: movement.id,
       since: movement.transport.acceptedAt,
