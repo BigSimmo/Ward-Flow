@@ -283,6 +283,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   }
   await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
+  await expectAccessible(page, testInfo, "ward bed board after the arrival");
   // The phone board leads with its work list and keeps the bed grid in the page, so read the tile's
   // state rather than its visibility.
   await expect(page.locator(`li:has(> #ward-board-tile-${admissionId})`)).toHaveAttribute("data-bed-kind", "occupied");

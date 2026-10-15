@@ -60,5 +60,7 @@ describe("arriving a patient into a seeded pulled stay", () => {
     expect(after.pulled).toBe(before.pulled - 1);
     expect(after.ready).toBe(before.ready);
     expect(unitAfter.empty.value).toBe(unitBefore.empty.value);
+    // The stay is already in the sex mix, so the same person arriving adds no second count.
+    expect(unitAfter.sexMix).toEqual(unitBefore.sexMix);
   });
 });
