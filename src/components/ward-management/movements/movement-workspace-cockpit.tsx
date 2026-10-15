@@ -119,6 +119,8 @@ import styles from "./movement-workspace-cockpit.module.css";
 
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
+const CANCEL_TRANSPORT_NOT_YOURS =
+  "This ward did not book the job, so ask the flow coordinator or the referring emergency department to cancel it.";
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
 const OPEN_GATE: RoleGate = { allowed: true, buttonProps: {}, note: null };
@@ -1471,7 +1473,13 @@ export function MovementWorkspaceCockpit({
                           ? "ward-console-cancel-transport-blocked"
                           : undefined
                     }
-                    title={cancelTransportReason === undefined ? CANCEL_TRANSPORT_UNCHOSEN : undefined}
+                    title={
+                      wardCannotCancel
+                        ? CANCEL_TRANSPORT_NOT_YOURS
+                        : cancelTransportReason === undefined
+                          ? CANCEL_TRANSPORT_UNCHOSEN
+                          : undefined
+                    }
                     onClick={
                       wardCannotCancel || cancelTransportReason === undefined
                         ? ignoreUnavailableActivation
@@ -1493,8 +1501,7 @@ export function MovementWorkspaceCockpit({
                       className={styles.actionSay}
                       data-testid="ward-console-cancel-transport-not-yours"
                     >
-                      This ward did not book the job, so ask the flow coordinator or the referring emergency department
-                      to cancel it.
+                      {CANCEL_TRANSPORT_NOT_YOURS}
                     </span>
                   ) : cancelTransportReason === undefined ? (
                     <span id="ward-console-cancel-transport-blocked" className="sr-only">
