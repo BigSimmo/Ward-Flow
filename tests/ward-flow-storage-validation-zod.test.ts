@@ -367,6 +367,10 @@ describe("stored ward flow state fence, equivalence harness", () => {
     // A stored discharge barrier is a list value, never free text.
     expect(check((x) => (x.admissions[0].dischargeBarrier = "typed text"))).toBe(false);
     expect(check((x) => (x.scenario = "unknown"))).toBe(false);
+    // An undo step type that names an Object.prototype member is refused. The hand-written
+    // validator threw a TypeError here instead; the zod rewrite refuses it.
+    for (const undoType of ["constructor", "toString", "__proto__", "hasOwnProperty"])
+      expect(check((x) => (x.undoRecords[2].undoType = undoType))).toBe(false);
     expect(check((x) => (x.auditSequence = 1))).toBe(false);
     expect(isValidStoredWardFlowState(null)).toBe(false);
     expect(isValidStoredWardFlowState([])).toBe(false);
