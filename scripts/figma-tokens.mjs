@@ -221,7 +221,9 @@ export function applyTokens(css, incoming) {
     const value = c.group === "Size" ? `${toPx(c.to)}px` : formatColour(toRgba(c.to));
     const night = decls.filter((d) => d.name === c.name && d.where === "night");
     const base = decls.filter((d) => d.name === c.name && d.where !== "night");
-    const targets = c.mode === "Night" ? night : base;
+    // An alias such as `--wf-row: var(--wf-row-default)` is code-owned wiring, not a value Figma
+    // holds, so an import changes only the literal declarations and leaves every alias pointing on.
+    const targets = (c.mode === "Night" ? night : base).filter((d) => !d.value.includes("var("));
     if (!targets.length) {
       skipped.push(`${c.name} (${c.mode}): the CSS has no separate ${c.mode} value to change`);
       continue;
