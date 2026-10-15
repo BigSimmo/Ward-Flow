@@ -17,32 +17,19 @@ import {
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import { OVERRIDE_REASONS, URGENCY_CHANGE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
-import { UNDO_STEP_ACTIONS, UNDO_WINDOW_MINUTES, type UndoStepType } from "../src/components/ward-management/ward-undo";
+import {
+  UNDO_STEP_ACTIONS,
+  UNDO_STEP_TYPES,
+  UNDO_WINDOW_MINUTES,
+  type UndoStepType,
+} from "../src/components/ward-management/ward-undo";
 
-import { applyFirstAccepted, undoOf } from "./helpers/ward-legal-figure-sweep";
+import { applyFirstAccepted, undoComparableWorld, undoOf } from "./helpers/ward-legal-figure-sweep";
 
 const NOW = NOW_ANCHOR;
 const stored = (state: WardFlowState) => JSON.parse(JSON.stringify({ ...state, rejections: [] })) as unknown;
 
-/** Everything except the append-only audit log, refusals and the undo bookkeeping. */
-function world(state: WardFlowState) {
-  const {
-    auditEvents: _a,
-    auditSequence: _s,
-    undoRecords: _u,
-    rejections: _r,
-    dischargeRevisions: _d,
-    units,
-    ...rest
-  } = state;
-  void [_a, _s, _u, _r, _d];
-  // A unit's revision and the id counters (ids are never reused) move forward by design; every
-  // record must match exactly.
-  return {
-    ...Object.fromEntries(Object.entries(rest).filter(([, value]) => typeof value !== "number")),
-    units: units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, revision: 0 } })),
-  };
-}
+const world = undoComparableWorld;
 
 /** The first candidate of `type` the reducer accepts on `state`, as the sweep builds it. */
 function step(state: WardFlowState, type: WardFlowEvent["type"]) {
@@ -70,9 +57,16 @@ function undoEventFor(event: WardFlowEvent, role: WardFlowRole, now = NOW + 1, a
 const lastRefusal = (before: WardFlowState, after: WardFlowState) =>
   after.rejections.length > before.rejections.length ? after.rejections.at(-1)!.reason : undefined;
 
+/** Steps a seeded movement needs first before it accepts `type` (master plan 5.2). */
+const PREREQUISITES: Partial<Record<WardFlowEvent["type"], readonly WardFlowEvent["type"][]>> = {
+  HANDOVER_READY: ["BOOK_TRANSPORT"],
+  TRANSPORT_ACCEPTED: ["BOOK_TRANSPORT", "HANDOVER_READY"],
+  PATIENT_COLLECTED: ["TRANSPORT_EN_ROUTE"],
+};
+
 /** Accept a step, take it back as `role`, and expect the world exactly as before the step. */
 function expectExactUndo(type: WardFlowEvent["type"], undoRole: WardFlowRole, actingUnitId?: string) {
-  const before = seedWardFlowState();
+  const before = (PREREQUISITES[type] ?? []).reduce((state, prior) => step(state, prior).applied, seedWardFlowState());
   const { applied, event } = step(before, type);
   expect(world(applied)).not.toEqual(world(before));
   // A typed-text step (a repatriation's CAD number) locks storage anyway; every other step, and
@@ -81,7 +75,9 @@ function expectExactUndo(type: WardFlowEvent["type"], undoRole: WardFlowRole, ac
   const undone = wardFlowReducer(applied, undoEventFor(event, undoRole, NOW + 1, actingUnitId));
   expect(lastRefusal(applied, undone)).toBeUndefined();
   expect(world(undone)).toEqual(world(before));
-  expect(undone.undoRecords ?? []).toEqual([]);
+  // Only the step's own record goes; a record the step replaced (one Undo per subject) stays gone.
+  const prior = before.undoRecords ?? [];
+  expect(undone.undoRecords ?? []).toEqual((applied.undoRecords ?? []).filter((record) => prior.includes(record)));
   expect(isValidStoredWardFlowState(stored(undone))).toBe(true);
   const entry = undone.auditEvents.at(-1)!;
   expect(entry).toMatchObject({ category: "undo", action: undoEventFor(event, undoRole).type, outcome: "accepted" });
@@ -141,6 +137,25 @@ describe("step undos restore exactly, by the role that acted or the coordinator"
     expectExactUndo(type, "coordinator");
   });
 
+  // Master plan 5.2 (15 Oct 2026): every undo action, by name, against every step it takes back.
+  it.each(
+    UNDO_STEP_TYPES.flatMap((undoType) =>
+      UNDO_STEP_ACTIONS[undoType]
+        .filter((type) => type !== "RECORD_SUPPORT_NOTIFICATION")
+        .map((type) => [undoType, type] as const),
+    ),
+  )("%s takes back %s exactly, by the role that acted and by the coordinator", (undoType, type) => {
+    const { event, undone } = expectExactUndo(type, "coordinator");
+    expect(undone.auditEvents.at(-1)!.action).toBe(undoType);
+    const actingUnitId =
+      event.type === "ACCEPT_IN_PRINCIPLE" && event.role === "ward"
+        ? event.unitId
+        : "actingUnitId" in event
+          ? event.actingUnitId
+          : undefined;
+    expectExactUndo(type, event.role, actingUnitId);
+  });
+
   it("UNDO_SUPPORT_NOTIFICATION takes back a Tell record exactly", () => {
     const before = seedWardFlowState();
     const arrival = before.movements.find(
@@ -165,6 +180,19 @@ describe("step undos restore exactly, by the role that acted or the coordinator"
     const undone = undoOf(event, recorded, NOW + 1);
     expect(undone?.type).toBe("UNDO_SUPPORT_NOTIFICATION");
     expect(undone!.state.supportNotifications ?? []).toEqual(before.supportNotifications ?? []);
+    // Master plan 5.2: the whole world comes back, by the role that acted and by the coordinator.
+    for (const role of ["ward", "coordinator"] as const) {
+      const taken = wardFlowReducer(recorded, undoEventFor(event, role));
+      expect(lastRefusal(recorded, taken), role).toBeUndefined();
+      // The undo leaves an empty list where the seed had none, which means the same.
+      const tells = (state: WardFlowState) => ({
+        ...world(state),
+        supportNotifications: state.supportNotifications ?? [],
+      });
+      expect(tells(taken), role).toEqual(tells(before));
+      expect(taken.undoRecords ?? [], role).toEqual(before.undoRecords ?? []);
+      expect(taken.auditEvents.at(-1)!.action, role).toBe("UNDO_SUPPORT_NOTIFICATION");
+    }
   });
 });
 
