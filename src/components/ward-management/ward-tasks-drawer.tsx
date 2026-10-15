@@ -487,6 +487,7 @@ export function WardTasksDrawer({
           Who did you escalate to?
           <span className={styles.escalationInput}>
             <input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- the field appears only after the user asks to escalate, so focus moves to it
               autoFocus
               required
               maxLength={160}
@@ -575,6 +576,7 @@ export function WardTasksDrawer({
       : "Patient not linked";
 
     return (
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and focus does the same for the keyboard
       <li
         key={item.id}
         className={styles.row}
@@ -585,6 +587,8 @@ export function WardTasksDrawer({
           if ((event.target as HTMLElement).closest("button, input, form, a")) return;
           setExpandedId(isPhone && isExpanded ? null : item.id);
         }}
+        // On a desktop, tabbing into a row shows its detail, the same as clicking it.
+        onFocus={isPhone ? undefined : () => setExpandedId(item.id)}
       >
         <div className={styles.rowHead}>
           <span className={styles.rowIcon} aria-hidden="true">

@@ -187,6 +187,7 @@ export function AlertRow({
 }) {
   const state = stateLine(entry, now);
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li className={styles.row} onClick={selectOnRowClick(entry, handlers)} {...rowData(entry, handlers)}>
       <span className={styles.rowGlyph}>
         <StatusGlyph tone={glyphTone(entry)} />
@@ -228,6 +229,7 @@ export function AlertCard({
   const state = stateLine(entry, now);
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li className={styles.card} onClick={selectOnRowClick(entry, handlers)} {...rowData(entry, handlers)}>
       <span className={styles.cardTop}>
         {entry.snooze ? <AlarmClock size={14} aria-hidden="true" className={styles.snoozeIcon} /> : null}
@@ -288,6 +290,7 @@ export function GroupHead({
 export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li className={styles.phoneRow} onClick={selectOnRowClick(entry, handlers)} {...rowData(entry, handlers)}>
       <span className={styles.phoneRowGlyph}>
         {entry.snooze ? <AlarmClock size={14} aria-hidden="true" /> : <StatusGlyph tone={glyphTone(entry)} />}

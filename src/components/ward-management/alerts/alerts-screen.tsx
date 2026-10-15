@@ -1896,6 +1896,7 @@ function AlertsWorkspace() {
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
           <div
             ref={modalRef}
             className={styles.modalOverlay}
@@ -1911,6 +1912,7 @@ function AlertsWorkspace() {
               }
             }}
           >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div className={styles.composer} onClick={(e) => e.stopPropagation()}>
               <div className={styles.drawerHead}>
                 <IconTile icon={Radio} />

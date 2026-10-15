@@ -2250,6 +2250,7 @@ function EventTable({
         <span>Outcome</span>
         <span>Review</span>
       </div>
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div className={thirdEdition.registerBody} role="region" aria-label={label} tabIndex={0} onKeyDown={onKey}>
         {!allowed ? (
           <div className={thirdEdition.emptyBlock}>

@@ -2067,6 +2067,7 @@ export function WardBoard({
          * at all and it falls into the flow directly beneath the grid, which is the same arrangement
          * without the overlay a phone sheet would impose.
          */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
         <div
           className={`${styles.zones}${selectedTile !== null ? ` ${styles.zonesOpen}` : ""}`}
           onKeyDown={onZoneKeyDown}
@@ -2490,6 +2491,7 @@ export function WardBoard({
 
                 ⚠️ **The board's other lists are a different matter and were left alone** — the
                 destinations and people lists ARE ordered and say so in visible prose. */}
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it */}
             <ul className={styles.beds} data-testid="ward-board-beds" aria-label="Beds on this ward" tabIndex={0}>
               {orderedTiles.map((tile) => {
                 const index = tileIndexMap.get(tile) ?? tiles.indexOf(tile);
@@ -2693,6 +2695,7 @@ export function WardBoard({
             aria-labelledby="ward-board-detail-heading"
             data-testid="ward-board-detail"
             data-detail-kind={selectedTile?.kind ?? "none"}
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
             tabIndex={0}
           >
             <div className={styles.detailBar}>
@@ -3177,6 +3180,7 @@ export function WardBoard({
                 </button>
               ) : null}
               {blockerDialogItem ? (
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
                 <div
                   ref={blockerDialogRef}
                   role="dialog"
@@ -3603,6 +3607,7 @@ export function WardBoard({
         </p>
 
         {pendingConfirm ? (
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
           <div
             ref={confirmDialogRef}
             role="dialog"
