@@ -17,6 +17,7 @@ import {
   buildPatientStatus,
   type PatientStatusContext,
 } from "../src/components/ward-management/patients/patient-status-card";
+import { edScreenSource } from "./helpers/ed-screen-source";
 
 /**
  * Feature 11, actions limited by role. The route gives the role (`wardChromeRole`); `EVENT_ROLE`
@@ -179,7 +180,10 @@ describe("role screens dispatch only what their route's role may take", () => {
   const root = join(__dirname, "../src/components/ward-management");
   for (const [file, role] of Object.entries(ROLE_SCREENS)) {
     it(`${file} (${role} route)`, () => {
-      const source = readFileSync(join(root, file), "utf8");
+      // `ed/ed-screen.tsx` stands for the whole ED screen: fix list 2.5 and 9.6 (15 Oct 2026) split
+      // it into sibling files, and `edScreenSource()` reads every one of them, so a dispatch added
+      // to any part of the screen is still checked against the ED role.
+      const source = file === "ed/ed-screen.tsx" ? edScreenSource() : readFileSync(join(root, file), "utf8");
       const types = [...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g)].map((match) => match[1] as EventType);
       expect(types.length, "no dispatch found; update this list if the screen moved").toBeGreaterThan(0);
       for (const type of new Set(types)) {
