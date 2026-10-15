@@ -10,6 +10,7 @@ const sqlFiles = [
   "004-trigger-search-path",
   "005-retention-and-indexes",
   "006-row-level-security",
+  "007-prototype-only",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -44,7 +45,7 @@ function checkExpressions(sql) {
   return result;
 }
 
-function fixture(version = 6) {
+function fixture(version = 7) {
   const owner = "migration_admin";
   const catalog = {
     owner,
@@ -196,6 +197,9 @@ function fixture(version = 6) {
       conditional: false,
     });
   for (const object of catalog.objects) object.inherited = false;
+  if (version >= 7)
+    catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
+      "CHECK (data_mode = 'prototype')";
   if (version >= 6)
     for (const object of catalog.objects.filter((o) => o.kind === "r")) {
       object.rls = true;
@@ -236,13 +240,13 @@ function withPostgresTextDeparse(catalog) {
   return catalog;
 }
 
-function pool(catalog, versions = [1, 2, 3, 4, 5, 6]) {
+function pool(catalog, versions = [1, 2, 3, 4, 5, 6, 7]) {
   const queries = [];
   return {
     queries,
     query: async (sql) => {
       queries.push(sql);
-      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 7")
+      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 8")
         return { rows: versions.map((version) => ({ version })) };
       assert.match(sql, /^WITH namespace/);
       assert.doesNotMatch(sql, /(?:ALTER|INSERT INTO|UPDATE ward_flow|DELETE FROM|DROP|CREATE SCHEMA|CREATE TABLE)/);
@@ -257,7 +261,7 @@ test("absent namespace is accepted by one read-only catalogue query", async () =
   assert.equal(db.queries.length, 1);
 });
 
-for (const version of [1, 2, 3, 4, 5, 6])
+for (const version of [1, 2, 3, 4, 5, 6, 7])
   test(`known migration ${version} namespace permits the separate migration stage`, async () => {
     const db = pool(
       fixture(version),
@@ -265,7 +269,7 @@ for (const version of [1, 2, 3, 4, 5, 6])
     );
     await verifyPostgresNamespace(db);
     assert.equal(db.queries.length, 2);
-    assert.match(db.queries[1], /LIMIT 7$/);
+    assert.match(db.queries[1], /LIMIT 8$/);
   });
 
 test("PostgreSQL text-literal casts in defaults, checks and index predicates permit the known schema", async () => {
@@ -326,7 +330,7 @@ test("reserved empty namespace and wrong migration-table shape refuse before rea
 });
 
 test("noncontiguous, empty, unsupported and malformed versions refuse migration", async () => {
-  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5, 6, 7], [1, 2, 2], [1, 2, 3, 4, "5"]])
+  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 2], [1, 2, 3, 4, "5"]])
     await assert.rejects(verifyPostgresNamespace(pool(fixture(), versions)), /Unrecognised or unsafe/);
 });
 
@@ -536,4 +540,15 @@ test("row-level security must match the version: none before 6, the runtime-only
     alter(catalog);
     await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
   }
+});
+
+test("from migration 7 the workspace check allows prototype only; before it, prototype or live", async () => {
+  const six = fixture(6);
+  await verifyPostgresNamespace(pool(six, [1, 2, 3, 4, 5, 6]));
+  six.constraints.find((c) => c.definition.includes("'live'")).definition = "CHECK (data_mode = 'prototype')";
+  await assert.rejects(verifyPostgresNamespace(pool(six, [1, 2, 3, 4, 5, 6])), /Unrecognised or unsafe/);
+  const seven = fixture();
+  seven.constraints.find((c) => c.definition === "CHECK (data_mode = 'prototype')").definition =
+    "CHECK ((data_mode = ANY (ARRAY['prototype'::text, 'live'::text])))";
+  await assert.rejects(verifyPostgresNamespace(pool(seven)), /Unrecognised or unsafe/);
 });

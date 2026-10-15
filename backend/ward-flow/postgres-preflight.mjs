@@ -208,7 +208,10 @@ function expectedConstraints(version, tables) {
     result.push({
       table: "workspaces",
       type: "c",
-      check: expression("CHECK (data_mode = ANY (ARRAY['prototype','live']))"),
+      // Migration 7 removed the never-used live label (D-55: synthetic data only).
+      check: expression(
+        version >= 7 ? "CHECK (data_mode = 'prototype')" : "CHECK (data_mode = ANY (ARRAY['prototype','live']))",
+      ),
     });
     for (const table of ["commands", "audit"])
       result.push({

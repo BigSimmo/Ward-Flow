@@ -65,7 +65,7 @@ to `005`. These source files do not establish a current hosted connection or dep
   (`*` on Railway, which is reachable only through its proxy). A locally
   verified token stays valid until it expires, even after sign-out.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts 6):
+- Migrations (`/readyz` needs 1 to 5, and accepts 6 and 7):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -77,6 +77,9 @@ to `005`. These source files do not establish a current hosted connection or dep
     before this migration is applied to a live database. `infra/rollback-006-row-level-security.sql`
     takes a database back to 5 in one transaction. The preflight and the runtime check refuse a
     database whose row-level security does not match its version.
+  - `007-prototype-only.sql`: workspaces allow `data_mode = 'prototype'` only, since Ward Flow is
+    synthetic only (D-55). It stops before changing anything if any workspace is labelled live.
+    `infra/rollback-007-prototype-only.sql` restores the old check.
 
 ## Boundaries
 
