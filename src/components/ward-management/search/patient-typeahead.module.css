@@ -310,7 +310,7 @@
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   padding: var(--ward-space-1) var(--wf-s-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   border: 1px solid var(--wf-line-2);
   color: var(--wf-ink-3);
 }

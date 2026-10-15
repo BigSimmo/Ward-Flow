@@ -99,7 +99,7 @@
   min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   color: inherit;
   background: color-mix(in srgb, currentColor 7%, transparent);
   font: 600 12px / 1 var(--wf-font, inherit);
