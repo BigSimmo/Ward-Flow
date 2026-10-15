@@ -160,6 +160,18 @@ const movementEvent = (
   };
 };
 
+/** A movement some ward has been asked about and has not yet answered. */
+const awaitingWards = (movement: Movement) =>
+  movement.stage === "destination_review" && movement.referredUnitIds.length > 0;
+
+/** The ward a referral arm names, so an answer is usually from a ward that was asked. */
+function addressedUnit(state: WardFlowState, random: Random, referral: WardFlowState["referrals"][number]) {
+  const named = referral.destinations.flatMap((arm) =>
+    arm.destination.kind === "psychiatric_ward" && arm.destination.unitId ? [arm.destination.unitId] : [],
+  );
+  return named.length > 0 && chance(random, 0.8) ? pick(random, named) : pick(random, state.units)?.id;
+}
+
 /** Transport legs, so each transport event is mostly aimed at a journey it can move on. */
 const leg = (movement: Movement) => {
   const job = movement.transport;
@@ -237,7 +249,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     (state, random) => {
       const referral = referralFor(state, random);
       if (!referral) return null;
-      const unitId = pick(random, state.units)?.id;
+      const unitId = addressedUnit(state, random, referral);
       return {
         role: answeringRole(random),
         type: "ACCEPT_REFERRAL",
@@ -257,7 +269,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       const referral = referralFor(state, random);
       if (!referral) return null;
       const community = chance(random, 0.2);
-      const unitId = pick(random, state.units)?.id;
+      const unitId = addressedUnit(state, random, referral);
       return {
         role: answeringRole(random),
         type: "DECLINE_REFERRAL",
@@ -311,7 +323,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   ],
   [
     5,
-    movementEvent("ACCEPT_IN_PRINCIPLE", ["destination_review"], (state, random, movement) => {
+    movementEvent("ACCEPT_IN_PRINCIPLE", awaitingWards, (state, random, movement) => {
       const unitId = pick(random, movement.referredUnitIds) ?? unitFor(state, random, movement)?.id;
       return {
         unitId,
@@ -323,7 +335,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   ],
   [
     5,
-    movementEvent("PULL_PATIENT", ["accepted_awaiting_bed", "destination_review"], (state, random, movement) => {
+    movementEvent("PULL_PATIENT", ["accepted_awaiting_bed"], (state, random, movement) => {
       const unitId = movementUnit(state, random, movement);
       return {
         unitId,
@@ -335,7 +347,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   ],
   [
     2,
-    movementEvent("DECLINE", ["destination_review"], (state, random, movement) => {
+    movementEvent("DECLINE", awaitingWards, (state, random, movement) => {
       const unitId = pick(random, movement.referredUnitIds) ?? unitFor(state, random, movement)?.id;
       return { unitId, actingUnitId: unitId, reason: pick(random, DECLINE_REASONS) };
     }),
@@ -437,7 +449,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [1, movementEvent("WITHDRAW_REFERRAL", ["destination_review", "accepted_awaiting_bed"])],
   [
     1,
-    movementEvent("WITHDRAW_WARD_REQUEST", ["destination_review"], (state, random, movement) => ({
+    movementEvent("WITHDRAW_WARD_REQUEST", awaitingWards, (state, random, movement) => ({
       unitId: pick(random, movement.referredUnitIds) ?? unitFor(state, random, movement)?.id,
       reason: pick(random, WARD_REQUEST_WITHDRAWAL_REASONS),
     })),
@@ -506,10 +518,24 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [2, admissionEvent("UNDO_DEPARTURE", ["departed"])],
   [
     4,
-    admissionEvent("PLACE_IN_BED", ["occupied", "pulled"], (state, random) => {
-      const unitId = pick(random, state.units)?.id;
-      return { bedNumber: bedOn(state, random, unitId) };
-    }),
+    (state, random) => {
+      const admission = admissionFor(state, random, ["occupied", "pulled"]);
+      if (!admission) return null;
+      // Often aim at a bed already taken or held on the same ward: the case that must be refused.
+      const taken = [
+        ...state.admissions.filter((other) => other.unitId === admission.unitId).map((other) => other.bedNumber),
+        ...state.movements
+          .filter((movement) => movement.acceptedUnitId === admission.unitId)
+          .map((movement) => movement.heldBedNumber),
+      ].filter((bed): bed is number => bed !== undefined);
+      return {
+        type: "PLACE_IN_BED",
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        bedNumber:
+          taken.length > 0 && chance(random, 0.4) ? pick(random, taken) : bedOn(state, random, admission.unitId),
+      };
+    },
   ],
   [2, admissionEvent("UNDO_PLACE_IN_BED", ["occupied", "pulled"])],
   [

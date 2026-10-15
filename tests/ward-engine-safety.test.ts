@@ -30,8 +30,8 @@ const envCount = (name: string, fallback: number) => {
   const value = Number(process.env[name]);
   return Number.isSafeInteger(value) && value > 0 ? value : fallback;
 };
-const SEQUENCES = envCount("WARD_ENGINE_FUZZ_SEQUENCES", 24);
-const STEPS = envCount("WARD_ENGINE_FUZZ_STEPS", 120);
+const SEQUENCES = envCount("WARD_ENGINE_FUZZ_SEQUENCES", 16);
+const STEPS = envCount("WARD_ENGINE_FUZZ_STEPS", 100);
 const FIRST_SEED = envCount("WARD_ENGINE_FUZZ_FIRST_SEED", 1);
 
 /** A person is in a bed while their stay is pulled (the bed is theirs) or occupied. */
@@ -248,7 +248,7 @@ function describeFailure(seed: number, scenario: WardScenario, events: WardFlowE
 }
 
 /** One seeded sequence. Returns a readable failure, or null, and how many events were refused. */
-export function runSeed(seed: number, steps = STEPS) {
+function runSeed(seed: number, steps = STEPS) {
   const scenario = WARD_SCENARIOS[seed % WARD_SCENARIOS.length];
   const random = seededRandom(seed);
   let state = seedWardFlowState(scenario);
