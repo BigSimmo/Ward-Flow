@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useMobileKeyboard } from "@/components/use-mobile-keyboard";
+import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 
 // F-07: iOS Safari lays the keyboard over the page, so the phone shell reads the visual viewport
 // and marks <html> for CSS to hide the dock and lift pinned footers.

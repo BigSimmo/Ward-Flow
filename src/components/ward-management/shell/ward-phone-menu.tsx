@@ -21,7 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
-import { useMobileKeyboard } from "@/components/use-mobile-keyboard";
+import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { Dot } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import {
