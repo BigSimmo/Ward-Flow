@@ -63,42 +63,33 @@ const inboxRows =
       }),
     ) as WardFlowState[K];
 
-/** What an audit entry's subject is checked against: the desk's own stays, journeys, referrals and wards. */
-type AuditScope = {
-  readonly admissionIds: ReadonlySet<string>;
-  readonly movements: readonly { readonly id: string }[];
-  readonly referrals: readonly { readonly id: string }[];
-  readonly unitIn: (unitId: string) => boolean;
-};
-
-/**
- * The seeded governance entries (`ward-governance-seed.ts`) about this coordinator's own scope.
- * They are derived from the whole workspace, never stored, so their ids are not in `auditEvents`.
- */
-function seededAuditIdsInScope(state: WardFlowState, scope: AuditScope): Set<string> {
-  return new Set(
-    syntheticGovernanceAuditEvents(state)
-      .filter((event) => auditSubjectInScope(event, scope))
-      .map((event) => event.id),
-  );
-}
-
 /** Is an audit entry about something the desk sees. Configuration and unresolved entries are not. */
-function auditSubjectInScope(event: AuditEvent, scope: AuditScope): boolean {
+function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
   const subject = event.subject;
   const has = (ids: readonly { id: string }[], id: string) => ids.some((item) => item.id === id);
   switch (subject.kind) {
     case "admission":
-      return scope.admissionIds.has(subject.admissionId);
+      return context.admissionIds.has(subject.admissionId);
     case "movement":
-      return has(scope.movements, subject.movementId);
+      return has(context.scoped.movements, subject.movementId);
     case "referral":
-      return has(scope.referrals, subject.referralId);
+      return has(context.scoped.referrals, subject.referralId);
     case "bed-release":
-      return scope.unitIn(subject.unitId);
+      return context.unitIn(subject.unitId);
     default:
       return false;
   }
+}
+
+/**
+ * The seeded governance entries (`ward-governance-seed.ts`) a coordinator's own screens show. They
+ * are derived, never stored, and the browser derives them from the workspace it was sent, from its
+ * own first journeys, referral and stay. The server derives them the same way, so a review is sent,
+ * and may be made, exactly when the desk's screens show its entry. The ids are fixed, so every desk
+ * that shows an entry shares its reviews.
+ */
+function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "admissions">, state: WardFlowState) {
+  return new Set(syntheticGovernanceAuditEvents({ ...state, ...sent }).map((event) => event.id));
 }
 
 /** Is this team id or name the community desk's own team. */
@@ -167,16 +158,9 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // Audit: a coordinator's own scope; every other desk keeps only the record-access receipts its
   // own stays need, because an opened discharge record is read against its receipt.
   auditEvents: (context) => context.auditEvents,
-  // A review goes with its entry. The seeded governance entries are derived, never stored, so each
-  // is worked out from the whole workspace and kept only when its subject is in the desk's scope.
   auditReviews: (context) => {
     if (!context.coordinator) return [];
-    const kept = seededAuditIdsInScope(context.state, {
-      admissionIds: context.admissionIds,
-      movements: context.scoped.movements,
-      referrals: context.scoped.referrals,
-      unitIn: context.unitIn,
-    });
+    const kept = seededAuditIds(context.scoped, context.state);
     for (const event of context.auditEvents) kept.add(event.id);
     return context.state.auditReviews.filter((review: AuditReview) => kept.has(review.eventId));
   },
@@ -236,28 +220,12 @@ export function scopeWardFlowState(
   };
   const auditEvents = state.auditEvents.filter((event) =>
     coordinator
-      ? auditSubjectInScope(event, { admissionIds, movements: scoped.movements, referrals: scoped.referrals, unitIn })
+      ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
       : event.category === "record-access" &&
         event.subject.kind === "admission" &&
         admissionIds.has(event.subject.admissionId),
   );
-  // Seeded entries must be derived from the whole workspace before scoping. Sending the
-  // authoritative entries here prevents the browser from deriving the fixed ids again from its
-  // already-filtered first records.
-  const authoritativeAuditEvents = coordinator
-    ? [
-        ...auditEvents,
-        ...syntheticGovernanceAuditEvents(state).filter((event) =>
-          auditSubjectInScope(event, {
-            admissionIds,
-            movements: scoped.movements,
-            referrals: scoped.referrals,
-            unitIn,
-          }),
-        ),
-      ]
-    : auditEvents;
-  const context: Context = { ...partial, auditEvents: authoritativeAuditEvents };
+  const context: Context = { ...partial, auditEvents };
   const next = {} as Record<keyof WardFlowState, unknown>;
   for (const key of Object.keys(FIELD_RULES) as (keyof WardFlowState)[]) next[key] = FIELD_RULES[key](context);
   // An optional field the saved state never had stays absent, as the stored-state check expects.
@@ -387,16 +355,9 @@ export function commandScopeRefusal(
   });
   const all = recordIds(state);
   // A seeded governance entry can be reviewed, so its id counts as a record too. A coordinator may
-  // name only the ones about its own scope.
+  // name only the ones its own screens show.
   for (const event of syntheticGovernanceAuditEvents(state)) all.add(event.id);
-  if (access.role === "coordinator")
-    for (const id of seededAuditIdsInScope(state, {
-      admissionIds: new Set(scoped.admissions.map((admission) => admission.id)),
-      movements: scoped.movements,
-      referrals: scoped.referrals,
-      unitIn: (unitId) => unitInScope(access.scope, unitId, places),
-    }))
-      writable.add(id);
+  if (access.role === "coordinator") for (const id of seededAuditIds(scoped, state)) writable.add(id);
   for (const text of commandStrings(command)) {
     if (all.has(text) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));
