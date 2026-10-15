@@ -468,9 +468,12 @@
 }
 
 .rowName {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
 }
@@ -487,6 +490,8 @@
    pointer hovers, so a tap on iPhone does not leave the row expanded and the layout jumping. */
 .rowInteractive:focus-visible .rowName,
 .rowInteractive:focus-visible .rowMeta {
+  -webkit-line-clamp: unset;
+  line-clamp: none;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -494,6 +499,8 @@
 @media (hover: hover) {
   .rowInteractive:hover .rowName,
   .rowInteractive:hover .rowMeta {
+    -webkit-line-clamp: unset;
+    line-clamp: none;
     white-space: normal;
     overflow-wrap: anywhere;
   }
@@ -585,11 +592,16 @@
   min-width: 0;
 }
 
+/* Phone review F-05 (WebKit check, 15 Oct 2026): a long title wraps to a second line rather than
+   losing its end to an ellipsis. */
 .heroTitle {
+  display: -webkit-box;
   margin: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
   font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
   letter-spacing: var(--wf-tr-20);
   color: var(--wf-hero-ink);
@@ -703,11 +715,14 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* Two lines before any cut, so "Out of area bed days" reads whole in a three-stat strip. */
 .heroLabelText {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .heroActions {

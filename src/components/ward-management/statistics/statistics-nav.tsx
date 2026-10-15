@@ -47,12 +47,19 @@ interface StatisticsNavProps {
  * its own chip. Only the row scrolls, never the page.
  */
 function scrollActiveIntoView(node: HTMLAnchorElement | null) {
-  const row = node?.parentElement;
-  if (!node || !row) return;
-  const start = node.offsetLeft - row.offsetLeft;
-  const end = start + node.offsetWidth;
-  if (start < row.scrollLeft) row.scrollLeft = start;
-  else if (end > row.scrollLeft + row.clientWidth) row.scrollLeft = end - row.clientWidth;
+  if (!node) return;
+  // Measured from the screen, not offsetLeft, and again on the next frame: WebKit showed the
+  // Weekly chip still off the right edge when the row was measured before fonts and layout settled.
+  const reveal = () => {
+    const row = node.parentElement;
+    if (!row) return;
+    const rowBox = row.getBoundingClientRect();
+    const chipBox = node.getBoundingClientRect();
+    if (chipBox.left < rowBox.left) row.scrollLeft += chipBox.left - rowBox.left;
+    else if (chipBox.right > rowBox.right) row.scrollLeft += chipBox.right - rowBox.right;
+  };
+  reveal();
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(reveal);
 }
 
 /** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
