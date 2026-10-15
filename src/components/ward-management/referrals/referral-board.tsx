@@ -28,7 +28,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -129,6 +129,8 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 
 /** The tier due times' status, read from the clinical values file so it changes when they are signed. */
 const DUE_TIMES_NOTE = allClinicalValuesSigned([
@@ -502,7 +504,8 @@ function subscribeToLocation(listener: () => void) {
   return () => window.removeEventListener("popstate", listener);
 }
 function readLinkedReferralId(): string | null {
-  return new URLSearchParams(window.location.search).get("referral");
+  // D-39: the link carries an address code; an old link may still carry the raw id.
+  return recordIdFromParam(new URLSearchParams(window.location.search).get("referral"));
 }
 
 /**
@@ -522,7 +525,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     admissions = [],
     bedReleases = [],
     leaveBeds = [],
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "referrals",
+    "units",
+    "dispatch",
+    "rejections",
+    "movements",
+    "patients",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const queued = referralQueueOrder(referrals);
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first
@@ -1127,7 +1140,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <div className={a.panelWho}>
                       <h2 className={a.panelName}>
                         {selectedPatientInfo.displayName}
-                        <span className="sr-only"> {selectedReferral.id}</span>
+                        <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
                       <p className={a.panelMeta}>
                         {umrnCopyable ? (
@@ -1187,7 +1200,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         <>
                           {linkedMovement ? (
                             <Link
-                              href={`/mockups/ward-flow/movements/${encodeURIComponent(linkedMovement.id)}`}
+                              href={movementHref(linkedMovement.id)}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                               data-testid="ward-referral-open-movement"
                             >
@@ -1205,7 +1218,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                           )}
                           {selectedReferral.patientId && !isPhone ? (
                             <Link
-                              href={`/mockups/ward-flow/people/${encodeURIComponent(selectedReferral.patientId)}`}
+                              href={patientHref(selectedReferral.patientId)}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                               data-testid="ward-referral-open-patient"
                             >
@@ -1901,7 +1914,7 @@ function DecidedSection({
                         aria-pressed={referral.id === selectedId}
                         onClick={() => onSelect(referral.id)}
                       >
-                        {referral.id}
+                        {patientInfo.umrn}
                       </button>
                     </td>
                     <td>

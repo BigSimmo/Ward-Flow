@@ -1,10 +1,12 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { GlobalSearchPreview } from "@/components/ward-management/search/global-search-preview";
 import { RecordPreview } from "@/components/ward-management/search/record-preview";
-import { WardMhaCalculator } from "@/components/ward-management/tools/ward-mha-calculator";
+import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -103,10 +105,20 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
     expect(container.textContent).toContain("40 years");
   });
 
-  it("WardMhaCalculator resolves multi-day simulation instant offsets cleanly from referenceNow", () => {
-    const scenarioInstant = new Date(perthMidnight(2026, 7, 15).getTime() + (NOW_ANCHOR + 1440) * 60_000);
-    render(<WardMhaCalculator referenceNow={scenarioInstant} />);
-    expect(screen.getByLabelText("Order expiry date written on form")).toHaveValue("2026-08-16");
-    expect(screen.getByLabelText("Order expiry time written on form")).toHaveValue("10:42");
+  it("WardFormTimes resolves simulation dayZero and demoNow cleanly without wall-clock drift", () => {
+    const scenarioDayZero = perthMidnight(2026, 7, 15); // 15 Aug 2026
+    function OverrideDayZero({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      return <WardFlowOverride value={{ ...value, dayZero: scenarioDayZero }}>{children}</WardFlowOverride>;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR + 1440}>
+        <OverrideDayZero>
+          <WardFormTimes />
+        </OverrideDayZero>
+      </WardFlowProvider>,
+    );
+    expect(screen.getByLabelText("Date written on form")).toHaveValue("2026-08-16");
+    expect(screen.getByLabelText("Time written on form")).toHaveValue("");
   });
 });

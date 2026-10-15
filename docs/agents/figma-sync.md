@@ -16,7 +16,7 @@ into tiles of at most 2000px so Figma keeps full resolution). The editable phone
 
 - Map: `design/figma/figma-sync.json` (file key, collections, naming rule, component and screen map).
 - Tokens: `node scripts/figma-tokens.mjs --export | --diff <file> | --apply <file>`.
-- Source CSS: `src/app/ward-flow-v6-tokens.css` (Figma sync script target) and [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css) (v9/v10 `--wf-*` token sheet; spec in [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md)). Shared components: [`src/components/wf/`](../../src/components/wf/) and [`src/components/ward-management/`](../../src/components/ward-management/).
+- Source CSS: [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css) (the one `--wf-*` token sheet and the Figma sync script target; the v6 baseline was folded into it on 15 October 2026; spec in [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md)). Shared components: [`src/components/wf/`](../../src/components/wf/) and [`src/components/ward-management/`](../../src/components/ward-management/).
 - Load the `figma-use` skill before any `use_figma` call. Synthetic data only.
 
 Figma variables: collection **Colour** (modes Day, Night) and **Size**. Each variable's WEB code
@@ -61,7 +61,7 @@ syntax is `var(--wf-name)`, which is the key in the token JSON. Skip `alpha/*` a
 
 2. `node scripts/figma-tokens.mjs --diff figma-pull.json` and show Josh the changed tokens.
 3. `node scripts/figma-tokens.mjs --apply figma-pull.json`, then
-   `npx vitest run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-v6-tokens.css`.
+   `npx vitest run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-v9-tokens.css`.
    Invalid collection shapes, sizes or colours fail before any CSS is written. Writes replace the
    complete file atomically; a malformed pull leaves source CSS unchanged. Partial valid pulls
    are allowed. Figma helper variables remain ignored.

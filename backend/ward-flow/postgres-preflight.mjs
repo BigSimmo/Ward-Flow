@@ -66,7 +66,12 @@ const CATALOG = `WITH namespace AS (
       OR (t.typtype='b' AND t.typelem IN (SELECT oid FROM pg_catalog.pg_type
         WHERE typtype='c' AND typrelid IN (SELECT oid FROM objects WHERE kind='r'))))) AS unknown_types,
   (SELECT count(*)::integer FROM pg_catalog.pg_rewrite r JOIN objects o ON o.oid=r.ev_class) AS rules,
-  (SELECT count(*)::integer FROM pg_catalog.pg_policy p JOIN objects o ON o.oid=p.polrelid) AS policies,
+  coalesce((SELECT jsonb_agg(to_jsonb(p)) FROM (
+    SELECT o.name AS table_name, p.polname AS name, p.polpermissive AS permissive, p.polcmd AS command,
+      p.polroles::text AS roles, pg_catalog.pg_get_expr(p.polqual, p.polrelid) AS qual,
+      pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid) AS with_check
+    FROM pg_catalog.pg_policy p JOIN objects o ON o.oid=p.polrelid ORDER BY o.name, p.polname LIMIT 65
+  ) p), '[]'::jsonb) AS policies,
   (SELECT count(*)::integer FROM pg_catalog.pg_extension e JOIN namespace n ON n.oid=e.extnamespace) AS extensions`;
 
 function normalise(value) {
@@ -94,7 +99,22 @@ const tableColumns = {
     "workspace_id:uuid!,data_mode:text!='prototype',item_ids:jsonb!,evaluated_at:timestamp with time zone!=now()",
   push_deliveries:
     "subscription_id:bigint!,item_id:text!,status:text!='pending',attempts:integer!=0,last_attempt_at:timestamp with time zone",
+  memberships:
+    "id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,role:text!,scope:jsonb!,granted_by:uuid!,granted_at:timestamp with time zone!=now(),expires_at:timestamp with time zone!,approved_by:uuid,approved_at:timestamp with time zone,revoked_by:uuid,revoked_at:timestamp with time zone",
+  break_glass:
+    "id:bigint!@,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,membership_id:uuid!,patient_id:text!,reason:text!,opened_at:timestamp with time zone!=now(),until:timestamp with time zone!",
 };
+
+/** The migration that created each table; a table missing from here has been there since 1. */
+const tableSince = {
+  push_subscriptions: 3,
+  push_baselines: 3,
+  push_deliveries: 3,
+  memberships: 8,
+  break_glass: 8,
+};
+
+const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
 
 function columns(spec) {
   return spec.split(",").map((value) => {
@@ -122,7 +142,30 @@ const checks = {
   ],
   push_baselines: ["data_mode = 'prototype'", "jsonb_typeof(item_ids) = 'array'"],
   push_deliveries: ["length(item_id) <= 200", "status = ANY (ARRAY['pending','sent','failed'])", "attempts >= 0"],
+  memberships: [
+    "data_mode = 'prototype'",
+    `role = ANY (${ACCESS_ROLES})`,
+    "jsonb_typeof(scope) = 'object' AND octet_length(scope::text) <= 4096",
+    "granted_by <> actor_id",
+    "expires_at > granted_at",
+    "approved_by <> granted_by AND approved_by <> actor_id",
+    "(approved_by IS NULL) = (approved_at IS NULL)",
+    "(revoked_by IS NULL) = (revoked_at IS NULL)",
+  ],
+  break_glass: [
+    "data_mode = 'prototype'",
+    "length(patient_id) <= 100",
+    "reason = ANY (ARRAY['handover','bed-search','transport-safety','other'])",
+    "until > opened_at",
+  ],
 };
+
+/** Migration 8 widened the audit role check and added the sender's place. */
+const auditChecksFrom8 = [
+  `actor_role = ANY (${ACCESS_ROLES})`,
+  "outcome = ANY (ARRAY['accepted','denied','stale'])",
+  "actor_scope IS NULL OR jsonb_typeof(actor_scope) = 'object'",
+];
 
 const primaryKeys = {
   migrations: ["version"],
@@ -132,6 +175,8 @@ const primaryKeys = {
   push_subscriptions: ["id"],
   push_baselines: ["workspace_id"],
   push_deliveries: ["subscription_id", "item_id"],
+  memberships: ["id"],
+  break_glass: ["id"],
 };
 
 const indexes = [
@@ -149,6 +194,10 @@ const indexes = [
   [3, "push_deliveries_pending", "push_deliveries", "subscription_id", false, "status = 'pending'"],
   [5, "commands_workspace_committed", "commands", "workspace_id, committed_at DESC", false],
   [5, "push_subscriptions_actor_active", "push_subscriptions", "workspace_id, actor_id", false, "revoked_at IS NULL"],
+  [8, "memberships_pkey", "memberships", "id", true],
+  [8, "memberships_actor_active", "memberships", "workspace_id, actor_id", false, "revoked_at IS NULL"],
+  [8, "break_glass_pkey", "break_glass", "id", true],
+  [8, "break_glass_actor", "break_glass", "workspace_id, actor_id, until DESC", false],
 ];
 
 const protectors = {
@@ -193,7 +242,7 @@ function expectedConstraints(version, tables) {
   const result = [];
   for (const table of tables) {
     result.push({ table, type: "p", keys: primaryKeys[table] });
-    for (const check of checks[table] ?? [])
+    for (const check of (version >= 8 && table === "audit" ? auditChecksFrom8 : checks[table]) ?? [])
       result.push({ table, type: "c", check: expression("CHECK (" + check + ")") });
   }
   for (const table of ["commands", "audit"])
@@ -203,7 +252,10 @@ function expectedConstraints(version, tables) {
     result.push({
       table: "workspaces",
       type: "c",
-      check: expression("CHECK (data_mode = ANY (ARRAY['prototype','live']))"),
+      // Migration 7 removed the never-used live label (D-55: synthetic data only).
+      check: expression(
+        version >= 7 ? "CHECK (data_mode = 'prototype')" : "CHECK (data_mode = ANY (ARRAY['prototype','live']))",
+      ),
     });
     for (const table of ["commands", "audit"])
       result.push({
@@ -235,17 +287,40 @@ function expectedConstraints(version, tables) {
       deletion: "c",
     });
   }
+  if (version >= 8) {
+    for (const table of ["memberships", "break_glass"])
+      result.push({
+        table,
+        type: "f",
+        keys: ["workspace_id", "data_mode"],
+        target: "workspaces",
+        foreign: ["id", "data_mode"],
+        deletion: "a",
+      });
+    result.push({
+      table: "break_glass",
+      type: "f",
+      keys: ["membership_id"],
+      target: "memberships",
+      foreign: ["id"],
+      deletion: "a",
+    });
+  }
   return result;
 }
 
 function verifyCatalog(catalog, version, runtimeRole) {
   if (!catalog.owner || [runtimeRole, "wardflow_backend", "anon", "authenticated"].includes(catalog.owner)) refuse();
-  const tables = Object.keys(tableColumns).filter((name) => version >= 3 || !name.startsWith("push_"));
+  const tables = Object.keys(tableColumns).filter((name) => version >= (tableSince[name] ?? 1));
+  const sequences = [
+    "audit_sequence_seq",
+    ...(version >= 3 ? ["push_subscriptions_id_seq"] : []),
+    ...(version >= 8 ? ["break_glass_id_seq"] : []),
+  ];
   const expectedObjects = [
     ...tables,
     ...indexes.filter(([minimum]) => version >= minimum).map(([, name]) => name),
-    "audit_sequence_seq",
-    ...(version >= 3 ? ["push_subscriptions_id_seq"] : []),
+    ...sequences,
   ].sort();
   if (!sameKeys(catalog.objects.map((object) => object.name).sort(), expectedObjects)) refuse();
   for (const object of catalog.objects) {
@@ -253,7 +328,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
       object.owner !== catalog.owner ||
       ["anon", "authenticated"].includes(object.owner) ||
       object.persistence !== "p" ||
-      object.rls ||
+      object.rls !== (version >= 6 && tables.includes(object.name)) ||
       object.force_rls ||
       object.inherited !== false
     )
@@ -263,6 +338,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
       const expected = columns(tableColumns[object.name]);
       if (version >= 2 && ["workspaces", "commands", "audit"].includes(object.name))
         expected.push(...columns("data_mode:text!='prototype'"));
+      if (version >= 8 && object.name === "audit") expected.push(...columns("actor_scope:jsonb"));
       verifyColumns(object.columns, expected);
     } else if (object.name.endsWith("_seq")) {
       if (object.kind !== "S") refuse();
@@ -272,6 +348,23 @@ function verifyCatalog(catalog, version, runtimeRole) {
       if (object.kind !== "i" || object.valid !== true || expression(object.definition) !== expression(expected))
         refuse();
     }
+  }
+  // Migration 6: one runtime-only policy per table, nothing else; before it, no policy at all.
+  const policies = version >= 6 ? tables : [];
+  if (catalog.policies.length !== policies.length) refuse();
+  const runtimeOnly = expression("(CURRENT_USER = 'wardflow_backend'::name)");
+  for (const table of policies) {
+    const policy = catalog.policies.find((p) => p.table_name === table);
+    if (
+      !policy ||
+      policy.name !== "runtime_only" ||
+      policy.permissive !== true ||
+      policy.command !== "*" ||
+      policy.roles !== "{0}" ||
+      expression(policy.qual) !== runtimeOnly ||
+      expression(policy.with_check) !== runtimeOnly
+    )
+      refuse();
   }
   const expected = expectedConstraints(version, tables);
   if (catalog.constraints.length !== expected.length) refuse();
@@ -330,11 +423,10 @@ function verifyCatalog(catalog, version, runtimeRole) {
     )
       refuse();
   }
-  const sequences = version >= 3 ? ["audit_sequence_seq", "push_subscriptions_id_seq"] : ["audit_sequence_seq"];
   if (catalog.sequences.length !== sequences.length) refuse();
   for (const name of sequences) {
     const sequence = catalog.sequences.find((s) => s.name === name);
-    const table = name === "audit_sequence_seq" ? "audit" : "push_subscriptions";
+    const table = name.replace(/_(?:sequence|id)_seq$/, "");
     const column = table === "audit" ? "sequence" : "id";
     if (
       !sequence ||
@@ -371,9 +463,11 @@ export async function verifyPostgresNamespace(pool, { runtimeRole = "wardflow_ba
     ["sequences", 64],
   ]))
     if (!Array.isArray(catalog[key]) || catalog[key].length > maximum) refuse();
-  for (const key of ["unknown_types", "rules", "policies", "extensions"]) if (catalog[key] !== 0) refuse();
+  if (!Array.isArray(catalog.policies) || catalog.policies.length > 64) refuse();
+  for (const key of ["unknown_types", "rules", "extensions"]) if (catalog[key] !== 0) refuse();
+  // Row-level security is checked against the version below; the owner reads the ledger either way.
   const migrations = catalog.objects.find((object) => object.name === "migrations");
-  if (!migrations || migrations.kind !== "r" || migrations.rls || migrations.force_rls) refuse();
+  if (!migrations || migrations.kind !== "r" || migrations.force_rls) refuse();
   verifyColumns(migrations.columns, columns(tableColumns.migrations));
   let versions;
   try {

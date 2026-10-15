@@ -25,15 +25,24 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
-  return { ...actual, useWardFlow: () => mockContext, useWardFlowClock: () => mockContext.now };
+  return {
+    ...actual,
+    useWardFlow: () => mockContext,
+    useWardFlowSelect: () => mockContext,
+    useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
+    useWardFlowClock: () => mockContext.now,
+  };
 });
 
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const seeded = seedWardFlowState();
 const UNLINKED = seeded.movements.find(
   (movement) => movement.patientId?.startsWith("PT-G-") && !movement.referralId && movement.stage !== "arrived",
@@ -57,8 +66,8 @@ describe("a movement linked to nobody says so", () => {
   it("really is linked to nobody, and was linked to a record before", () => {
     const state = { patients: seeded.patients, referrals: seeded.referrals, movements };
     const unlinked = movements.find((movement) => movement.id === UNLINKED.id);
-    expect(resolveSubjectPatient(unlinked, state).displayName).toBe("Unknown Patient");
-    expect(resolveSubjectPatient(UNLINKED, state).displayName).not.toBe("Unknown Patient");
+    expect(resolveSubjectPatient(unlinked, state).displayName).toBe("Name not recorded");
+    expect(resolveSubjectPatient(UNLINKED, state).displayName).not.toBe("Name not recorded");
   });
 
   it("patient search says an unrecorded age or sex is not recorded instead of guessing one", () => {
@@ -72,7 +81,7 @@ describe("a movement linked to nobody says so", () => {
   it("the handover row for that movement says the patient is unknown and the record number is not recorded", () => {
     const { container } = render(<HandoverPage />);
     const card = container.querySelector<HTMLElement>(`tr[data-row-id="${UNLINKED.id}"]`)!;
-    expect(card.textContent).toContain("Unknown Patient");
+    expect(card.textContent).toContain("Name not recorded");
     expect(card.textContent).toContain("UMRN not recorded");
   });
 });

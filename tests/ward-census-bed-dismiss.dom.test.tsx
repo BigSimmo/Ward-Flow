@@ -25,16 +25,17 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { CensusDetail } from "@/components/ward-management/search/patient-census-view";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
+import { SHEET_INERT_MARKER } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 beforeEach(() => {
   navigation.navigate = undefined;
   navigation.back.mockReset();
@@ -52,6 +53,7 @@ it("dismisses the Census modal when its ward-bed link is activated", async () =>
     movements: [],
     referrals: [],
     now: NOW_ANCHOR,
+    thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     dayZero: new Date("2026-10-01T00:00:00+08:00"),
   }).rows.find((item) => item.kind === "admission" && item.unitId && item.bedNumber !== undefined)!;
   expect(row).toBeDefined();
@@ -79,6 +81,7 @@ it("Escape returns from the Census-linked bed to its Ward bed link with no linge
     movements: [],
     referrals: [],
     now: NOW_ANCHOR,
+    thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     dayZero: new Date("2026-10-01T00:00:00+08:00"),
   }).rows.find((item) => item.kind === "admission" && item.unitId && item.bedNumber !== undefined)!;
   expect(row).toBeDefined();

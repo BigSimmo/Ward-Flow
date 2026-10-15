@@ -28,7 +28,7 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
       "src/components/ward-management/community/community-team-phone.module.css",
       "src/components/ward-management/ed/ed-board-controls.module.css",
       "src/components/ward-management/ed/ed.module.css",
-      "src/components/ward-management/tools/ward-mha-calculator.module.css",
+      "src/components/ward-management/tools/ward-tools-sheet.module.css",
       "src/components/ward-management/referrals/arrival-time-modal.module.css",
     ];
     for (const modPath of mobileInputModules) {
@@ -52,8 +52,8 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     expect(Number(overrideMinHeight?.[1])).toBeGreaterThanOrEqual(2.75);
     expect(shortlistCss).not.toMatch(/min-height:\s*2\.125rem/);
 
-    const v6Tokens = readCss("src/app/ward-flow-v6-tokens.css");
-    expect(v6Tokens).toMatch(/--wf-phone-pill-gap:\s*8px/);
+    const wfTokens = readCss("src/app/ward-flow-v9-tokens.css");
+    expect(wfTokens).toMatch(/--wf-phone-pill-gap:\s*8px/);
   });
 
   it("prevents 320px horizontal overflow when DOB filter is open in census.module.css", () => {
@@ -62,10 +62,10 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     expect(censusCss).toMatch(/\.searchForm:has\(\.dobSeg\)\s*\{[^}]*min-width:\s*min\(380px,\s*100%\)/);
   });
 
-  it("eliminates 11px font-size fallbacks in out-of-area-third-edition.module.css and referrals.module.css and expands collapsed rail controls to 2.75rem", () => {
-    const ooaCss = readCss("src/components/ward-management/out-of-area/out-of-area-third-edition.module.css");
+  // out-of-area-third-edition.module.css left this case on 15 Oct 2026: nothing imported it, so it
+  // was deleted (fix list 2.4). The live out-of-area sheets are in tests/ward-table-min-width.test.ts.
+  it("eliminates 11px font-size fallbacks in referrals.module.css and expands collapsed rail controls to 2.75rem", () => {
     const referralsCss = readCss("src/components/ward-management/referrals/referrals.module.css");
-    expect(ooaCss).not.toMatch(/font-size:\s*var\(--t-0,\s*11px\)/);
     expect(referralsCss).not.toMatch(/font-size:\s*var\(--t-0,\s*11px\)/);
 
     const railCss = readCss("src/components/ward-management/shell/ward-rail.module.css");

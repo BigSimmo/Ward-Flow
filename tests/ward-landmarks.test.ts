@@ -95,7 +95,6 @@ import { WardPatientWorkspace } from "@/components/ward-management/ward-manageme
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -285,7 +284,6 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
-  { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
   // Read-only reports, 9 Oct 2026 (stream C).
   { route: `${ROUTE_PREFIX}/statistics/weekly`, render: () => createElement(WeeklyReportScreen) },
   // The four statistics index pages, 9 Oct 2026 (Statistics A).

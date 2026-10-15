@@ -11,6 +11,7 @@ import {
   parseAddedLines,
   scanAddedLines,
   signOutConflicts,
+  signOutLogOptional,
   unsignedWardFiles,
 } from "../scripts/pre-commit-checks.mjs";
 
@@ -145,6 +146,18 @@ function added(file: string, ...lines: string[]) {
   return new Map([[file, lines.map((text, index) => ({ line: index + 1, text }))]]);
 }
 
+describe("signOutLogOptional", () => {
+  it("lets only an unnamed default log off Windows be absent", () => {
+    expect(signOutLogOptional({}, "linux")).toBe(true);
+    expect(signOutLogOptional({}, "darwin")).toBe(true);
+    expect(signOutLogOptional({}, "win32")).toBe(false);
+    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "/tmp/typo.md" }, "linux")).toBe(false);
+    expect(signOutLogOptional({ WARD_FLOW_LOGS: "/tmp/typo" }, "linux")).toBe(false);
+    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: "" }, "linux")).toBe(true);
+    expect(signOutLogOptional({ WARD_FLOW_LOGS: "" }, "win32")).toBe(false);
+  });
+});
+
 describe("identifier validators", () => {
   it("accepts a checksum-valid Medicare number and rejects the synthetic ones", () => {
     expect(isValidMedicare(VALID_MEDICARE.replace(/\s/g, "").slice(0, 10))).toBe(true);
@@ -275,6 +288,7 @@ describe("the hook script end to end", () => {
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     const file = "docs/ward-flow/probe.md";
     const signOutFile = join(root, "sign-out.md");
+    writeFileSync(signOutFile, "Open sign-outs only\n");
     const blocked = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain(`Ward files without your sign-out in ${signOutFile}`);
@@ -284,4 +298,37 @@ describe("the hook script end to end", () => {
     expect(passed.status).toBe(0);
     expect(passed.stderr).toContain("[pre-commit] ok");
   });
+
+  it("still blocks when an explicitly named sign-out log is missing", () => {
+    const root = repo();
+    execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+    const signOutFile = join(root, "absent", "sign-out.md");
+    const blocked = stageAndRun(root, "docs/ward-flow/probe.md", "synthetic probe\n", {
+      WARD_SIGNOUT_FILE: signOutFile,
+    });
+    expect(blocked.status).toBe(1);
+    expect(blocked.stderr).toContain(`Ward files without your sign-out in ${signOutFile}`);
+  });
+
+  it.skipIf(process.platform === "win32")(
+    "warns and skips the ownership check when the default log is absent off Windows",
+    () => {
+      const root = repo();
+      execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+      // Off Windows the default log is ~/ward-flow-logs/sign-out.md, so point HOME at the fixture.
+      const env: NodeJS.ProcessEnv = { ...process.env, HOME: root };
+      delete env.WARD_SIGNOUT_FILE;
+      delete env.WARD_FLOW_LOGS;
+      mkdirSync(join(root, "docs", "ward-flow"), { recursive: true });
+      writeFileSync(join(root, "docs/ward-flow/probe.md"), "synthetic probe\n");
+      execFileSync("git", ["add", "docs/ward-flow/probe.md"], { cwd: root });
+      const passed = spawnSync(process.execPath, [join(process.cwd(), "scripts", "pre-commit-checks.mjs")], {
+        cwd: root,
+        encoding: "utf8",
+        env,
+      });
+      expect(passed.status).toBe(0);
+      expect(passed.stderr).toContain(`sign-out guard skipped (no log at ${root}/ward-flow-logs/sign-out.md`);
+    },
+  );
 });

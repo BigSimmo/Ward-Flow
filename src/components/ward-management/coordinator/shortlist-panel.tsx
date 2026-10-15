@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useContext, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
@@ -34,12 +34,12 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
-  clockState,
   formatElapsed,
   formatInstantWithDay,
+  type Instant,
+  isClockBreached,
   minutesUntil,
   splitDuration,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
@@ -79,7 +79,11 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
-import { useWardFlow, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useOptionalWardFlowSelect,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -95,6 +99,9 @@ import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, fitKind, type FitKind } from "./home-fit";
+import { NextWardAfterRefusal } from "./next-ward-after-refusal";
+import { PreMatchCleaningNote } from "./prematch-cleaning-note";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
 
 /**
@@ -328,7 +335,7 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
   // The patient's name through the same resolver the Referral board uses, never the raw record id
   // (live walkthrough, 25 Sept 2026: this panel showed "PT-RD06" where the board showed a name).
   // A referral with no single linked patient says so plainly.
-  const { patients, referrals, movements } = useWardFlow();
+  const { patients, referrals, movements } = useWardFlowSelect("patients", "referrals", "movements");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
   const patientLabel = patientInfo.patient ? patientInfo.displayName : "Not recorded";
 
@@ -341,7 +348,7 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
         <div className={styles.shortlistHeaderTop}>
           <h3 className={`${styles.shortlistMovementId} ${shortlistStyles.subjectId}`}>
             <small>Referral</small>
-            {referral.id}
+            {patientInfo.umrn}
           </h3>
           <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={referral.urgency}>
             {urgencyTierLabel(referral.urgency)}
@@ -431,14 +438,16 @@ export function ShortlistPanel({
 }: ShortlistPanelProps) {
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. Called unconditionally,
   // ahead of the `if (!movement)` early return below, so the hook order stays fixed.
+  const thresholds = useDueSoonThresholds();
   const resolvePatientIdentity = usePatientOf();
   // Phone (v10 Home "Patient open"): a 2x2 facts card and less text. Desktop is unchanged.
   const isPhone = useIsPhone();
+  const nextWardOn = useWardFeatureFlag("top25-next-ward");
+  const preMatchCleaningOn = useWardFeatureFlag("top25-prematch-cleaning");
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
-  const flowContext = useContext(WardFlowContext);
+  const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId");
   const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
-  const flowSetRole = (flowContext as { setRole?: (role: WardFlowRole) => void } | null)?.setRole;
   const flowSetFocusMovementId = flowContext?.setFocusMovementId;
   const { run: runStep } = useUndoableStep({
     dispatch,
@@ -713,7 +722,7 @@ export function ShortlistPanel({
   // comment in ward-model.ts) — only the transport/transfer forms (4A/4C) still do, and none of
   // those are due in the past on today's fixture, so `legalBreached` is false today.
   const legalDueAt = movement.legalForm?.dueAt;
-  const legalBreached = legalDueAt !== undefined && clockState(legalDueAt, now) === "breached";
+  const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
 
   // The destination slot. An accepted unit and every outstanding referral are independent facts
   // a coordinator acts on differently (same reasoning `flow-diagram.tsx` already applies), so
@@ -818,7 +827,7 @@ export function ShortlistPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const { factors } = operationalScore(movement, now);
+  const { factors } = operationalScore(movement, now, thresholds);
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant
@@ -1280,7 +1289,6 @@ export function ShortlistPanel({
                       data-testid={`ward-shortlist-open-ward-desk-${acceptedUnit.id}`}
                       className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                       onClick={() => {
-                        flowSetRole?.("ward");
                         flowSetFocusMovementId?.(movementId);
                       }}
                     >
@@ -1386,7 +1394,6 @@ export function ShortlistPanel({
                     data-testid={`ward-shortlist-open-ward-desk-${unit.id}`}
                     className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                     onClick={() => {
-                      flowSetRole?.("ward");
                       flowSetFocusMovementId?.(movementId);
                     }}
                   >
@@ -2266,6 +2273,30 @@ export function ShortlistPanel({
             )}
           </details>
         );
+      })()}
+
+      {nextWardOn ? (
+        <NextWardAfterRefusal
+          movement={movement}
+          units={units}
+          now={now}
+          chosenUnitIds={referTargets}
+          slotsLeft={parallelReferralCap - liveUnitIds.length - referTargets.length}
+          onChoose={(unitId) => {
+            toggleReferTarget(unitId);
+            onSelectUnit(unitId);
+          }}
+        />
+      ) : null}
+
+      {(() => {
+        // Top 25 item 15: only the ward this patient is matched to (accepted) or offered to
+        // (explicitly selected), never the list's orientation default.
+        const matchedUnitId = movement.acceptedUnitId ?? selectedUnitId;
+        const matchedUnit = matchedUnitId ? units.find((unit) => unit.id === matchedUnitId) : undefined;
+        return preMatchCleaningOn && matchedUnit ? (
+          <PreMatchCleaningNote movement={movement} unit={matchedUnit} bedReleases={bedReleases} />
+        ) : null;
       })()}
 
       {/* Task 2: urgency and legal status can change mid-flight, each change recorded with who

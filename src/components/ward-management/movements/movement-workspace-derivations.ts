@@ -1,9 +1,11 @@
 import {
   clockState,
+  type DueSoonThresholds,
   formatInstantWithDay,
   formatRemaining,
-  minutesUntil,
   type Instant,
+  isClockBreached,
+  minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
@@ -105,7 +107,7 @@ export function legalFormReadinessLine(legalForm: LegalForm, now: Instant): stri
   const named = legalFormNameLabelFirst(legalForm);
   if (legalForm.dueAt === undefined) return `${named} · no deadline recorded`;
   const when = formatInstantWithDay(legalForm.dueAt, now);
-  if (clockState(legalForm.dueAt, now) === "breached") {
+  if (isClockBreached(legalForm.dueAt, now)) {
     return `${named} · due ${when} — ${formatRemaining(minutesUntil(legalForm.dueAt, now))}`;
   }
   return `${named} · due ${when}`;
@@ -321,6 +323,7 @@ export function attentionItems({
   movement,
   units,
   now,
+  thresholds,
   destination,
   open,
   blockerIsActive,
@@ -328,6 +331,7 @@ export function attentionItems({
   movement: Movement;
   units: Unit[];
   now: Instant;
+  thresholds: DueSoonThresholds;
   destination: Unit | undefined;
   open: boolean;
   blockerIsActive: boolean;
@@ -363,7 +367,7 @@ export function attentionItems({
 
   const deadline = movement.legalForm?.dueAt;
   if (movement.legalForm && deadline !== undefined) {
-    const state = clockState(deadline, now);
+    const state = clockState(deadline, now, thresholds);
     if (state === "breached") {
       items.push({
         key: "deadline",

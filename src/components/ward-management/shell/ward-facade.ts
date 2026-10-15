@@ -36,12 +36,21 @@
  * already resolved, so a figure computed here and a figure computed in a screen cannot be about two
  * different moments.
  */
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type {
+  BedRelease,
+  LeaveBed,
+  Movement,
+  Referral,
+  ReferralSource,
+  Site,
+  Unit,
+} from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * THE MOVEMENT VERDICT, RE-EXPORTED RATHER THAN WRAPPED.
@@ -111,10 +120,13 @@ export type ShellFigure = {
 export type ShellFigureInput = {
   readonly movements: Movement[];
   readonly units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  readonly sites: readonly Site[];
   readonly referrals: Referral[];
   readonly bedReleases: readonly BedRelease[];
   readonly leaveBeds: readonly LeaveBed[];
   readonly now: Instant;
+  readonly thresholds: DueSoonThresholds;
   readonly plannedAdmissions?: readonly PlannedAdmission[];
 };
 
@@ -149,10 +161,12 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
   const counts = wardNavCounts({
     movements: input.movements,
     units: input.units,
+    sites: input.sites,
     referrals: input.referrals,
     bedReleases: input.bedReleases,
     leaveBeds: input.leaveBeds,
     now: input.now,
+    thresholds: input.thresholds,
   });
 
   function required(key: "capacity" | "movements" | "delays" | "referrals"): ShellFigure {
@@ -201,7 +215,8 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
  * wrong.
  */
 export function patientHref(patientId: string): string {
-  return `/mockups/ward-flow/people/${encodeURIComponent(patientId)}`;
+  // D-39: the address carries a code, never the person's record number.
+  return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
 }
 
 /**
@@ -255,12 +270,12 @@ export function edHref(edId: string): string {
 
 /** One movement's record. See `patientHref` — same two reasons. */
 export function movementHref(movementId: string): string {
-  return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;
+  return `/mockups/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
 }
 
 /** One discharged stay, opened in the discharges board detail. The id is a synthetic admission id. */
 export function dischargeHref(admissionId: string): string {
-  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;
+  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;
 }
 
 /** Fixed shell destinations live beside the parameterised builders so chrome never retypes them. */
@@ -359,7 +374,6 @@ export function communityStatisticsHref(teamId: string): string {
  * GP referral source. So the type is no longer restated here — it is the model's own, quoted, and
  * anything this file can put in a link is something `Referral.source` can hold.
  */
-import type { ReferralSource } from "@/components/ward-management/ward-model";
 export type RaiseReferralTarget = {
   readonly patientId?: string;
   /** Where the referral comes from. Optional: the bar's "New referral" menu names only where it goes. */
@@ -396,7 +410,7 @@ export type RaiseReferralTarget = {
  */
 export function raiseReferralHref(target: RaiseReferralTarget): string {
   const query = new URLSearchParams();
-  if (target.patientId !== undefined) query.set("patientId", target.patientId);
+  if (target.patientId !== undefined) query.set("patientId", encodeRecordAddress(target.patientId));
   if (target.source !== undefined) query.set("source", target.source);
   if (target.refer !== undefined) query.set("refer", target.refer);
   if (target.originEdId !== undefined) query.set("originEdId", target.originEdId);

@@ -1,14 +1,15 @@
 "use client";
 
-import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
+  NAME_NOT_RECORDED,
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
   type ResolvedPatientInfo,
@@ -79,7 +80,7 @@ function getPatientDisplayName(
     return resolved.displayName;
   } catch {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    return movement.id ? "Unknown Patient" : "Name not recorded";
+    return NAME_NOT_RECORDED;
   }
 }
 
@@ -101,7 +102,7 @@ export function WardNotificationCenter({
 }: WardNotificationCenterProps) {
   // Read the provider when present (the ward screen); a bare render (component tests) has none, and
   // the resolver then falls back exactly as before.
-  const context = useContext(WardFlowContext);
+  const context = useOptionalWardFlowSelect("resolvePatientIdentity", "patients");
   const resolveIdentity = context?.resolvePatientIdentity;
   const effectivePatients = patients ?? context?.patients;
   // D-39: notices name the patient by UMRN. Inside the provider that comes from its identity
@@ -198,7 +199,6 @@ export function WardNotificationCenter({
     // read out bare (expected red #1, announced figures carry their marker). No visible change.
     <section
       className={`${styles.panel} ${hasUrgentBuzz ? styles.urgentBuzzPulse : ""}`}
-      role="region"
       aria-label={`Ward notification and buzzer centre for ${unitName}`}
       aria-live="polite"
       data-testid="ward-notification-center"
@@ -240,6 +240,7 @@ export function WardNotificationCenter({
           )}
         </div>
 
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div role="tablist" aria-label="Notification filters" className={styles.tabList} onKeyDown={handleTabKeyDown}>
           {TABS.map((tab, index) => {
             const isSelected = activeTab === tab.id;
@@ -452,5 +453,3 @@ export function WardNotificationCenter({
     </section>
   );
 }
-
-export default WardNotificationCenter;

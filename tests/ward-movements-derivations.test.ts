@@ -31,6 +31,7 @@ import {
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
 /** A safe, independent copy of a real fixture movement — never a mutation of the shared
@@ -50,13 +51,13 @@ describe("journeyStages", () => {
   });
 
   it("returns exactly one entry per MOVEMENT_STAGES member, in that order, each id appearing once", () => {
-    const stages = journeyStages(wardMovements, NOW);
+    const stages = journeyStages(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(stages.map((stage) => stage.id)).toEqual(MOVEMENT_STAGES);
     expect(new Set(stages.map((stage) => stage.id)).size).toBe(MOVEMENT_STAGES.length);
   });
 
   it("counts every movement exactly once across the stages, so a heading count is people, never a double count", () => {
-    const stages = journeyStages(wardMovements, NOW);
+    const stages = journeyStages(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const total = stages.reduce((sum, stage) => sum + stage.movements.length, 0);
     expect(total).toBe(wardMovements.length);
     for (const stage of stages) {
@@ -73,7 +74,7 @@ describe("journeyStages", () => {
     ).toBeGreaterThan(0);
 
     const withoutHandoverReady = wardMovements.filter((movement) => movement.stage !== "handover_ready");
-    const stages = journeyStages(withoutHandoverReady, NOW);
+    const stages = journeyStages(withoutHandoverReady, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const group = stages.find((stage) => stage.id === "handover_ready");
     expect(group, "handover_ready is missing from the output entirely, not merely empty").toBeDefined();
     expect(group?.movements).toEqual([]);
@@ -86,7 +87,9 @@ describe("journeyStages", () => {
     // NOW_ANCHOR (measured directly: the only dueAt-bearing movements in this fixture, WF-004,
     // WF-006, WF-011, WF-014, are all "clear" or "due", and none is at placement_requested), so
     // this stage's order isolates the wait-only rule from the legal-authority exception.
-    const stage = journeyStages(wardMovements, NOW).find((entry) => entry.id === "placement_requested");
+    const stage = journeyStages(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS).find(
+      (entry) => entry.id === "placement_requested",
+    );
     expect(stage?.movements.length, "no placement_requested movement in the fixture").toBeGreaterThan(1);
     const openedAts = stage!.movements.map((movement) => movement.openedAt);
     for (let i = 1; i < openedAts.length; i += 1) {
@@ -111,7 +114,9 @@ describe("journeyStages", () => {
     urgent.stage = "pulled";
 
     const others = wardMovements.filter((movement) => movement.stage === "pulled" && movement.id !== "WF-004");
-    const stage = journeyStages([...others, urgent], NOW).find((entry) => entry.id === "pulled");
+    const stage = journeyStages([...others, urgent], NOW, DEFAULT_DUE_SOON_THRESHOLDS).find(
+      (entry) => entry.id === "pulled",
+    );
     expect(stage?.movements[0]?.id).toBe(urgent.id);
     // And WF-311, the real longest wait, is still second — the urgency exception does not disturb
     // the ordering of everyone it does not apply to.
@@ -161,13 +166,13 @@ describe("transportLegs", () => {
   });
 
   it("returns exactly one leg per movement whose transport job has actually been accepted", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const expectedIds = [...EXPECTED_ACCEPTED_IDS, ...EXPECTED_COLLECTED_IDS, ...EXPECTED_ARRIVED_IDS].sort();
     expect(legs.map((leg) => leg.movement.id).sort()).toEqual(expectedIds);
   });
 
   it("carries transportLeg's own leg name onto every row, matching a hand-checked bucketing", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const byId = new Map(legs.map((leg) => [leg.movement.id, leg]));
     for (const id of EXPECTED_ACCEPTED_IDS) expect(byId.get(id)?.state, id).toBe("Accepted");
     for (const id of EXPECTED_COLLECTED_IDS) expect(byId.get(id)?.state, id).toBe("Collected");
@@ -183,7 +188,7 @@ describe("transportLegs", () => {
    * including one added to the fixture later.
    */
   it("never decides a leg for itself — every row's state is transportLeg's own answer for that job", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(legs.length, "no legs to compare — this check would be vacuous").toBeGreaterThan(0);
     for (const leg of legs) {
       expect(leg.state, leg.movement.id).toBe(transportLeg(leg.movement.transport));
@@ -215,11 +220,11 @@ describe("transportLegs", () => {
     expect(transportLeg(cancelledUnaccepted.transport)).toBe("Cancelled");
     expect(cancelledUnaccepted.transport.acceptedAt).toBeUndefined();
 
-    expect(transportLegs([cancelledUnaccepted], NOW)).toEqual([]);
+    expect(transportLegs([cancelledUnaccepted], NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toEqual([]);
   });
 
   it("sets bookedAt to the job's own acceptedAt, and minutesSinceBooked to now minus that, on every leg", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     for (const leg of legs) {
       const acceptedAt = leg.movement.transport?.acceptedAt;
       expect(acceptedAt, leg.movement.id).toBeDefined();
@@ -229,7 +234,7 @@ describe("transportLegs", () => {
   });
 
   it("carries the job's own provider onto the leg, unchanged", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     for (const leg of legs) {
       expect(leg.provider, leg.movement.id).toBe(leg.movement.transport?.provider);
       expect(TRANSPORT_PROVIDERS, leg.movement.id).toContain(leg.provider);
@@ -251,13 +256,13 @@ describe("transportLegs", () => {
       estimatedAt: 0,
     };
 
-    const legs = transportLegs([requestedOnly], NOW);
+    const legs = transportLegs([requestedOnly], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(legs).toEqual([]);
 
     // And it does not suppress its neighbours when mixed in with real, accepted jobs.
-    const mixed = transportLegs([requestedOnly, ...wardMovements], NOW);
+    const mixed = transportLegs([requestedOnly, ...wardMovements], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(mixed.some((leg) => leg.movement.id === requestedOnly.id)).toBe(false);
-    expect(mixed.length).toBe(transportLegs(wardMovements, NOW).length);
+    expect(mixed.length).toBe(transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS).length);
   });
 
   it("puts an expiring legal authority ahead of a much longer time since booking (design lock §5.4)", () => {
@@ -270,14 +275,14 @@ describe("transportLegs", () => {
     urgent.id = "WF-015-SYNTH-CRITICAL";
     urgent.legalForm = { code: "4C", dueAt: NOW + 30 };
 
-    const legs = transportLegs([longAgoBooked, urgent], NOW);
+    const legs = transportLegs([longAgoBooked, urgent], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(legs.map((leg) => leg.movement.id)).toEqual([urgent.id, longAgoBooked.id]);
   });
 });
 
 describe("transportCounts", () => {
   it("tallies exactly the legs it is given, with every producible state present even at zero", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const counts = transportCounts(legs);
     expect(Object.keys(counts).sort()).toEqual(["Accepted", "Arrived", "Cancelled", "Collected", "En route"]);
     expect(counts.Accepted + counts["En route"] + counts.Collected + counts.Arrived + counts.Cancelled).toBe(
@@ -293,12 +298,12 @@ describe("transportCounts", () => {
    * fill. `MovementLegState` excludes it with `Exclude`; put it back and this goes red.
    */
   it("has no Requested bucket, because no row on this screen can ever be in it", () => {
-    const counts = transportCounts(transportLegs(wardMovements, NOW));
+    const counts = transportCounts(transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS));
     expect(Object.keys(counts)).not.toContain("Requested");
   });
 
   it("matches an independent count of each state, and En route and Cancelled are honestly zero here", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const independent: Record<MovementLegState, number> = {
       Accepted: 0,
       "En route": 0,
@@ -331,7 +336,7 @@ describe("transportCounts", () => {
       acceptedAt: NOW - 30,
       enRouteAt: NOW - 10,
     };
-    const legs = transportLegs([enRoute], NOW);
+    const legs = transportLegs([enRoute], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(legs).toHaveLength(1);
     expect(legs[0].state).toBe("En route");
     expect(transportCounts(legs)["En route"]).toBe(1);
@@ -350,14 +355,14 @@ describe("transportCounts", () => {
       acceptedAt: NOW - 20,
       cancelledAt: NOW - 5,
     };
-    const legs = transportLegs([cancelled], NOW);
+    const legs = transportLegs([cancelled], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(legs).toHaveLength(1);
     expect(legs[0].state).toBe("Cancelled");
     expect(transportCounts(legs).Cancelled).toBe(1);
   });
 
   it("never recomputes from a movements list independently — it only reads the legs handed to it", () => {
-    const legs = transportLegs(wardMovements, NOW);
+    const legs = transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const totalBefore = Object.values(transportCounts(legs)).reduce((sum, count) => sum + count, 0);
     expect(totalBefore).toBe(legs.length);
     // A shorter, hand-picked slice must produce a proportionally smaller total, never the full-list
@@ -619,7 +624,7 @@ describe("how long a movement has waited", () => {
     };
 
     expect(
-      byLongestWait([longClosed, shortOpen], NOW).map((movement) => movement.id),
+      byLongestWait([longClosed, shortOpen], NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((movement) => movement.id),
       "the closed movement opened far earlier but waited 10 minutes; ordering by now-openedAt puts it first",
     ).toEqual(["WF-SHORT-OPEN", "WF-LONG-CLOSED"]);
   });
@@ -630,7 +635,7 @@ describe("how long a movement has waited", () => {
       id: "WF-CLOSED",
       closure: { at: NOW - 80, outcome: "did_not_proceed", reason: "Left before transport" },
     };
-    expect(byLongestWait([{ ...base }, closed], NOW)).toHaveLength(2);
+    expect(byLongestWait([{ ...base }, closed], NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toHaveLength(2);
   });
 
   /**
@@ -649,7 +654,7 @@ describe("how long a movement has waited", () => {
     };
 
     expect(
-      byLongestWait([longWait, expiring], NOW).map((movement) => movement.id),
+      byLongestWait([longWait, expiring], NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((movement) => movement.id),
       "the expiring legal authority waited 10 minutes against 900 and must still come first",
     ).toEqual(["WF-EXPIRING", "WF-LONG"]);
   });
@@ -657,7 +662,13 @@ describe("how long a movement has waited", () => {
   it("is a stable total order, so an unchanged state cannot reshuffle the list", () => {
     const a: Movement = { ...base, id: "WF-A" };
     const b: Movement = { ...base, id: "WF-B" };
-    expect(byLongestWait([b, a], NOW).map((movement) => movement.id)).toEqual(["WF-A", "WF-B"]);
-    expect(byLongestWait([a, b], NOW).map((movement) => movement.id)).toEqual(["WF-A", "WF-B"]);
+    expect(byLongestWait([b, a], NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((movement) => movement.id)).toEqual([
+      "WF-A",
+      "WF-B",
+    ]);
+    expect(byLongestWait([a, b], NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((movement) => movement.id)).toEqual([
+      "WF-A",
+      "WF-B",
+    ]);
   });
 });

@@ -56,6 +56,7 @@ function wardsInScope(state: WardFlowState, scope: BroadcastAlert["targetScope"]
  * - DISPATCH_BROADCAST_ALERT
  * - ACKNOWLEDGE_BROADCAST_ALERT
  * - STAND_DOWN_BROADCAST_ALERT
+ * - EXTEND_BROADCAST_ALERT (Top 25 item 25)
  * - RAISE_PULL_NOW and REPLY_BROADCAST_ALERT (global alerts, 10 Oct 2026)
  */
 export function reduceBroadcastAlertEvent(
@@ -204,6 +205,21 @@ export function reduceBroadcastAlertEvent(
         ...state,
         broadcastAlerts: updatedAlerts,
       };
+    }
+
+    case "EXTEND_BROADCAST_ALERT": {
+      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
+      const target = existingAlerts.find((a: BroadcastAlert) => a.id === event.alertId);
+      if (!target) {
+        return reject(state, event, `EXTEND_BROADCAST_ALERT alertId ${event.alertId} not found`);
+      }
+      // An ended alert stays ended: a stood down or lapsed alert is raised again, not extended.
+      if (!isAlertActive(target, event.now)) {
+        return reject(state, event, `EXTEND_BROADCAST_ALERT alertId ${event.alertId} is no longer active`);
+      }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return extendBroadcastAlert(state, target.id, event.now, DEFAULT_BROADCAST_EXTENSION_MINUTES);
     }
 
     case "RAISE_PULL_NOW": {

@@ -20,6 +20,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
 /**
@@ -253,7 +254,7 @@ describe("the group split reads the record, never the form code", () => {
 describe("legalFormRowClassification (the visibly-different-row requirement)", () => {
   it("gives a breached deadline danger tone and a naming chip", () => {
     const movement = synthetic({ legalForm: { code: "4C", kind: "transfer", dueAt: NOW - 10 } });
-    const classification = legalFormRowClassification(movement, NOW);
+    const classification = legalFormRowClassification(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(classification.tone).toBe("danger");
     expect(classification.chip).toEqual({ level: "urgent", text: "Form expiry passed" });
     expect(classification.reasonLevel).toBe("danger");
@@ -261,7 +262,7 @@ describe("legalFormRowClassification (the visibly-different-row requirement)", (
 
   it("gives an unrecorded clock-bearing gap warning tone and a DIFFERENT chip from a breach", () => {
     const movement = synthetic({ legalForm: { code: "4A", kind: "transport" } });
-    const classification = legalFormRowClassification(movement, NOW);
+    const classification = legalFormRowClassification(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(classification.tone).toBe("warning");
     expect(classification.chip).toEqual({ level: "stalled", text: "No deadline recorded" });
     // ⚠️ The chip may not say anything about the TYPE. This branch fires only for 4A/4C, which DO
@@ -274,7 +275,7 @@ describe("legalFormRowClassification (the visibly-different-row requirement)", (
 
   it("gives a structurally clockless form neutral tone and NO chip — the only case WardRecordRow allows one", () => {
     const movement = synthetic({ legalForm: { code: "1A", kind: "examination" } });
-    const classification = legalFormRowClassification(movement, NOW);
+    const classification = legalFormRowClassification(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(classification.tone).toBe("neutral");
     expect(classification.chip).toBeUndefined();
     expect(classification.reasonLevel).toBe("ok");
@@ -282,7 +283,7 @@ describe("legalFormRowClassification (the visibly-different-row requirement)", (
 
   it("gives a real, not-yet-due deadline neutral tone and no chip too — only a breach or a gap earns one", () => {
     const movement = synthetic({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 500 } });
-    const classification = legalFormRowClassification(movement, NOW);
+    const classification = legalFormRowClassification(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(classification.tone).toBe("neutral");
     expect(classification.chip).toBeUndefined();
   });
@@ -316,23 +317,37 @@ describe("legalFormBreakdown (cannot disagree structurally with the rows it desc
 describe("legal expiry reminders (item 13 synthetic demo, typed expiries only)", () => {
   it("reminds inside the Settings warning windows and nowhere else", () => {
     const at = (offset: number) => synthetic({ legalForm: { code: "3A", kind: "detention", dueAt: NOW + offset } });
-    expect(legalExpiryReminderOf(at(30), NOW)).toBe("within-urgent");
-    expect(legalExpiryReminderOf(at(120), NOW)).toBe("within-soon");
-    expect(legalExpiryReminderOf(at(500), NOW)).toBeUndefined();
+    expect(legalExpiryReminderOf(at(30), NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("within-urgent");
+    expect(legalExpiryReminderOf(at(120), NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("within-soon");
+    expect(legalExpiryReminderOf(at(500), NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBeUndefined();
     // A passed expiry is the breach row, not a reminder.
-    expect(legalExpiryReminderOf(at(-5), NOW)).toBeUndefined();
+    expect(legalExpiryReminderOf(at(-5), NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBeUndefined();
     // No typed expiry means no reminder: nothing is ever computed from the form code.
-    expect(legalExpiryReminderOf(synthetic({ legalForm: { code: "1A", kind: "examination" } }), NOW)).toBeUndefined();
+    expect(
+      legalExpiryReminderOf(
+        synthetic({ legalForm: { code: "1A", kind: "examination" } }),
+        NOW,
+        DEFAULT_DUE_SOON_THRESHOLDS,
+      ),
+    ).toBeUndefined();
   });
 
   it("gives a row inside a window a warning chip that names the window", () => {
-    const urgent = legalFormRowClassification(synthetic({ legalForm: { code: "3A", dueAt: NOW + 30 } }), NOW);
+    const urgent = legalFormRowClassification(
+      synthetic({ legalForm: { code: "3A", dueAt: NOW + 30 } }),
+      NOW,
+      DEFAULT_DUE_SOON_THRESHOLDS,
+    );
     expect(urgent).toEqual({
       tone: "warning",
       chip: { level: "urgent", text: "Expires within 1h" },
       reasonLevel: "warning",
     });
-    const soon = legalFormRowClassification(synthetic({ legalForm: { code: "3A", dueAt: NOW + 120 } }), NOW);
+    const soon = legalFormRowClassification(
+      synthetic({ legalForm: { code: "3A", dueAt: NOW + 120 } }),
+      NOW,
+      DEFAULT_DUE_SOON_THRESHOLDS,
+    );
     expect(soon.chip).toEqual({ level: "stalled", text: "Expires within 3h" });
   });
 
@@ -343,7 +358,7 @@ describe("legal expiry reminders (item 13 synthetic demo, typed expiries only)",
       synthetic({ id: "WF-R3", legalForm: { code: "4C", kind: "transfer", dueAt: NOW + 150 } }),
       synthetic({ id: "WF-R4", legalForm: { code: "3A", dueAt: NOW + 30 }, stage: "arrived" }),
     ];
-    const summary = legalExpiryReminderSummary(movements, NOW);
+    const summary = legalExpiryReminderSummary(movements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(summary).toEqual({ withinUrgent: 1, withinSoon: 2, urgentHours: 1, soonHours: 3 });
     const text = legalExpiryReminderText(summary);
     expect(text).toContain("Synthetic demo reminder: 3 recorded form expiries are close (1 within 1h, 2 within 3h).");

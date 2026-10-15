@@ -11,6 +11,7 @@ import { journeyStages } from "@/components/ward-management/movements/movements-
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * TASK D1 — the Delays screen's panel names must read exactly as the approved Delays page mockup
  * (October 2026) draws them (it superseded `docs/ward-flow/mockups/delays-third-edition.html`, which
@@ -278,7 +279,7 @@ describe("D3's cross-screen sentence — the property it claims, not the words i
   });
 
   it("half 1 — the Movement screen's stage grouping keeps a closed movement (owner ruling, 2026-09-05)", () => {
-    const stages = journeyStages([STILL_OPEN, CLOSED], NOW);
+    const stages = journeyStages([STILL_OPEN, CLOSED], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const group = stages.find((stage) => stage.id === "accepted_awaiting_bed");
     expect(group, "no group for the fixture's stage — the grouping changed shape").toBeDefined();
     expect(
@@ -289,7 +290,7 @@ describe("D3's cross-screen sentence — the property it claims, not the words i
   });
 
   it("half 2 — this screen's waiting population excludes it", () => {
-    const grouped = delayGroups([STILL_OPEN, CLOSED], allUnits(), NOW).flatMap((group) =>
+    const grouped = delayGroups([STILL_OPEN, CLOSED], allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS).flatMap((group) =>
       group.movements.map((movement) => movement.id),
     );
     expect(

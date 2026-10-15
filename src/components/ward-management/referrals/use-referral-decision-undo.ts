@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useOptionalToast } from "@/components/wf";
 
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import type { WardFlowRole } from "../ward-flow-roles";
 import { UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { roleLimitReason } from "../ward-role-permissions";
@@ -20,7 +20,7 @@ type Watch =
  * `UNDO_REFERRAL_DECISION` and, if the engine refuses it, the toast says why.
  */
 export function useReferralDecisionUndo(role: WardFlowRole, actingUnitId?: string) {
-  const { dispatch, rejections, referrals } = useWardFlow();
+  const { dispatch, rejections, referrals } = useWardFlowSelect("dispatch", "rejections", "referrals");
   const now = useWardFlowClock();
   const toast = useOptionalToast();
   const watchRef = useRef<Watch | null>(null);

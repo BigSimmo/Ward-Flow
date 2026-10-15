@@ -100,6 +100,23 @@ const PATIENT_LINK_READ =
  * the two pre-existing entries; the other four are the plumbing this task adds, not a screen.
  */
 const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
+  // Role access plan, D-59 (Josh, 15 Oct 2026). These read the link to keep patients OUT of a desk's
+  // view: the scope narrows what a ward, ED or team learns and never adds a history it lacked.
+  {
+    file: "ward-access-scope.ts",
+    reason:
+      "D-59 scoping: collects the patients linked to the desk's own movements, stays and referrals so every other patient is removed before any screen reads the workspace.",
+  },
+  {
+    file: "shell/ward-access.tsx",
+    reason:
+      "D-59 gate: traces a movement address to its person so the closed page and break glass name one person, and refuses edits to a person seen only through break glass.",
+  },
+  {
+    file: "shell/ward-access-store.ts",
+    reason:
+      "D-59 break glass record: holds the one person a desk opened outside its care, in memory only, for the coordinator's review.",
+  },
   // Clinical pages audit fixes, 13 Oct 2026 (Josh approved the fixes; this boundary is flagged to
   // him on PR #267 for confirmation). Each reads one person's own link only, never a history.
   {
@@ -111,6 +128,19 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
     file: "ed/ed-screen.tsx",
     reason:
       "Audit A2-1: Raise referral starts from a found person (draft.patientId) instead of filing an Unknown Patient, and the ED row reads its own patient's open ward referral via ed-bed-search-step.",
+  },
+  // Fix list 2.5 and 9.6 (15 Oct 2026): ed-screen.tsx was split into sibling files with no change
+  // to behaviour. These two hold reads that were already in ed-screen.tsx under the Audit A2-1
+  // entry above, moved unchanged. They are not new readers and read nothing more than before.
+  {
+    file: "ed/ed-screen-raise-section.tsx",
+    reason:
+      "Audit A2-1, moved unchanged from ed-screen.tsx: the Raise into a movement form shows and edits the found person on its own draft (draft.patientId).",
+  },
+  {
+    file: "ed/ed-screen-inbox.tsx",
+    reason:
+      "Audit A2-1, moved unchanged from ed-screen.tsx: Raise into a movement from an inbox referral copies that one referral's own person (referral.patientId) into the draft.",
   },
   {
     file: "referrals/accepted-ward-referral.ts",
@@ -256,10 +286,37 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
     reason: "Owner mandate 2026-09-21: clinical handover sheet displays patient name and UMRN for each active journey.",
   },
   {
+    file: "ward-referral-visibility.ts",
+    reason:
+      "Owner's choice, 15 Oct 2026 (decision card, Engine safety thread): the community team page reads " +
+      "the community-scoped projection, so that projection copies the referral's own patient link across " +
+      "by name. One referral's own person, for community-screen.tsx above, never another destination.",
+  },
+  {
     file: "community/community-screen.tsx",
     reason:
       "Community team hub: resolves and displays patient identity for active community care and referral episodes.",
   },
+  // Fix list 2.5 and 9.6 (15 Oct 2026): `community-screen.tsx` was split into sections and hooks as a
+  // pure refactor. These are the parts of it that carry its reads, named one by one so a new file
+  // still has to be added here on purpose. Each entry is void if the file is rendered by anything
+  // other than the community team screen.
+  ...[
+    "community/community-screen-helpers.ts",
+    "community/community-screen-panels.tsx",
+    "community/community-screen-phone.tsx",
+    "community/community-screen-waiting-tab.tsx",
+    "community/community-screen-in-bed-tab.tsx",
+    "community/community-screen-back-tab.tsx",
+    "community/community-screen-caseload-tab.tsx",
+    "community/community-screen-drawer.tsx",
+  ].map((file) => ({
+    file,
+    reason:
+      "Split out of community/community-screen.tsx (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor: " +
+      "the same patient identity reads that entry above is allowed, moved with their markup, and rendered " +
+      "only by that screen.",
+  })),
   {
     file: "patients/patient-now-adapter.ts",
     reason:
@@ -310,7 +367,11 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(25);
+    // 25 → 26 on 2026-10-15: ward-referral-visibility.ts, the community projection the team page now reads.
+    // 29 → 39 on 2026-10-15: fix list 2.5 and 9.6 split ed-screen.tsx and community-screen.tsx into
+    // sections. No new reader: the same A2-1 reads moved, two into ED parts and eight into community
+    // parts, each named beside its entry.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(39);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

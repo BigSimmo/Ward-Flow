@@ -17,7 +17,7 @@ import { delayGroups, legalDeadlineMinutes } from "@/components/ward-management/
 import { clockStanding, isActNow } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { bedGlyphTone } from "@/components/ward-management/ward/ward-beds-matrix";
 import { activeActNowItems, taskItems } from "@/components/ward-management/ward-act-now-items";
-import { clockState } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -44,24 +44,30 @@ function movement(overrides: Partial<Movement>): Movement {
 describe("one time-left rule for legal forms (A3-3, A3-4)", () => {
   it("is act now at exactly the first warning on Forms and Delays alike", () => {
     const due = movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 60 } });
-    expect(clockState(NOW + 60, NOW)).toBe("critical");
-    expect(clockStanding(due, NOW)).toBe("urgent");
-    expect(isActNow(clockStanding(due, NOW))).toBe(true);
-    expect(dueTone(60)).toBe("danger");
-    expect(isDueSoon({ dueIn: 60 } as BoardRow)).toBe(true);
-    expect(clockState(NOW + 61, NOW)).toBe("due");
-    expect(clockState(NOW + 180, NOW)).toBe("due");
-    expect(clockState(NOW + 181, NOW)).toBe("clear");
+    expect(clockState(NOW + 60, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("critical");
+    expect(clockStanding(due, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("urgent");
+    expect(isActNow(clockStanding(due, NOW, DEFAULT_DUE_SOON_THRESHOLDS))).toBe(true);
+    expect(dueTone(60, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("danger");
+    expect(isDueSoon({ dueIn: 60 } as BoardRow, DEFAULT_DUE_SOON_THRESHOLDS)).toBe(true);
+    expect(clockState(NOW + 61, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("due");
+    expect(clockState(NOW + 180, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("due");
+    expect(clockState(NOW + 181, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("clear");
   });
 
   it("gives the Patient page the same time left and expiry the Forms page shows", () => {
     const due = movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 60 } });
-    const left = formTimeLeft(due, NOW)!;
+    const left = formTimeLeft(due, NOW, DEFAULT_DUE_SOON_THRESHOLDS)!;
     expect(left).toMatchObject({ code: "Form 4A", text: "1h 00m left", at: "11:42", actNow: true });
-    expect(formTimeLeft(movement({ legalForm: { code: "3B", kind: "detention" } }), NOW)).toBeUndefined();
-    expect(formTimeLeft(movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW - 37 } }), NOW)?.text).toBe(
-      "37m past",
-    );
+    expect(
+      formTimeLeft(movement({ legalForm: { code: "3B", kind: "detention" } }), NOW, DEFAULT_DUE_SOON_THRESHOLDS),
+    ).toBeUndefined();
+    expect(
+      formTimeLeft(
+        movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW - 37 } }),
+        NOW,
+        DEFAULT_DUE_SOON_THRESHOLDS,
+      )?.text,
+    ).toBe("37m past");
   });
 });
 
@@ -119,10 +125,10 @@ describe("form moves on after examination or arrival (S-6)", () => {
     expect(currentLegalDueAt(ended)).toBeUndefined();
     expect(isLegalDeadlineBreached(ended, NOW)).toBe(false);
     expect(legalFormGroupOf(ended)).toBe("no-deadline");
-    expect(clockStanding(ended, NOW)).toBe("none");
-    expect(formTimeLeft(ended, NOW)).toBeUndefined();
+    expect(clockStanding(ended, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("none");
+    expect(formTimeLeft(ended, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBeUndefined();
     expect(legalDeadlineMinutes(ended, NOW)).toBeUndefined();
-    const cause = delayGroups([ended], seedWardFlowStateAt(0).units, NOW).find((group) =>
+    const cause = delayGroups([ended], seedWardFlowStateAt(0).units, NOW, DEFAULT_DUE_SOON_THRESHOLDS).find((group) =>
       group.movements.some((row) => row.id === ended.id),
     )?.cause;
     expect(cause).not.toBe("legal_breached");

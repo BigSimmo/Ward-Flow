@@ -936,7 +936,7 @@
 @media (max-width: 48rem) {
   .search {
     min-height: 44px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .phoneServices :global([role="radiogroup"]) {
@@ -953,7 +953,7 @@
     min-height: 44px;
     padding: 0 12px;
     border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     font: 600 var(--wf-fs-12) / 1 var(--wf-font);
@@ -1123,7 +1123,7 @@
   width: 44px;
   height: 44px;
   min-height: 44px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .phoneViewRow {

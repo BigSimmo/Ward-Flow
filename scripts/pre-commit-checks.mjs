@@ -32,7 +32,9 @@
  * Also: a clash guard. Staged files that another branch has signed out in the
  * shared sign-out file (D:/Repos/ward-flow-logs/sign-out.md,
  * "## Active sign-outs" lines `- date | who | branch | worktree | files`) block
- * the commit and name the owner. Missing file = no check.
+ * the commit and name the owner. A missing file is treated as an empty log
+ * (fail closed) on Windows or when WARD_SIGNOUT_FILE names it; elsewhere the
+ * default log is optional, so a missing one gives a notice and no check.
  *
  * Escapes, in order of preference:
  *   - a line containing `precommit-scan: allow` is skipped by the scan
@@ -43,6 +45,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -55,7 +58,31 @@ const ALLOW_MARKER = "precommit-scan: allow";
 // Pure helpers (exported for tests)
 // ---------------------------------------------------------------------------
 
-const SIGN_OUT_FILE = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
+// Inline copy of scripts/ward-flow/logs-root.mjs (tests copy this script alone into fixtures):
+// WARD_SIGNOUT_FILE, else WARD_FLOW_LOGS, else D:/Repos/ward-flow-logs on Windows and
+// ~/ward-flow-logs elsewhere.
+const SIGN_OUT_FILE =
+  process.env.WARD_SIGNOUT_FILE ||
+  path
+    .join(
+      process.env.WARD_FLOW_LOGS ||
+        (process.platform === "win32" ? "D:/Repos/ward-flow-logs" : path.join(os.homedir(), "ward-flow-logs")),
+      "sign-out.md",
+    )
+    .replace(/\\/g, "/");
+
+/**
+ * The shared log lives on Josh's Windows machine. Only an unnamed default log off Windows (a cloud
+ * container, a Linux or macOS clone) may be absent without blocking. An explicit WARD_SIGNOUT_FILE
+ * or WARD_FLOW_LOGS, or a Windows default that cannot be found still fails closed, so a typo or an unmounted drive
+ * never switches the guard off.
+ * @param {Record<string, string | undefined>} [env]
+ * @param {string} [platform]
+ */
+export function signOutLogOptional(env = process.env, platform = process.platform) {
+  // Empty values count as unset, matching the || fallbacks in SIGN_OUT_FILE above.
+  return !env.WARD_SIGNOUT_FILE && !env.WARD_FLOW_LOGS && platform !== "win32";
+}
 
 /** Read both the headed legacy log and the current rebuilt, headingless active log. */
 export function activeSignOutLines(signOutText) {
@@ -736,9 +763,16 @@ async function main() {
   const merging = existsSync(git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim());
 
   // 1b. Ward ownership guard. Not during a fold's merge.
-  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1") {
+  // A missing optional log (see signOutLogOptional) gives a notice and no check. Any other missing
+  // log reads as empty, so unsigned Ward files on a task branch still block.
+  const signOutLogPresent = existsSync(SIGN_OUT_FILE);
+  const skipMissingLog = !signOutLogPresent && signOutLogOptional();
+  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1" && skipMissingLog) {
+    report.push(`sign-out guard skipped (no log at ${SIGN_OUT_FILE}; set WARD_SIGNOUT_FILE to use one)`);
+  }
+  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1" && !skipMissingLog) {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
-    const signOutText = existsSync(SIGN_OUT_FILE) ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
+    const signOutText = signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
     const clashes = signOutConflicts(staged, signOutText, branch, root);
     const taskBranch = isPublicWardFlowCheckout(root)
       ? branch !== "main" && branch !== "HEAD"

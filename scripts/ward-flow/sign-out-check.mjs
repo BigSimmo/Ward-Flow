@@ -12,6 +12,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import os from "node:os";
 
 const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 const root = git(["rev-parse", "--show-toplevel"]);
@@ -24,7 +25,16 @@ const {
 } = await import(pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href);
 const standaloneWardFlow = isPublicWardFlowCheckout(root);
 const LINE = standaloneWardFlow ? "refs/remotes/origin/main" : "codex/task-ward-flow-live-state-20260831";
-const SIGN_OUT = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
+// Inline copy of scripts/ward-flow/logs-root.mjs: tests copy this script alone into fixtures.
+const SIGN_OUT =
+  process.env.WARD_SIGNOUT_FILE ||
+  path
+    .join(
+      process.env.WARD_FLOW_LOGS ||
+        (process.platform === "win32" ? "D:/Repos/ward-flow-logs" : path.join(os.homedir(), "ward-flow-logs")),
+      "sign-out.md",
+    )
+    .replace(/\\/g, "/");
 function readSignOutText() {
   return existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
 }

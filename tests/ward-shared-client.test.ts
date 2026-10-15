@@ -56,6 +56,70 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot?.revision).toBe(status === 400 ? 1 : 2);
     client.dispose();
   });
+  it("says so when the server has the demo controls switched off", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json({ outcome: "denied", snapshot: { ...snapshot(1), demoControls: false } }, { status: 422 })
+          : Response.json({ snapshot: { ...snapshot(1), demoControls: false } }),
+    });
+    await client.refresh();
+    expect(view?.snapshot?.demoControls).toBe(false);
+    client.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: 642, minutes: 15 } as WardFlowEvent);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
+    expect(view?.error).toBe("Demo controls are switched off on the shared workspace. Nothing was changed.");
+    client.dispose();
+  });
+  it("says why when a command names a record outside the desk's place", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json(
+              {
+                outcome: "denied",
+                code: "scope",
+                error: "This change names a record outside your role's place.",
+                snapshot: snapshot(1),
+              },
+              { status: 422 },
+            )
+          : Response.json({ snapshot: snapshot(1) }),
+    });
+    await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
+    expect(view?.error).toBe("This change names a record outside your role's place. Nothing was changed.");
+    expect(view?.status).toBe("ready");
+    client.dispose();
+  });
+  it("stops and says so when the account holds more than one role", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => Response.json({ code: "choose-role", choices: [] }, { status: 409 }),
+    });
+    await client.refresh();
+    expect(view?.status).toBe("not-authorised");
+    expect(view?.snapshot).toBeNull();
+    expect(view?.error).toMatch(/more than one role/);
+    client.dispose();
+  });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
     for (const dataMode of [undefined, "live"]) {
       let view: SharedView | undefined;
@@ -300,4 +364,95 @@ it("drops an uncertain command and queued actions when token refresh detects an 
   client.dispatch(event);
   expect(requests).toHaveLength(1);
   client.dispose();
+});
+
+describe("shared workspace traffic", () => {
+  it("polls with the revision it holds and keeps its snapshot when the workspace has not changed", async () => {
+    const urls: string[] = [];
+    let view: SharedView | undefined;
+    let notModified = false;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) => {
+        urls.push(String(url));
+        return notModified
+          ? Response.json({ notModified: true, revision: 3, now: 700 })
+          : Response.json({ snapshot: snapshot(3) });
+      },
+    });
+    await client.refresh();
+    const held = view?.snapshot;
+    notModified = true;
+    await client.refresh();
+    expect(urls).toEqual(["https://example.test/v1/workspace", "https://example.test/v1/workspace?since=3"]);
+    expect(view?.status).toBe("ready");
+    expect(view?.snapshot?.revision).toBe(3);
+    expect(view?.snapshot?.now).toBe(700);
+    expect(view?.snapshot?.payload).toBe(held?.payload);
+    client.dispose();
+  });
+
+  it("refuses a not-modified answer for a revision it does not hold", async () => {
+    let view: SharedView | undefined;
+    let calls = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () =>
+        calls++ === 0
+          ? Response.json({ snapshot: snapshot(3) })
+          : Response.json({ notModified: true, revision: 4, now: 700 }),
+    });
+    await client.refresh();
+    await client.refresh();
+    expect(view?.status).toBe("unavailable");
+    client.dispose();
+  });
+
+  it("asks for revision-only replies while commands are queued, then reads the board once", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const reads: string[] = [];
+    let revision = 1;
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url, options) => {
+        if (!options?.body) {
+          reads.push(String(url));
+          return Response.json({ snapshot: snapshot(revision) });
+        }
+        const body = JSON.parse(String(options.body));
+        bodies.push(body);
+        revision += 1;
+        return body.reply === "revision"
+          ? Response.json({ outcome: "accepted", commandRevision: revision })
+          : Response.json({ outcome: "accepted", commandRevision: revision, snapshot: snapshot(revision) });
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    client.dispatch(event);
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(3));
+    // The first command leaves before the others are queued; the second has one behind it.
+    expect(bodies.map((body) => [body.expectedRevision, body.reply])).toEqual([
+      [1, undefined],
+      [2, "revision"],
+      [3, undefined],
+    ]);
+    expect(view?.snapshot?.revision).toBe(4);
+    expect(reads).toEqual(["https://example.test/v1/workspace"]);
+    client.dispose();
+  });
 });

@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { edScreenSource as readEdScreenSource } from "./helpers/ed-screen-source";
+
 /**
  * Commit 8035fdfa9f rewrote ed.module.css for the third-edition token layer and, in doing so,
  * silently dropped seven classes ed-screen.tsx still references: referralForm, referralGrid,
@@ -18,10 +20,11 @@ import { describe, expect, it } from "vitest";
  * to 2.25rem.
  */
 
-const edScreenSource = readFileSync(
-  new URL("../src/components/ward-management/ed/ed-screen.tsx", import.meta.url),
-  "utf8",
-);
+// Fix list 2.5 and 9.6 (15 Oct 2026) split ed-screen.tsx into sibling files (`ed-screen-*.ts(x)`,
+// `use-ed-screen-*.ts`), each importing the same `styles` from "./ed.module.css". "ed-screen.tsx"
+// below means the whole screen: `edScreenSource()` reads every one of those files, so a class any
+// part of the screen asks for is still checked.
+const edScreenSource = readEdScreenSource();
 const edCss = readFileSync(new URL("../src/components/ward-management/ed/ed.module.css", import.meta.url), "utf8");
 
 /** Every `styles.<identifier>` and `styles["identifier"]` / `styles['identifier']` reference in

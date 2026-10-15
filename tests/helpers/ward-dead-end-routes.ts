@@ -19,12 +19,12 @@ export function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function walkPages(dir: string): string[] {
+function walkPages(dir: string, names: readonly string[] = ["page.tsx"]): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walkPages(full));
-    else if (entry.name === "page.tsx") out.push(full);
+    if (entry.isDirectory()) out.push(...walkPages(full, names));
+    else if (names.includes(entry.name)) out.push(full);
   }
   return out;
 }
@@ -50,12 +50,13 @@ export type AppRoutes = {
  * Every route the whole app serves — not only Ward Flow — because a control this file examines
  * may legitimately link to the developer hub, another mode, or anywhere else under `src/app`.
  * Used only to answer "does this href resolve to a page on disk", never to attribute meaning to
- * which page it is.
+ * which page it is. A `route.ts` handler counts too: the Ward Flow Digest (`/mockups/ward-flow-digest`)
+ * is served by one, and Settings links to it.
  */
 export function scanAppRoutes(): AppRoutes {
   const staticRoutes = new Set<string>();
   const dynamicPatterns: RegExp[] = [];
-  for (const file of walkPages(APP_ROOT)) {
+  for (const file of walkPages(APP_ROOT, ["page.tsx", "route.ts"])) {
     const segments = routeSegmentsOf(file);
     const dynamic = segments.some((segment) => /^\[.+\]$/.test(segment));
     if (dynamic) {
@@ -97,7 +98,10 @@ export function scanWardFlowRoutes(): WardFlowRouteInfo[] {
     const dynamic = segments.some((segment) => /^\[.+\]$/.test(segment));
     const source = readFileSync(file, "utf8");
     const body = source.slice(source.indexOf("export default"));
-    const redirectOnly = /\bredirect\(\s*["'`]/u.test(body);
+    // D-39 (15 Oct 2026): a record page redirects an OLD raw-id link to its coded address and
+    // otherwise renders a screen. Only a page that redirects and renders nothing is redirect-only.
+    const rendersAScreen = /\breturn\s*\(?\s*</u.test(body);
+    const redirectOnly = /\bredirect\(\s*["'`]/u.test(body) && !rendersAScreen;
     return { route, dynamic, redirectOnly };
   });
 }

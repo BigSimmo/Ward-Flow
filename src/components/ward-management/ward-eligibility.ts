@@ -168,7 +168,20 @@ function readyBedsNow(unit: Unit): number {
   return boundedBedAvailability(unit).available;
 }
 
-export function eligibility(movement: Movement, unit: Unit, now: Instant): EligibilityVerdict {
+/**
+ * The movement facts `eligibility()` reads, and nothing else. Every `Movement` is one; a stay that
+ * is not on a movement (a step-down candidate, `ward-step-down.ts`) builds one from its admission so
+ * it is matched by these same gates rather than a second set (Top 25 item 8).
+ */
+export type EligibilitySubject = Pick<
+  Movement,
+  "declines" | "gender" | "sex" | "genderPlacements" | "cohort" | "security" | "highAcuity" | "specialling"
+> & {
+  /** Not recorded is `undefined`, which the authorisation gate treats as needing an authorised ward. */
+  legalStatus: Movement["legalStatus"] | undefined;
+};
+
+export function eligibility(movement: EligibilitySubject, unit: Unit, now: Instant): EligibilityVerdict {
   const authorisationNeeded = requiresAuthorisedDestination(movement.legalStatus);
   const declined = movement.declines.some((decline) => decline.unitId === unit.id);
   const fresh = capacityIsFresh(unit, now);
@@ -414,7 +427,7 @@ function bedKindGateDetail(needsSecureBed: boolean, unit: Unit): string {
 }
 
 /** `eligibility()`'s `security` gate detail — see `bedKindGateDetail` above for the shared rule. */
-function securityGateDetail(movement: Movement, unit: Unit): string {
+function securityGateDetail(movement: Pick<Movement, "security">, unit: Unit): string {
   return bedKindGateDetail(movement.security === "Secure", unit);
 }
 

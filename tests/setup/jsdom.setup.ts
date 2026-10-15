@@ -8,8 +8,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
-import { applyDueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 // next/dynamic stand-in: starts the import when dynamic() is called and renders the loaded
 // component synchronously once it has resolved (the loading placeholder until then), so code-split
@@ -99,11 +97,6 @@ afterEach(() => {
   forceDynamicLoading = false;
   cleanup();
   vi.restoreAllMocks();
-  try {
-    applyDueSoonThresholds(DUE_SOON_URGENT_MINUTES, DUE_SOON_MINUTES);
-  } catch {
-    // ignore
-  }
   try {
     window.sessionStorage.clear();
     window.localStorage.clear();

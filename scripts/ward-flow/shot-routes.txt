@@ -22,7 +22,6 @@
 /mockups/ward-flow/referrals/new
 /mockups/ward-flow/search
 /mockups/ward-flow/settings
-/mockups/ward-flow/sovereign
 /mockups/ward-flow/statistics
 /mockups/ward-flow/statistics/compare
 /mockups/ward-flow/statistics/overview

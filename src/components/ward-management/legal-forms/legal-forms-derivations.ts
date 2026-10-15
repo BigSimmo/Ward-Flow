@@ -1,10 +1,11 @@
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import {
   clockState,
-  currentDueSoonThresholds,
+  type DueSoonThresholds,
+  type Instant,
+  isClockBreached,
   minutesUntil,
   splitDuration,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -124,10 +125,10 @@ export function legalFormGroupRows(movements: Movement[], now: Instant, group: L
 
 /** A real, passed deadline — never true for a form with no `dueAt`, matching the canonical breach
  *  predicate already used by `ward-pressure.ts` and `ward-derivations.ts`'s inbox builder:
- *  `dueAt !== undefined && clockState(dueAt, now) === "breached"`. Not re-derived differently here. */
+ *  `dueAt !== undefined && isClockBreached(dueAt, now)`. Not re-derived differently here. */
 export function isLegalDeadlineBreached(movement: Movement, now: Instant): boolean {
   const dueAt = currentLegalDueAt(movement);
-  return dueAt !== undefined && clockState(dueAt, now) === "breached";
+  return dueAt !== undefined && isClockBreached(dueAt, now);
 }
 
 /**
@@ -258,7 +259,11 @@ export type LegalFormRowClassification = {
  * may carry no chip, and it is also the only case whose tone is `"neutral"` — see that
  * component's own doc comment for why those two facts have to move together.
  */
-export function legalFormRowClassification(movement: Movement, now: Instant): LegalFormRowClassification {
+export function legalFormRowClassification(
+  movement: Movement,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): LegalFormRowClassification {
   const legalForm = movement.legalForm;
   if (!legalForm) {
     throw new Error(`legalFormRowClassification called on movement ${movement.id}, which carries no legal form`);
@@ -266,11 +271,11 @@ export function legalFormRowClassification(movement: Movement, now: Instant): Le
   if (isLegalDeadlineBreached(movement, now)) {
     return { tone: "danger", chip: { level: "urgent", text: "Form expiry passed" }, reasonLevel: "danger" };
   }
-  const reminder = legalExpiryReminderOf(movement, now);
+  const reminder = legalExpiryReminderOf(movement, now, thresholds);
   if (reminder !== undefined) {
     // A reminder before a typed expiry lapses (item 13, 4 Oct 2026). The thresholds are Josh's
     // Settings warnings, never a legal limit; the expiry itself is the time a person typed.
-    const hours = reminderHours(reminder);
+    const hours = reminderHours(reminder, thresholds);
     return {
       tone: "warning",
       chip: { level: reminder === "within-urgent" ? "urgent" : "stalled", text: `Expires within ${hours}h` },
@@ -312,18 +317,22 @@ export function legalFormRowClassification(movement: Movement, now: Instant): Le
  */
 export type LegalExpiryReminder = "within-urgent" | "within-soon";
 
-export function legalExpiryReminderOf(movement: Movement, now: Instant): LegalExpiryReminder | undefined {
+export function legalExpiryReminderOf(
+  movement: Movement,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): LegalExpiryReminder | undefined {
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return undefined;
-  const state = clockState(dueAt, now);
+  const state = clockState(dueAt, now, thresholds);
   if (state === "critical") return "within-urgent";
   if (state === "due") return "within-soon";
   return undefined;
 }
 
-/** The whole-hour window a reminder names, read from the live Settings thresholds. */
-export function reminderHours(reminder: LegalExpiryReminder): number {
-  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+/** The whole-hour window a reminder names, read from the Settings thresholds passed in. */
+export function reminderHours(reminder: LegalExpiryReminder, thresholds: DueSoonThresholds): number {
+  const { urgentMinutes, soonMinutes } = thresholds;
   return Math.round((reminder === "within-urgent" ? urgentMinutes : soonMinutes) / 60);
 }
 
@@ -335,19 +344,23 @@ export type LegalExpiryReminderSummary = {
 };
 
 /** How many open recorded forms are inside each warning window. A count of rows, never a rate. */
-export function legalExpiryReminderSummary(movements: Movement[], now: Instant): LegalExpiryReminderSummary {
+export function legalExpiryReminderSummary(
+  movements: Movement[],
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): LegalExpiryReminderSummary {
   let withinUrgent = 0;
   let withinSoon = 0;
   for (const movement of legalFormPopulation(movements)) {
-    const reminder = legalExpiryReminderOf(movement, now);
+    const reminder = legalExpiryReminderOf(movement, now, thresholds);
     if (reminder === "within-urgent") withinUrgent += 1;
     else if (reminder === "within-soon") withinSoon += 1;
   }
   return {
     withinUrgent,
     withinSoon,
-    urgentHours: reminderHours("within-urgent"),
-    soonHours: reminderHours("within-soon"),
+    urgentHours: reminderHours("within-urgent", thresholds),
+    soonHours: reminderHours("within-soon", thresholds),
   };
 }
 

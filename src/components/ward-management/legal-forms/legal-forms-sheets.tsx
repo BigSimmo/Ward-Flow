@@ -39,6 +39,7 @@ import {
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 const MS_PER_MINUTE = 60_000;
 
 /**
@@ -232,7 +233,8 @@ export function ExtendSheet({
   now: Instant;
   onClose: () => void;
 }) {
-  const standing = target ? clockStanding(target, now) : "none";
+  const thresholds = useDueSoonThresholds();
+  const standing = target ? clockStanding(target, now, thresholds) : "none";
   return (
     <Sheet
       open={target !== null}
@@ -262,7 +264,7 @@ export function ExtendSheet({
         <div className={styles.extendBody}>
           {target.legalForm?.dueAt !== undefined ? (
             <div className={styles.dueLine}>
-              <Badge tone={STANDING_TONE[standing]}>{standingWord(standing)}</Badge>
+              <Badge tone={STANDING_TONE[standing]}>{standingWord(standing, thresholds)}</Badge>
               <Timer
                 at={target.legalForm.dueAt * MS_PER_MINUTE}
                 now={now * MS_PER_MINUTE}

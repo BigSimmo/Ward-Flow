@@ -249,14 +249,22 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       const first = focusable[0]!;
       const last = focusable[focusable.length - 1]!;
 
-      // Shift+Tab from first wraps to last
-      first.focus();
-      fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
-      expect(document.activeElement).toBe(last);
+      // The shared modal trap skips elements without layout boxes, which jsdom never gives, so lend them one.
+      const rects = vi
+        .spyOn(HTMLElement.prototype, "getClientRects")
+        .mockReturnValue([new DOMRect(0, 0, 1, 1)] as unknown as DOMRectList);
+      try {
+        // Shift+Tab from first wraps to last
+        first.focus();
+        fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+        expect(document.activeElement).toBe(last);
 
-      // Tab from last wraps to first
-      fireEvent.keyDown(dialog, { key: "Tab", shiftKey: false });
-      expect(document.activeElement).toBe(first);
+        // Tab from last wraps to first
+        fireEvent.keyDown(dialog, { key: "Tab", shiftKey: false });
+        expect(document.activeElement).toBe(first);
+      } finally {
+        rects.mockRestore();
+      }
 
       // Close modal
       const closeBtn = within(dialog).getByRole("button", { name: /Close form verification dialog/i });

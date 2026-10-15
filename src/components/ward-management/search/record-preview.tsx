@@ -16,7 +16,7 @@ import {
 import { patientDisplayName, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
@@ -29,6 +29,7 @@ import { movementSearchState } from "./search-operational-state";
 import styles from "./record-preview.module.css";
 import searchStyles from "./search.module.css";
 import { isCommunityReferral } from "./community-referral";
+import { movementHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 const NOT_RECORDED = "Not recorded";
 
@@ -379,7 +380,7 @@ export function RecordPreview({
     const statutory = legalStatutoryInfo(legalStatus);
     const displayName = patientDisplayName(patient);
     const history = deriveClinicalHistory(patient);
-    const referralHref = `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(patient.id)}`;
+    const referralHref = raiseReferralHref({ patientId: patient.id });
     const legalClass = legalClassFor(legalStatus);
 
     let tierClass = styles.tier3;
@@ -431,12 +432,12 @@ export function RecordPreview({
               <span className={styles.dispositionBadge}>{disposition}</span>
             </div>
             <div className={styles.dossierActions}>
-              <Link className={styles.openLink} href={`/mockups/ward-flow/people/${patient.id}`}>
+              <Link className={styles.openLink} href={patientHref(patient.id)}>
                 Open full record
               </Link>
               <Link
                 className={styles.referLink}
-                href={`/mockups/ward-flow/referrals/new?patientId=${patient.id}`}
+                href={raiseReferralHref({ patientId: patient.id })}
                 data-testid="ward-patient-preview-raise-referral"
               >
                 Raise referral for this patient &rarr;
@@ -497,7 +498,7 @@ export function RecordPreview({
               <h4 className={styles.tieHeading}>Referral</h4>
               {referral && referralSummary ? (
                 <p className={styles.tieBody}>
-                  <strong>{referralSummary.id}</strong> — {referralStateSentence(referralState(referral))}
+                  <strong>This referral</strong> — {referralStateSentence(referralState(referral))}
                   <br />
                   {referralSummary.originLine} — {referralSummary.declineNote}
                 </p>
@@ -534,10 +535,7 @@ export function RecordPreview({
                   <p className={styles.tieBody}>
                     {movementSummary.departmentText} · {movementSummary.destinationCell} · {movementSummary.elapsedText}
                   </p>
-                  <Link
-                    className={searchStyles.primaryAction}
-                    href={`/mockups/ward-flow/movements/${linkedMovement.id}`}
-                  >
+                  <Link className={searchStyles.primaryAction} href={movementHref(linkedMovement.id)}>
                     {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                     Open this movement
                   </Link>
@@ -624,7 +622,7 @@ export function RecordPreview({
             {presenceStatus === "live" ? (
               <>
                 {linkedMovement ? (
-                  <Link href={`/mockups/ward-flow/movements/${linkedMovement.id}`} className={styles.btnPrimary}>
+                  <Link href={movementHref(linkedMovement.id)} className={styles.btnPrimary}>
                     <span>View Movement</span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="9 18 15 12 9 6" />
@@ -649,7 +647,7 @@ export function RecordPreview({
                 </button>
                 {linkedMovement ? (
                   <Link
-                    href={`/mockups/ward-flow/movements/${linkedMovement.id}`}
+                    href={movementHref(linkedMovement.id)}
                     className={styles.btnSecondary}
                     data-testid="ward-patient-preview-transport-order"
                   >
@@ -717,7 +715,7 @@ export function RecordPreview({
         ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
         : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";
-    const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : `Referral ${referral.id}`;
+    const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unidentified referral";
     const subjectSubtitle = linkedPatient
       ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · DOB ${linkedPatient.dateOfBirth}`
       : `Queued referral · Age cohort: ${referral.ageBand}`;
@@ -790,7 +788,7 @@ export function RecordPreview({
             <span className={styles.sectionTitle}>Linked Person</span>
             {linkedPatient ? (
               <p className={styles.tieLink}>
-                <Link href={`/mockups/ward-flow/people/${linkedPatient.id}`}>
+                <Link href={patientHref(linkedPatient.id)}>
                   {patientDisplayName(linkedPatient)} ({linkedPatient.umrn})
                 </Link>{" "}
                 — open person record
@@ -806,8 +804,7 @@ export function RecordPreview({
               <span className={styles.sectionTitle}>Linked Movement</span>
               {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
               <p className={styles.tieLink}>
-                <Link href={`/mockups/ward-flow/movements/${linkedMovement.id}`}>{subjectName}</Link> — open movement
-                record
+                <Link href={movementHref(linkedMovement.id)}>{subjectName}</Link> — open movement record
               </p>
             </div>
           )}
@@ -923,7 +920,7 @@ export function RecordPreview({
   const urgency = `Tier ${movement.urgency}`;
   const statutory = legalStatutoryInfo(legalStatus);
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unknown Patient";
+  const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : NAME_NOT_RECORDED;
   const subjectUrm = linkedPatient ? linkedPatient.umrn : "UMRN not recorded";
   const history = deriveClinicalHistory(linkedPatient);
   const legalClass = legalClassFor(legalStatus);
@@ -972,7 +969,7 @@ export function RecordPreview({
             <span className={styles.dispositionBadge}>{disposition}</span>
           </div>
           <div>
-            <Link className={styles.openLink} href={`/mockups/ward-flow/movements/${movement.id}`}>
+            <Link className={styles.openLink} href={movementHref(movement.id)}>
               Open full record
             </Link>
           </div>
@@ -1030,7 +1027,7 @@ export function RecordPreview({
             <h4 className={styles.tieHeading}>Referral</h4>
             {referral ? (
               <p className={styles.tieBody}>
-                <strong>{referral.id}</strong> — {buildReferralSummary(referral).originLine}
+                <strong>This referral</strong> — {buildReferralSummary(referral).originLine}
               </p>
             ) : (
               <p className={styles.tieEmpty}>No referral is linked to this movement.</p>
@@ -1040,7 +1037,7 @@ export function RecordPreview({
           <section className={styles.tieSection} data-testid="ward-patient-search-preview-person">
             <h4 className={styles.tieHeading}>Person</h4>
             {linkedPatient ? (
-              <Link className={styles.openLink} href={`/mockups/ward-flow/people/${linkedPatient.id}`}>
+              <Link className={styles.openLink} href={patientHref(linkedPatient.id)}>
                 {patientDisplayName(linkedPatient)} · {linkedPatient.umrn}
               </Link>
             ) : referral ? (
@@ -1114,7 +1111,7 @@ export function RecordPreview({
 
         {/* 7. Coordinator Action Bar */}
         <div className={styles.dossierActionBar}>
-          <Link href={`/mockups/ward-flow/movements/${movement.id}`} className={styles.btnPrimary}>
+          <Link href={movementHref(movement.id)} className={styles.btnPrimary}>
             <span>View Movement</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="9 18 15 12 9 6" />
@@ -1129,7 +1126,7 @@ export function RecordPreview({
             Bed Allocation
           </button>
           <Link
-            href={`/mockups/ward-flow/movements/${movement.id}`}
+            href={movementHref(movement.id)}
             className={styles.btnSecondary}
             data-testid="ward-patient-preview-movement-transport"
           >

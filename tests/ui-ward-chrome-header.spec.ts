@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
+import { personPath } from "./helpers/ward-record-url";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/ward-management/ward-nav";
 
@@ -328,7 +329,20 @@ test.describe("@mockup Ward shell bar", () => {
       for (const route of COUNTED_ROUTES) {
         await gotoWardChrome(page, route);
 
-        for (const [testId, label] of EXACTLY_ONE) {
+        // A phone draws no rail (fix list 7.6, October 2026): the bar's Menu carries the navigation
+        // there, so at 375px the Menu is counted in the rail's place and the rail must be absent.
+        const shellControls =
+          width === 375
+            ? EXACTLY_ONE.map(([testId, label]) =>
+                testId === "ward-rail"
+                  ? (["ward-bar-phone-menu", "the phone Menu"] as const)
+                  : ([testId, label] as const),
+              )
+            : EXACTLY_ONE;
+        if (width === 375) {
+          await expect(page.getByTestId("ward-rail"), `a phone draws no rail on ${route}`).toHaveCount(0);
+        }
+        for (const [testId, label] of shellControls) {
           await expect(
             page.getByTestId(testId),
             `${label} (${testId}) must appear EXACTLY ONCE on ${route} at ${width}px. Two means ` +
@@ -414,7 +428,7 @@ test.describe("@mockup Ward shell bar", () => {
     // click outright rather than silently succeeding against an unreachable element.
     await firstResult.click();
     await expect(page, "clicking the first visible result must navigate to that person's own record").toHaveURL(
-      /\/mockups\/ward-flow\/people\/PT-001(?:$|[/?#])/,
+      new RegExp(`${personPath("PT-001")}(?:$|[/?#])`),
       { timeout: 10_000 },
     );
   });
@@ -674,16 +688,18 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   }
 });
 
-test("@mockup drawer workspace keeps Figures focus and every task reachable on a short phone", async ({ page }) => {
+test("@mockup drawer workspace keeps All figures focus and every task reachable on a short phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
   await gotoWardChrome(page);
   const bar = page.getByTestId("ward-bar");
-  await expect(bar.getByTestId("ward-bar-figures-trigger")).toHaveCount(0);
+  await expect(bar.getByTestId("ward-tools-service-now")).toHaveCount(0);
   await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools" });
-  await tools.getByTestId("ward-bar-figures-trigger").click();
-  const figures = tools.getByRole("button", { name: "Figures", exact: true });
-  await expect(figures).toHaveAttribute("aria-pressed", "true");
+  // Tools review (15 Oct 2026): Service now sits at the top of the one sheet, All figures below it.
+  await expect(tools.getByTestId("ward-tools-service-now")).toBeVisible();
+  const figures = tools.getByTestId("ward-tools-toggle-figures");
+  await figures.click();
+  await expect(figures).toHaveAttribute("aria-expanded", "true");
   await expect(figures).toBeFocused();
   await expect(tools.getByTestId("ward-stats-drawer-content")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -721,7 +737,8 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await openPatient!.click();
   // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
   // its stay on the discharges board. Either way the task is reachable and the drawer closes.
-  await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
+  // D-39: the address carries a code, never the WF or AD number.
+  await expect(page).toHaveURL(/\/movements\/[0-9a-z]+(?:[?#]|$)|\/discharges\?admissionId=[0-9a-z]+/u);
   await expect(tasks).toHaveCount(0);
 });
 

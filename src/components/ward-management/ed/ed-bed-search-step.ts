@@ -1,4 +1,5 @@
 import type { Movement, Referral } from "../ward-model";
+import { encodeRecordAddress } from "../shell/ward-record-address";
 
 /**
  * The ward referral still waiting on an answer for this person, if any: the newest referral for
@@ -28,7 +29,7 @@ export function openWardReferralFor(
 
 /** A2-5: the Referrals board with this referral open (`ReferralBoard` reads `?referral=`). */
 export function referralBoardHref(referralId: string): string {
-  return `/mockups/ward-flow/referrals?${new URLSearchParams({ referral: referralId }).toString()}`;
+  return `/mockups/ward-flow/referrals?${new URLSearchParams({ referral: encodeRecordAddress(referralId) }).toString()}`;
 }
 
 /** "Referred to Bentley Older Adult", or "Referred to 3 wards" when it went to several. */

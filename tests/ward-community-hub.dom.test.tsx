@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectNeverSaysAgain, expectSays } from "./helpers/ward-caption";
@@ -139,7 +140,7 @@ const TEAM_B = COMMUNITY_TEAM_PAGES[1];
 function renderTeam(teamId: string, admissions: Admission[], referrals: Referral[]) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <CommunityScreen teamId={teamId} admissions={admissions} referrals={referrals} />
+      <CommunityScreen teamId={teamId} admissions={admissions} referrals={communityScopedReferrals(referrals)} />
     </WardFlowProvider>,
   );
 }

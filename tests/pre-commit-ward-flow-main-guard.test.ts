@@ -192,6 +192,8 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
         join(root, "scripts", "pre-commit-checks.mjs"),
       );
       stageWardFile(root);
+      // An empty log is what makes an unsigned file a block; a missing log only warns.
+      writeFileSync(join(root, "sign-out.md"), "Open sign-outs only\n");
       return {
         root,
         env: {

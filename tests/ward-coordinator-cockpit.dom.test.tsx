@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { CoordinatorCockpit } from "@/components/ward-management/coordinator/coordinator-cockpit";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowSelect, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
@@ -59,5 +59,31 @@ describe("CoordinatorCockpit (WF-A1-15)", () => {
     expect(event.role).toBe("coordinator");
     expect(event.type).toBe("SET_CONFIGURATION");
     expect(event.now).toBe(NOW_ANCHOR - 60);
+  });
+
+  it("keeps one dispatch across state changes, so dispatch readers under it stay asleep", () => {
+    const seen = new Set<unknown>();
+    function DispatchReader() {
+      seen.add(useWardFlowSelect("dispatch").dispatch);
+      return null;
+    }
+    const { rerender } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorCockpit>
+          <DispatchReader />
+          <TestActionTrigger />
+        </CoordinatorCockpit>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("test-dispatch-btn"));
+    rerender(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorCockpit>
+          <DispatchReader />
+          <TestActionTrigger />
+        </CoordinatorCockpit>
+      </WardFlowProvider>,
+    );
+    expect(seen.size).toBe(1);
   });
 });

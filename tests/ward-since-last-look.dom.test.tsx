@@ -11,6 +11,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
 function renderCommand() {
@@ -32,6 +33,7 @@ function seededSnapshot() {
       bedReleases: state.bedReleases,
     },
     NOW,
+    DEFAULT_DUE_SOON_THRESHOLDS,
   );
 }
 

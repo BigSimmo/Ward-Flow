@@ -9,7 +9,7 @@ import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/
 import { plannedAdmissionAgenda, plannedAdmissionDays } from "@/components/ward-management/capacity/planned-admissions";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { derivedSexMix } from "@/components/ward-management/ward-board-derivations";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { eventLogEntryFor } from "@/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -27,7 +27,7 @@ import { currentInboxOwner, partitionSnoozed, SNOOZE_REASON_IDS } from "@/compon
 import { inboxItemIsActNow, inboxRowExists } from "@/components/ward-management/ward-inbox-reducer";
 import { patientCohort, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "fre-adult-open";
@@ -885,6 +885,8 @@ describe("review follow-up: callers beyond Alerts count the overdue booking", ()
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
       now: NOW,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+      sites: wardSites,
     };
     const without = shellFigures(input).tasks.value;
     expect(shellFigures({ ...input, plannedAdmissions: state.plannedAdmissions }).tasks.value).toBe(without + 1);

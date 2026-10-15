@@ -382,10 +382,11 @@ describe("referral letter text", () => {
     expect(text).toContain("Risks: None selected");
   });
 
-  it("builds an ISBAR note with the referral number and due time", () => {
+  it("builds an ISBAR note with the send and due times, never the referral number", () => {
     const text = referralIsbarText(input, { referralId: "RF-024", sentAt: "10:47", decisionDue: "14:47" });
     expect(text.split("\n").map((line) => line.slice(0, 2))).toEqual(["I:", "S:", "B:", "A:", "R:"]);
-    expect(text).toContain("RF-024 sent 10:47");
+    expect(text).toContain("Referral sent 10:47");
+    expect(text).not.toContain("RF-024");
     expect(text).toContain("Decision due 14:47.");
   });
 });

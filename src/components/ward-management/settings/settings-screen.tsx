@@ -49,7 +49,8 @@ import {
   validateConfiguration,
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -359,8 +360,16 @@ export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents, patients } = useWardFlow();
+  const {
+    movements,
+    rejections,
+    configuration,
+    eventLog = [],
+    readAuditEvents,
+    patients,
+  } = useWardFlowSelect("movements", "rejections", "configuration", "eventLog", "readAuditEvents", "patients");
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
   const thresholds = publishedThresholds(movements, now, configuration);
 
   /**
@@ -519,7 +528,7 @@ export function SettingsScreen() {
   const handleSave = () => {
     if (!hasUnsavedRules) return;
     pendingSave.current = { before: configuration, count: unsavedCount, rejectionsAt: rejections.length };
-    dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: draft });
+    raise("SET_CONFIGURATION", { payload: draft });
     setPhoneSheet(null);
   };
 
@@ -546,13 +555,13 @@ export function SettingsScreen() {
       undo: {
         durationMs: UNDO_TOAST_MS,
         onUndo: () => {
-          dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before });
+          raise("SET_CONFIGURATION", { payload: before });
           setDraft({ ...before });
           showToast("Rules back as they were. Recorded in the audit.");
         },
       },
     });
-  }, [configuration, rejections, toast, dispatch, now, showToast]);
+  }, [configuration, rejections, toast, raise, showToast]);
 
   const handleDiscard = () => {
     const kept = draft;
@@ -657,7 +666,7 @@ export function SettingsScreen() {
       railOpen,
     };
     const defaults = defaultWardConfiguration();
-    dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: defaults });
+    raise("SET_CONFIGURATION", { payload: defaults });
     setDraft({ ...defaults });
     setAudioBuzz(true);
     setAudioBuzzPreference(true);
@@ -671,7 +680,7 @@ export function SettingsScreen() {
       undo: {
         durationMs: UNDO_TOAST_MS,
         onUndo: () => {
-          dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before.configuration });
+          raise("SET_CONFIGURATION", { payload: before.configuration });
           setDraft({ ...before.draft });
           setAudioBuzz(before.buzz);
           setAudioBuzzPreference(before.buzz);
@@ -809,6 +818,7 @@ export function SettingsScreen() {
             </li>
           ) : (
             results.map((entry, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- combobox option: the input handles the keys through aria-activedescendant
               <li
                 key={entry.id}
                 id={`settings-find-${entry.id}`}

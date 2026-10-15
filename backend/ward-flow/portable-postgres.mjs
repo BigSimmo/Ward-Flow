@@ -2,7 +2,7 @@
 import { Pool } from "pg";
 import { readFileSync } from "node:fs";
 import { X509Certificate } from "node:crypto";
-import { LATEST_MIGRATION } from "./migrations.mjs";
+import { LATEST_MIGRATION, MINIMUM_RUNTIME_MIGRATION } from "./migrations.mjs";
 import { validatePortablePostgresUrl, validatePostgresConnectionString } from "./postgres-config.mjs";
 
 export function createPortablePostgresPool(config, dependencies = {}) {
@@ -163,6 +163,25 @@ SELECT current_user AS role,
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.push_deliveries', 'DELETE')
     AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.push_subscriptions_id_seq', 'USAGE')
   )) AS push_grants,
+  -- Migration 8: memberships are read, granted, approved and ended (only those four columns change);
+  -- break glass rows are only ever added. Before it, neither table exists.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 8) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'INSERT')
+    AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', 'approved_by', 'UPDATE')
+    AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', 'approved_at', 'UPDATE')
+    AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', 'revoked_by', 'UPDATE')
+    AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', 'revoked_at', 'UPDATE')
+    AND NOT EXISTS (SELECT 1 FROM unnest(ARRAY['id', 'workspace_id', 'data_mode', 'actor_id', 'role', 'scope', 'granted_by', 'granted_at', 'expires_at']) AS fixed(name)
+      WHERE pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', fixed.name, 'UPDATE'))
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'INSERT')
+    AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.break_glass_id_seq', 'USAGE')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.break_glass', 'UPDATE,REFERENCES')
+    AND NOT pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.break_glass_id_seq', 'UPDATE')
+  ELSE true END AS access_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')
     OR pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'CREATE')
@@ -176,6 +195,23 @@ SELECT current_user AS role,
         AND CASE WHEN c.relkind = 'S' THEN pg_catalog.has_sequence_privilege(b.oid, c.oid, 'USAGE,SELECT,UPDATE') ELSE false END)
   ) AS browser_denied,
   (SELECT array_agg(version ORDER BY version) FROM ward_flow.migrations) AS versions,
+  -- Once migration 6 is in, every Ward Flow table keeps row-level security on (not forced, so the
+  -- owner still migrates), and every policy is the runtime-only one, with both expressions present.
+  -- Before it, no table has any.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 6) THEN
+    NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'ward_flow' AND c.relkind = 'r' AND (NOT c.relrowsecurity OR c.relforcerowsecurity
+        OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p WHERE p.polrelid = c.oid)))
+    AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'ward_flow' AND NOT (p.polname = 'runtime_only' AND p.polpermissive AND p.polcmd = '*'
+        AND p.polroles = '{0}'::oid[]
+        AND coalesce(pg_catalog.pg_get_expr(p.polqual, p.polrelid), '') = '(CURRENT_USER = ''wardflow_backend''::name)'
+        AND coalesce(pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid), '') = '(CURRENT_USER = ''wardflow_backend''::name)'))
+  ELSE NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'ward_flow' AND (c.relrowsecurity OR c.relforcerowsecurity))
+    AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'ward_flow') END AS rls_valid,
   -- Exactly two user triggers in the schema, whatever their state, and both are the guards.
   (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
     JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
@@ -223,13 +259,16 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "required_grants",
       "restricted_grants",
       "push_grants",
+      "access_grants",
       "audit_append_only",
       "browser_denied",
       "guards_valid",
       "sequence_restricted",
+      "rls_valid",
     ].every((field) => row[field] === true) ||
     !Array.isArray(row.versions) ||
-    row.versions.length !== LATEST_MIGRATION ||
+    row.versions.length < MINIMUM_RUNTIME_MIGRATION ||
+    row.versions.length > LATEST_MIGRATION ||
     !row.versions.every((version, index) => version === index + 1)
   )
     throw new Error(unsafeMessage);

@@ -1,11 +1,17 @@
 // @ts-check
-import { createHash } from "node:crypto";
-import { LATEST_MIGRATION } from "./migrations.mjs";
+import { createHash, randomUUID } from "node:crypto";
+import { LATEST_MIGRATION, MINIMUM_RUNTIME_MIGRATION, ROLE_ACCESS_MIGRATION } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** A device whose sends keep failing for a reason that may pass is tried this many times. */
 export const MAX_DELIVERY_ATTEMPTS = 5;
+/** How long the schema version is trusted before it is read again. */
+const VERSION_TRUSTED_MS = 60_000;
+/** A break glass record that ended this recently still sends the whole scoped workspace on a poll. */
+const GRANT_SETTLE_MS = 60_000;
+/** Roles that work only once a second person has approved them. */
+const APPROVED_ROLES = ["coordinator", "admin"];
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -27,6 +33,9 @@ function canonical(value) {
  *   delivery carries on in the background after that.
  * @param retryAfterMs How long a claimed delivery waits before another attempt may claim it: the
  *   gap between retries, and how long an interrupted delivery waits for the sweep.
+ * @param demoEvents Whether the demonstration controls (advance clock, reset or set scenario) may
+ *   change the shared workspace. Off unless WARD_SHARED_DEMO_EVENTS=true: one coordinator could
+ *   otherwise reset everyone's board.
  */
 export function createWorkspaceStore(
   pool,
@@ -38,14 +47,61 @@ export function createWorkspaceStore(
     log = (event) => console.error(JSON.stringify(event)),
     deliveryWaitMs = 1500,
     retryAfterMs = 60_000,
+    demoEvents = false,
   },
 ) {
-  const snapshot = (row, at) => ({
+  /**
+   * `view` is the signed-in desk from `viewer()`: its role, place and break glass records. The
+   * HTTP layer always passes it, so every reply carries only that desk's part of the workspace.
+   * Without one (the store's own tests and the push sweep) the whole workspace is used.
+   */
+  const snapshot = (row, at, view) => ({
     dataMode: row.data_mode,
+    // Whether the demonstration controls work here, so the screens can say when they do not.
+    demoControls: demoEvents,
     revision: Number(row.revision),
-    payload: row.payload,
+    payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
     now: engine.worldNow(row.payload, at),
   });
+  let known = { version: 0, until: 0 };
+  async function schemaVersion() {
+    const now = clock().getTime();
+    if (known.until > now) return known.version;
+    const { rows } = await pool.query("SELECT max(version) AS version FROM ward_flow.migrations");
+    const version = rows[0]?.version;
+    if (!Number.isInteger(version) || version < MINIMUM_RUNTIME_MIGRATION || version > LATEST_MIGRATION)
+      throw new Error("Shared schema unavailable");
+    known = { version, until: now + VERSION_TRUSTED_MS };
+    return version;
+  }
+  // After a rollback the cached version can name a table or column that is gone. That request
+  // fails, and the next one reads the version again instead of failing for the rest of the minute.
+  function forgetVersionOnMissing(error) {
+    if (error?.code === "42P01" || error?.code === "42703") known = { version: 0, until: 0 };
+  }
+  /** One audit row, naming the sender's role and place once migration 8 holds them. */
+  async function audit(client, view, actorId, row) {
+    const values = [
+      workspaceId,
+      actorId,
+      row.commandId ?? null,
+      row.action,
+      row.outcome,
+      row.priorRevision,
+      row.revision,
+      row.changes,
+    ];
+    if (view && view.version >= ROLE_ACCESS_MIGRATION)
+      await client.query(
+        "INSERT INTO ward_flow.audit(workspace_id, actor_id, command_id, action, outcome, prior_revision, revision, changes, actor_role, actor_scope) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+        [...values, view.access.role, view.access.scope],
+      );
+    else
+      await client.query(
+        "INSERT INTO ward_flow.audit(workspace_id, actor_id, command_id, action, outcome, prior_revision, revision, changes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+        values,
+      );
+  }
   async function transaction(run) {
     const client = await pool.connect();
     let rollbackFailure;
@@ -55,6 +111,7 @@ export function createWorkspaceStore(
       await client.query("COMMIT");
       return result;
     } catch (error) {
+      forgetVersionOnMissing(error);
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -65,7 +122,7 @@ export function createWorkspaceStore(
       client.release(rollbackFailure);
     }
   }
-  async function lock(client, actorId, at) {
+  async function lock(client, actorId, at, view) {
     let { rows } = await client.query(
       "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
       [workspaceId],
@@ -76,10 +133,13 @@ export function createWorkspaceStore(
         [workspaceId, engine.seedWorld(at)],
       );
       if (created.rowCount)
-        await client.query(
-          "INSERT INTO ward_flow.audit(workspace_id, actor_id, action, outcome, prior_revision, revision, changes) VALUES ($1, $2, 'INITIALISE_WORKSPACE', 'accepted', 0, 1, '{}')",
-          [workspaceId, actorId],
-        );
+        await audit(client, view, actorId, {
+          action: "INITIALISE_WORKSPACE",
+          outcome: "accepted",
+          priorRevision: 0,
+          revision: 1,
+          changes: {},
+        });
       ({ rows } = await client.query(
         "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
         [workspaceId],
@@ -87,6 +147,15 @@ export function createWorkspaceStore(
     }
     if (rows[0]?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
     if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
+    // `viewer()` ran before this transaction. A revoke takes this same lock, so checking again
+    // here means a role removed in between stops this request too.
+    if (view?.membershipId) {
+      const active = await client.query(
+        "SELECT 1 FROM ward_flow.memberships WHERE id=$1 AND workspace_id=$2 AND revoked_at IS NULL AND expires_at > $3",
+        [view.membershipId, workspaceId, at],
+      );
+      if (!active.rowCount) throw new Error("role-ended");
+    }
     return rows[0];
   }
   /**
@@ -239,13 +308,143 @@ export function createWorkspaceStore(
       log({ event: "ward_backend_push_delivery_unavailable", ...counts, ...errorFields(error) });
     }
   }
+  async function read(actorId, view) {
+    const at = clock();
+    const { rows } = await pool.query(
+      "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+      [workspaceId],
+    );
+    if (rows[0] && engine.validWorld(rows[0].payload)) return snapshot(rows[0], at, view);
+    return transaction(async (client, now) => snapshot(await lock(client, actorId, now, view), now, view));
+  }
+  /**
+   * Who this account is working as. The role always comes from here, never from the browser.
+   * An account named in WARD_COORDINATOR_USER_IDS (the bootstrap) works as the statewide
+   * coordinator unless it asks for one of its memberships. Any other account needs one active
+   * membership: none is refused, and more than one must say which with `workingAs`. Checked on
+   * every request, so a removed or expired role stops at once.
+   */
+  async function viewer(actorId, { bootstrap = false, workingAs = null } = {}) {
+    const at = clock();
+    const version = await schemaVersion();
+    const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE }] : [];
+    if (version >= ROLE_ACCESS_MIGRATION) {
+      const { rows } = await pool
+        .query(
+          "SELECT id, role, scope FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
+          [workspaceId, actorId, at, APPROVED_ROLES],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      for (const row of rows) {
+        // A row the access table would not allow is skipped, never widened.
+        const access = engine.parseAccess(row.role, row.scope);
+        if (access) choices.push({ membershipId: row.id, access });
+      }
+    }
+    const chosen = workingAs
+      ? choices.find((choice) => (choice.membershipId ?? "bootstrap") === workingAs)
+      : bootstrap || choices.length === 1
+        ? choices[0]
+        : undefined;
+    if (!chosen)
+      return choices.length > 1 && !workingAs
+        ? {
+            status: "choose",
+            choices: choices.map((choice) => ({ workingAs: choice.membershipId ?? "bootstrap", ...choice.access })),
+          }
+        : { status: "none" };
+    let grants = [];
+    let recentGrant = false;
+    if (chosen.membershipId) {
+      const { rows } = await pool.query(
+        "SELECT patient_id, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT 50",
+        [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
+      );
+      recentGrant = rows.length > 0;
+      grants = rows
+        .filter((row) => row.until > at)
+        .map((row) => ({ patientId: row.patient_id, until: new Date(row.until) }));
+    }
+    return {
+      status: "ok",
+      actorId,
+      version,
+      membershipId: chosen.membershipId,
+      access: chosen.access,
+      grants,
+      recentGrant,
+    };
+  }
+  /** A membership as an access admin sees it. */
+  const presentMembership = (row) => ({
+    id: row.id,
+    actorId: row.actor_id,
+    role: row.role,
+    scope: row.scope,
+    grantedBy: row.granted_by,
+    grantedAt: new Date(row.granted_at).toISOString(),
+    expiresAt: new Date(row.expires_at).toISOString(),
+    approved: row.approved_at !== null || !APPROVED_ROLES.includes(row.role),
+    approvedBy: row.approved_by,
+  });
+  const refused = (status, error) => ({ status, body: { error } });
+  const notAdmin = "Granting and removing roles is not part of your role.";
+  /**
+   * Inside one locked transaction: approve or remove a membership the access admin's own place
+   * covers. `change` returns a refusal, or the columns to set.
+   */
+  // Roles live in the tables migration 8 adds; before it, the access routes say so instead of failing.
+  function accessRefusal(view) {
+    if (!engine.managesAccess(view.access)) return refused(403, notAdmin);
+    if (!(view.version >= ROLE_ACCESS_MIGRATION))
+      return refused(409, "Roles are not set up on this database yet. Apply migration 8 first.");
+    return null;
+  }
+  async function changeMembership(view, membershipId, action, change) {
+    const blocked = accessRefusal(view);
+    if (blocked) return blocked;
+    return transaction(async (client, at) => {
+      const row = await lock(client, view.actorId, at, view);
+      const { rows } = await client.query(
+        "SELECT * FROM ward_flow.memberships WHERE id=$1 AND workspace_id=$2 AND revoked_at IS NULL AND expires_at > $3 FOR UPDATE",
+        [membershipId, workspaceId, at],
+      );
+      const membership = rows[0];
+      if (!membership) return refused(404, "That role is not active.");
+      const access = engine.parseAccess(membership.role, membership.scope);
+      // A row the access table cannot read is left to a statewide admin.
+      const covered = access
+        ? engine.scopeWithin(row.payload, access.scope, view.access.scope)
+        : view.access.scope.kind === "statewide";
+      if (!covered) return refused(403, "That role is wider than your own.");
+      const outcome = change(membership);
+      if (typeof outcome === "string") return refused(422, outcome);
+      const [column, byColumn] = outcome;
+      const { rows: updated } = await client.query(
+        `UPDATE ward_flow.memberships SET ${column}=$2, ${byColumn}=$3 WHERE id=$1 RETURNING *`,
+        [membershipId, at, view.actorId],
+      );
+      const revision = Number(row.revision);
+      await audit(client, view, view.actorId, {
+        action,
+        outcome: "accepted",
+        priorRevision: revision,
+        revision,
+        changes: { membershipId, actorId: membership.actor_id, role: membership.role, scope: membership.scope },
+      });
+      return { status: 200, body: { membership: presentMembership(updated[0]) } };
+    });
+  }
   return {
     pushEnabled: !!push,
     async ready() {
-      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [
-        LATEST_MIGRATION,
-      ]);
-      if (!rows.length) throw new Error("Shared schema unavailable");
+      const { rows } = await pool.query("SELECT max(version) AS version FROM ward_flow.migrations");
+      const version = rows[0]?.version;
+      if (!Number.isInteger(version) || version < MINIMUM_RUNTIME_MIGRATION || version > LATEST_MIGRATION)
+        throw new Error("Shared schema unavailable");
     },
     async subscribe(actorId, subscription) {
       if (!push) throw new Error("push-disabled");
@@ -335,31 +534,188 @@ export function createWorkspaceStore(
       });
       await deliver();
     },
-    async read(actorId) {
+    read,
+    /**
+     * The 3 second poll. When the workspace is still at `knownRevision`, returns only the revision
+     * and the world clock (read from two small fields, so the whole record is not sent or checked);
+     * otherwise the full snapshot, as `read` does.
+     */
+    async poll(actorId, knownRevision, view) {
+      // A break glass record just opened or ended changes what this desk may see without a new
+      // revision, so the whole scoped workspace goes back until it has settled.
+      if (view?.recentGrant) return { notModified: false, snapshot: await read(actorId, view) };
       const at = clock();
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
-      if (rows[0] && engine.validWorld(rows[0].payload)) return snapshot(rows[0], at);
-      return transaction(async (client, now) => snapshot(await lock(client, actorId, now), now));
+      const row = rows[0];
+      if (
+        row &&
+        Number(row.revision) === knownRevision &&
+        typeof row.started_at === "string" &&
+        Number.isFinite(Date.parse(row.started_at)) &&
+        Number.isFinite(row.clock_offset)
+      )
+        return {
+          notModified: true,
+          dataMode: row.data_mode,
+          revision: knownRevision,
+          now: engine.worldNow({ startedAt: row.started_at, state: { clockOffsetMinutes: row.clock_offset } }, at),
+        };
+      return { notModified: false, snapshot: await read(actorId, view) };
     },
-    async audit() {
+    viewer,
+    /**
+     * The newest audit rows. The statewide coordinator reads them all, break glass included. An
+     * access admin reads only role changes inside their own place, never which patient was opened.
+     * The HTTP layer refuses everyone else before this runs.
+     */
+    async audit(view) {
+      const whole = !view || engine.wholeNetwork(view.access);
+      const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
       const { rows } = await pool.query(
-        "SELECT sequence, actor_id, actor_role, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype' ORDER BY sequence DESC LIMIT 200",
+        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"} ORDER BY sequence DESC LIMIT 200`,
         [workspaceId],
       );
-      return rows;
+      if (whole || view.access.scope.kind === "statewide") return rows;
+      const world = await pool.query("SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'", [
+        workspaceId,
+      ]);
+      const payload = world.rows[0]?.payload;
+      if (!payload || !engine.validWorld(payload)) return [];
+      return rows.filter((row) => {
+        const access = engine.parseAccess(row.changes?.role, row.changes?.scope);
+        return !!access && engine.scopeWithin(payload, access.scope, view.access.scope);
+      });
     },
-    async command(actorId, commandId, expectedRevision, event) {
+    /** Every active or waiting role inside the access admin's own place. */
+    async listAccess(view) {
+      const blocked = accessRefusal(view);
+      if (blocked) return blocked;
+      const at = clock();
+      const world = await read(view.actorId);
+      const { rows } = await pool.query(
+        "SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2 ORDER BY granted_at, id LIMIT 500",
+        [workspaceId, at],
+      );
+      return {
+        status: 200,
+        body: {
+          memberships: rows
+            .filter((row) => {
+              const access = engine.parseAccess(row.role, row.scope);
+              return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+            })
+            .map(presentMembership),
+        },
+      };
+    },
+    /**
+     * Gives a person a role at a place until a set time. Nobody grants themselves a role or one
+     * wider than their own, and a coordinator or access admin role waits for a second approver.
+     */
+    async grantAccess(view, request) {
+      const blocked = accessRefusal(view);
+      if (blocked) return blocked;
+      const access = engine.parseAccess(request.role, request.scope);
+      if (!access) return refused(400, "A role and a place that go together are required.");
+      if (request.actorId === view.actorId) return refused(422, "Nobody grants themselves a role.");
+      return transaction(async (client, at) => {
+        if (!(request.expiresAt > at)) return refused(400, "A role needs an end date in the future.");
+        const row = await lock(client, view.actorId, at, view);
+        if (!engine.scopeExists(row.payload, access.scope)) return refused(422, "That place is not in the workspace.");
+        if (!engine.scopeWithin(row.payload, access.scope, view.access.scope))
+          return refused(403, "That role is wider than your own.");
+        const id = randomUUID();
+        const { rows } = await client.query(
+          "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
+          [id, workspaceId, request.actorId, access.role, access.scope, view.actorId, at, request.expiresAt],
+        );
+        const revision = Number(row.revision);
+        await audit(client, view, view.actorId, {
+          action: "ACCESS_GRANT",
+          outcome: "accepted",
+          priorRevision: revision,
+          revision,
+          changes: {
+            membershipId: id,
+            actorId: request.actorId,
+            role: access.role,
+            scope: access.scope,
+            expiresAt: request.expiresAt.toISOString(),
+          },
+        });
+        return { status: 200, body: { membership: presentMembership(rows[0]) } };
+      });
+    },
+    /** The second person's approval of a coordinator or access admin role. */
+    approveAccess(view, membershipId) {
+      return changeMembership(view, membershipId, "ACCESS_APPROVE", (membership) =>
+        !APPROVED_ROLES.includes(membership.role) || membership.approved_at !== null
+          ? "That role is not waiting for approval."
+          : membership.granted_by === view.actorId || membership.actor_id === view.actorId
+            ? "A second person approves this role."
+            : ["approved_at", "approved_by"],
+      );
+    },
+    /** Ends a role now. */
+    revokeAccess(view, membershipId) {
+      return changeMembership(view, membershipId, "ACCESS_REVOKE", () => ["revoked_at", "revoked_by"]);
+    },
+    /**
+     * Opens one patient's record, read only, outside this desk's care for a set time, with a
+     * reason. Each opening is kept as the "who looked" record and audited. More than the set
+     * number in one shift is marked as a pattern for the coordinator.
+     */
+    async breakGlass(view, patientId, reason) {
+      if (!engine.BREAK_GLASS_REASON_IDS.includes(reason)) return refused(400, "A reason from the list is required.");
+      return transaction(async (client, at) => {
+        const row = await lock(client, view.actorId, at, view);
+        const refusal = view.membershipId ? engine.breakGlassRefusal(row.payload, view.access, patientId, at) : null;
+        if (refusal || !view.membershipId)
+          return refused(422, refusal ?? "Opening a record outside your care is not part of your role.");
+        const until = new Date(at.getTime() + engine.BREAK_GLASS_MINUTES * 60_000);
+        await client.query(
+          "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+          [workspaceId, view.actorId, view.membershipId, patientId, reason, at, until],
+        );
+        const { rows } = await client.query(
+          "SELECT count(*)::int AS count FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND opened_at > $3",
+          [workspaceId, view.actorId, new Date(at.getTime() - engine.BREAK_GLASS_SHIFT_HOURS * 3_600_000)],
+        );
+        const pattern = rows[0].count > engine.BREAK_GLASS_PER_SHIFT;
+        const revision = Number(row.revision);
+        await audit(client, view, view.actorId, {
+          action: "BREAK_GLASS",
+          outcome: "accepted",
+          priorRevision: revision,
+          revision,
+          changes: { patientId, reason, until: until.toISOString(), membershipId: view.membershipId, pattern },
+        });
+        const opened = { ...view, grants: [...view.grants, { patientId, until }] };
+        return { status: 200, body: { until: until.toISOString(), pattern, snapshot: snapshot(row, at, opened) } };
+      });
+    },
+    /**
+     * `options.revisionOnly`: an accepted command (or its replay) answers without the snapshot.
+     * The client asks for this when more of its commands are queued, and reads the board once at
+     * the end. A refused or stale command always carries the snapshot. `options.view` is the
+     * sender's desk from `viewer()`: the command is checked against its role and place, and the
+     * reply carries only its part of the workspace.
+     * @param {{ revisionOnly?: boolean, view?: any }} [options]
+     */
+    async command(actorId, commandId, expectedRevision, event, options = {}) {
+      const { revisionOnly = false, view } = options;
       if (!engine.validCommand(event)) throw new Error("invalid-command");
+      const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprint = createHash("sha256")
         .update(JSON.stringify(canonical({ expectedRevision, event })))
         .digest("hex");
       let queued = false;
       const response = await transaction(async (client, at) => {
         queued = false;
-        const row = await lock(client, actorId, at);
+        const row = await lock(client, actorId, at, view);
         const previous = await client.query(
           "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
           [workspaceId, actorId, commandId],
@@ -369,16 +725,38 @@ export function createWorkspaceStore(
           if (receipt.fingerprint !== fingerprint)
             return {
               status: 422,
-              body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at) },
+              body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },
             };
-          return { status: receipt.status, body: { ...receipt.result, replayed: true, snapshot: snapshot(row, at) } };
+          return {
+            status: receipt.status,
+            body: {
+              ...receipt.result,
+              replayed: true,
+              ...(revisionOnly && receipt.status === 200 ? {} : { snapshot: snapshot(row, at, view) }),
+            },
+          };
         }
         let outcome = "stale";
         let status = 409;
         let changes = {};
         let reason = "The workspace changed. Review the latest board before trying again.";
+        let code = null;
         const priorRevision = Number(row.revision);
-        if (priorRevision === expectedRevision) {
+        // The sender's own role and place, checked before the revision, so a desk never learns
+        // whether a record outside its place changed. A refusal can still show that an id
+        // exists, because ids it cannot find fall through to the engine's own not-found reply.
+        const scopeRefusal = view ? engine.commandRefusal(row.payload, view.access, event, at, view.grants) : null;
+        if (scopeRefusal) {
+          outcome = "denied";
+          status = 422;
+          reason = scopeRefusal;
+          code = "scope";
+        } else if (demoRefused) {
+          // Refused like any other denial, so the attempt is audited and a retry replays it.
+          outcome = "denied";
+          status = 422;
+          reason = "Demo controls are switched off on the shared workspace.";
+        } else if (priorRevision === expectedRevision) {
           const applied = engine.applyCommand(row.payload, event, at);
           ({ outcome, changes, reason } = applied);
           status = outcome === "accepted" ? 200 : 422;
@@ -407,16 +785,28 @@ export function createWorkspaceStore(
             }
           }
         }
-        const result = { outcome, commandRevision: Number(row.revision), ...(reason ? { error: reason } : {}) };
-        await client.query(
-          "INSERT INTO ward_flow.audit(workspace_id, actor_id, command_id, action, outcome, prior_revision, revision, changes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
-          [workspaceId, actorId, commandId, event.type, outcome, priorRevision, row.revision, changes],
-        );
+        const result = {
+          outcome,
+          commandRevision: Number(row.revision),
+          ...(reason ? { error: reason } : {}),
+          ...(code ? { code } : {}),
+        };
+        await audit(client, view, actorId, {
+          commandId,
+          action: event.type,
+          outcome,
+          priorRevision,
+          revision: row.revision,
+          changes,
+        });
         await client.query(
           "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)",
           [workspaceId, actorId, commandId, fingerprint, status, result],
         );
-        return { status, body: { ...result, snapshot: snapshot(row, at) } };
+        return {
+          status,
+          body: { ...result, ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at, view) }) },
+        };
       });
       if (queued) {
         // Wait briefly so a quick delivery finishes in this invocation, but never hold the save

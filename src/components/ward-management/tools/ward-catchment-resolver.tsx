@@ -543,6 +543,10 @@ export interface WardCatchmentResolverProps {
   readonly initialQuery?: string;
   readonly onSelectCatchment?: (entry: ResolvedCatchment) => void;
   readonly className?: string;
+  /** Extra actions for the shown result, beside Copy summary (Tools sheet: refer and clinic phone). */
+  readonly renderActions?: (entry: ResolvedCatchment) => React.ReactNode;
+  /** Inside the Tools sheet: no title block and no outer frame, the sheet row already names it. */
+  readonly compact?: boolean;
 }
 
 /**
@@ -552,6 +556,8 @@ export function WardCatchmentResolver({
   initialQuery = "",
   onSelectCatchment,
   className = "",
+  renderActions,
+  compact = false,
 }: WardCatchmentResolverProps) {
   const searchInputId = useId();
   const [query, setQuery] = useState(initialQuery);
@@ -608,9 +614,12 @@ export function WardCatchmentResolver({
   const serviceDotStyle = activeResult ? getHealthServiceDotStyle(activeResult.healthService.code) : undefined;
 
   return (
-    <div className={`${styles.container} ${className}`.trim()} data-testid="ward-catchment-resolver">
+    <div
+      className={`${styles.container} ${compact ? styles.compact : ""} ${className}`.trim()}
+      data-testid="ward-catchment-resolver"
+    >
       {/* Header */}
-      <header className={styles.header}>
+      <header className={styles.header} hidden={compact}>
         <div className={styles.titleRow}>
           <span className={styles.titleIcon} aria-hidden="true">
             <svg
@@ -863,6 +872,7 @@ export function WardCatchmentResolver({
                   </>
                 )}
               </button>
+              {renderActions ? renderActions(activeResult) : null}
             </div>
           </article>
         ) : queryResult.type === "not-found" ? (
@@ -920,5 +930,3 @@ export function WardCatchmentResolver({
     </div>
   );
 }
-
-export default WardCatchmentResolver;
