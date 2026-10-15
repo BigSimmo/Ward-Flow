@@ -265,9 +265,6 @@ describe("the set of ward files that render through a portal", () => {
     "shell/ward-rail.tsx":
       "renders More pages through <Sheet> -> OverlayPortal. Its content is covered by " +
       "ward-rail.module.css's `.moreSheet, .moreSheet *` print reset outside the shell subtree.",
-    "ward-management-navigation.tsx":
-      "renders the phone drawer through <Sheet> -> OverlayPortal. Its content is covered by " +
-      "ward-sidebar.module.css's `.drawerBody, .drawerBody *` print reset, which is LOAD-BEARING.",
     "shell/ward-phone-menu.tsx":
       "renders the phone menu and Create sheets through <Sheet> -> OverlayPortal. Their content " +
       "is covered by ward-phone-menu.module.css's `.sheet, .sheet *` print reset.",
