@@ -11,7 +11,7 @@ export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward-flow-reducer.ts": 7200,
-  "src/components/ward-management/ed/ed-screen.tsx": 6950,
+  "src/components/ward-management/ed/ed-screen.tsx": 6650,
   "src/components/ward-management/community/community-screen.tsx": 6200,
   "src/components/ward-management/referrals/ward-referral-drawer.tsx": 4350,
   "src/components/ward-management/board/ward-board.tsx": 3950,
