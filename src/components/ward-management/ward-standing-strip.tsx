@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
+import { durMinutes } from "@/components/wf";
 import { clockState, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
@@ -24,7 +25,6 @@ import {
 import type { WardNetwork } from "@/components/ward-management/ward-sites";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import styles from "./ward-standing-strip.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -165,11 +165,14 @@ export function standingFigures(
    * therefore mean nothing. The legal figures carry thresholds the model itself defines
    * (`clockState`) and are **zero on a good day**, which is what makes an amber tile informative.
    */
+  const urgentWindow =
+    thresholds.urgentMinutes % 60 === 0 ? `${thresholds.urgentMinutes / 60}h` : durMinutes(thresholds.urgentMinutes);
   const legalFigures: StandingFigure[] = [
     { key: "passed", label: "Deadline passed", value: String(legal.passed), flagged: legal.passed > 0 },
     {
       key: "within-hour",
-      label: `Due within ${DUE_SOON_URGENT_MINUTES / 60}h (your default)`,
+      // The window the count above uses, so a changed urgent warning in Settings changes both.
+      label: `Due within ${urgentWindow} (your default)`,
       value: String(legal.withinHour),
       flagged: legal.withinHour > 0,
     },
