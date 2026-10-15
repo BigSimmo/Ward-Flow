@@ -62,10 +62,10 @@ const ALLOW_MARKER = "precommit-scan: allow";
 // WARD_SIGNOUT_FILE, else WARD_FLOW_LOGS, else D:/Repos/ward-flow-logs on Windows and
 // ~/ward-flow-logs elsewhere.
 const SIGN_OUT_FILE =
-  process.env.WARD_SIGNOUT_FILE ??
+  process.env.WARD_SIGNOUT_FILE ||
   path
     .join(
-      process.env.WARD_FLOW_LOGS ??
+      process.env.WARD_FLOW_LOGS ||
         (process.platform === "win32" ? "D:/Repos/ward-flow-logs" : path.join(os.homedir(), "ward-flow-logs")),
       "sign-out.md",
     )

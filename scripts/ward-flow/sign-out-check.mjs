@@ -27,10 +27,10 @@ const standaloneWardFlow = isPublicWardFlowCheckout(root);
 const LINE = standaloneWardFlow ? "refs/remotes/origin/main" : "codex/task-ward-flow-live-state-20260831";
 // Inline copy of scripts/ward-flow/logs-root.mjs: tests copy this script alone into fixtures.
 const SIGN_OUT =
-  process.env.WARD_SIGNOUT_FILE ??
+  process.env.WARD_SIGNOUT_FILE ||
   path
     .join(
-      process.env.WARD_FLOW_LOGS ??
+      process.env.WARD_FLOW_LOGS ||
         (process.platform === "win32" ? "D:/Repos/ward-flow-logs" : path.join(os.homedir(), "ward-flow-logs")),
       "sign-out.md",
     )

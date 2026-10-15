@@ -12,5 +12,5 @@ export function wardFlowLogsRoot(env = process.env, platform = process.platform)
 
 /** @param {Record<string, string | undefined>} [env] @param {string} [platform] */
 export function wardSignOutFile(env = process.env, platform = process.platform) {
-  return env.WARD_SIGNOUT_FILE ?? path.join(wardFlowLogsRoot(env, platform), "sign-out.md").replace(/\\/g, "/");
+  return env.WARD_SIGNOUT_FILE || path.join(wardFlowLogsRoot(env, platform), "sign-out.md").replace(/\\/g, "/");
 }
