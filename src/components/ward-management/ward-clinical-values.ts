@@ -156,6 +156,14 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-24 (26 Sep 2026), Josh's default, shown neutral",
   },
+  veryLongWait: {
+    ...SYNTHETIC,
+    name: "Wait in hospital shown in the second, danger waiting band on statistics, from",
+    group: "Emergency department waits",
+    value: 48 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (twice the long wait, statistics screens, 26 Sep 2026)`,
+  },
   edAccessTarget: {
     ...SYNTHETIC,
     name: "ED access target, counted from arrival",

@@ -11,6 +11,7 @@ import {
   clinicalValueStatusText,
   clinicalValuesMarkdownTable,
   formatClinicalFigure,
+  allClinicalValuesSigned,
   unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
 import { applyDueSoonThresholds } from "../src/components/ward-management/ward-clock";
@@ -77,6 +78,7 @@ describe("clinical values file", () => {
       edSecondEscalation: 720,
       edLadderActNowEdge: 1320,
       longWait: 1440,
+      veryLongWait: 2880,
       edAccessTarget: 1440,
       edMedicalBedRelease: 24,
       bedAlertLine: 85,
@@ -112,8 +114,18 @@ describe("clinical values file", () => {
       delayedDischargeEscalation: 72,
       readmissionWindow: 28,
     });
-    expect(unsignedClinicalValueCount()).toBe(CLINICAL_VALUE_LIST.length);
-    expect(TIER_TARGETS_NOTE).toBe("Overdue after T1 1h, T2 4h, T3 24h, pending clinical sign-off");
+    expect(unsignedClinicalValueCount()).toBe(
+      CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,
+    );
+    const tiersSigned = allClinicalValuesSigned([
+      "tierOneOverdue",
+      "tierTwoOverdue",
+      "tierThreeOverdue",
+      "anyTierOverdue",
+    ]);
+    expect(TIER_TARGETS_NOTE).toBe(
+      `Overdue after T1 1h, T2 4h, T3 24h, ${tiersSigned ? "clinically signed" : "pending clinical sign-off"}`,
+    );
   });
 
   it("is what the screens' constants read", () => {
@@ -149,6 +161,18 @@ describe("clinical values file", () => {
     expect(radar.find((item) => item.id === "red")?.urgency).toBe("critical_1h");
     expect(radar.find((item) => item.id === "inside")?.urgency).toBe("warning_4h");
     expect(radar.find((item) => item.id === "outside")?.urgency).toBe("normal");
+  });
+
+  it("keeps the radar's one-hour red when Settings shortens the urgent warning", () => {
+    const now = "2026-10-15T00:00:00.000Z";
+    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
+    const forms = [{ id: "forty-five-minutes", formType: "Form 3B", expiresAt: at(45) }];
+    try {
+      applyDueSoonThresholds(15, 30);
+      expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("critical_1h");
+    } finally {
+      applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
+    }
   });
 
   it("follows the Settings warnings when they are longer, never shorter, than the radar's amber", () => {

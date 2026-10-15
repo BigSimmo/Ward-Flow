@@ -198,8 +198,8 @@ function hoursText(minutes: number): string {
 
 // ---- Group STATISTICS AND SETTINGS (Fix the working system, 26 September 2026) ----------------
 
-/** The second waiting band on the statistics screens: twice the long-wait default. */
-export const VERY_LONG_WAIT_MINUTES = 2 * LONG_WAIT_MINUTES;
+/** The second waiting band on the statistics screens (twice the long-wait default, unsigned). */
+export const VERY_LONG_WAIT_MINUTES = CLINICAL_VALUES.veryLongWait.value;
 
 /** This group's entries for the settings list; `OPERATIONAL_DEFAULTS` below includes them. */
 export const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [

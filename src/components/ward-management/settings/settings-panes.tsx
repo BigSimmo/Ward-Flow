@@ -863,6 +863,7 @@ export function DataPane({
             </p>
             <div className={styles.tableWrap} role="region" aria-label="Clinical values" tabIndex={0}>
               <table className={styles.table}>
+                <caption className={styles.srOnly}>Clinical values and sign-off status</caption>
                 <thead>
                   <tr>
                     <th scope="col">Rule</th>
@@ -879,7 +880,10 @@ export function DataPane({
                       data-clinical-status={entry.status}
                     >
                       <td className={styles.cellStrong}>{entry.name}</td>
-                      <td className={styles.mono}>{formatClinicalFigure(entry.value, entry.unit)}</td>
+                      <td className={styles.mono}>
+                        {formatClinicalFigure(entry.value, entry.unit)}
+                        {entry.adjustable ? ", default, changeable in Settings" : null}
+                      </td>
                       <td>
                         <span className={styles.readout}>
                           <StatusGlyph tone={entry.status === "signed" ? "success" : "neutral"} size={9} />

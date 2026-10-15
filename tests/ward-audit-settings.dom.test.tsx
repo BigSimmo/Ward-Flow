@@ -13,7 +13,11 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
-import { CLINICAL_VALUE_LIST } from "@/components/ward-management/ward-clinical-values";
+import {
+  CLINICAL_VALUE_LIST,
+  clinicalValueStatusText,
+  unsignedClinicalValueCount,
+} from "@/components/ward-management/ward-clinical-values";
 beforeEach(() => {
   localStorage.clear();
 });
@@ -41,12 +45,12 @@ it("lists every clinical value with its synthetic or signed status", () => {
   fireEvent.click(screen.getByRole("tab", { name: /Clinical values/ }));
   const panel = screen.getByTestId("ward-settings-clinical-values");
   expect(panel).toHaveTextContent(
-    `${CLINICAL_VALUE_LIST.length} of ${CLINICAL_VALUE_LIST.length} values wait on clinical sign-off`,
+    `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values wait on clinical sign-off`,
   );
   for (const entry of CLINICAL_VALUE_LIST) {
     const row = within(panel).getByTestId(`ward-settings-clinical-value-${entry.id}`);
     expect(row).toHaveTextContent(entry.name);
-    expect(row).toHaveTextContent("Synthetic value");
+    expect(row).toHaveTextContent(clinicalValueStatusText(entry));
   }
 });
 it("discloses that board refresh is not wired and does not pretend to save a cadence", () => {
