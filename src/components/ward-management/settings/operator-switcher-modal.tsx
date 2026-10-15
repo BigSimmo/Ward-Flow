@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
 import {
   setWardAccess,
@@ -104,6 +104,10 @@ function useSafePathname(): string {
   }
 }
 
+function sameAccess(a: WardAccess, b: WardAccess): boolean {
+  return a.role === b.role && JSON.stringify(a.scope) === JSON.stringify(b.scope);
+}
+
 /**
  * Switch workstation, direction D (Josh, 9 Oct 2026): a site drawer with an inline preview.
  * Search and recents on top, the desk you are on and what it can do, the statewide desks, then
@@ -112,8 +116,11 @@ function useSafePathname(): string {
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
-  const { movements, units, bedReleases, admissions, leaveBeds, patients, referrals, focusMovementId, configuration } =
+  const { movements, units, bedReleases, admissions, leaveBeds, focusMovementId, configuration } =
     useUnscopedWardFlow();
+  // The patient in focus is named from the desk's own scoped workspace (review on PR #330), so a
+  // restricted desk never sees the UMRN of someone outside its care here.
+  const scoped = useWardFlow();
   // Role access plan PR 1: with the flag on, opening a desk takes that desk's access.
   const accessOn = useWardFeatureFlag("role-access");
   const { access: currentAccess } = useWardAccessSnapshot();
@@ -187,7 +194,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
 
   // "Current" follows the role (Settings is the coordinator's desk); navigation is only blocked when
   // the browser is already on that desk's own home, so the coordinator home still opens from here.
-  const atHome = (desk: Desk) => pathname === desk.href;
+  // With role access on, the access must match too: a service coordinator shares the statewide
+  // home address but can still switch back to the statewide desk (review on PR #330).
+  const atHome = (desk: Desk) => pathname === desk.href && (!accessOn || sameAccess(currentAccess, accessFor(desk)));
 
   function go(desk: Desk) {
     if (atHome(desk)) return;
@@ -215,7 +224,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   // Owner answer 38: the wards a patient was referred to are named to coordinators only. Their
   // emergency department is not another ward, so that shortcut shows on every route.
   const focusMovement = focusMovementId
-    ? movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
+    ? scoped.movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
     : undefined;
   const focusWardIds =
     focusMovement && isCoordinatorRoute
@@ -285,7 +294,13 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
           <span className={styles.chipLead}>
             <Icon icon={Crosshair} size={14} />
             Patient in focus
-            <span className={styles.mono}>{movementUmrn(focusMovement, { patients, referrals, movements })}</span>
+            <span className={styles.mono}>
+              {movementUmrn(focusMovement, {
+                patients: scoped.patients,
+                referrals: scoped.referrals,
+                movements: scoped.movements,
+              })}
+            </span>
           </span>
           {focusWards.map((unit) => (
             <Link

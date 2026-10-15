@@ -218,7 +218,11 @@ export function lockWardDesk(): void {
   emit({ ...snapshot, records: expireGrants(snapshot.records) });
 }
 
-/** Open one patient record outside the desk's care, read only, for a set time (plan section 7). */
+/**
+ * Open one patient record outside the desk's care, read only, for a set time (plan section 7).
+ * Returns `null` and records nothing during a coordinator preview: a preview is read only and must
+ * never be logged as the previewed desk (review on PR #330).
+ */
 export function breakGlass(input: {
   patientId: string;
   now: Instant;
@@ -226,8 +230,9 @@ export function breakGlass(input: {
   reason: BreakGlassReasonId;
   otherText?: string;
   placeLabel: string;
-}): BreakGlassRecord {
+}): BreakGlassRecord | null {
   load();
+  if (snapshot.previewOf !== null) return null;
   const record: BreakGlassRecord = {
     id: sequence++,
     patientId: input.patientId,

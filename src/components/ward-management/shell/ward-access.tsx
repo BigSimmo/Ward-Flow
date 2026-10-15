@@ -304,6 +304,7 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
     headingRef.current?.focus();
   }, []);
   const { units } = useUnscopedWardFlow();
+  const { previewOf } = useWardAccessSnapshot();
   const home = homeHrefFor(access, communityTeamSlug);
   return (
     <WardGround>
@@ -325,7 +326,10 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
             Switch desk
           </Button>
         </div>
-        {patientId && canBreakGlass(access.role) ? <BreakGlassForm access={access} patientId={patientId} /> : null}
+        {/* A preview is read only, so it never offers break glass (review on PR #330). */}
+        {patientId && canBreakGlass(access.role) && previewOf === null ? (
+          <BreakGlassForm access={access} patientId={patientId} />
+        ) : null}
         {switching ? <OperatorSwitcherModal isOpen onClose={() => setSwitching(false)} /> : null}
       </main>
     </WardGround>

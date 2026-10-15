@@ -58,6 +58,16 @@ describe("the access table", () => {
     expect(ROLE_SCREENS.admin.search).toBeUndefined();
   });
 
+  it("opens a service's statistics only to that service or the whole network", () => {
+    const path = "/mockups/ward-flow/statistics/service/" + encodeURIComponent("North Metro");
+    expect(screenForPath(path)).toMatchObject({ screen: "statistics", serviceId: "North Metro" });
+    const north = { role: "executive", scope: { kind: "service", service: "North Metro" } } as const;
+    const south = { role: "executive", scope: { kind: "service", service: "South Metro" } } as const;
+    expect(screenDecision(north, screenForPath(path), places).open).toBe(true);
+    expect(screenDecision(south, screenForPath(path), places)).toEqual({ open: false, why: "place" });
+    expect(screenDecision(STATEWIDE_COORDINATOR, screenForPath(path), places).open).toBe(true);
+  });
+
   it("lets only clinical roles break glass", () => {
     expect(WARD_ACCESS_ROLES.filter(canBreakGlass).sort()).toEqual(["bed_manager", "community", "ed", "ward"]);
   });
@@ -258,8 +268,8 @@ describe("the desk store", () => {
       otherText: "Typed words",
       placeLabel: "Ward",
     });
-    expect(record.until).toBe(NOW_ANCHOR + 60);
-    expect(record.otherText).toBe("Typed words");
+    expect(record?.until).toBe(NOW_ANCHOR + 60);
+    expect(record?.otherText).toBe("Typed words");
     setWardAccess({ role: "ed", scope: { kind: "ed", edId: "x" } });
     const changed = readWardAccessSnapshot();
     expect(changed.access.role).toBe("ed");
@@ -283,5 +293,18 @@ describe("the desk store", () => {
     startAccessPreview(wardDesk);
     expect(readWardAccessSnapshot().access).toEqual(wardDesk);
     expect(readWardAccessSnapshot().previewOf).toEqual(STATEWIDE_COORDINATOR);
+  });
+
+  it("never breaks glass during a preview, so nothing is logged as the previewed desk", () => {
+    startAccessPreview(wardDesk);
+    const record = breakGlass({
+      patientId: "P-3",
+      now: NOW_ANCHOR,
+      windowMinutes: 60,
+      reason: "handover",
+      placeLabel: "Ward",
+    });
+    expect(record).toBeNull();
+    expect(readWardAccessSnapshot().records).toHaveLength(0);
   });
 });

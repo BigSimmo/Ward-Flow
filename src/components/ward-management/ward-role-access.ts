@@ -287,6 +287,8 @@ export type ScreenAddress = {
   readonly teamSlug?: string;
   readonly patientId?: string;
   readonly movementId?: string;
+  /** The health service a `/statistics/service/...` address names. */
+  readonly serviceId?: string;
   /** The statistics section a `/statistics/...` address opens. */
   readonly statisticsSection?: string;
 };
@@ -360,7 +362,8 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
       if (second === "ed" && third !== undefined) return { screen: "statistics", statisticsSection: "ed", edId: third };
       if (second === "community" && third !== undefined)
         return { screen: "statistics", statisticsSection: "community", teamSlug: third };
-      if (second === "service" && third !== undefined) return { screen: "statistics", statisticsSection: "service" };
+      if (second === "service" && third !== undefined)
+        return { screen: "statistics", statisticsSection: "service", serviceId: third };
       return { screen: "statistics", statisticsSection: second };
     }
     default:
@@ -434,6 +437,10 @@ export function screenDecision(
   }
   if (address.unitId !== undefined && !unitInScope(scope, address.unitId, places)) return { open: false, why: "place" };
   if (address.edId !== undefined && !edInScope(scope, address.edId, places)) return { open: false, why: "place" };
+  if (address.serviceId !== undefined) {
+    const own = scope.kind === "statewide" || (scope.kind === "service" && scope.service === address.serviceId);
+    if (!own) return { open: false, why: "place" };
+  }
   if (address.teamSlug !== undefined) {
     const own =
       scope.kind === "team"
