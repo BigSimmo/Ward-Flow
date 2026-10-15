@@ -7,7 +7,11 @@ import { useState } from "react";
 
 import { buttonClass, Button } from "@/components/wf";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WARD_HOME_HREF, resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
+import {
+  WARD_BED_MEETING_TV_HREF,
+  WARD_HOME_HREF,
+  resolveWardScreenTitle,
+} from "@/components/ward-management/ward-nav";
 import styles from "./ward-phone-desktop-only.module.css";
 
 /**
@@ -20,7 +24,7 @@ import styles from "./ward-phone-desktop-only.module.css";
  */
 const DESKTOP_ONLY_PREFIXES: readonly string[] = [
   // The bed meeting TV view (15 Oct 2026) is a meeting room screen, and is left out of the phone menu.
-  "/mockups/ward-flow/bed-meeting",
+  WARD_BED_MEETING_TV_HREF,
 ];
 
 export function isPhoneDesktopOnlyPath(pathname: string): boolean {
