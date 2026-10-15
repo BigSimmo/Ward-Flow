@@ -4181,6 +4181,14 @@ export function reduceClinicalEvent(
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
       const arriverSex = mixSexOf(movement.gender, movement.sex);
+      const countedSex =
+        linkedAdmission === undefined ? arriverSex : mixSexOf(linkedAdmission.gender, linkedAdmission.sex);
+      const updatedSexMix =
+        bedAlreadyCounted && countedSex !== arriverSex
+          ? adjustSexMix(adjustSexMix(unit.sexMix, countedSex, -1), arriverSex, 1)
+          : bedAlreadyCounted
+            ? unit.sexMix
+            : adjustSexMix(unit.sexMix, arriverSex, 1);
 
       /*
        * A no-transport arrival jumps from `pulled` or `handover_ready` straight here and skips
@@ -4206,7 +4214,7 @@ export function reduceClinicalEvent(
       const updatedUnit: Unit = {
         ...unit,
         empty: bedAlreadyCounted ? unit.empty : { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
-        sexMix: bedAlreadyCounted ? unit.sexMix : adjustSexMix(unit.sexMix, arriverSex, 1),
+        sexMix: updatedSexMix,
         ...(isBedTurnaround
           ? {
               arrivalCapacityConflicts: [

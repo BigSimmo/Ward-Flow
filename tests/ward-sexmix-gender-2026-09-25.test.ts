@@ -85,6 +85,31 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
     expect(afterUnit.sexMix.Male).toBe(beforeUnit.sexMix.Male ?? 0);
   });
 
+  it("PATIENT_ARRIVED reconciles a seeded pulled stay when gender changes before arrival", () => {
+    const state = seeded();
+    const base = movement(state, "WF-004");
+    const withGender: Movement = {
+      ...base,
+      gender: "Female",
+      transportNeed: { needed: false, at: NOW - 10 },
+    };
+    const before = replaceMovement(state, "WF-004", withGender);
+    const beforeUnit = unit(before, "bty-adult-secure");
+
+    const after = wardFlowReducer(before, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      now: NOW,
+      movementId: "WF-004",
+      actingUnitId: "bty-adult-secure",
+    });
+
+    expect(after.rejections).toHaveLength(0);
+    const afterUnit = unit(after, "bty-adult-secure");
+    expect(afterUnit.sexMix.Male).toBe((beforeUnit.sexMix.Male ?? 0) - 1);
+    expect(afterUnit.sexMix.Female).toBe((beforeUnit.sexMix.Female ?? 0) + 1);
+  });
+
   it("PATIENT_ARRIVED counts a Non-binary gender under its recorded sex", () => {
     const state = seeded();
     const base = movement(state, "WF-004");
