@@ -3355,16 +3355,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
                           const stay = admissions?.find((a) => a.id === admissionId);
                           if (blocker === null) {
-                            // Each record is cleared only if it holds one, so nothing is refused as a no-op.
-                            if (stay && stay.blockReason !== null) {
-                              dispatch({
-                                type: "CLEAR_STAY_DISCHARGE_BLOCKER",
-                                role: "ward",
-                                now,
-                                admissionId,
-                                actingUnitId: unitId,
-                              });
-                            }
+                            // A blocked release clears the stay's reason with it; otherwise the stay's own
+                            // reason is cleared, so nothing is refused as a no-op.
                             if (pendingRelease && pendingRelease.blocker !== null) {
                               dispatch({
                                 type: "CLEAR_BED_RELEASE_BLOCK",
@@ -3373,26 +3365,36 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                                 releaseId: pendingRelease.id,
                                 actingUnitId: unitId,
                               });
+                            } else if (stay && stay.blockReason !== null) {
+                              dispatch({
+                                type: "CLEAR_STAY_DISCHARGE_BLOCKER",
+                                role: "ward",
+                                now,
+                                admissionId,
+                                actingUnitId: unitId,
+                              });
                             }
                             setToastMessage("Discharge blocker cleared.");
                             return;
                           }
                           const validBlocker = blocker as BedReleaseBlocker;
-                          // The stay keeps the blocker whether or not a bed release exists yet.
-                          dispatch({
-                            type: "RECORD_STAY_DISCHARGE_BLOCKER",
-                            role: "ward",
-                            now,
-                            admissionId,
-                            actingUnitId: unitId,
-                            blocker: validBlocker,
-                          });
+                          // With a bed release the release event keeps the stay's reason in step; without
+                          // one the stay records it directly.
                           if (pendingRelease) {
                             dispatch({
                               type: "BLOCK_BED_RELEASE",
                               role: "ward",
                               now,
                               releaseId: pendingRelease.id,
+                              actingUnitId: unitId,
+                              blocker: validBlocker,
+                            });
+                          } else {
+                            dispatch({
+                              type: "RECORD_STAY_DISCHARGE_BLOCKER",
+                              role: "ward",
+                              now,
+                              admissionId,
                               actingUnitId: unitId,
                               blocker: validBlocker,
                             });

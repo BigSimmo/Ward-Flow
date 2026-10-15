@@ -65,6 +65,7 @@ import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze"
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
+  type BedReleaseBlocker,
   CANCEL_TRANSPORT_REASONS,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
   LEGAL_STATUS_CHANGE_REASONS,
@@ -1352,6 +1353,17 @@ function replaceAdmission(state: WardFlowState, admissionId: string, next: Admis
       ? { ...state.dischargeRevisions, [admissionId]: (state.dischargeRevisions[admissionId] ?? 0) + 1 }
       : state.dischargeRevisions,
   };
+}
+
+/**
+ * One discharge blocker, two records: the release's own `blocker` and the stay's `blockReason`.
+ * Whenever a release-level event changes the first, the linked stay follows, so a blocker set on one
+ * screen is never left behind on the handover, stranded list or statistics by another screen's clear.
+ */
+function withStayBlocker(state: WardFlowState, admissionId: string, blocker: BedReleaseBlocker | null): WardFlowState {
+  const stay = findAdmission(state, admissionId);
+  if (!stay || stay.blockReason === blocker) return state;
+  return replaceAdmission(state, stay.id, { ...stay, blockReason: blocker });
 }
 
 function findLeaveBed(state: WardFlowState, leaveBedId: string): LeaveBed | undefined {
@@ -6659,8 +6671,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         state: "expected",
         expectedAt: event.expectedAt,
         waitingOn: event.waitingOn,
-        blocker: event.blocker ?? null,
-        blockedBy: event.blocker !== undefined ? flaggingRole : null,
+        // A blocker already recorded on the stay carries over when the flag supplies none.
+        blocker: event.blocker ?? flaggedAdmission.blockReason ?? null,
+        blockedBy: event.blocker !== undefined || flaggedAdmission.blockReason !== null ? flaggingRole : null,
         // A bed nobody has yet left is not being made ready. Preparation only ever begins after
         // `RELEASE_BED`, and only through `SET_BED_PREPARATION` — see that case.
         preparing: false,
@@ -6801,7 +6814,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updated);
+      return withStayBlocker(replaceBedRelease(state, release.id, updated), release.admissionId, event.blocker);
     }
 
     case "CLEAR_BED_RELEASE_BLOCK": {
@@ -6828,7 +6841,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, unblocked);
+      return withStayBlocker(replaceBedRelease(state, release.id, unblocked), release.admissionId, null);
     }
 
     case "SET_BED_PREPARATION": {

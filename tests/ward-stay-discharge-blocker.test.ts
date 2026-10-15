@@ -93,4 +93,95 @@ describe("a stay-level discharge blocker, recorded before any bed release exists
       expect(find(refused, notInBed.id).blockReason).toBe(notInBed.blockReason);
     }
   });
+
+  describe("stays in step with the bed release", () => {
+    function flag(state: WardFlowState, person: { id: string; unitId: string }) {
+      return wardFlowReducer(state, {
+        type: "FLAG_BED_RELEASE",
+        role: "ward",
+        now: NOW,
+        unitId: person.unitId,
+        actingUnitId: person.unitId,
+        admissionId: person.id,
+        waitingOn: "Nothing outstanding",
+        expectedAt: NOW + 60,
+      });
+    }
+
+    function freshOccupant(state: WardFlowState) {
+      const found = state.admissions.find(
+        (a) =>
+          a.state === "occupied" &&
+          a.blockReason === null &&
+          !state.bedReleases.some((r) => r.admissionId === a.id && r.state !== "discharged"),
+      );
+      if (!found) throw new Error("the seed has nobody in a bed with no live release and no blocker");
+      return found;
+    }
+
+    function releaseOf(state: WardFlowState, admissionId: string) {
+      const found = state.bedReleases.find((r) => r.admissionId === admissionId && r.state !== "discharged");
+      if (!found) throw new Error("no live release");
+      return found;
+    }
+
+    it("a release flagged after the stay blocker starts out blocked with that reason", () => {
+      const state = seedWardFlowState();
+      const person = freshOccupant(state);
+      const withBlocker = record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[1]);
+      const flagged = flag(withBlocker, person);
+
+      expect(flagged.rejections).toHaveLength(state.rejections.length);
+      expect(releaseOf(flagged, person.id).blocker).toBe(BED_RELEASE_BLOCKERS[1]);
+      expect(releaseOf(flagged, person.id).blockedBy).not.toBeNull();
+    });
+
+    it("a release flagged with no stay blocker stays unblocked", () => {
+      const state = seedWardFlowState();
+      const person = freshOccupant(state);
+      const flagged = flag(state, person);
+
+      expect(releaseOf(flagged, person.id).blocker).toBeNull();
+      expect(releaseOf(flagged, person.id).blockedBy).toBeNull();
+    });
+
+    it("clearing the release blocker (discharge board) also clears the stay's reason", () => {
+      const state = seedWardFlowState();
+      const person = freshOccupant(state);
+      const flagged = flag(record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]), person);
+      const release = releaseOf(flagged, person.id);
+
+      const cleared = wardFlowReducer(flagged, {
+        type: "CLEAR_BED_RELEASE_BLOCK",
+        role: "ward",
+        now: NOW,
+        releaseId: release.id,
+        actingUnitId: person.unitId,
+      });
+
+      expect(cleared.rejections).toHaveLength(state.rejections.length);
+      expect(releaseOf(cleared, person.id).blocker).toBeNull();
+      expect(find(cleared, person.id).blockReason).toBeNull();
+    });
+
+    it("replacing the release blocker also replaces the stay's reason", () => {
+      const state = seedWardFlowState();
+      const person = freshOccupant(state);
+      const flagged = flag(record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]), person);
+      const release = releaseOf(flagged, person.id);
+
+      const replaced = wardFlowReducer(flagged, {
+        type: "BLOCK_BED_RELEASE",
+        role: "ward",
+        now: NOW,
+        releaseId: release.id,
+        actingUnitId: person.unitId,
+        blocker: BED_RELEASE_BLOCKERS[2],
+      });
+
+      expect(replaced.rejections).toHaveLength(state.rejections.length);
+      expect(releaseOf(replaced, person.id).blocker).toBe(BED_RELEASE_BLOCKERS[2]);
+      expect(find(replaced, person.id).blockReason).toBe(BED_RELEASE_BLOCKERS[2]);
+    });
+  });
 });
