@@ -586,9 +586,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const [toolsOpenRequest, setToolsOpenRequest] = useState<{ tool: ToolsSheetToolId; seq: number } | undefined>();
+  const toolsReturnFocusRef = useRef<HTMLElement | null>(null);
   const clearToolsOpenRequest = useCallback(() => setToolsOpenRequest(undefined), []);
   useEffect(
-    () => subscribeToolsTool((tool) => setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }))),
+    () => subscribeToolsTool((tool, returnFocus) => {
+      toolsReturnFocusRef.current = returnFocus ?? null;
+      setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }));
+    }),
     [],
   );
   const [activityQuery, setActivityQuery] = useState("");
@@ -884,6 +888,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
+      if (id === "tools") toolsReturnFocusRef.current = null;
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
@@ -902,7 +907,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       } else if (id === "tasks") {
         announceToWardShell(`Tasks opened. ${tasksActiveCount} invented tasks outstanding.`);
       } else if (id === "tools") {
-        announceToWardShell("Tools opened. Figures, utilities, contacts and shift desk are here.");
+        announceToWardShell("Tools opened. Service now, quick actions, look ups, print and share, and demo controls are here.");
       } else if (id === "referral") {
         announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
       }
@@ -2047,7 +2052,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
-        returnFocusRef={isPhone ? phoneMenuRef : toolsTriggerRef}
+        returnFocusRef={toolsReturnFocusRef.current ? { current: toolsReturnFocusRef.current } : isPhone ? phoneMenuRef : toolsTriggerRef}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
         headerClassName={styles.drawerHeader}
@@ -2070,9 +2075,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           isPhone={isPhone}
           roleLabel={CHROME_ROLE_LABELS[role]}
           onNavigate={() => closePopover("tools", false)}
-          onNewReferral={() =>
+          onNewReferral={(communityService) =>
             openReferral(
-              { category: roleCategory, destination: "ward" },
+              communityService
+                ? { category: roleCategory, destination: "community", sendingTeam: communityService }
+                : { category: roleCategory, destination: "ward" },
               isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
             )
           }

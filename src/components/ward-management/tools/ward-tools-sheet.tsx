@@ -57,7 +57,7 @@ export type WardToolsSheetProps = {
   roleLabel: string;
   /** Close the sheet; every link calls it as it navigates. */
   onNavigate: () => void;
-  onNewReferral: () => void;
+  onNewReferral: (communityService?: string) => void;
   /** A tool to open on arrival, and a counter so the same request can be made again. */
   openRequest?: { tool: ToolsSheetToolId; seq: number };
   /** Called once the request is used, so the parent can clear it and a later open starts at the top. */
@@ -319,7 +319,7 @@ export function WardToolsSheet({
                       ? `${result.communityClinic} clinic ${clinic.publishedPhone}, published number, not call-tested`
                       : `${result.communityClinic} clinic number not recorded`}
                   </span>
-                  <button type="button" className={styles.primaryButton} onClick={onNewReferral}>
+                  <button type="button" className={styles.primaryButton} onClick={() => onNewReferral(result.communityClinic)}>
                     Refer to this service
                   </button>
                 </>
@@ -405,4 +405,6 @@ export function WardToolsSheet({
       </section>
     </div>
   );
+}
+);
 }
