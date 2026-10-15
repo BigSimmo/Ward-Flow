@@ -279,8 +279,10 @@ export function findRetiredTerms(file, text, config) {
     for (const term of config.terms) {
       term.regex.lastIndex = 0;
       // A clause that itself says the thing is retired is current; another clause on the line is not.
-      const match = [...line.matchAll(term.regex)].find((m) => !term.allowRegex?.test(clauseAt(line, m.index)));
-      if (match) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
+      // Every mention counts, so a second mention added to an already-flagged line is still new.
+      for (const match of line.matchAll(term.regex))
+        if (!term.allowRegex?.test(clauseAt(line, match.index)))
+          hits.push({ file, line: index + 1, term: term.id, text: match[0] });
     }
   });
   return hits;

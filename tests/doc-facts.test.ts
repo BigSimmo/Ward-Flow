@@ -108,6 +108,7 @@ describe("retired terms", () => {
     expect(findRetiredTerms("a.md", "ok\nUses Azure Storage\nAZURE_TENANT_ID and Entra ID", config)).toEqual([
       { file: "a.md", line: 2, term: "azure", text: "Azure" },
       { file: "a.md", line: 3, term: "azure", text: "AZURE" },
+      { file: "a.md", line: 3, term: "azure", text: "Entra" },
     ]);
   });
 
@@ -274,6 +275,17 @@ describe("doc facts run", () => {
     expect(run({ root, base }).errors).toEqual([
       { file: "docs/hosting.md", line: 5, term: "azure", text: "Azure", isNew: true },
     ]);
+  });
+
+  it("fails a second mention added to a line that already named the term", () => {
+    const { put, git } = fixture();
+    run({ root, write: true });
+    git("-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qam", "facts");
+    const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    put("docs/hosting.md", "Old Azure note, now also Azure Functions\n");
+    git("-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qam", "more");
+
+    expect(run({ root, base }).errors).toHaveLength(2);
   });
 
   it("passes on this repository's current tree", () => {
