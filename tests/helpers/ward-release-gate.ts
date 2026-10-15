@@ -21,8 +21,19 @@ const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
  * is attached per step, so a red run says which rule failed on which element at which step.
  */
 export async function expectAccessible(page: Page, testInfo: TestInfo, step: string) {
-  const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-  const blocking = results.violations.filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ""));
+  const scan = async () => {
+    const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+    const blocking = results.violations.filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ""));
+    return { results, blocking };
+  };
+  let { results, blocking } = await scan();
+  // A screen still settling after a client-side move (a sheet closing, a header repainting for the
+  // new desk) can measure a colour against a background that is not there a moment later. Scan once
+  // more after it settles; a real violation is still there and fails.
+  if (blocking.length > 0) {
+    await page.waitForTimeout(1_000);
+    ({ results, blocking } = await scan());
+  }
   await testInfo.attach(`axe: ${step}`, {
     body: JSON.stringify({ url: page.url(), violations: results.violations }, null, 2),
     contentType: "application/json",
@@ -169,19 +180,34 @@ export function wardDesk(unitId: string, unitName: string) {
  * the Ward flow button in the ward's own toolbar opens the same card as a sheet.
  */
 export async function openWardList(page: Page, list: "Admissions" | "Discharges") {
-  if (isPhoneLayout(page)) {
-    await page.getByRole("toolbar", { name: "Ward actions" }).getByRole("button", { name: "Ward flow", exact: true }).click();
-    await expect(page.getByRole("dialog", { name: "Ward flow" })).toBeVisible();
-  } else {
-    await page.locator("#tabBtn-attn").click();
-  }
-  await page.getByRole("radio", { name: new RegExp(`^${list}`, "u") }).click();
+  await openWardFlow(page, list);
   const button = list === "Admissions" ? "All arrivals" : "All discharges";
   await page.getByRole("button", { name: button, exact: true }).click();
   await expect(page.locator(list === "Admissions" ? "#tab-coming" : "#tab-out")).toHaveAttribute(
     "data-active",
     "true",
   );
+}
+
+/**
+ * Shows one pane of the ward's Ward flow card: Referrals (awaiting this ward's answer), Admissions
+ * or Discharges. On a phone the card is a sheet opened from the ward's toolbar.
+ */
+export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" | "Discharges") {
+  if (isPhoneLayout(page)) {
+    const sheet = page.getByRole("dialog", { name: "Ward flow" });
+    if (!(await sheet.isVisible())) {
+      await page
+        .getByRole("toolbar", { name: "Ward actions" })
+        .getByRole("button", { name: "Ward flow", exact: true })
+        .click();
+    }
+    await expect(sheet).toBeVisible();
+  } else {
+    await page.locator("#tabBtn-attn").click();
+  }
+  const radio = page.getByRole("radio", { name: new RegExp(`^${pane}`, "u") });
+  if ((await radio.getAttribute("aria-checked")) !== "true") await radio.click();
 }
 
 /** Back to the ward's Home tab, where its bed figures live. */

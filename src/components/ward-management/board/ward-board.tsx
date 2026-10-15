@@ -3115,7 +3115,12 @@ export function WardBoard({
                   data-expanded={shiftExpanded ? "true" : undefined}
                 >
                   {shiftTiles.map((item) => (
-                    <div key={item.key} className={styles.shiftTile} data-tone={item.tone ?? undefined}>
+                    <div
+                      key={item.key}
+                      className={styles.shiftTile}
+                      data-tone={item.tone ?? undefined}
+                      data-testid={`ward-board-shift-${item.key}`}
+                    >
                       <div className={styles.shiftTop}>
                         <button
                           type="button"

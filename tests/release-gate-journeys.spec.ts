@@ -11,6 +11,7 @@ import {
   goToDesk,
   goViaNav,
   isPhoneLayout,
+  openWardFlow,
   openWardHome,
   openWardList,
   plantSentinel,
@@ -82,7 +83,11 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   // second sign-off (D-30), which is the one path that offers a ward without a second referral.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await expectAccessible(page, testInfo, "coordinator Home");
-  await page.getByTestId(`ward-queue-row-${movementId}`).click();
+  // The phone queue shows the first twenty; a new tier 3 movement can sit below them.
+  const queueRow = page.getByTestId(`ward-queue-row-${movementId}`);
+  const showAll = page.getByRole("region", { name: "Priority queue" }).getByRole("button", { name: /^Show all/u });
+  if (!(await queueRow.isVisible()) && (await showAll.isVisible())) await showAll.click();
+  await queueRow.click();
   const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
   await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
   const candidatesToggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
@@ -100,18 +105,25 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await shortlist.getByRole("button", { name: "Record override" }).click();
   await expect(shortlist).toContainText("Parallel referral:");
   await expectNoReloadSince(page, "offering the ward");
+  // On a phone Placement is a bottom sheet over the page and its header; close it, as a
+  // coordinator would, before going to the ward.
+  if (isPhoneLayout(page)) {
+    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
+    await expect(shortlist).toHaveCount(0);
+  }
 
   // The ward accepts and pulls the patient into a bed.
   const unitName = unitById(unitId)?.name;
   expect(unitName, `unit ${unitId} must resolve to a ward name`).toBeTruthy();
   await goToDesk(page, wardDesk(unitId, unitName!), "ward-unit-screen");
-  const wardScreen = page.getByTestId("ward-unit-screen");
+  await openWardFlow(page, "Referrals");
   await expectAccessible(page, testInfo, "ward Home with the offer waiting");
-  const accept = wardScreen.getByTestId(`ward-accept-${movementId}`);
+  // On a phone the Ward flow card is a sheet portalled outside the ward screen, so look up by page.
+  const accept = page.getByTestId(`ward-accept-${movementId}`);
   await expect(accept).not.toHaveAttribute("aria-disabled", "true");
   await accept.click();
   await openWardList(page, "Admissions");
-  const pull = wardScreen.getByTestId(`ward-pull-${movementId}`);
+  const pull = page.getByTestId(`ward-pull-${movementId}`);
   await expect(pull).not.toHaveAttribute("aria-disabled", "true");
   await expectAccessible(page, testInfo, "ward arrivals with the accepted patient");
   await pull.click();
@@ -251,12 +263,16 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
   await expectAccessible(page, testInfo, "ward bed board");
-  const tile = page.locator(`#ward-board-tile-${release.admissionId}`);
-  await expect(async () => {
-    await tile.click();
-    await expect(tile).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
-  }).toPass({ timeout: 15_000 });
-  await page.getByTestId("ward-board-record-leaving-submit").click();
+  // The board's Needs you this shift list carries every discharge due or overdue, on desktop and
+  // on the phone (where it replaces the bed grid). They have left records the departure.
+  const workBand = page.getByTestId("ward-board-work-band-list");
+  const shiftItem = workBand.getByTestId(`ward-board-shift-discharge-${release.admissionId}`);
+  const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show \d+ more$/u });
+  if (!(await shiftItem.isVisible()) && (await showMore.isVisible())) await showMore.click();
+  // Not asserted: the item's label. The board reads the admission's own confirmed flag, not the
+  // bed release the ward just confirmed, so it still says Expected discharge (reported on the PR).
+  await expect(shiftItem).toBeVisible();
+  await shiftItem.getByRole("button", { name: "They have left", exact: true }).click();
   const departure = page.getByRole("dialog", { name: "Confirm patient departure" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
