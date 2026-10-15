@@ -435,6 +435,11 @@ export function screenDecision(
     if (address.statisticsSection !== undefined && !BED_MANAGER_STATISTICS.has(address.statisticsSection))
       return { open: false, why: "place" };
   }
+  // A desk held to one ED or one team never opens the index of every ED or team (review on PR #330).
+  if (address.screen === "ed" && address.edId === undefined && scope.kind === "ed")
+    return { open: false, why: "place" };
+  if (address.screen === "community" && address.teamSlug === undefined && scope.kind === "team")
+    return { open: false, why: "place" };
   if (address.unitId !== undefined && !unitInScope(scope, address.unitId, places)) return { open: false, why: "place" };
   if (address.edId !== undefined && !edInScope(scope, address.edId, places)) return { open: false, why: "place" };
   if (address.serviceId !== undefined) {

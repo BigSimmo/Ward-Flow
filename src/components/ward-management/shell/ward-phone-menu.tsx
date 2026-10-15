@@ -625,6 +625,8 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
+  // Role access plan: New referral only for a desk whose role may raise one (review on PR #330).
+  const canRefer = byId.has("referral-intake");
   const router = useRouter();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
@@ -643,18 +645,20 @@ function CreateSheet({
       closeButtonClassName={styles.close}
       bodyClassName={`${styles.body} ${styles.createBody}`}
     >
-      <button
-        type="button"
-        className={styles.createPrimary}
-        data-testid="ward-phone-create-referral"
-        onClick={() => {
-          onClose();
-          onNewReferral();
-        }}
-      >
-        <Inbox aria-hidden="true" strokeWidth={1.75} />
-        New referral
-      </button>
+      {canRefer ? (
+        <button
+          type="button"
+          className={styles.createPrimary}
+          data-testid="ward-phone-create-referral"
+          onClick={() => {
+            onClose();
+            onNewReferral();
+          }}
+        >
+          <Inbox aria-hidden="true" strokeWidth={1.75} />
+          New referral
+        </button>
+      ) : null}
       <ul className={`${styles.list} ${styles.rich}`}>
         {CREATE_LINKS.flatMap((item) => {
           const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);

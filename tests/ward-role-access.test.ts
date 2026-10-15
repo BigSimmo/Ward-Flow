@@ -68,6 +68,14 @@ describe("the access table", () => {
     expect(screenDecision(STATEWIDE_COORDINATOR, screenForPath(path), places).open).toBe(true);
   });
 
+  it("keeps a one-ED or one-team desk out of the index of every ED or team", () => {
+    const ed = { role: "ed", scope: { kind: "ed", edId: "x" } } as const;
+    expect(screenDecision(ed, screenForPath(`${BASE}/ed`), places)).toEqual({ open: false, why: "place" });
+    expect(screenDecision(ed, screenForPath(`${BASE}/ed/x`), places).open).toBe(true);
+    const team = { role: "community", scope: { kind: "team", teamName: "Any team" } } as const;
+    expect(screenDecision(team, screenForPath(`${BASE}/community`), places)).toEqual({ open: false, why: "place" });
+  });
+
   it("lets only clinical roles break glass", () => {
     expect(WARD_ACCESS_ROLES.filter(canBreakGlass).sort()).toEqual(["bed_manager", "community", "ed", "ward"]);
   });
@@ -218,6 +226,7 @@ describe("the scoped workspace", () => {
       expect(patient.givenName).toBe("Hidden");
       expect(patient.familyName).toBe("");
       expect(patient.umrn).toBe("");
+      expect(patient.dateOfBirth).toMatch(/^\d{4}-01-01$/u);
     }
     for (const referral of scoped.referrals) expect("intake" in referral).toBe(false);
   });
@@ -235,6 +244,7 @@ describe("the scoped workspace", () => {
     for (const movement of scoped.movements) {
       expect(movement.transport).toBeDefined();
       expect(movement.closure).toBeUndefined();
+      expect(movement.tentativeDiagnosis).toBeUndefined();
     }
     for (const patient of scoped.patients) expect(patient.umrn).toBe("");
     expect(scoped.referrals).toEqual([]);

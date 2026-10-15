@@ -125,7 +125,8 @@ function anonymousPatient(patient: Patient): Patient {
     umrn: "",
     givenName: "Hidden",
     familyName: "",
-    dateOfBirth: patient.dateOfBirth,
+    // Year only: a full birth date can identify someone even without a name (review on PR #330).
+    dateOfBirth: `${patient.dateOfBirth.slice(0, 4)}-01-01`,
     ...(patient.sex === undefined ? {} : { sex: patient.sex }),
     ...(patient.gender === undefined ? {} : { gender: patient.gender }),
     ...(patient.legalStatus === undefined ? {} : { legalStatus: patient.legalStatus }),
@@ -349,6 +350,14 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
           movement.transport.arrivedAt === undefined &&
           movement.closure === undefined,
       );
+      // A collection needs who, where, legal status and safety, never the working diagnosis
+      // (review on PR #330).
+      movements = movements.map((movement) => {
+        if (movement.tentativeDiagnosis === undefined) return movement;
+        const rest: Movement = { ...movement };
+        delete rest.tentativeDiagnosis;
+        return rest;
+      });
       officer = true;
       break;
     }

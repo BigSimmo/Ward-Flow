@@ -347,8 +347,8 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
     <section className={styles.glass} aria-labelledby="ward-break-glass-title">
       <h2 id="ward-break-glass-title">Open this record anyway</h2>
       <p>
-        Only if you need it for this person&apos;s care. It opens read only for {minutes} minutes, the coordinator is
-        told straight away, and it is reviewed.
+        Only if you need it for this person&apos;s care. It opens read only for {minutes} minutes and is listed for the
+        coordinator to review in Governance.
       </p>
       <fieldset>
         <legend>Why do you need it?</legend>
@@ -404,7 +404,7 @@ export function WardBreakGlassNote({ patientId }: { patientId: string }) {
   if (!glass.has(patientId)) return null;
   return (
     <p className={styles.readOnly} role="status" data-testid="ward-break-glass-note">
-      Opened outside your care, read only. The coordinator has been told.
+      Opened outside your care, read only. It is listed for the coordinator to review.
     </p>
   );
 }
