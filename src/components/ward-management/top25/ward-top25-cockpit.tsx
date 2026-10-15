@@ -268,7 +268,7 @@ export interface WardTop25CockpitProps {
 }
 
 /**
- * Interactive cockpit surfacing all 25 items of the Perfected Top 25 Master List for Ward Flow.
+ * Interactive cockpit surfacing the 22 items retained from the Top 25 review (#10, #18 and #22 dropped 15 October 2026) for Ward Flow.
  * Built with existing Next.js / v10 design system components (`NeedsYou`, `UndoHairline`,
  * `PhoneSheet`, `WardBroadcastBanner`) and pure derivations. Items #10, #18 and #22 were dropped
  * after review (15 Oct 2026), so their cards are intentionally absent.
@@ -331,7 +331,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
 
   // #25 Broadcast Alert Auto-Expiry & Stand-Down State
 
-  // Pure derivations across all 25 items
+  // Pure derivations across the retained items
   const afternoonDischarges = useMemo(() => deriveAfternoonDischarges(state.admissions, now), [state.admissions, now]);
   const sampleMovement = state.movements[0];
   const topCompatibleWards = useMemo(
@@ -483,7 +483,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
     <div className={styles.cockpit} data-testid="ward-top25-cockpit">
       <div className={styles.header}>
         <div className={styles.headerTitleGroup}>
-          <span className={styles.eyebrow}>Perfected Master List · 25 High-Yield Flow Improvements</span>
+          <span className={styles.eyebrow}>Top 25 review · 22 retained improvements</span>
           <h2 className={styles.title}>Ward Flow Top 25 Operational Command Cockpit</h2>
         </div>
         <div className={styles.headerControls}>
