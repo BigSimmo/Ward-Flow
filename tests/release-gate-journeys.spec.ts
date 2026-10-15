@@ -212,7 +212,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await expectAccessible(page, testInfo, "ED transport booking, filled");
   await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
   await expect(booking).toHaveCount(0);
-  await personSheet.getByRole("button", { name: "Handover ready", exact: true }).click();
+  await personSheet.getByRole("button", { name: "Mark handover ready", exact: true }).click();
   await expectAccessible(page, testInfo, "ED person sheet after handover ready");
   await page.keyboard.press("Escape");
   await expect(personSheet).toHaveCount(0);
