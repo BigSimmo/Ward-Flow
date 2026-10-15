@@ -367,7 +367,8 @@ in them as belonging to the tree named, never as current.
   **`PHASE0-RESOLUTION-2026-09-10.md`**, **`WARD-MOCKUPS-HANDOVER-2026-09-11.md`**,
   **`WARD-MOCKUPS-STATUS-2026-09-10.md`** — five DATED NOTE handover/status snapshots from the
   10–12 September third-edition build push. Historical; current status is `STATUS.md` and this
-  folder's own `README.md`.
+  folder's own `README.md`. The second 15 October 2026 docs trim removed all five; restore them
+  from Git history (see `../ARCHIVE-NOTE.md`).
 
 ### Design authority — the 34 screens with a build contract (per `SCREEN-MAP.md`)
 
@@ -486,7 +487,8 @@ kept only so a restyle can copy their CSS. See `plans/2026-09-16-drawings-new-lo
   **`transport-officer-third-edition.html`**, **`ward-answer-third-edition.html`**,
   **`wards-third-edition.html`** — twenty visual restyles, one per named screen above, each
   reference-only per the folder's own README. Same filenames as the real mockups one level up; do
-  not confuse the two paths.
+  not confuse the two paths. The second 15 October 2026 docs trim removed this whole folder;
+  restore it from Git history (see `../ARCHIVE-NOTE.md`).
 
 ### `mockups/third-edition-kit/` (37 files across the folder and its `fonts/`, `inputs/` and `shell/` subfolders) — the drawing-checker toolchain
 
@@ -498,7 +500,9 @@ must start "Invented figures..." never "Live"), `check-standard.mjs`, `shell-swe
 page's shell from Command's — every page must read `SAME SHELL`), `recompute-contrast.mjs`,
 `shots.mjs`, plus `contrast-pairs.json`, `REVIEW-FINDINGS.json`, `check-output.txt` (a captured run),
 and dated docs `AGENT-BRIEF.md` (the brief given to one agent building one page),
-`HANDOVER.md`/`HANDOVER-MOCKUPS-CHAT-2026-09-10.md`/`MERGE-BRIEF.md`/`RESUME-2026-09-09.md`.
+`HANDOVER.md`/`HANDOVER-MOCKUPS-CHAT-2026-09-10.md`/`MERGE-BRIEF.md`/`RESUME-2026-09-09.md`. The
+second 15 October 2026 docs trim removed `REVIEW-FINDINGS.json`, `HANDOVER-MOCKUPS-CHAT-2026-09-10.md`,
+`MERGE-BRIEF.md` and `RESUME-2026-09-09.md`; `AGENT-BRIEF.md` and `HANDOVER.md` stay.
 `run-all-checks.sh` has a hard-coded `cd` to a worktree that no longer exists
 (`.claude/worktrees/ward-flow-phase-5-resume-166ecb`) and will fail here — run the individual `node`
 commands from `README.md` instead. `fonts/` (7 files) self-hosts the Geist/Geist Mono `.woff2` faces

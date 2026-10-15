@@ -13,7 +13,7 @@
 
 **Tech Stack:** Next.js 16 App Router, React 19 (`useReducer` + `createContext`, no state library), TypeScript 6 strict, CSS Modules with a local token scale, Vitest for the reducer and contracts, Playwright Chromium for journeys.
 
-**Spec:** [`docs/superpowers/specs/2026-08-19-ward-flow-phase-3-role-screens-design.md`](../specs/2026-08-19-ward-flow-phase-3-role-screens-design.md) — read it alongside this plan. §3 is the model surgery, §6 the events, §8 the ten routes, §10 the refusals, §15 the build order.
+**Spec:** `docs/superpowers/specs/2026-08-19-ward-flow-phase-3-role-screens-design.md` (removed in the 15 Oct 2026 docs trim) — read it alongside this plan. §3 is the model surgery, §6 the events, §8 the ten routes, §10 the refusals, §15 the build order.
 
 **Read also:** [`docs/ward-flow-context.md`](../../ward-flow-context.md) — the cold-start orientation, corrected 2026-08-19.
 
