@@ -65,7 +65,7 @@ legal or service standard until a named clinician signs it.
 | Arrivals and answers | Expected arrival flagged after waiting, involuntary | 7 days | Synthetic value | Josh, 7 Sep 2026 | None recorded | `expectFlagInvoluntary` |
 | Arrivals and answers | Expected referral flagged to reconsider after | 72 hours | Synthetic value | Josh, 7 Sep 2026 | None recorded | `expectReconsider` |
 | Discharge, leave and absence | Discharge prep prompt opens before the expected discharge | 24 hours | Synthetic value | No decision recorded (Top 25 discharge prep, 15 Oct 2026) | None recorded | `dischargePrepWindow` |
-| Discharge, leave and absence | Leave bed flagged to consider opening, or converting to discharge, after | 24 hours | Synthetic value | D-23 (26 Sep 2026), Josh's default | None recorded | `leaveOpenWarning` |
+| Discharge, leave and absence | Leave bed flagged to consider opening after | 24 hours | Synthetic value | D-23 (26 Sep 2026), Josh's default | None recorded | `leaveOpenWarning` |
 | Discharge, leave and absence | Bed held for a person absent without leave flagged for review after | 4 hours | Synthetic value | No decision recorded (Top 25 absence tracker, 15 Oct 2026) | None recorded | `awolBedHoldWarning` |
 | Discharge, leave and absence | Community treatment order follow up booked within, after departure | 7 days | Synthetic value | No decision recorded (Top 25 CTO handshake, 15 Oct 2026); flagged in the 15 Oct repo review | None recorded | `ctoFollowUpWindow` |
 | Discharge, leave and absence | Stay long enough to prompt a discharge plan, and escalation dossier, from | 7 days | Synthetic value | Ward board long stay line; no decision recorded for the Top 25 dossier | None recorded | `longStayPrompt` |

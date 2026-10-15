@@ -1,8 +1,14 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { readConfig } from "./config.mjs";
-import { createBackend } from "./providers.mjs";
+import {
+  AUTH_PROVIDERS,
+  DATABASE_PROVIDERS,
+  DEFAULT_AUTH_PROVIDER,
+  DEFAULT_DATABASE_PROVIDER,
+  readConfig,
+} from "./config.mjs";
+import { AUTH_ADAPTERS, DATABASE_ADAPTERS, createBackend } from "./providers.mjs";
 import { createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { VerifierUnavailableError } from "./auth.mjs";
@@ -20,15 +26,6 @@ function environment(databaseProvider, authProvider) {
     WARD_DATA_MODE: "prototype",
     WARD_WORKSPACE_ID: randomUUID(),
     WARD_COORDINATOR_USER_IDS: randomUUID(),
-    WARD_COORDINATOR_OBJECT_IDS: randomUUID(),
-    AZURE_TENANT_ID: randomUUID(),
-    WARD_API_AUDIENCE: "9b7b160d-9bc7-4712-b748-17ff3e70b706",
-    WARD_ALLOWED_OBJECT_ID: randomUUID(),
-    AzureWebJobsStorage__accountName: "wflowdev7273a083aue",
-    WARD_PG_RESOURCE_ID: `/subscriptions/${randomUUID()}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers/wardflow-dev-aue`,
-    WARD_PG_HOST: "wardflow-dev-aue.postgres.database.azure.com",
-    WARD_PG_DATABASE: "wardflow_dev",
-    WARD_PG_USER: "wardflow_backend",
     WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
     WARD_SUPABASE_URL: APPROVED_SUPABASE_URL,
     WARD_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "synthetic_offline_fixture"].join("_"),
@@ -38,17 +35,15 @@ function environment(databaseProvider, authProvider) {
   };
 }
 
-for (const databaseProvider of ["azure", "supabase", "postgres"]) {
-  for (const authProvider of ["entra", "supabase"]) {
+for (const databaseProvider of Object.keys(DATABASE_PROVIDERS)) {
+  for (const authProvider of Object.keys(AUTH_PROVIDERS)) {
     test(`${databaseProvider}/${authProvider} independently selects factories and preserves shared HTTP contracts offline`, async () => {
       const env = environment(databaseProvider, authProvider);
       const config = readConfig(env);
       assert.equal(config.databaseProvider, databaseProvider);
       assert.equal(config.authProvider, authProvider);
       assert.equal(config.push, null);
-      assert.deepEqual(config.coordinatorIds, [
-        authProvider === "supabase" ? env.WARD_COORDINATOR_USER_IDS : env.WARD_COORDINATOR_OBJECT_IDS,
-      ]);
+      assert.deepEqual(config.coordinatorIds, [env.WARD_COORDINATOR_USER_IDS]);
       const calls = [];
       const pool = { end: async () => calls.push("end") };
       const authenticate = async (header) => {
@@ -67,10 +62,6 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
       const loader = async () => {
         calls.push(databaseProvider);
         return {
-          createAuthenticator: async () => {
-            calls.push("preset-auth");
-            return authenticate;
-          },
           createPool: async (received) => {
             assert.equal(received, config.postgres);
             return pool;
@@ -80,27 +71,20 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
             assert.equal(settings.pushEnabled, false);
             calls.push("verify");
           },
-          openStorage: async () => {
-            calls.push("blob");
-            return {};
-          },
-          createStore: () => ({ ready: async () => calls.push("storage-ready") }),
         };
       };
       const forbidden = async () => {
         throw new Error("unselected database provider was loaded");
       };
       const dependencies = {
-        azure: databaseProvider === "azure" ? loader : forbidden,
-        supabase: databaseProvider === "supabase" ? loader : forbidden,
-        postgres: databaseProvider === "postgres" ? loader : forbidden,
-        entraAuth: async () => {
-          calls.push("entra-auth");
-          return authenticate;
-        },
-        supabaseAuth: async () => {
-          calls.push("supabase-auth");
-          return authenticate;
+        database: Object.fromEntries(
+          Object.keys(DATABASE_PROVIDERS).map((name) => [name, name === databaseProvider ? loader : forbidden]),
+        ),
+        auth: {
+          [authProvider]: async () => async () => {
+            calls.push(`${authProvider}-auth`);
+            return authenticate;
+          },
         },
         workspace: async () => ({
           createWorkspaceStore: (received, settings) => {
@@ -115,13 +99,7 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
       const backend = await createBackend(config, dependencies);
       assert.equal(backend.pool, pool);
       assert.equal(backend.sharedStore, sharedStore);
-      assert.equal(calls.includes("blob"), databaseProvider === "azure");
-      const expectedAuth =
-        (databaseProvider === "azure" && authProvider === "entra") ||
-        (databaseProvider === "supabase" && authProvider === "supabase")
-          ? "preset-auth"
-          : `${authProvider}-auth`;
-      assert.ok(calls.includes(expectedAuth));
+      assert.ok(calls.includes(`${authProvider}-auth`));
       const handler = createHandler({ ...backend, log: () => {} });
       const request = (path, options = {}) =>
         new Request(`http://127.0.0.1:8799${path}`, {
@@ -130,10 +108,7 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
         });
       assert.equal((await handler(request("/readyz", { headers: { authorization: "" } }))).status, 401);
       const ready = await handler(request("/readyz"));
-      assert.deepEqual(
-        await ready.json(),
-        databaseProvider === "azure" ? { storage: "ready", database: "ready" } : { database: "ready" },
-      );
+      assert.deepEqual(await ready.json(), { database: "ready" });
       const read = await handler(request("/v1/workspace"));
       assert.equal(read.status, 200);
       const envelope = await read.json();
@@ -161,39 +136,32 @@ for (const databaseProvider of ["azure", "supabase", "postgres"]) {
         (await handler(request("/v1/workspace", { headers: { origin: "https://unapproved.invalid" } }))).status,
         403,
       );
-      assert.equal(
-        (await handler(request("/v1/sessions/" + randomUUID()))).status,
-        databaseProvider === "azure" ? 503 : 404,
-      );
+      // The retired Azure Blob session vault route no longer exists.
+      assert.equal((await handler(request("/v1/sessions/" + randomUUID()))).status, 404);
     });
   }
 }
 
-test("omitted selectors default to Supabase, retain legacy Azure/Entra fallback, and refuse invalid or live configuration", () => {
-  const supabaseDefault = environment("supabase", "supabase");
-  delete supabaseDefault.WARD_DATABASE_PROVIDER;
-  delete supabaseDefault.WARD_AUTH_PROVIDER;
-  assert.equal(readConfig(supabaseDefault).databaseProvider, "supabase");
-  assert.equal(readConfig(supabaseDefault).authProvider, "supabase");
-
-  const env = environment("azure", "entra");
+test("omitted selectors default to Supabase, and retired, unknown or live configuration is refused", () => {
+  assert.equal(DEFAULT_DATABASE_PROVIDER, "supabase");
+  assert.equal(DEFAULT_AUTH_PROVIDER, "supabase");
+  assert.deepEqual(Object.keys(DATABASE_PROVIDERS), Object.keys(DATABASE_ADAPTERS));
+  assert.deepEqual(Object.keys(AUTH_PROVIDERS), Object.keys(AUTH_ADAPTERS));
+  const env = environment("supabase", "supabase");
   delete env.WARD_DATABASE_PROVIDER;
   delete env.WARD_AUTH_PROVIDER;
-  delete env.WARD_SUPABASE_PROJECT_REF;
-  delete env.WARD_SUPABASE_URL;
-  delete env.WARD_SUPABASE_DATABASE_URL;
-  assert.equal(readConfig(env).databaseProvider, "azure");
-  assert.equal(readConfig(env).authProvider, "entra");
+  assert.equal(readConfig(env).databaseProvider, "supabase");
+  assert.equal(readConfig(env).authProvider, "supabase");
   for (const patch of [
+    { WARD_DATABASE_PROVIDER: "azure" },
+    { WARD_AUTH_PROVIDER: "entra" },
     { WARD_DATABASE_PROVIDER: "mysql" },
     { WARD_AUTH_PROVIDER: "none" },
     { WARD_DATA_MODE: "live" },
-    { WARD_PG_HOST: "other.invalid" },
-    { AzureWebJobsStorage__accountName: "otherstorage" },
   ])
-    assert.throws(() => readConfig({ ...env, ...patch }));
+    assert.throws(() => readConfig({ ...env, ...patch }), /configuration|commissioned/);
   // With the shared workspace off, the database selector is accepted but no PostgreSQL target is read.
-  for (const provider of ["postgres", "supabase"]) {
+  for (const provider of Object.keys(DATABASE_PROVIDERS)) {
     const config = readConfig({ ...environment(provider, "supabase"), WARD_SHARED_ENABLED: "false" });
     assert.equal(config.shared, false);
     assert.equal(config.postgres, null);
@@ -208,17 +176,19 @@ test("provider startup cleans up the created pool on verification or engine fail
         closed++;
       },
     };
-    const config = readConfig(environment("postgres", "entra"));
+    const config = readConfig(environment("postgres", "supabase"));
     const fail = () => {
       throw new Error("synthetic startup failure");
     };
     await assert.rejects(
       createBackend(config, {
-        postgres: async () => ({
-          createPool: async () => pool,
-          verifyPool: stage === "verify" ? fail : async () => {},
-        }),
-        entraAuth: async () => async () => config.coordinatorIds[0],
+        database: {
+          postgres: async () => ({
+            createPool: async () => pool,
+            verifyPool: stage === "verify" ? fail : async () => {},
+          }),
+        },
+        auth: { supabase: async () => async () => async () => config.coordinatorIds[0] },
         engine: stage === "engine" ? fail : async () => ({}),
         workspace: async () => ({ createWorkspaceStore: stage === "workspace" ? fail : () => ({}) }),
       }),
@@ -251,7 +221,7 @@ test("shared HTTP authorisation and verifier outages never reach the store", asy
       503,
     ],
   ]) {
-    const response = await createHandler({ config, store: null, sharedStore, authenticate, log: () => {} })(
+    const response = await createHandler({ config, sharedStore, authenticate, log: () => {} })(
       new Request("http://127.0.0.1/v1/workspace"),
     );
     assert.equal(response.status, expected);

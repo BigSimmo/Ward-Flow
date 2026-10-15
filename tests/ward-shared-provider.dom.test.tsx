@@ -228,6 +228,6 @@ describe("shared provider boundary", () => {
       </WardFlowProvider>,
     );
     expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.getByRole("button", { name: "Sign in with Microsoft" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in with email" })).toBeInTheDocument();
   });
 });

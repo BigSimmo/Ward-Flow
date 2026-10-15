@@ -155,12 +155,6 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^TAKING_MS$/,
   },
   {
-    id: "phone-alert-release",
-    why: "How long sign-out waits for the server to release this device's phone alerts (10 Oct 2026); never shown, not a limit.",
-    file: /^ward-shared-access\.tsx$/,
-    name: /^PHONE_RELEASE_WAIT_MS$/,
-  },
-  {
     id: "early-header-tap",
     why: "Early header tap replay (11 Oct 2026): how old a pre-hydration tap may be and how long React gets to replay it first; never shown, not a limit.",
     file: /^shell\/ward-early-tap\.ts$/,

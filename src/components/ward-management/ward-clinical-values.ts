@@ -415,7 +415,7 @@ export const CLINICAL_VALUES = {
   },
   leaveOpenWarning: {
     ...SYNTHETIC,
-    name: "Leave bed flagged to consider opening, or converting to discharge, after",
+    name: "Leave bed flagged to consider opening after",
     group: "Discharge, leave and absence",
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
