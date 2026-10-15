@@ -10,7 +10,7 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
 - [ ] **The build passes.** For any code change, the type check passes
       (`npm run typecheck`). If routes, configuration or dependencies
       changed, `npm run build` passes too. For documentation-only changes, the ward doc-link check
-      passes instead (`npm run check:ward-doc-links`).
+      passes instead (`npm run docs:check-links`).
 - [ ] **The tests for the areas you touched pass.** Run the test files for what you changed
       (`npm run test:focused -- --files <paths>`). Changes to the engine need the full offline ward
       suite (`npm run check:ward-expected-reds`) before integration. Never skip, disable or loosen a

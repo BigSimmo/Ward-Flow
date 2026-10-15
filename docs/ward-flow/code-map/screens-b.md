@@ -16,7 +16,7 @@ See [the current receipt](../reports/remediation-2026-10-08.md).
 Covers every file under `src/components/ward-management/` in these folders: `alerts/`, `board/`,
 `capacity/`, `delays/` (no `backup/` subfolder exists there — see "Not checked"), `discharges/`,
 `escalation/`, `governance/`, `handover/`, `hub/`, `legal-forms/`, `movements/`, `officer/`,
-`on-call/`, `out-of-area/`, `patients/`, `settings/`, `sovereign/`, `tools/`, `tracker/`, `wards/`.
+`on-call/`, `out-of-area/`, `patients/`, `settings/`, `tools/`, `tracker/`, `wards/`.
 Tip `ace8e9ee8d` (one commit behind this worktree's HEAD `d9016539bd`, which only split this doc
 into linked parts — no source under these folders changed between the two). Date 25 September 2026. Line counts are `wc -l` run once per folder against every file in it. Route/importer/test
 claims come from `grep -rl` across `src/app`, `src/components` and `tests`, cross-checked against
@@ -585,21 +585,6 @@ plus this folder's own `settings-search-index.ts`/`settings-thresholds.ts`. **Te
   against it. Exports `ThresholdState`, `PublishedThreshold`, `publishedThresholds`.
 - **`src/components/ward-management/settings/settings.module.css`** (2032 lines) — styles for
   `settings-screen.tsx`.
-
-## `sovereign/`
-
-**Route:** `/sovereign`. **Mockup:** `sovereign-chrome-and-drawers-perfected.html` — listed under
-"Drawn, no build contract" in `SCREEN-MAP.md`, but the route does exist and does render this
-component (the "no build contract" heading there means no generator-enforced pairing test, not that
-the route is missing). **Dispatches:** none. **Reads:** none from `ward-derivations.ts`. **Tests:**
-`ward-landmarks.test.ts`, `ward-nav.test.ts`, `ward-no-dead-ends.dom.test.tsx` only — no
-sovereign-specific test file exists.
-
-- **`src/components/ward-management/sovereign/sovereign-showcase-screen.tsx`** (163 lines) — a
-  showcase/demo screen for the "sovereign" chrome and drawers concept. `SovereignShowcaseScreen`
-  (30). Also imported by `src/app/mockups/ward-flow/sovereign/error.tsx` and `loading.tsx`.
-- **`src/components/ward-management/sovereign/sovereign-showcase.module.css`** (185 lines) —
-  styles.
 
 ## `tools/`
 

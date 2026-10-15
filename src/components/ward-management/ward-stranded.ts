@@ -93,6 +93,79 @@ export function strandedFlags(
   );
 }
 
+const MINUTES_PER_HOUR = 60;
+
+export type LongStaySummary = {
+  flag: StrandedFlag;
+  /** The ward's recorded hold on the admission, shown as recorded. */
+  blockReason: BedReleaseBlocker | null;
+  /** Hours the escalation point sits after the expected discharge date. */
+  escalateAfterHours: number;
+  /** Expected discharge date plus `escalateAfterHours`; undefined while no date is recorded. */
+  escalationAt: Instant | undefined;
+  /** Whole hours past the expected discharge date; undefined when no date or not yet passed. */
+  hoursPastExpected: number | undefined;
+  escalationReached: boolean;
+};
+
+/**
+ * Long stay and delayed discharge summary (Top 25 item 20, flag `top25-long-stay-dossier`). One
+ * entry per stranded flag with the days in bed, the recorded barrier and hold, and the escalation
+ * point: `delayedDischargeEscalation` hours after the ward's own expected discharge date. Only the
+ * date a person recorded is read; nothing here is a legal time limit. Replaces the showcase's
+ * `deriveMaroonedPatientDossier`, whose inputs are not on an admission.
+ */
+export function longStaySummaries(
+  admissions: readonly Admission[],
+  now: Instant,
+  bedReleases?: readonly BedRelease[],
+): LongStaySummary[] {
+  const byId = new Map(admissions.map((admission) => [admission.id, admission]));
+  const escalateAfterHours = CLINICAL_VALUES.delayedDischargeEscalation.value;
+  const flags = strandedFlags(admissions, now, bedReleases);
+  // A stay past its own expected discharge date belongs here too, even with no waiting hold, or
+  // its escalation point could never show.
+  const flagged = new Set(flags.map((flag) => flag.admissionId));
+  for (const admission of admissions) {
+    const expected = admission.expectedDischargeAt;
+    if (admission.state !== "occupied" || flagged.has(admission.id)) continue;
+    if (expected === null || !Number.isFinite(expected) || now <= expected) continue;
+    const days = daysInBed(admission, now);
+    if (days === null) continue;
+    flags.push({
+      admissionId: admission.id,
+      reasons: [],
+      days,
+      waitingOn: null,
+      barrier: admission.dischargeBarrier ?? null,
+    });
+  }
+  flags.sort((a, b) =>
+    a.days !== b.days ? b.days - a.days : a.admissionId < b.admissionId ? -1 : a.admissionId > b.admissionId ? 1 : 0,
+  );
+  return flags.map((flag) => {
+    const admission = byId.get(flag.admissionId);
+    const expected = admission?.expectedDischargeAt ?? null;
+    const hasDate = expected !== null && Number.isFinite(expected);
+    const escalationAt = hasDate ? expected + escalateAfterHours * MINUTES_PER_HOUR : undefined;
+    const hoursPastExpected = hasDate && now > expected ? Math.floor((now - expected) / MINUTES_PER_HOUR) : undefined;
+    return {
+      flag,
+      // The same effective hold `strandedFlags` reads: a live release blocker first, then the stay's.
+      blockReason:
+        flag.waitingOn ??
+        bedReleases?.find((release) => release.admissionId === flag.admissionId && release.state !== "discharged")
+          ?.blocker ??
+        admission?.blockReason ??
+        null,
+      escalateAfterHours,
+      escalationAt,
+      hoursPastExpected,
+      escalationReached: escalationAt !== undefined && now > escalationAt,
+    };
+  });
+}
+
 /** The prompt in plain words, for one flag. */
 export function strandedPromptText(flag: StrandedFlag): string {
   const parts: string[] = [];

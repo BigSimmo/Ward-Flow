@@ -56,7 +56,7 @@ export const PAIRS = [
   // Added 2026-09-14/16 as REFERENCES, not build contracts.
   ["movement-gantt-third-edition.html", null, null, false],
   ["network-horizon-third-edition.html", null, null, false],
-  ["sovereign-chrome-and-drawers-perfected.html", "/sovereign", "sovereign", false],
+  ["sovereign-chrome-and-drawers-perfected.html", null, null, false],
   ["perfected-activity-drawer.html", null, null, false],
   ["perfected-drawers-showcase.html", null, null, false],
   ["perfected-service-popover.html", null, null, false],
@@ -137,7 +137,6 @@ export const ROUTE_COMPONENTS = [
   { route: "/reports/downtime", folder: "reports", react: "reports/downtime-pack-screen.tsx" },
   { route: "/search", folder: "search", react: "search/patient-search.tsx" },
   { route: "/settings", folder: "settings", react: "settings/settings-screen.tsx" },
-  { route: "/sovereign", folder: "sovereign", react: "sovereign/sovereign-showcase-screen.tsx" },
   { route: "/statistics", folder: "statistics", react: "statistics/statistics-screen.tsx" },
   {
     route: "/statistics/community/[teamId]",

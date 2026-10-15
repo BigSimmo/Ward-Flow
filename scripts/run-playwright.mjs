@@ -24,6 +24,7 @@ import { runOwnedChild } from "./owned-child.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 import { journeyRunVerdict, requestedProjects } from "./ward-flow/journey-run-verdict.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
+import { wardFlowLogsRoot } from "./ward-flow/logs-root.mjs";
 import {
   appName,
   circularProjectPortRange,
@@ -834,7 +835,7 @@ try {
         const kept = keepJourneyFailures({
           projectRoot,
           shardCount,
-          logsRoot: process.env.WARD_FLOW_LOGS ?? "D:/Repos/ward-flow-logs",
+          logsRoot: wardFlowLogsRoot(),
         });
         if (kept) console.log(`Kept the shards' failure artefacts in ${kept}`);
       } catch (error) {

@@ -131,7 +131,13 @@ for (const databaseProvider of Object.keys(DATABASE_PROVIDERS)) {
       const response = await handler(post(body));
       assert.equal(response.status, 409);
       assert.deepEqual(await response.json(), { code: "stale", revision: 2 });
-      assert.deepEqual(calls.at(-1), [config.coordinatorIds[0], commandId.toLowerCase(), 1, body.event]);
+      assert.deepEqual(calls.at(-1), [
+        config.coordinatorIds[0],
+        commandId.toLowerCase(),
+        1,
+        body.event,
+        { revisionOnly: false },
+      ]);
       assert.equal(
         (await handler(request("/v1/workspace", { headers: { origin: "https://unapproved.invalid" } }))).status,
         403,

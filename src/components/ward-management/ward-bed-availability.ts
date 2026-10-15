@@ -1,3 +1,4 @@
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -148,6 +149,44 @@ export type CapacityBreakdown = {
 export function bedsPendingPreparation(unitId: string, releases: BedRelease[]): number {
   return releases.filter((release) => release.unitId === unitId && release.state === "discharged" && release.preparing)
     .length;
+}
+
+/**
+ * Pre-match a bed while it is being made ready (Top 25 item 15, flag `top25-prematch-cleaning`).
+ * A bed being made ready stays offered and counted (`SET_BED_PREPARATION`), so a patient can be
+ * matched to its ward while it is cleaned; only the pull waits. This says whether the ward a
+ * patient is matched or offered to has a bed being made ready, and whether the patient's placement
+ * is paused for an unresumed ED medical deterioration (`Movement.medicalDeterioration`, D-34).
+ * Replaces the showcase's `canPreMatchCleaningBed`, which read a deterioration off the bed.
+ */
+export function preMatchCleaningState(
+  movement: { medicalDeterioration?: { at: Instant; resumedAt?: Instant } },
+  unitId: string,
+  releases: BedRelease[],
+): { bedsBeingMadeReady: number; medicalPause: boolean } | undefined {
+  const bedsBeingMadeReady = bedsPendingPreparation(unitId, releases);
+  if (bedsBeingMadeReady === 0) return undefined;
+  const medicalPause =
+    movement.medicalDeterioration !== undefined && movement.medicalDeterioration.resumedAt === undefined;
+  return { bedsBeingMadeReady, medicalPause };
+}
+
+/**
+ * Top 25 item 4: this unit's beds still being made ready past `CLINICAL_VALUES.preparingBedStale`,
+ * timed from the release's last recorded change (`confirmedAt`, restamped by `RECORD_LEAVING` and
+ * `SET_BED_PREPARATION`). A reminder to confirm the bed is ready, read only: nothing here opens a
+ * bed or changes a count (Q4). Oldest first.
+ */
+export function stalePreparingReleases(
+  unitId: string,
+  releases: readonly BedRelease[],
+  now: Instant,
+): { release: BedRelease; minutes: number }[] {
+  return releases
+    .filter((release) => release.unitId === unitId && release.state === "discharged" && release.preparing)
+    .map((release) => ({ release, minutes: Math.max(0, now - release.confirmedAt) }))
+    .filter((entry) => entry.minutes >= CLINICAL_VALUES.preparingBedStale.value)
+    .sort((left, right) => right.minutes - left.minutes);
 }
 
 /**

@@ -204,19 +204,19 @@ describe("no file under tests/ is invisible to every runner", () => {
       if (["firefox-ward-responsive", "webkit-ward-responsive"].includes(project.name)) {
         expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
-        expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(false);
+        expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
       } else if (["release-gate-desktop", "release-gate-phone"].includes(project.name)) {
         // The release gate runs its own four journeys and nothing else.
         expect(project.patternName, project.name).toBe("releaseGateSpecPattern");
         expect(project.pattern.test("tests/release-gate-journeys.spec.ts"), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
-        expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(false);
+        expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
       } else if (["chromium-mockups", "chromium-mockups-known"].includes(project.name)) {
         expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(true);
       } else {
         expect(project.patternName, project.name).toBe("productionSpecPattern");
-        expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(true);
+        expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(true);
         expect(project.pattern.test(responsiveSpec), project.name).toBe(false);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
       }
@@ -271,7 +271,7 @@ describe("no file under tests/ is invisible to every runner", () => {
       // Not vacuous: the matcher must actually say yes to something, on all five paths.
       expect(isVisible("tests/ward-model.test.ts")).toBe(true); // node project
       expect(isVisible("tests/ward-model.dom.test.tsx")).toBe(true); // jsdom project (hypothetical name; glob-only check)
-      expect(isVisible("tests/ui-smoke.spec.ts")).toBe(true); // Playwright production project
+      expect(isVisible("tests/api-csrf-proxy.spec.ts")).toBe(true); // Playwright production project
       expect(isVisible("tests/ui-ward-management.spec.ts")).toBe(true); // Playwright mockup project
       expect(isVisible("tests/universal-search-owner.live.test.ts")).toBe(true); // live project gate
     });

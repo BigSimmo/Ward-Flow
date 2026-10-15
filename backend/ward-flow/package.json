@@ -8,11 +8,13 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node --test backend.test.mjs shared-http.test.mjs supabase-auth.test.mjs postgres.test.mjs push.test.mjs migrate.test.mjs postgres-preflight.test.mjs provider-portability.test.mjs provider-routing.test.mjs",
+    "test": "node --test backend.test.mjs shared-http.test.mjs supabase-auth.test.mjs traffic.test.mjs postgres.test.mjs push.test.mjs migrate.test.mjs postgres-preflight.test.mjs provider-portability.test.mjs provider-routing.test.mjs",
     "build:engine": "node build-engine.mjs",
     "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
     "migrate:postgres": "node --env-file-if-exists=.env migrate-postgres.mjs",
-    "migrate:supabase": "node --env-file-if-exists=.env migrate-supabase.mjs"
+    "migrate:supabase": "node --env-file-if-exists=.env migrate-supabase.mjs",
+    "prune:receipts:postgres": "node --env-file-if-exists=.env prune-receipts.mjs postgres",
+    "prune:receipts:supabase": "node --env-file-if-exists=.env prune-receipts.mjs supabase"
   },
   "dependencies": {
     "pg": "^8.23.1",

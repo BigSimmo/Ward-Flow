@@ -147,15 +147,22 @@ export function createSharedHandler({
       if (config.dataMode && config.dataMode !== "prototype")
         return reply(503, { error: "Live data mode is not commissioned" });
       if (path === "/v1/workspace" && request.method === "GET") {
+        const workspace = { role: "coordinator", actorId, workspaceId: config.workspaceId };
+        const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
+        // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
+        const since = Number(new URL(request.url).searchParams.get("since"));
+        if (Number.isSafeInteger(since) && since >= 1 && store.poll) {
+          const polled = await store.poll(actorId, since);
+          if (polled.notModified) {
+            if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+            return reply(200, { ...workspace, data, notModified: true, revision: polled.revision, now: polled.now });
+          }
+          if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+          return reply(200, { ...workspace, data, snapshot: polled.snapshot });
+        }
         const snapshot = await store.read(actorId);
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
-        return reply(200, {
-          role: "coordinator",
-          actorId,
-          workspaceId: config.workspaceId,
-          data: { mode: snapshot.dataMode, source: "synthetic", liveAvailable: false },
-          snapshot,
-        });
+        return reply(200, { ...workspace, data, snapshot });
       }
       if (path === "/v1/workspace/audit" && request.method === "GET")
         return reply(200, { events: await store.audit() });
@@ -229,10 +236,13 @@ export function createSharedHandler({
         typeof body.event !== "object" ||
         Array.isArray(body.event) ||
         typeof body.event.type !== "string" ||
-        body.event.type.length > 100
+        body.event.type.length > 100 ||
+        (body.reply !== undefined && body.reply !== "revision")
       )
         return reply(400, { error: "A synthetic command, command ID and valid revision are required" });
-      const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event);
+      const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event, {
+        revisionOnly: body.reply === "revision",
+      });
       return reply(result.status, result.body);
     } catch (error) {
       if (error?.message === "invalid-command")
