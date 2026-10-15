@@ -404,6 +404,8 @@ export function HandoverPage() {
   const [takenAt, setTakenAt] = useState<Instant | null>(null);
   const [printOptions, setPrintOptions] = useState(DEFAULT_PRINT_OPTIONS);
   const [copied, setCopied] = useState(false);
+  const [singleKeyShortcutsEnabled, setSingleKeyShortcutsEnabled] = useState(true);
+  const shortcutScopeRef = useRef<HTMLElement | null>(null);
   const keysTriggerRef = useRef<HTMLButtonElement | null>(null);
   const signOffRef = useRef<HTMLDivElement | null>(null);
 
@@ -695,7 +697,9 @@ export function HandoverPage() {
         else if (present) setPresent(false);
         return;
       }
-      if (isPhoneWidth) return;
+      // Character shortcuts belong to this handover, not the surrounding shell or another widget.
+      if (!singleKeyShortcutsEnabled || isPhoneWidth || !shortcutScopeRef.current?.contains(document.activeElement))
+        return;
       if (key === "p") {
         event.preventDefault();
         setSheetOpen(true);
@@ -715,7 +719,7 @@ export function HandoverPage() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [drawerOpen, selectedId, present, sheetOpen, isPhoneWidth, toggleMeeting, tab, step]);
+  }, [drawerOpen, selectedId, present, sheetOpen, isPhoneWidth, singleKeyShortcutsEnabled, toggleMeeting, tab, step]);
 
   /* sign-off checks */
   const actRows = rows.filter((row) => groupOf(row, now, cutoff) === "act");
@@ -1159,16 +1163,24 @@ export function HandoverPage() {
         )}
       >
         {() => (
-          <dl className={styles.keys}>
-            {KEYS.map(([keys, text]) => (
-              <div key={keys}>
-                <dt>
-                  <kbd>{keys}</kbd>
-                </dt>
-                <dd>{text}</dd>
-              </div>
-            ))}
-          </dl>
+          <>
+            <Checkbox
+              label="Enable single-key shortcuts"
+              checked={singleKeyShortcutsEnabled}
+              onChange={(event) => setSingleKeyShortcutsEnabled(event.target.checked)}
+            />
+            <p>Letter shortcuts work while focus is in this handover. Escape stays available.</p>
+            <dl className={styles.keys}>
+              {KEYS.map(([keys, text]) => (
+                <div key={keys}>
+                  <dt>
+                    <kbd>{keys}</kbd>
+                  </dt>
+                  <dd>{text}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
         )}
       </Popover>
     </div>
@@ -1468,7 +1480,13 @@ export function HandoverPage() {
   ) : null;
 
   return (
-    <main id="main-content" className={styles.page} data-testid="ward-handover-page" data-ward-design="v6">
+    <main
+      ref={shortcutScopeRef}
+      id="main-content"
+      className={styles.page}
+      data-testid="ward-handover-page"
+      data-ward-design="v6"
+    >
       {hero}
       {pastBanner}
       {sheetOpen ? null : sinceStrip}
