@@ -109,7 +109,13 @@ function deriveStageAssigningCases(rawSource: string): string[] {
 }
 
 const REDUCER_SOURCE_PATH = path.join(process.cwd(), "src/components/ward-management/ward-flow-reducer.ts");
-const reducerSource = readFileSync(REDUCER_SOURCE_PATH, "utf8");
+// 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the reducer unchanged, so scan them too.
+const REDUCER_SLICE_PATHS = ["ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map((file) =>
+  path.join(process.cwd(), "src/components/ward-management", file),
+);
+const reducerSource = [REDUCER_SOURCE_PATH, ...REDUCER_SLICE_PATHS]
+  .map((file) => readFileSync(file, "utf8"))
+  .join("\n");
 const derivedStageAssigningCases = deriveStageAssigningCases(reducerSource);
 
 // ---------------------------------------------------------------------------------------------
