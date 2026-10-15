@@ -1,8 +1,9 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
+import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
@@ -39,5 +40,28 @@ describe("rail persona follows the desk", () => {
 
     act(() => dispatchPersonaSyncForRole("community"));
     expect(trigger().getAttribute("aria-label")).toContain("Community team clinician");
+  });
+});
+
+describe("rail popover and sheets share one Escape", () => {
+  it("leaves the persona popover open while a sheet is open, and closes it on the next press", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(trigger());
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+
+    const sheetNode = document.createElement("div");
+    document.body.appendChild(sheetNode);
+    pushSheet("test-rail-sheet", sheetNode);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+
+    popSheet("test-rail-sheet");
+    sheetNode.remove();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
 });

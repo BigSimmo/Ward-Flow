@@ -1,5 +1,6 @@
 "use client";
 
+import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import {
   ArrowRight,
   Check,
@@ -445,6 +446,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         if (openOverlay !== null) {
+          // An open sheet sits above this popover, so Escape closes the sheet only. The popover waits
+          // for the next press instead of both closing on one.
+          if (hasOpenSheet()) return;
           event.preventDefault();
           const trigger =
             openOverlay === "persona"
