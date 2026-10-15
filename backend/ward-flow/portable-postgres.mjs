@@ -177,7 +177,8 @@ SELECT current_user AS role,
   ) AS browser_denied,
   (SELECT array_agg(version ORDER BY version) FROM ward_flow.migrations) AS versions,
   -- Once migration 6 is in, every Ward Flow table keeps row-level security on (not forced, so the
-  -- owner still migrates), and every policy is the runtime-only one. Before it, no table has any.
+  -- owner still migrates), and every policy is the runtime-only one, with both expressions present.
+  -- Before it, no table has any.
   CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 6) THEN
     NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'ward_flow' AND c.relkind = 'r' AND (NOT c.relrowsecurity OR c.relforcerowsecurity
@@ -186,8 +187,8 @@ SELECT current_user AS role,
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'ward_flow' AND NOT (p.polname = 'runtime_only' AND p.polpermissive AND p.polcmd = '*'
         AND p.polroles = '{0}'::oid[]
-        AND pg_catalog.pg_get_expr(p.polqual, p.polrelid) = '(CURRENT_USER = ''wardflow_backend''::name)'
-        AND pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid) = '(CURRENT_USER = ''wardflow_backend''::name)'))
+        AND coalesce(pg_catalog.pg_get_expr(p.polqual, p.polrelid), '') = '(CURRENT_USER = ''wardflow_backend''::name)'
+        AND coalesce(pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid), '') = '(CURRENT_USER = ''wardflow_backend''::name)'))
   ELSE NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'ward_flow' AND (c.relrowsecurity OR c.relforcerowsecurity))
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p JOIN pg_catalog.pg_class c ON c.oid = p.polrelid

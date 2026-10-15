@@ -784,6 +784,10 @@ test(
       await owner.query("DROP POLICY runtime_only ON ward_flow.audit");
       await assert.rejects(runtimeOk(runtime), /unsafe/);
       await assert.rejects(verifyPostgresNamespace(owner), /Unrecognised or unsafe/);
+      // So is a same-named policy with no USING clause, whose missing expression must not read as a match.
+      await owner.query("CREATE POLICY runtime_only ON ward_flow.audit WITH CHECK (current_user = 'wardflow_backend')");
+      await assert.rejects(runtimeOk(runtime), /unsafe/);
+      await assert.rejects(verifyPostgresNamespace(owner), /Unrecognised or unsafe/);
     } finally {
       for (const pool of pools) await pool.end();
       await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
