@@ -21,6 +21,23 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+// Records every booking the screen sends, so a test can see the ETA it carried even when the
+// reducer then refuses the booking. Every event still goes to the real reducer unchanged.
+const bookings = vi.hoisted(() => ({ estimatedAt: [] as Array<number | undefined> }));
+vi.mock("@/components/ward-management/ward-flow-reducer", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-reducer")>();
+  return {
+    ...actual,
+    wardFlowReducer: (
+      state: Parameters<typeof actual.wardFlowReducer>[0],
+      event: Parameters<typeof actual.wardFlowReducer>[1],
+    ) => {
+      if (event.type === "BOOK_TRANSPORT") bookings.estimatedAt.push(event.estimatedAt);
+      return actual.wardFlowReducer(state, event);
+    },
+  };
+});
+
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -207,9 +224,12 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(etaInput).toHaveValue(formatInstantWithDay(yesterday, NOW_ANCHOR));
     expect((etaInput as HTMLInputElement).value).toMatch(/ yesterday$/);
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-99210" } });
+    bookings.estimatedAt.length = 0;
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
 
     expect(screen.queryByText("Enter the ETA as HH:MM or minutes, for example 11:15 or 45m")).not.toBeInTheDocument();
+    // The booking the form sent carries yesterday's instant, not today's 11:12.
+    expect(bookings.estimatedAt).toEqual([yesterday]);
     expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
   });
 
