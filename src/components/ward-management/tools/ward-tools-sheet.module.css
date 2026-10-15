@@ -482,6 +482,14 @@
   white-space: pre-wrap;
 }
 
+@media print {
+  .summaryText {
+    overflow: visible;
+    max-width: none;
+    max-height: none;
+  }
+}
+
 /* Form times */
 .fieldRow {
   display: grid;
@@ -696,12 +704,19 @@
 }
 
 @media (max-width: 48rem) {
-  .row {
-    min-height: 56px;
+  .row,
+  .chip,
+  .iconButton,
+  .primaryButton,
+  .secondaryButton,
+  .resetButton,
+  .select,
+  .input {
+    min-height: 48px;
   }
 
-  .chip {
-    min-height: 40px;
+  .row {
+    min-height: 56px;
   }
 
   .contactRow {

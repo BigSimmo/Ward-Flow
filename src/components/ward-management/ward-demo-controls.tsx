@@ -287,7 +287,7 @@ export function WardDemoClockPopover({
       title={title ?? `Board time ${clockText} AWST`}
       aria-label={`${ariaLabel ?? `Board time ${clockText} AWST`}. Open demo controls in Tools`}
       data-testid={testId}
-      onClick={() => requestToolsTool("demo")}
+      onClick={(event) => requestToolsTool("demo", event.currentTarget)}
     >
       {children ?? (
         <>

@@ -3,7 +3,7 @@
 import { useId, useMemo, useState } from "react";
 
 import { formTitleForCode } from "@/lib/form-register";
-import { useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { AUDITABLE_FORM_CODES } from "../ward-audit";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "../ward-legal-clock";
 import { formatStatutoryDateTime, parseDateTimeInput, toDateInputValue } from "./ward-form-time-input";
@@ -28,11 +28,9 @@ function gapText(minutes: number) {
  */
 export function WardFormTimes() {
   const demoNow = useWardFlowClock();
-  // The demo clock counts minutes from the start of the scenario day, anchored to today's date,
-  // the same anchoring the form tool used, so a typed date reads naturally.
-  // The anchor is fixed once, so the comparison does not jump a day if the page stays open past
-  // Perth midnight.
-  const [dayZero] = useState(() => parseDateTimeInput(toDateInputValue(new Date()), "00:00") ?? new Date());
+  // The demo clock counts minutes from the provider's scenario day, the same anchor every board
+  // date uses, so a typed date compares against the same day the board shows.
+  const { dayZero } = useWardFlow();
   const now = useMemo(() => new Date(dayZero.getTime() + demoNow * 60_000), [dayZero, demoNow]);
   const [code, setCode] = useState<string>("1A");
   const [date, setDate] = useState(() => toDateInputValue(now));

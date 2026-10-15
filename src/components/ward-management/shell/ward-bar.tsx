@@ -586,9 +586,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const [toolsOpenRequest, setToolsOpenRequest] = useState<{ tool: ToolsSheetToolId; seq: number } | undefined>();
+  const toolsReturnFocusRef = useRef<HTMLElement | null>(null);
   const clearToolsOpenRequest = useCallback(() => setToolsOpenRequest(undefined), []);
   useEffect(
-    () => subscribeToolsTool((tool) => setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }))),
+    () =>
+      subscribeToolsTool((tool, returnFocus) => {
+        // A Board time pill opens Tools at Demo; closing Tools goes back to that pill.
+        toolsReturnFocusRef.current = returnFocus ?? null;
+        setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }));
+      }),
     [],
   );
   const [activityQuery, setActivityQuery] = useState("");
@@ -604,6 +610,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
   // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
   const phoneMenuRef = useRef<HTMLButtonElement>(null);
+  // Read when Tools closes: the Board time pill that opened it, else the button that opens Tools.
+  const toolsReturnTarget = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        return toolsReturnFocusRef.current ?? (isPhone ? phoneMenuRef.current : toolsTriggerRef.current);
+      },
+    }),
+    [isPhone],
+  );
   const referralReturnFocusRef = useRef<HTMLElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
@@ -884,6 +899,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
+      // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
+      if (id === "tools") toolsReturnFocusRef.current = null;
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
@@ -902,7 +919,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       } else if (id === "tasks") {
         announceToWardShell(`Tasks opened. ${tasksActiveCount} invented tasks outstanding.`);
       } else if (id === "tools") {
-        announceToWardShell("Tools opened. Figures, utilities, contacts and shift desk are here.");
+        announceToWardShell(
+          "Tools opened. Service now, quick actions, look ups, print and share, and demo controls are here.",
+        );
       } else if (id === "referral") {
         announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
       }
@@ -2047,7 +2066,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
-        returnFocusRef={isPhone ? phoneMenuRef : toolsTriggerRef}
+        returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
         headerClassName={styles.drawerHeader}
