@@ -225,7 +225,7 @@ safe global key across 30 files.
 | `D-54` | `decisions.md`:629 | D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026) |
 | `D-55` | `decisions.md`:636 | D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026) |
 | `D-56` | `decisions.md`:642 | D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026) |
-| `D-57` | `decisions.md`:648 | D-57. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026) |
+| `D-58` | `decisions.md`:648 | D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -558,7 +558,7 @@ safe global key across 30 files.
 - `D-54` — line 629, heading: "D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026)"
 - `D-55` — line 636, heading: "D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026)"
 - `D-56` — line 642, heading: "D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026)"
-- `D-57` — line 648, heading: "D-57. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026)"
+- `D-58` — line 648, heading: "D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 
