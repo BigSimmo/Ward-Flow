@@ -275,6 +275,7 @@ describe("the hook script end to end", () => {
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     const file = "docs/ward-flow/probe.md";
     const signOutFile = join(root, "sign-out.md");
+    writeFileSync(signOutFile, "Open sign-outs only\n");
     const blocked = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain(`Ward files without your sign-out in ${signOutFile}`);
@@ -283,5 +284,16 @@ describe("the hook script end to end", () => {
     const passed = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
     expect(passed.status).toBe(0);
     expect(passed.stderr).toContain("[pre-commit] ok");
+  });
+
+  it("warns and skips the ownership check when no sign-out log exists on this machine", () => {
+    const root = repo();
+    execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+    const signOutFile = join(root, "absent", "sign-out.md");
+    const passed = stageAndRun(root, "docs/ward-flow/probe.md", "synthetic probe\n", {
+      WARD_SIGNOUT_FILE: signOutFile,
+    });
+    expect(passed.status).toBe(0);
+    expect(passed.stderr).toContain(`sign-out guard skipped (no log at ${signOutFile}`);
   });
 });

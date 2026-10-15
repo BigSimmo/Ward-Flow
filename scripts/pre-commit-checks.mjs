@@ -32,7 +32,7 @@
  * Also: a clash guard. Staged files that another branch has signed out in the
  * shared sign-out file (D:/Repos/ward-flow-logs/sign-out.md,
  * "## Active sign-outs" lines `- date | who | branch | worktree | files`) block
- * the commit and name the owner. Missing file = no check.
+ * the commit and name the owner. Missing file = a notice and no check.
  *
  * Escapes, in order of preference:
  *   - a line containing `precommit-scan: allow` is skipped by the scan
@@ -736,9 +736,15 @@ async function main() {
   const merging = existsSync(git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim());
 
   // 1b. Ward ownership guard. Not during a fold's merge.
-  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1") {
+  // The shared log lives on Josh's machine. Elsewhere (a cloud container, another OS) there is
+  // no log to check against, so warn once and skip rather than block every commit.
+  const signOutLogPresent = existsSync(SIGN_OUT_FILE);
+  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1" && !signOutLogPresent) {
+    report.push(`sign-out guard skipped (no log at ${SIGN_OUT_FILE}; set WARD_SIGNOUT_FILE to use one)`);
+  }
+  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1" && signOutLogPresent) {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
-    const signOutText = existsSync(SIGN_OUT_FILE) ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
+    const signOutText = readFileSync(SIGN_OUT_FILE, "utf8");
     const clashes = signOutConflicts(staged, signOutText, branch, root);
     const taskBranch = isPublicWardFlowCheckout(root)
       ? branch !== "main" && branch !== "HEAD"

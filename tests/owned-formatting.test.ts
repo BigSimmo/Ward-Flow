@@ -52,6 +52,20 @@ it("detects partially staged input before rewriting it", () => {
 });
 it("requires explicit file ownership scope for write mode", () =>
   expect(main(["--write"])).rejects.toThrow("exact owned paths"));
+it("formats named files without an ownership check when no sign-out log exists", async () => {
+  const { root } = fixture();
+  const previous = process.env.WARD_SIGNOUT_FILE;
+  process.env.WARD_SIGNOUT_FILE = path.join(root, "absent", "sign-out.md");
+  try {
+    // The fixture has no node_modules, so reaching the Prettier lookup proves the missing log did not block.
+    await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow(
+      "Locked local Prettier unavailable",
+    );
+  } finally {
+    if (previous === undefined) delete process.env.WARD_SIGNOUT_FILE;
+    else process.env.WARD_SIGNOUT_FILE = previous;
+  }
+});
 it("checks all verdicts on formatter config drift without granting directory writes", () => {
   const { root } = fixture();
   writeFileSync(path.join(root, "package.json"), '{"prettier":{"semi":true}}');
