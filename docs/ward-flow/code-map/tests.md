@@ -186,7 +186,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-community-collision-coverage.test.ts`** (249 lines) — the shared near-duplicate derivation
 - **`tests/ward-community-decline-reasons.test.ts`** (105 lines) — the community decline vocabulary
 - **`tests/ward-community-notices.dom.test.tsx`** (112 lines) — a community team sees its own notices and can mark them read
-- **`tests/ward-community-teams-table.dom.test.tsx`** (139 lines) — CommunityTeamsTable [describe.skip — retired/disabled]
 - **`tests/ward-configuration-read-sites.test.ts`** (227 lines) — configuration constants are read only through state.configuration
 - **`tests/ward-configuration-reducer.test.ts`** (287 lines) — SET_CONFIGURATION
 - **`tests/ward-configuration.test.ts`** (142 lines) — defaultWardConfiguration
@@ -200,7 +199,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-delays-derivations.test.ts`** (714 lines) — delayGroups
 - **`tests/ward-delays-service-scope.dom.test.tsx`** (385 lines) — fixture sanity: South Metro actually splits the open population both ways
 - **`tests/ward-derivations.test.ts`** (524 lines) — buildActionInbox
-- **`tests/ward-device-claim-reason.dom.test.tsx`** (203 lines) — a live board's stated reason for not being a medical device
 - **`tests/ward-discharge-dates.test.ts`** (435 lines) — derivedBedReleases — expected releases
 - **`tests/ward-discharge-records.test.ts`** (165 lines) — guarded discharge projection
 - **`tests/ward-diversion-controls.dom.test.tsx`** (137 lines) — officer diversion control — T4b
@@ -459,11 +457,10 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 
 ### Per-screen DOM tests, by screen
 
-#### Community (28 files)
+#### Community (25 files)
 
 - **`tests/ward-community-corrected-claims.test.ts`** (627 lines) — the community screens rendered something to scan at all
 - **`tests/ward-community-durations-not-dates.test.ts`** (167 lines) — the community route prints durations, never calendar dates
-- **`tests/ward-community-figures.dom.test.tsx`** (93 lines) — CommunityFigures [describe.skip — retired/disabled]
 - **`tests/ward-community-gateway.dom.test.tsx`** (405 lines) — Community gateway — the floor this whole file stands on
 - **`tests/ward-community-governance-claims.dom.test.tsx`** (174 lines) — the claims the live community screens make
 - **`tests/ward-community-hub.dom.test.tsx`** (1421 lines) — community hub — an unknown team is never another team
@@ -474,10 +471,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-community-ratified-alias-on-screen.dom.test.tsx`** (238 lines) — a ratified service ruling reaches the reader
 - **`tests/ward-community-ratified-aliases.test.ts`** (220 lines) — the ratified service aliases
 - **`tests/ward-community-ratified-provenance.dom.test.tsx`** (195 lines) — an agent-decided alias never renders as a person's signature
-- **`tests/ward-community-scope.dom.test.tsx`** (101 lines) — CommunityHome — the coordinator's scope switch [describe.skip — retired/disabled]
 - **`tests/ward-community-team-contact-mapping.test.ts`** (129 lines) — community team contact mapping
 - **`tests/ward-community-team-count.test.ts`** (145 lines) — Community team count — the number on screen, checked against its own source
-- **`tests/ward-community-team-hub.dom.test.tsx`** (207 lines) — CommunityTeamHub — the community role's own, restricted landing [describe.skip — retired/disabled]
 - **`tests/ward-community-team-list-source.test.ts`** (95 lines) — the community team screen's list source
 - **`tests/ward-community-team-single-source.test.ts`** (137 lines) — the community hub's one source
 - **`tests/ward-community-third-edition-headings.dom.test.tsx`** (344 lines) — the community team screen's third-edition headings
@@ -490,7 +485,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-statistics-community-provenance.dom.test.tsx`** (104 lines) — the community screen's provenance section
 - **`tests/ward-statistics-community-scope-note.dom.test.tsx`** (94 lines) — the community screen's scope note
 
-#### ED (19 files)
+#### ED (17 files)
 
 - **`tests/ward-ed-answered-cap.dom.test.tsx`** (142 lines) — recently answered holds ten — owner ruling 19
 - **`tests/ward-ed-css-classes-exist.test.ts`** (152 lines) — ed.module.css carries every class ed-screen.tsx references
@@ -498,12 +493,10 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-ed-due-at-parsing.dom.test.tsx`** (148 lines) — the typed deadline reaches the movement, and an untyped one stays absent
 - **`tests/ward-ed-expects-order.dom.test.tsx`** (134 lines) — the Expects list is ordered the way it says it is
 - **`tests/ward-ed-form-expiry.dom.test.tsx`** (250 lines) — the ED screen's form-expiry line reads only the typed expiry
-- **`tests/ward-ed-home.dom.test.tsx`** (183 lines) — EdHome [describe.skip — retired/disabled]
 - **`tests/ward-ed-no-transport-needed.dom.test.tsx`** (58 lines) — recording that no transport is needed
 - **`tests/ward-ed-outcomes.test.ts`** (238 lines) — RECORD_ED_OUTCOME — withdraws live requests
 - **`tests/ward-ed-psychiatry-hub.dom.test.tsx`** (1877 lines) — the ED psychiatry inbox selector
 - **`tests/ward-ed-screen.dom.test.tsx`** (1230 lines) — emergency department intake picker
-- **`tests/ward-ed-service-bands.dom.test.tsx`** (104 lines) — EdServiceBands [describe.skip — retired/disabled]
 - **`tests/ward-ed-transport-booking.dom.test.tsx`** (484 lines) — booking transport from the sending emergency department
 - **`tests/ward-statistics-ed-about-figures.dom.test.tsx`** (145 lines) — the ED screen's 'About the figures on this page' panel
 - **`tests/ward-statistics-ed-bands.test.ts`** (141 lines) — the five wait bands
@@ -594,14 +587,13 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-shortlist-ward-detail.dom.test.tsx`** (120 lines) — ShortlistPanel's ward detail block
 - **`tests/ward-shortlist.dom.test.tsx`** (413 lines) — ShortlistPanel escalation contact
 
-#### Delays (6 files)
+#### Delays (5 files)
 
 - **`tests/ward-delays-alias.test.ts`** (22 lines) — delays alias pedagogy (Wave 4 item 15)
 - **`tests/ward-delays-nobody-waiting.dom.test.tsx`** (143 lines) — the delays screen when nobody is waiting
 - **`tests/ward-delays-screen.dom.test.tsx`** (780 lines) — the Delays screen
 - **`tests/ward-delays-third-edition.dom.test.tsx`** (293 lines) — Delays — the drawing's panel names (task D1)
 - **`tests/ward-delays-type-ranks.test.ts`** (121 lines) — the Delays waiting row keeps its type ranks after the 12px raise (O-16.2)
-- **`tests/ward-escalation.dom.test.tsx`** (162 lines) — EscalationBoardPage [describe.skip — retired/disabled]
 
 #### Handover (6 files)
 
@@ -640,7 +632,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-discharge-blocked-emphasis.dom.test.tsx`** (146 lines) — the discharges board raises the blocked group, and only while it has rows
 - **`tests/ward-discharge-column-contract.dom.test.tsx`** (167 lines) — the discharges board's column contract
 
-#### Transport officer (15 files)
+#### Transport officer (14 files)
 
 - **`tests/ward-book-transport-acting-unit-validation.test.ts`** (75 lines) — BOOK_TRANSPORT actingUnitId validation
 - **`tests/ward-book-transport.test.ts`** (377 lines) — BOOK_TRANSPORT
@@ -651,7 +643,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-officer-print.test.ts`** (50 lines) — Transport officer — print keeps job content visible
 - **`tests/ward-officer-stepper.dom.test.tsx`** (90 lines) — the transport officer's job cards render a leg stepper
 - **`tests/ward-stop-transport.test.ts`** (426 lines) — stopping a collected transport — WLQ-38 (owner, 2026-09-15)
-- **`tests/ward-tracker-leg-badge.dom.test.tsx`** (130 lines) — live tracker leg badges [describe.skip — retired/disabled]
 - **`tests/ward-transport-cancel-no-rebook.test.ts`** (236 lines) — CANCEL_TRANSPORT with a bed held no longer rebooks automatically (owner answer 30)
 - **`tests/ward-transport-cancel-permission.test.ts`** (362 lines) — who may cancel a transport
 - **`tests/ward-transport-not-needed.test.ts`** (181 lines) — "No transport needed" — owner answer 10 (second round, 2026-09-17)
@@ -922,17 +913,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
   `//` or `/*` before taking the first match — `tests/ward-guard-comment-blindness.test.ts` exists
   because the repo's own text-scanning guards have the identical trap in the other direction (a
   comment can satisfy a guard meant to scan real code).
-- **Eight DOM suites are `describe.skip` for a named, owner-ruled reason and are not dead code**:
-  `ward-community-figures.dom.test.tsx`, `ward-community-scope.dom.test.tsx`,
-  `ward-community-team-hub.dom.test.tsx`, `ward-ed-home.dom.test.tsx`,
-  `ward-ed-service-bands.dom.test.tsx`, `ward-escalation.dom.test.tsx`,
-  `ward-community-teams-table.dom.test.tsx` and `ward-tracker-leg-badge.dom.test.tsx` each carry a
-  head comment citing the 6 September 2026 owner ruling that their screen is unreachable. Do not
-  un-skip one of these to raise a passing count, and do not delete the file — the repo's dead-code
-  policy forbids removing an exported symbol on a "nothing imports it" basis, and
-  `tests/ward-component-reachability.test.ts` is the guard that reddens the day the underlying
-  component becomes reachable again, at which point the retired coverage record names what to
-  restore.
+- **The eight retired `describe.skip` DOM suites are gone.** They covered screens the 6 September
+  2026 owner ruling made unreachable, and were removed by PR #306 on 15 Oct 2026.
 - **About a quarter of this suite reads the source tree directly.** 162 of the 656 files call
   `readFileSync`/`readdirSync` (measured by grep over every file in this map, excluding the JSON
   manifest) — essentially all of "Design tokens, raw colour and table/type rules", most of

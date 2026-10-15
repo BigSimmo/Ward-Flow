@@ -20,7 +20,8 @@ A `WARD_NAV` item or rail entry with a `flag` is hidden while that flag is off.
 The statistics layout preserves its seven modes and panel grids. The shared navigation anchors
 under the measured WardBar height. Statistics alone uses clipped horizontal overflow on mobile,
 so the document remains the sticky scroll container. Explanation disclosures and provenance
-panels have been removed; operational breakdowns render directly through `StatisticsDetailPanel`.
+panels have been removed; operational breakdowns rendered directly through `StatisticsDetailPanel`,
+which was removed by PR #306 on 15 Oct 2026.
 The compact footer still identifies synthetic data. Bed, admission, decline and community counts
 continue to use the existing derivations, including unavailable values rather than invented history.
 
@@ -457,9 +458,6 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   outside this scope's own directory: `settings/settings-screen.tsx` (the preference toggles) and
   `ward/ward-notification-center.tsx` (the actual alert trigger) — both outside this part's file
   list, so not detailed further here.
-- **`shell/ward-wallboard-store.ts`** (38 lines) — `localStorage`-backed wallboard auto-refresh
-  interval preference (`"off" | 15 | 30 | 60`). 1 importer, `settings/settings-screen.tsx`, outside
-  this part's file list.
 
 ---
 
@@ -538,8 +536,7 @@ shell itself:
   route) and by `people/[patientId]/page.tsx` (the not-found branch). 2 importers.
 - `governance-registers.tsx` (1,928 lines) — `GovernanceWorkbench` (plus
   `GovernanceOverridesRegisterPanel`, `GovernanceAccessRecordPanel`), mounted by
-  `ward-management-modes.tsx` for the `/governance` route, and separately by
-  `governance/governance-screen.tsx`. 2 importers.
+  `ward-management-modes.tsx` for the `/governance` route. 1 importer.
 - `ward-management-modes.tsx` (535 lines) — `WardModeWorkspace`, the mode dispatcher mounted
   directly by `governance/page.tsx` and `network/page.tsx`; also defines `GovernanceView`,
   `NotAMedicalDeviceStatement`, `WARD_WORKSPACE_MODES`. 2 importers.
@@ -628,8 +625,8 @@ scope's own directory):
 One line each: which component(s) compose/import it, and whether anything does.
 
 - **`decline-register.module.css`** (101) — `decline-register.tsx` only.
-- **`governance-third-edition.module.css`** (1,633) — `governance/governance-screen.tsx`,
-  `governance-registers.tsx`, `ward-management-modes.tsx`.
+- **`governance-third-edition.module.css`** (1,633) — `governance-registers.tsx`,
+  `ward-management-modes.tsx`.
 - **`override-register.module.css`** (107) — `override-register.tsx` only.
 - **`ward-bar.module.css`** (224) — `ward-bar.tsx` (the root stacked-bar chart) only; unrelated to
   `shell/ward-bar.module.css`, which is a different, much larger file for a different component.
@@ -647,14 +644,15 @@ One line each: which component(s) compose/import it, and whether anything does.
   alongside the third-edition module above — both are live in the same file at once).
 - **`ward-management.module.css`** (1,413) — `ward-management-console.tsx` and
   `ward-management-navigation.tsx` (the latter unmounted, §4.1).
-- **`ward-modes-second-edition.module.css`** (586) — `governance/governance-screen.tsx`,
-  `governance-registers.tsx`, `ward-management-modes.tsx` (same three files as
-  `governance-third-edition.module.css`; both second- and third-edition classes are live in each).
+- **`ward-modes-second-edition.module.css`** (586) — not imported by any `.tsx`/`.ts` file. Only
+  comments in three other stylesheets name it. `governance-registers.tsx` and
+  `ward-management-modes.tsx` import `governance-third-edition.module.css` instead.
 - **`ward-panel.module.css`** (175) — `ward-panel.tsx` only.
 - **`ward-record-row.module.css`** (191) — `ward-record-row.tsx` only.
 - **`ward-reduced-motion.module.css`** (32) — not imported from any `.tsx`/`.ts` file; **composed
-  from** by ten other CSS modules' own classes (`coordinator.module.css`, `officer.module.css`,
-  `tracker/live-tracker.module.css`, `ward-demo-controls.module.css`,
+  from** by ten other CSS modules' own classes (`coordinator/coordinator.module.css`,
+  `coordinator/home.module.css`, `referrals/ward-referral-drawer.module.css`,
+  `ward-demo-controls.module.css`,
   `ward-management-modes.module.css`, `ward-management-network.module.css`,
   `ward-management.module.css`, `ward-role-switcher.module.css`, `ward-sidebar.module.css`,
   `ward-tasks-drawer.module.css`) — a shared `prefers-reduced-motion` kill-switch, not a

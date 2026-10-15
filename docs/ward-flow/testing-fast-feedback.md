@@ -33,10 +33,12 @@ native owned-job supervision on normal exit and timeout.
 For larger selections use `"executionMode": "guarded"`. Neither mode replaces a final required gate. It
 scrubs provider credentials and removes ambient test exclusions/sharding.
 
-```powershell
-node scripts/ward-flow/test-batch.mjs --plan D:/Temp/ward-batch.json --output D:/Temp/ward-test-evidence --dry-run
-node scripts/ward-flow/test-batch.mjs --plan D:/Temp/ward-batch.json --output D:/Temp/ward-test-evidence
+```sh
+node scripts/ward-flow/test-batch.mjs --plan ../ward-batch.json --output ../ward-test-evidence --dry-run
+node scripts/ward-flow/test-batch.mjs --plan ../ward-batch.json --output ../ward-test-evidence
 ```
+
+The plan and output paths can be anywhere outside the checkout. They work the same on Windows, macOS and Linux.
 
 Every run produces separate log, JSON test report and result files. The runner
 requires a nonempty successful report containing exactly the selected files,
