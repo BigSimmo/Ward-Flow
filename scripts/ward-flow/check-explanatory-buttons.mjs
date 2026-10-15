@@ -151,23 +151,6 @@ function maskAttrValueBodies(tagText) {
 }
 
 /**
- * Explicit allowlist for shared-workspace demo-off controls (PR #342, pinned by
- * `tests/ward-demo-controls-shared-off.dom.test.tsx` with `.toBeDisabled()`) where the
- * `DEMO_CONTROLS_OFF` notice is rendered as an always-visible section `<p>` banner directly
- * above the button group rather than a hidden `.sr-only` tooltip.
- */
-const VISIBLE_BANNER_ALLOWLIST = [
-  {
-    file: "src/components/ward-management/demo-reset/ward-demo-reset.tsx",
-    testIdPattern: /data-testid=\{`ward-demo-reset-\$\{choice\}`\}/,
-  },
-  {
-    file: "src/components/ward-management/ward-global-search.tsx",
-    testIdPattern: /data-testid="ward-global-search-cmd-advance-clock"/,
-  },
-];
-
-/**
  * Extracts JSX `<button ...>` opening tags (handling nested `{...}` expressions inside props)
  * and checks whether any tag combines a native `disabled` attribute with `aria-describedby`.
  *
@@ -212,21 +195,17 @@ export function findExplanatoryDisabledButtonViolations(source, filePath = "<inl
     if (endIdx === -1) continue;
 
     const tagText = cleaned.slice(startIdx, endIdx);
-    const rawTag = source.slice(startIdx, endIdx);
-    const isAllowlisted = VISIBLE_BANNER_ALLOWLIST.some(
-      (entry) => entry.file === filePath && entry.testIdPattern.test(rawTag),
-    );
-    if (isAllowlisted) continue;
-
     const topLevelTag = maskAttrValueBodies(tagText);
     const hasAriaDescribedBy = /(?:^|[\s\n])aria-describedby\s*=/m.test(topLevelTag);
     // Match standalone top-level `disabled` or `disabled={...}`, never `aria-disabled` or `data-disabled`
     // or a `disabled` variable inside `{...}`.
     const hasNativeDisabled = /(?:^|[\s\n])disabled(?:\s*=|\s*[\s/>])/m.test(topLevelTag);
+    // Role-gated controls receive both attributes through the shared buttonProps spread.
+    const hasRoleGateProps = /\{\s*\.\.\.\s*[^}]*buttonProps\s*\}/m.test(tagText);
 
-    if (hasAriaDescribedBy && hasNativeDisabled) {
+    if ((hasAriaDescribedBy && hasNativeDisabled) || hasRoleGateProps) {
       const line = cleaned.slice(0, startIdx).split("\n").length;
-      const snippet = rawTag.replace(/\s+/g, " ").trim();
+      const snippet = source.slice(startIdx, endIdx).replace(/\s+/g, " ").trim();
       violations.push({
         file: filePath,
         line,
