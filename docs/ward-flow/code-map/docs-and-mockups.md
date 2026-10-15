@@ -429,8 +429,8 @@ source of this table and is more current than this bullet list if the two ever d
 - **`ward-flow-digest.html`** — the condensed reader's brief mirror of the same standard.
 - **`movement-gantt-third-edition.html`**, **`network-horizon-third-edition.html`** — alternate
   visualisations of Movement and Network, not routed.
-- **`sovereign-chrome-and-drawers-perfected.html`** — reference only (routed at `/sovereign`, a
-  scratch route, per `SCREEN-MAP.md`; not a design source for any real screen per `README.md`).
+- **`sovereign-chrome-and-drawers-perfected.html`** — reference only, not routed (its scratch
+  route `/sovereign` was deleted on 15 Oct 2026; not a design source for any real screen per `README.md`).
 - **`sovereign-sidebar-ultimate.html`** — reference only, confirmed by `README.md`.
 - **`perfected-activity-drawer.html`**, **`perfected-drawers-showcase.html`**,
   **`perfected-service-popover.html`**, **`perfected-tasks-drawer.html`**,

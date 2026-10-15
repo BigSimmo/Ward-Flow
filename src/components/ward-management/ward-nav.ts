@@ -478,10 +478,6 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
       "Settings is reached from the Tools drawer (shell/ward-bar.tsx), the rail footer (shell/ward-rail.tsx) " +
       "and search (search/ward-smart-search.ts).",
   ],
-  [
-    "/mockups/ward-flow/sovereign",
-    "Showcase workspace for the Sovereign Chrome, Navigation Rail & Drawers Suite (sovereign-sidebar-ultimate.html) — a demonstrator screen for cross-cutting shell and off-canvas drawer capabilities, deliberately unlisted from the operational clinical navigation rail.",
-  ],
   /* The next three entries were added by MERGE 01 (owner-approved 2026-09-05), which folded the
    * priority queue, the exceptions inbox and the escalation board into one screen, `DelaysScreen`
    * at /mockups/ward-flow/delays. Each of the three old routes now redirects there rather than
@@ -794,7 +790,6 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized.startsWith("/mockups/ward-flow/transport/officer")) return "Transport";
   if (normalized.startsWith("/mockups/ward-flow/transport")) return "Transport";
   if (normalized.startsWith("/mockups/ward-flow/settings")) return "Settings";
-  if (normalized.startsWith("/mockups/ward-flow/sovereign")) return "Sovereign Health";
 
   const exactView = WARD_VIEWS.find((v) => v.href === normalized);
   if (exactView) return exactView.label;
