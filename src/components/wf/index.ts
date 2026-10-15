@@ -49,8 +49,6 @@ export {
   WardCapacityRows,
   GroupHead,
   SinceYouLooked,
-  NeedsYou,
-  UndoHairline,
   type CheckingItem,
   type CheckingFootProps,
   type StepState,
@@ -58,9 +56,6 @@ export {
   type WardCapacityRowProps,
   type GroupHeadProps,
   type SinceItem,
-  type NeedsYouItem,
-  type NeedsYouProps,
-  type UndoHairlineProps,
 } from "./v10-parts";
 export {
   HeroChip,
