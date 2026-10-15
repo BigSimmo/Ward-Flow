@@ -284,15 +284,15 @@ export function formatInstant(instant: Instant) {
 /**
  * A typed 24-hour clock time as minutes since midnight (0 to 1439), or `undefined`.
  *
- * Takes "09:30" and "9:30", and the digits-only "0930" and "930" too, because the iPhone number
- * pad has no ":" key. Anything else is refused rather than guessed ("14:3", "14", "24:00", "9h30"),
- * so a half-typed time never becomes a time nobody typed.
+ * Takes "09:30" and "9:30", and four digits ("0930") too, because the iPhone number pad has no
+ * ":" key. Digits only must be four: "143" could be 01:43 or a dropped digit from 14:30, so it is
+ * refused like "14:3", "14", "24:00" and "9h30". A half-typed time never becomes a time nobody typed.
  */
 export function minuteOfDayFromClockText(text: string): number | undefined {
-  const match = /^(\d{1,2}):?(\d{2})$/.exec(text.trim());
+  const match = /^(?:(\d{1,2}):(\d{2})|(\d{2})(\d{2}))$/.exec(text.trim());
   if (!match) return undefined;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
+  const hours = Number(match[1] ?? match[3]);
+  const minutes = Number(match[2] ?? match[4]);
   if (hours > 23 || minutes > 59) return undefined;
   return hours * 60 + minutes;
 }

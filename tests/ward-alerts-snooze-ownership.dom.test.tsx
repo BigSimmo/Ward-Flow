@@ -91,7 +91,7 @@ describe("alerts: ownership and snooze", () => {
     // The row keeps its real severity glyph: a red row shows the triangle, not a neutral mark.
     expect(first.tone).toBe("danger");
     expect(row.querySelector('svg path[d="M5 0.8 9.6 9.2H0.4Z"]')).not.toBeNull();
-    expect(within(row).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: /^Return .* now for / })).toBeInTheDocument();
 
     fireEvent.click(within(row).getByTestId("ward-alerts-open"));
     const panel = screen.getByRole("complementary", { name: "Selected alert" });

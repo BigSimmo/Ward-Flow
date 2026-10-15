@@ -142,8 +142,11 @@ export function resolveMobileKeyboardBaselines(args: {
  * interactive-widget=resizes-content). Writes the overlay height to the CSS
  * variable `--keyboard-height` and marks `<html data-wf-keyboard="open">` while
  * a focused field has the keyboard up, so CSS can move fixed chrome. Mount once.
+ *
+ * `trackState: false` keeps only those DOM marks, for a caller that never reads the returned
+ * values: it then does not re-render on every viewport resize while the keyboard animates.
  */
-export function useMobileKeyboard(): MobileKeyboardContextState {
+export function useMobileKeyboard({ trackState = true }: { trackState?: boolean } = {}): MobileKeyboardContextState {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -164,8 +167,10 @@ export function useMobileKeyboard(): MobileKeyboardContextState {
 
     function applyKeyboardState(next: MobileKeyboardContextState) {
       keyboardWasOpen = next.isKeyboardOpen;
-      setIsKeyboardOpen(next.isKeyboardOpen);
-      setKeyboardHeight(next.keyboardHeight);
+      if (trackState) {
+        setIsKeyboardOpen(next.isKeyboardOpen);
+        setKeyboardHeight(next.keyboardHeight);
+      }
       const root = document.documentElement;
       root.style.setProperty("--keyboard-height", `${next.keyboardHeight}px`);
       // CSS hides the phone dock and lifts pinned footers while this is set (F-07).
@@ -285,7 +290,7 @@ export function useMobileKeyboard(): MobileKeyboardContextState {
       document.documentElement.style.removeProperty("--keyboard-height");
       delete document.documentElement.dataset.wfKeyboard;
     };
-  }, []);
+  }, [trackState]);
 
   return { isKeyboardOpen, keyboardHeight };
 }

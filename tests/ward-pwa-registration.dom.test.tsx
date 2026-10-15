@@ -9,6 +9,7 @@ import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "@/components/ward-manag
 import { listenForInstallPrompt } from "@/components/ward-management/shell/ward-pwa-install";
 import {
   LEGACY_PWA_SCOPE,
+  PHONE_ALERTS_MOVED_NOTICE,
   WardPwaRegistration,
   wardPwaOpenTarget,
 } from "@/components/ward-management/shell/ward-pwa-registration";
@@ -35,6 +36,7 @@ function installServiceWorker({
   active = {} as object | null,
   waiting = null as ReturnType<typeof fakeWorker> | null,
   legacy = false,
+  legacySubscribed = false,
 } = {}) {
   const origin = window.location.origin;
   const containerListeners: Record<string, Listener[]> = {};
@@ -46,7 +48,11 @@ function installServiceWorker({
     installing: null as ReturnType<typeof fakeWorker> | null,
     addEventListener: (type: string, listener: Listener) => (registrationListeners[type] ??= []).push(listener),
   };
-  const legacyRegistration = { scope: `${origin}${LEGACY_PWA_SCOPE}`, unregister: vi.fn(async () => true) };
+  const legacyRegistration = {
+    scope: `${origin}${LEGACY_PWA_SCOPE}`,
+    unregister: vi.fn(async () => true),
+    pushManager: { getSubscription: async () => (legacySubscribed ? { endpoint: "https://push.example/1" } : null) },
+  };
   const other = { scope: `${origin}/somewhere-else/`, unregister: vi.fn(async () => true) };
   const container = {
     controller: active ? {} : null,
@@ -101,6 +107,19 @@ describe("WardPwaRegistration", () => {
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
     expect(browser.legacyRegistration.unregister).toHaveBeenCalledTimes(1);
     expect(browser.other.unregister).not.toHaveBeenCalled();
+  });
+
+  it("says once to turn phone alerts on again when the old registration held them", async () => {
+    installServiceWorker({ legacy: true, legacySubscribed: true });
+    renderRegistration();
+    expect(await screen.findByText(PHONE_ALERTS_MOVED_NOTICE.title)).toBeInTheDocument();
+  });
+
+  it("stays quiet when the old registration had no phone alerts", async () => {
+    const browser = installServiceWorker({ legacy: true });
+    renderRegistration();
+    await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
+    expect(screen.queryByText(PHONE_ALERTS_MOVED_NOTICE.title)).not.toBeInTheDocument();
   });
 
   it("does nothing in a browser without service workers", () => {

@@ -7,8 +7,8 @@
  *   turned on, so the offline fallback page works for everyone. Same URL, scope and options as
  *   `ward-phone-push.ts`, so there is one registration and push keeps working.
  * - Removes the old `/mockups/ward-flow/` registration (F-11). Its scope left Home uncontrolled, and
- *   as the longer match it would keep every other page on the old worker. Phone alerts that were
- *   on under it need turning on again in Settings.
+ *   as the longer match it would keep every other page on the old worker. Removing it ends any
+ *   phone alerts subscribed under it, so a one-time notice says to turn them on again in Settings.
  * - A new worker version waits. A notice offers Reload; the tap tells the waiting worker to take
  *   over, then the page reloads once it has, so code never changes under someone mid-task.
  * - Keeps the browser's install event for the Settings install hint (`ward-pwa-install.ts`).
@@ -45,16 +45,39 @@ export function wardPwaOpenTarget(data: unknown, origin: string): string | null 
   }
 }
 
-/** Registers the Ward Flow worker and drops the pre-F-11 registration. Resolves null when unsupported. */
-export async function registerWardPwaWorker(): Promise<ServiceWorkerRegistration | null> {
+/** The one-time notice when removing the old registration ended this phone's alerts. */
+export const PHONE_ALERTS_MOVED_NOTICE = {
+  title: "Turn phone alerts on again",
+  body: "An update moved Ward Flow's alerts. Switch them on again in Settings, Alerts.",
+} as const;
+
+async function hadPushSubscription(registration: ServiceWorkerRegistration): Promise<boolean> {
+  try {
+    return Boolean(await registration.pushManager?.getSubscription());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Registers the Ward Flow worker and drops the pre-F-11 registration. Resolves null when unsupported.
+ * `onAlertsEnded` runs when the dropped registration held a phone alerts subscription, which the
+ * browser ends with it. The server forgets that endpoint once a send to it fails.
+ */
+export async function registerWardPwaWorker(onAlertsEnded?: () => void): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
   const legacyScope = new URL(LEGACY_PWA_SCOPE, window.location.origin).href;
   const existing = await navigator.serviceWorker.getRegistrations();
-  await Promise.all(
+  const ended = await Promise.all(
     existing
       .filter((registration) => registration.scope === legacyScope)
-      .map((registration) => registration.unregister()),
+      .map(async (registration) => {
+        const subscribed = await hadPushSubscription(registration);
+        await registration.unregister();
+        return subscribed;
+      }),
   );
+  if (ended.some(Boolean)) onAlertsEnded?.();
   return navigator.serviceWorker.register(PHONE_PUSH_WORKER_URL, { scope: PHONE_PUSH_SCOPE, updateViaCache: "none" });
 }
 
@@ -115,7 +138,9 @@ export function WardPwaRegistration() {
 
     void (async () => {
       try {
-        const registration = await registerWardPwaWorker();
+        const registration = await registerWardPwaWorker(() => {
+          toastRef.current?.push({ tone: "warning", duration: 0, ...PHONE_ALERTS_MOVED_NOTICE });
+        });
         if (!registration || cancelled) return;
         offer(registration, registration.waiting);
         registration.addEventListener("updatefound", () => {

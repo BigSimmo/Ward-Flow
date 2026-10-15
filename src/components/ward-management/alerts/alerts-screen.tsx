@@ -740,7 +740,7 @@ function AlertsWorkspace() {
         dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
       const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking, admission);
       const kind = alertKindOf(inboxItemId);
-      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
+      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"} for ${subject.displayName} ${subject.umrn}`;
     };
     for (const [id, list] of Object.entries(inboxAcknowledgements)) {
       list.forEach((entry, index) =>
@@ -1162,7 +1162,7 @@ function AlertsWorkspace() {
           id: entry.item.id,
           at: entry.raised!,
           shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
-          title: `${entry.item.title}, ${entry.subject.displayName}, raised ${formatInstantWithDay(entry.raised!, now)}`,
+          title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
         }))}
       acted={history
         .filter((entry) => entry.action)

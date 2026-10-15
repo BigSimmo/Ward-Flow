@@ -101,10 +101,11 @@ describe("clock time on a chosen day", () => {
     expect(clockTextOnDay("9:00", 0, now)).toBe(3 * 1440 + 540);
     // The iPhone number pad has no ":" key, so digits only reads the same (F-01).
     expect(clockTextOnDay("0900", 0, now)).toBe(3 * 1440 + 540);
-    expect(clockTextOnDay("900", 0, now)).toBe(3 * 1440 + 540);
     expect(clockTextOnDay("2330", 2, now)).toBe(1 * 1440 + 1410);
     expect(clockTextOnDay("9:0", 0, now)).toBeNull();
     expect(clockTextOnDay("90", 0, now)).toBeNull();
+    // Three digits could be a dropped digit ("143" for 14:30), so they are refused, not guessed.
+    expect(clockTextOnDay("900", 0, now)).toBeNull();
     expect(clockTextOnDay("2400", 0, now)).toBeNull();
     expect(clockTextOnDay("24:00", 0, now)).toBeNull();
     expect(clockTextOnDay("09:00", 3, now)).toBeNull();

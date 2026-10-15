@@ -13,14 +13,28 @@ describe("typed clock time", () => {
     expect(minuteOfDayFromClockText("09:30")).toBe(570);
     expect(minuteOfDayFromClockText("9:30")).toBe(570);
     expect(minuteOfDayFromClockText("0930")).toBe(570);
-    expect(minuteOfDayFromClockText("930")).toBe(570);
     expect(minuteOfDayFromClockText(" 1405 ")).toBe(845);
     expect(minuteOfDayFromClockText("0000")).toBe(0);
     expect(minuteOfDayFromClockText("23:59")).toBe(1439);
   });
 
   it("refuses half-typed or impossible times rather than guessing", () => {
-    for (const text of ["", "9", "93", "14:3", "14:", ":30", "12345", "2400", "24:00", "0960", "9h30", "09.30"]) {
+    for (const text of [
+      "",
+      "9",
+      "93",
+      "930",
+      "143",
+      "14:3",
+      "14:",
+      ":30",
+      "12345",
+      "2400",
+      "24:00",
+      "0960",
+      "9h30",
+      "09.30",
+    ]) {
       expect(minuteOfDayFromClockText(text)).toBeUndefined();
     }
   });

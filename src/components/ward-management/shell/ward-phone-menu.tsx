@@ -377,7 +377,6 @@ function PageRow({
   );
 }
 
-/** F-19 (WCAG 2.5.3): with a badge showing, a dock name starts as drawn, the badge then the word. */
 /**
  * F-19 (WCAG 2.5.3): the name comes from the visible label plus a screen-reader-only tail, so it
  * starts with the word on screen ("Referrals, 7 awaiting a decision") and voice control can say it.
@@ -908,7 +907,7 @@ export function WardPhoneMenu({
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
   // F-07: marks <html data-wf-keyboard> so the dock hides and pinned footers lift over the keyboard.
-  useMobileKeyboard();
+  useMobileKeyboard({ trackState: false });
 
   useEffect(
     () =>
