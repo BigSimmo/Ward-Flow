@@ -11,8 +11,9 @@ import {
   readPushConfig,
 } from "./push.mjs";
 import { readConfig } from "./config.mjs";
-import { createHandler } from "./server.mjs";
-import { sweepPush } from "./function.mjs";
+import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
+import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
+import { createHandler, sweepPush } from "./server.mjs";
 
 // Invented keys generated for this test run only; never a deployed key.
 function vapidKeys() {
@@ -328,20 +329,20 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {
   const base = {
-    AZURE_TENANT_ID: other,
-    WARD_ALLOWED_OBJECT_ID: coordinator,
-    WARD_API_AUDIENCE: "9b7b160d-9bc7-4712-b748-17ff3e70b706", // gitleaks:allow -- synthetic API audience (client ID)
-    AzureWebJobsStorage__accountName: "wflowdev7273a083aue",
+    WARD_COORDINATOR_USER_IDS: coordinator,
+    WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
+    WARD_SUPABASE_URL: APPROVED_SUPABASE_URL,
+    WARD_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "synthetic_offline_fixture"].join("_"),
   };
   assert.equal(readConfig({ ...base, ...env }).push, null);
   const shared = {
     ...base,
     WARD_SHARED_ENABLED: "true",
     WARD_WORKSPACE_ID: "44444444-4444-4444-8444-444444444444",
-    WARD_PG_RESOURCE_ID: `/subscriptions/${other}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers/wardflow-dev-aue`,
-    WARD_PG_HOST: "wardflow-dev-aue.postgres.database.azure.com",
-    WARD_PG_DATABASE: "wardflow_dev",
-    WARD_PG_USER: "wardflow_backend",
+    WARD_SUPABASE_DATABASE_URL: syntheticDatabaseUrl({
+      host: `db.${APPROVED_SUPABASE_PROJECT}.supabase.co`,
+      database: "postgres",
+    }),
   };
   assert.equal(readConfig(shared).push, null);
   assert.equal(readConfig({ ...shared, ...env }).push.publicKey, keys.publicKey);
@@ -363,10 +364,10 @@ test("a failed sweep is logged with its cause, never silently", async () => {
   const events = [];
   const failing = Object.assign(new Error("relation does not exist"), { code: "42P01" });
   await sweepPush(
-    null,
-    null,
-    async () => {
-      throw failing;
+    {
+      sweepPush: async () => {
+        throw failing;
+      },
     },
     (event) => events.push(event),
   );

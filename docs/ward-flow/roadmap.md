@@ -17,8 +17,7 @@ milestones. Preserve the latest accepted appearance and current `AGENTS.md` repo
 2. Complete source-backed workflow controls and phone/keyboard behaviour. Keep
    missing capabilities explicit where a role or product decision is unresolved.
 3. Harden the authenticated **shared synthetic** backend boundary (opt-in Supabase
-   shared workspace `zakzoemeedfepxcstsou` and Azure Functions/Entra conditional
-   Blob/PostgreSQL contracts in `backend/ward-flow/`).
+   shared workspace in `backend/ward-flow/`; provider in [DATABASE.md](DATABASE.md)).
 4. Verify isolated environments, operational monitoring, recovery and release
    protections against named Ward resources; do not deploy under a local-fix request.
 5. Prove concurrent users, conflicting reservations, retries, reconnects, permission

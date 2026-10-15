@@ -12,7 +12,7 @@ A ward and bed-coordination prototype for mental health services: referrals, pat
 
 The 27 September 2026 hosting record describes a separate **Ward Flow** Railway project connected to `main`. Its current hosted state was not rechecked in the 2 October documentation repair. See [hosting and database decisions](docs/hosting.md) for the dated configuration and limitations.
 
-**Ward Flow must never connect to PsychSift's Supabase or Railway resources.** By default, the UI runs on browser-local synthetic state. For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses either its **dedicated Ward Flow synthetic-only Supabase project (`zakzoemeedfepxcstsou`)** or its **dedicated Ward Flow Azure Functions / PostgreSQL backend**, operating exclusively on 100% synthetic data; see [the backend guide](backend/ward-flow/README.md) and [Supabase/Azure presets](backend/ward-flow/SETUP-SUPABASE.md). Local source does not prove hosted provisioning, credentials or connectivity.
+**Ward Flow must never connect to PsychSift's Supabase or Railway resources.** By default, the UI runs on browser-local synthetic state. For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses Ward Flow's **dedicated synthetic-only Supabase project**, operating exclusively on 100% synthetic data. The current provider and how to change it are recorded in [DATABASE.md](docs/ward-flow/DATABASE.md); see also [the backend guide](backend/ward-flow/README.md). Local source does not prove hosted provisioning, credentials or connectivity.
 
 ## About this repository
 
@@ -33,7 +33,7 @@ npm ci
 npm run ensure
 ```
 
-Use the URL printed by the launcher and open `/mockups/ward-flow`. By default, Ward Flow uses synthetic browser-local state; no Supabase, Azure or OpenAI credentials are required (and PsychSift's Supabase or Railway credentials must never be used). Optional shared-workspace settings for Ward Flow's dedicated synthetic Supabase project (`zakzoemeedfepxcstsou`) or dedicated Azure/PostgreSQL backend are documented in `.env.example` and [the backend guide](backend/ward-flow/README.md). Never commit a real `.env.local` or credentials.
+Use the URL printed by the launcher and open `/mockups/ward-flow`. By default, Ward Flow uses synthetic browser-local state; no Supabase or OpenAI credentials are required (and PsychSift's Supabase or Railway credentials must never be used). Optional shared-workspace settings for Ward Flow's dedicated synthetic Supabase project are documented in `.env.example`, [DATABASE.md](docs/ward-flow/DATABASE.md) and [the backend guide](backend/ward-flow/README.md). Never commit a real `.env.local` or credentials.
 
 ## Publication scope
 

@@ -1,67 +1,42 @@
 import { createPush } from "./push.mjs";
 
-async function azureFactories() {
-  const [{ openStorage, createStore }, { createAuthenticator }] = await Promise.all([
-    import("./database.mjs"),
-    import("./auth.mjs"),
-  ]);
-  return {
-    openStorage,
-    createStore,
-    createAuthenticator,
-    createPool: async (config) => (await import("./postgres.mjs")).createPostgresPool(config),
-    verifyPool: async (pool) => (await import("./postgres.mjs")).verifyAzureMigrations(pool),
-  };
-}
+/**
+ * Provider adapters, keyed by the names config.mjs accepts. Supabase is the current provider
+ * (decision D-55); plain PostgreSQL shares the same SQL and runtime-role checks. Loading is lazy so
+ * only the selected adapter's modules are imported. See docs/ward-flow/DATABASE.md.
+ *
+ * A database adapter returns `{ createPool(config.postgres), verifyPool(pool, options) }`.
+ * A sign-in adapter returns `createAuthenticator(config)`, resolving to a function that maps an
+ * Authorization header to a coordinator user ID or throws (VerifierUnavailableError for outages).
+ */
+export const DATABASE_ADAPTERS = Object.freeze({
+  supabase: async () => {
+    const { createSupabasePool, verifySupabaseRuntimeRole } = await import("./supabase-postgres.mjs");
+    return { createPool: createSupabasePool, verifyPool: verifySupabaseRuntimeRole };
+  },
+  postgres: async () => {
+    const { createPortablePostgresPool, verifyPortableRuntimeRole } = await import("./portable-postgres.mjs");
+    return { createPool: createPortablePostgresPool, verifyPool: verifyPortableRuntimeRole };
+  },
+});
 
-async function supabaseFactories() {
-  const [{ createSupabasePool, verifySupabaseRuntimeRole }, { createSupabaseAuthenticator }] = await Promise.all([
-    import("./supabase-postgres.mjs"),
-    import("./supabase-auth.mjs"),
-  ]);
-  return {
-    createPool: createSupabasePool,
-    verifyPool: verifySupabaseRuntimeRole,
-    createAuthenticator: createSupabaseAuthenticator,
-  };
-}
+export const AUTH_ADAPTERS = Object.freeze({
+  supabase: async () => (await import("./supabase-auth.mjs")).createSupabaseAuthenticator,
+});
 
-async function postgresFactories() {
-  const { createPortablePostgresPool, verifyPortableRuntimeRole } = await import("./portable-postgres.mjs");
-  return { createPool: createPortablePostgresPool, verifyPool: verifyPortableRuntimeRole };
-}
-
-/** Provider setup is lazy: Supabase never opens Blob Storage or constructs an Azure credential. */
 export async function createBackend(config, dependencies = {}) {
-  const provider = config.databaseProvider ?? "supabase";
-  const loaders = {
-    azure: dependencies.azure ?? azureFactories,
-    supabase: dependencies.supabase ?? supabaseFactories,
-    postgres: dependencies.postgres ?? postgresFactories,
-  };
-  if (!Object.hasOwn(loaders, provider)) throw new Error("Invalid backend provider");
-  const factories = await loaders[provider]();
+  const loadDatabase = dependencies.database?.[config.databaseProvider] ?? DATABASE_ADAPTERS[config.databaseProvider];
+  const loadAuth = dependencies.auth?.[config.authProvider] ?? AUTH_ADAPTERS[config.authProvider];
+  if (!loadDatabase) throw new Error("Invalid backend provider");
+  if (!loadAuth) throw new Error("Invalid identity provider");
   let pool;
   try {
-    const authProvider = config.authProvider ?? "supabase";
-    let createAuthenticator;
-    if (
-      (provider === "supabase" && authProvider === "supabase") ||
-      (provider === "azure" && authProvider === "entra")
-    ) {
-      createAuthenticator = factories.createAuthenticator;
-    } else if (authProvider === "supabase") {
-      createAuthenticator =
-        dependencies.supabaseAuth ?? (await import("./supabase-auth.mjs")).createSupabaseAuthenticator;
-    } else if (authProvider === "entra") {
-      createAuthenticator = dependencies.entraAuth ?? (await import("./auth.mjs")).createAuthenticator;
-    } else throw new Error("Invalid identity provider");
-    const authenticate = await createAuthenticator(config);
-    const store = provider === "azure" ? factories.createStore(await factories.openStorage(config.storage)) : null;
+    const authenticate = await (await loadAuth())(config);
     let sharedStore;
     if (config.shared) {
-      pool = await factories.createPool(config.postgres);
-      await factories.verifyPool?.(pool, { ...config.postgres, pushEnabled: !!config.push });
+      const database = await loadDatabase();
+      pool = await database.createPool(config.postgres);
+      await database.verifyPool(pool, { ...config.postgres, pushEnabled: !!config.push });
       const [{ createWorkspaceStore }, engine] = await Promise.all([
         (dependencies.workspace ?? (() => import("./postgres.mjs")))(),
         (dependencies.engine ?? (() => import("./dist/engine.mjs")))(),
@@ -72,7 +47,7 @@ export async function createBackend(config, dependencies = {}) {
         push: await createPush(config),
       });
     }
-    return { config, store, authenticate, sharedStore, pool };
+    return { config, authenticate, sharedStore, pool };
   } catch (error) {
     try {
       await pool?.end();

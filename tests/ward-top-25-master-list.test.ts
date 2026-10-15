@@ -33,11 +33,9 @@ import {
   createUndoWindowState,
   deriveAwolTrackerSummary,
   deriveCtoFollowUpHandshake,
-  deriveDischargeLoungeEligible,
   deriveEdBreachLadder,
   deriveGhostPreparingBeds,
   deriveInterWardStepDownSwaps,
-  deriveLeaveFastTrack,
   deriveMaroonedPatientDossier,
   derivePaperLegalExpiryRadar,
   derivePreFlightAdmissionsPacket,
@@ -45,8 +43,6 @@ import {
   deriveStepDownPullBoard,
   deriveStuckHandoverSla,
   deriveTMinus24hDischargePrompts,
-  filterCommandPaletteItems,
-  releaseBedToDischargeLounge,
 } from "@/components/ward-management/ward-top25-features";
 
 describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Suite", () => {
@@ -220,22 +216,6 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     expect(incomplete.unmetConditions).toEqual([CLD_DEFAULT_CONDITIONS[1]]);
   });
 
-  it("#10 Leave-to-Discharge Fast-Track & 1-Tap Return Restoration", () => {
-    const over24h = deriveLeaveFastTrack(
-      { id: "lv-1", unitId: "rph", leaveStartedAt: "2026-10-14T08:00:00.000Z" },
-      NOW_ISO,
-    );
-    expect(over24h.elapsedHours).toBe(26);
-    expect(over24h.promptsDischargeConversion).toBe(true);
-    expect(over24h.canReturnOneTap).toBe(true);
-
-    const under24h = deriveLeaveFastTrack(
-      { id: "lv-2", unitId: "rph", leaveStartedAt: "2026-10-15T02:00:00.000Z" },
-      NOW_ISO,
-    );
-    expect(under24h.promptsDischargeConversion).toBe(false);
-  });
-
   it("#11 Community Treatment Order (CTO) & 7-Day Follow-Up Handshake", () => {
     const missing = deriveCtoFollowUpHandshake({
       admissionId: "adm-1",
@@ -342,38 +322,6 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     expect(undo.canUndo).toBe(true);
   });
 
-  it("#18 Virtual Discharge Lounge / Transit Chair Early Bed Release", () => {
-    const eligible = deriveDischargeLoungeEligible([
-      {
-        id: "p-1",
-        clinicallyCleared: true,
-        scriptsReady: true,
-        awaitingAfternoonTransport: true,
-        highRisk: false,
-        seclusion: false,
-        legalStatus: "voluntary",
-      },
-      {
-        id: "p-2",
-        clinicallyCleared: true,
-        scriptsReady: true,
-        awaitingAfternoonTransport: true,
-        highRisk: true,
-        seclusion: false,
-        legalStatus: "voluntary",
-      },
-    ]);
-    expect(eligible.map((c) => c.id)).toEqual(["p-1"]);
-
-    const updated = releaseBedToDischargeLounge({ id: "u-1", availableBeds: 0, loungeOccupied: 1 }, "p-1");
-    expect(updated.availableBeds).toBe(1);
-    expect(updated.loungeOccupied).toBe(2);
-    // Repeated release for same candidate is idempotent
-    const repeated = releaseBedToDischargeLounge(updated, "p-1");
-    expect(repeated.availableBeds).toBe(1);
-    expect(repeated.loungeOccupied).toBe(2);
-  });
-
   it("#19 Paper-Form Statutory Expiry Radar (4h Amber / 1h Red)", () => {
     const radar = derivePaperLegalExpiryRadar(
       [
@@ -410,16 +358,6 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     const high = deriveEddDriftBadge({ dischargeDateMoves: 0 });
     expect(high.confidence).toBe("high");
     expect(high.requiresConsultantReview).toBe(false);
-  });
-
-  it("#22 Global Command Palette (Ctrl+K / /) Jump-to-Patient & Quick-Action", () => {
-    const items = [
-      { id: "1", label: "Jump to Bentley Ward 7", category: "Ward", keywords: ["bty", "acute"], onSelect: () => {} },
-      { id: "2", label: "Refer Top 3 Compatible Wards", category: "Flow", keywords: ["fanout"], onSelect: () => {} },
-    ];
-    expect(filterCommandPaletteItems(items, "bty").map((i) => i.id)).toEqual(["1"]);
-    expect(filterCommandPaletteItems(items, "   ")).toHaveLength(2);
-    expect(filterCommandPaletteItems(items, "nonexistent-xyz")).toEqual([]);
   });
 
   it("#23 Mobile Walk-Round Bottom-Sheet (390x844 Thumb-Zone Mode)", () => {
