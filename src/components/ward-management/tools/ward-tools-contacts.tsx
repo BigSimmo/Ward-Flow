@@ -17,6 +17,7 @@ import {
   numberAt,
   type DirectoryEntry,
 } from "../on-call/on-call-directory";
+import { normalizeFavouriteIds } from "../on-call/on-call-screen";
 import { onCallHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
 
@@ -25,10 +26,10 @@ const FAVOURITES_KEY = "ward-flow:on-call:favourites";
 
 type ContactsView = "key" | "mine" | "now" | "recent" | "all";
 
-function readFavourites(): string[] {
+function readFavourites(ids: Set<string>): string[] {
   try {
     const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
-    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [];
+    return Array.isArray(saved) ? normalizeFavouriteIds(saved, ids) : [];
   } catch {
     return [];
   }
@@ -62,9 +63,9 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setFavourites(readFavourites()));
+    const frame = window.requestAnimationFrame(() => setFavourites(readFavourites(new Set(entries.map((entry) => entry.id)))));
     return () => window.cancelAnimationFrame(frame);
-  }, []);
+  }, [entries]);
 
   function toggleFavourite(id: string) {
     const next = favourites.includes(id) ? favourites.filter((value) => value !== id) : [...favourites, id];
@@ -170,7 +171,7 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
                     type="button"
                     className={styles.iconButton}
                     aria-label={`Copy number for ${entry.name}`}
-                    onClick={() => void copyNumber(entry, number)}
+                    onClick={() => void copyNumber(entry, number ?? entry.email!)}
                   >
                     <Copy aria-hidden="true" strokeWidth={1.75} />
                   </button>
@@ -209,3 +210,4 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
     </div>
   );
 }
+O

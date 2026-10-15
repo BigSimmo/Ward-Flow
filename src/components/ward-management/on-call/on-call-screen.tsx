@@ -112,6 +112,10 @@ const LEGACY_FAVOURITE_IDS: Record<string, string> = {
   "pr-coordinator": "pr-liaison",
 };
 
+export function normalizeFavouriteIds(saved: unknown[], ids: Set<string>): string[] {
+  return [...new Set(saved.filter((id): id is string => typeof id === "string").map((id) => LEGACY_FAVOURITE_IDS[id] ?? id).filter((id) => ids.has(id)))];
+}
+
 const SECTION_LABEL: Record<DirectorySection, string> = {
   hospitals: "Hospitals",
   community: "Community",
@@ -184,15 +188,7 @@ export function OnCallScreen() {
       if (favouritesChanged.current) return;
       try {
         const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
-        if (Array.isArray(saved))
-          setFavourites([
-            ...new Set(
-              saved
-                .filter((id): id is string => typeof id === "string")
-                .map((id) => LEGACY_FAVOURITE_IDS[id] ?? id)
-                .filter((id) => ids.has(id)),
-            ),
-          ]);
+        if (Array.isArray(saved)) setFavourites(normalizeFavouriteIds(saved, ids));
       } catch {
         // Saved preferences are optional; the directory works without them.
       }
