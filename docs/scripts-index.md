@@ -107,7 +107,7 @@ Also catalogued (2026-09-02), gate and CI helpers:
 - `check-source-catalogue.ts` (`check:source-catalogue`) — repository source references, providers and coverage issues from `src/lib/sources/repository-providers`.
 - `check-stale-docs.mjs` (`check:stale-docs`) — advisory report of Markdown docs untouched for `--days` and linked from nowhere; refuses shallow clones.
 - `check-playwright-browser-revision.mjs` (`check:playwright-browser-revision`) — fails closed unless the pinned Chromium revision has a launchable binary on disk (`#312`).
-- `playwright-pr-shards.mjs` (`check:playwright-pr-shards`) — duration-aware shard groups for the required Chromium PR journeys.
+- `playwright-pr-shards.mjs` (no npm alias since 15 Oct 2026; run with `node`) — duration-aware shard groups for the required Chromium PR journeys.
 - `browser-test-plan.mjs` (`plan:browser`, `check:browser-test-plan`) — chooses the smallest browser gate that still covers a change.
 - `classify-visual-baseline-outcome.mjs` — decides whether a failed `test:e2e:visual` run was pixel drift (advisory) or an infrastructure failure that stays red.
 - `lighthouse-measurement-outcome.mjs`, `lighthouse-time-budget.mjs`, `live-web-vitals-inputs.mjs` — Lighthouse budget runner helpers: whether a cell produced gradeable evidence, bounded-stage timing, and validation of the dispatch-only live Web Vitals matrix.
@@ -116,7 +116,7 @@ Also catalogued (2026-09-02), gate and CI helpers:
 
 Also catalogued (2026-09-04):
 
-- `check-dependency-drift.mjs` (`check:dependency-drift`) — flags a surface whose transitive import closure changed even though the files a staleness check names directly did not.
+- `check-dependency-drift.mjs` (no npm alias since 15 Oct 2026; run with `node`) — flags a surface whose transitive import closure changed even though the files a staleness check names directly did not.
 - `check-design-drift-ratchet.mjs` (`check:design-drift-ratchet`) — ratchet guard for two design-token drift metrics (bypass-prone inline `style={{ }}` under `src/**`; design-system components with zero product importers).
 - `stamp-service-worker.mjs` (part of `build:internal`) — gives `public/sw.js` a different body on every build so the browser's byte comparison detects an update and fires `updatefound`/`activate`.
 
