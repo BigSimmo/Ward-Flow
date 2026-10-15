@@ -285,8 +285,9 @@ export function evaluateCriteriaLedDischarge(input: {
   consultantAuthorised: boolean;
   conditionsMet: Readonly<Record<string, boolean>>;
 }): CriteriaLedDischargeEvaluation {
-  const providedKeys = Object.keys(input.conditionsMet);
-  const conditionList = providedKeys.length > 0 ? providedKeys : [...CLD_DEFAULT_CONDITIONS];
+  // The three standard conditions are always required; a consultant's own extra conditions are added.
+  // A standard condition missing from the record counts as unmet, so a partial record cannot unlock discharge.
+  const conditionList = Array.from(new Set<string>([...CLD_DEFAULT_CONDITIONS, ...Object.keys(input.conditionsMet)]));
   const unmetConditions = conditionList.filter((cond) => !input.conditionsMet[cond]);
   const totalCount = conditionList.length;
   const metCount = totalCount - unmetConditions.length;

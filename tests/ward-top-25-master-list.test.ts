@@ -586,10 +586,36 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
         custom_depot_administered: false,
       },
     });
-    expect(customCld.totalCount).toBe(2);
+    // The three standard conditions stay required, so 3 missing standard + 1 unmet custom stay unmet.
+    expect(customCld.totalCount).toBe(5);
     expect(customCld.metCount).toBe(1);
     expect(customCld.canNurseExecuteDischarge).toBe(false);
-    expect(customCld.unmetConditions).toEqual(["custom_depot_administered"]);
+    expect(customCld.unmetConditions).toEqual([...CLD_DEFAULT_CONDITIONS, "custom_depot_administered"]);
+
+    // A partial record (or an empty one) can never unlock a nurse-led discharge.
+    const partial = evaluateCriteriaLedDischarge({
+      consultantAuthorised: true,
+      conditionsMet: { [CLD_DEFAULT_CONDITIONS[0]]: true },
+    });
+    expect(partial.canNurseExecuteDischarge).toBe(false);
+    expect(partial.totalCount).toBe(3);
+    expect(partial.unmetConditions).toEqual([CLD_DEFAULT_CONDITIONS[1], CLD_DEFAULT_CONDITIONS[2]]);
+    expect(
+      evaluateCriteriaLedDischarge({ consultantAuthorised: true, conditionsMet: {} }).canNurseExecuteDischarge,
+    ).toBe(false);
+
+    // Extra consultant conditions that are all met do not replace the standard ones.
+    const allMetWithExtra = evaluateCriteriaLedDischarge({
+      consultantAuthorised: true,
+      conditionsMet: {
+        [CLD_DEFAULT_CONDITIONS[0]]: true,
+        [CLD_DEFAULT_CONDITIONS[1]]: true,
+        [CLD_DEFAULT_CONDITIONS[2]]: true,
+        custom_family_meeting: true,
+      },
+    });
+    expect(allMetWithExtra.canNurseExecuteDischarge).toBe(true);
+    expect(allMetWithExtra.totalCount).toBe(4);
 
     // #15 Medical deterioration (D-34) blocks cleaning pre-match until resumed
     expect(

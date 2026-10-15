@@ -52,9 +52,8 @@ export function UndoHairline({
   const effectiveRemainingMs = remainingMs ?? Math.max(0, effectiveInitialMs - elapsedMs);
   const effectiveWindowMs = durationMs ?? windowMs;
   if (!active || effectiveRemainingMs <= 0) {
-    return onExpire && active && (remainingMs ?? effectiveInitialMs) <= 0 ? (
-      <UndoHairlineExpiryEffect active={active} remainingMs={0} onExpire={onExpire} />
-    ) : null;
+    // An active countdown that has reached zero (by its own timer or a passed-in 0) must still fire onExpire.
+    return onExpire && active ? <UndoHairlineExpiryEffect active remainingMs={0} onExpire={onExpire} /> : null;
   }
   const secondsLeft = Math.max(1, Math.ceil(effectiveRemainingMs / 1000));
   const progressPct = Math.max(

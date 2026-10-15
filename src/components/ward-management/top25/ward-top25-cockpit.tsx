@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   Badge,
@@ -211,9 +211,16 @@ function useIsClient(): boolean {
   );
 }
 
+/** The banner counts whole minutes, so the alert is over from the start of its final minute's end. */
+function broadcastEndsAtMs(expiresAt: string | number): number {
+  const ms = typeof expiresAt === "number" ? expiresAt * 60_000 : Date.parse(expiresAt);
+  return Math.floor(ms / 60_000) * 60_000;
+}
+
 /**
- * #25 — the alert is raised with the real clock when this mounts in the browser, so the banner's own
- * ticking clock carries it to expiry, and Extend uses the same clock the banner reads.
+ * #25 — the alert is raised with the real clock when this mounts in the browser. The card owns one
+ * clock and hands it to the banner, so the banner and the status chip always agree: when the alert
+ * runs out the chip changes to "Expired" by itself, with no tap needed.
  */
 function BroadcastLifecycleCard() {
   const [broadcastState, setBroadcastState] = useState(() =>
@@ -227,22 +234,42 @@ function BroadcastLifecycleCard() {
       now: new Date().toISOString(),
     }),
   );
+  const [clockMs, setClockMs] = useState(() => Date.now());
+  const { activeAlert } = broadcastState;
+  const alertIsOpen = activeAlert !== null && activeAlert.status === "active";
+  const expiresAt = activeAlert?.expiresAt;
+  const isLive = alertIsOpen && expiresAt !== undefined && broadcastEndsAtMs(expiresAt) > clockMs;
+
+  useEffect(() => {
+    if (!alertIsOpen || expiresAt === undefined) return;
+    const tick = () => setClockMs(Date.now());
+    const interval = window.setInterval(tick, 30_000);
+    const untilEnd = broadcastEndsAtMs(expiresAt) - Date.now();
+    const timeout = untilEnd > 0 && untilEnd < 2 ** 31 ? window.setTimeout(tick, untilEnd + 50) : undefined;
+    return () => {
+      window.clearInterval(interval);
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
+  }, [alertIsOpen, expiresAt]);
+
+  const statusLabel = isLive ? "Active Surge Alert" : activeAlert ? "Expired" : "Stood Down";
   return (
     <article className={styles.card} data-testid="top25-item-25">
       <div className={styles.cardHeader}>
         <span className={styles.cardRank}>#25</span>
         <h3 className={styles.cardTitle}>Broadcast Alert Auto-Expiry & Stand-Down Lifecycle</h3>
-        <Chip tone={broadcastState.activeAlert ? "danger" : "ok"}>
-          {broadcastState.activeAlert ? "Active Surge Alert" : "Stood Down"}
-        </Chip>
+        <Chip tone={isLive ? "danger" : "ok"}>{statusLabel}</Chip>
       </div>
       <WardBroadcastBanner
-        activeAlert={broadcastState.activeAlert}
-        onExtend={() =>
+        activeAlert={activeAlert}
+        now={new Date(clockMs).toISOString()}
+        onExtend={() => {
+          const nowMs = Date.now();
+          setClockMs(nowMs);
           setBroadcastState((prev) =>
-            wardBroadcastReducer(prev, { type: "EXTEND_BROADCAST_ALERT", now: new Date().toISOString() }),
-          )
-        }
+            wardBroadcastReducer(prev, { type: "EXTEND_BROADCAST_ALERT", now: new Date(nowMs).toISOString() }),
+          );
+        }}
         onClear={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "CLEAR_BROADCAST_ALERT" }))}
       />
     </article>
