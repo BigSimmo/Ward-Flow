@@ -1001,14 +1001,14 @@
 
   .headingCount {
     height: 24px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
   }
 
   .closeButton {
     width: 48px;
     min-width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: var(--wf-r-ctl);
   }
 
   .controls {
@@ -1053,7 +1053,7 @@
     box-sizing: border-box;
     margin-block: var(--wf-phone-seg-band);
     padding: 2px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
   }
 
   .segment {
@@ -1064,7 +1064,7 @@
     height: var(--wf-phone-seg-item-h);
     min-height: 0;
     padding: 0 var(--wf-s-2);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-phone-pill-fs);
     font-weight: 600;
   }
@@ -1100,7 +1100,7 @@
     height: 44px;
     min-height: 44px;
     padding: 0 var(--wf-s-3);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     box-shadow: none;
   }
@@ -1169,7 +1169,7 @@
     height: 44px;
     min-height: 44px;
     padding: 0 var(--wf-s-3);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     font-size: var(--wf-fs-13);
     box-shadow: none;
   }

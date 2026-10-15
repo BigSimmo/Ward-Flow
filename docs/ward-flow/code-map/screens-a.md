@@ -150,11 +150,11 @@ baseline.
   `ward-priority.ts`, `ward-bed-availability.ts` (`bedsPendingPreparation`),
   `ward-bed-designation.ts` (`designationSummary`), `ward-legal-forms.ts`,
   `ward-patient-resolver.ts`, `ward-diagnosis.ts`, `ward-change-reasons.ts`.
-- **Tests:** 38 files, including `ward-ed-screen.dom.test.tsx` and about 20 further
+- **Tests:** 36 files, including `ward-ed-screen.dom.test.tsx` and about 20 further
   `ward-ed-*.dom.test.tsx` files each covering one control (due-at field/parsing, form expiry,
   legal clock, outcome controls, transport booking, withdraw referral, no-referral-raised,
   no-transport-needed, answered cap, access target configuration, CSS class existence), plus
-  `ward-ed-home-derivations.test.ts`, `ward-ed-home.dom.test.tsx`, `ward-ed-service-bands.dom.test.tsx`,
+  `ward-ed-home-derivations.test.ts`,
   `ward-catchment.test.ts`, `ward-component-reachability.test.ts`, `ward-nav.test.ts`,
   `ward-no-dead-ends.dom.test.tsx`, `ward-retired-suite-integrity.test.ts`.
 
@@ -164,21 +164,11 @@ baseline.
 - **`ed-home-derivations.ts`** (248 lines) — pure ED-summary functions: `isDetainedUnderTheAct`,
   `elapsedOpenMinutes`, `edOpenSummaries`, `edHomeSummaries`, `edHomeTotals`, `worstEdSummary`,
   `groupByHealthService`, `ofPopulation`. **Not itself unreachable** — `coordinator/pressure-strip.tsx`
-  imports `edOpenSummaries` directly, so this file stays live even though its sibling component
-  (`ed-home.tsx`) is not.
-- **`ed-home.module.css`** (122 lines) — styles only `ed-home.tsx`; dead weight while that component
-  is unreachable.
-- **`ed-home.tsx`** (220 lines) — `EdHome`. 🔴 **Unreachable on purpose.** Its own header comment
-  states `/ed/[edId]` renders `EdScreen` instead (owner ruling 2026-09-06); its retired test
-  (`ward-ed-home.dom.test.tsx`) is `describe.skip`. Guarded by
-  `tests/ward-component-reachability.test.ts` and `tests/ward-retired-suite-integrity.test.ts`. Do
-  not delete without the owner (protected path).
+  imports `edOpenSummaries` directly, so this file stays live. Its sibling component
+  `ed-home.tsx` was removed by PR #306 on 15 Oct 2026.
 - **`ed-screen.tsx`** (5,810 lines) — **the largest file in Ward Flow.** `EdScreen` (from line 1,139
   to end of file) is the entire routed ED board: referral intake, legal forms, medical clearance,
   transport booking, outcomes. See outline below.
-- **`ed-service-bands.module.css`** (85 lines) — styles only `ed-service-bands.tsx`.
-- **`ed-service-bands.tsx`** (131 lines) — `EdServiceBands`. 🔴 **Unreachable**, and doubly so: its
-  own comment says it is "reached only from ed-home, itself unreachable."
 - **`ed.module.css`** (3,750 lines) — the stylesheet for `ed-screen.tsx`.
 
 **`ed-screen.tsx` outline** (5,810 lines; `EdScreen` alone is ~4,670 lines):
@@ -295,13 +285,13 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   dependency of any screen folder), `ward-referrals.ts`, `ward-catchment.ts` (via
   `referral-destination-options.ts`), `ward-priority.ts`, `ward-eligibility.ts`,
   `ward-bed-availability.ts`, `ward-patients.ts`.
-- **Tests:** 50 files, including about 25 `ward-referral-*` specs (intake sections, sending team,
+- **Tests:** 49 files, including about 25 `ward-referral-*` specs (intake sections, sending team,
   match gender placement × 2, match suburb, match hooks-order, match non-ward-decline, destinations,
   duplicate, wait-line, receipt integrity, unsaved-history warning, control labels, decided
   heading, kind-pair-gap, query-prefill, screens), plus `ward-community-*` specs that exercise
   `referral-destination-options.ts` and `referral-duplicate.ts` (community catchment routing shares
   this module), `ward-ed-to-community-referral.test.ts`, `ward-parallel-referral-cap-ui.dom.test.tsx`,
-  `ward-device-claim-reason.dom.test.tsx`, `ward-document-metadata.dom.test.tsx`,
+  `ward-document-metadata.dom.test.tsx`,
   `ward-governance-enumerations.dom.test.tsx`, `ward-facade-agrees-with-screens.test.ts`,
   `ward-owner-decisions-2026-09-16.test.ts`, `ward-referrals-print.test.ts`.
 
@@ -381,13 +371,6 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - **`community-elapsed.ts`** (39 lines) — `elapsedDaysPhrase`. Owner-approved rule: state elapsed
   time ("left 5 weeks ago"), never a calendar date, so the fixture stays correct as the demo clock
   moves.
-- **`community-figures.tsx`** (71 lines) — `CommunityFigures`. 🔴 **Unreachable** — "reached only
-  from community-home, itself unreachable" (owner ruling 2026-09-06). Retired test is
-  `describe.skip`.
-- **`community-home.module.css`** (86 lines) — styles only the unreachable `community-home.tsx`.
-- **`community-home.tsx`** (261 lines) — `CommunityHome`. 🔴 **Unreachable** — `/community` renders
-  `CommunityIndex` instead (owner ruling 2026-09-06). Guarded by
-  `tests/ward-component-reachability.test.ts`.
 - **`community-index.module.css`** (1,548 lines) — styles `community-index.tsx`.
 - **`community-index.tsx`** (1,037 lines) — `CommunityIndex`, the `/community` route component: the
   team directory.
@@ -403,15 +386,6 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - **`community-team-contact-mapping.ts`** (226 lines) — `CommunityTeamContactMapping`,
   `COMMUNITY_TEAM_CONTACT_MAPPINGS`, `mappedTeamNames`, `contactForTeam`, `contactDecisionFor`,
   `RATIFIED_GROUP_COUNT`. Only imported by `community-screen.tsx`.
-- **`community-team-hub.module.css`** (42 lines) — styles only the unreachable
-  `community-team-hub.tsx`.
-- **`community-team-hub.tsx`** (173 lines) — `CommunityTeamHub`. 🔴 **Unreachable** —
-  `/community/[teamId]` renders `CommunityScreen` instead (owner ruling 2026-09-06).
-- **`community-teams-table.module.css`** (65 lines) — styles only the unreachable
-  `community-teams-table.tsx`.
-- **`community-teams-table.tsx`** (140 lines) — `CommunityTeamsTable`, `suburbCountsByTeam`,
-  `suburbCountForTeam`, `CommunityTeamRow`. 🔴 **Unreachable** — "reached only from community-home,
-  itself unreachable."
 - **`community-vocabulary.ts`** (329 lines) — `communityTeamSuburbCounts`, `namesAreNearDuplicates`,
   `CommunityNameCollision`/`communityNameCollisions`, `communityNamesInCollisions`,
   `nearDuplicateSpellingsOf`. Detects near-duplicate team-name spellings (e.g. "Midalnd" vs
@@ -693,10 +667,9 @@ scoping, independent decisions, waitlisting and receipt deduplication.
    "engine files" are; changing `delays-derivations.ts`'s `answerSilenceReminder` or
    `ed-home-derivations.ts`'s exports can silently break the coordinator screen with no import
    error inside `coordinator/` itself.
-2. **Four "family" unreachable components per retired screen, not one.** The 2026-09-06 retirement
-   left an unreachable page component (`ed-home.tsx`, `community-home.tsx`), an unreachable child
-   (`ed-service-bands.tsx`, `community-team-hub.tsx`, `community-teams-table.tsx`,
-   `community-figures.tsx`) and its paired `.module.css`, all still on disk and all still compiling.
+2. **The retired ED and community components are gone.** The unreachable page components, child
+   components and paired `.module.css` files left by the 2026-09-06 retirement were removed by
+   PR #306 on 15 Oct 2026.
    `grep`-ing for a component name without checking `tests/ward-component-reachability.test.ts`
    first will over-count what is live.
 3. **`ward-screen.tsx`'s two presentations are one component, not two.** `WardScreen` (273) is a

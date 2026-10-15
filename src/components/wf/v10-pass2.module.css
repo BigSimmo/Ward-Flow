@@ -26,7 +26,7 @@
   padding: 5px var(--wf-s-3);
   box-sizing: border-box;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-on-hero-fill);
   color: var(--wf-hero-ink);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -116,7 +116,8 @@
   color: var(--wf-ink-1);
 }
 
-/* ── StatusPill: neutral words, the glyph carries tone, never a fill ── */
+/* ── StatusPill: neutral words, the glyph carries tone, never a tinted fill. A plain neutral label
+ * with no edge (refined buttons, 15 Oct 2026). ── */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -126,9 +127,9 @@
   min-width: 0;
   padding: 0 9px 0 8px;
   box-sizing: border-box;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-surface);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-track);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;

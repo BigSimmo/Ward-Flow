@@ -107,7 +107,7 @@
   padding: 0 7px;
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   letter-spacing: 0.02em;
@@ -124,7 +124,7 @@
   padding: 0 var(--wf-s-3);
   box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-hero-ink-2);
   font: 400 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
@@ -176,7 +176,7 @@
   padding: 0 12px;
   box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   color: var(--wf-hero-ink-2);
   font: 400 var(--wf-fs-12) / 1 var(--wf-font);
@@ -361,7 +361,7 @@
   height: 26px;
   padding: 0 7px;
   border: 0;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   cursor: pointer;
 }
@@ -533,7 +533,7 @@
   height: var(--wf-h-sm);
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   color: var(--wf-ink-3);
   cursor: pointer;
@@ -708,7 +708,7 @@
   flex: 0 0 auto;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   color: var(--wf-ink-2);
   cursor: pointer;
@@ -928,7 +928,7 @@
 .edLink:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .lines {
@@ -1276,7 +1276,7 @@
   min-height: 0;
   max-width: calc(100% - 2rem);
   transform: translateX(-50%);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-lg);
   background: var(--wf-ink-1);
   color: var(--wf-surface);
   font: 500 var(--wf-fs-13) / 40px var(--wf-font);
@@ -1339,7 +1339,7 @@
   height: 44px;
   padding: 0 4px;
   border: 0;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-hero-ink-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
@@ -1405,7 +1405,7 @@
 
 .focalActions > * {
   min-height: 44px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 /* 44px faces (v10 phone) keep a 48px hit area. */
@@ -1434,7 +1434,7 @@
   min-height: 54px;
   padding: 0 4px 0 0;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-lg);
 }
 
 .focalMiniOpen {
@@ -1483,7 +1483,7 @@
   height: 48px;
   padding: 0;
   border: 1px solid var(--wf-line-2);
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   cursor: pointer;
@@ -1497,7 +1497,7 @@
 .phoneTools .search {
   width: 100%;
   min-height: 48px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .phoneChips {
@@ -1513,7 +1513,7 @@
 .phoneChips > * {
   flex: 0 0 auto;
   min-height: 44px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 /* The directory tabs stay under the header while the list scrolls (v10 phone). */
@@ -1739,7 +1739,7 @@
   min-height: var(--ward-tap, 3rem);
   padding: 0;
   border: 1px solid var(--wf-line-2);
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-accent-ink);
   cursor: pointer;
@@ -1896,14 +1896,14 @@
   }
   .coverTrack {
     width: 100%;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
     padding: 3px;
   }
   .coverTrack > * {
     flex: 1 1 0;
     justify-content: center;
     min-height: 44px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
   }
   .lineLabel span {
     white-space: nowrap;
@@ -1972,7 +1972,7 @@
     box-sizing: border-box;
     padding: 0 14px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
     box-shadow:
       0 0 0 1px var(--toast-ring),
