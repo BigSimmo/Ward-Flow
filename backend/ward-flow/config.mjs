@@ -46,6 +46,8 @@ export function readConfig(env = process.env) {
     .map((address) => address.trim().replace(/^::ffff:/i, ""))
     .filter(Boolean);
   const shared = env.WARD_SHARED_ENABLED === "true";
+  // The demonstration controls (advance clock, reset or set scenario) on the shared workspace.
+  const sharedDemoEvents = env.WARD_SHARED_DEMO_EVENTS === "true";
   const dataMode = env.WARD_DATA_MODE || "prototype";
   if (dataMode !== "prototype") throw new Error("Live data mode is not commissioned in this release");
   const coordinatorIds = (env.WARD_COORDINATOR_USER_IDS || "").split(",").map((id) => id.trim().toLowerCase());
@@ -61,6 +63,7 @@ export function readConfig(env = process.env) {
     databaseProvider,
     authProvider,
     shared,
+    sharedDemoEvents,
     dataMode,
     coordinatorIds,
     workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),

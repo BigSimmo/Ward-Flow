@@ -5,7 +5,7 @@
 
 # Ward Flow scripts inventory
 
-Curated map of `scripts/` (165 files) and the `package.json` script surface (121 entries),
+Curated map of `scripts/` (157 files) and the `package.json` script surface (98 entries),
 with a maintained generated count header and a historical catalogue below. The current
 command surface is `package.json`. `npm run docs:check-inventory` checks the declared counts
 with the existing tolerance; `npm run docs:check-scripts` checks maintained command references,
@@ -13,13 +13,13 @@ excluding marked historical sections. Neither check establishes semantic freshne
 
 ## Active Ward Flow documentation & organisation scripts
 
-| Command / Script                                                                                                  | Purpose                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`)                     | Regenerate all derived Ward Flow and repository indexes (`OWNER-RULINGS.md`, `SCREEN-MAP.md`, `MANIFEST.json`, `SCREEN-VERIFICATION.md`, `RULES.md`, `<git-dir>/ward-organisation/ORGANISATION.md`, `scripts-index.md`, `site-map.md`), update `pack_manifest.json` SHA-256 digests, and run all 7 documentation & organisation gates |
-| `npm run docs:maintain:check` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --check`)               | Verify all generated indexes, `pack_manifest.json` digests, file organisation (`registry.json`), and all 7 documentation integrity gates without writing                                                                                                                                                                              |
-| `npm run ward:classify -- <path>` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>`) | Classify any existing or proposed file path against `docs/ward-flow/organisation/registry.json` and recommend the canonical folder and naming convention when unregistered                                                                                                                                                            |
-| `npm run ensure` (`node scripts/ensure-local-server.mjs`)                                                         | Start or verify the local Ward Flow server and print its project-verified URL                                                                                                                                                                                                                                                         |
-| `npm run verify:pr-local` (`node scripts/verify-pr-local.mjs`)                                                    | Run the public Ward Flow pre-push verification gate                                                                                                                                                                                                                                                                                   |
+| Command / Script                                                                                    | Purpose                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`)       | Regenerate all derived Ward Flow and repository indexes (`OWNER-RULINGS.md`, `SCREEN-MAP.md`, `MANIFEST.json`, `SCREEN-VERIFICATION.md`, `RULES.md`, `<git-dir>/ward-organisation/ORGANISATION.md`, `scripts-index.md`, `site-map.md`), update `pack_manifest.json` SHA-256 digests, and run all 7 documentation & organisation gates |
+| `npm run docs:maintain:check` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --check`) | Verify all generated indexes, `pack_manifest.json` digests, file organisation (`registry.json`), and all 7 documentation integrity gates without writing                                                                                                                                                                              |
+| `node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>`                       | Classify any existing or proposed file path against `docs/ward-flow/organisation/registry.json` and recommend the canonical folder and naming convention when unregistered                                                                                                                                                            |
+| `npm run ensure` (`node scripts/ensure-local-server.mjs`)                                           | Start or verify the local Ward Flow server and print its project-verified URL                                                                                                                                                                                                                                                         |
+| `npm run verify:pr-local` (`node scripts/verify-pr-local.mjs`)                                      | Run the public Ward Flow pre-push verification gate                                                                                                                                                                                                                                                                                   |
 
 <!-- docs-script-refs:historical-start -->
 
@@ -107,17 +107,16 @@ Also catalogued (2026-09-02), gate and CI helpers:
 - `check-source-catalogue.ts` (`check:source-catalogue`) — repository source references, providers and coverage issues from `src/lib/sources/repository-providers`.
 - `check-stale-docs.mjs` (`check:stale-docs`) — advisory report of Markdown docs untouched for `--days` and linked from nowhere; refuses shallow clones.
 - `check-playwright-browser-revision.mjs` (`check:playwright-browser-revision`) — fails closed unless the pinned Chromium revision has a launchable binary on disk (`#312`).
-- `playwright-pr-shards.mjs` (`check:playwright-pr-shards`) — duration-aware shard groups for the required Chromium PR journeys.
+- `playwright-pr-shards.mjs` (no npm alias since 15 Oct 2026; run with `node`) — duration-aware shard groups for the required Chromium PR journeys.
 - `browser-test-plan.mjs` (`plan:browser`, `check:browser-test-plan`) — chooses the smallest browser gate that still covers a change.
 - `classify-visual-baseline-outcome.mjs` — decides whether a failed `test:e2e:visual` run was pixel drift (advisory) or an infrastructure failure that stays red.
 - `lighthouse-measurement-outcome.mjs`, `lighthouse-time-budget.mjs`, `live-web-vitals-inputs.mjs` — Lighthouse budget runner helpers: whether a cell produced gradeable evidence, bounded-stage timing, and validation of the dispatch-only live Web Vitals matrix.
 - `check-image-content-contract.mjs`, `trivy-image-scan.mjs`, `resolve-oci-image-digest.mjs`, `app-container-smoke.mjs` (`smoke:app-container`) — container CI: final-image hardening assertions, pinned Trivy scan + SBOM, multi-platform digest lookup for pinning base images, and a provider-free boot smoke of the built app image.
 - `check-worker-python-lock.mjs` (`check:worker-python-lock`, `check:worker-python-cloud-lock`, `check:worker-python-locks:static`), `generate-worker-python-lock.mjs` (`generate:worker-python-lock`, `generate:worker-python-cloud-lock`), `worker-python-lock-config.mjs` — the hashed `worker/python/requirements.txt` lock targets.
-- `check-dev-drive-cache.mjs` (`check:dev-drive-cache`) — Windows Dev Drive npm cache registration and Defender trust (`#6SMMB4`).
 
 Also catalogued (2026-09-04):
 
-- `check-dependency-drift.mjs` (`check:dependency-drift`) — flags a surface whose transitive import closure changed even though the files a staleness check names directly did not.
+- `check-dependency-drift.mjs` (no npm alias since 15 Oct 2026; run with `node`) — flags a surface whose transitive import closure changed even though the files a staleness check names directly did not.
 - `check-design-drift-ratchet.mjs` (`check:design-drift-ratchet`) — ratchet guard for two design-token drift metrics (bypass-prone inline `style={{ }}` under `src/**`; design-system components with zero product importers).
 - `stamp-service-worker.mjs` (part of `build:internal`) — gives `public/sw.js` a different body on every build so the browser's byte comparison detects an update and fires `updatefound`/`activate`.
 

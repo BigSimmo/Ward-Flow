@@ -228,3 +228,30 @@ test("shared routes are logged with a request ID even when the shared workspace 
   assert.equal(logs[0].route, "workspace");
   assert.equal(logs[0].outcome, "not_configured");
 });
+test("the poll names its revision; an unchanged workspace answers with the clock only", async () => {
+  const { calls, handler } = setup(coordinator, "prototype", {
+    poll: async (...args) => {
+      calls.push(["poll", ...args]);
+      return { notModified: true, dataMode: "prototype", revision: 7, now: 900 };
+    },
+  });
+  const response = await handler(request("?since=7"));
+  assert.equal(response.status, 200);
+  const value = await response.json();
+  assert.equal(value.notModified, true);
+  assert.equal(value.revision, 7);
+  assert.equal(value.now, 900);
+  assert.equal(value.snapshot, undefined);
+  assert.deepEqual(calls, [["poll", coordinator, 7]]);
+  for (const since of ["0", "x", "1.5"]) {
+    const { calls: plain, handler: other } = setup();
+    assert.equal((await other(request(`?since=${since}`))).status, 200);
+    assert.deepEqual(plain, [[coordinator]], "an unusable revision reads the full workspace");
+  }
+});
+test("a command may ask for a revision-only reply, and nothing else", async () => {
+  const { calls, handler } = setup();
+  await handler(request("/commands", { ...body, reply: "revision" }));
+  assert.deepEqual(calls.at(-1).at(-1), { revisionOnly: true });
+  assert.equal((await handler(request("/commands", { ...body, reply: "everything" }))).status, 400);
+});
