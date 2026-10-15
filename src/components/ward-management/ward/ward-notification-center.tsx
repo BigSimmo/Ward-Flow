@@ -7,6 +7,7 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
+import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
@@ -167,7 +168,7 @@ export function WardNotificationCenter({
     if (m.acceptedUnitId !== unitId) return false;
     const eta = m.arrivalDetails?.estimatedArrivalAt;
     if (eta === undefined) return false;
-    return now > eta + 60;
+    return now > eta + LATE_ARRIVAL_GRACE_MINUTES;
   });
 
   const missingClearances = movements.filter((m) => {

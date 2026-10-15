@@ -54,6 +54,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import {
   calendarDateOf,
+  currentDueSoonThresholds,
   dayOf,
   formatInstant,
   formatInstantWithDay,
@@ -1243,7 +1244,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         const remaining = minutesUntil(dueAt, now);
         alerts.push({
           key: `form-${movement.id}`,
-          tone: remaining <= 60 ? "critical" : "warning",
+          tone: remaining <= currentDueSoonThresholds().urgentMinutes ? "critical" : "warning",
           title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
           countdown: remaining < 0 ? "Due time has passed" : formatRemaining(remaining),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -2306,7 +2307,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
+  // Release gate (15 Oct 2026): on a phone, All discharges and All arrivals sit in the Ward flow
+  // sheet. Close the sheet too, so the list is what the person lands on, not a tab behind the sheet
+  // (the same reason A1-7 closes it before opening one arrival).
   function openDischargesTab() {
+    setPhonePanel(null);
     setActiveTab("out");
   }
 
@@ -2975,6 +2980,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onShiftViewChange={setShiftView}
             morningRollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
             onOpenArrivals={() => {
+              setPhonePanel(null);
               setActiveTab("coming");
             }}
             onOpenBeds={() => {

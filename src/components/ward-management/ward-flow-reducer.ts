@@ -1037,6 +1037,44 @@ function replaceBedRelease(state: WardFlowState, releaseId: string, next: BedRel
   };
 }
 
+/**
+ * Keeps the stay's own discharge decision in step with its bed release. Screens that read the stay
+ * (the bed board's shift list, the patient card, the discharge board) read
+ * `Admission.dischargeConfirmedAt`; the ward's Confirm and Revert act on the release. Without this,
+ * one discharge carried two answers (release gate, 15 Oct 2026).
+ *
+ * Only the ward is named as the confirmer: "Ward manager" is the one label `DISCHARGE_ROLE_LABELS`
+ * holds, so a coordinator's confirmation records the time with the role left unrecorded rather
+ * than naming the wrong person. The change moves the stay's discharge revision, so an edit made
+ * against the record as it stood before is refused as stale.
+ */
+function withAdmissionDischargeDecision(
+  state: WardFlowState,
+  admissionId: string,
+  at: Instant | null,
+  role: WardFlowRole,
+): WardFlowState {
+  const admission = findAdmission(state, admissionId);
+  if (!admission) return state;
+  // A stay already confirmed keeps its own confirmation time: the release agrees with it, so
+  // restamping would rewrite when the discharge was decided. A revert still clears it, because the
+  // ward has said the discharge is no longer decided.
+  if (at !== null && admission.dischargeConfirmedAt !== null) return state;
+  if (at === null && admission.dischargeConfirmedAt === null) return state;
+  const withStay = replaceAdmission(state, admissionId, {
+    ...admission,
+    dischargeConfirmedAt: at,
+    dischargeConfirmedBy: at !== null && role === "ward" ? "Ward manager" : null,
+  });
+  return {
+    ...withStay,
+    dischargeRevisions: {
+      ...withStay.dischargeRevisions,
+      [admissionId]: (state.dischargeRevisions[admissionId] ?? 0) + 1,
+    },
+  };
+}
+
 function findAdmission(state: WardFlowState, admissionId: string): Admission | undefined {
   return state.admissions.find((candidate) => candidate.id === admissionId);
 }
@@ -1197,6 +1235,15 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
   return {
     ...withUnit,
     admissions: withUnit.admissions.filter((candidate) => candidate.id !== movement.admissionId),
+    // A Bed board placement on the removed stay has nothing left to undo, and a saved world still
+    // naming that stay is refused on reload (found by tests/ward-engine-safety.test.ts).
+    ...(withUnit.undoRecords === undefined
+      ? {}
+      : {
+          undoRecords: withUnit.undoRecords.filter(
+            (record) => record.kind !== "bed-placement" || record.admissionId !== movement.admissionId,
+          ),
+        }),
     dischargeRevisions: Object.fromEntries(
       Object.entries(withUnit.dischargeRevisions).filter(([id]) => id !== movement.admissionId),
     ),
@@ -5439,7 +5486,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "CONFIRM_BED_RELEASE": {
       const release = findBedRelease(state, event.releaseId);
       if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
-      // Claim-not-proof, as FLAG_BED_RELEASE. `CONFIRM_BED_RELEASE` is `ward`-only, so the
+      // Claim-not-proof, as FLAG_BED_RELEASE. `CONFIRM_BED_RELEASE` carries the acting unit, so the
       // comparison always runs.
       if (event.actingUnitId !== release.unitId) {
         return reject(
@@ -5467,7 +5514,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updated);
+      return withAdmissionDischargeDecision(
+        replaceBedRelease(state, release.id, updated),
+        release.admissionId,
+        event.now,
+        event.role,
+      );
     }
 
     case "REVERT_BED_RELEASE": {
@@ -5501,7 +5553,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, reverted);
+      return withAdmissionDischargeDecision(
+        replaceBedRelease(state, release.id, reverted),
+        release.admissionId,
+        null,
+        event.role,
+      );
     }
 
     case "BLOCK_BED_RELEASE": {

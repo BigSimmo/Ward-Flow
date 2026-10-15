@@ -1,5 +1,6 @@
 import { daysInBed, type Admission, type DischargeBarrier } from "@/components/ward-management/ward-admissions";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
@@ -24,7 +25,7 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  *
  * Only `occupied` admissions are read: a pulled bed has no stay yet, and a departed one is gone.
  */
-export const LONG_STAY_PROMPT_DAYS = 7;
+export const LONG_STAY_PROMPT_DAYS = CLINICAL_VALUES.longStayPrompt.value;
 
 export const STRANDED_WAITING_BLOCKERS = [
   "Awaiting accommodation",
