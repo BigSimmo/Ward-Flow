@@ -264,9 +264,9 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
       data-role={role}
       data-ward-design="third-edition"
     >
-      <h1 className="sr-only">{modeCopy[mode].title}</h1>
       <ModeHeader mode={mode} role={role} onRoleChange={setRole} />
       <main id="main-content" className={styles.modeContent}>
+        <h1 className="sr-only">{modeCopy[mode].title}</h1>
         {/* v10: a page opens on its hero, so the role note follows the body rather than sitting
             above the Network hero (a block above the hero would cost it the band). */}
         <ModeBody mode={mode} />

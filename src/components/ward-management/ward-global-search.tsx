@@ -1373,6 +1373,7 @@ export function WardGlobalSearch({
                 movements={movements}
                 units={units}
                 now={now}
+                dayZero={wardFlow?.dayZero}
                 onOpen={onPreviewOpen}
               />
             </div>

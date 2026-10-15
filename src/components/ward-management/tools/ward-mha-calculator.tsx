@@ -3,7 +3,8 @@
 import React, { useCallback, useId, useMemo, useState } from "react";
 import { AlertTriangle, Clock } from "lucide-react";
 
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { calendarDateOf } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { formTitleForCode } from "@/lib/form-register";
 import styles from "./ward-mha-calculator.module.css";
@@ -229,21 +230,26 @@ export const calculateForm4B = getForm4BRecord;
 
 /**
  * Safely resolves the current reference clock moment.
- * Reads `useWardFlowClock()` at top level when mounted inside `WardFlowProvider`,
- * or falls back to standard wall clock when mounted in tests or standalone.
+ * Reads `useOptionalWardFlow()` (`dayZero`) and `useWardFlowClock()` at top level when mounted
+ * inside `WardFlowProvider`, or falls back to standard wall clock when mounted standalone.
  */
 function useResolvedClock(override?: Date): Date {
+  const flow = useOptionalWardFlow();
   const demoInstant = useWardFlowClock(-1);
+  const providerDayZero = flow?.dayZero;
 
   return useMemo(() => {
     if (override) return override;
     if (demoInstant !== -1) {
+      if (providerDayZero) {
+        return calendarDateOf(demoInstant, providerDayZero);
+      }
       const today = new Date();
       const dayZero = parseDateTimeInput(toDateInputValue(today), "00:00") ?? today;
       return new Date(dayZero.getTime() + demoInstant * 60_000);
     }
     return new Date();
-  }, [override, demoInstant]);
+  }, [override, demoInstant, providerDayZero]);
 }
 
 export interface WardMhaCalculatorProps {

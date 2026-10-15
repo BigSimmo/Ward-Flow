@@ -77,6 +77,31 @@ describe("the tasks drawer", () => {
     expect(drawer).toHaveAttribute("aria-modal", "true");
   });
 
+  it("AUD-13: does not trap focus or hijack global Escape without a backdrop, while local Escape collapses open sub-forms first and then closes the drawer", () => {
+    const { drawer, onClose } = renderDrawer({ withBackdrop: false });
+    expect(drawer).toHaveAttribute("role", "complementary");
+    expect(drawer).not.toHaveAttribute("aria-modal");
+
+    // Pressing Escape on window outside the drawer must not close the inline complementary panel:
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+
+    // If an inline Escalate sub-form is open, pressing Escape inside it collapses the sub-form first:
+    const escalateButtons = within(drawer).queryAllByRole("button", { name: /Escalate/i });
+    if (escalateButtons.length > 0) {
+      fireEvent.click(escalateButtons[0]!);
+      const input = within(drawer).getByPlaceholderText("Contact name or service");
+      fireEvent.keyDown(input, { key: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(within(drawer).queryByPlaceholderText("Contact name or service")).toBeNull();
+    }
+
+    // Pressing Escape while focused inside the complementary drawer honours the visible Esc badge:
+    const closeBtn = within(drawer).getByRole("button", { name: "Close tasks panel" });
+    fireEvent.keyDown(closeBtn, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("has rows to assert about, so nothing below passes over an empty list", () => {
     expect(items.length, "the seed produced no inbox rows — every assertion here would be vacuous").toBeGreaterThan(0);
   });

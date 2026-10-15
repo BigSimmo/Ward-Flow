@@ -254,7 +254,6 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  useWardModalFocus(withBackdrop, drawerRef, onClose);
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
@@ -273,6 +272,25 @@ export function WardTasksDrawer({
   const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
   const toast = useOptionalToast();
+
+  function handleEscape() {
+    if (escalating !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        'li[data-expanded] button[data-escalate], button[data-escalate][aria-expanded="true"]',
+      );
+      setEscalating(null);
+      setContact("");
+      trigger?.focus();
+      return;
+    }
+    if (contacting !== null) {
+      setContacting(null);
+      return;
+    }
+    onClose();
+  }
+
+  useWardModalFocus(withBackdrop, drawerRef, handleEscape);
 
   /** Calling is not wired: the number is copied and the toast says so. */
   function callNumber(row: CallRow) {
@@ -801,6 +819,12 @@ export function WardTasksDrawer({
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? "true" : undefined}
         aria-label="Tasks"
+        onKeyDown={(event) => {
+          if (!withBackdrop && event.key === "Escape") {
+            event.stopPropagation();
+            handleEscape();
+          }
+        }}
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">

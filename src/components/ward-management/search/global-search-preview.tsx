@@ -5,7 +5,9 @@ import { useMemo, type MouseEvent } from "react";
 import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboard, Plus, Users } from "lucide-react";
 
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
+import { calendarDateOf, demoDayZero } from "@/components/ward-management/ward-clock";
 import { destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
+import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { patientAgeYears, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -13,7 +15,7 @@ import {
   resolveSubjectPatient,
   type PatientLookup,
 } from "@/components/ward-management/ward-patient-resolver";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 import { edHref, movementHref, patientHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { unitReadyBedCount } from "./ward-smart-search";
 
@@ -46,6 +48,7 @@ type PreviewProps = {
   movements: readonly Movement[];
   units: Unit[];
   now?: number;
+  dayZero?: Date;
   /** Called on a plain click of any action, so the palette can close and remember the record. */
   onOpen: (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 };
@@ -85,8 +88,8 @@ function initials(name: string): string {
     .join("");
 }
 
-function personSub(patient: Patient): string {
-  const age = patientAgeYears(patient, new Date());
+function personSub(patient: Patient, activeDate: Date): string {
+  const age = patientAgeYears(patient, activeDate);
   return [patient.umrn, Number.isFinite(age) && age >= 0 ? `${age}y` : null, shortSex(patient.sex)]
     .filter(Boolean)
     .join(" · ");
@@ -159,6 +162,7 @@ function MovementPreview({
   lookup,
   units,
   now,
+  activeDate,
   onOpen,
 }: {
   movement: Movement;
@@ -166,6 +170,7 @@ function MovementPreview({
   lookup: PatientLookup;
   units: Unit[];
   now?: number;
+  activeDate: Date;
   onOpen: PreviewProps["onOpen"];
 }) {
   const subject = resolveSubjectPatient(movement, lookup);
@@ -195,7 +200,7 @@ function MovementPreview({
         </span>
         <div className={styles.headText}>
           <p className={styles.title}>{subject.formalName}</p>
-          <p className={styles.sub}>{patient ? personSub(patient) : subject.umrn}</p>
+          <p className={styles.sub}>{patient ? personSub(patient, activeDate) : subject.umrn}</p>
         </div>
         <TierTile tier={movement.urgency} />
       </div>
@@ -278,6 +283,7 @@ function PersonPreview({
   movements,
   units,
   now,
+  activeDate,
   onOpen,
 }: {
   patient: Patient;
@@ -285,6 +291,7 @@ function PersonPreview({
   movements: readonly Movement[];
   units: Unit[];
   now?: number;
+  activeDate: Date;
   onOpen: PreviewProps["onOpen"];
 }) {
   const name = patientListName(patient);
@@ -308,7 +315,7 @@ function PersonPreview({
         </span>
         <div className={styles.headText}>
           <p className={styles.title}>{name}</p>
-          <p className={styles.sub}>{personSub(patient)}</p>
+          <p className={styles.sub}>{personSub(patient, activeDate)}</p>
         </div>
       </div>
       {openMovement ? <Journey stage={openMovement.stage} /> : null}
@@ -546,13 +553,36 @@ function SimplePreview({ item, onOpen }: { item: GlobalSearchPreviewItem; onOpen
   );
 }
 
-export function GlobalSearchPreview({ item, patients, referrals, movements, units, now, onOpen }: PreviewProps) {
+export function GlobalSearchPreview({
+  item,
+  patients,
+  referrals,
+  movements,
+  units,
+  now,
+  dayZero,
+  onOpen,
+}: PreviewProps) {
+  const flow = useOptionalWardFlow();
+  const resolvedNow = now ?? flow?.now;
+  const activeDate = useMemo(() => {
+    const resolvedDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
+    return calendarDateOf(resolvedNow ?? NOW_ANCHOR, resolvedDayZero);
+  }, [dayZero, flow?.dayZero, resolvedNow]);
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   let body;
   if (item.kind === "person") {
     const patient = patients.find((candidate) => candidate.id === item.id);
     body = patient ? (
-      <PersonPreview patient={patient} lookup={lookup} movements={movements} units={units} now={now} onOpen={onOpen} />
+      <PersonPreview
+        patient={patient}
+        lookup={lookup}
+        movements={movements}
+        units={units}
+        now={resolvedNow}
+        activeDate={activeDate}
+        onOpen={onOpen}
+      />
     ) : null;
   } else if (item.kind === "movement" || item.kind === "task") {
     const movementId = item.kind === "task" ? item.movementId : item.id;
@@ -563,7 +593,8 @@ export function GlobalSearchPreview({ item, patients, referrals, movements, unit
         task={item.kind === "task" ? item : undefined}
         lookup={lookup}
         units={units}
-        now={now}
+        now={resolvedNow}
+        activeDate={activeDate}
         onOpen={onOpen}
       />
     ) : null;
@@ -574,7 +605,14 @@ export function GlobalSearchPreview({ item, patients, referrals, movements, unit
     ) : null;
   } else if (item.kind === "ed") {
     body = (
-      <EdPreview edId={item.id} href={item.href} lookup={lookup} movements={movements} now={now} onOpen={onOpen} />
+      <EdPreview
+        edId={item.id}
+        href={item.href}
+        lookup={lookup}
+        movements={movements}
+        now={resolvedNow}
+        onOpen={onOpen}
+      />
     );
   }
 

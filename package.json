@@ -18,6 +18,7 @@
     "guard:push:self-test": "node scripts/guard-push.mjs --self-test",
     "check:ward-expected-reds": "node scripts/check-ward-expected-reds.mjs",
     "check:ward-text-size": "node scripts/ward-flow/check-text-size-floor.mjs",
+    "check:explanatory-buttons": "node scripts/ward-flow/check-explanatory-buttons.mjs",
     "check:ward-source-control-chars": "node scripts/ward-flow/check-source-control-chars.mjs",
     "check:ward-errata-freshness": "node scripts/ward-flow/check-errata-freshness.mjs",
     "check:ward-citations": "node scripts/check-ward-citations.mjs",
