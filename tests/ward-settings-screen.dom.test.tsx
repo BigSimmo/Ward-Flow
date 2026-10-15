@@ -187,6 +187,15 @@ describe("the settings screen", () => {
  * really has, add a state per row, and do NOT add the two the drawing lists and the app lacks.
  */
 describe("the settings screen's thresholds panel", () => {
+  it("opens the Ward Flow Digest from About in a new tab, now that Tools no longer carries it", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    const digest = screen.getByRole("link", { name: "Ward Flow Digest" });
+    expect(digest).toHaveAttribute("href", "/mockups/ward-flow-digest");
+    expect(digest).toHaveAttribute("target", "_blank");
+    expect(digest).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it("renders a row for each published threshold and no others", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));

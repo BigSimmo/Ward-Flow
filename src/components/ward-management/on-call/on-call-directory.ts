@@ -104,6 +104,21 @@ export const SERVICE_META: Record<DirectoryService, { name: string; short: strin
   Private: { name: "Private", short: "Private", tone: "private" },
 };
 
+/** Every field a contact search reads, shared by the On-call page and the Tools sheet's Contacts. */
+export function entrySearchFields(entry: DirectoryEntry): string[] {
+  return [
+    entry.name,
+    entry.place,
+    entry.groupTitle,
+    entry.siteCode ?? "",
+    entry.purpose,
+    SERVICE_META[entry.service].short,
+    SERVICE_META[entry.service].name,
+    entry.email ?? "",
+    ...entry.lines.map((item) => `${item.number ?? ""} ${item.label}`),
+  ];
+}
+
 /** Directory order: the metro services, then children's, country and private. */
 export const SERVICE_ORDER: readonly HealthService[] = [
   "North Metro",
