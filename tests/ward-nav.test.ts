@@ -1181,17 +1181,18 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
 describe("The Ward Flow rail's aria-label is honest for a sandboxed prototype (D11)", () => {
   /**
    * Every file that can put a link on a Ward Flow screen's chrome, concatenated: the live rail, the
-   * bar (which carries the phone menu), and the data they read. The old `ClinicalRail` sidebar and
+   * bar, its phone menu, and the data they read. The old `ClinicalRail` sidebar and
    * its drawer were removed on 15 Oct 2026, and this guard moved to the chrome that replaced them.
    */
   const source = [
     "src/components/ward-management/shell/ward-rail.tsx",
     "src/components/ward-management/shell/ward-bar.tsx",
+    "src/components/ward-management/shell/ward-phone-menu.tsx",
     "src/components/ward-management/ward-nav.ts",
   ]
     .map((file) => readFileSync(path.join(REPO_ROOT, file), "utf8"))
     .join("\n");
-  // A comment-stripped view of the same three files, for the assertions below that check a real
+  // A comment-stripped view of the same four files, for the assertions below that check a real
   // attribute or literal is present — `source` itself stays raw for the two negative checks
   // further down, where an unstripped read is the conservative direction (a stray comment
   // mentioning forbidden text should still fail loudly, not be stripped into a silent pass).
