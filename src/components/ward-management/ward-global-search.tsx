@@ -612,12 +612,14 @@ export function WardGlobalSearch({
   const id = useId();
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
+  const demoOffId = `${id}-demo-off`;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const nameFor = usePatientNameDisplay();
   const wardFlow = useOptionalWardFlow();
+  const demoOff = wardFlow?.demoControlsAvailable === false;
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -1235,12 +1237,17 @@ export function WardGlobalSearch({
                 <span className={styles.group} data-testid="ward-global-search-group-commands">
                   <span>Quick commands</span>
                 </span>
+                {demoOff ? (
+                  <p id={demoOffId} className={styles.commandNote} data-testid="ward-global-search-demo-off">
+                    {DEMO_CONTROLS_OFF}
+                  </p>
+                ) : null}
                 <div className={styles.commandList}>
                   <button
                     type="button"
                     className={styles.commandBtn}
-                    disabled={!resultsCurrent || wardFlow?.demoControlsAvailable === false}
-                    title={wardFlow?.demoControlsAvailable === false ? DEMO_CONTROLS_OFF : undefined}
+                    disabled={!resultsCurrent || demoOff}
+                    aria-describedby={demoOff ? demoOffId : undefined}
                     data-testid="ward-global-search-cmd-advance-clock"
                     onClick={() => {
                       if (wardFlow) {
