@@ -26,8 +26,9 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { clock } from "@/components/ward-management/patients/patient-now-records";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 
-function RecordTransportFixture() {
+function RecordTransportFixture({ estimatedAt = NOW_ANCHOR + 30 }: { estimatedAt?: number }) {
   const { dispatch } = useWardFlow();
   return (
     <button
@@ -41,7 +42,7 @@ function RecordTransportFixture() {
           escortRequired: false,
           cadNumber: "CAD-84920",
           transportLegalStatus: "involuntary",
-          estimatedAt: NOW_ANCHOR + 30,
+          estimatedAt,
         })
       }
     >
@@ -184,6 +185,32 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
     expect(within(section).getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-84920");
     expect(within(section).getByTestId("ward-patient-cad-number")).not.toHaveTextContent("CAD-99210");
+  });
+
+  it("refills a saved ETA from another day with its day word and accepts it unchanged", () => {
+    // The refill names the day, and an unchanged refill keeps the saved instant, so the box never
+    // fails as an unreadable time. The reducer then refuses the second booking (cancel first),
+    // which shows the form passed its own checks.
+    const yesterday = NOW_ANCHOR - 1440 + 30;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordTransportFixture estimatedAt={yesterday} />
+        <PatientNowScreen initialExampleId="WF-004" />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
+    openTransportSheet();
+    const section = screen.getByTestId("ward-patient-transport-section");
+    fireEvent.click(within(section).getByTestId("ward-patient-book-transport-btn"));
+    const form = within(section).getByTestId("ward-patient-transport-form");
+    const etaInput = within(form).getByTestId("ward-patient-input-eta");
+    expect(etaInput).toHaveValue(formatInstantWithDay(yesterday, NOW_ANCHOR));
+    expect((etaInput as HTMLInputElement).value).toMatch(/ yesterday$/);
+    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-99210" } });
+    fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
+
+    expect(screen.queryByText("Enter the ETA as HH:MM or minutes, for example 11:15 or 45m")).not.toBeInTheDocument();
+    expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
   });
 
   it("does not offer a booking before a bed is accepted, so no booking can appear to succeed", () => {
