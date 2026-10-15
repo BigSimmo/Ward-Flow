@@ -23,6 +23,13 @@
   overflow-y: auto;
 }
 
+@media print {
+  .tv:fullscreen {
+    max-block-size: none;
+    overflow: visible;
+  }
+}
+
 .header {
   display: flex;
   align-items: flex-start;

@@ -194,7 +194,8 @@ export function BedMeetingTvView({
 }) {
   const { capacity, discharges, ed, delays } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
-  const dischargingToday = discharges.confirmed + discharges.expected;
+  // Held up discharges are due too: the panel lists them, so the figure counts them.
+  const dischargingToday = discharges.heldUp + discharges.confirmed + discharges.expected;
 
   return (
     <>
@@ -347,7 +348,7 @@ export function WardTvView({
   design?: TvTileDesign;
 }) {
   const { capacity, incoming, discharges } = sheet;
-  const going = discharges.confirmed + discharges.expected;
+  const going = discharges.heldUp + discharges.confirmed + discharges.expected;
   const stuck = [
     ...sheet.heldUp.map((person) => ({ person, note: `Held up: ${person.blockReason ?? ""}`.trim() })),
     ...sheet.overdue
@@ -612,8 +613,9 @@ function useFullscreen(target: RefObject<HTMLElement | null>) {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, [target]);
   const toggle = () => {
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void target.current?.requestFullscreen?.();
+    // The browser can refuse either request (a kiosk policy, say). The button then does nothing.
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+    else target.current?.requestFullscreen?.().catch(() => undefined);
   };
   return { supported, active, toggle };
 }

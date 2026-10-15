@@ -80,7 +80,10 @@ describe("the bed meeting TV view", () => {
     expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
     expect(figure("bed-meeting-tv-locked")).toBe(shown(sheet.capacity.lockedReady));
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
-    expect(figure("bed-meeting-tv-discharges")).toBe(shown(sheet.discharges.confirmed + sheet.discharges.expected));
+    const { heldUp, confirmed, expected } = sheet.discharges;
+    // Held up discharges are listed in the panel, so the headline counts them.
+    expect(heldUp).toBeGreaterThan(0);
+    expect(figure("bed-meeting-tv-discharges")).toBe(shown(heldUp + confirmed + expected));
     expect(figure("bed-meeting-tv-delays")).toBe(shown(sheet.delays.total));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bed meeting · All services");
   });
@@ -157,7 +160,9 @@ describe("the ward and ED TV views", () => {
     expect(figure("ward-tv-ready")).toBe(shown(sheet.capacity.ready));
     expect(figure("ward-tv-incoming")).toBe(shown(sheet.incoming.total));
     expect(figure("ward-tv-asked")).toBe(shown(sheet.askedCount));
-    expect(figure("ward-tv-going")).toBe(shown(sheet.discharges.confirmed + sheet.discharges.expected));
+    expect(figure("ward-tv-going")).toBe(
+      shown(sheet.discharges.heldUp + sheet.discharges.confirmed + sheet.discharges.expected),
+    );
     expect(figure("ward-tv-overdue")).toBe(shown(sheet.overdue.length));
     expect(sheet.incoming.total).toBeGreaterThan(0);
     expect(within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem").length).toBe(
