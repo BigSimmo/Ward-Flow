@@ -54,18 +54,20 @@ export function findBeds(units: readonly Unit[], releases: BedRelease[], filters
       // shows more beds than the board or the bed summary. The data does not say which beds are
       // empty, so each kind is capped on its own rather than giving the cap to locked beds first.
       const ready = boundedBedAvailability(unit).available;
+      const pending = bedsPendingPreparation(unit.id, releases);
+      const actionable = Math.max(0, ready - pending);
       const free =
         filters.bed === "locked"
-          ? Math.min(lockedBedsFree(unit), ready)
+          ? Math.min(lockedBedsFree(unit), actionable)
           : filters.bed === "open"
-            ? Math.min(openBedsFree(unit), ready)
-            : ready;
+            ? Math.min(openBedsFree(unit), actionable)
+            : actionable;
       const service = unitHealthService(unit);
       return {
         unit,
         service,
         free,
-        pending: bedsPendingPreparation(unit.id, releases),
+        pending,
         home: filters.home !== "any" && service === filters.home,
       };
     })
