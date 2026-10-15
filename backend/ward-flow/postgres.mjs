@@ -742,8 +742,9 @@ export function createWorkspaceStore(
         let reason = "The workspace changed. Review the latest board before trying again.";
         let code = null;
         const priorRevision = Number(row.revision);
-        // The sender's own role and place, checked before anything else: a desk never learns
-        // whether a record outside its place exists, or changed.
+        // The sender's own role and place, checked before the revision, so a desk never learns
+        // whether a record outside its place changed. A refusal can still show that an id
+        // exists, because ids it cannot find fall through to the engine's own not-found reply.
         const scopeRefusal = view ? engine.commandRefusal(row.payload, view.access, event, at, view.grants) : null;
         if (scopeRefusal) {
           outcome = "denied";
