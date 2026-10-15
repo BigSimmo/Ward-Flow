@@ -1620,6 +1620,27 @@ export function applyFirstAccepted(
  * and, through it, to `candidateEvents` — see that function's own doc comment for what `false`
  * proves and why it was missing.
  */
+/**
+ * Everything a step undo must restore: the state without the append-only audit log, refusals,
+ * undo bookkeeping, id counters and unit revisions, which move forward by design.
+ */
+export function undoComparableWorld(state: WardFlowState) {
+  const {
+    auditEvents: _a,
+    auditSequence: _s,
+    undoRecords: _u,
+    rejections: _r,
+    dischargeRevisions: _d,
+    units,
+    ...rest
+  } = state;
+  void [_a, _s, _u, _r, _d];
+  return {
+    ...Object.fromEntries(Object.entries(rest).filter(([, value]) => typeof value !== "number")),
+    units: units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, revision: 0 } })),
+  };
+}
+
 /** The step undo for an accepted undoable `event`, applied to `applied`, when the reducer accepts it. */
 export function undoOf(
   event: WardFlowEvent,

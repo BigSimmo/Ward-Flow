@@ -224,20 +224,9 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 **Route:** none live. `/escalation` (`src/app/mockups/ward-flow/escalation/page.tsx`) is a
 `redirect()` to `/mockups/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
 **Mockup:** none listed for this folder in `SCREEN-MAP.md`; the escalation board's design now lives
-inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none live (the component is
-unreached). **Tests:** `ward-component-reachability.test.ts` (declares it unreachable, see below),
-`ward-device-claim-reason.dom.test.tsx`, `ward-escalation.dom.test.tsx` — these two still render
-`EscalationBoard` directly, so they report green about a screen no coordinator can open.
-
-- **`src/components/ward-management/escalation/escalation-board.tsx`** (180 lines) — the retired
-  escalation board component. ⚠️ **UNREACHABLE**, declared in both
-  `tests/ward-component-reachability.test.ts` (`DECLARED_UNREACHABLE`, reason "`/escalation`
-  redirects to `/delays`") and the generated `docs/ward-flow/SCREEN-MAP.md` ("UNREACHABLE — a screen
-  component nothing imports"). Still imported by two test files (above), which is exactly the
-  situation the reachability guard exists to keep visible rather than silently wrong.
-- **`src/components/ward-management/escalation/escalation.module.css`** (191 lines) — styles for the
-  unreachable component; not deleted alongside it (see `docs/agents/dead-code-deletion.md` — removal
-  is a separate, owner-governed decision).
+inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none. The folder's
+`escalation-board.tsx`, `escalation.module.css` and their two DOM tests were removed by PR #306
+on 15 Oct 2026.
 
 ## `governance/`
 
@@ -249,19 +238,10 @@ from `ward-management-modes.tsx`, which in turn renders `GovernanceWorkbench` fr
 in [Frame and PsychSift](frame-and-psychsift.md) or [Routes, shell and shared UI](shell-and-shared.md),
 not this file). **Dispatches:** none. **Reads:** none live. **Tests:** only
 `ward-browser-build-css.test.ts`, and that test only compiles `governance.module.css` through the
-build pipeline — it does not render or import `governance-screen.tsx` itself.
+build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 15 Oct 2026.
 
-- **`src/components/ward-management/governance/governance-screen.tsx`** (236 lines) — a retired,
-  second-edition governance screen. ⚠️ **UNREACHABLE AND UNTESTED — not even caught by the
-  reachability guard**, because `tests/ward-component-reachability.test.ts` only declares orphans
-  that some _test_ still renders, and no test renders this one. Confirmed independently: it is on
-  the generated `SCREEN-MAP.md` "UNREACHABLE" list, and a repo-wide grep for `governance-screen` or
-  `GovernanceScreen` outside this file finds nothing. Its own imports are a second clue: it pulls in
-  `GovernanceWorkbench` (the same component the real route now renders directly) and
-  `../ward-modes-second-edition.module.css` — a second-edition stylesheet — confirming this is the
-  file the third-edition shell replaced without deleting.
 - **`src/components/ward-management/governance/governance.module.css`** (1115 lines) — styles for
-  the unreachable screen above; only reachable transitively through dead code.
+  the removed `governance-screen.tsx`.
 
 ## `handover/`
 
@@ -526,7 +506,7 @@ module. The local Clinical overview / Transit operations switch preserves the fi
 Legacy `/movements/[movementId]` renders the same `PatientNowScreen`; cockpit exception handlers
 are reused via `MovementWorkspaceCockpit`'s embedded mode. Operational dispatches, event-name
 mappings, verification commands and screenshot capture are documented in
-[the unified flight deck implementation note](../plans/unified-patient-flight-deck.md).
+the unified flight deck implementation note (`docs/ward-flow/plans/unified-patient-flight-deck.md`, removed in the 15 Oct 2026 docs trim).
 `tests/ward-patient-flight-deck.dom.test.tsx` drives referral through arrival and verifies
 reasoned step-back / release capacity behaviour against the shared reducer.
 
@@ -636,18 +616,11 @@ tracker into `MovementsScreen`. **Mockup:** none current. **Dispatches:** none. 
 `transportLeg` (`ward-derivations.ts`) only, via its own `tracker-derivations.ts`. **Tests:**
 `tracker-derivations.test.ts` (tests the derivations module directly — legitimate unit-test
 coverage of logic, not a screen), `ward-component-reachability.test.ts`,
-`ward-tracker-leg-badge.dom.test.tsx`, `ward-transport-page-name.test.ts`.
+`ward-transport-page-name.test.ts`. The folder's `live-tracker.tsx`, its `.module.css` and
+`ward-tracker-leg-badge.dom.test.tsx` were removed by PR #306 on 15 Oct 2026.
 
-- **`src/components/ward-management/tracker/live-tracker.module.css`** (303 lines) — styles for the
-  unreachable screen below.
-- **`src/components/ward-management/tracker/live-tracker.tsx`** (170 lines) — the pre-merge live
-  vehicle tracker screen. ⚠️ **UNREACHABLE**, declared in
-  `tests/ward-component-reachability.test.ts` ("`/transport` redirects to `/movements`"). Still
-  passes `activeMode="transport"` to `ClinicalRail`, which is the one thing keeping it from being a
-  clean deletion candidate — `ward-nav.ts` notes explicitly that retiring this file and
-  `tracker-derivations.ts` is "a two-file question, not an id rename," left for the owner.
 - **`src/components/ward-management/tracker/tracker-derivations.ts`** (66 lines) — small, pure
-  helpers used by `live-tracker.tsx` and legitimately unit-tested on their own:
+  helpers, formerly used by `live-tracker.tsx`, and unit-tested on their own:
   `trackerRowState`, `stampAgeText`. Delegates all "which leg" logic to `transportLeg`
   (`ward-derivations.ts`) rather than duplicating it.
 
@@ -672,14 +645,9 @@ from the separate `ward/` folder — the two are easy to conflate by name), plus
 
 ## Pitfalls in this area
 
-1. **Three components are confirmed unreachable, one of them untested and unrecorded anywhere else
-   in this codebase.** `escalation/escalation-board.tsx` and `tracker/live-tracker.tsx` are both
-   declared in `tests/ward-component-reachability.test.ts` and on the generated
-   `docs/ward-flow/SCREEN-MAP.md`; `governance/governance-screen.tsx` is on `SCREEN-MAP.md` but
-   **not** in the test's `DECLARED_UNREACHABLE` list, because that guard only declares orphans some
-   test still renders, and nothing renders or imports `governance-screen.tsx` at all. Before editing
-   any of the three, check `SCREEN-MAP.md`'s "UNREACHABLE" section first — editing them changes
-   nothing a coordinator can see.
+1. **The three formerly unreachable components here are gone.** `escalation/escalation-board.tsx`,
+   `tracker/live-tracker.tsx` and `governance/governance-screen.tsx` were removed by PR #306 on
+   15 Oct 2026.
 2. **The `/governance` route does not render the file in `governance/`.** It renders `GovernanceView`
    /`GovernanceWorkbench` from `ward-management-modes.tsx` / `governance-registers` instead. A
    search for "governance" that stops at the folder name will edit the wrong file.

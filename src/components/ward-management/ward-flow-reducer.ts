@@ -4109,6 +4109,11 @@ export function reduceClinicalEvent(
        * event.
        */
       if (event.role === "officer") {
+        // Master plan 5.2 random run: with no transport needed there is no leg to deliver, and
+        // Delivered used to be accepted as a silent no-op. The officer screen already refuses it.
+        if (noTransportNeeded) {
+          return reject(state, event, "No transport leg to deliver; the receiving ward confirms arrival");
+        }
         if (movement.transport?.arrivedAt !== undefined) {
           return reject(
             state,
@@ -4181,10 +4186,22 @@ export function reduceClinicalEvent(
         heldBed !== undefined && bedNumberRefusal(state, unit, heldBed, linkedAdmission?.id) === null
           ? heldBed
           : undefined;
-      const isBedTurnaround = unit.empty.value <= 0;
+      // A seeded pulled stay (`movementId` null) is already counted as a taken bed and in the sex
+      // mix (`bedStates`), so its arrival takes no second bed. Before this, arriving one moved
+      // Occupied up by two and Ready down by one (release gate, 15 Oct 2026).
+      const bedAlreadyCounted = linkedAdmission?.movementId === null;
+      const isBedTurnaround = !bedAlreadyCounted && unit.empty.value <= 0;
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
       const arriverSex = mixSexOf(movement.gender, movement.sex);
+      const countedSex =
+        linkedAdmission === undefined ? arriverSex : mixSexOf(linkedAdmission.gender, linkedAdmission.sex);
+      const updatedSexMix =
+        bedAlreadyCounted && countedSex !== arriverSex
+          ? adjustSexMix(adjustSexMix(unit.sexMix, countedSex, -1), arriverSex, 1)
+          : bedAlreadyCounted
+            ? unit.sexMix
+            : adjustSexMix(unit.sexMix, arriverSex, 1);
 
       /*
        * A no-transport arrival jumps from `pulled` or `handover_ready` straight here and skips
@@ -4209,8 +4226,8 @@ export function reduceClinicalEvent(
 
       const updatedUnit: Unit = {
         ...unit,
-        empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
-        sexMix: adjustSexMix(unit.sexMix, arriverSex, 1),
+        empty: bedAlreadyCounted ? unit.empty : { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
+        sexMix: updatedSexMix,
         ...(isBedTurnaround
           ? {
               arrivalCapacityConflicts: [
