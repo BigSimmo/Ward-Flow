@@ -74,6 +74,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   TRANSPORT_EXCEPTION_REASON_LABELS,
   holdEndsBeforeEta,
+  instantFromEtaText,
   legalNowText,
   legalNowTransportStatus,
   transportExceptionText,
@@ -151,51 +152,6 @@ function getStageBedflowDetail(stageId: string, liveMovement?: Movement): StageP
       detail: `Recorded by ${change.by}${change.reason ? `: ${change.reason}` : ""}.`,
     })),
   };
-}
-
-/**
- * Turns a typed `HH:MM` time string into minutes from midnight (0–1439).
- * Same HH:MM parser the ED booking popup uses — local copy matching ed-screen.tsx.
- * Refuses rather than guesses: returns undefined if blank, malformed, or out of range.
- */
-function minutesFromTimeInput(value: string): number | undefined {
-  const clean = value.replace(/\s*AWST\s*/i, "").trim();
-  const parts = clean.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (!rawHours || !rawMinutes) return undefined;
-  if (rawHours.length < 1 || rawHours.length > 2 || rawMinutes.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
-function instantFromEstimatedTimeInputs(timeValue: string, day: "today" | "tomorrow", now: number): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function parseEtaToInstant(value: string, now: number): number | undefined {
-  const clean = value.trim();
-  if (!clean) return undefined;
-
-  // Relative minutes: "~45m", "45m", "~30", "+45", "45 min", "45"
-  const relMatch = clean.match(/^[~+]?\s*(\d+)\s*(?:m|min|mins|minutes)?$/i);
-  if (relMatch && !clean.includes(":")) {
-    const mins = Number(relMatch[1]);
-    if (Number.isFinite(mins) && mins >= 0) {
-      return now + mins;
-    }
-  }
-
-  // HH:MM clock time matching ed-screen.tsx instantFromEstimatedTimeInputs
-  const isTomorrow = /tomorrow/i.test(clean);
-  const cleanTime = clean.replace(/\s*tomorrow\s*/i, "").trim();
-  return instantFromEstimatedTimeInputs(cleanTime, isTomorrow ? "tomorrow" : "today", now);
 }
 
 function formatTransportLegalStatus(status?: string): string {
@@ -525,7 +481,7 @@ export function PatientNowScreen({
   const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
   const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
   const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
-  const draftEtaAt = parseEtaToInstant(transportEtaDraft.trim(), now);
+  const draftEtaAt = instantFromEtaText(transportEtaDraft.trim(), now);
   // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
   const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
 
@@ -545,7 +501,7 @@ export function PatientNowScreen({
     e.preventDefault();
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
-    const estimatedAt = parseEtaToInstant(cleanEta, now);
+    const estimatedAt = instantFromEtaText(cleanEta, now);
     const errors: { cad?: string; eta?: string; legal?: string } = {};
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
