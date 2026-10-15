@@ -90,7 +90,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { GENDERS, patientAgeYears, type Gender, type Patient } from "@/components/ward-management/ward-patients";
 
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { allEmergencyDepartments, wardSites, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
@@ -196,7 +196,7 @@ type WardReferralDrawerProps = {
   initialDestination?: "ward" | "community" | "ed";
   /** A `Patient.id` from a Refer link. Used only when the record holds that person. */
   initialPatientId?: string;
-  /** A `wardSites` code from a Refer link, for the referring site. */
+  /** A `siteDirectory` code from a Refer link, for the referring site. */
   initialOriginSiteCode?: string;
   /** The referring community team's name, when the slide-out is opened from that team's page. */
   initialSendingTeam?: string;
@@ -1369,7 +1369,7 @@ function WardReferralDrawerContent({
   function referralError() {
     if (
       !originSiteCode ||
-      !wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
+      !siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
     )
       return "Choose the location of referral.";
     if (sourceKind === "community" && !sendingTeam.trim()) return "Record the referring community service.";
@@ -1378,7 +1378,7 @@ function WardReferralDrawerContent({
   }
   const originValid =
     !!originSiteCode &&
-    wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
+    siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
   const needed: Record<DrawerSection, number> = {
     patient: [
       !patientRecord && !unidentified?.trim(),
@@ -1594,7 +1594,7 @@ function WardReferralDrawerContent({
     suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.trim().toLowerCase());
   const originLabel = originValid
     ? sourceKind === "ed"
-      ? (wardSites.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
+      ? (siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
       : (siteByCode(originSiteCode)?.name ?? originSiteCode)
     : "";
   /** The board calls a referral overdue after this tier window, a service default (`OPERATIONAL_DEFAULT_LABEL`). */
@@ -3061,7 +3061,7 @@ function WardReferralDrawerContent({
                               onChange={(e) => setOriginSiteCode(e.target.value)}
                             >
                               <option value="">Choose location</option>
-                              {wardSites
+                              {siteDirectory
                                 .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
                                 .map((site) => (
                                   <option key={site.code} value={site.code}>

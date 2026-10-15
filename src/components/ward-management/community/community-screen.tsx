@@ -5787,7 +5787,7 @@ const REFERRAL_SOURCE_LABELS: Record<Referral["source"], string> = {
  * Where a referral says it came from, in words a coordinator reading this queue can act on: the
  * channel (`REFERRAL_SOURCE_LABELS`) and, where the record names one, the originating site
  * (`siteByCode`) — never a literal hospital name, which would be a second home for a fact
- * `wardSites` already owns. An unresolvable site code renders as the code itself rather than a
+ * `siteDirectory` already owns. An unresolvable site code renders as the code itself rather than a
  * blank or a guess, the same discipline `unitName` holds a few functions above.
  */
 function referralOriginLabel(referral: Referral): string {

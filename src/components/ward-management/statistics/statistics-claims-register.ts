@@ -342,22 +342,22 @@ const BED_RELEASE_BODY =
 
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather
- * than a fallback when a code matches none, and the RETURN TYPE cannot witness that: `?? wardSites[0]`
+ * than a fallback when a code matches none, and the RETURN TYPE cannot witness that: `?? siteDirectory[0]`
  * is still assignable to `Site | undefined`, so the declared signature is unchanged by exactly the
  * edit that makes the claim false. The `.find(...)` expression is what has to move.
  */
 const SITE_BY_CODE_LOOKUP =
   "/** Returns `undefined` for an unknown code. Never falls back to a different site. */ export " +
-  "function siteByCode(code: string): Site | undefined { return wardSites.find((site) => site.code === " +
+  "function siteByCode(code: string): Site | undefined { return siteDirectory.find((site) => site.code === " +
   "code); }";
 
 /** Shared by the two screens that make the site-lookup claim, so both go red together. */
 const SITE_BY_CODE_GAINS_A_FALLBACK: FalsifyingEdit = {
   change:
-    "The lookup starts substituting a site instead of answering nothing — `?? wardSites[0]` — which " +
+    "The lookup starts substituting a site instead of answering nothing — `?? siteDirectory[0]` — which " +
     "is legal against the unchanged declared return type and is precisely what both screens deny.",
-  find: "return wardSites.find((site) => site.code === code); }",
-  replaceWith: "return wardSites.find((site) => site.code === code) ?? wardSites[0]; }",
+  find: "return siteDirectory.find((site) => site.code === code); }",
+  replaceWith: "return siteDirectory.find((site) => site.code === code) ?? siteDirectory[0]; }",
 };
 
 /*
@@ -1532,7 +1532,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-ward-list"',
     claim: "Site lookup returns nothing rather than a fallback site when a code matches none.",
-    /** Re-pointed 2026-09-01 from the signature to the signature AND the body: `?? wardSites[0]` is
+    /** Re-pointed 2026-09-01 from the signature to the signature AND the body: `?? siteDirectory[0]` is
      *  still assignable to the declared `Site | undefined`, so the signature alone could not fail. */
     sourceFile: WARD_SITES,
     evidence: SITE_BY_CODE_LOOKUP,
@@ -1633,7 +1633,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: WARD_STATS_SCREEN,
     rendered: 'data-testid="ward-statistics-ward-site"',
     claim: "Site lookup returns nothing rather than a fallback site when a code matches none.",
-    /** Re-pointed 2026-09-01 from the signature to the signature AND the body: `?? wardSites[0]` is
+    /** Re-pointed 2026-09-01 from the signature to the signature AND the body: `?? siteDirectory[0]` is
      *  still assignable to the declared `Site | undefined`, so the signature alone could not fail. */
     sourceFile: WARD_SITES,
     evidence: SITE_BY_CODE_LOOKUP,

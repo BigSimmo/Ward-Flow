@@ -11,6 +11,7 @@ import type {
   Movement,
   Referral,
   Rejection,
+  Site,
   Unit,
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -43,6 +44,8 @@ export type CommandActivityInput = {
   /** D-39: read only to name each journey by its patient's UMRN. */
   patients: Patient[];
   units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  sites: readonly Site[];
   referrals: Referral[];
   rejections: Rejection[];
   bedReleases: BedRelease[];
@@ -184,6 +187,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const counts = wardNavCounts({
     movements,
     units,
+    sites: input.sites,
     referrals,
     bedReleases,
     leaveBeds,

@@ -6,6 +6,7 @@ import {
   useDueSoonThresholds,
   useWardFlowClock,
   useWardFlowSelect,
+  useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -54,10 +55,20 @@ export function useWardNavCounts(): {
   );
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
+  const network = useWardNetwork();
   return {
     role: wardChromeRole(pathname),
     shellRole: WARD_SHELL_ROLE,
-    counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now, thresholds }),
+    counts: wardNavCounts({
+      movements,
+      units,
+      sites: network.sites,
+      referrals,
+      bedReleases,
+      leaveBeds,
+      now,
+      thresholds,
+    }),
     placeId: wardPlaceIdFor(pathname),
   };
 }

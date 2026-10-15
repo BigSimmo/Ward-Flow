@@ -11,7 +11,7 @@ import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-managem
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { edPressure } from "@/components/ward-management/ward-pressure";
-import { allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 import { standingFigures, WardStandingStrip } from "@/components/ward-management/ward-standing-strip";
 
 /**
@@ -142,7 +142,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
       "no open movement carries a legal deadline in range at NOW_ANCHOR — the legal figures are untested here",
     ).toBeGreaterThan(0);
 
-    const figures = standingFigures(baseInput(NOW_ANCHOR), DEFAULT_DUE_SOON_THRESHOLDS);
+    const figures = standingFigures(baseInput(NOW_ANCHOR), DEFAULT_DUE_SOON_THRESHOLDS, activeWardNetwork());
     const nonZero = figures.filter((figure) => /[1-9]/u.test(figure.value));
     expect(
       nonZero.length,
@@ -171,7 +171,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
    * are quiet. A third figure flagged here would slip past a test that only checked the total count.
    */
   it("flags only the two legal figures at NOW_ANCHOR, where both happen to be quiet", () => {
-    const figures = standingFigures(baseInput(NOW_ANCHOR), DEFAULT_DUE_SOON_THRESHOLDS);
+    const figures = standingFigures(baseInput(NOW_ANCHOR), DEFAULT_DUE_SOON_THRESHOLDS, activeWardNetwork());
     const flagged = figures.filter((figure) => figure.flagged === true);
     expect(
       flagged.length,
@@ -195,7 +195,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
   it("flags only the two legal figures, and both are lit, at the instant the fixture's own deadlines breach", () => {
     const now = NOW_ANCHOR + 70;
     const expected = expectedLegalCounts(now);
-    const figures = standingFigures(baseInput(now), DEFAULT_DUE_SOON_THRESHOLDS);
+    const figures = standingFigures(baseInput(now), DEFAULT_DUE_SOON_THRESHOLDS, activeWardNetwork());
     const byKey = Object.fromEntries(figures.map((figure) => [figure.key, figure]));
 
     expect(byKey.passed.value).toBe(String(expected.passed));
@@ -237,7 +237,7 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
       undefined,
     );
 
-    const figures = standingFigures(baseInput(now), DEFAULT_DUE_SOON_THRESHOLDS);
+    const figures = standingFigures(baseInput(now), DEFAULT_DUE_SOON_THRESHOLDS, activeWardNetwork());
     const byKey = Object.fromEntries(figures.map((figure) => [figure.key, figure]));
 
     expect(byKey.ready.value).toBe(String(rollup.service.availableNow));
@@ -347,7 +347,11 @@ describe("the standing strip never exceeds WardFigureStrip's two-flag ceiling", 
  */
 describe("the ready figures say how many beds are pending, in the words each role can act on", () => {
   const readySub = (chromeRole: "coordinator" | "ward" | "ed", placeId?: string) => {
-    const figures = standingFigures(baseInput(NOW_ANCHOR, chromeRole, placeId), DEFAULT_DUE_SOON_THRESHOLDS);
+    const figures = standingFigures(
+      baseInput(NOW_ANCHOR, chromeRole, placeId),
+      DEFAULT_DUE_SOON_THRESHOLDS,
+      activeWardNetwork(),
+    );
     const ready = figures.find((figure) => figure.key.startsWith("ready"));
     expect(ready, `no ready figure in the ${chromeRole} set`).toBeTruthy();
     return ready!.sub;

@@ -37,13 +37,14 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
     useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
   };
 });
 
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Notice } from "@/components/ward-management/ward-model";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";

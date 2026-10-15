@@ -5,7 +5,7 @@ import { URGENCY_CHANGE_REASONS } from "@/components/ward-management/ward-change
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 describe("Command activity from current records", () => {
@@ -17,6 +17,7 @@ describe("Command activity from current records", () => {
       ...state,
       refreshRequests: [current, future],
       now: NOW_ANCHOR,
+      sites: wardSites,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
     expect(result.lastEventAt).toBe(NOW_ANCHOR);
@@ -27,13 +28,19 @@ describe("Command activity from current records", () => {
 
   it("updates the movement tally when an open record is added", () => {
     const state = seedWardFlowState();
-    const before = deriveCommandActivity({ ...state, now: NOW_ANCHOR, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const before = deriveCommandActivity({
+      ...state,
+      now: NOW_ANCHOR,
+      sites: wardSites,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+    });
     const movement = state.movements.find((item) => item.stage === "placement_requested")!;
     expect(movement).toBeDefined();
     const after = deriveCommandActivity({
       ...state,
       movements: [...state.movements, { ...movement, id: "WF-ACTIVITY-CHECK", openedAt: NOW_ANCHOR }],
       now: NOW_ANCHOR,
+      sites: wardSites,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
     const count = (value: typeof before) =>
@@ -78,6 +85,7 @@ describe("Command activity from current records", () => {
       leaveBeds: [],
       refreshRequests: [],
       now: changedAt,
+      sites: wardSites,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 
@@ -111,6 +119,7 @@ describe("Command activity from current records", () => {
       leaveBeds: [],
       refreshRequests: [],
       now: NOW_ANCHOR,
+      sites: wardSites,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 
@@ -152,6 +161,7 @@ describe("Command activity from current records", () => {
       leaveBeds: [],
       refreshRequests: [],
       now: NOW_ANCHOR,
+      sites: wardSites,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 

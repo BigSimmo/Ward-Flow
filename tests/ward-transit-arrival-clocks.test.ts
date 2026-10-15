@@ -16,7 +16,7 @@ import { ShortlistPanel } from "@/components/ward-management/coordinator/shortli
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
@@ -132,6 +132,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
     useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
   };
 });

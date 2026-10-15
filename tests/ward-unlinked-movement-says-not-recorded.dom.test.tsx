@@ -31,6 +31,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
     useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
   };
 });
@@ -39,7 +40,7 @@ import { HandoverPage } from "@/components/ward-management/handover/handover-pag
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const seeded = seedWardFlowState();

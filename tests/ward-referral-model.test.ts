@@ -34,7 +34,7 @@ import {
   referralQueueOrder,
   referralWaitLabel,
 } from "../src/components/ward-management/ward-referrals";
-import { NOW_ANCHOR, allUnits, siteByCode, unitById } from "../src/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allUnits, siteByCode, unitById, wardSites } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { madeUpForensicWard, withMadeUpForensicWard } from "./helpers/ward-made-up-forensic-ward";
@@ -196,7 +196,7 @@ describe("bed category — the Youth unit", () => {
     expect(youthUnits[0]?.name).toBe("East Metropolitan Youth Unit (EMyU)");
     expect(youthUnits[0]?.siteCode).toBe("BTY");
 
-    const bentley = siteByCode("BTY");
+    const bentley = wardSites.find((site) => site.code === "BTY");
     expect(bentley?.name).toBe("Bentley Health Service");
     expect(bentley?.units.some((unit) => unit.id === youthUnits[0]?.id)).toBe(true);
   });

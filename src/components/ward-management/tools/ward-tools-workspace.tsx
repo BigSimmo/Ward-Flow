@@ -21,7 +21,7 @@ import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-
 import { occupiedBeds } from "../statistics/statistics-occupancy";
 import { dayOf, formatInstant } from "../ward-clock";
 import { isOpen } from "../ward-derivations";
-import { wardSites, siteByCode, allEmergencyDepartments } from "../ward-sites";
+import { siteDirectory, siteByCode, allEmergencyDepartments } from "../ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "../community/community-derivations";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { HEALTH_SERVICES, TRANSPORT_PROVIDERS, type Unit } from "../ward-model";
@@ -29,9 +29,11 @@ import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-r
 import { StatusGlyph } from "@/components/wf";
 import styles from "./ward-tools-workspace.module.css";
 
+import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 const root = "/mockups/ward-flow";
 
 export function NetworkFigures() {
+  const network = useWardNetwork();
   const thresholds = useDueSoonThresholds();
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
     "units",
@@ -58,6 +60,7 @@ export function NetworkFigures() {
       chromeRole: "coordinator",
     },
     thresholds,
+    network,
   ).filter((figure) => ["passed", "within-hour", "longest"].includes(figure.key));
   const groups = [
     {
@@ -257,7 +260,7 @@ export function toolsDirectoryEntries(units: Unit[]): DirectoryEntry[] {
         recordedOn: contact?.recordedOn,
       };
     }),
-    ...wardSites.map((site) => ({
+    ...siteDirectory.map((site) => ({
       id: `switchboard-${site.code}`,
       name: `${site.name} switchboard`,
       context: site.service,

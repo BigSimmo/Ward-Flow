@@ -67,6 +67,7 @@ import {
   useDueSoonThresholds,
   useWardFlowClock,
   useWardFlowSelect,
+  useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
@@ -559,6 +560,7 @@ function isReferralSheetPath(pathname: string): boolean {
 }
 
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
+  const network = useWardNetwork();
   const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -674,8 +676,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           placeId,
         },
         thresholds,
+        network,
       ),
-    [movements, units, admissions, bedReleases, leaveBeds, now, role, placeId, thresholds],
+    [movements, units, admissions, bedReleases, leaveBeds, now, role, placeId, thresholds, network],
   );
   const flaggedFigures = useMemo(() => figures.filter((f) => f.flagged), [figures]);
 
@@ -827,9 +830,22 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         leaveBeds,
         refreshRequests,
         now,
+        sites: network.sites,
         thresholds,
       }),
-    [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now, thresholds],
+    [
+      movements,
+      patients,
+      units,
+      referrals,
+      rejections,
+      bedReleases,
+      leaveBeds,
+      refreshRequests,
+      now,
+      thresholds,
+      network,
+    ],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);

@@ -49,7 +49,7 @@ import {
   useIsPhone,
   durMinutes,
 } from "@/components/wf";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
@@ -360,9 +360,10 @@ export function HubScreen() {
   // Audit 11 Oct 2026: community teams carry no figures here, so in the All view their section
   // starts folded; the Teams switch still lists them in full.
   const [teamsFoldOpen, setTeamsOpen] = useState(false);
+  const wardNetwork = useWardNetwork();
   const entries = useMemo(
-    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
-    [units, bedReleases, admissions, leaveBeds, now],
+    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: wardNetwork.sites }),
+    [units, bedReleases, admissions, leaveBeds, now, wardNetwork.sites],
   );
   const results = useMemo(() => {
     const base = searchHub(entries, "", kind);

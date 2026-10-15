@@ -27,6 +27,7 @@ import {
   useDueSoonThresholds,
   useWardFlowClock,
   useWardFlowSelect,
+  useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
@@ -147,6 +148,7 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  * queue and the ED card, never the bedflow or the shortlist.
  */
 export function CoordinatorScreen() {
+  const network = useWardNetwork();
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
   const {
@@ -545,13 +547,26 @@ export function CoordinatorScreen() {
       leaveBeds,
       refreshRequests,
       now,
+      sites: network.sites,
       thresholds,
     });
     return activity.content.changes.slice(0, SINCE_TIMELINE_LINES).map((change) => ({
       ...change,
       tone: activity.tones[change.id] ?? "info",
     }));
-  }, [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now, thresholds]);
+  }, [
+    movements,
+    patients,
+    units,
+    referrals,
+    rejections,
+    bedReleases,
+    leaveBeds,
+    refreshRequests,
+    now,
+    thresholds,
+    network,
+  ]);
 
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(
@@ -563,9 +578,10 @@ export function CoordinatorScreen() {
         bedReleases,
         leaveBeds,
         now,
+        sites: network.sites,
         thresholds,
       }),
-    [movements, units, referrals, bedReleases, leaveBeds, now, thresholds],
+    [movements, units, referrals, bedReleases, leaveBeds, now, thresholds, network],
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);

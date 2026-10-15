@@ -5,7 +5,7 @@ import { handoverSnapshot, searchPatients } from "@/components/ward-management/w
 import { decidedReferrals } from "@/components/ward-management/ward-referrals";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
@@ -41,6 +41,7 @@ function referralCount(state: WardFlowState): number {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     now: NOW_ANCHOR,
+    sites: wardSites,
     thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
   });
   const referralsCount = counts.referrals;

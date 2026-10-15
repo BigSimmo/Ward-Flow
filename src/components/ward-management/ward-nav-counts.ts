@@ -2,9 +2,9 @@ import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-mana
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-import { wardSites } from "@/components/ward-management/ward-sites";
+
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Referral, Site, Unit } from "@/components/ward-management/ward-model";
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
 
 /**
@@ -50,6 +50,8 @@ export type WardNavCounts = Partial<Record<WardMode | WardNavId, WardNavCount>>;
 export type WardNavCountInput = {
   movements: Movement[];
   units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  sites: readonly Site[];
   referrals: Referral[];
   bedReleases: readonly BedRelease[];
   leaveBeds: readonly LeaveBed[];
@@ -58,10 +60,10 @@ export type WardNavCountInput = {
 };
 
 export function wardNavCounts(input: WardNavCountInput): WardNavCounts {
-  const { movements, units, referrals, bedReleases, leaveBeds, now, thresholds } = input;
+  const { movements, units, sites, referrals, bedReleases, leaveBeds, now, thresholds } = input;
 
   const open = movements.filter(isOpen);
-  const rollup = serviceRollup(wardSites, units, [...bedReleases], [...leaveBeds], now);
+  const rollup = serviceRollup(sites, units, [...bedReleases], [...leaveBeds], now);
 
   /*
    * `SEVERE_CAUSES` is `delays-derivations.ts`'s own list — a breached statutory deadline, one

@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
-import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -155,9 +155,8 @@ export function OnCallScreen() {
   const isTabletPortrait = useIsTabletPortrait();
   const [slideId, setSlideId] = useState<string | null>(null);
   // The EMHS demo and surge scenarios swap in their own wards, so the directory follows the scenario.
-  const scenario = useOptionalWardFlowSelect("scenario")?.scenario;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `scenario` re-points `wardSites`, which the build reads
-  const entries = useMemo(() => buildOnCallDirectory(), [scenario]);
+  const network = useWardNetwork();
+  const entries = useMemo(() => buildOnCallDirectory(network.sites), [network.sites]);
   const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
 
   const [tab, setTab] = useState<DirectoryTab>("hospitals");

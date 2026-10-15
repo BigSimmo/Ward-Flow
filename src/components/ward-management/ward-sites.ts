@@ -865,11 +865,17 @@ export const STANDARD_WARD_SITES: Site[] = [
 ];
 
 /**
- * THE ACTIVE NETWORK. Every lookup below (`allUnits`, `unitById`, `siteByCode`, ...) and every
- * direct reader of `wardSites` sees the network of the scenario on screen. It is the standard
- * network unless the EMHS demo or surge scenario is loaded, which swaps in its own wards
- * (`ward-scenarios.ts`, `activateScenarioNetwork`). Sites, site codes and emergency departments
- * are the same in every network; only the wards differ.
+ * THE ACTIVE NETWORK. `allUnits`, `unitById` and every direct reader of `wardSites` see the
+ * network of the scenario on screen. It is the standard network unless a demonstration scenario
+ * is loaded, which swaps in its own wards (`ward-scenarios.ts`, `activateScenarioNetwork`).
+ *
+ * Sites, site codes and emergency departments are the same in every network; only the wards
+ * differ. So the identity lookups (`siteDirectory`, `siteByCode`, `edById`,
+ * `allEmergencyDepartments`) read the standard network and give the same answer whatever is on
+ * screen, which lets a screen call them without the scenario as an input. A screen that needs
+ * the WARDS reads them through `useWardNetwork()`, never from this module-wide value: the React
+ * Compiler caches a calculation on the inputs it can see, and the scenario is not one of them here
+ * (Josh's card, 15 Oct 2026, "Pass values in"). Calculations outside React may still read it.
  *
  * ⚠️ A module-level binding, re-pointed rather than mutated: importers read the live value.
  * Nothing but `activateWardNetwork` may assign it.
@@ -885,13 +891,57 @@ export function allUnits(): Unit[] {
   return wardSites.flatMap((site) => site.units);
 }
 
-export function allEmergencyDepartments(): EmergencyDepartment[] {
-  return wardSites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
-}
-
 /** Returns `undefined` for an unknown id. Never falls back to a different unit. */
 export function unitById(id: string): Unit | undefined {
   return allUnits().find((unit) => unit.id === id);
+}
+
+/** A site without its wards: the part every network shares. */
+export type SiteIdentity = Omit<Site, "units">;
+
+function identityOf(site: Site): SiteIdentity {
+  const { units, ...identity } = site;
+  void units;
+  return identity;
+}
+
+/** Every site, without its wards. The same in every network. */
+export const siteDirectory: readonly SiteIdentity[] = STANDARD_WARD_SITES.map(identityOf);
+
+/** The same emergency departments in every network (each network keeps the standard site's own). */
+export function allEmergencyDepartments(): EmergencyDepartment[] {
+  return STANDARD_WARD_SITES.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
+}
+
+/**
+ * One network's wards, as an input a screen passes on (`useWardNetwork()`). The same sites give
+ * back the same object, so it only changes when the scenario's network does.
+ */
+export type WardNetwork = {
+  readonly sites: readonly Site[];
+  allUnits(): Unit[];
+  unitById(id: string): Unit | undefined;
+};
+
+const networks = new WeakMap<readonly Site[], WardNetwork>();
+
+export function wardNetworkOf(sites: readonly Site[]): WardNetwork {
+  let network = networks.get(sites);
+  if (!network) {
+    const allUnitsOf = () => sites.flatMap((site) => site.units);
+    network = {
+      sites,
+      allUnits: allUnitsOf,
+      unitById: (id) => allUnitsOf().find((unit) => unit.id === id),
+    };
+    networks.set(sites, network);
+  }
+  return network;
+}
+
+/** The network the module-wide lookups point at now. For code outside a provider. */
+export function activeWardNetwork(): WardNetwork {
+  return wardNetworkOf(wardSites);
 }
 
 /**
@@ -915,9 +965,10 @@ export function edById(id: string): EmergencyDepartment | undefined {
   );
 }
 
-/** Returns `undefined` for an unknown code. Never falls back to a different site. */
-export function siteByCode(code: string): Site | undefined {
-  return wardSites.find((site) => site.code === code);
+/** Returns `undefined` for an unknown code. Never falls back to a different site. The site's
+ * identity only: its wards differ by scenario, so read them through the network. */
+export function siteByCode(code: string): SiteIdentity | undefined {
+  return siteDirectory.find((site) => site.code === code);
 }
 
 /**

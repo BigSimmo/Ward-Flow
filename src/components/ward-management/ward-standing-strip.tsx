@@ -18,9 +18,10 @@ import {
   useDueSoonThresholds,
   useWardFlowClock,
   useWardFlowSelect,
+  useWardNetwork,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import { wardSites } from "@/components/ward-management/ward-sites";
+import type { WardNetwork } from "@/components/ward-management/ward-sites";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -103,7 +104,11 @@ function longestOpen(open: Movement[], now: Instant): StandingFigure {
   };
 }
 
-export function standingFigures(input: FigureInput, thresholds: DueSoonThresholds): StandingFigure[] {
+export function standingFigures(
+  input: FigureInput,
+  thresholds: DueSoonThresholds,
+  network: WardNetwork,
+): StandingFigure[] {
   const { movements, units, admissions, bedReleases, leaveBeds, now, chromeRole, placeId } = input;
   const open = movements.filter(isOpen);
   const legal = legalCounts(open, now, thresholds);
@@ -173,7 +178,7 @@ export function standingFigures(input: FigureInput, thresholds: DueSoonThreshold
   if (chromeRole === "ed") {
     const departments = edPressure(now, movements);
     const mine = placeId === undefined ? undefined : departments.find((entry) => entry.ed.id === placeId);
-    const rollup = serviceRollup(wardSites, units, [...bedReleases], [...leaveBeds], now);
+    const rollup = serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now);
     return [
       /*
        * ⚠️ **AN ED CANNOT PLACE A PATIENT, so statewide supply is CONTEXT and the caveat lives
@@ -239,7 +244,7 @@ export function standingFigures(input: FigureInput, thresholds: DueSoonThreshold
     }
   }
 
-  const rollup = serviceRollup(wardSites, units, [...bedReleases], [...leaveBeds], now);
+  const rollup = serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now);
   const inEd = edPressure(now, movements).reduce((total, entry) => total + entry.waiting, 0);
   return [
     /*
@@ -376,6 +381,7 @@ export function WardStatsPanel({ figures, open }: { figures: StandingFigure[]; o
  * header row and the panel beneath, which is the whole reason the two are separate exports.
  */
 export function WardStandingStrip() {
+  const network = useWardNetwork();
   const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const { movements, units, admissions, bedReleases, leaveBeds } = useWardFlowSelect(
@@ -400,6 +406,7 @@ export function WardStandingStrip() {
       placeId: placeIdFrom(pathname),
     },
     thresholds,
+    network,
   );
   return (
     <div data-chrome-role={chromeRole} className={styles.hudAnchor}>

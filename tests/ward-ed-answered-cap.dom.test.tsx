@@ -38,13 +38,14 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useWardFlowSelect: () => mockContext,
     useOptionalWardFlowSelect: () => mockContext,
     useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
   };
 });
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const ED_ID = "rph-ed";

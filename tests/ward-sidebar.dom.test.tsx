@@ -256,6 +256,7 @@ describe("Ward Flow sidebar, by role", () => {
       bedReleases: seed.bedReleases,
       leaveBeds: seed.leaveBeds,
       now: NOW_ANCHOR,
+      sites: wardSites,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     });
 

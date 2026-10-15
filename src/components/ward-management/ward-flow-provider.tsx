@@ -77,8 +77,12 @@ import type {
   Rejection,
   Unit,
 } from "@/components/ward-management/ward-model";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { activateScenarioNetwork, type WardScenario } from "@/components/ward-management/ward-scenarios";
+import { activeWardNetwork, NOW_ANCHOR, type WardNetwork } from "@/components/ward-management/ward-sites";
+import {
+  activateScenarioNetwork,
+  scenarioWardNetwork,
+  type WardScenario,
+} from "@/components/ward-management/ward-scenarios";
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
@@ -1473,4 +1477,13 @@ export function useWardFlowClock(fallback?: Instant): Instant {
 export function useDueSoonThresholds(): DueSoonThresholds {
   const picked = useOptionalWardFlowSelect("configuration");
   return dueSoonThresholdsOf(picked?.configuration);
+}
+
+/**
+ * The wards of the scenario on screen, as an input a screen passes on (`network.unitById(id)`,
+ * `network.sites`). Outside a provider, whichever network the module-wide lookups point at.
+ */
+export function useWardNetwork(): WardNetwork {
+  const picked = useOptionalWardFlowSelect("scenario");
+  return picked ? scenarioWardNetwork(picked.scenario) : activeWardNetwork();
 }

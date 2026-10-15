@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 // The answer view's back link goes through contextual history (ContextualBackLink), which reads
@@ -19,6 +19,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
   useWardFlowSelect: () => context,
   useOptionalWardFlowSelect: () => context,
   useDueSoonThresholds: () => dueSoonThresholdsOf(context?.configuration),
+  useWardNetwork: () => activeWardNetwork(),
   useWardFlowClock: () => NOW_ANCHOR,
 }));
 

@@ -48,7 +48,7 @@ import { DAY_SHIFT_END_MINUTE, pullHoldRemainingLabel } from "@/components/ward-
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import type {
   BedRelease,
@@ -63,7 +63,7 @@ import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-mornin
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import { wardSites } from "@/components/ward-management/ward-sites";
+
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
@@ -180,22 +180,26 @@ type FlowTab = (typeof FLOW_TABS)[number];
 /**
  * Where a unit's own record lives.
  *
- * ⚠️ **The UNIT comes from live state; only the SITE comes from `wardSites`.** That split is the
- * whole fix for the board disagreeing with the ward screen. A unit's capacity fields are mutated by
- * the reducer on a structural clone (`PULL_PATIENT`, `RECORD_ARRIVAL`, `CONFIRM_CAPACITY`), and
- * `wardSites` is the un-mutated seed that no reducer path ever writes — so reading the unit from
- * there produced a permanently seed-valued `held` while the ward screen moved.
+ * ⚠️ **The UNIT comes from live state; only the SITE comes from the network's sites
+ * (`useWardNetwork().sites`).** That split is the whole fix for the board disagreeing with the
+ * ward screen. A unit's capacity fields are mutated by the reducer on a structural clone (`PULL_PATIENT`, `RECORD_ARRIVAL`, `CONFIRM_CAPACITY`), and
+ * the network's sites are the un-mutated seed that no reducer path ever writes — so reading the
+ * unit from there produced a permanently seed-valued `held` while the ward screen moved.
  *
  * The site is different in kind: name and code are static reference data, not state, and no event
- * changes them. It is still resolved by walking `wardSites` rather than through `unitById`, which
- * `tests/ward-flow-single-source.test.ts` restricts to three named fixture files.
+ * changes them. It is still resolved by walking the network's sites rather than through
+ * `unitById`, which `tests/ward-flow-single-source.test.ts` restricts to three named fixture files.
  *
  * Returns `undefined` for an unknown id and never falls back to a different ward.
  */
-function findUnit(unitId: string, liveUnits: readonly Unit[]): { unit: Unit; site: Site } | undefined {
+function findUnit(
+  unitId: string,
+  liveUnits: readonly Unit[],
+  sites: readonly Site[],
+): { unit: Unit; site: Site } | undefined {
   const unit = liveUnits.find((candidate) => candidate.id === unitId);
   if (unit === undefined) return undefined;
-  for (const site of wardSites) {
+  for (const site of sites) {
     if (site.units.some((candidate) => candidate.id === unitId)) return { unit, site };
   }
   return undefined;
@@ -956,6 +960,7 @@ export function WardBoard({
   // Live state, on the same terms as every other screen. Named `liveUnits` only because `unit`
   // below is the one this board is about; `now` and `admissions` keep their names so every
   // derivation beneath reads unchanged.
+  const network = useWardNetwork();
   const {
     units: liveUnits,
     admissions,
@@ -1236,7 +1241,7 @@ export function WardBoard({
     [closeDetail],
   );
 
-  const found = findUnit(unitId, liveUnits);
+  const found = findUnit(unitId, liveUnits, network.sites);
   if (found === undefined) {
     // Task A: a "Ward not found" page with no per-screen navigation mount was a dead end — there
     // was no way back to anything else in Ward Flow from it. Every other dynamic-route screen

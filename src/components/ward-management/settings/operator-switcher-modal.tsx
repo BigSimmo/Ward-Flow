@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -102,6 +102,7 @@ function useSafePathname(): string {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+  const network = useWardNetwork();
   const { movements, units, bedReleases, admissions, leaveBeds, patients, referrals, focusMovementId, configuration } =
     useWardFlowSelect(
       "movements",
@@ -127,11 +128,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   const { statewide, sites, teams } = useMemo(
     () =>
       workstationDesks({
-        hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
+        hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites }),
         eds: edHomeSummaries(movements, now, configuration.edAccessTargetMinutes),
         movements,
       }),
-    [units, bedReleases, admissions, leaveBeds, movements, now, configuration.edAccessTargetMinutes],
+    [units, bedReleases, admissions, leaveBeds, movements, now, configuration.edAccessTargetMinutes, network],
   );
   const allDesks = useMemo(
     () => [...statewide, ...sites.flatMap((site) => site.desks), ...teams],

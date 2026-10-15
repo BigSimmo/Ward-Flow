@@ -27,7 +27,7 @@ import { currentInboxOwner, partitionSnoozed, SNOOZE_REASON_IDS } from "@/compon
 import { inboxItemIsActNow, inboxRowExists } from "@/components/ward-management/ward-inbox-reducer";
 import { patientCohort, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "fre-adult-open";
@@ -886,6 +886,7 @@ describe("review follow-up: callers beyond Alerts count the overdue booking", ()
       leaveBeds: state.leaveBeds,
       now: NOW,
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+      sites: wardSites,
     };
     const without = shellFigures(input).tasks.value;
     expect(shellFigures({ ...input, plannedAdmissions: state.plannedAdmissions }).tasks.value).toBe(without + 1);

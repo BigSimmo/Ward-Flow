@@ -23,7 +23,7 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
 import { HeroTool } from "./statistics-hero-tools";
@@ -74,7 +74,7 @@ export function StatisticsServicesIndexScreen() {
   const isPhone = useIsPhone();
 
   const services = HEALTH_SERVICES.map((service) => {
-    const siteCodes = new Set(wardSites.filter((site) => site.service === service).map((site) => site.code));
+    const siteCodes = new Set(siteDirectory.filter((site) => site.service === service).map((site) => site.code));
     const serviceUnits = units.filter((unit) => siteCodes.has(unit.siteCode));
     const rows = serviceUnits.map((unit) => {
       const states = bedStates(unit, admissions, bedReleases, leaveBeds);
