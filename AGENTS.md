@@ -101,6 +101,12 @@ not authorise restyling it; preserve understandable status and accessible contro
 Synthetic data only. Do not use real patient information before
 the separately required clinical, privacy and legal reviews.
 
+Changeable facts (database, migrations, route and decision counts, Node range, backend environment
+variables) are generated from source into [`docs/FACTS.md`](docs/FACTS.md). Read them there and
+quote them with fact markers rather than restating them; `npm run docs:facts` fails when a doc
+disagrees with the source, and [`docs/retired-terms.json`](docs/retired-terms.json) lists words
+that new doc lines must not use.
+
 ### Where work happens
 
 - Work only on your own task branch and worktree in this `BigSimmo/Ward-Flow` Git repository.

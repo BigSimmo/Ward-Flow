@@ -130,6 +130,8 @@
     "docs:check-links": "node scripts/check-maintained-doc-links.mjs",
     "docs:maintain": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --write",
     "docs:maintain:check": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --check",
+    "docs:facts": "node scripts/doc-facts.mjs",
+    "docs:facts:write": "node scripts/doc-facts.mjs --write",
     "ward:classify": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify"
   },
   "dependencies": {
