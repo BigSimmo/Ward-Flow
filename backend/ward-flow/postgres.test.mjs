@@ -740,10 +740,16 @@ test(
           await client.query("BEGIN");
           await client.query(await sql(file));
           await client.query("COMMIT");
+        } catch (error) {
+          await client.query("ROLLBACK");
+          throw error;
         } finally {
           client.release();
         }
       };
+      // Out of order, each rollback refuses and changes nothing, so the ledger never has a gap.
+      await assert.rejects(rollBack("./infra/rollback-006-row-level-security.sql"), /Roll back 007 first/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 7);
       let revision = 2;
       for (const [file, version] of [
         ["./infra/rollback-007-prototype-only.sql", 6],
@@ -760,6 +766,7 @@ test(
         "SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname='workspaces_data_mode_check'",
       );
       assert.equal(check[0].def, "CHECK ((data_mode = ANY (ARRAY['prototype'::text, 'live'::text])))");
+      await assert.rejects(rollBack("./infra/rollback-007-prototype-only.sql"), /not at migration 7/);
 
       // 007 refuses, and the whole run rolls back, while any workspace is labelled live.
       const liveId = randomUUID();
