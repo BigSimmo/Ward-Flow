@@ -84,6 +84,7 @@ export function useWardSupabaseShared(enabled: boolean) {
             // A refused session or role ends this connection: stop polling, drop the refused
             // local session so it is not left stored, and keep the not-authorised message visible.
             disconnect();
+            setActNowAppBadge(0);
             void instance.signOut().catch(() => {});
           }
           setView(next);
@@ -182,11 +183,13 @@ export function useWardSupabaseShared(enabled: boolean) {
               await connect();
             }),
           signOut: async () => {
-            setActNowAppBadge(0);
             const token = auth!.captureAccessTokenForSignOut();
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
             setForm({ open: false, recovery: false, busy: false, message: null });
+            // The next account on a shared phone never sees this one's act-now count, even when
+            // the session has expired and the phone alert cleanup below cannot run.
+            setActNowAppBadge(0);
             if (token) {
               const cleanup = new SharedWorkspaceClient({
                 baseUrl: base.toString().replace(/\/$/, ""),
