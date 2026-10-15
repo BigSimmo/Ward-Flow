@@ -1381,6 +1381,11 @@
   padding: var(--ward-space-6) var(--ward-space-8);
 }
 
+/* `display: grid` above beats the user-agent `[hidden]` rule, so say it again for the open-gates filter. */
+.shortlistGateRow[hidden] {
+  display: none;
+}
+
 .shortlistGateRow[data-pass="false"] {
   border-style: dashed;
   border-color: var(--danger);
