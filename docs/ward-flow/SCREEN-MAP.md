@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**68 mockups · 53 routes · 34 screen folders.**
+**68 mockups · 52 routes · 32 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -56,7 +56,7 @@ UNMAPPED rather than disappearing.
 | `ward-flow-digest.html` | `/mockups/ward-flow-digest` | yes |
 | `movement-gantt-third-edition.html` | — | — |
 | `network-horizon-third-edition.html` | — | — |
-| `sovereign-chrome-and-drawers-perfected.html` | `/sovereign` | yes |
+| `sovereign-chrome-and-drawers-perfected.html` | — | — |
 | `perfected-activity-drawer.html` | — | — |
 | `perfected-drawers-showcase.html` | — | — |
 | `perfected-service-popover.html` | — | — |

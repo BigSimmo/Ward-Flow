@@ -89,7 +89,6 @@ import { AddPatientForm } from "@/components/ward-management/patients/add-patien
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -182,10 +181,6 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ],
   ["/mockups/ward-flow/search", { concrete: "/mockups/ward-flow/search", render: () => <PatientSearchPage /> }],
   ["/mockups/ward-flow/settings", { concrete: "/mockups/ward-flow/settings", render: () => <SettingsScreen /> }],
-  [
-    "/mockups/ward-flow/sovereign",
-    { concrete: "/mockups/ward-flow/sovereign", render: () => <SovereignShowcaseScreen /> },
-  ],
   // Read-only reports, 9 Oct 2026 (stream C).
   [
     "/mockups/ward-flow/reports/chronology",

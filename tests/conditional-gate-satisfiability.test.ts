@@ -62,8 +62,9 @@ import { describe, expect, it } from "vitest";
  *         FOUR SITES, ACROSS FOUR FILES. (Measured 2026-09-06 as six sites across five files,
  *         with `pdf-extractor.test.ts` carrying two; PsychSift's removal deleted that file
  *         entirely, taking both of its sites with it.)
- *           === "win32"   ci-cache-safety:386, pr-handoff-stop:95,
- *                         push-format-guard:136                       (3 sites, 3 files)
+ *           === "win32"   pr-handoff-stop:95, push-format-guard:136,
+ *                         pre-commit-checks, owned-formatting         (4 sites, 4 files;
+ *                         the ci-cache-safety site went with its dead monorepo cases, 15 Oct 2026)
  *           !== "win32"   guard-push-no-merge-base:43                 (1 site,  1 file)
  *
  *     ⚠️ **A FIFTH SITE IS REPORTED BY ANY SCANNER WITHOUT STRING-BLANKING, AND IT IS NOT A
@@ -141,16 +142,10 @@ const KNOWN_UNSATISFIABLE: Readonly<Record<string, string>> = {
  * it is recording that satisfiability was considered and found undecidable from a static read.
  */
 const DECLARED_UNDECIDABLE: Readonly<Record<string, string>> = {
-  "tests/ward-flow-chat-control.test.ts :: existsSync(controlRoot)":
-    "depends on whether docs/ward-flow/control is present in the checkout being tested",
   "tests/ward-flow-remote-boundary.test.ts :: existsSync(shell)":
     "depends on whether a bash or sh executable exists on the system to run the git hook",
   "tests/ward-travel-bands.test.ts :: !TRAVEL_BANDS_ARE_INVENTED":
     "a module constant about the fixture's provenance, not an environment fact",
-  "tests/ci-cache-safety.test.ts :: !existsSync(ciUrl)":
-    "depends on whether monorepo ci.yml is present in the checkout",
-  'tests/ci-cache-safety.test.ts :: process.platform === "win32" || !workflow':
-    "depends on host platform and whether monorepo ci.yml is present in the checkout",
 };
 
 /**

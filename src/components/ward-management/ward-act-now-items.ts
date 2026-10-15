@@ -13,6 +13,7 @@
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import {
@@ -68,6 +69,7 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
       referrals: source.referrals,
       supportNotifications: source.supportNotifications,
       plannedAdmissions: source.plannedAdmissions,
+      stuckHandoverMinutes: source.stuckHandoverMinutes,
     }),
     ...decisionTargetInboxItems(open, now, source.configuration),
   ];
@@ -86,4 +88,30 @@ export function activeActNowItems(source: TaskSource, now: Instant): InboxItem[]
 /** Act-now rows in `current` that were not on the active list last time. */
 export function newActNowItems(previousIds: ReadonlySet<string>, current: readonly InboxItem[]): InboxItem[] {
   return current.filter((item) => item.tone === "danger" && !previousIds.has(item.id));
+}
+
+/**
+ * NEEDS YOU FOR THE SIGNED IN ROLE (Top 25 item 6, flag `top25-needs-you-roles`). A task row's
+ * `owner` is the words a person reads ("Sending team", "Nurse in charge", a ward's name), so this
+ * names the roles those words mean. An owner it cannot place belongs to the coordinator only,
+ * never guessed onto another role. "ED or ward" belongs to both.
+ */
+export function inboxOwnerRoles(owner: string, wardNames: readonly string[] = []): WardChromeRole[] {
+  const roles = new Set<WardChromeRole>();
+  if (/coordinator|bed manager/i.test(owner)) roles.add("coordinator");
+  if (/\bED\b|emergency|sending team/i.test(owner)) roles.add("ed");
+  if (/ward|nurse in charge/i.test(owner) || wardNames.includes(owner)) roles.add("ward");
+  if (/transport/i.test(owner)) roles.add("officer");
+  if (/community/i.test(owner)) roles.add("community");
+  return [...roles];
+}
+
+/** The task rows the role owns. The coordinator, and the bed manager desk, see every row. */
+export function inboxItemsForRole(
+  items: readonly InboxItem[],
+  role: WardChromeRole,
+  wardNames: readonly string[] = [],
+): InboxItem[] {
+  if (role === "coordinator" || role === "bed_manager") return [...items];
+  return items.filter((item) => inboxOwnerRoles(item.owner, wardNames).includes(role));
 }
