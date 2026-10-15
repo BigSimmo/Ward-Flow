@@ -494,3 +494,124 @@ export function SinceYouLooked({
     </SinceYouLookedFold>
   );
 }
+
+/* ── NeedsYou (Top 25 #6) ─────────────────────────────────────────────────────────────────── */
+
+export type NeedsYouItem = {
+  id: string;
+  title: ReactNode;
+  meta?: ReactNode;
+  tone?: WfTone;
+  edgeAct?: boolean;
+  actionLabel: string;
+  onAction: () => void;
+};
+
+export type NeedsYouProps = {
+  roleLabel?: string;
+  items?: NeedsYouItem[];
+  maxItems?: number;
+  label?: string;
+  count?: number;
+  tone?: WfTone;
+  action?: ReactNode;
+  className?: string;
+};
+
+/**
+ * Role-Scoped "Needs You Now" Home Strip (Top 25 #6, D-52).
+ * Caps at 3–5 top role-actionable items and collapses when 0 items remain.
+ */
+export function NeedsYou({
+  roleLabel,
+  items,
+  maxItems = 5,
+  label,
+  count,
+  tone = "warning",
+  action,
+  className,
+}: NeedsYouProps) {
+  if (items === undefined) {
+    const resolvedCount = count ?? 0;
+    if (resolvedCount <= 0) return null;
+    const heading = label ?? roleLabel ?? "Needs you now";
+    return (
+      <section
+        className={cx(styles.needsYou, className)}
+        aria-label={heading}
+        data-testid="wf-needs-you"
+        data-all-clear="false"
+      >
+        <div className={styles.needsYouHead}>
+          <StatusGlyph tone={tone} size={10} />
+          <span className={styles.needsYouTitle}>{heading}</span>
+          <span className={styles.needsYouCount}>{resolvedCount}</span>
+        </div>
+        {action ? <div className={styles.needsYouText}>{action}</div> : null}
+      </section>
+    );
+  }
+
+  const resolvedRole = roleLabel ?? label ?? "Desk";
+  const shown = items.slice(0, Math.max(1, Math.min(5, maxItems)));
+  if (shown.length === 0) {
+    return (
+      <section
+        className={cx(styles.needsYouCollapsed, className)}
+        aria-label={`Needs you now (${resolvedRole})`}
+        data-testid="wf-needs-you"
+        data-all-clear="true"
+      >
+        <StatusGlyph tone="success" size={10} />
+        <span className={styles.needsYouRole}>{resolvedRole}</span>
+        <span className={styles.needsYouAllClear}>All clear — 0 items awaiting your role</span>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className={cx(styles.needsYou, className)}
+      aria-label={`Needs you now (${resolvedRole})`}
+      data-testid="wf-needs-you"
+      data-all-clear="false"
+    >
+      <div className={styles.needsYouHead}>
+        <span className={styles.needsYouTitle}>Needs you now</span>
+        <span className={styles.needsYouRole}>{resolvedRole}</span>
+        <span className={styles.needsYouCount}>{shown.length}</span>
+      </div>
+      <ul className={styles.needsYouList}>
+        {shown.map((item) => (
+          <li
+            key={item.id}
+            className={cx(styles.needsYouRow, item.edgeAct && styles.needsYouEdgeAct)}
+            data-edge-act={item.edgeAct ? "true" : undefined}
+          >
+            <div className={styles.needsYouText}>
+              <span className={styles.needsYouItemTitle}>
+                {item.tone ? <StatusGlyph tone={item.tone} size={10} /> : null}
+                <span>{item.title}</span>
+              </span>
+              {item.meta ? <span className={styles.needsYouMeta}>{item.meta}</span> : null}
+            </div>
+            <Button variant="sec" size="sm" onClick={item.onAction}>
+              {item.actionLabel}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+import {
+  CommandPalette,
+  filterCommandPaletteItems,
+  type CommandPaletteItem,
+  type CommandPaletteProps,
+} from "./v10-command-palette";
+
+export { CommandPalette, filterCommandPaletteItems, type CommandPaletteItem, type CommandPaletteProps };
+export { UndoHairline, type UndoHairlineProps } from "./v10-undo-hairline";

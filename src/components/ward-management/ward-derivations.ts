@@ -14,10 +14,16 @@ import {
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
 
-import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import {
+  bedIsOccupied,
+  plannedAdmissionIsOverdue,
+  type Admission,
+  type PlannedAdmission,
+} from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import {
+  MINUTES_PER_DAY,
   clockState,
   formatElapsed,
   formatInstant,
@@ -2221,4 +2227,177 @@ export function unitBedOfferBlocked(
     return { blocked: true, reason: `Bay ${options.bayId} is closed.` };
   }
   return { blocked: false, reason: null };
+}
+
+function toInstantMinutes(val: Instant | string): number {
+  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+  const parsed = Date.parse(val);
+  if (Number.isNaN(parsed)) return 0;
+  return Math.floor(parsed / 60_000);
+}
+
+/**
+ * Afternoon Discharge & Parallel Support-Service Unblocker (#1).
+ * Surfaces occupied admissions with an expected discharge today or within the next 24h window
+ * so wards can trigger parallel Pharmacy (TTO), Transport, and Cleaning dispatches early.
+ */
+export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant | string): Admission[] {
+  const nowMin = toInstantMinutes(now);
+  return admissions.filter((adm) => {
+    if (!bedIsOccupied(adm) || adm.expectedDischargeAt === null || !Number.isFinite(adm.expectedDischargeAt)) {
+      return false;
+    }
+    const diff = adm.expectedDischargeAt - nowMin;
+    return diff >= 0 && diff <= MINUTES_PER_DAY;
+  });
+}
+
+export interface CompatibleWardCandidate {
+  unit: Unit;
+  availableNow: number;
+  failingGates: EligibilityGate[];
+  isOutOfArea: boolean;
+}
+
+/**
+ * One-Tap Multi-Ward Parallel Referral Fan-Out (#2).
+ * Returns up to `maxCount` (default 3, capped by `PARALLEL_REFERRAL_CAP`) top compatible wards
+ * for a movement, ranked by passing eligibility gates, in-catchment preference, and available beds.
+ */
+export function deriveTopCompatibleWards(
+  movement: Movement,
+  units: readonly Unit[],
+  maxCount: number = PARALLEL_REFERRAL_CAP,
+  now?: Instant,
+): CompatibleWardCandidate[] {
+  // Wards already live use up parallel slots, so only the remaining slots can be suggested.
+  const remainingSlots = Math.max(0, PARALLEL_REFERRAL_CAP - movement.referredUnitIds.length);
+  const cap = Math.max(0, Math.min(maxCount, remainingSlots));
+  if (cap === 0) return [];
+  const effectiveNow = (now ?? Math.max(movement.openedAt, ...units.map((u) => u.allocatable.confirmedAt))) as Instant;
+  const originService = movementHealthService(movement);
+  const scored = units
+    .filter((u) => !movement.referredUnitIds.includes(u.id))
+    .map((unit) => {
+      const check = eligibility(movement, unit, effectiveNow);
+      const { available } = boundedBedAvailability(unit);
+      const isOutOfArea = Boolean(originService && siteByCode(unit.siteCode)?.service !== originService);
+      // A previous decline is informational: the ward may be referred again without an override.
+      const failingGates = (check.gates ?? [])
+        .filter((g) => !g.pass && !INFORMATIONAL_GATES.includes(g.gate))
+        .map((g) => g.gate);
+      return {
+        unit,
+        availableNow: available,
+        failingGates,
+        isOutOfArea,
+      };
+    })
+    .filter((entry) => entry.failingGates.length === 0)
+    .sort((a, b) => {
+      if (a.isOutOfArea !== b.isOutOfArea) return a.isOutOfArea ? 1 : -1;
+      if (b.availableNow !== a.availableNow) return b.availableNow - a.availableNow;
+      return a.unit.name.localeCompare(b.unit.name);
+    });
+  return scored.slice(0, cap);
+}
+
+export interface RefusalRecoveryAction {
+  code: string;
+  title: string;
+  actionLabel: string;
+  targetFilter: "gender_compatible" | "open_or_waitlist" | "authorisation_check" | "alternative_ward";
+  description: string;
+}
+
+/**
+ * Inline Refusal Recovery & Guided Next-Best Action (#3).
+ * Maps a reducer rejection or ward decline reason directly to an inline recovery action chip
+ * so the user is never stranded at a dead-end error message.
+ */
+export function deriveRefusalRecoveryAction(refusalCode: string): RefusalRecoveryAction {
+  const normalized = refusalCode.trim().toLowerCase();
+  if (normalized.includes("gender") || normalized.includes("sex")) {
+    return {
+      code: refusalCode,
+      title: "Bed sex or gender designation mismatch",
+      actionLabel: "Show compatible wards or record coordinator ward check",
+      targetFilter: "gender_compatible",
+      description:
+        "Filter candidate shortlist to wards with matching bed designation or record a non-binary ward check.",
+    };
+  }
+  if (normalized.includes("secure") || normalized.includes("locked") || normalized.includes("no_suitable_bed")) {
+    return {
+      code: refusalCode,
+      title: "Secure or allocatable bed unavailable",
+      actionLabel: "Waitlist on preferred unit or fan out to next compatible ward",
+      targetFilter: "open_or_waitlist",
+      description:
+        "Keep request waitlisted for the next discharge or send a parallel referral to an eligible backup unit.",
+    };
+  }
+  if (normalized.includes("authoris") || normalized.includes("legal")) {
+    return {
+      code: refusalCode,
+      title: "Authorised hospital destination required",
+      actionLabel: "Filter shortlist to authorised inpatient units",
+      targetFilter: "authorisation_check",
+      description: "Only authorised psychiatric units can receive this involuntary movement.",
+    };
+  }
+  return {
+    code: refusalCode,
+    title: "Referral or stage transition refused",
+    actionLabel: "Open next compatible ward options",
+    targetFilter: "alternative_ward",
+    description: "Review alternative eligible wards or step back the movement stage to resolve the blocker.",
+  };
+}
+
+export interface SilentWardNotice {
+  movementId: string;
+  unitId: string;
+  elapsedMinutes: number;
+  escalationTier: "nudge_2h" | "escalate_4h";
+  actionLabel: string;
+}
+
+/**
+ * Automated Silent-Ward Escalation & Re-Allocation Loop (#7).
+ * Identifies ward referrals that have gone unanswered for >= 2 hours (120m) or >= 4 hours (240m),
+ * surfacing one-tap `[Nudge NUM]` and `[Switch to Next Compatible Ward]` actions.
+ */
+export function deriveSilentWards(movements: readonly Movement[], now: Instant | string): SilentWardNotice[] {
+  const nowMin = toInstantMinutes(now);
+  const results: SilentWardNotice[] = [];
+  for (const m of movements) {
+    if (!isOpen(m) || m.acceptedUnitId !== undefined) continue;
+    // Only a recorded send time can show a request as overdue. With none, nothing is escalated.
+    const sentAt = m.referralDecisionOpenedAt ?? m.referredAt;
+    if (sentAt === undefined || sentAt === null) continue;
+    const elapsedMinutes = Math.max(0, nowMin - sentAt);
+    if (elapsedMinutes < 120) continue;
+
+    // `referredUnitIds` is the standing set of live requests, so a re-referred ward shows again. A ward
+    // that answered by waitlisting since the send has replied and is not silent.
+    const waitlistedSinceSend = new Set(
+      m.declines
+        .filter((d) => d.at >= sentAt && (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(d.reason))
+        .map((d) => d.unitId),
+    );
+    for (const unitId of m.referredUnitIds) {
+      if (waitlistedSinceSend.has(unitId)) continue;
+      const escalationTier = elapsedMinutes >= 240 ? "escalate_4h" : "nudge_2h";
+      results.push({
+        movementId: m.id,
+        unitId,
+        elapsedMinutes,
+        escalationTier,
+        actionLabel:
+          escalationTier === "escalate_4h" ? "Switch to Next Compatible Ward" : "Nudge NUM — unanswered referral",
+      });
+    }
+  }
+  return results;
 }

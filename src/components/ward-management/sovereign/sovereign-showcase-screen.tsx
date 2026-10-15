@@ -50,6 +50,7 @@ import { openWardDrawer, type WardDrawerId } from "@/components/ward-management/
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardTop25Cockpit } from "@/components/ward-management/top25/ward-top25-cockpit";
 
 import styles from "./sovereign-showcase.module.css";
 
@@ -180,6 +181,7 @@ export function SovereignShowcaseScreen() {
   const [paused, setPaused] = useState(false);
   const [toastOpen, setToastOpen] = useState(true);
   const [clearance, setClearance] = useState("");
+  const [showTop25, setShowTop25] = useState(false);
   const appearance = useAppearanceStore();
   const [mountedAt] = useState(() => Date.now());
   const night = appearance === "dark";
@@ -337,6 +339,9 @@ export function SovereignShowcaseScreen() {
         aside={
           <>
             <HeroTrack label="Showcase sections" items={SECTIONS} value={section} onChange={setSection} />
+            <Button variant="onHero" size="sm" aria-pressed={showTop25} onClick={() => setShowTop25((v) => !v)}>
+              Top 25
+            </Button>
             <Button variant="onHero" size="sm" icon={Moon} aria-pressed={night} onClick={toggleNight}>
               Night
             </Button>
@@ -732,6 +737,8 @@ export function SovereignShowcaseScreen() {
           ) : null}
         </div>
       ) : null}
+
+      {showTop25 ? <WardTop25Cockpit /> : null}
 
       <WardPrototypeFooter
         testId="ward-sovereign-governance"

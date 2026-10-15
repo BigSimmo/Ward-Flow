@@ -671,11 +671,18 @@ export const wardIntakeConstraintLabels: Record<WardIntakeConstraint, string> = 
 };
 
 /**
- * Statutory and systemic discharge barrier reasons for SAT hearings and Public Guardian delays.
+ * Statutory and systemic discharge barrier reasons for SAT hearings, Public Guardian delays,
+ * NDIS/SIL funding, accommodation, and T-24h operational discharge preparation (#5).
  * Maintained in an isolated taxonomy to preserve strict test pins on BED_RELEASE_BLOCKERS (length 9)
  * and changeReasonLabels (18 entries).
  */
 export const DISCHARGE_DELAY_REASONS = [
+  "accommodation",
+  "ndis_support",
+  "community_follow_up",
+  "medication_supply",
+  "transport",
+  "family_carer",
   "sat_hearing",
   "public_guardian",
 ] as const;
@@ -683,26 +690,74 @@ export const DISCHARGE_DELAY_REASONS = [
 export type DischargeDelayReason = (typeof DISCHARGE_DELAY_REASONS)[number];
 
 export const dischargeDelayReasonLabels: Record<DischargeDelayReason, string> = {
+  accommodation: "Accommodation or transitional housing pending",
+  ndis_support: "NDIS support package or SIL coordination pending",
+  community_follow_up: "Community mental health follow-up slot pending",
+  medication_supply: "Discharge scripts (TTO) or medication supply pending",
+  transport: "Departure transport or escort booking pending",
+  family_carer: "Family or carer collection arrangement pending",
   sat_hearing: "State Administrative Tribunal (SAT) hearing pending",
   public_guardian: "Public Guardian / Public Advocate determination pending",
 };
 
 export interface DischargeDelayMetadata {
   readonly code: DischargeDelayReason;
-  readonly category: "legal_statutory" | "guardianship";
+  readonly category: "legal_statutory" | "guardianship" | "funding_accommodation" | "operational_prep";
   readonly categoryLabel: string;
   readonly label: string;
   readonly clinicalDescription: string;
 }
 
 export const dischargeDelayMetadata: Record<DischargeDelayReason, DischargeDelayMetadata> = {
+  accommodation: {
+    code: "accommodation",
+    category: "funding_accommodation",
+    categoryLabel: "Funding & Accommodation",
+    label: "Accommodation",
+    clinicalDescription: "Transitional housing, step-down bed, or residential placement confirmation pending.",
+  },
+  ndis_support: {
+    code: "ndis_support",
+    category: "funding_accommodation",
+    categoryLabel: "Funding & Accommodation",
+    label: "NDIS Support",
+    clinicalDescription: "NDIS plan review or Supported Independent Living package coordination pending.",
+  },
+  community_follow_up: {
+    code: "community_follow_up",
+    category: "operational_prep",
+    categoryLabel: "Operational Preparation",
+    label: "Community Follow-Up",
+    clinicalDescription: "Community clinic 7-day post-discharge review appointment confirmation pending.",
+  },
+  medication_supply: {
+    code: "medication_supply",
+    category: "operational_prep",
+    categoryLabel: "Operational Preparation",
+    label: "Medication Supply",
+    clinicalDescription: "Discharge scripts (TTO), depot, or blister pack dispensing pending pharmacy sign-off.",
+  },
+  transport: {
+    code: "transport",
+    category: "operational_prep",
+    categoryLabel: "Operational Preparation",
+    label: "Transport",
+    clinicalDescription: "Departure transport, inter-hospital vehicle, or escort booking confirmation pending.",
+  },
+  family_carer: {
+    code: "family_carer",
+    category: "operational_prep",
+    categoryLabel: "Operational Preparation",
+    label: "Family / Carer",
+    clinicalDescription: "Family or carer notification and collection time confirmation pending.",
+  },
   sat_hearing: {
     code: "sat_hearing",
     category: "legal_statutory",
     categoryLabel: "Legal & Statutory",
     label: "SAT Hearing",
     clinicalDescription:
-      "State Administrative Tribunal hearing pending for involuntary treatment review, community treatment order, or guardianship determination.",
+      "State Administrative Tribunal hearing pending for treatment review, community treatment order, or guardianship determination.",
   },
   public_guardian: {
     code: "public_guardian",
