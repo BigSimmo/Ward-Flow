@@ -1012,6 +1012,27 @@ export function candidateEvents(
         admissionId: admission.id,
         actingUnitId: admission.unitId,
       }));
+    case "RECORD_STAY_DISCHARGE_BLOCKER":
+      // One candidate per admission, crossed with every chosen blocker. The blocker is a closed list
+      // of plain operational reasons, so nothing here can carry a duration or statutory figure.
+      return state.admissions.flatMap((admission) =>
+        BED_RELEASE_BLOCKERS.map((blocker) => ({
+          type,
+          role,
+          now,
+          admissionId: admission.id,
+          actingUnitId: admission.unitId,
+          blocker,
+        })),
+      );
+    case "CLEAR_STAY_DISCHARGE_BLOCKER":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+      }));
     case "REQUEST_CAPACITY_REFRESH":
       // Coordinator-scoped (spec D12): one candidate per unit, no `actingUnitId` field exists on
       // this event at all.

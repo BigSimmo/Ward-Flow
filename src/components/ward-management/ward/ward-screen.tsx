@@ -411,7 +411,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [bedQuery, setBedQuery] = useState("");
   const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
-  const [stayBlockers, setStayBlockers] = useState<Record<string, BedReleaseBlocker | null>>({});
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
   const bedParam = searchParams?.get("bed");
@@ -1412,7 +1411,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const releaseBlocker = bedReleases.find(
       (r) => r.admissionId === admission?.id && r.state !== "discharged",
     )?.blocker;
-    const localStayBlocker = admission?.id ? stayBlockers[admission.id] : undefined;
 
     const patient = patientInfo?.patient;
     const expectedDischargeLabel =
@@ -1439,10 +1437,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       awayAtEdHours: awayHours,
       expectedDays: expDays,
       tentativeDiagnosis: tentDiag,
-      blockReason:
-        localStayBlocker === null
-          ? undefined
-          : (localStayBlocker ?? releaseBlocker ?? admission?.blockReason ?? undefined),
+      blockReason: releaseBlocker ?? admission?.blockReason ?? undefined,
       dischargeBarrier: admission?.dischargeBarrier ?? undefined,
       isSpecialling,
       legalStatus: patientLegalStatus,
@@ -3358,11 +3353,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     !pathname || routeRole === "ward"
                       ? (admissionId, blocker) => {
                           const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
+                          const stay = admissions?.find((a) => a.id === admissionId);
                           if (blocker === null) {
-                            setStayBlockers((prev) => ({
-                              ...prev,
-                              [admissionId]: null,
-                            }));
+                            // Each record is cleared only if it holds one, so nothing is refused as a no-op.
+                            if (stay && stay.blockReason !== null) {
+                              dispatch({
+                                type: "CLEAR_STAY_DISCHARGE_BLOCKER",
+                                role: "ward",
+                                now,
+                                admissionId,
+                                actingUnitId: unitId,
+                              });
+                            }
                             if (pendingRelease && pendingRelease.blocker !== null) {
                               dispatch({
                                 type: "CLEAR_BED_RELEASE_BLOCK",
@@ -3376,10 +3378,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             return;
                           }
                           const validBlocker = blocker as BedReleaseBlocker;
-                          setStayBlockers((prev) => ({
-                            ...prev,
-                            [admissionId]: validBlocker,
-                          }));
+                          // The stay keeps the blocker whether or not a bed release exists yet.
+                          dispatch({
+                            type: "RECORD_STAY_DISCHARGE_BLOCKER",
+                            role: "ward",
+                            now,
+                            admissionId,
+                            actingUnitId: unitId,
+                            blocker: validBlocker,
+                          });
                           if (pendingRelease) {
                             dispatch({
                               type: "BLOCK_BED_RELEASE",
@@ -3390,12 +3397,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                               blocker: validBlocker,
                             });
                           }
-                          // Without a pending release nothing reaches the engine, so say it is for this view only.
-                          setToastMessage(
-                            pendingRelease
-                              ? `Discharge blocker recorded: ${blocker}`
-                              : `Discharge blocker noted for this view only: ${blocker}`,
-                          );
+                          setToastMessage(`Discharge blocker recorded: ${blocker}`);
                         }
                       : undefined
                   }

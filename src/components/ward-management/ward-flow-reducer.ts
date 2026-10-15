@@ -791,6 +791,8 @@ function subjectId(event: WardFlowEvent): string {
     case "RECORD_LEAVING":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
+    case "RECORD_STAY_DISCHARGE_BLOCKER":
+    case "CLEAR_STAY_DISCHARGE_BLOCKER":
     case "RECORD_REPATRIATION":
       return event.admissionId;
     case "END_LEAVE_BED":
@@ -6404,6 +6406,52 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // path ever moved an away admission's state. A flag nobody can clear is the defect being
       // repaired, so the clearing half is guarded on the flag itself and nothing else.
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: null });
+    }
+
+    case "RECORD_STAY_DISCHARGE_BLOCKER": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `RECORD_STAY_DISCHARGE_BLOCKER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      // Blockers are chosen, never typed: a membership test, not a truthiness test.
+      if (!event.blocker || !BED_RELEASE_BLOCKERS.includes(event.blocker)) {
+        return reject(
+          state,
+          event,
+          `RECORD_STAY_DISCHARGE_BLOCKER requires a blocker chosen from BED_RELEASE_BLOCKERS`,
+        );
+      }
+      // Only somebody occupying a bed has a discharge to hold up; a waitlisted or departed stay does not.
+      if (admission.state !== "occupied") {
+        return reject(
+          state,
+          event,
+          `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can have a discharge blocker`,
+        );
+      }
+      return replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+    }
+
+    case "CLEAR_STAY_DISCHARGE_BLOCKER": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `CLEAR_STAY_DISCHARGE_BLOCKER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      // Refused rather than absorbed: clearing a blocker that was never recorded is a screen defect.
+      if (admission.blockReason === null) {
+        return reject(state, event, `admission ${admission.id} carries no discharge blocker to clear`);
+      }
+      return replaceAdmission(state, admission.id, { ...admission, blockReason: null });
     }
 
     case "CONFIRM_CAPACITY": {

@@ -1609,6 +1609,39 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * A STAY-LEVEL DISCHARGE BLOCKER: WHAT IS HOLDING THIS PATIENT'S DISCHARGE UP, BEFORE ANY
+       * BED RELEASE EXISTS.
+       *
+       * Writes `Admission.blockReason` and nothing else. `BLOCK_BED_RELEASE` needs a pending
+       * release; a ward often knows the discharge is stuck before anybody has flagged the bed, and
+       * until this event the bed dossier could only show that for the open tab. It moves no
+       * capacity figure and no bed stage.
+       *
+       * `blocker` is chosen from `BED_RELEASE_BLOCKERS`, never typed - the same closed list the
+       * release event uses, so the reasons cannot drift into two vocabularies. Only somebody
+       * occupying a bed can have a discharge held up.
+       */
+      type: "RECORD_STAY_DISCHARGE_BLOCKER";
+      role: WardFlowRole;
+      now: Instant;
+      /** The admission whose discharge is held up. */
+      admissionId: string;
+      /** Same claim-not-proof discipline as `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`. */
+      actingUnitId: string;
+      /** Chosen from `BED_RELEASE_BLOCKERS`; the reducer refuses anything else. */
+      blocker: BedReleaseBlocker;
+    }
+  | {
+      /** The other half: the stay's discharge is no longer held up. Refused when none is recorded. */
+      type: "CLEAR_STAY_DISCHARGE_BLOCKER";
+      role: WardFlowRole;
+      now: Instant;
+      admissionId: string;
+      /** Same claim-not-proof discipline as the event above. */
+      actingUnitId: string;
+    }
+  | {
+      /**
        * SOMEBODY SAYS WHAT IS ACTUALLY HOLDING THIS PATIENT UP.
        *
        * ⚠️ **`Movement.blocker`, NOT `BedRelease.blocker`.** Two different fields share that name:
@@ -2688,6 +2721,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // can enter with either.
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
   RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
+  // A stay-level discharge blocker is the ward's to record, exactly like the release-level one.
+  RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+  CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
   /*
    * Mirrors `WITHDRAW_REFERRAL` below exactly, and for the same reason: whoever may raise a
    * movement may say what is holding it up, plus the coordinator. The four are not

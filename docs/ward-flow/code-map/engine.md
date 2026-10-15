@@ -39,7 +39,7 @@ and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's p
 
 The original map below is historical; its line numbers and earlier counts are not current.
 This task integrates canonical main and locally tested remediation. As of 14 October 2026,
-`src/components/ward-management/ward-flow-events.ts` and `EVENT_ROLE` define **127**
+`src/components/ward-management/ward-flow-events.ts` and `EVENT_ROLE` define **129**
 `WardFlowEvent` variants (the 97 baseline variants from the 25 September 2026 extraction
 pass catalogued in §2 below, minus the removed `OVERRIDE_LEGAL_MISMATCH`, plus 31 variants
 added across the October passes: 18 named variants (`RECORD_ADMISSION_FOLLOW_UP`,
@@ -78,7 +78,7 @@ Final boundary repairs: protected departures use the approved scoped projection;
 
 ## WA remediation update — 3 October 2026
 
-At the 3 October 2026 pass the event union had 98 types (now **127** on disk as of 14 October 2026). `RECORD_ADMISSION_CARE` uses identity, generation, revision and explicit ward/community scope checks; its closed changes cover planning, documents, appointments, current-appointment contacts, coding, episode type, transport, transfers and recorded legal paperwork. Transfer arrival changes sending and receiving occupancy atomically. The provider now dispatches protected patient-linked departures. Movement workflow controls expose the nine formerly unexposed operational/legal commands. Ward requests use closed synthetic messages. Audit, history, restore validation and persistence classification include the care command.
+At the 3 October 2026 pass the event union had 98 types (now **129** on disk as of 14 October 2026). `RECORD_ADMISSION_CARE` uses identity, generation, revision and explicit ward/community scope checks; its closed changes cover planning, documents, appointments, current-appointment contacts, coding, episode type, transport, transfers and recorded legal paperwork. Transfer arrival changes sending and receiving occupancy atomically. The provider now dispatches protected patient-linked departures. Movement workflow controls expose the nine formerly unexposed operational/legal commands. Ward requests use closed synthetic messages. Audit, history, restore validation and persistence classification include the care command.
 
 The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
 
@@ -96,7 +96,7 @@ engine files under `src/components/ward-management/`: `ward-flow-reducer.ts`,
 number below was read directly from `ward-flow-reducer.ts` (not inferred), grouped across four
 read-only extraction passes (Sonnet, extraction) whose output this document assembles and whose
 line numbers this document's own author re-checked against the file's `case "TYPE":` labels by
-`grep`. The baseline event-type count (97 at 25 September 2026; **127** on disk as of 14 October 2026) and the `EVENT_ROLE` table were read from
+`grep`. The baseline event-type count (97 at 25 September 2026; **129** on disk as of 14 October 2026) and the `EVENT_ROLE` table were read from
 `ward-flow-events.ts` directly, not carried over from the overview map. Nothing was run except
 reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 
@@ -107,7 +107,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 - **`ward-flow-reducer.ts`** (8,741 lines at baseline) — the whole engine's write path: `WardFlowState`,
   `wardFlowReducer(state, event)`, `seedWardFlowState`/`seedWardFlowStateAt`, and every event's
   guard-and-effect case. See §1a for its internal structure and §2 for the event catalogue.
-- **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**127**
+- **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
   first. Also declares `ReferralDraft` (the intake form's shape) and re-exports `WardFlowRole`/
@@ -217,7 +217,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   if the world actually changed reference (guards against a rejected reset silently incrementing
   generation), then always calls `appendAudit`.
 - **`reduceClinicalEvent(state, event, decision)`** (`:1733`) — the guard chain and the
-  `switch (event.type)` documented in §2 (97 cases in the 25 September 2026 baseline below; **127**
+  `switch (event.type)` documented in §2 (97 cases in the 25 September 2026 baseline below; **129**
   `WardFlowEvent` variants on disk as of 14 October 2026). Guard order: **(1) role** — `EVENT_ROLE[type]`
   checked before any payload field is read (`:1734`–`:1743`); **(2)** each case's own domain
   guards (record exists, not closed, stage/state correct, reason/code is a member of its closed
@@ -231,7 +231,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 
 ## 2. Event catalogue
 
-**127 event types on disk as of 14 October 2026; 97 baseline event types catalogued below**
+**129 event types on disk as of 14 October 2026; 97 baseline event types catalogued below**
 (`grep -Ec '^[[:space:]]*case "[A-Z_]+":'` on `reduceClinicalEvent`'s switch at the 25 September 2026
 baseline, matching `EVENT_ROLE`'s 97 baseline keys — see the 8–14 October header above for the
 31 variants added since and the removal of `OVERRIDE_LEGAL_MISMATCH`). Grouped by domain
