@@ -121,6 +121,7 @@ Every remaining tracked document in this category (architecture and design, plus
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
 - [codex-review-protocol.md](codex-review-protocol.md) — historical inherited review protocol; current handling is in [agents/codex-github-review.md](agents/codex-github-review.md)
+- [branch-cleanup-guide.md](archive/branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)
 
@@ -154,7 +155,9 @@ Every remaining tracked document in this category (process, plus the `agents/` r
 Every remaining tracked document in this category (the Ward Flow developer-gated prototype's context, decisions, roadmap, ledgers and dated handovers), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
 - [ward-flow-context.md](ward-flow-context.md) — Ward Flow — complete context — Everything a session needs to work on Ward Flow, in one file.
+- [ward-flow-phase-3-rulings.md](archive/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
 - [ward-flow-phase-5-handover.md](ward-flow-phase-5-handover.md) — Ward Flow Phase 5 — session handover — Written 2026-08-26, before the merge;
+- [ward-management-decisions.md](archive/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
 
 ## Subdirectory map
 
@@ -174,7 +177,7 @@ as it was on that date; supersede with a new dated document rather than editing.
 
 ### Also catalogued (2026-09-02)
 
-Every remaining tracked document in this category (dated records and the `superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` and `archive/` folders were removed in the 15 Oct 2026 docs trim, see [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
+Every remaining tracked document in this category (dated records and the `superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` folder and most of `archive/` were removed in the 15 Oct 2026 docs trim, see [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
 - [superpowers/plans/2026-08-14-ward-management-mockups.md](superpowers/plans/2026-08-14-ward-management-mockups.md) — Ward Management Mockup Generation Plan — Goal: Produce and validate three independent desktop visual directions for the approved synthetic WA mental-health ward-management command m…
 - [superpowers/plans/2026-08-18-ward-flow-model-and-modes.md](superpowers/plans/2026-08-18-ward-flow-model-and-modes.md) — Ward Flow model correction and missing modes — Implementation Plan — Goal: Close the four model defects that let Ward Flow propose an unlawful or impossible placement, then add the four modes the WA pathway ne…

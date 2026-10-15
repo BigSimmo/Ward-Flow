@@ -24,8 +24,8 @@ Do **not** treat `archive/dated-notes/` as current process.
 These folders left the working tree. Nothing in the app, tests or scripts read them.
 
 - `docs/ward-flow-phase-3-workspace/` (phase 3 briefs, reports and reviews)
-- `docs/archive/` (August and September handovers, plans and PsychSift-era notes)
-- `docs/ward-flow/archive/` except `dated-notes/owner-*.md` and the clinician check rulings (read by the owner-rulings index) and the retired coverage record (read by a test)
+- `docs/archive/` (August and September handovers, plans and PsychSift-era notes), except the owner rulings and decision records and `branch-cleanup-guide.md`, which live agent instructions still point to
+- `docs/ward-flow/archive/` except `dated-notes/owner-*.md` and the clinician check rulings (read by the owner-rulings index) the retired coverage record (read by a test), the D-5 protected deletion ruling and the unanswered owner questions
 
 Every removed file is kept in commit `26d0987` (`26d09877cf0ca5362426090d5356206e6c90bccd`), the last `main` commit before the trim. To read or restore one:
 

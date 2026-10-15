@@ -4,13 +4,15 @@ Moved here during docs hardening. **Not live guidance.**
 
 Live entry: [`../../README.md`](../../README.md) · Boot: [`../../LOCAL-FIRST-RUN.md`](../../LOCAL-FIRST-RUN.md) · Status: [`../../STATUS.md`](../../STATUS.md) · [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md)
 
-Count: 36
+Count: 38
 
-On 15 October 2026 the docs trim removed the other dated notes (handovers, prompts, censuses and session records). Owner rulings, owner questions and the clinician check rulings stay here because the owner-rulings index reads them. The retired coverage record stays because `tests/ward-retired-suite-integrity.test.ts` reads it. See [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md) to restore a removed note.
+On 15 October 2026 the docs trim removed the other dated notes (handovers, prompts, censuses and session records). Owner rulings, owner questions and the clinician check rulings stay here because the owner-rulings index reads them. The retired coverage record stays because `tests/ward-retired-suite-integrity.test.ts` reads it, and the D-5 protected deletion ruling and the unanswered owner questions stay because they are owner decisions. See [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md) to restore a removed note.
 
 ## Files
 
+- [ANSWERS-THAT-NEVER-ARRIVE-2026-09-12.md](ANSWERS-THAT-NEVER-ARRIVE-2026-09-12.md)
 - [clinician-check-rulings-2026-09-06.md](clinician-check-rulings-2026-09-06.md)
+- [D-5-protected-deletion-routing-2026-09-12.md](D-5-protected-deletion-routing-2026-09-12.md)
 - [owner-answers-2026-09-17.md](owner-answers-2026-09-17.md)
 - [owner-answers-2026-09-18.md](owner-answers-2026-09-18.md)
 - [owner-decision-pending-device-copy-2026-09-04.md](owner-decision-pending-device-copy-2026-09-04.md)
@@ -40,8 +42,8 @@ On 15 October 2026 the docs trim removed the other dated notes (handovers, promp
 - [owner-rulings-2026-09-02-afternoon.md](owner-rulings-2026-09-02-afternoon.md)
 - [owner-rulings-2026-09-02-batch.md](owner-rulings-2026-09-02-batch.md)
 - [owner-rulings-2026-09-02-staleness-and-legal-status.md](owner-rulings-2026-09-02-staleness-and-legal-status.md)
-- [owner-rulings-2026-09-04.md](owner-rulings-2026-09-04.md)
 - [owner-rulings-2026-09-04-decision-batch.md](owner-rulings-2026-09-04-decision-batch.md)
+- [owner-rulings-2026-09-04.md](owner-rulings-2026-09-04.md)
 - [owner-rulings-2026-09-05.md](owner-rulings-2026-09-05.md)
 - [owner-wording-page-2026-09-02.md](owner-wording-page-2026-09-02.md)
 - [owner-working-instructions-2026-09-04.md](owner-working-instructions-2026-09-04.md)
