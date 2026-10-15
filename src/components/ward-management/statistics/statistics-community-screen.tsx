@@ -152,6 +152,18 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
   const inBedCount = measuredValue(figures.admitted);
   const withDateCount = measuredValue(figures.expected);
+  // The two parts add up to the bed count, so when one part is worded as fewer than five the other
+  // is not shown either, or the hidden one could be worked back from the total (review on PR #345).
+  const phoneParts = (() => {
+    if (inBedCount === null || withDateCount === null) return { withDate: "none", noDate: "none" } as const;
+    const withDate = small(withDateCount);
+    const noDate = small(inBedCount - withDateCount);
+    const partHidden = typeof withDate === "string" || typeof noDate === "string";
+    return {
+      withDate: partHidden && typeof withDate !== "string" ? "not shown" : withDate,
+      noDate: partHidden && typeof noDate !== "string" ? "not shown" : noDate,
+    };
+  })();
 
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
     { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
@@ -215,11 +227,8 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         stats: (
           <>
             <HeroStat value={inBedCount === null ? "none" : small(inBedCount)} label="In a bed" />
-            <HeroStat value={withDateCount === null ? "none" : small(withDateCount)} label="With a date" />
-            <HeroStat
-              value={inBedCount === null || withDateCount === null ? "none" : small(inBedCount - withDateCount)}
-              label="No date"
-            />
+            <HeroStat value={phoneParts.withDate} label="With a date" />
+            <HeroStat value={phoneParts.noDate} label="No date" />
           </>
         ),
       }}

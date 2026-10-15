@@ -143,7 +143,9 @@ function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
 /**
  * Executive figures (role access plan, Josh's yes 15 Oct 2026): a count of people under the small
  * number line reads "fewer than 5" on the Statistics headline figures, so a small group cannot be
- * picked out. Beds and wards stay exact, and every other desk sees exact counts.
+ * picked out. Beds and their states (in use, pulled, ready) stay exact, because the bed count and
+ * occupancy beside them would give a hidden one away (review on PR #345). Every other desk sees exact
+ * counts.
  */
 export function useSmallNumber(): (count: number) => number | string {
   const on = useWardFeatureFlag("role-access");

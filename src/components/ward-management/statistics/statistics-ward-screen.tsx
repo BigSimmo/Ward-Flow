@@ -251,10 +251,10 @@ export function StatisticsWardScreen({
         scope: unit.name,
         figures: () => [
           ["Beds", unit.beds],
-          ["Occupied", small(wardOccupancy.occupied)],
-          ["In use (occupied or pulled)", small(wardOccupancy.inUse)],
+          ["Occupied", wardOccupancy.occupied],
+          ["In use (occupied or pulled)", wardOccupancy.inUse],
           ["Occupancy percent (occupied or pulled)", occupancyPct],
-          ["Pulled, not arrived", small(wardOccupancy.pulled)],
+          ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
           ["Average stay, days", averageStay ?? "none"],
           ["Due out, 7 days", small(dueThisWeek)],
@@ -267,12 +267,12 @@ export function StatisticsWardScreen({
         stats: (
           <>
             <HeroStat
-              value={small(wardOccupancy.inUse)}
+              value={wardOccupancy.inUse}
               label="In use"
               tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
             />
             <HeroStat value={capacity.available} label="Ready" />
-            <HeroStat value={small(wardOccupancy.pulled)} label="Pulled" />
+            <HeroStat value={wardOccupancy.pulled} label="Pulled" />
           </>
         ),
       }}
@@ -280,9 +280,9 @@ export function StatisticsWardScreen({
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
               out; the export still carries it. */}
-          <HeroStat value={small(wardOccupancy.inUse)} label={`In use, ${occupancyPct}%`} />
+          <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
           <HeroStat
-            value={small(wardOccupancy.pulled)}
+            value={wardOccupancy.pulled}
             label={
               <span className={styles.flagged}>
                 {wardOccupancy.pulled > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
