@@ -15,7 +15,11 @@ import {
 } from "@/components/ward-management/ward-bed-availability";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { edPressure } from "@/components/ward-management/ward-pressure";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  type WardFlowContextValue,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -63,10 +67,10 @@ export type StandingFigure = {
 
 type FigureInput = {
   movements: Movement[];
-  units: ReturnType<typeof useWardFlow>["units"];
-  admissions: ReturnType<typeof useWardFlow>["admissions"];
-  bedReleases: ReturnType<typeof useWardFlow>["bedReleases"];
-  leaveBeds: ReturnType<typeof useWardFlow>["leaveBeds"];
+  units: WardFlowContextValue["units"];
+  admissions: WardFlowContextValue["admissions"];
+  bedReleases: WardFlowContextValue["bedReleases"];
+  leaveBeds: WardFlowContextValue["leaveBeds"];
   now: Instant;
   chromeRole: WardChromeRole;
   /** The unit or department id in the path, when the route carries one. */
@@ -503,7 +507,13 @@ export function WardStatsPanel({ figures, open }: { figures: StandingFigure[]; o
  */
 export function WardStandingStrip() {
   const pathname = usePathname() ?? "";
-  const { movements, units, admissions, bedReleases, leaveBeds } = useWardFlow();
+  const { movements, units, admissions, bedReleases, leaveBeds } = useWardFlowSelect(
+    "movements",
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const chromeRole = wardChromeRole(pathname);

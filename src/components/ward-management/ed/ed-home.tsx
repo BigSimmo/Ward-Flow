@@ -24,7 +24,7 @@ import Link from "next/link";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { WardChip } from "@/components/ward-management/ward-chip";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -86,7 +86,7 @@ function heroLede(worst: EdSummary, isHighestWaiting: boolean, accessTargetMinut
  * `WardShellHeader`) renders neither — see the navigation-shell plan's stated interface.
  */
 export function EdHome() {
-  const { movements, configuration, patients } = useWardFlow();
+  const { movements, configuration, patients } = useWardFlowSelect("movements", "configuration", "patients");
   const now = useWardFlowClock();
   const accessTarget = configuration.edAccessTargetMinutes;
   const summaries = edHomeSummaries(movements, now, accessTarget);

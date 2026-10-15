@@ -31,7 +31,7 @@ import {
 } from "@/components/ward-management/ward-inbox-snooze";
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
@@ -156,14 +156,31 @@ type HistoryEntry = { id: string; at: Instant; tone: WfTone; title: string; sub:
 type ActionRequest = { type: string; logOffset: number; ok: string; refused: string };
 
 export function AlertsScreen() {
-  const { worldGeneration } = useWardFlow();
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
   return <AlertsWorkspace key={worldGeneration} />;
 }
 
 function AlertsWorkspace() {
   usePrintableDisclosures();
 
-  const state = useWardFlow();
+  const state = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxOwnership",
+    "inboxSnoozes",
+    "configuration",
+    "broadcastAlerts",
+    "notices",
+    "plannedAdmissions",
+    "admissions",
+    "supportNotifications",
+    "leaveBeds",
+    "eventLog",
+  );
   const {
     movements,
     units,

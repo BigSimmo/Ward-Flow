@@ -62,7 +62,7 @@ import { formatInstant, formatInstantWithDay, splitDuration } from "@/components
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
@@ -575,7 +575,26 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     inboxSnoozes,
     configuration,
     supportNotifications,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "admissions",
+    "referrals",
+    "rejections",
+    "bedReleases",
+    "leaveBeds",
+    "refreshRequests",
+    "notices",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+    "inboxOwnership",
+    "inboxSnoozes",
+    "configuration",
+    "supportNotifications",
+  );
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();

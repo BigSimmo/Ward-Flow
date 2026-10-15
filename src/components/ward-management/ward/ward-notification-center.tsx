@@ -1,10 +1,10 @@
 "use client";
 
-import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -101,7 +101,7 @@ export function WardNotificationCenter({
 }: WardNotificationCenterProps) {
   // Read the provider when present (the ward screen); a bare render (component tests) has none, and
   // the resolver then falls back exactly as before.
-  const context = useContext(WardFlowContext);
+  const context = useOptionalWardFlowSelect("resolvePatientIdentity", "patients");
   const resolveIdentity = context?.resolvePatientIdentity;
   const effectivePatients = patients ?? context?.patients;
   // D-39: notices name the patient by UMRN. Inside the provider that comes from its identity

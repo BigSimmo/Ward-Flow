@@ -10,7 +10,7 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Button, Icon, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
@@ -128,7 +128,7 @@ export function WardBedDossierDrawer({
   fullReferralHref,
   roleLockNote,
 }: WardBedDossierDrawerProps) {
-  const { admissions, resolvePatientIdentity } = useWardFlow();
+  const { admissions, resolvePatientIdentity } = useWardFlowSelect("admissions", "resolvePatientIdentity");
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);

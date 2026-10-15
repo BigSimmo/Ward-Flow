@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { WARD_SHELL_ROLE, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 
 import {
@@ -38,7 +38,18 @@ export function WardActNowNotifier() {
     admissions,
     patients,
     referrals,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "configuration",
+    "inboxSnoozes",
+    "sessionAdopted",
+    "worldGeneration",
+    "leaveBeds",
+    "admissions",
+    "patients",
+    "referrals",
+  );
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
   // The baseline belongs to one adopted world: the seed shown before a saved session is restored,

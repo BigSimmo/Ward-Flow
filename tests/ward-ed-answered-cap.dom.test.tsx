@@ -32,7 +32,13 @@ vi.mock("next/link", () => ({
  */
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
-  return { ...actual, useWardFlow: () => mockContext, useWardFlowClock: () => mockContext.now };
+  return {
+    ...actual,
+    useWardFlow: () => mockContext,
+    useWardFlowSelect: () => mockContext,
+    useOptionalWardFlowSelect: () => mockContext,
+    useWardFlowClock: () => mockContext.now,
+  };
 });
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";

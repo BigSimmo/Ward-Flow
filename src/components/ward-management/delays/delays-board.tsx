@@ -25,7 +25,7 @@ import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-rea
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -432,7 +432,7 @@ function PersonPanel({
   onEscalate: (movement: Movement) => void;
   panelRef: RefObject<HTMLElement | null>;
 }) {
-  const { referrals, setFocusMovementId } = useWardFlow();
+  const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
   const patientOf = usePatientOf();
   const { movement, cause } = row;
   const patient = patientOf(movement);

@@ -49,7 +49,7 @@ import {
   validateConfiguration,
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -359,7 +359,23 @@ export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents, patients } = useWardFlow();
+  const {
+    movements,
+    dispatch,
+    rejections,
+    configuration,
+    eventLog = [],
+    readAuditEvents,
+    patients,
+  } = useWardFlowSelect(
+    "movements",
+    "dispatch",
+    "rejections",
+    "configuration",
+    "eventLog",
+    "readAuditEvents",
+    "patients",
+  );
   const now = useWardFlowClock();
   const thresholds = publishedThresholds(movements, now, configuration);
 

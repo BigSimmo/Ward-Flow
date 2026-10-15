@@ -15,7 +15,7 @@ import {
   FileClock,
   Printer,
 } from "lucide-react";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { occupiedBeds } from "../statistics/statistics-occupancy";
@@ -32,7 +32,13 @@ import styles from "./ward-tools-workspace.module.css";
 const root = "/mockups/ward-flow";
 
 export function NetworkFigures() {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlow();
+  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "movements",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const [category, setCategory] = useState("all");
   const capacity = units.map((unit) => capacityBreakdown(unit, bedReleases, leaveBeds, now));
@@ -290,7 +296,7 @@ export function toolsDirectoryEntries(units: Unit[]): DirectoryEntry[] {
 }
 
 export function ToolsContactDirectory({ onNavigate }: { onNavigate: () => void }) {
-  const { units } = useWardFlow();
+  const { units } = useWardFlowSelect("units");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const entries = toolsDirectoryEntries(units);

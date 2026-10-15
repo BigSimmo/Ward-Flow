@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardChromeSearch } from "@/components/ward-management/ward-chrome-search";
 import { WardStatsPanel, WardStatsToggle, standingFigures } from "@/components/ward-management/ward-standing-strip";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
@@ -94,7 +94,19 @@ export function WardChromeHeader() {
     inboxAcknowledgements,
     inboxCompletions,
     plannedAdmissions,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
 
   const [figuresOpen, setFiguresOpen] = useState(false);

@@ -8,7 +8,7 @@ import {
   type ArrivalMode,
   type Movement,
 } from "@/components/ward-management/ward-model";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
@@ -63,7 +63,7 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 }
 
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
-  const { dispatch, configuration } = useWardFlow();
+  const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
   const now = useWardFlowClock();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
   const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");

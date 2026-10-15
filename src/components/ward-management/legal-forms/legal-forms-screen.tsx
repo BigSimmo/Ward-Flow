@@ -30,7 +30,7 @@ import {
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -138,7 +138,17 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   usePrintableDisclosures();
 
   const { movements, referrals, patients, admissions, units, supportNotifications, dispatch, dayZero, rejections } =
-    useWardFlow();
+    useWardFlowSelect(
+      "movements",
+      "referrals",
+      "patients",
+      "admissions",
+      "units",
+      "supportNotifications",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
   const now = useWardFlowClock();
   const gate = useRoleGate();
   // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names

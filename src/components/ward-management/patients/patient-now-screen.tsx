@@ -26,7 +26,7 @@ import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-head
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
@@ -243,7 +243,18 @@ export function PatientNowScreen({
   initialExampleId = "WF-009",
   initialTaskAction,
 }: PatientNowScreenProps) {
-  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
+  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
+    useWardFlowSelect(
+      "patients",
+      "movements",
+      "referrals",
+      "admissions",
+      "units",
+      "leaveBeds",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
   const now = useWardFlowClock();
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const gate = useRoleGate();

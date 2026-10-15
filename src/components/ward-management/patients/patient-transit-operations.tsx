@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, eligibility } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
 import { legalFormName } from "../ward-legal-forms";
@@ -50,7 +50,14 @@ export function PatientTransitOperations({
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
-  const { units, admissions, referrals, dispatch, rejections, readAuditEvents } = useWardFlow();
+  const { units, admissions, referrals, dispatch, rejections, readAuditEvents } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "referrals",
+    "dispatch",
+    "rejections",
+    "readAuditEvents",
+  );
   const now = useWardFlowClock();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();

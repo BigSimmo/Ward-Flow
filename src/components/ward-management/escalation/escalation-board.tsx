@@ -26,7 +26,7 @@ import {
   stageCopy,
   type EscalationBoard,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -59,7 +59,7 @@ import styles from "./escalation.module.css";
  * matching work is a design that has not been done yet rather than a door that is closed.
  */
 export function EscalationBoardPage() {
-  const { movements, units, patients, referrals } = useWardFlow();
+  const { movements, units, patients, referrals } = useWardFlowSelect("movements", "units", "patients", "referrals");
   const now = useWardFlowClock();
   const board = escalationBoard(movements, units, now);
 

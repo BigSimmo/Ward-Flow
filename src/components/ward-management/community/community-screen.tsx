@@ -77,7 +77,7 @@ import {
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import {
   COMMUNITY_DECLINE_REASONS,
@@ -527,7 +527,18 @@ export function CommunityScreen({
     openDischargeRecord,
     readDischargeRecord,
     dispatch,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "admissions",
+    "referrals",
+    "notices",
+    "units",
+    "movements",
+    "patients",
+    "rejections",
+    "openDischargeRecord",
+    "readDischargeRecord",
+    "dispatch",
+  );
   const now = useWardFlowClock();
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
   const umrnLookup = useMemo(

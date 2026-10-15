@@ -26,7 +26,7 @@ import { OnCallScreen } from "@/components/ward-management/on-call/on-call-scree
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import {
-  WardFlowContext,
+  WardFlowOverride,
   WardFlowProvider,
   useWardFlow,
   type WardFlowContextValue,
@@ -45,7 +45,7 @@ import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal
 
 function Override({ children, value }: { children: ReactNode; value: Partial<WardFlowContextValue> }) {
   const flow = useWardFlow();
-  return <WardFlowContext.Provider value={{ ...flow, ...value }}>{children}</WardFlowContext.Provider>;
+  return <WardFlowOverride value={{ ...flow, ...value }}>{children}</WardFlowOverride>;
 }
 function renderFlow(children: ReactNode, value: Partial<WardFlowContextValue> = {}) {
   return render(

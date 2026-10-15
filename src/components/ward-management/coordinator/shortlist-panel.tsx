@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useContext, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
@@ -79,7 +79,7 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
-import { useWardFlow, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -328,7 +328,7 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
   // The patient's name through the same resolver the Referral board uses, never the raw record id
   // (live walkthrough, 25 Sept 2026: this panel showed "PT-RD06" where the board showed a name).
   // A referral with no single linked patient says so plainly.
-  const { patients, referrals, movements } = useWardFlow();
+  const { patients, referrals, movements } = useWardFlowSelect("patients", "referrals", "movements");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
   const patientLabel = patientInfo.patient ? patientInfo.displayName : "Not recorded";
 
@@ -436,9 +436,8 @@ export function ShortlistPanel({
   const isPhone = useIsPhone();
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
-  const flowContext = useContext(WardFlowContext);
+  const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId");
   const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
-  const flowSetRole = (flowContext as { setRole?: (role: WardFlowRole) => void } | null)?.setRole;
   const flowSetFocusMovementId = flowContext?.setFocusMovementId;
   const { run: runStep } = useUndoableStep({
     dispatch,
@@ -1280,7 +1279,6 @@ export function ShortlistPanel({
                       data-testid={`ward-shortlist-open-ward-desk-${acceptedUnit.id}`}
                       className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                       onClick={() => {
-                        flowSetRole?.("ward");
                         flowSetFocusMovementId?.(movementId);
                       }}
                     >
@@ -1386,7 +1384,6 @@ export function ShortlistPanel({
                     data-testid={`ward-shortlist-open-ward-desk-${unit.id}`}
                     className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                     onClick={() => {
-                      flowSetRole?.("ward");
                       flowSetFocusMovementId?.(movementId);
                     }}
                   >

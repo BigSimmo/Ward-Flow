@@ -8,9 +8,9 @@
 // Not for ward-facing (`ward/`) screens: they must not read referral data (the referral-screen
 // boundary guard), so they use the provider's `resolvePatientIdentity` instead. Neither applies any
 // ward scoping to identity; whether a screen may show a name at all is that screen's decision.
-import { useContext, useMemo } from "react";
+import { useMemo } from "react";
 
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
@@ -38,7 +38,7 @@ const NONE: readonly never[] = [];
 
 /** The provider's records as one stable object, so the resolver's index cache survives re-renders. */
 function useProviderLookup(): PatientLookup {
-  const context = useContext(WardFlowContext);
+  const context = useOptionalWardFlowSelect("patients", "referrals", "movements", "plannedAdmissions");
   const patients = context?.patients ?? NONE;
   const referrals = context?.referrals ?? NONE;
   const movements = context?.movements ?? NONE;

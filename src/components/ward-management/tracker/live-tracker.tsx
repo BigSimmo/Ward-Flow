@@ -22,7 +22,7 @@
 import Link from "next/link";
 
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 
@@ -77,7 +77,7 @@ const LEG_BADGE_CLASS: Record<TrackerLeg, string> = {
  * the same single source of truth, never independently guessed.
  */
 export function LiveTracker() {
-  const { movements, units, patients } = useWardFlow();
+  const { movements, units, patients } = useWardFlowSelect("movements", "units", "patients");
   const now = useWardFlowClock();
 
   const openMovements = movements.filter(isOpen);

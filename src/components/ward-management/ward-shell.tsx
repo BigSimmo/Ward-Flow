@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 
 import styles from "./ward-shell.module.css";
@@ -131,7 +131,7 @@ export function WardGround({ children }: { children: ReactNode }) {
  */
 export function WardShellHeader() {
   const pathname = usePathname();
-  const { units } = useWardFlow();
+  const { units } = useWardFlowSelect("units");
   const place = wardPlaceFor(pathname, units);
   if (!place) return null;
 

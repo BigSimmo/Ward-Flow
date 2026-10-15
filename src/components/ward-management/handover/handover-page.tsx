@@ -39,7 +39,7 @@ import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-rol
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { HEALTH_SERVICES, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -358,7 +358,20 @@ export function HandoverPage() {
     rejections,
     configuration,
     inboxSnoozes,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "admissions",
+    "bedReleases",
+    "dispatch",
+    "dayZero",
+    "handoverSignOffs",
+    "rejections",
+    "configuration",
+    "inboxSnoozes",
+  );
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
   const isTabletPortrait = useIsTabletPortrait();

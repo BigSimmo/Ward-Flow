@@ -54,7 +54,7 @@ import {
   type LegalStatusChangeReason,
   type UrgencyChangeReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import {
@@ -1283,7 +1283,17 @@ export function EdScreen({ edId }: EdScreenProps) {
     configuration,
     patients: registryPatients,
     admissions,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "rejections",
+    "dayZero",
+    "dispatch",
+    "configuration",
+    "patients",
+    "admissions",
+  );
   const now = useWardFlowClock();
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(

@@ -35,7 +35,7 @@ import type {
   DischargeOpenHandle,
   WardRecordActor,
 } from "@/components/ward-management/ward-discharge-records";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
@@ -416,7 +416,7 @@ function RecordedDischargeMilestones({
 
 /** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
 export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: string } = {}) {
-  const { worldGeneration } = useWardFlow();
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
   // Remount clears every selected handle and DTO synchronously on a reset/scenario change.
   // This board has one fixed coordinator actor; it does not offer a role switch.
   return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} initialAdmissionId={initialAdmissionId} />;
@@ -434,7 +434,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     dispatch,
     recordWardDeparture,
     rejections,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "bedReleases",
+    "units",
+    "patients",
+    "dayZero",
+    "readDischargeRecords",
+    "openDischargeRecord",
+    "readDischargeRecord",
+    "dispatch",
+    "recordWardDeparture",
+    "rejections",
+  );
   const toast = useOptionalToast();
   const now = useWardFlowClock();
   const [population, setPopulation] = useState<Population>("releases");

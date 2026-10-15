@@ -23,7 +23,7 @@ import {
   referralBlockedReason,
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -162,7 +162,25 @@ export function CoordinatorScreen() {
     patients,
     supportNotifications,
     inboxSnoozes,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "rejections",
+    "referrals",
+    "refreshRequests",
+    "dispatch",
+    "focusMovementId",
+    "setFocusMovementId",
+    "configuration",
+    "scenario",
+    "plannedAdmissions",
+    "patients",
+    "supportNotifications",
+    "inboxSnoozes",
+  );
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
 

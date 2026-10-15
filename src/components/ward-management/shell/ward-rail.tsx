@@ -27,7 +27,7 @@ import {
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
@@ -305,7 +305,13 @@ function WardFlowMark({ className }: { className?: string }) {
 
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlow();
+  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+    "units",
+    "bedReleases",
+    "movements",
+    "configuration",
+    "admissions",
+  );
   const now = useWardFlowClock();
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
   const bedAlerts = deriveServiceBedAlerts(

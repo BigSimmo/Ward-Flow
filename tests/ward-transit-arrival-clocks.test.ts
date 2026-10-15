@@ -128,6 +128,8 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
   return {
     ...actual,
     useWardFlow: () => mockContext,
+    useWardFlowSelect: () => mockContext,
+    useOptionalWardFlowSelect: () => mockContext,
     useWardFlowClock: () => mockContext.now,
   };
 });

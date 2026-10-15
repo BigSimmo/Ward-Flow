@@ -192,13 +192,21 @@ describe("a person's own screen", () => {
     // next person to delete the guard rather than read it.
     const { readFileSync } = await import("node:fs");
     const source = readFileSync("src/components/ward-management/patients/person-screen.tsx", "utf8");
+    // The screen names the fields it takes, either as a `useWardFlow()` destructure or as the
+    // field names given to `useWardFlowSelect(...)`.
     const destructure = source.match(/const\s*\{([^}]*)\}\s*=\s*useWardFlow\(\)/);
-    expect(destructure, "the screen must read state through useWardFlow, or this guard sees nothing").not.toBeNull();
+    const selected = source.match(/useWardFlowSelect\(([^)]*)\)/);
+    expect(
+      destructure ?? selected,
+      "the screen must read state through useWardFlow or useWardFlowSelect, or this guard sees nothing",
+    ).not.toBeNull();
 
-    const taken = (destructure?.[1] ?? "")
-      .split(",")
-      .map((name) => name.trim())
-      .filter(Boolean);
+    const taken = destructure
+      ? destructure[1]
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean)
+      : [...(selected?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((match) => match[1]);
     expect(taken.length, "an empty destructure would make the subset check below vacuous").toBeGreaterThan(0);
     for (const name of taken) {
       expect(

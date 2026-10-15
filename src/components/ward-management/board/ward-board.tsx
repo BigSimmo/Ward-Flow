@@ -42,7 +42,7 @@ import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import type {
   BedRelease,
@@ -965,7 +965,19 @@ export function WardBoard({
     resolvePatientIdentity,
     rejections,
     dayZero,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "leaveBeds",
+    "dispatch",
+    "recordWardDeparture",
+    "movements",
+    "bedReleases",
+    "patients",
+    "resolvePatientIdentity",
+    "rejections",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);

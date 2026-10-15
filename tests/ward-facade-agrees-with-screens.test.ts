@@ -92,6 +92,8 @@ const world = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock("@/components/ward-management/ward-flow-provider", () => ({
   WardFlowProvider: ({ children }: { children: ReactNode }) => children,
   useWardFlow: () => world.current,
+  useWardFlowSelect: () => world.current,
+  useOptionalWardFlowSelect: () => world.current,
   // Screens read the ticking clock separately from the world snapshot; the mock world carries
   // `now` on the same object `useWardFlow` returns, so the clock hook reads it from there.
   useWardFlowClock: () => (world.current as { now: number } | null)?.now ?? 0,

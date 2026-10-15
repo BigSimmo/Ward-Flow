@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
@@ -41,7 +41,7 @@ type HomeEdPressureProps = {
  */
 export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
-  const { configuration } = useWardFlow();
+  const { configuration } = useWardFlowSelect("configuration");
   const urgentWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
   const soonWindow = dueWindowLabel(configuration.dueSoonMinutes);
   const pressure = useMemo(() => edPressure(now, movements), [now, movements]);

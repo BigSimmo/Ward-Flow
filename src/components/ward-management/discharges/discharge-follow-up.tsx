@@ -4,11 +4,11 @@ import { useState } from "react";
 import { FOLLOW_UP_STATES, isFollowUpState, type FollowUpState } from "../ward-admissions";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { formatInstantWithDay } from "../ward-clock";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import styles from "./discharges-third-edition.module.css";
 
 export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; actor: WardRecordActor }) {
-  const { dispatch, rejections } = useWardFlow();
+  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   const now = useWardFlowClock();
   const [submittedAtCount, setSubmittedAtCount] = useState<number | null>(null);
   const refused =

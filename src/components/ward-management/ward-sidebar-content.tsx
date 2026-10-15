@@ -13,7 +13,7 @@ import { orderBoardsForRole, orderRoleScreensForRole, orderViewsForRole } from "
 import { wardNavCountLabel, type WardNavCount, type WardNavCounts } from "./ward-nav-counts";
 import { useWardNavCounts } from "./use-ward-nav-counts";
 import { buildActionInbox, destinationUnit, isOpen } from "./ward-derivations";
-import { useWardFlow, useWardFlowClock } from "./ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
 
 import styles from "./ward-sidebar.module.css";
 
@@ -61,7 +61,7 @@ export function WardSidebarNav({
    * `use-ward-nav-counts.ts` for why neither is a prop, and why both trees must read one source.
    */
   const { role, shellRole, counts, placeId } = useWardNavCounts();
-  const { movements, units, plannedAdmissions = [] } = useWardFlow();
+  const { movements, units, plannedAdmissions = [] } = useWardFlowSelect("movements", "units", "plannedAdmissions");
   const now = useWardFlowClock();
   /*
    * Scoped to the reader's own place, not the network — see `WardSidebarAttention`'s doc comment

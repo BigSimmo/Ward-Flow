@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -103,7 +103,17 @@ function useSafePathname(): string {
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
   const { movements, units, bedReleases, admissions, leaveBeds, patients, referrals, focusMovementId, configuration } =
-    useWardFlow();
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "bedReleases",
+      "admissions",
+      "leaveBeds",
+      "patients",
+      "referrals",
+      "focusMovementId",
+      "configuration",
+    );
   const now = useWardFlowClock();
   const router = useRouter();
   const pathname = useSafePathname();

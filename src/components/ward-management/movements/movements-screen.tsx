@@ -21,7 +21,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -287,7 +287,15 @@ function bedReadyNote(items: Movement[]): string {
  * Delays merge's own 30-of-42 audit as exactly the failure mode this guards against.
  */
 export function MovementsScreen() {
-  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlow();
+  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "dispatch",
+    "configuration",
+    "setFocusMovementId",
+  );
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.

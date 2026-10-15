@@ -35,7 +35,7 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDebouncedValue } from "@/components/ward-management/search/use-debounced-value";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -723,7 +723,13 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlow();
+  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "referrals",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
@@ -927,7 +933,19 @@ export function WardPhoneMenu({
   const dockRole = routeRole === "officer" ? routeRole : shellRole;
   const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
-  const flow = useWardFlow();
+  const flow = useWardFlowSelect(
+    "movements",
+    "units",
+    "configuration",
+    "inboxSnoozes",
+    "leaveBeds",
+    "admissions",
+    "patients",
+    "referrals",
+    "supportNotifications",
+    "plannedAdmissions",
+    "now",
+  );
   const actNowCount = useMemo(
     () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
     [shellRole, flow],

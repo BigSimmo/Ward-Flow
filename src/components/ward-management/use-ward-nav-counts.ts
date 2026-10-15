@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
@@ -41,7 +41,13 @@ export function useWardNavCounts(): {
   placeId: string | undefined;
 } {
   const pathname = usePathname() ?? "";
-  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   return {
     role: wardChromeRole(pathname),

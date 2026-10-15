@@ -2,8 +2,8 @@
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 
-import { useContext, useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -384,7 +384,7 @@ export function ReferralMatchView({
   bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
   // S2-14: linked movements gate whole-referral withdrawal (in transit, arrived or closed refuses).
-  const linkedMovements = useContext(WardFlowContext)?.movements;
+  const linkedMovements = useOptionalWardFlowSelect("movements")?.movements;
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a

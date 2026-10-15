@@ -73,7 +73,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -333,7 +333,24 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dayZero,
     wardReferralInbox,
     patients,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "resolvePatientIdentity",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "refreshRequests",
+    "dispatch",
+    "recordWardDeparture",
+    "rejections",
+    "admissions",
+    "notices",
+    "morningRollupConfirmations",
+    "configuration",
+    "dayZero",
+    "wardReferralInbox",
+    "patients",
+  );
   const now = useWardFlowClock();
 
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the

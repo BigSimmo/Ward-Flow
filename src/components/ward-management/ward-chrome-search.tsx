@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fragment,
-  useContext,
   useEffect,
   useId,
   useMemo,
@@ -23,7 +22,7 @@ import { movementHref, patientHref } from "@/components/ward-management/shell/wa
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
 export type WardChromeSearchProps = {
   movements?: Movement[];
@@ -79,7 +78,7 @@ export function WardChromeSearch({
 }: WardChromeSearchProps = {}) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const context = useContext(WardFlowContext);
+  const context = useOptionalWardFlowSelect("movements", "patients", "units", "referrals", "plannedAdmissions");
 
   // Memoised so the empty-array fallback keeps one identity across renders (the search memos below
   // depend on these).

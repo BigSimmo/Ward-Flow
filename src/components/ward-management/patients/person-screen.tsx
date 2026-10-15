@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { type PatientId, patientAgeYears, patientDisplayName } from "@/components/ward-management/ward-patients";
@@ -187,7 +187,7 @@ type RecordTabId = (typeof RECORD_TABS)[number]["id"];
  * compiler refuses a movement id here and a patient id there.
  */
 export function PersonScreen({ patientId }: { patientId: PatientId }) {
-  const { patients, dayZero } = useWardFlow();
+  const { patients, dayZero } = useWardFlowSelect("patients", "dayZero");
   const person = patients.find((candidate) => candidate.id === patientId);
 
   // "The record" — the tablist's own accessible name, copied from the drawing (§A3 of the

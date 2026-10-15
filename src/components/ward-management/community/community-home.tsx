@@ -34,7 +34,7 @@ import {
   type CommunityTeamRow,
 } from "@/components/ward-management/community/community-teams-table";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { ReferralAddressing } from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import {
@@ -84,7 +84,7 @@ function longestWaiting(entries: readonly CommunityBoundReferral[]): CommunityBo
  * is used rather than the design prototype's invented "16".
  */
 export function CommunityHome() {
-  const { referrals } = useWardFlow();
+  const { referrals } = useWardFlowSelect("referrals");
   const now = useWardFlowClock();
   const [scope, setScope] = useState<Scope>({ kind: "all" });
 

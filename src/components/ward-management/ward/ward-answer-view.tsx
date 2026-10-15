@@ -22,7 +22,7 @@ import {
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -104,7 +104,16 @@ function declineReasonLabel(reason: DeclineReason): string {
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
-    useWardFlow();
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "bedReleases",
+      "leaveBeds",
+      "admissions",
+      "dispatch",
+      "rejections",
+      "resolvePatientIdentity",
+    );
   const now = useWardFlowClock();
   const unit = units.find((candidate) => candidate.id === unitId);
 

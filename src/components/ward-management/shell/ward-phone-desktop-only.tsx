@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass, Button } from "@/components/wf";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_HOME_HREF, resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
 import styles from "./ward-phone-desktop-only.module.css";
 
@@ -26,7 +26,7 @@ export function isPhoneDesktopOnlyPath(pathname: string): boolean {
 
 export function WardPhoneDesktopOnly() {
   const pathname = usePathname() ?? "";
-  const { units } = useWardFlow();
+  const { units } = useWardFlowSelect("units");
   const [shownPath, setShownPath] = useState<string | null>(null);
   if (!isPhoneDesktopOnlyPath(pathname) || shownPath === pathname) return null;
   const title = resolveWardScreenTitle(pathname, units);

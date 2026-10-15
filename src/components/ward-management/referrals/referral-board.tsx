@@ -28,7 +28,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -522,7 +522,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     admissions = [],
     bedReleases = [],
     leaveBeds = [],
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "referrals",
+    "units",
+    "dispatch",
+    "rejections",
+    "movements",
+    "patients",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const queued = referralQueueOrder(referrals);
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first

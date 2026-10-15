@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
@@ -10,7 +10,13 @@ import { perthDateTimeLocal } from "../ward-clock";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
-  const { dispatch, units, leaveBeds, rejections, dayZero } = useWardFlow();
+  const { dispatch, units, leaveBeds, rejections, dayZero } = useWardFlowSelect(
+    "dispatch",
+    "units",
+    "leaveBeds",
+    "rejections",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);

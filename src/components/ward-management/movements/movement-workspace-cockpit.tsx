@@ -30,7 +30,7 @@ import {
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -123,7 +123,14 @@ export function MovementWorkspaceCockpit({
   /** Who is acting in this cockpit — ward embeds must not attribute as coordinator. */
   role?: "ward" | "coordinator";
 }) {
-  const { dispatch, movements, units, patients, referrals, admissions } = useWardFlow();
+  const { dispatch, movements, units, patients, referrals, admissions } = useWardFlowSelect(
+    "dispatch",
+    "movements",
+    "units",
+    "patients",
+    "referrals",
+    "admissions",
+  );
   const now = useWardFlowClock();
 
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);

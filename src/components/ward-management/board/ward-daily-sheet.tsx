@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { Copy, FileText, Printer, X } from "lucide-react";
@@ -6,7 +6,7 @@ import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTon
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   admissionsForUnit,
   bedIsOccupied,
@@ -424,7 +424,7 @@ export function WardDailySheet({
     now !== undefined && Number.isFinite(now) ? now : Number.isFinite(clockNow) ? clockNow : WARD_ADMISSIONS_ANCHOR;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
-  const liveFlow = useContext(WardFlowContext);
+  const liveFlow = useOptionalWardFlowSelect("admissions", "bedReleases");
   const liveAdmissions = liveFlow?.admissions;
   const liveBedReleases = liveFlow?.bedReleases;
   const admissionSource = liveAdmissions ?? wardAdmissions;

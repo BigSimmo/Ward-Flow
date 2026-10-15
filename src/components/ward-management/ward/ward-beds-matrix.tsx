@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 
@@ -317,7 +317,7 @@ export function WardBedsMatrix({
   const [shiftGroup, setShiftGroup] = useState<ShiftGroup>("all");
 
   // Optional: matrix chrome still renders in isolated tests without a provider.
-  const bedReleasesList = useContext(WardFlowContext)?.bedReleases ?? [];
+  const bedReleasesList = useOptionalWardFlowSelect("bedReleases")?.bedReleases ?? [];
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
 
   // Filter by pod / locked / open

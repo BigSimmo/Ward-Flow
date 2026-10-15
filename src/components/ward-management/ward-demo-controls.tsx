@@ -4,7 +4,7 @@ import { FlaskConical } from "lucide-react";
 import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SCENARIOS, scenarioLabels } from "@/components/ward-management/ward-scenarios";
 
 import styles from "./ward-demo-controls.module.css";
@@ -38,7 +38,13 @@ import styles from "./ward-demo-controls.module.css";
  * `*BlockedReason` guard: raised with `role: "demo"`, the reducer can never refuse either.
  */
 export function WardDemoControls() {
-  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
+  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlowSelect(
+    "scenario",
+    "dispatch",
+    "saveScenarioFile",
+    "loadScenarioFile",
+    "savingOnDevice",
+  );
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const [fileMessage, setFileMessage] = useState<string | null>(null);
@@ -276,7 +282,12 @@ export function WardDemoClockPopover({
   children,
   testId = "ward-demo-clock-pill",
 }: WardDemoClockPopoverProps) {
-  const { scenario, dispatch, saveScenarioFile, savingOnDevice } = useWardFlow();
+  const { scenario, dispatch, saveScenarioFile, savingOnDevice } = useWardFlowSelect(
+    "scenario",
+    "dispatch",
+    "saveScenarioFile",
+    "savingOnDevice",
+  );
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const [fileMessage, setFileMessage] = useState<string | null>(null);

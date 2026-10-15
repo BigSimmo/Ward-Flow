@@ -17,7 +17,7 @@ import {
   separationHandoff,
 } from "../ward-care-journey";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
 import styles from "./discharges-third-edition.module.css";
 const words = (value: string) => value.replaceAll("_", " ");
@@ -37,7 +37,7 @@ function Choice({ label, values }: { label: string; values: readonly string[] })
   );
 }
 export function DischargeCareJourney({ record, actor }: { record: DischargeRecord; actor: WardRecordActor }) {
-  const { dispatch, rejections, dayZero, units } = useWardFlow();
+  const { dispatch, rejections, dayZero, units } = useWardFlowSelect("dispatch", "rejections", "dayZero", "units");
   const now = useWardFlowClock();
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);

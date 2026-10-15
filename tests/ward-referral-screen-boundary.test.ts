@@ -492,7 +492,7 @@ function namespaceOrDefaultReferralImports(source: string): string[] {
 
 /** How many times a source calls `useWardFlow()`, comments stripped. */
 function useWardFlowCallCount(source: string): number {
-  return (withoutComments(source).match(/useWardFlow\s*\(/g) ?? []).length;
+  return (withoutComments(source).match(/use(?:Optional)?WardFlow(?:Select)?\s*\(/g) ?? []).length;
 }
 
 /** The binding lists of every `const { … } = useWardFlow()` in a source file. Comments are stripped
@@ -500,12 +500,22 @@ function useWardFlowCallCount(source: string): number {
  *  a destructuring, and the prose "Incoming referrals" on the same screen is never mistaken for a
  *  context read. */
 function contextBindingsOf(source: string): string[][] {
-  return [...withoutComments(source).matchAll(/const\s*\{([^}]*)\}\s*=\s*useWardFlow\(\)/g)].map((match) =>
+  const code = withoutComments(source);
+  const destructured = [...code.matchAll(/const\s*\{([^}]*)\}\s*=\s*useWardFlow\(\)/g)].map((match) =>
     match[1]
       .split(",")
       .map((binding) => binding.split(":")[0].trim())
       .filter((binding) => binding.length > 0),
   );
+  // `useWardFlowSelect("units", "now")` names its fields as string literals. Anything else in the
+  // argument list (a spread, a variable) is kept as written, so it can never pass as a named field.
+  const selected = [...code.matchAll(/use(?:Optional)?WardFlowSelect\s*\(([^)]*)\)/g)].map((match) =>
+    match[1]
+      .split(",")
+      .map((argument) => argument.trim().replace(/^"([^"]*)"$/, "$1"))
+      .filter((argument) => argument.length > 0),
+  );
+  return [...destructured, ...selected];
 }
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");

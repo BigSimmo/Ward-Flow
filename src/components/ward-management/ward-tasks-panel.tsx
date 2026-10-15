@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
 import styles from "./ward-tasks-panel.module.css";
@@ -45,7 +45,16 @@ export function WardTasksPanel() {
     inboxAcknowledgements,
     inboxCompletions,
     plannedAdmissions,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "units",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);

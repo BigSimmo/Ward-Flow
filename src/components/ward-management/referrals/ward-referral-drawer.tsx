@@ -37,7 +37,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import {
   arrivalEtaLabel,
@@ -799,7 +799,18 @@ function WardReferralDrawerContent({
     wardReferralInbox,
     admissions,
     units,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "rejections",
+    "configuration",
+    "dayZero",
+    "dispatch",
+    "wardReferralInbox",
+    "admissions",
+    "units",
+  );
   const now = useWardFlowClock();
 
   const urlPrefill = useMemo(() => {

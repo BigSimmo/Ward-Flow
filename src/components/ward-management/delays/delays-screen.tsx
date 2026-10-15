@@ -6,7 +6,7 @@ import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-m
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -76,7 +76,12 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
-  const { movements: liveMovements, units, configuration, dispatch } = useWardFlow();
+  const {
+    movements: liveMovements,
+    units,
+    configuration,
+    dispatch,
+  } = useWardFlowSelect("movements", "units", "configuration", "dispatch");
   const service = useServiceScope();
   const now = useWardFlowClock();
 

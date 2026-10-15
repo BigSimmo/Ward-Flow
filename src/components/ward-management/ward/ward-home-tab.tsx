@@ -1,7 +1,7 @@
 "use client";
 
 import { bedsPendingPreparation, releaseBand } from "@/components/ward-management/ward-bed-availability";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -268,7 +268,7 @@ export function WardHomeTab({
   phoneShiftLabel,
 }: WardHomeTabProps) {
   const phoneSheets = phonePanel !== undefined;
-  const { bedReleases, leaveBeds = [] } = useWardFlow();
+  const { bedReleases, leaveBeds = [] } = useWardFlowSelect("bedReleases", "leaveBeds");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,

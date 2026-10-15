@@ -9,7 +9,7 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 import { officerHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./ward-role-switcher.module.css";
@@ -80,7 +80,7 @@ export function deriveNextStepDesk(
  * change attempting the shortcut fails a test instead of quietly reopening the leak.
  */
 export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } = {}) {
-  const { movements, units, focusMovementId } = useWardFlow();
+  const { movements, units, focusMovementId } = useWardFlowSelect("movements", "units", "focusMovementId");
   const [open, setOpen] = useState(false);
   // Owner answer 38 (17 Sept 2026): other wards in the switcher are coordinators-only. `?? ""` is
   // the same fallback `ward-chrome-header.tsx`/`ward-standing-strip.tsx`/`ward-chrome-search.tsx`

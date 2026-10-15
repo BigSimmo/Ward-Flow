@@ -2,7 +2,7 @@
 
 import React from "react";
 import { CoordinatorScreen } from "./coordinator-screen";
-import { useWardFlow, useWardFlowClock, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock, WardFlowOverride } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
 export interface CoordinatorCockpitProps {
@@ -42,11 +42,11 @@ export function CoordinatorCockpit({ className, onDispatchAction, children }: Co
   }, [wardFlow, now, onDispatchAction]);
 
   return (
-    <WardFlowContext.Provider value={coordinatorContext}>
+    <WardFlowOverride value={coordinatorContext}>
       <div className={className} data-testid="ward-coordinator-cockpit">
         {children ?? <CoordinatorScreen />}
       </div>
-    </WardFlowContext.Provider>
+    </WardFlowOverride>
   );
 }
 

@@ -32,7 +32,7 @@ import {
   formatRemaining,
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
   foldPatientSearchText,
@@ -225,7 +225,15 @@ export interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
-  const { movements, referrals, units, patients, admissions, plannedAdmissions = [], dayZero } = useWardFlow();
+  const {
+    movements,
+    referrals,
+    units,
+    patients,
+    admissions,
+    plannedAdmissions = [],
+    dayZero,
+  } = useWardFlowSelect("movements", "referrals", "units", "patients", "admissions", "plannedAdmissions", "dayZero");
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
   const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");

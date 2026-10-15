@@ -9,6 +9,8 @@ import type { Movement } from "@/components/ward-management/ward-model";
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>()),
   useWardFlow: () => context,
+  useWardFlowSelect: () => context,
+  useOptionalWardFlowSelect: () => context,
   useWardFlowClock: () => NOW_ANCHOR,
 }));
 

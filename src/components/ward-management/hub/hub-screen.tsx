@@ -49,7 +49,7 @@ import {
   useIsPhone,
   durMinutes,
 } from "@/components/wf";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
@@ -296,7 +296,15 @@ const HubPlaceRow = memo(function HubPlaceRow({
 
 export function HubScreen() {
   usePrintableDisclosures();
-  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch, movements } = useWardFlow();
+  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch, movements } = useWardFlowSelect(
+    "units",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "refreshRequests",
+    "dispatch",
+    "movements",
+  );
   const { now, paused, togglePause } = usePageLive();
   const router = useRouter();
   const isPhone = useIsPhone();
