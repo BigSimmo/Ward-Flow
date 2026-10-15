@@ -67,7 +67,7 @@ Screen ──dispatch(event)──▶ wardFlowReducer ──▶ new WardFlowStat
 
 All in the root of `src/components/ward-management/`. The engine is almost entirely
 self-contained: only three engine files import anything from outside Ward Flow
-(`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/ui/sheet-focus`).
+(`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/wf/sheet-focus`).
 
 ### 2.1 Engine files
 
@@ -504,9 +504,9 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 | `@/components/ui-primitives`                                                        |         14 | shared control recipes                                     |
 | `@/lib/client-store-factory`                                                        |          7 | SSR-safe browser stores                                    |
 | `@/lib/form-register`                                                               |          4 | legal form titles                                          |
-| `@/components/ui/sheet`                                                             |          4 | drawers                                                    |
-| `@/components/ui/missing-value`, `contextual-back-link`, `clinical-dashboard/brand` |     2 each | empty values, back links, brand mark (retired chrome only) |
-| `@/components/ui/tooltip`, `ui/sheet-focus`                                         |     1 each | rail tooltips, dialog focus                                |
+| `@/components/wf/sheet`                                                             |          4 | drawers                                                    |
+| `@/components/wf/missing-value`, `contextual-back-link`, `clinical-dashboard/brand` |     2 each | empty values, back links, brand mark (retired chrome only) |
+| `@/components/wf/tooltip`, `ui/sheet-focus`                                         |     1 each | rail tooltips, dialog focus                                |
 
 **Reverse direction:** no file in `src/` outside Ward Flow imports Ward Flow (grep re-checked).
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { hasOpenSheet } from "@/components/ui/sheet-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
   Check,
@@ -18,8 +18,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { Sheet } from "@/components/ui/sheet";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Sheet } from "@/components/wf/sheet";
+import { Tooltip } from "@/components/wf/tooltip";
 import {
   OperatorSwitcherModal,
   WARD_PERSONA_SYNC_EVENT,

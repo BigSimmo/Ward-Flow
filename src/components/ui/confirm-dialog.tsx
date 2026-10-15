@@ -2,7 +2,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { fieldControlPlain, textMuted, cn } from "@/components/ui-primitives";
 
 export type ConfirmDialogProps = {

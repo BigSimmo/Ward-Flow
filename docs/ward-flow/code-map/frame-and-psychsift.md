@@ -46,13 +46,13 @@ files.
   `search/patient-search.tsx`, `search/record-preview.tsx`. Itself imports
   `@/lib/form-ranker` (203 lines, a `FormAvailability` type) — part of PsychSift's own on-call/forms
   surface.
-- **`src/components/ui/sheet.tsx`** (588 lines) — the shared slide-in drawer/dialog primitive.
+- **`src/components/wf/sheet.tsx`** (588 lines) — the shared slide-in drawer/dialog primitive.
   Imported by 4 files: `movements/movement-drawer.tsx`, `shell/ward-bar.tsx`, `shell/ward-rail.tsx`,
-  and the retired `ward-management-navigation.tsx`. Imports `@/components/ui/overlay-root` (167
+  and the retired `ward-management-navigation.tsx`. Imports `@/components/wf/overlay-root` (167
   lines) and `@/components/ui-primitives` (above).
-- **`src/components/ui/missing-value.tsx`** (83 lines) — renders an empty-value placeholder.
+- **`src/components/wf/missing-value.tsx`** (83 lines) — renders an empty-value placeholder.
   Imported by 2 files: `discharges/discharge-board.tsx`, `ward-management-console.tsx`. Imports
-  `@/components/ui-primitives` and `@/components/ui/design-system-diagnostics` (30 lines).
+  `@/components/ui-primitives` and `@/components/wf/design-system-diagnostics` (30 lines).
 - **`src/components/contextual-back-link.tsx`** (82 lines) — a back-navigation link that resolves
   its target from router history. Imported by 2 files: `patients/patient-now-screen.tsx`,
   `ward-management-console.tsx`. Imports only `next/link`, `next/navigation` and `react` types — no
@@ -62,10 +62,10 @@ files.
   tests (`brand-mark-optics.test.ts`, `ward-flow-seam.test.ts`) read it. Imports
   `@/components/ui-primitives` and `@/lib/brand-mark` (189 lines). No currently-mounted Ward screen
   reaches this file.
-- **`src/components/ui/tooltip.tsx`** (198 lines) — the shared tooltip primitive. Imported once, by
-  `shell/ward-rail.tsx` (rail tooltips). Imports `@/components/ui/overlay-root` and
+- **`src/components/wf/tooltip.tsx`** (198 lines) — the shared tooltip primitive. Imported once, by
+  `shell/ward-rail.tsx` (rail tooltips). Imports `@/components/wf/overlay-root` and
   `@/components/ui-primitives`.
-- **`src/components/ui/sheet-focus.ts`** (345 lines) — dialog focus-trap/return-focus utility.
+- **`src/components/wf/sheet-focus.ts`** (345 lines) — dialog focus-trap/return-focus utility.
   Imported once, by `ward-modal-focus.ts`. No outside project imports of its own.
 - **`src/components/developer-area/ward-flow-access-gate.tsx`** — the developer-cookie access gate,
   with its route guard, key screen and `lib/developer-area/link-access*.ts`: removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.

@@ -10,17 +10,17 @@ import { Checkbox, RadioGroup } from "@/components/ui/choice";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Disclosure, DisclosureGroup, disclosureBodyText } from "@/components/ui/disclosure";
 import { DownloadLink, ExternalTextLink, LinkAction, TextLink, type LinkActionProps } from "@/components/ui/link";
-import { OverlayPortal, OverlayRoot } from "@/components/ui/overlay-root";
+import { OverlayPortal, OverlayRoot } from "@/components/wf/overlay-root";
 import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { Progress, StageList } from "@/components/ui/progress";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Select } from "@/components/ui/select";
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { Tabs } from "@/components/ui/tabs";
 import { SearchField, TextField } from "@/components/ui/text-field";
-import { ToastProvider, useToast } from "@/components/ui/toast";
-import { Tooltip } from "@/components/ui/tooltip";
+import { ToastProvider, useToast } from "@/components/wf/toast-provider";
+import { Tooltip } from "@/components/wf/tooltip";
 
 describe("Button", () => {
   it("folds the busy contract in: disabled, announced, and relabelled", () => {
@@ -1674,7 +1674,7 @@ describe("Pagination — clamping, focus and announcement", () => {
   });
 
   it("does not announce a page the parent rejected", async () => {
-    const announceSpy = vi.spyOn(await import("@/components/ui/live-announcer"), "announce");
+    const announceSpy = vi.spyOn(await import("@/components/wf/live-announcer"), "announce");
     render(<Pagination page={2} pageCount={5} onPageChange={() => {}} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Next page" }));

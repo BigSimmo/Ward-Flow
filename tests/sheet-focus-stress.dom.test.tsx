@@ -2,8 +2,8 @@ import { act, render, waitFor } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Sheet } from "@/components/ui/sheet";
-import { popSheet, pushSheet, SHEET_FOCUS_SETTLE_MS, SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
+import { Sheet } from "@/components/wf/sheet";
+import { popSheet, pushSheet, SHEET_FOCUS_SETTLE_MS, SHEET_INERT_MARKER } from "@/components/wf/sheet-focus";
 
 afterEach(() => {
   vi.useRealTimers();

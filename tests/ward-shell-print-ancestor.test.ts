@@ -29,7 +29,7 @@ import { describe, expect, it } from "vitest";
  * ⚠️ IN-FLOW IS LOAD-BEARING IN THAT SENTENCE, AND AN EARLIER VERSION OF THIS COMMENT OMITTED IT.
  * `.wardTokens *` reaches DOM descendants only, and one ward surface is not a DOM descendant of the
  * shell: `ward-management-navigation.tsx` renders the phone drawer through `<Sheet>`, which renders
- * through `OverlayPortal` (`@/components/ui/overlay-root`). Portalled content leaves the shell's
+ * through `OverlayPortal` (`@/components/wf/overlay-root`). Portalled content leaves the shell's
  * subtree entirely, so `.drawerBody` and everything inside it is NOT covered by this chain.
  *
  * That is why each portalling file's own print block (for example `ward-rail.module.css`'s
@@ -246,7 +246,7 @@ describe("the fixtures this guard reads are the real ones", () => {
  * `ward-rail.module.css`'s `.moreSheet` block, which exists for exactly this reason and is load-bearing.
  *
  * Detection resolves imports two hops deep rather than matching names: a module counts as portalling
- * if it calls `createPortal`, or imports a module under `src/components/ui/` that does. Matching the
+ * if it calls `createPortal`, or imports a module under `src/components/wf/` that does. Matching the
  * NAME would be defeated the way `<SheetPerson` and `<SheetGroup` in `board/ward-daily-sheet.tsx`
  * already defeat it — a file whose whole vocabulary is the word "sheet" and which imports no Sheet
  * at all.
@@ -289,11 +289,18 @@ describe("the set of ward files that render through a portal", () => {
     return [...source.matchAll(/from\s+"([^"]+)"/gu)].map((m) => m[1]);
   }
 
-  function resolveUi(specifier: string): URL | null {
-    if (!specifier.startsWith("@/components/ui/")) return null;
-    const base = specifier.replace(/^@\//u, "src/");
-    for (const candidate of [`${base}.tsx`, `${base}.ts`, `${base}/index.tsx`]) {
-      const url = new URL(`../${candidate}`, import.meta.url);
+  // The shared primitives live in components/wf (fix list 2.2 moved them out of components/ui).
+  // The wf barrel itself is not followed: only a direct module path names one primitive, and a
+  // primitive's own relative imports ("./overlay-root") are followed from its folder.
+  function resolveUi(specifier: string, from?: URL): URL | null {
+    let target: URL;
+    if (/^@\/components\/(?:ui|wf)\/./u.test(specifier)) {
+      target = new URL(`../${specifier.replace(/^@\//u, "src/")}`, import.meta.url);
+    } else if (from && specifier.startsWith("./") && /\/src\/components\/(?:ui|wf)\/[^/]+$/u.test(from.pathname)) {
+      target = new URL(specifier, from);
+    } else return null;
+    for (const suffix of [".tsx", ".ts", "/index.tsx"]) {
+      const url = new URL(`${target.href}${suffix}`);
       try {
         readFileSync(url, "utf8");
         return url;
@@ -310,7 +317,7 @@ describe("the set of ward files that render through a portal", () => {
     if (/createPortal/u.test(source)) return true;
     if (depth >= 2) return false;
     return importsOf(url).some((spec) => {
-      const next = resolveUi(spec);
+      const next = resolveUi(spec, url);
       return next !== null && portals(next, depth + 1);
     });
   }

@@ -17,7 +17,7 @@ import {
   Truck,
   X,
 } from "lucide-react";
-import { MissingValue } from "@/components/ui/missing-value";
+import { MissingValue } from "@/components/wf/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
   calendarDateOf,

@@ -1,6 +1,6 @@
 "use client";
 
-import { hasOpenSheet, lockPageScroll } from "@/components/ui/sheet-focus";
+import { hasOpenSheet, lockPageScroll } from "@/components/wf/sheet-focus";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

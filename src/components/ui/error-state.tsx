@@ -4,7 +4,7 @@ import { CircleAlert } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { AsyncButton, cn, floatingControl } from "@/components/ui-primitives";
-import { createBoundedDiagnosticRecorder } from "@/components/ui/design-system-diagnostics";
+import { createBoundedDiagnosticRecorder } from "@/components/wf/design-system-diagnostics";
 
 /**
  * COMPONENTS §0.3 and SPEC §10, "Search failed → `ErrorState`", with the copy

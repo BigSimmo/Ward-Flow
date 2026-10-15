@@ -13,7 +13,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { X, type LucideIcon } from "lucide-react";
-import { OverlayPortal } from "@/components/ui/overlay-root";
+import { OverlayPortal } from "./overlay-root";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
 import { useIsPhone } from "./use-is-phone";

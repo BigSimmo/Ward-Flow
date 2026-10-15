@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { OverlayPortal } from "@/components/ui/overlay-root";
-import overlayStyles from "@/components/wf/overlay.module.css";
-import { type ToastNextStep, type ToastUndo, ToastView } from "@/components/wf/toast";
+import { OverlayPortal } from "./overlay-root";
+import overlayStyles from "./overlay.module.css";
+import { type ToastNextStep, type ToastUndo, ToastView } from "./toast";
 
 type ToastTone = "success" | "info" | "warning" | "danger";
 

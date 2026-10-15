@@ -1,5 +1,5 @@
 import { cn } from "@/components/ui-primitives";
-import { createBoundedDiagnosticRecorder } from "@/components/ui/design-system-diagnostics";
+import { createBoundedDiagnosticRecorder } from "./design-system-diagnostics";
 
 /**
  * COMPONENTS §3. In clinical data a bare dash reads as a negative result: an

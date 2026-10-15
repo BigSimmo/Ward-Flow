@@ -129,8 +129,8 @@ export {
   useToast,
   type ToastApi,
   type ToastInput,
-} from "@/components/ui/toast";
-export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
+} from "./toast-provider";
+export { Tooltip, type TooltipProps } from "./tooltip";
 export {
   LiveChip,
   Timer,

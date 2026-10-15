@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { announce } from "@/components/ui/live-announcer";
+import { announce } from "@/components/wf/live-announcer";
 import { cn } from "@/components/ui-primitives";
 
 export type PaginationProps = {

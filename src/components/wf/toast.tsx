@@ -135,7 +135,7 @@ function UndoButton({ undo, phase, finish }: { undo: ToastUndo; phase: UndoPhase
 
 /**
  * The v6 toast card: regular glass, glyph first, one line, optional Undo and close. Presentational
- * only. `ToastProvider` in `@/components/ui/toast` renders it inside its polite live region; a
+ * only. `ToastProvider` in `@/components/wf/toast-provider` renders it inside its polite live region; a
  * page that keeps its own toast state can render it directly inside a `role="status"` region.
  */
 export function ToastView({

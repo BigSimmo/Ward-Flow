@@ -10,7 +10,7 @@ import {
   useState,
   type ReactElement,
 } from "react";
-import { OverlayPortal } from "@/components/ui/overlay-root";
+import { OverlayPortal } from "./overlay-root";
 import { cn } from "@/components/ui-primitives";
 import styles from "./tooltip.module.css";
 
