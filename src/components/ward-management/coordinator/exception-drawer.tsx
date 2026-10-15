@@ -1,5 +1,6 @@
 "use client";
 
+import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
@@ -213,7 +214,7 @@ export function ExceptionDrawer({
                   item.plannedAdmission ??
                     (item.movementId ? { movementId: item.movementId } : { id: item.admissionId }),
                 );
-                const whoName = who.displayName === "Unknown Patient" ? null : nameFor(who.displayName, who.umrn);
+                const whoName = who.displayName === NAME_NOT_RECORDED ? null : nameFor(who.displayName, who.umrn);
                 const detailText = umrnText(item.detail);
                 // A planned admission's detail carries no movement id, so add the known UMRN here,
                 // unless the discreet form or the detail already shows it.

@@ -16,7 +16,7 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `latest-decision`   | D-56                                        | Newest entry in the decision log                                                        | `docs/ward-flow/decisions.md`   |
 | `next-decision`     | D-57                                        | Number to use for the next decision                                                     | `docs/ward-flow/decisions.md`   |
 | `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                                 | `package.json`                  |
-| `backend-env-vars`  | 21 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                          | `backend/ward-flow/*.mjs`       |
+| `backend-env-vars`  | 22 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                          | `backend/ward-flow/*.mjs`       |
 
 ## backend-env-vars
 
@@ -42,6 +42,7 @@ Environment variables the shared backend reads:
 - `WARD_SUPABASE_PROJECT_REF`
 - `WARD_SUPABASE_PUBLISHABLE_KEY`
 - `WARD_SUPABASE_URL`
+- `WARD_TRUSTED_PROXY_ADDRESSES`
 - `WARD_WORKSPACE_ID`
 
 ## Quoting a fact

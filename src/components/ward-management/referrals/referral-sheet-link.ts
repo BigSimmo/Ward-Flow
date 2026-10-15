@@ -1,6 +1,7 @@
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { REFERRAL_SOURCES, type ReferralSource } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * The referral slide-out is the one place a referral is written (Josh, 8 Oct 2026, option B). The
@@ -52,7 +53,7 @@ export function referralSheetRequestFromSearch(params: URLSearchParams): Referra
     : undefined;
   const referValue = params.get("refer")?.trim() ?? "";
   const destination = DESTINATIONS.find((value) => value === referValue);
-  const personId = params.get("patientId")?.trim() || undefined;
+  const personId = recordIdFromParam(params.get("patientId")?.trim()) ?? undefined;
   const edId = params.get("originEdId")?.trim() ?? "";
   const originSiteCode = edId ? allEmergencyDepartments().find((ed) => ed.id === edId)?.siteCode : undefined;
   const teamId = params.get("teamId")?.trim() ?? "";

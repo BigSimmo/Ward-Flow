@@ -22,6 +22,7 @@ import { allEmergencyDepartments, wardSites } from "@/components/ward-management
 
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { namesRealPlace } from "./helpers/ward-place-names";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * A PERSON'S OWN SCREEN — the subject is the PERSON, not a request for a bed.
@@ -332,7 +333,9 @@ describe("a person's own screen", () => {
     expect(href, "the Refer control must link somewhere").toBeTruthy();
     // The key by NAME. A test that only checked the id appeared somewhere in the href would pass
     // against `?patient=PT-001`, which is precisely the rename that broke nothing and everything.
-    expect(href).toContain(`patientId=${encodeURIComponent(someone.id)}`);
+    // D-39: the value is the address code, which the intake decodes back to the person.
+    expect(href).toContain(`patientId=${encodeURIComponent(encodeRecordAddress(someone.id))}`);
+    expect(href).not.toContain(someone.id);
     expect(href).toContain("/mockups/ward-flow/referrals/new");
   });
 

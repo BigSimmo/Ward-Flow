@@ -86,7 +86,7 @@ describe("the network's priority queue counts only people still waiting", () => 
     const panel = screen.getByRole("region", { name: "Waiting" });
     for (const movement of notOpen) {
       expect(
-        within(panel).queryByText(movement.id),
+        within(panel).queryByTestId(`ward-network-queue-${movement.id}`),
         `${movement.id} has left the pathway (stage ${movement.stage}) and must not be a row in a ` +
           "queue for placement — the count and the list have to agree about who is waiting",
       ).not.toBeInTheDocument();
@@ -97,7 +97,8 @@ describe("the network's priority queue counts only people still waiting", () => 
     renderNetwork();
     const panel = screen.getByRole("region", { name: "Waiting" });
     // A filter that removed everything would satisfy both assertions above.
-    const shown = open.filter((movement) => within(panel).queryByText(movement.id) !== null);
+    // D-39: rows name the person, not the journey number, so read each row by its test id.
+    const shown = open.filter((movement) => within(panel).queryByTestId(`ward-network-queue-${movement.id}`) !== null);
     expect(shown.length, "the queue must still show the people who are waiting").toBeGreaterThan(0);
   });
 });

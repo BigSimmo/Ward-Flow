@@ -85,6 +85,7 @@ import {
 
 import thirdEdition from "./governance-third-edition.module.css";
 import wardPin from "./ward-pinned-switch.module.css";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * TWO NEW GOVERNANCE PANELS — built to sit inside `GovernanceView`
@@ -768,7 +769,7 @@ function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteGap[] {
         umrn: person.umrn,
         detail: `Form ${movement.legalForm.code}`,
         missing,
-        href: `${FORMS_HREF}?movement=${encodeURIComponent(movement.id)}`,
+        href: `${FORMS_HREF}?movement=${encodeURIComponent(encodeRecordAddress(movement.id))}`,
       });
     }
   }

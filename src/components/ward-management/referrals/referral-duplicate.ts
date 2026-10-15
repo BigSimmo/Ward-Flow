@@ -1,6 +1,7 @@
 import type { Referral } from "../ward-model";
 import type { PatientId } from "../ward-patients";
 import { referralState } from "../ward-referrals";
+import { encodeRecordAddress } from "../shell/ward-record-address";
 
 /**
  * WHAT IS ALREADY OPEN FOR THIS PERSON — SAID BEFORE A SECOND REFERRAL IS RAISED.
@@ -153,6 +154,7 @@ export function duplicateCaseHref(input: { patientId: PatientId; referrals: read
     .filter((referral) => referral.patientId === input.patientId)
     .map((referral) => referralState(referral));
   if (states.includes("queued")) return "/mockups/ward-flow/referrals";
-  if (states.includes("accepted")) return `/mockups/ward-flow/people/${encodeURIComponent(input.patientId)}`;
+  if (states.includes("accepted"))
+    return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(input.patientId))}`;
   return undefined;
 }

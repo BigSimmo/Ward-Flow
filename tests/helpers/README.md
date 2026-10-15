@@ -67,9 +67,10 @@ function at all of `src/`.**
 
 ## Proving a guard actually catches its defect
 
-| You would search for                                                                                                            | It is called                       | Where              |
-| ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------ |
-| does my guard actually fire · positive and negative control · test the test · prove a guard is not vacuous · anti-vacuity floor | `guardControls`, `controlPairsFor` | `guard-control.ts` |
+| You would search for                                                                                                                          | It is called                                       | Where                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
+| does my guard actually fire · positive and negative control · test the test · prove a guard is not vacuous · anti-vacuity floor               | `guardControls`, `controlPairsFor`                 | `guard-control.ts`     |
+| shallow clone · Git guard test fails in a container · identity anchor missing · skip without full history · fixture repo borrows real commits | `HAS_WARD_FLOW_HISTORY`, `NEEDS_WARD_FLOW_HISTORY` | `ward-flow-history.ts` |
 
 **Reach for this whenever you narrow a guard.** The 2026-09-05 failure it was written for: a guard
 narrowed correctly was then green on the very defect it had been narrowed to keep catching, and

@@ -104,17 +104,32 @@ function initialsOnlyPatient(initials: string): ResolvedPatientInfo {
   return {
     displayName: `Initials ${initials}`,
     formalName: `Initials ${initials}`,
-    umrn: "UMRN not recorded",
+    umrn: UMRN_NOT_RECORDED,
     initials,
   };
 }
 
+/** D-39 placeholders: what a screen shows when the resolver has no name or no UMRN for a person. */
+export const NAME_NOT_RECORDED = "Name not recorded";
+export const UMRN_NOT_RECORDED = "UMRN not recorded";
+
 const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
-  displayName: "Unknown Patient",
-  formalName: "Unknown Patient",
-  umrn: "UMRN not recorded",
+  displayName: NAME_NOT_RECORDED,
+  formalName: NAME_NOT_RECORDED,
+  umrn: UMRN_NOT_RECORDED,
   initials: "UP",
 });
+
+/**
+ * One identity line, "Family, Given · UMRN", read from the resolver's fields only (D-39). A missing
+ * part shows its placeholder ("Name not recorded", "UMRN not recorded"), never a record number.
+ * Display only: nothing here accepts or stores a name or UMRN.
+ */
+export function patientIdentityLine(info: Pick<ResolvedPatientInfo, "formalName" | "umrn">): string {
+  const name = info.formalName.replace(/[\s,]+/gu, "") === "" ? NAME_NOT_RECORDED : info.formalName.trim();
+  const umrn = info.umrn.trim() === "" ? UMRN_NOT_RECORDED : info.umrn.trim();
+  return `${name} · ${umrn}`;
+}
 
 export type PatientResolutionSubject =
   | Movement
@@ -288,4 +303,66 @@ function umrnFromIndex(index: ReturnType<typeof getOrBuildIndex>): (movementId: 
     const match = index.movementMap.get(movementId);
     return !match || match === DUPLICATE ? UNKNOWN_PATIENT.umrn : resolveSubjectWithIndex(match, index).umrn;
   };
+}
+
+/** The plain words a refusal or notice uses in place of a record number (D-39, 15 Oct 2026). */
+const RECORD_WORDS: Record<string, string> = {
+  RF: "referral",
+  AD: "stay",
+  PT: "patient",
+  WR: "bed release",
+  WL: "leave bed",
+};
+const KIND_WORDS: Record<string, string> = {
+  referral: "referral",
+  admission: "stay",
+  stay: "stay",
+  patient: "patient",
+  person: "patient",
+  release: "bed release",
+  "bed release": "bed release",
+  "leave bed": "leave bed",
+};
+// After one of these words the kind word reads on its own ("the queued referral"), so no "this".
+const KEEP_KIND_ONLY = new Set([
+  "the",
+  "this",
+  "that",
+  "a",
+  "an",
+  "its",
+  "their",
+  "discharged",
+  "linked",
+  "same",
+  "queued",
+  "existing",
+  "open",
+  "active",
+  "other",
+]);
+const RECORD_TOKEN = String.raw`(RF|AD|PT|WR|WL)-[A-Za-z0-9-]*[A-Za-z0-9]`;
+const NAMED_RECORD = new RegExp(
+  String.raw`(\b[A-Za-z]+\s+)?\b(referral|admission|stay|patient|person|bed release|release|leave bed)\s+(?:[A-Za-z0-9]+-)*?${RECORD_TOKEN}\b`,
+  "giu",
+);
+const ID_RECORD = new RegExp(String.raw`\bids?\s+(?:[A-Za-z0-9]+-)*?${RECORD_TOKEN}\b`, "gu");
+const BARE_RECORD = new RegExp(String.raw`(?<![A-Za-z0-9-])${RECORD_TOKEN}(?![A-Za-z0-9-])`, "gu");
+
+/**
+ * Engine prose with each referral, stay, patient, bed release or leave bed number replaced by plain
+ * words ("this referral", "this stay"). The ids stay on the record's own data fields for diagnosis.
+ * Journey (`WF-`) numbers are handled by `withUmrnInPlaceOfMovementIds`, which runs first.
+ */
+export function withoutRecordNumbers(text: string): string {
+  if (!/(?:RF|AD|PT|WR|WL)-/u.test(text)) return text;
+  const named = text
+    .replace(ID_RECORD, "that id")
+    .replace(NAMED_RECORD, (_match, before: string | undefined, kind: string) => {
+      const word = KIND_WORDS[kind.toLowerCase()] ?? kind;
+      const previous = before?.trim().toLowerCase();
+      if (before !== undefined && previous !== undefined && KEEP_KIND_ONLY.has(previous)) return `${before}${word}`;
+      return `${before ?? ""}this ${word}`;
+    });
+  return named.replace(BARE_RECORD, (_match, prefix: string) => `this ${RECORD_WORDS[prefix] ?? "record"}`);
 }

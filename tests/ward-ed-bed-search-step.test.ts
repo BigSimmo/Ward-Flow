@@ -10,6 +10,7 @@ import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { edReferralSheetHref } from "@/components/ward-management/referrals/open-referral-sheet";
 import { referralSheetRequestFromHref } from "@/components/ward-management/referrals/referral-sheet-link";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * S-7 and A2-5 (audit 13 Oct 2026): after an inpatient order the ED primary carries on the bed
@@ -68,7 +69,8 @@ describe("openWardReferralFor", () => {
 
 describe("A2-5: a referred row links to its referral and counts as No bed yet", () => {
   it("links to the Referrals board with that referral open", () => {
-    expect(referralBoardHref("RF-X")).toBe("/mockups/ward-flow/referrals?referral=RF-X");
+    expect(referralBoardHref("RF-X")).toBe(`/mockups/ward-flow/referrals?referral=${encodeRecordAddress("RF-X")}`);
+    expect(referralBoardHref("RF-X")).not.toContain("RF-X");
   });
 
   it("counts a row referred but not yet placed under the one No bed yet rule", () => {
