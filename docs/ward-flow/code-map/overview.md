@@ -200,7 +200,7 @@ monotonic id counters (never array length).
 6. Screens read through the provider and the pure derivation modules.
 
 Other browser storage: `shell/ward-service-store.ts` (chosen health service, sessionStorage),
-`use-ward-sidebar-collapsed.ts` and hub "recents" (localStorage via `createBrowserStore`).
+hub "recents" (localStorage via `createBrowserStore`).
 
 ### 2.5 Roles
 
@@ -305,10 +305,8 @@ Activity/Tasks/Tools drawers and the primary action), `ward-broadcast-banner.tsx
 open drawers), `ward-command-activity.ts`, `ward-service-bed-alerts.ts`, small stores for sound,
 wallboard and service.
 
-**Retired chrome still on disk, not mounted:** `ward-management-navigation.tsx` (`WardModeNavigation`),
-`ward-chrome-header.tsx`, `ward-chrome-search.tsx`,
-`ward-standing-strip.tsx`, the `WardShellHeader` export in `ward-shell.tsx`,
-`use-ward-sidebar-collapsed.ts`, and `shell/ward-shell-tokens.module.css` (empty stub). No
+**Retired chrome still on disk, not mounted:** `ward-chrome-header.tsx`, `ward-chrome-search.tsx`,
+`ward-standing-strip.tsx` and the `WardShellHeader` export in `ward-shell.tsx`. No
 production file draws PsychSift's `BrandMark` since `ClinicalRail` was removed on 15 Oct 2026.
 
 **Shared UI primitives** at the root: `ward-panel`, `ward-chip` (six worded states; throws

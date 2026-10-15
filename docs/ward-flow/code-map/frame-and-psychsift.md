@@ -37,8 +37,8 @@ files.
   longer reached. `recipes.ts` still re-exports `cn`, so the barrel still reaches the shared
   `src/lib/cn.ts` and `tailwind-merge.ts` helpers (see the retirement list below).
 - **`src/lib/client-store-factory.ts`** (32 lines) — `createBrowserStore`, an SSR-safe store built
-  on React's `useSyncExternalStore`. Imported by 7 Ward files: `shell/ward-bar.tsx`,
-  `shell/ward-rail.tsx`, `shell/ward-service-store.ts`, `use-ward-sidebar-collapsed.ts`,
+  on React's `useSyncExternalStore`. Imported by 6 Ward files: `shell/ward-bar.tsx`,
+  `shell/ward-rail.tsx`, `shell/ward-service-store.ts`,
   `hub/hub-browser-memory.ts`, `community/community-index.tsx`, `referrals/referral-match.tsx`. No
   outside imports of its own beyond `react`.
 - **`src/lib/form-register.ts`** (170 lines) — the canonical Mental Health Act form titles/codes
@@ -47,8 +47,8 @@ files.
   `@/lib/form-ranker` (203 lines, a `FormAvailability` type) — part of PsychSift's own on-call/forms
   surface.
 - **`src/components/wf/sheet.tsx`** (588 lines) — the shared slide-in drawer/dialog primitive.
-  Imported by 4 files: `movements/movement-drawer.tsx`, `shell/ward-bar.tsx`, `shell/ward-rail.tsx`,
-  and the retired `ward-management-navigation.tsx`. Imports `@/components/wf/overlay-root` (167
+  Imported by 3 files: `movements/movement-drawer.tsx`, `shell/ward-bar.tsx` and
+  `shell/ward-rail.tsx`. Imports `@/components/wf/overlay-root` (167
   lines) and `@/components/ui-primitives` (above).
 - **`src/components/wf/missing-value.tsx`** (83 lines) — renders an empty-value placeholder.
   Imported by 2 files: `discharges/discharge-board.tsx`, `ward-management-console.tsx`. Imports
@@ -270,7 +270,7 @@ Its headline counts:
 
 - **Ward Flow's own files:** 2,496.
 - **PsychSift files Ward Flow's screens load: 47.** Shared UI (`ui-primitives.tsx`,
-  `primitive-recipes/`, nine `components/ui/` files), brand mark and theme, `contextual-back-link.tsx`,
+  `primitive-recipes/`; the unused `components/ui/` files were deleted on 15 Oct 2026), brand mark and theme, `contextual-back-link.tsx`,
   the developer-key gate with `lib/developer-area/{headers,link-access,link-access-shared}.ts`,
   `form-register.ts` and the thirteen search helpers it drags in, `env.ts` and three small files it
   imports, `owner-scope.ts`, `types.ts`, `cn.ts`, `tailwind-merge.ts`, `client-store-factory.ts`.

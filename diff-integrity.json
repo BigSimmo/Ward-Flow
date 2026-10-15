@@ -605,6 +605,48 @@
       "after": 19,
       "reason": "Retired the case that checked right-alignment rules in statistics-third-edition.module.css. The Compare screen stopped importing that sheet in the v6 rebuild, so the case guarded CSS nothing loads, and the sheet was deleted with nine other unimported stylesheets (fix list 2.4, wave F). The threshold cases in this file were re-pointed to the live statistics-compare.module.css rather than retired. Whether figures on the live Compare tables right-align is listed as a leftover. A record, not a gate condition: 1 of 20 is under the per-file floor.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/applied-filters.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered components/ui/applied-filters.tsx; Josh approved deleting the unused components that day.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/chip-contract.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered components/ui/chip.tsx; Josh approved deleting the unused components that day.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/error-state.dom.test.tsx",
+      "before": 14,
+      "after": 0,
+      "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered components/ui/error-state.tsx; Josh approved deleting the unused components that day.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/metro-pulse-circle.dom.test.tsx",
+      "before": 3,
+      "after": 0,
+      "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered components/ui/metro-pulse-circle.tsx; Josh approved deleting the unused components that day.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ui-v2-components.dom.test.tsx",
+      "before": 90,
+      "after": 0,
+      "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered the components/ui kit (button, chip, choice, confirm dialog, disclosure, link, page header, pagination, progress, segmented control, select, tabs, text field); Josh approved deleting the unused components that day.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ui-v2-form-field.dom.test.tsx",
+      "before": 12,
+      "after": 0,
+      "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered components/ui/form-field.tsx; Josh approved deleting the unused components that day.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }

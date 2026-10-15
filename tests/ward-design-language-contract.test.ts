@@ -574,11 +574,10 @@ describe("the ground is not merely painted — it has to be visible", () => {
      * count floor.
      *
      * The test is whether the first rule is a PAGE ROOT (`.screen`, `.modeShell`) or a component
-     * that would not be itself without a background. Opened all three:
+     * that would not be itself without a background. Opened all three (`ward-tasks-panel` was a fourth until it was deleted, unused, on 15 Oct 2026):
      *
      *   `.wrap`   ward-standing-strip — the sticky figures band. Board content scrolls UNDER it, so
      *             a transparent one renders text through text. Opacity is what makes it chrome.
-     *   `.opener` ward-tasks-panel    — a `<button>`.
      *   `.drawer` ward-tasks-drawer   — a side panel with its own left border.
      *
      * None has a `.screen` or `.modeShell` equivalent anywhere in the file. Same category as
@@ -586,7 +585,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
      * chrome stylesheets and were exempted on the same reasoning.
      */
     "ward-standing-strip.module.css",
-    "ward-tasks-panel.module.css",
     "ward-tasks-drawer.module.css",
     /*
      * ⚠️ **`.bar` — the single header row, added when the owner asked for the figures toggle to sit
@@ -637,7 +635,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // acquires a `.screen`-equivalent root, it belongs back in the detector.
     "ward-standing-strip.module.css",
     "ward-tasks-drawer.module.css",
-    "ward-tasks-panel.module.css",
     // ADDED 2026-09-17 (screens plan S2): the service scope bar. Its first rule is `.bar`, a strip a
     // scoped screen mounts inside its own page — a component that paints its own surface, not a
     // page root. Checked by opening the file, not assumed.
