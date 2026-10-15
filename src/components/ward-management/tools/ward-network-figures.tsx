@@ -6,7 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
-import { occupiedBeds } from "../statistics/statistics-occupancy";
+import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
 import { dayOf, formatInstant, minutesUntil, splitDuration, type Instant } from "../ward-clock";
 import type { Movement } from "../ward-model";
 import { isOpen } from "../ward-derivations";
@@ -52,7 +52,8 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
         {
           label: "Occupied",
           value: String(occupied.occupied),
-          sub: total ? `${Math.round((occupied.occupied / total) * 100)}% occupancy` : "—",
+          // Occupied + Pulled, the one occupancy figure every other page prints (L1, 12 Oct 2026).
+          sub: total ? `${occupancyPercent(occupied)}% occupancy` : "—",
         },
         {
           label: "Ready",

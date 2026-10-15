@@ -160,4 +160,14 @@ describe("Form times on the Perth clock", () => {
     expect(screen.getByLabelText("Time written on form")).toHaveValue("10:42");
     expect(screen.getByRole("status").textContent).toContain("on the demo clock");
   });
+
+  it("shows nothing for a cleared time rather than reading it as midnight", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFormTimes />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "" } });
+    expect(screen.getByRole("status").textContent).toBe("Not recorded");
+  });
 });

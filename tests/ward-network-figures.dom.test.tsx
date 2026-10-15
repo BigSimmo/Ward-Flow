@@ -15,7 +15,17 @@ vi.mock("next/navigation", () => ({
 import { NetworkFigures } from "@/components/ward-management/tools/ward-network-figures";
 import { WardFlowProvider, useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { occupancyPercent, occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
+
+function OccupancyProbe() {
+  const { units, admissions, bedReleases, leaveBeds } = useWardFlow();
+  return (
+    <span data-testid="occupancy-probe">
+      {occupancyPercent(occupiedBeds(units, admissions, [...bedReleases], leaveBeds))}
+    </span>
+  );
+}
 
 function AdvanceClock() {
   const { dispatch } = useWardFlow();
@@ -50,6 +60,16 @@ describe("whole-network tools figures", () => {
     expect(screen.getByText("Admissions today")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "All figures" }));
     expect(screen.getByText("Total beds")).toBeVisible();
+  });
+  it("prints the same occupancy as every other page, Occupied plus Pulled", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <OccupancyProbe />
+        <NetworkFigures />
+      </WardFlowProvider>,
+    );
+    const expected = screen.getByTestId("occupancy-probe").textContent;
+    expect(screen.getByText("Occupied").parentElement?.textContent).toContain(`${expected}% occupancy`);
   });
   it("shows the longest wait as a duration with its ED, never a movement reference", () => {
     render(

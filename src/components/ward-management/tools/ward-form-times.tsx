@@ -34,16 +34,17 @@ export function WardFormTimes() {
   const demoNow = useWardFlowClock();
   // The demo clock counts minutes from the start of the scenario day, anchored to today's date,
   // the same anchoring the form tool used, so a typed date reads naturally.
-  const now = useMemo(() => {
-    const dayZero = parseDateTimeInput(toDateInputValue(new Date()), "00:00") ?? new Date();
-    return new Date(dayZero.getTime() + demoNow * 60_000);
-  }, [demoNow]);
+  // The anchor is fixed once, so the comparison does not jump a day if the page stays open past
+  // Perth midnight.
+  const [dayZero] = useState(() => parseDateTimeInput(toDateInputValue(new Date()), "00:00") ?? new Date());
+  const now = useMemo(() => new Date(dayZero.getTime() + demoNow * 60_000), [dayZero, demoNow]);
   const [code, setCode] = useState<string>("1A");
   const [date, setDate] = useState(() => toDateInputValue(now));
   const [time, setTime] = useState(() => toTimeInputValue(now));
   const dateId = useId();
   const timeId = useId();
-  const typed = parseDateTimeInput(date, time);
+  // An empty time field is not a typed time, so it never reads as midnight (rule D5).
+  const typed = time ? parseDateTimeInput(date, time) : null;
 
   return (
     <div className={styles.toolBody} data-testid="ward-form-times">
