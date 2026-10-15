@@ -86,6 +86,9 @@ function edName(department: string): string {
   return department.replace(/ Emergency Department$/, "");
 }
 
+/** Causes take two lines each in a quarter-width panel, so fewer fit than journey rows. */
+const DELAY_ROW_LIMIT = 6;
+
 function Figure({ value }: { value: number | string }) {
   return <>{value === 0 ? "None" : value}</>;
 }
@@ -157,11 +160,12 @@ function Empty({ children }: { children: ReactNode }) {
   return <p className={styles.empty}>{children}</p>;
 }
 
-function More({ count, noun }: { count: number; noun: string }) {
+/** "and 3 more causes", or with `one`, "and 1 more cause". */
+function More({ count, noun, one = noun }: { count: number; noun: string; one?: string }) {
   if (count === 0) return null;
   return (
     <p className={styles.more}>
-      and {count} more {noun}
+      and {count} more {count === 1 ? one : noun}
     </p>
   );
 }
@@ -216,7 +220,6 @@ function gapText(gap: number): string {
   return `Spare ${gap}`;
 }
 
-/** "a", "a and b", "a, b and c". */
 /**
  * The ready figure counts beds still being made ready and never subtracts them (the owner's
  * 2026-09-01 ruling), so every ready figure on the TV says how many there are, in the wording the
@@ -224,10 +227,6 @@ function gapText(gap: number): string {
  */
 function preparingSentence(pendingPreparation: number): string {
   return pendingPreparation > 0 ? `. ${pendingPreparation} still being made ready` : "";
-}
-
-function listWords(words: string[]): string {
-  return words.length < 2 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
 }
 
 function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
@@ -384,7 +383,7 @@ export function BedMeetingTvView({
             label: "Beds ready now",
             value: capacity.ready,
             detail: shortKinds.length
-              ? `${capacity.lockedReady} locked${preparingSentence(extras.pendingPreparation)}. Short of ${listWords(shortKinds.map((row) => BED_KIND_SHORT[row.id].toLowerCase()))} beds`
+              ? `${capacity.lockedReady} locked${preparingSentence(extras.pendingPreparation)}. ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
               : `${capacity.lockedReady} locked, of ${capacity.beds} beds${preparingSentence(extras.pendingPreparation)}`,
             tone: capacity.ready === 0 ? "danger" : shortKinds.length > 0 ? "warning" : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
@@ -448,15 +447,18 @@ export function BedMeetingTvView({
           {delays.groups.length === 0 ? (
             <Empty>No delays.</Empty>
           ) : (
-            <ol className={styles.list}>
-              {delays.groups.map((group) => (
-                <li key={group.cause}>
-                  <span className={styles.who}>{group.title}</span>
-                  <span className={styles.where}>longest {splitDuration(group.longestWaitMinutes)}</span>
-                  <span className={styles.wait}>{group.count}</span>
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className={styles.list}>
+                {delays.groups.slice(0, DELAY_ROW_LIMIT).map((group) => (
+                  <li key={group.cause}>
+                    <span className={styles.who}>{group.title}</span>
+                    <span className={styles.where}>longest {splitDuration(group.longestWaitMinutes)}</span>
+                    <span className={styles.wait}>{group.count}</span>
+                  </li>
+                ))}
+              </ol>
+              <More count={Math.max(0, delays.groups.length - DELAY_ROW_LIMIT)} noun="causes" one="cause" />
+            </>
           )}
         </Panel>
       </div>
@@ -548,7 +550,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
                   </li>
                 ))}
               </ol>
-              <More count={discharges.moreRows} noun="discharges" />
+              <More count={discharges.moreRows} noun="discharges" one="discharge" />
             </>
           )}
         </Panel>
@@ -566,7 +568,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
                   </li>
                 ))}
               </ol>
-              <More count={Math.max(0, stuck.length - TV_ROW_LIMIT)} noun="people" />
+              <More count={Math.max(0, stuck.length - TV_ROW_LIMIT)} noun="people" one="person" />
             </>
           )}
         </Panel>
@@ -697,7 +699,7 @@ export function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: numb
                   </li>
                 ))}
               </ol>
-              <More count={sheet.moreWards} noun="wards" />
+              <More count={sheet.moreWards} noun="wards" one="ward" />
             </>
           )}
         </Panel>
