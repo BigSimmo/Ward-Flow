@@ -55,6 +55,25 @@ git fetch origin 5afce0b62413f4e182cfbefc7966e03b97126422
 git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- docs/ward-flow/mockups/reference
 ```
 
+### Third pass: dated plans, reports, handovers and audit output
+
+A third trim removed 544 more files that no code, test, script or agent instruction reads:
+
+- 360 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README, `product-refinement/VISUAL-REVIEW.md` and every plan the code cites stay)
+- `docs/ward-flow/sdd-rescued/`, `register/`, `handover/`, `handovers/`, `reviews/`, `triage/`, `outstanding/`, `rescued/`, `merge/` and `evidence/`, apart from any file the code cites
+- the September reports in `docs/ward-flow/reports/`
+- dated chat prompts, pre-registrations, finding registers and test sweeps at the top of `docs/ward-flow/`
+- `docs/ward-flow/audit-artefacts/stabilisation-suite-report.json` (4 MB of test output, which `scripts/ward-flow/audit/measure-ward-suite.mjs` writes again when run)
+
+Kept on purpose: both ledgers (they hold owner rulings), the owner rulings and decision records, the lessons (the rules index reads them), `reference-data/` (the reference build scripts read it), and the drawings the screen verification check reads.
+
+These files are kept in commit `cac245b` (`cac245bccbbc30115fe4ef9a38b8cfee0f149e92`), the last `main` commit before this pass. For example:
+
+```sh
+git fetch origin cac245bccbbc30115fe4ef9a38b8cfee0f149e92
+git checkout cac245bccbbc30115fe4ef9a38b8cfee0f149e92 -- docs/ward-flow/plans/2026-09-11-design-review-chat-handover.md
+```
+
 ## Documentation system
 
 Process / freshness / tip lock: [../DOCS-SYSTEM.md](../DOCS-SYSTEM.md).

@@ -24,7 +24,7 @@ Current commissioned work is established by the owner's task scope, current sour
 - [WF-DOCS-20261008 documentation repair](2026-10-08-documentation-repair.md): reviewed current-guidance corrections and maintained documentation gates; same task checkpoint and evidence.
 - [Owner answers, second round](../archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs come from Ward Lead.
 - [Retiring PsychSift from the Ward Flow folder](2026-09-25-psychsift-retirement.md): what Ward Flow uses, what is safe to remove now, what must be untangled first, and the Railway leftovers.
-- [Removing the rest of PsychSift, plan v1](2026-09-25-psychsift-removal-plan-v1.md): where the retirement stands after batch 3a, why the shared building blocks stay put, the few files that drag PsychSift in, the mixed tests, and the single removal pass.
+- Removing the rest of PsychSift, plan v1 (`docs/ward-flow/plans/2026-09-25-psychsift-removal-plan-v1.md`, removed in the 15 Oct 2026 docs trim): where the retirement stands after batch 3a, why the shared building blocks stay put, the few files that drag PsychSift in, the mixed tests, and the single removal pass.
 
 ## Folded & Completed (Round 2)
 

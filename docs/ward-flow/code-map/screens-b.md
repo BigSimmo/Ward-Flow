@@ -526,7 +526,7 @@ module. The local Clinical overview / Transit operations switch preserves the fi
 Legacy `/movements/[movementId]` renders the same `PatientNowScreen`; cockpit exception handlers
 are reused via `MovementWorkspaceCockpit`'s embedded mode. Operational dispatches, event-name
 mappings, verification commands and screenshot capture are documented in
-[the unified flight deck implementation note](../plans/unified-patient-flight-deck.md).
+the unified flight deck implementation note (`docs/ward-flow/plans/unified-patient-flight-deck.md`, removed in the 15 Oct 2026 docs trim).
 `tests/ward-patient-flight-deck.dom.test.tsx` drives referral through arrival and verifies
 reasoned step-back / release capacity behaviour against the shared reducer.
 
