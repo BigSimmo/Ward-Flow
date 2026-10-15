@@ -104,12 +104,15 @@ jobs:
       # These source checks need no npm install and do not assert clinical approval.
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
-      # Documentation in CI is held to three checks (fix list 10.12, 15 Oct 2026): links and
-      # anchors in every tracked Markdown file, the facts and retired terms below, and the safety
-      # wording (synthetic-data disclaimer above, legal wording later in this job). The index,
-      # inventory, organisation and command checks still run locally in the pre-commit hook.
+      # Documentation in CI is held to four checks (fix list 10.12, 15 Oct 2026): links and
+      # anchors in every tracked Markdown file, npm commands named in maintained docs, the facts
+      # and retired terms below, and the safety wording (synthetic-data disclaimer above, legal
+      # wording later in this job). The index and inventory checks run in the pre-commit hook;
+      # the organisation check runs on demand with `npm run docs:maintain:check`.
       - name: Check document links and anchors
         run: npm run docs:check-links
+      - name: Check maintained document commands
+        run: npm run docs:check-scripts
       # Facts read from source must match docs/FACTS.md and every fact marker. Retired terms
       # (docs/retired-terms.json) warn on existing lines and fail only on lines this PR adds.
       - name: Check doc facts and retired terms
