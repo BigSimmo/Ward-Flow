@@ -76,6 +76,7 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import {
   patientIdentityLine,
   resolveSubjectPatient,
+  NAME_NOT_RECORDED,
   UMRN_NOT_RECORDED,
   withUmrnInPlaceOfMovementIds,
   type PatientResolutionSubject,
@@ -2101,7 +2102,7 @@ export function CommunityScreen({
                   id: row.key,
                   testId: `ward-community-phone-cto-${row.referralId}`,
                   name: phoneName(person, "No person on file"),
-                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? row.referralId}`,
+                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? UMRN_NOT_RECORDED}`,
                   time: caseloadRecordedExpiryLabel(row, now),
                   onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
                 };
@@ -4268,10 +4269,14 @@ export function CommunityScreen({
                             return (
                               <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>
                                 <td>
-                                  <strong>{row.patientId ?? "No person on file"}</strong>
+                                  <strong>
+                                    {row.patientId === undefined || row.patientId === null
+                                      ? "No person on file"
+                                      : phoneName(phonePerson(row.patientId), NAME_NOT_RECORDED)}
+                                  </strong>
                                   {/* The age band sits under the person, as the v6 table carries it. */}
                                   <span className={styles.caseloadMeta}>
-                                    {row.umrn ?? row.referralId} · {row.ageBand}
+                                    {row.umrn ?? UMRN_NOT_RECORDED} · {row.ageBand}
                                   </span>
                                 </td>
                                 <td>
@@ -5006,14 +5011,10 @@ export function CommunityScreen({
                       <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                           <div>
-                            <b>Referral ID:</b>{" "}
-                            <span className={styles.mono} id="refDrawerId">
-                              {selectedReferral?.id ?? "Not found"}
-                            </span>
-                          </div>
-                          <div>
                             <b>Patient:</b>{" "}
-                            <span id="refDrawerPatient">{selectedReferral?.patientId ?? "Not recorded"}</span>
+                            <span id="refDrawerPatient">
+                              {selectedReferral ? identityOf(selectedReferral) : "Not recorded"}
+                            </span>
                           </div>
                           <div>
                             <b>Referring Service:</b>{" "}

@@ -12,6 +12,7 @@ import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { edPressure, type EdPressure } from "@/components/ward-management/ward-pressure";
 import {
   resolveSubjectPatient,
+  withoutRecordNumbers,
   withUmrnInPlaceOfMovementIds,
 } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -164,7 +165,9 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     events.push({
       at: rejection.at,
       id: `rejection:${rejection.id}`,
-      text: `${rejection.movementId}: ${rejection.attempted} was refused. ${rejection.reason}`,
+      // A journey number becomes the patient's UMRN below. Any other record (a referral, stay, bed
+      // release or leave bed) has no line of its own here, so its number is left off (D-39).
+      text: `${rejection.movementId.startsWith("WF-") ? `${rejection.movementId}: ` : ""}${rejection.attempted} was refused. ${withoutRecordNumbers(rejection.reason)}`,
       tone: "danger",
       category: "other",
     });
