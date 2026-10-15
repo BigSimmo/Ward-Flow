@@ -1,7 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { WalkRoundRowMarks, WardWalkRound, type WalkRoundBed } from "@/components/ward-management/ward/ward-walk-round";
+import {
+  useWalkRound,
+  WalkRoundRowMarks,
+  WardWalkRound,
+  type WalkRoundBed,
+} from "@/components/ward-management/ward/ward-walk-round";
 
 // Made-up beds, deliberately out of bed order so the walk has to sort them.
 const beds: WalkRoundBed[] = [
@@ -52,9 +57,27 @@ function list(mark: (bedNumber: number) => { reviewed: boolean; changed: boolean
   );
 }
 
+/** The ward page holds the round; `phone` false stands in for turning the phone to landscape. */
+function Harness({
+  bedList = beds,
+  onOpenBed = vi.fn(),
+  phone = true,
+}: {
+  bedList?: WalkRoundBed[];
+  onOpenBed?: (n: number) => void;
+  phone?: boolean;
+}) {
+  const [round, setRound] = useWalkRound("ward-a", bedList);
+  return phone ? (
+    <WardWalkRound beds={bedList} round={round} setRound={setRound} onOpenBed={onOpenBed} renderList={list} />
+  ) : (
+    <p>Desktop list</p>
+  );
+}
+
 describe("phone walk round (item 23, option D)", () => {
   it("walks beds in bed order, marks them reviewed and returns to the list", () => {
-    render(<WardWalkRound beds={beds} onOpenBed={vi.fn()} renderList={list} />);
+    render(<Harness />);
     expect(screen.getByText("List bed 01")).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("0 of 3 reviewed");
 
@@ -74,7 +97,7 @@ describe("phone walk round (item 23, option D)", () => {
   });
 
   it("starts from a tapped list row and finishes on the last bed", () => {
-    render(<WardWalkRound beds={beds} onOpenBed={vi.fn()} renderList={list} />);
+    render(<Harness />);
     fireEvent.click(screen.getByText("List bed 03"));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
     expect(screen.getByText("List bed 03")).toBeTruthy();
@@ -83,24 +106,45 @@ describe("phone walk round (item 23, option D)", () => {
 
   it("opens the bed's existing panel to update it", () => {
     const onOpenBed = vi.fn();
-    render(<WardWalkRound beds={beds} onOpenBed={onOpenBed} renderList={list} />);
+    render(<Harness onOpenBed={onOpenBed} />);
     fireEvent.click(screen.getByRole("button", { name: "Walk from bed 02" }));
     fireEvent.click(screen.getByRole("button", { name: "Update this bed" }));
     expect(onOpenBed).toHaveBeenCalledWith(2);
   });
 
   it("marks a bed changed this round when its state moves, not when only its text ticks", () => {
-    const { rerender } = render(<WardWalkRound beds={beds} onOpenBed={vi.fn()} renderList={list} />);
+    const { rerender } = render(<Harness />);
     expect(screen.queryByText("Changed")).toBeNull();
     const ticked = beds.map((bed) => (bed.bedNumber === 2 ? { ...bed, note: "Pull 26m left" } : bed));
-    rerender(<WardWalkRound beds={ticked} onOpenBed={vi.fn()} renderList={list} />);
+    rerender(<Harness bedList={ticked} />);
     expect(screen.queryByText("Changed")).toBeNull();
     const moved = beds.map((bed) =>
       bed.bedNumber === 1 ? { ...bed, note: "Discharge confirmed", changeKey: "occupied|confirmed" } : bed,
     );
-    rerender(<WardWalkRound beds={moved} onOpenBed={vi.fn()} renderList={list} />);
+    rerender(<Harness bedList={moved} />);
     expect(screen.getAllByText("Changed")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Walk from bed 01" }));
     expect(screen.getByText("Changed this round")).toBeTruthy();
+  });
+
+  it("keeps the round when the layout leaves the phone and comes back", () => {
+    const { rerender } = render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    rerender(<Harness phone={false} />);
+    rerender(<Harness />);
+    expect(screen.getByRole("status").textContent).toBe("1 of 3 reviewed");
+  });
+
+  it("starts a finished round again from nothing", () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
+    expect(screen.getByRole("status").textContent).toBe("3 of 3 reviewed");
+    fireEvent.click(screen.getByRole("button", { name: "Walk again from bed 01" }));
+    expect(screen.getByRole("status").textContent).toBe("0 of 3 reviewed");
+    expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
   });
 });

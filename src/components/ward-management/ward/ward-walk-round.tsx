@@ -6,12 +6,13 @@
  * time in bed order, with Reviewed, next bed as the main button and Back to list to return.
  *
  * Phone only and behind the top25-walk-round flag. Reviewed marks and the changed this round marks
- * live in this screen's memory only: nothing is saved, and a reload starts a fresh round. Edits go
+ * live in this screen's memory only: nothing is saved, and a reload starts a fresh round. The round
+ * is held by the ward page (`useWalkRound`), so turning the phone and back keeps it. Edits go
  * through the bed's existing panel, so every change uses the same events and checks as before.
  */
 
-import React, { useState } from "react";
-import { Button, StatusGlyph, type WfTone } from "@/components/wf";
+import React, { useState, type Dispatch, type SetStateAction } from "react";
+import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
 import styles from "./ward-walk-round.module.css";
 
 export type WalkRoundBed = {
@@ -29,20 +30,56 @@ export type WalkRoundBed = {
 
 export type WalkRoundMark = { reviewed: boolean; changed: boolean };
 
+export type WalkRoundState = {
+  /** The ward this round belongs to; a different ward starts a fresh round. */
+  scope: string;
+  reviewed: ReadonlySet<number>;
+  walking: number | null;
+  /** Each bed's change key when the round started. */
+  startKeys: ReadonlyMap<number, string>;
+};
+
+function freshRound(scope: string, beds: readonly WalkRoundBed[]): WalkRoundState {
+  return {
+    scope,
+    reviewed: new Set(),
+    walking: null,
+    startKeys: new Map(beds.map((bed) => [bed.bedNumber, bed.changeKey])),
+  };
+}
+
+/** The round's state, held above the phone and desktop branch so a layout change keeps it. */
+export function useWalkRound(
+  scope: string,
+  beds: readonly WalkRoundBed[],
+): [WalkRoundState, Dispatch<SetStateAction<WalkRoundState>>] {
+  const [round, setRound] = useState(() => freshRound(scope, beds));
+  if (round.scope !== scope) {
+    const next = freshRound(scope, beds);
+    setRound(next);
+    return [next, setRound];
+  }
+  return [round, setRound];
+}
+
 type Props = {
   beds: WalkRoundBed[];
+  round: WalkRoundState;
+  setRound: Dispatch<SetStateAction<WalkRoundState>>;
   /** Opens the bed's existing panel, where its status is updated. */
   onOpenBed: (bedNumber: number) => void;
+  /** Records the control that opened the panel, so focus returns to it when the panel closes. */
+  registerTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
   /** The grouped list. It gets each bed's marks and a way to start walking from that bed. */
   renderList: (mark: (bedNumber: number) => WalkRoundMark, walkFrom: (bedNumber: number) => void) => React.ReactNode;
 };
 
-export function WardWalkRound({ beds, onOpenBed, renderList }: Props) {
+export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigger, renderList }: Props) {
   const ordered = [...beds].sort((left, right) => left.bedNumber - right.bedNumber);
-  // The round starts when the screen opens: a bed whose state moves after that is changed this round.
-  const [startKeys] = useState(() => new Map(beds.map((bed) => [bed.bedNumber, bed.changeKey])));
-  const [reviewed, setReviewed] = useState<ReadonlySet<number>>(() => new Set());
-  const [walking, setWalking] = useState<number | null>(null);
+  const { reviewed, walking, startKeys } = round;
+  const setWalking = (bedNumber: number | null) => {
+    setRound((previous) => ({ ...previous, walking: bedNumber }));
+  };
 
   const changed = (bed: WalkRoundBed) => {
     const start = startKeys.get(bed.bedNumber);
@@ -53,15 +90,27 @@ export function WardWalkRound({ beds, onOpenBed, renderList }: Props) {
     return { reviewed: reviewed.has(bedNumber), changed: bed ? changed(bed) : false };
   };
   const reviewedCount = ordered.filter((bed) => reviewed.has(bed.bedNumber)).length;
+  const allReviewed = ordered.length > 0 && reviewedCount === ordered.length;
   const index = walking === null ? -1 : ordered.findIndex((bed) => bed.bedNumber === walking);
   const current = index >= 0 ? ordered[index] : undefined;
   const firstUnreviewed = ordered.find((bed) => !reviewed.has(bed.bedNumber)) ?? ordered[0];
 
   const reviewAndNext = () => {
     if (!current) return;
-    setReviewed((previous) => new Set(previous).add(current.bedNumber));
     const next = ordered[index + 1];
-    setWalking(next ? next.bedNumber : null);
+    setRound((previous) => ({
+      ...previous,
+      reviewed: new Set(previous.reviewed).add(current.bedNumber),
+      walking: next ? next.bedNumber : null,
+    }));
+  };
+  const startOrCarryOn = () => {
+    // A finished round starts again from nothing: no reviewed marks and a new change baseline.
+    if (allReviewed) {
+      setRound({ ...freshRound(round.scope, beds), walking: ordered[0]?.bedNumber ?? null });
+      return;
+    }
+    if (firstUnreviewed) setWalking(firstUnreviewed.bedNumber);
   };
 
   return (
@@ -97,16 +146,10 @@ export function WardWalkRound({ beds, onOpenBed, renderList }: Props) {
           })}
         </div>
         {current ? null : (
-          <Button
-            variant="pri"
-            size="sm"
-            onClick={() => {
-              if (firstUnreviewed) setWalking(firstUnreviewed.bedNumber);
-            }}
-          >
+          <Button variant="pri" size="sm" onClick={startOrCarryOn}>
             {reviewedCount === 0
               ? "Start walk round"
-              : reviewedCount === ordered.length
+              : allReviewed
                 ? "Walk again from bed " + (ordered[0]?.number ?? "")
                 : "Carry on from bed " + (firstUnreviewed?.number ?? "")}
           </Button>
@@ -142,14 +185,17 @@ export function WardWalkRound({ beds, onOpenBed, renderList }: Props) {
             {changed(current) ? <span className={styles.changed}>Changed this round</span> : null}
             {reviewed.has(current.bedNumber) ? <span className={styles.done}>Reviewed</span> : null}
           </p>
-          <Button
-            variant="sec"
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", size: "md", iconOnly: false })}
+            aria-haspopup="dialog"
+            ref={(element) => registerTrigger?.(current.bedNumber, element)}
             onClick={() => {
               onOpenBed(current.bedNumber);
             }}
           >
             Update this bed
-          </Button>
+          </button>
           <div className={styles.cardFoot}>
             <Button
               variant="ghost"

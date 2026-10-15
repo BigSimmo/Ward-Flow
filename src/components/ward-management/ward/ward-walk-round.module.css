@@ -44,8 +44,8 @@
 
 .stripBed {
   flex: 0 0 auto;
-  min-width: var(--wf-target, 28px);
-  min-height: var(--wf-touch, 44px);
+  min-width: var(--wf-row-touch, 52px);
+  min-height: var(--wf-row-touch, 52px);
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);

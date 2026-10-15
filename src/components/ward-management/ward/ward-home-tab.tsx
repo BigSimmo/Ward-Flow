@@ -54,7 +54,13 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { pullBlockedReason } from "./ward-arrivals-corridor";
-import { WalkRoundRowMarks, WardWalkRound, type WalkRoundMark } from "./ward-walk-round";
+import {
+  useWalkRound,
+  WalkRoundRowMarks,
+  WardWalkRound,
+  type WalkRoundBed,
+  type WalkRoundMark,
+} from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
@@ -613,6 +619,30 @@ export function WardHomeTab({
 
   // Phone grouped bed list. With the walk round on, a row starts the walk from that bed and shows
   // its reviewed and changed marks.
+  // Item 23: the walk round's state sits here, above the phone and desktop branch, so turning the
+  // phone to landscape and back keeps the round.
+  const walkBeds: WalkRoundBed[] = bedRows.map((row) => ({
+    bedNumber: Number(row.bed.bedNumber),
+    number: row.number,
+    name: row.name,
+    note: row.note,
+    changeKey: [
+      row.bed.status,
+      row.bed.statusText,
+      row.bed.admissionId,
+      row.bed.blockReason,
+      row.bed.dischargeBarrier,
+      row.bed.dischargeConfirmed,
+      row.bed.pastDate,
+      row.bed.awayAtEdHours != null,
+      row.bed.isSpecialling,
+      row.bed.preparing,
+    ].join("|"),
+    glyph: row.glyph,
+    days: row.days,
+    accessibleName: row.accessibleName,
+  }));
+  const [walkRound, setWalkRound] = useWalkRound(unit.id, walkBeds);
   const walkRowLabel = (name: string, marks: WalkRoundMark) =>
     [name, marks.changed ? "changed this round" : "", marks.reviewed ? "reviewed" : "", "walk from this bed"]
       .filter(Boolean)
@@ -1823,27 +1853,10 @@ export function WardHomeTab({
           ) : isPhone ? (
             walkRoundOn ? (
               <WardWalkRound
-                beds={bedRows.map((row) => ({
-                  bedNumber: Number(row.bed.bedNumber),
-                  number: row.number,
-                  name: row.name,
-                  note: row.note,
-                  changeKey: [
-                    row.bed.status,
-                    row.bed.statusText,
-                    row.bed.admissionId,
-                    row.bed.blockReason,
-                    row.bed.dischargeBarrier,
-                    row.bed.dischargeConfirmed,
-                    row.bed.pastDate,
-                    row.bed.awayAtEdHours != null,
-                    row.bed.isSpecialling,
-                    row.bed.preparing,
-                  ].join("|"),
-                  glyph: row.glyph,
-                  days: row.days,
-                  accessibleName: row.accessibleName,
-                }))}
+                beds={walkBeds}
+                round={walkRound}
+                setRound={setWalkRound}
+                registerTrigger={registerBedTrigger}
                 onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
                 renderList={(mark, walkFrom) => phoneGroupList(mark, walkFrom)}
               />
