@@ -490,21 +490,21 @@ export function unsignedClinicalValueCount(): number {
  */
 export function clinicalValuesMarkdownTable(): string {
   const cell = (text: string) => text.replaceAll("|", "\\|");
+  // Plain concatenation, no nested templates: the travel-band guard's comment scanner reads this file.
   const rows = CLINICAL_VALUE_LIST.map((entry) => {
-    const alternatives =
-      entry.alternatives?.map((alt) => `${formatClinicalFigure(alt.value, entry.unit)} (${alt.where})`).join("; ") ??
-      "";
-    return `| ${[
+    const alternatives = (entry.alternatives ?? [])
+      .map((alt) => formatClinicalFigure(alt.value, entry.unit) + " (" + alt.where + ")")
+      .join("; ");
+    const cells = [
       entry.group,
       entry.name,
       formatClinicalFigure(entry.value, entry.unit) + (entry.adjustable ? ", default, changeable in Settings" : ""),
       clinicalValueStatusText(entry),
       entry.source,
       alternatives || "None recorded",
-      `\`${entry.id}\``,
-    ]
-      .map(cell)
-      .join(" | ")} |`;
+      "`" + entry.id + "`",
+    ];
+    return "| " + cells.map(cell).join(" | ") + " |";
   });
   return [
     "| Group | Rule | Value | Status | Source | Other figures seen | Id |",
