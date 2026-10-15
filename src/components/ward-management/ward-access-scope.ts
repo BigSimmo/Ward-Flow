@@ -66,6 +66,8 @@ export type ScopeOptions = {
 export type ScopedWorkspace<T extends ScopableWorkspace> = T & {
   /** Patients visible only through break glass, so a screen can label them read only. */
   readonly breakGlassPatientIds: ReadonlySet<string>;
+  /** Stays sent as ward and dates only, so nothing hung off them (leave, a release) goes too. */
+  readonly datesOnlyAdmissionIds: ReadonlySet<string>;
 };
 
 function activeGrantIds(grants: readonly BreakGlassGrant[] | undefined, now: Instant): Set<string> {
@@ -257,7 +259,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 ): ScopedWorkspace<T> {
   const { now, places } = options;
   const grantIds = activeGrantIds(options.grants, now);
-  if (accessIsWholeNetwork(access)) return { ...workspace, breakGlassPatientIds: NO_GRANTS };
+  if (accessIsWholeNetwork(access))
+    return { ...workspace, breakGlassPatientIds: NO_GRANTS, datesOnlyAdmissionIds: NO_GRANTS };
 
   const scope = access.scope;
   const unitIn = (unitId: string) => unitInScope(scope, unitId, places);
@@ -268,6 +271,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   let movements: Movement[] = [];
   let referrals: Referral[] = [];
   let admissions: Admission[] = [];
+  const datesOnlyAdmissionIds = new Set<string>();
   let anonymise = false;
   let officer = false;
 
@@ -398,7 +402,10 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       );
       admissions = workspace.admissions.flatMap((admission) => {
         if (admission.referralId !== null && referralIds.has(admission.referralId)) return [admission];
-        if (admission.patientId !== null && catchment.has(admission.patientId)) return [datesOnlyAdmission(admission)];
+        if (admission.patientId !== null && catchment.has(admission.patientId)) {
+          datesOnlyAdmissionIds.add(admission.id);
+          return [datesOnlyAdmission(admission)];
+        }
         return [];
       });
       break;
@@ -464,6 +471,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     patients,
     notices,
     breakGlassPatientIds: visibleOnlyByGrant,
+    datesOnlyAdmissionIds,
   };
 }
 
@@ -516,4 +524,33 @@ export function smallNumberText(count: number): string {
   const line = CLINICAL_VALUES.smallNumberHidden.value;
   if (count > 0 && count < line) return `fewer than ${line}`;
   return String(count);
+}
+
+/**
+ * D-59: the people a coordinator's own bookings name, added to its view, so a booking for one of its
+ * wards keeps its person even when nothing else links them there. Nobody else is added.
+ */
+export function withBookedPatients<P extends { id: string }>(
+  shown: readonly P[],
+  all: readonly P[],
+  bookings: readonly { patientId: string | null }[],
+): P[] {
+  const present = new Set(shown.map((patient) => patient.id));
+  const booked = new Set(
+    bookings.map((booking) => booking.patientId).filter((id): id is string => id !== null && !present.has(id)),
+  );
+  return booked.size === 0 ? [...shown] : [...shown, ...all.filter((patient) => booked.has(patient.id))];
+}
+
+/** Whether a booking's person is in view. An initials-only booking names nobody, so it always is. */
+export function bookingPersonShown(booking: { patientId: string | null }, patients: ReadonlySet<string>): boolean {
+  return booking.patientId === null || patients.has(booking.patientId);
+}
+
+/** Whether a record belongs to a person this desk sees only through break glass, so it stays read only. */
+export function seenThroughBreakGlass(
+  record: { patientId?: string | null },
+  breakGlassPatientIds: ReadonlySet<string>,
+): boolean {
+  return typeof record.patientId === "string" && breakGlassPatientIds.has(record.patientId);
 }

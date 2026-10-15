@@ -106,6 +106,7 @@ describe("clinical values file", () => {
       // Role access plan (Josh, 15 Oct 2026): new synthetic access and privacy values.
       breakGlassWindow: 60,
       breakGlassPerShift: 3,
+      breakGlassShift: 12,
       edHandoffWindow: 24,
       wardHandoffWindow: 7,
       idleLock: 15,
