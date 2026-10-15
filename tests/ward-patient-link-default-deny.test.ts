@@ -195,6 +195,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "IS the plumbing the guard exists to sit downstream of, not a screen.",
   },
   {
+    file: "ward-flow-record-events.ts",
+    reason:
+      "The reducer's RECORD_* cases, moved out of ward-flow-reducer.ts unchanged on 15 October 2026. " +
+      "The same engine plumbing as the reducer entry above (for example RECORD_COMMUNITY_TREATMENT_ORDER " +
+      "checking an event's patientId against state.patients), not a screen.",
+  },
+  {
     file: "movements/movement-drawer.tsx",
     reason:
       "🔴 OWNER RULING O-16.3, 2026-09-11 — 'Yes show the patient name.' The Movement detail " +
@@ -303,7 +310,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(24);
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(25);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
