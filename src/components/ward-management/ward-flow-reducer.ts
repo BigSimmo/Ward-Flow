@@ -53,8 +53,8 @@ import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
-import { reduceRecordedFactEvent } from "./ward-flow-record-events";
-import { reduceUndoEvent } from "./ward-flow-undo-events";
+import { type RecordedFactEventHelpers, reduceRecordedFactEvent } from "./ward-flow-record-events";
+import { type UndoEventHelpers, reduceUndoEvent } from "./ward-flow-undo-events";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
   BED_PREPARATION_NOTES,
@@ -2159,7 +2159,7 @@ export function reduceClinicalEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
-      return reduceUndoEvent(state, event, decision);
+      return reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
 
     case "PLACE_IN_BED": {
       const admission = findAdmission(state, event.admissionId);
@@ -2537,7 +2537,7 @@ export function reduceClinicalEvent(
     case "RECORD_REPATRIATION":
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
-      return reduceRecordedFactEvent(state, event, decision);
+      return reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
 
     /**
      * T4: the undo for `RECORD_LEGAL_FORM_RECEIVED`. Clears `legalFormReceivedAt` and appends the
@@ -6909,3 +6909,45 @@ export function reduceClinicalEvent(
   }
   return state;
 }
+
+// Passed to the RECORD_* and UNDO_* slices, which may not import this file at run time.
+
+const RECORDED_FACT_EVENT_HELPERS: RecordedFactEventHelpers = {
+  STAGE_TRANSITION_BLOCKERS,
+  appendNotices,
+  departAdmission,
+  dischargeBlockingTransit,
+  dischargeMovement,
+  findAdmission,
+  findMovement,
+  findReferral,
+  findUnit,
+  makeNotice,
+  movementHoldsBedByStage,
+  movementSourceAdmission,
+  nextLeaveBedId,
+  nextReferralId,
+  patientRecordIsInvoluntary,
+  recordedByLabel,
+  reduceClinicalEvent,
+  referralReferrer,
+  reject,
+  releasePulledBedAndAdmission,
+  replaceAdmission,
+  replaceMovement,
+  replaceReferral,
+  replaceUnit,
+  withdrawAllLiveRequestsForReferrer,
+};
+
+const UNDO_EVENT_HELPERS: UndoEventHelpers = {
+  UNDO_STEP_NOTHING,
+  bedNumberRefusal,
+  findAdmission,
+  findReferral,
+  findUnit,
+  heldBedRefusal,
+  reject,
+  replaceAdmission,
+  replaceReferral,
+};

@@ -1,13 +1,9 @@
 import { isLeavingDestination } from "./ward-admissions";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
-import {
-  type ClinicalContactRecord,
-  type HandoverSignOffRecord,
-  type RepatriationRecord,
-  STAGE_TRANSITION_BLOCKERS,
-  type WardFlowState,
+import type {
   appendNotices,
+  ClinicalContactRecord,
   departAdmission,
   dischargeBlockingTransit,
   dischargeMovement,
@@ -15,6 +11,7 @@ import {
   findMovement,
   findReferral,
   findUnit,
+  HandoverSignOffRecord,
   makeNotice,
   movementHoldsBedByStage,
   movementSourceAdmission,
@@ -26,10 +23,13 @@ import {
   referralReferrer,
   reject,
   releasePulledBedAndAdmission,
+  RepatriationRecord,
   replaceAdmission,
   replaceMovement,
   replaceReferral,
   replaceUnit,
+  STAGE_TRANSITION_BLOCKERS,
+  WardFlowState,
   withdrawAllLiveRequestsForReferrer,
 } from "./ward-flow-reducer";
 import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
@@ -120,11 +120,71 @@ export type RecordedFactEvent = Extract<
   }
 >;
 
+/**
+ * The reducer helpers this slice uses. `ward-flow-reducer.ts` passes them in, so the two files do not
+ * import each other at run time (tests/architecture-boundaries.test.ts forbids runtime import cycles).
+ */
+export type RecordedFactEventHelpers = {
+  STAGE_TRANSITION_BLOCKERS: typeof STAGE_TRANSITION_BLOCKERS;
+  appendNotices: typeof appendNotices;
+  departAdmission: typeof departAdmission;
+  dischargeBlockingTransit: typeof dischargeBlockingTransit;
+  dischargeMovement: typeof dischargeMovement;
+  findAdmission: typeof findAdmission;
+  findMovement: typeof findMovement;
+  findReferral: typeof findReferral;
+  findUnit: typeof findUnit;
+  makeNotice: typeof makeNotice;
+  movementHoldsBedByStage: typeof movementHoldsBedByStage;
+  movementSourceAdmission: typeof movementSourceAdmission;
+  nextLeaveBedId: typeof nextLeaveBedId;
+  nextReferralId: typeof nextReferralId;
+  patientRecordIsInvoluntary: typeof patientRecordIsInvoluntary;
+  recordedByLabel: typeof recordedByLabel;
+  reduceClinicalEvent: typeof reduceClinicalEvent;
+  referralReferrer: typeof referralReferrer;
+  reject: typeof reject;
+  releasePulledBedAndAdmission: typeof releasePulledBedAndAdmission;
+  replaceAdmission: typeof replaceAdmission;
+  replaceMovement: typeof replaceMovement;
+  replaceReferral: typeof replaceReferral;
+  replaceUnit: typeof replaceUnit;
+  withdrawAllLiveRequestsForReferrer: typeof withdrawAllLiveRequestsForReferrer;
+};
+
 export function reduceRecordedFactEvent(
   state: WardFlowState,
   event: RecordedFactEvent,
   decision: AuditDecision,
+  helpers: RecordedFactEventHelpers,
 ): WardFlowState {
+  const {
+    STAGE_TRANSITION_BLOCKERS,
+    appendNotices,
+    departAdmission,
+    dischargeBlockingTransit,
+    dischargeMovement,
+    findAdmission,
+    findMovement,
+    findReferral,
+    findUnit,
+    makeNotice,
+    movementHoldsBedByStage,
+    movementSourceAdmission,
+    nextLeaveBedId,
+    nextReferralId,
+    patientRecordIsInvoluntary,
+    recordedByLabel,
+    reduceClinicalEvent,
+    referralReferrer,
+    reject,
+    releasePulledBedAndAdmission,
+    replaceAdmission,
+    replaceMovement,
+    replaceReferral,
+    replaceUnit,
+    withdrawAllLiveRequestsForReferrer,
+  } = helpers;
   switch (event.type) {
     case "RECORD_MEDICAL_CLEARANCE": {
       const referral = findReferral(state, event.referralId);

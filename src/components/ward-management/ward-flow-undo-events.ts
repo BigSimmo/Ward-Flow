@@ -1,7 +1,5 @@
 import type { AuditDecision } from "./ward-audit";
-import {
-  UNDO_STEP_NOTHING,
-  type WardFlowState,
+import type {
   bedNumberRefusal,
   findAdmission,
   findReferral,
@@ -10,6 +8,8 @@ import {
   reject,
   replaceAdmission,
   replaceReferral,
+  UNDO_STEP_NOTHING,
+  WardFlowState,
 } from "./ward-flow-reducer";
 import {
   applyStepUndo,
@@ -49,7 +49,39 @@ export type UndoEvent = Extract<
   }
 >;
 
-export function reduceUndoEvent(state: WardFlowState, event: UndoEvent, decision: AuditDecision): WardFlowState {
+/**
+ * The reducer helpers this slice uses. `ward-flow-reducer.ts` passes them in, so the two files do not
+ * import each other at run time (tests/architecture-boundaries.test.ts forbids runtime import cycles).
+ */
+export type UndoEventHelpers = {
+  UNDO_STEP_NOTHING: typeof UNDO_STEP_NOTHING;
+  bedNumberRefusal: typeof bedNumberRefusal;
+  findAdmission: typeof findAdmission;
+  findReferral: typeof findReferral;
+  findUnit: typeof findUnit;
+  heldBedRefusal: typeof heldBedRefusal;
+  reject: typeof reject;
+  replaceAdmission: typeof replaceAdmission;
+  replaceReferral: typeof replaceReferral;
+};
+
+export function reduceUndoEvent(
+  state: WardFlowState,
+  event: UndoEvent,
+  decision: AuditDecision,
+  helpers: UndoEventHelpers,
+): WardFlowState {
+  const {
+    UNDO_STEP_NOTHING,
+    bedNumberRefusal,
+    findAdmission,
+    findReferral,
+    findUnit,
+    heldBedRefusal,
+    reject,
+    replaceAdmission,
+    replaceReferral,
+  } = helpers;
   switch (event.type) {
     case "UNDO_REFERRAL_DECISION": {
       const referral = findReferral(state, event.referralId);
