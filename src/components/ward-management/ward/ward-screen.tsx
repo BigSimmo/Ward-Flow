@@ -84,7 +84,11 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
-import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
+import {
+  admissionCriteriaEligibility,
+  HIGH_ACUITY_STAFFING_REFUSAL,
+  OVERRIDE_REASON_REQUIRED,
+} from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -139,7 +143,6 @@ import { openDecisionCount } from "./ward-decision-count";
 import { WardDischargeNotices } from "./ward-discharge-notices";
 import { type WardFlowTab, WardHomeTab, type WardShiftView, wardActNowCount } from "./ward-home-tab";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
-import { criteriaEligibility } from "@/components/ward-management/ward-discharge-criteria";
 
 const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
@@ -3304,6 +3307,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {selectedBed !== null
           ? (() => {
               const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
+              const selectedAdmission = admissions.find((admission) => admission.id === selectedBedItem?.admissionId);
               return (
                 <WardBedDossierDrawer
                   selectedBed={selectedBed}
@@ -3432,11 +3436,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       : undefined
                   }
                   criteriaEligibility={
-                    criteriaLedOn
-                      ? criteriaEligibility(
-                          selectedBedItem?.patientInfo?.patient?.legalStatus,
-                          selectedBedItem?.legalStatus,
-                        )
+                    criteriaLedOn && selectedAdmission
+                      ? admissionCriteriaEligibility({ movements, patients }, selectedAdmission)
                       : undefined
                   }
                   onSetCriteria={
