@@ -2,7 +2,7 @@
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -32,6 +32,7 @@ import {
   TextInput,
   useIsPhone,
   useOptionalToast,
+  useModalFocus,
   type SinceItem,
   type WfTone,
 } from "@/components/wf";
@@ -70,6 +71,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import {
@@ -533,8 +535,6 @@ export function CommunityScreen({
     type: "review" | "assign";
     referral: CommunityScopedReferral;
   } | null>(null);
-  // These dialogs do not join the sheet stack, so they hold the page still themselves (phone).
-  useWardPageScrollLock(transportBookFor !== undefined || transportCancelFor !== undefined || activeModal !== null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
@@ -553,19 +553,31 @@ export function CommunityScreen({
 
   /*
    * v10 pass 3: an Accept or Decline recorded here shows a toast with Undo
-   * (`UNDO_REFERRAL_DECISION`, this team's own decision). `rejectionsRef` reads the newest count at
-   * the moment Undo is pressed, and a refused Undo says why.
+   * (`UNDO_REFERRAL_DECISION`, this team's own decision), through the shared `useUndoableStep`: a
+   * refused step or Undo says why.
    */
   const toast = useOptionalToast();
-  const rejectionsRef = useRef(rejections.length);
-  useEffect(() => {
-    rejectionsRef.current = rejections.length;
-  }, [rejections]);
+  const { run: runDecision, offer: offerDecision } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: "community",
+    toast,
+  });
+  const decisionStep = useCallback(
+    (referralId: string, word: "accepted" | "declined") => ({
+      success: `Referral ${word}`,
+      undo: (at: Instant): WardFlowEvent => ({
+        type: "UNDO_REFERRAL_DECISION",
+        role: "community",
+        now: at,
+        referralId,
+      }),
+      undone: "Decision undone. The referral is back in the queue.",
+    }),
+    [],
+  );
   const toastedAcceptRef = useRef<string | null>(null);
-  const declineCheckRef = useRef<{ referralId: string; count: number } | null>(null);
-  const [declineCheckToken, setDeclineCheckToken] = useState(0);
-  const undoCheckRef = useRef<number | null>(null);
-  const [undoCheckToken, setUndoCheckToken] = useState(0);
   const [switchOpen, setSwitchOpen] = useState(false);
   // Phone (v10): the waiting referral and the departure open as bottom sheets.
   const isPhone = useIsPhone();
@@ -582,25 +594,6 @@ export function CommunityScreen({
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const pushDecisionToast = useCallback(
-    (referralId: string, word: "accepted" | "declined") => {
-      toast?.push({
-        tone: "success",
-        title: `Referral ${word}`,
-        body: "Undo puts it back in the queue.",
-        undo: {
-          durationMs: 8000,
-          onUndo: () => {
-            undoCheckRef.current = rejectionsRef.current;
-            dispatch({ type: "UNDO_REFERRAL_DECISION", role: "community", now, referralId });
-            setUndoCheckToken((token) => token + 1);
-          },
-        },
-      });
-    },
-    [toast, dispatch, now],
-  );
-
   useEffect(() => {
     if (!pendingAcceptance || !team || toastedAcceptRef.current === pendingAcceptance.id) return;
     const names = [team.name, ...ratifiedSameServiceNames(team.name)];
@@ -609,27 +602,8 @@ export function CommunityScreen({
       addressing !== undefined && names.includes(addressing.destination.teamName) && addressing.state === "accepted";
     if (!accepted) return;
     toastedAcceptRef.current = pendingAcceptance.id;
-    pushDecisionToast(pendingAcceptance.id, "accepted");
-  }, [pendingAcceptance, liveReferrals, team, pushDecisionToast]);
-
-  useEffect(() => {
-    const check = declineCheckRef.current;
-    if (declineCheckToken === 0 || check === null) return;
-    declineCheckRef.current = null;
-    if (rejections.length > check.count) return;
-    pushDecisionToast(check.referralId, "declined");
-  }, [rejections, declineCheckToken, pushDecisionToast]);
-
-  useEffect(() => {
-    if (undoCheckToken === 0 || undoCheckRef.current === null) return;
-    if (rejections.length > undoCheckRef.current) {
-      toast?.push({ tone: "warning", title: "Undo was refused", body: rejections[rejections.length - 1].reason });
-    } else {
-      toast?.push({ tone: "info", title: "Decision undone", body: "The referral is back in the queue." });
-    }
-    undoCheckRef.current = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rejections, undoCheckToken]);
+    offerDecision(decisionStep(pendingAcceptance.id, "accepted"));
+  }, [pendingAcceptance, liveReferrals, team, decisionStep, offerDecision]);
 
   const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
   const [showCareEditor, setShowCareEditor] = useState(false);
@@ -774,20 +748,21 @@ export function CommunityScreen({
   const handleConfirmDecline = useCallback(
     (referralId: string) => {
       if (declineDraft === undefined) return;
-      declineCheckRef.current = { referralId, count: rejectionsRef.current };
-      setDeclineCheckToken((token) => token + 1);
-      dispatch({
-        type: "DECLINE_REFERRAL",
-        role: "community",
-        now,
-        referralId,
-        destinationKind: "community_team",
-        reason: declineDraft,
-      });
+      runDecision(
+        {
+          type: "DECLINE_REFERRAL",
+          role: "community",
+          now,
+          referralId,
+          destinationKind: "community_team",
+          reason: declineDraft,
+        },
+        decisionStep(referralId, "declined"),
+      );
       setDeclineOpenFor(undefined);
       setDeclineDraft(undefined);
     },
-    [declineDraft, dispatch, now],
+    [declineDraft, decisionStep, now, runDecision],
   );
 
   /**
@@ -914,6 +889,34 @@ export function CommunityScreen({
     setCancelTransportReason(undefined);
   }
 
+  // Every overlay here follows the shared modal contract (`useModalFocus`): the page behind is inert
+  // and held still, focus moves inside, Tab wraps, Escape closes only the top layer (handled first,
+  // before this screen's own Escape, which would otherwise clear every overlay at once), and focus
+  // returns to the opener. Hook order is stacking order when two open together: drawer, then dialogs.
+  const drawerPanelRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: drawerScrimRef } = useModalFocus({
+    open: activeDrawer !== null,
+    onClose: () => setActiveDrawer(null),
+    panelRef: drawerPanelRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  const noteModalRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: noteModalOverlayRef } = useModalFocus({
+    open: activeModalType !== null,
+    onClose: () => setActiveModalType(null),
+    panelRef: noteModalRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  const referralModalRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: referralModalBackdropRef } = useModalFocus({
+    open: activeModal !== null,
+    onClose: () => setActiveModal(null),
+    panelRef: referralModalRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
   const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
   useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
@@ -3766,7 +3769,16 @@ export function CommunityScreen({
                                 key={egr.id}
                                 data-status={isContacted ? "completed" : egr.status}
                                 data-pt-id={egr.patientId}
+                                tabIndex={0}
                                 onClick={() => {
+                                  setSelectedPatientId(egr.patientId);
+                                  setActiveDrawer("pxDrawer");
+                                }}
+                                onKeyDown={(event) => {
+                                  // Keys from the contact button inside the row stay with that button.
+                                  if (event.target !== event.currentTarget) return;
+                                  if (event.key !== "Enter" && event.key !== " ") return;
+                                  event.preventDefault();
                                   setSelectedPatientId(egr.patientId);
                                   setActiveDrawer("pxDrawer");
                                 }}
@@ -4641,9 +4653,15 @@ export function CommunityScreen({
         ) : null}
 
         {activeModal !== null && (
-          <div className={styles.modalBackdrop} role="presentation" onClick={() => setActiveModal(null)}>
+          <div
+            ref={referralModalBackdropRef}
+            className={styles.modalBackdrop}
+            role="presentation"
+            onClick={() => setActiveModal(null)}
+          >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={referralModalRef}
               className={styles.modalDialog}
               role="dialog"
               aria-modal="true"
@@ -4695,6 +4713,7 @@ export function CommunityScreen({
         {/* ── Drawers (mounted only when activeDrawer !== null) ── */}
         {activeDrawer !== null && (
           <div
+            ref={drawerScrimRef}
             className={styles.drawerScrim}
             id="drawerScrim"
             role="presentation"
@@ -4702,6 +4721,7 @@ export function CommunityScreen({
           >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={drawerPanelRef}
               className={styles.drawerPanel}
               id={
                 activeDrawer === "referral" || activeDrawer === "referralDrawer"
@@ -5346,9 +5366,15 @@ export function CommunityScreen({
 
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         {activeModalType !== null && (
-          <div className={styles.modalOverlay} role="presentation" onClick={() => setActiveModalType(null)}>
+          <div
+            ref={noteModalOverlayRef}
+            className={styles.modalOverlay}
+            role="presentation"
+            onClick={() => setActiveModalType(null)}
+          >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={noteModalRef}
               className={styles.modalBox}
               id={
                 activeModalType === "contact"
@@ -5360,6 +5386,7 @@ export function CommunityScreen({
                       : undefined
               }
               role="dialog"
+              aria-modal="true"
               aria-labelledby={
                 activeModalType === "contact"
                   ? "contactModalTitle"

@@ -9,6 +9,8 @@ const sqlFiles = [
   "003-push-subscriptions",
   "004-trigger-search-path",
   "005-retention-and-indexes",
+  "006-row-level-security",
+  "007-prototype-only",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -43,7 +45,7 @@ function checkExpressions(sql) {
   return result;
 }
 
-function fixture(version = 5) {
+function fixture(version = 7) {
   const owner = "migration_admin";
   const catalog = {
     owner,
@@ -54,7 +56,7 @@ function fixture(version = 5) {
     sequences: [],
     unknown_types: 0,
     rules: 0,
-    policies: 0,
+    policies: [],
     extensions: 0,
   };
   const addConstraint = (table, type, keys, details = {}) =>
@@ -195,6 +197,22 @@ function fixture(version = 5) {
       conditional: false,
     });
   for (const object of catalog.objects) object.inherited = false;
+  if (version >= 7)
+    catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
+      "CHECK (data_mode = 'prototype')";
+  if (version >= 6)
+    for (const object of catalog.objects.filter((o) => o.kind === "r")) {
+      object.rls = true;
+      catalog.policies.push({
+        table_name: object.name,
+        name: "runtime_only",
+        permissive: true,
+        command: "*",
+        roles: "{0}",
+        qual: "(CURRENT_USER = 'wardflow_backend'::name)",
+        with_check: "(CURRENT_USER = 'wardflow_backend'::name)",
+      });
+    }
   return catalog;
 }
 
@@ -222,13 +240,13 @@ function withPostgresTextDeparse(catalog) {
   return catalog;
 }
 
-function pool(catalog, versions = [1, 2, 3, 4, 5]) {
+function pool(catalog, versions = [1, 2, 3, 4, 5, 6, 7]) {
   const queries = [];
   return {
     queries,
     query: async (sql) => {
       queries.push(sql);
-      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 6")
+      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 8")
         return { rows: versions.map((version) => ({ version })) };
       assert.match(sql, /^WITH namespace/);
       assert.doesNotMatch(sql, /(?:ALTER|INSERT INTO|UPDATE ward_flow|DELETE FROM|DROP|CREATE SCHEMA|CREATE TABLE)/);
@@ -243,7 +261,7 @@ test("absent namespace is accepted by one read-only catalogue query", async () =
   assert.equal(db.queries.length, 1);
 });
 
-for (const version of [1, 2, 3, 4, 5])
+for (const version of [1, 2, 3, 4, 5, 6, 7])
   test(`known migration ${version} namespace permits the separate migration stage`, async () => {
     const db = pool(
       fixture(version),
@@ -251,7 +269,7 @@ for (const version of [1, 2, 3, 4, 5])
     );
     await verifyPostgresNamespace(db);
     assert.equal(db.queries.length, 2);
-    assert.match(db.queries[1], /LIMIT 6$/);
+    assert.match(db.queries[1], /LIMIT 8$/);
   });
 
 test("PostgreSQL text-literal casts in defaults, checks and index predicates permit the known schema", async () => {
@@ -300,7 +318,7 @@ test("reserved empty namespace and wrong migration-table shape refuse before rea
       c.objects.find((o) => o.name === "migrations").columns[0].type = "text";
     },
     (c) => {
-      c.objects.find((o) => o.name === "migrations").rls = true;
+      c.objects.find((o) => o.name === "migrations").force_rls = true;
     },
   ]) {
     const catalog = fixture();
@@ -312,7 +330,7 @@ test("reserved empty namespace and wrong migration-table shape refuse before rea
 });
 
 test("noncontiguous, empty, unsupported and malformed versions refuse migration", async () => {
-  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5, 6], [1, 2, 2], [1, 2, 3, 4, "5"]])
+  for (const versions of [[], [0], [2], [1, 3], [1, 2, 3, 5], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 2], [1, 2, 3, 4, "5"]])
     await assert.rejects(verifyPostgresNamespace(pool(fixture(), versions)), /Unrecognised or unsafe/);
 });
 
@@ -356,7 +374,7 @@ test("unknown classes, functions, indexes and sequences refuse migration", async
     catalog.objects.push({ name: "unrelated_sentinel", kind });
     await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
   }
-  for (const key of ["unknown_types", "rules", "policies", "extensions"]) {
+  for (const key of ["unknown_types", "rules", "extensions"]) {
     const catalog = fixture();
     catalog[key] = 1;
     await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
@@ -474,4 +492,63 @@ test("bounded catalog overflow and incomplete summaries refuse migration", async
     alter(catalog);
     await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
   }
+});
+
+test("row-level security must match the version: none before 6, the runtime-only policy on every table from 6", async () => {
+  const five = fixture(5);
+  five.objects.find((o) => o.name === "audit").rls = true;
+  await assert.rejects(verifyPostgresNamespace(pool(five, [1, 2, 3, 4, 5])), /Unrecognised or unsafe/);
+  const stray = fixture(5);
+  stray.policies.push({ ...fixture().policies[0] });
+  await assert.rejects(verifyPostgresNamespace(pool(stray, [1, 2, 3, 4, 5])), /Unrecognised or unsafe/);
+  for (const alter of [
+    (c) => {
+      c.objects.find((o) => o.name === "commands").rls = false;
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "workspaces").force_rls = true;
+    },
+    (c) => {
+      c.objects.find((o) => o.kind === "i").rls = true;
+    },
+    (c) => {
+      c.policies.pop();
+    },
+    (c) => {
+      c.policies.push({ ...c.policies[0], name: "browser_read" });
+    },
+    (c) => {
+      c.policies[0].qual = "true";
+    },
+    (c) => {
+      c.policies[0].with_check = null;
+    },
+    (c) => {
+      c.policies[0].roles = "{16384}";
+    },
+    (c) => {
+      c.policies[0].permissive = false;
+    },
+    (c) => {
+      c.policies[0].command = "r";
+    },
+    (c) => {
+      c.policies[0].qual = "(CURRENT_USER = 'authenticated'::name)";
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
+
+test("from migration 7 the workspace check allows prototype only; before it, prototype or live", async () => {
+  const six = fixture(6);
+  await verifyPostgresNamespace(pool(six, [1, 2, 3, 4, 5, 6]));
+  six.constraints.find((c) => c.definition.includes("'live'")).definition = "CHECK (data_mode = 'prototype')";
+  await assert.rejects(verifyPostgresNamespace(pool(six, [1, 2, 3, 4, 5, 6])), /Unrecognised or unsafe/);
+  const seven = fixture();
+  seven.constraints.find((c) => c.definition === "CHECK (data_mode = 'prototype')").definition =
+    "CHECK ((data_mode = ANY (ARRAY['prototype'::text, 'live'::text])))";
+  await assert.rejects(verifyPostgresNamespace(pool(seven)), /Unrecognised or unsafe/);
 });

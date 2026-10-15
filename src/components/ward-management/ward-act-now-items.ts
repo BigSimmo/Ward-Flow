@@ -24,6 +24,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
+import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 
 /**
  * What the task list reads. The records (admissions, patients, referrals, notifications, planned
@@ -36,8 +37,27 @@ export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configurat
     leaveBeds?: WardFlowState["leaveBeds"];
   };
 
-/** Every task row at `now`, snoozed ones included: the inbox rows plus the decision targets. */
-export function taskItems(source: TaskSource, now: Instant): InboxItem[] {
+/**
+ * Every task row at `now`, snoozed ones included: the inbox rows plus the decision targets.
+ *
+ * The header badge, the phone menu, the act-now notifier and Home each build this list, so the last
+ * answer is shared until a record or the clock minute changes (`ward-last-call.ts`). Callers must
+ * not change the returned list in place.
+ */
+export const taskItems = rememberLastCall(deriveTaskItems, (source: TaskSource, now: Instant) => [
+  source.movements,
+  source.units,
+  source.configuration,
+  source.admissions,
+  source.patients,
+  source.referrals,
+  source.supportNotifications,
+  source.plannedAdmissions,
+  source.leaveBeds,
+  now,
+]);
+
+function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
   const open = source.movements.filter(isOpen);
   return [
     // Audit A3-1: absent without leave on an order sits first; it is the most urgent row there is.

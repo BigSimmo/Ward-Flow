@@ -14,6 +14,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -147,6 +148,7 @@ import {
   useIsPhone,
   useIsTabletPortrait,
   useMediaQuery,
+  useModalFocus,
   useOptionalToast,
 } from "@/components/wf";
 import { EdElsewhereLinks, EdNeedsYou, type EdNeedsItem } from "./ed-needs-you";
@@ -1293,54 +1295,32 @@ export function EdScreen({ edId }: EdScreenProps) {
   // panel — `role="dialog"`, focus moved in on open, trapped while open, and released on Escape.
   // One ref suffices because `transportOpenFor` names at most one open movement at a time, so at
   // most one dialog is ever mounted.
-  const transportDialogRef = useRef<HTMLDivElement>(null);
-  const transportTriggerRef = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    if (transportOpenFor === undefined) return;
-    const dialog = transportDialogRef.current;
-    if (!dialog) return;
-    if (document.activeElement instanceof HTMLElement) {
-      transportTriggerRef.current = document.activeElement;
-    }
-    const firstField = dialog.querySelector<HTMLElement>("select, input, button");
-    firstField?.focus();
-  }, [transportOpenFor]);
+  const transportDialogRef = useRef<HTMLDivElement | null>(null);
+  // The dialog renders only for a listed, bookable movement, so the modal contract follows the
+  // dialog element itself rather than `transportOpenFor` alone.
+  const [transportDialogMounted, setTransportDialogMounted] = useState(false);
+  const setTransportDialogNode = useCallback((node: HTMLDivElement | null) => {
+    transportDialogRef.current = node;
+    setTransportDialogMounted(node !== null);
+  }, []);
   function closeTransportDialog() {
     setTransportOpenFor(undefined);
     setTransportDraft(BLANK_TRANSPORT_DRAFT);
-    transportTriggerRef.current?.focus();
   }
   /**
-   * ESCAPE CLOSES THE POPUP; TAB IS TRAPPED INSIDE IT. Read live off the DOM (`querySelectorAll`)
-   * rather than a hand-maintained ref list, so a field added to the dialog later is trapped
-   * automatically rather than silently escaping the trap the next person forgets to update.
+   * The shared modal contract (`useModalFocus`): the patient's sheet beneath and the page are inert
+   * while the popup is open, focus moves to its first field, Tab wraps inside it, Escape closes only
+   * the popup (handled first, so neither the sheet nor this screen's own Escape also fires), and
+   * focus returns to the control that opened it. The stack reads the DOM live, so a field added to
+   * the dialog later is trapped automatically.
    */
-  function handleTransportDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    // The patient's sheet beneath this dialog listens on window for Tab and Escape; this dialog
-    // owns both while it is open.
-    if (event.key === "Escape" || event.key === "Tab") event.stopPropagation();
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeTransportDialog();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const dialog = transportDialogRef.current;
-    if (!dialog) return;
-    const focusable = Array.from(
-      dialog.querySelectorAll<HTMLElement>('select, input, button, [href], [tabindex]:not([tabindex="-1"])'),
-    ).filter((element) => !element.hasAttribute("disabled"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
+  const { rootRef: transportBackdropRef } = useModalFocus({
+    open: transportDialogMounted,
+    onClose: closeTransportDialog,
+    panelRef: transportDialogRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   const [withdrawOpenFor, setWithdrawOpenFor] = useState<string | undefined>(undefined);
   // T3: one open-for id and one draft, the same shape every toggle above uses — only one panel is
   // open at a time, so one draft cannot be read against the wrong patient. "Record expiry from the
@@ -1418,12 +1398,12 @@ export function EdScreen({ edId }: EdScreenProps) {
   /**
    * v10 pass 3: a recorded decline shows a toast with Undo (`UNDO_REFERRAL_DECISION`, the ED's own
    * decision only, within the engine's undo window). `pendingDeclineRef` holds the referral just
-   * declined until the rejection check says whether the reducer accepted it; `undoCheckRef` holds
-   * the count before an Undo so a refused Undo can say why.
+   * declined until the rejection check says whether the reducer accepted it; the shared
+   * `useUndoableStep` then offers Undo and says why a refused Undo was refused.
    */
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
-  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
   // A2-1 (audit 13 Oct 2026): a raised referral used to land off screen with no word. The movement
   // ids held before the raise; the new one is announced with a toast that opens its row.
   const raisePendingRef = useRef<Set<string> | null>(null);
@@ -1454,8 +1434,6 @@ export function EdScreen({ edId }: EdScreenProps) {
   const [phoneSheetFor, setPhoneSheetFor] = useState<string | undefined>(undefined);
   const [phoneSheetReason, setPhoneSheetReason] = useState<string | undefined>(undefined);
   const pendingDeclineRef = useRef<string | undefined>(undefined);
-  const undoCheckRef = useRef<number | undefined>(undefined);
-  const [undoCheckToken, setUndoCheckToken] = useState(0);
   type DepartmentTabKey = "review" | "cleared" | "expected" | "forms" | "referred";
   const [departmentListTab, setDepartmentListTab] = useState<DepartmentTabKey>("review");
   const [boardFilter, setBoardFilter] = useState<
@@ -1567,39 +1545,19 @@ export function EdScreen({ edId }: EdScreenProps) {
       setDeclineRejection(undefined);
       const declined = pendingDeclineRef.current;
       if (declined !== undefined) {
-        toast?.push({
-          tone: "success",
-          title: "Referral declined",
-          body: "The referrer sees the reason. Undo puts it back in the inbox.",
-          undo: {
-            durationMs: 8000,
-            onUndo: () => {
-              undoCheckRef.current = rejections.length;
-              dispatch({ type: "UNDO_REFERRAL_DECISION", role: "ed", now, referralId: declined });
-              setUndoCheckToken((token) => token + 1);
-            },
-          },
+        offerStep({
+          success: "Referral declined",
+          undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined }),
+          undone: "Decline undone",
         });
       }
     }
     pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
-    // `toast`, `dispatch` and `now` are read at the moment the check runs; the check itself is keyed
+    // `offerStep` is read at the moment the check runs; the check itself is keyed
     // on the dispatch token so it runs once per decline.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, declineCheckToken]);
-
-  useEffect(() => {
-    if (undoCheckToken === 0 || undoCheckRef.current === undefined) return;
-    if (rejections.length > undoCheckRef.current) {
-      const newest = rejections[rejections.length - 1];
-      toast?.push({ tone: "warning", title: "Undo was refused", body: newest.reason });
-    } else {
-      toast?.push({ tone: "info", title: "Decline undone", body: "The referral is back in the inbox." });
-    }
-    undoCheckRef.current = undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rejections, undoCheckToken]);
 
   useEffect(() => {
     const before = raisePendingRef.current;
@@ -4466,8 +4424,8 @@ export function EdScreen({ edId }: EdScreenProps) {
                     {/*
                      * ⚠️ **A POPUP (DIALOG), NOT AN INLINE PANEL — owner's third ruling, 2026-09-17.**
                      * `role="dialog"`/`aria-modal="true"`/`aria-labelledby` name and announce it,
-                     * `handleTransportDialogKeyDown` traps Tab inside it and closes it on Escape, and
-                     * the `useEffect` beside `transportDialogRef` moves focus in on open.
+                     * and `useModalFocus` beside `transportDialogRef` moves focus in on open, traps Tab
+                     * inside it, closes it on Escape and returns focus to the opener.
                      *
                      * ⚠️ **DELIBERATELY NOT A `<form>`, unlike the four panels around it.** A form
                      * submits on Enter from inside a field whatever its submit button advertises, so
@@ -4483,20 +4441,20 @@ export function EdScreen({ edId }: EdScreenProps) {
                           // and stop the sheet taking its focus back.
                           // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
                           <div
+                            ref={transportBackdropRef}
                             className={styles.modalBackdrop}
                             onClick={closeTransportDialog}
                             data-sheet-inert-skip=""
                             data-sheet-portal=""
                           >
-                            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
+                            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                             <div
-                              ref={transportDialogRef}
+                              ref={setTransportDialogNode}
                               className={styles.declineForm}
                               data-testid={`ward-ed-book-transport-${movement.id}`}
                               role="dialog"
                               aria-modal="true"
                               aria-labelledby={`ward-ed-book-transport-title-${movement.id}`}
-                              onKeyDown={handleTransportDialogKeyDown}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <h2 id={`ward-ed-book-transport-title-${movement.id}`} className={styles.declineLegend}>

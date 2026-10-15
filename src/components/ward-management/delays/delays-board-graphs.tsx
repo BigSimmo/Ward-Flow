@@ -6,7 +6,7 @@
  * dot opens that person's row. Every graph draws everyone waiting: the spread dims the dots a
  * filter hides, while the runway and the matrix keep counting everyone so the whole picture stays.
  */
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -570,6 +570,7 @@ export function DelaysBoardGraphs(props: Props) {
   const [lanes, setLanes] = useState<"owner" | "origin">("owner");
   const [cols, setCols] = useState<"owner" | "cause">("owner");
   const [tip, setTip] = useState<Tip>(null);
+  const graphId = useId();
   const onTip = (event: React.MouseEvent | null, body?: ReactNode) => {
     if (event === null || body === undefined) {
       setTip(null);
@@ -593,7 +594,7 @@ export function DelaysBoardGraphs(props: Props) {
     if (next < 0) return;
     event.preventDefault();
     setGraph(tabs[next].id);
-    window.requestAnimationFrame(() => document.getElementById(`delays-graph-tab-${tabs[next].id}`)?.focus());
+    window.requestAnimationFrame(() => document.getElementById(`${graphId}-tab-${tabs[next].id}`)?.focus());
   };
 
   const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
@@ -718,8 +719,8 @@ export function DelaysBoardGraphs(props: Props) {
               key={entry.id}
               type="button"
               role="tab"
-              id={`delays-graph-tab-${entry.id}`}
-              aria-controls="delays-graph-panel"
+              id={`${graphId}-tab-${entry.id}`}
+              aria-controls={`${graphId}-panel`}
               aria-selected={graph === entry.id}
               tabIndex={graph === entry.id ? 0 : -1}
               onClick={() => {
@@ -735,9 +736,9 @@ export function DelaysBoardGraphs(props: Props) {
       </div>
       <div className={`${styles.legend} ${styles.gLegend}`}>{legend}</div>
       <div
-        id="delays-graph-panel"
+        id={`${graphId}-panel`}
         role="tabpanel"
-        aria-labelledby={`delays-graph-tab-${graph}`}
+        aria-labelledby={`${graphId}-tab-${graph}`}
         className={styles.gScroll}
       >
         {graph === "spread" ? (

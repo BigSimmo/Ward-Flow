@@ -13,7 +13,7 @@ import {
  * signed: it may be Josh's product default, or a figure an earlier build typed in with no decision
  * behind it (`source` says which). **Signed** means a named person signed it on a date, and the
  * type will not accept a signed value without both. On 15 Oct 2026 Josh signed every value with a
- * recorded source (D-56). The values with no decision behind them stay synthetic. Signing is for
+ * recorded source (D-56), and two more with a national source (D-58). The rest stay synthetic. Signing is for
  * the prototype: real patient use still needs formal clinical governance sign-off (D-54). No value
  * is a legal limit (D-22) and none comes from the Mental Health Act: Act periods live only in
  * `legal-forms/act-periods-demo.ts` (D-29).
@@ -35,7 +35,7 @@ import {
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 
-export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent";
+export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent" | "count";
 
 /** A value is synthetic until a named person signs it for the prototype on a date (D-56). */
 export type ClinicalValueSignature =
@@ -49,7 +49,8 @@ type ClinicalValueGroup =
   | "Legal form warnings"
   | "Alerts and holds"
   | "Arrivals and answers"
-  | "Discharge, leave and absence";
+  | "Discharge, leave and absence"
+  | "Access and privacy";
 
 /** Another figure some screen used, or a document named, for the same rule. */
 interface ClinicalValueAlternative {
@@ -71,7 +72,7 @@ export type ClinicalValueEntry = ClinicalValueSignature & {
 };
 
 const SYNTHETIC = { status: "synthetic" } as const;
-/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56). The rest stay synthetic. */
+/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56), and two with a national source (D-58). */
 const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-15" } as const;
 const NO_DECISION = "No decision recorded";
 
@@ -133,22 +134,6 @@ export const CLINICAL_VALUES = {
     value: 8 * MINUTES_PER_HOUR,
     unit: "minutes",
     source: "D-22 (26 Sep 2026), labelled default; the ACEM eight hour line came off screens under D-24",
-  },
-  edSecondEscalation: {
-    ...SYNTHETIC,
-    name: "ED wait escalated to a state coordinator broadcast from",
-    group: "Emergency department waits",
-    value: 12 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
-  },
-  edLadderActNowEdge: {
-    ...SYNTHETIC,
-    name: "ED wait shown with the act now edge from",
-    group: "Emergency department waits",
-    value: 22 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 escalation ladder, 15 Oct 2026)`,
   },
   longWait: {
     ...SIGNED_BY_JOSH,
@@ -242,24 +227,6 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-24 (26 Sep 2026), Josh's default",
     adjustable: true,
-    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "Top 25 paper form radar amber" }],
-  },
-  paperFormRadarAmber: {
-    ...SYNTHETIC,
-    name: "Paper form radar turns amber within (or the first warning, if Settings sets it longer)",
-    group: "Legal form warnings",
-    value: 4 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
-    alternatives: [{ value: 3 * MINUTES_PER_HOUR, where: "Settings first warning default (D-24)" }],
-  },
-  paperFormRadarEdge: {
-    ...SYNTHETIC,
-    name: "Paper form radar shows the act now edge within",
-    group: "Legal form warnings",
-    value: 6 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
   },
 
   // ---- Alerts and holds ----------------------------------------------------------------------
@@ -373,14 +340,6 @@ export const CLINICAL_VALUES = {
     source: "Stream A, 9 Oct 2026, labelled default",
     adjustable: true,
   },
-  handoverStuck: {
-    ...SYNTHETIC,
-    name: "Accepted patient not yet moving flagged as a stuck handover after",
-    group: "Arrivals and answers",
-    value: 1 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: `${NO_DECISION} (Top 25 stuck handover timer, 15 Oct 2026)`,
-  },
   expectFlagVoluntary: {
     ...SIGNED_BY_JOSH,
     name: "Expected arrival flagged after waiting, voluntary",
@@ -432,12 +391,13 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (Top 25 absence tracker, 15 Oct 2026)`,
   },
   ctoFollowUpWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Community treatment order follow up booked within, after departure",
     group: "Discharge, leave and absence",
     value: 7,
     unit: "days",
-    source: `${NO_DECISION} (Top 25 CTO handshake, 15 Oct 2026); flagged in the 15 Oct repo review`,
+    source:
+      "D-58 (15 Oct 2026), 7 days from the national KPI for community care within 7 days of discharge (AIHW). The KPI counts a completed contact after discharge from a public acute mental health unit. This check looks for a booking within the window on every discharge, with extra items for a CTO patient",
   },
   longStayPrompt: {
     ...SIGNED_BY_JOSH,
@@ -456,12 +416,61 @@ export const CLINICAL_VALUES = {
     source: `${NO_DECISION} (Top 25 long stay dossier, 15 Oct 2026)`,
   },
   readmissionWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH,
     name: "Readmission flag, discharged from a ward within",
     group: "Discharge, leave and absence",
     value: 28,
     unit: "days",
-    source: `${NO_DECISION}; a prompt to look, not a reporting standard`,
+    source: "D-58 (15 Oct 2026), national mental health KPI for readmission within 28 days (AIHW); a prompt to look",
+  },
+  // ---- Access and privacy (role access plan, Josh's go, 15 Oct 2026) ------------------------
+  breakGlassWindow: {
+    ...SYNTHETIC,
+    name: "Patient record opened outside your care (break glass) stays open for",
+    group: "Access and privacy",
+    value: 60,
+    unit: "minutes",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  breakGlassPerShift: {
+    ...SYNTHETIC,
+    name: "Break glass openings in one shift before the coordinator is told it is a pattern",
+    group: "Access and privacy",
+    value: 3,
+    unit: "count",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  edHandoffWindow: {
+    ...SYNTHETIC,
+    name: "Emergency department keeps sight of a patient after they reach the ward for",
+    group: "Access and privacy",
+    value: 24,
+    unit: "hours",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  wardHandoffWindow: {
+    ...SYNTHETIC,
+    name: "Ward keeps sight of a patient after they leave, for the follow up, for",
+    group: "Access and privacy",
+    value: 7,
+    unit: "days",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026); the same figure as the 7 day follow up`,
+  },
+  idleLock: {
+    ...SYNTHETIC,
+    name: "A shared computer locks after no use for",
+    group: "Access and privacy",
+    value: 15,
+    unit: "minutes",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  smallNumberHidden: {
+    ...SYNTHETIC,
+    name: "Planned, not applied yet: executive figures below this to show as fewer than this",
+    group: "Access and privacy",
+    value: 5,
+    unit: "count",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
   },
 } satisfies Record<string, ClinicalValueEntry>;
 
@@ -479,6 +488,7 @@ function plural(count: number, word: string): string {
 /** A figure in its own unit as people read it: "15 minutes", "4 hours", "7 days", "85%". */
 export function formatClinicalFigure(value: number, unit: ClinicalValueUnit): string {
   if (unit === "percent") return `${value}%`;
+  if (unit === "count") return String(value);
   if (unit === "days") return plural(value, "day");
   if (unit === "hours") return plural(value, "hour");
   if (value % (HOURS_PER_DAY * MINUTES_PER_HOUR) === 0 && value >= 7 * HOURS_PER_DAY * MINUTES_PER_HOUR)

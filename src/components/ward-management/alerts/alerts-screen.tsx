@@ -34,7 +34,6 @@ import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reduce
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -59,6 +58,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
+import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { broadcastScopeCount, directiveAcknowledgements, isAlertLive, replyBoard } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
@@ -127,6 +127,7 @@ import {
   Textarea,
   type WfTone,
   useIsTabletPortrait,
+  useModalFocus,
 } from "@/components/wf";
 
 /**
@@ -362,15 +363,18 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
+  const deskInScope = useDeskInScope();
   // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
   // A bed call is answered by the wards it asked, never ED desks, so it counts replies as the banner does.
   const broadcastBoard =
     activeBroadcast && broadcastKind(activeBroadcast) !== "directive" ? replyBoard(activeBroadcast, units) : undefined;
-  const broadcastAcks = !activeBroadcast
+  const allAcks = !activeBroadcast
     ? undefined
     : broadcastBoard
       ? { acknowledged: broadcastBoard.answered, of: broadcastBoard.rows.length }
-      : directiveAcknowledgements(activeBroadcast, units);
+      : directiveAcknowledgements(activeBroadcast, units, deskInScope);
+  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
+  const broadcastAcks = allAcks && (allAcks.of > 0 || !deskInScope) ? allAcks : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );
@@ -381,55 +385,18 @@ function AlertsWorkspace() {
 
   const handleCloseBroadcastModal = useCallback(() => {
     setBroadcastModalOpen(false);
-    setTimeout(() => {
-      broadcastTriggerRef.current?.focus();
-    }, 0);
   }, [setBroadcastModalOpen]);
 
-  const trapFocus = (e: React.KeyboardEvent<HTMLElement>, container: HTMLElement | null) => {
-    if (e.key !== "Tab" || !container) return;
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
-  const handleModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      handleCloseBroadcastModal();
-      return;
-    }
-    trapFocus(e, modalRef.current);
-  };
-
-  useWardPageScrollLock(isBroadcastModalOpen);
-
-  useEffect(() => {
-    if (!isBroadcastModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleCloseBroadcastModal();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBroadcastModalOpen, handleCloseBroadcastModal]);
-
-  useEffect(() => {
-    if (isBroadcastModalOpen) {
-      modalCloseRef.current?.focus();
-    }
-  }, [isBroadcastModalOpen]);
+  // The shared modal contract: the page behind is inert and held still, focus starts on the close
+  // button, Tab wraps inside, Escape closes only this top layer, and focus returns to the trigger.
+  useModalFocus({
+    open: isBroadcastModalOpen,
+    onClose: handleCloseBroadcastModal,
+    panelRef: modalRef,
+    initialFocusRef: modalCloseRef,
+    returnFocusRef: broadcastTriggerRef,
+    focusOnOpen: "immediate",
+  });
 
   useEffect(() => {
     if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
@@ -1319,9 +1286,13 @@ function AlertsWorkspace() {
                 <span className={styles.phoneCardText}>
                   <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{broadcastAcks?.acknowledged}</b> of{" "}
-                    <span className={styles.mono}>{broadcastAcks?.of}</span> answered · ends{" "}
-                    <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
+                    {broadcastAcks ? (
+                      <>
+                        <b className={styles.mono}>{broadcastAcks.acknowledged}</b> of{" "}
+                        <span className={styles.mono}>{broadcastAcks.of}</span> answered ·{" "}
+                      </>
+                    ) : null}
+                    ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                   </span>
                 </span>
                 <ChevronRight size={16} aria-hidden="true" />
@@ -1420,10 +1391,12 @@ function AlertsWorkspace() {
                     <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
                     <span className={styles.heroBroadcastMeta}>
                       ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
-                      <span className={styles.deskOnly}>
-                        {" "}
-                        · <span className={styles.mono}>{broadcastAcks?.acknowledged}</span> acknowledged
-                      </span>
+                      {broadcastAcks ? (
+                        <span className={styles.deskOnly}>
+                          {" "}
+                          · <span className={styles.mono}>{broadcastAcks.acknowledged}</span> acknowledged
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                 ) : null}
@@ -1655,15 +1628,17 @@ function AlertsWorkspace() {
                               </span>
                             </dd>
                           </div>
-                          <div>
-                            <dt>Acknowledged</dt>
-                            <dd>
-                              <span>
-                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units{" "}
-                                {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
-                              </span>
-                            </dd>
-                          </div>
+                          {broadcastAcks ? (
+                            <div>
+                              <dt>Acknowledged</dt>
+                              <dd>
+                                <span>
+                                  {broadcastAcks.acknowledged} of {broadcastAcks.of} units{" "}
+                                  {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
+                                </span>
+                              </dd>
+                            </div>
+                          ) : null}
                         </dl>
                         {broadcastKind(activeBroadcast) === "bed_call" ? (
                           <ReplyBoardList alert={activeBroadcast} units={units} now={now} />
@@ -1896,7 +1871,7 @@ function AlertsWorkspace() {
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
           <div
             ref={modalRef}
             className={styles.modalOverlay}
@@ -1905,7 +1880,6 @@ function AlertsWorkspace() {
             aria-labelledby="broadcast-title"
             aria-describedby="broadcast-desc"
             tabIndex={-1}
-            onKeyDown={handleModalKeyDown}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 handleCloseBroadcastModal();

@@ -3,7 +3,7 @@
 import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { Badge, Card, EmptyState, StatusGlyph, Tabs } from "@/components/wf";
 import { DeclineRegister } from "@/components/ward-management/decline-register";
@@ -105,6 +105,7 @@ export function ExceptionDrawer({
   const umrnText = useUmrnText();
   // A2-20: names here follow Discreet names on a phone (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
+  const baseId = useId();
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
@@ -146,11 +147,11 @@ export function ExceptionDrawer({
         type="button"
         className={styles.registersToggle}
         aria-expanded={open}
-        aria-controls="ward-coordinator-registers-panel"
+        aria-controls={`${baseId}-registers-panel`}
         onClick={onToggle}
       >
         {open ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
-        <span id="ward-exceptions-toggle-label">Today’s answers</span>
+        <span id={`${baseId}-toggle-label`}>Today’s answers</span>
         <span className={styles.registersToggleCounts}>
           <span data-testid="ward-exceptions-toggle-decline-count">
             {declines.length === 1 ? "1 decline" : `${declines.length} declines`}
@@ -176,11 +177,11 @@ export function ExceptionDrawer({
         </span>
       </button>
       <div
-        id="ward-coordinator-registers-panel"
+        id={`${baseId}-registers-panel`}
         className={styles.registersPanel}
         data-open={open}
         role="region"
-        aria-labelledby="ward-exceptions-toggle-label"
+        aria-labelledby={`${baseId}-toggle-label`}
       >
         <Tabs
           label="Today’s answers"
@@ -351,10 +352,10 @@ export function ExceptionDrawer({
             <EmptyState title="No refused actions" meta={`Checked at ${checkedAt}`} />
           ) : (
             <>
-              <p className={styles.registerLead} id="ward-refusals-lead">
+              <p className={styles.registerLead} id={`${baseId}-refusals-lead`}>
                 Refused actions, newest first
               </p>
-              <ul className={styles.registerList} aria-labelledby="ward-refusals-lead">
+              <ul className={styles.registerList} aria-labelledby={`${baseId}-refusals-lead`}>
                 {refusalsNewestFirst.map((rejection) => (
                   <li key={rejection.id} data-testid={`ward-refusal-${rejection.id}`} className={styles.registerRow}>
                     <span className={styles.registerMain}>
