@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
-import { lockPageScroll } from "@/components/ui/sheet-focus";
+import { lockPageScroll } from "@/components/wf/sheet-focus";
 import { useModalFocus } from "@/components/wf";
 
 /**

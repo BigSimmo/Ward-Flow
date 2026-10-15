@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Two-way token sync between src/app/ward-flow-v6-tokens.css (the source of truth) and the Figma
+ * Two-way token sync between src/app/ward-flow-v9-tokens.css (the source of truth) and the Figma
  * file "Ward Flow v6 live". Figma Professional has no Variables REST API, so Claude reads and
  * writes the Figma side through the Figma MCP on Josh's device. This script only handles the code side.
  * Procedure: docs/agents/figma-sync.md. Map: design/figma/figma-sync.json.
@@ -18,7 +18,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const CSS_PATH = resolve(ROOT, "src/app/ward-flow-v6-tokens.css");
+export const CSS_PATH = resolve(ROOT, "src/app/ward-flow-v9-tokens.css");
 export const TOKENS_PATH = resolve(ROOT, "design/figma/tokens.json");
 
 // Figma-only helper variables. Code derives these with color-mix, so a pull never writes them.
@@ -221,9 +221,19 @@ export function applyTokens(css, incoming) {
     const value = c.group === "Size" ? `${toPx(c.to)}px` : formatColour(toRgba(c.to));
     const night = decls.filter((d) => d.name === c.name && d.where === "night");
     const base = decls.filter((d) => d.name === c.name && d.where !== "night");
-    const targets = c.mode === "Night" ? night : base;
+    // An alias such as `--wf-row: var(--wf-row-default)` is code-owned wiring, not a value Figma
+    // holds, so an import changes only the literal declarations and leaves every alias pointing on.
+    const pool = c.mode === "Night" ? night : base;
+    const targets = pool.filter((d) => !d.value.includes("var("));
     if (!targets.length) {
       skipped.push(`${c.name} (${c.mode}): the CSS has no separate ${c.mode} value to change`);
+      continue;
+    }
+    // A later alias wins the cascade on the root, so editing the literal would report a change that
+    // mostly does not show. Say so instead, and leave the token for a code change.
+    const lastLiteral = targets[targets.length - 1];
+    if (pool.some((d) => d.valueStart > lastLiteral.valueStart && d.value.includes("var("))) {
+      skipped.push(`${c.name}: a later alias in the CSS sets the live value, so this edit would not take effect`);
       continue;
     }
     // A colour with no night declaration serves both modes, so a Day edit would also change Night.
@@ -265,7 +275,7 @@ export function main(argv = process.argv.slice(2), { stdout = console.log, stder
         const result = applyTokens(css, incoming);
         writeAtomically(CSS_PATH, result.css);
         for (const s of result.skipped) stderr(`[figma-tokens] skipped ${s}`);
-        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v6-tokens.css`);
+        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v9-tokens.css`);
       }
       return 0;
     }

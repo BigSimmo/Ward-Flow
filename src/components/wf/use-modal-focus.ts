@@ -9,7 +9,7 @@ import {
   startSheetOpenFocus,
   updateSheetRoot,
   type SheetFocusController,
-} from "@/components/ui/sheet-focus";
+} from "./sheet-focus";
 
 export type UseModalFocusOptions = {
   open: boolean;

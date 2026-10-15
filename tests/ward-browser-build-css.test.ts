@@ -43,15 +43,19 @@ describe("Ward browser-build CSS", () => {
     expect(exported.btnSecondary.split(/\s+/)).toContain(exported.btn);
   });
 
-  it("compiles Statistics third edition modules with pure selectors", async () => {
-    const r1 = await compile("src/components/ward-management/statistics/statistics-third-edition.module.css");
+  // The third edition statistics sheets were deleted on 15 Oct 2026 (nothing imported them); the
+  // live v6 statistics sheets take their place here.
+  it("compiles the Statistics modules with pure selectors", async () => {
+    const r1 = await compile("src/components/ward-management/statistics/statistics-v6.module.css");
     expect(r1.css.length).toBeGreaterThan(0);
-    const r2 = await compile("src/components/ward-management/statistics/statistics-service-third-edition.module.css");
+    const r2 = await compile("src/components/ward-management/statistics/statistics-compare.module.css");
     expect(r2.css.length).toBeGreaterThan(0);
   });
 
-  it("compiles Governance module with pure selectors", async () => {
-    const res = await compile("src/components/ward-management/governance/governance.module.css");
+  // "compiles Governance module with pure selectors" retired 15 Oct 2026: governance.module.css had
+  // no importer and was deleted. governance-third-edition.module.css is the live sheet.
+  it("compiles the Governance module with pure selectors", async () => {
+    const res = await compile("src/components/ward-management/governance-third-edition.module.css");
     expect(res.css.length).toBeGreaterThan(0);
   });
 });

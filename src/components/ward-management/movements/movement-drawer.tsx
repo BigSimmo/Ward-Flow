@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { BedSingle, ChevronRight, FileText, Flag, Lock, PhoneCall, Truck, X } from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import {
   isOpen,

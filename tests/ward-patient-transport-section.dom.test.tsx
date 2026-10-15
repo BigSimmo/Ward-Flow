@@ -233,6 +233,22 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
   });
 
+  it("names the day on a quoted ETA that falls on another day", () => {
+    // A bare clock face would read as today, and past midnight it showed an hour above 23.
+    const tomorrow = NOW_ANCHOR + 1440 + 30;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordTransportFixture estimatedAt={tomorrow} />
+        <PatientNowScreen initialExampleId="WF-004" />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
+    openTransportSheet();
+    const eta = within(screen.getByTestId("ward-patient-transport-section")).getByTestId("ward-patient-transport-eta");
+    expect(eta).toHaveTextContent(`${formatInstantWithDay(tomorrow, NOW_ANCHOR)} AWST`);
+    expect(eta).toHaveTextContent(/ tomorrow AWST/);
+  });
+
   it("does not offer a booking before a bed is accepted, so no booking can appear to succeed", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

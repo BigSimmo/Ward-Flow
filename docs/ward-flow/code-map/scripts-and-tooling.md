@@ -542,7 +542,7 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 
 - **`roots`** — ~50 glob roots that are IN scope for classification at all (every Ward Flow source
   tree, plus the shared build/test/lint config files and a short list of shared UI/theme files
-  Ward Flow depends on but does not own, e.g. `src/app/layout.tsx`, `src/components/ui/sheet.tsx`).
+  Ward Flow depends on but does not own, e.g. `src/app/layout.tsx`, `src/components/wf/sheet.tsx`).
 - **`sourceClasses`** — three classes by extension: `code` (`.ts .tsx .js .mjs .mts .css .py .sh
 .html`), `documentation` (`.md .txt`), `structured-reference` (`.json .yaml .yml`).
 - **`denials`** — globs excluded outright regardless of root match, including
