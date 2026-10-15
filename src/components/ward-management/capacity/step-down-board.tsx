@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -19,6 +20,8 @@ import styles from "./step-down-board.module.css";
 export function StepDownBoard({ now }: { now: Instant }) {
   const { admissions, units, movements, patients, referrals, dispatch, configuration } = useWardFlow();
   const patientOf = usePatientOf();
+  // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
+  const [capReasons, setCapReasons] = useState<Record<string, ReferralCapReason | "">>({});
   const rows = useMemo(
     () => deriveStepDownBoard({ admissions, units, movements, patients, referrals, now }),
     [admissions, units, movements, patients, referrals, now],
@@ -36,6 +39,29 @@ export function StepDownBoard({ now }: { now: Instant }) {
                 <p className={styles.who}>
                   {patientOf(row.admission).displayName} <span className={styles.meta}>on {row.fromUnit.name}</span>
                 </p>
+                {row.transferMovement &&
+                row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap ? (
+                  <label className={styles.capReason} data-testid="step-down-cap-reason">
+                    <span>
+                      {row.transferMovement.referredUnitIds.length} wards are already asked, the usual limit is{" "}
+                      {configuration.parallelReferralCap}. Choose a reason to ask another.
+                    </span>
+                    <select
+                      value={capReasons[row.admission.id] ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value as ReferralCapReason | "";
+                        setCapReasons((previous) => ({ ...previous, [row.admission.id]: value }));
+                      }}
+                    >
+                      <option value="">Choose reason</option>
+                      {REFERRAL_CAP_REASONS.map((reason) => (
+                        <option key={reason} value={reason}>
+                          {reason}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 {row.wards.length === 0 ? (
                   <p className={styles.absent}>No ward passes every check with a Ready bed now.</p>
                 ) : (
@@ -48,12 +74,12 @@ export function StepDownBoard({ now }: { now: Instant }) {
                             size="sm"
                             variant="sec"
                             disabled={row.transferMovement.referredUnitIds.includes(ward.unit.id)}
-                            // A plain refer has no reason to give, so a stay already at the cap is
-                            // greyed with why. Over the cap with a reason is done from Placement.
+                            // At the limit Refer waits for a reason, then sends it with the refer.
                             disabledReason={
                               !row.transferMovement.referredUnitIds.includes(ward.unit.id) &&
-                              row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap
-                                ? "The referral limit is reached. Ask more wards from Placement."
+                              row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap &&
+                              !capReasons[row.admission.id]
+                                ? "Choose a reason above to ask more wards than the usual limit."
                                 : undefined
                             }
                             onClick={() => {
@@ -65,6 +91,10 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                 now,
                                 movementId: movement.id,
                                 unitIds: [ward.unit.id],
+                                ...(movement.referredUnitIds.length >= configuration.parallelReferralCap &&
+                                capReasons[row.admission.id]
+                                  ? { overCapReason: capReasons[row.admission.id] as ReferralCapReason }
+                                  : {}),
                               });
                             }}
                           >

@@ -277,9 +277,9 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // Override control records the reason.
   "src/components/ward-management/coordinator/shortlist-panel.tsx": "ACCEPT_IN_PRINCIPLE",
   // Top 25 item 8 (15 Oct 2026): the Capacity step down board's Refer is offered only for a ward
-  // that already passes the main eligibility rules with a Ready bed, and is greyed at the referral
-  // limit. Anything needing a reason is chosen in Placement, where shortlist-panel.tsx's Override
-  // records one. So there is no override to record here.
+  // that already passes the main eligibility rules with a Ready bed. At the referral limit it asks
+  // for a cap reason (overCapReason, not an eligibility override). An eligibility override is chosen
+  // in Placement, where shortlist-panel.tsx's Override records one. So there is none to record here.
   "src/components/ward-management/capacity/step-down-board.tsx": "REFER_TO_UNITS",
 };
 

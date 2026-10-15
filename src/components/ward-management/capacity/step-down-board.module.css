@@ -46,3 +46,10 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
+
+.capReason {
+  display: grid;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
