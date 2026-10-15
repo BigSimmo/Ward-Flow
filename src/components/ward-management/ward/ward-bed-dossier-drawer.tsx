@@ -17,12 +17,13 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { deriveAfternoonDischarges } from "@/components/ward-management/ward-derivations";
+import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Button, Icon, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
+import { Button, Icon, StatusGlyph, buttonClass, cx, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -140,9 +141,10 @@ export function WardBedDossierDrawer({
   roleLockNote,
   onSetBarrier,
 }: WardBedDossierDrawerProps) {
-  const { admissions, resolvePatientIdentity } = useWardFlow();
+  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlow();
   const now = useWardFlowClock();
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
+  const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
@@ -245,6 +247,20 @@ export function WardBedDossierDrawer({
             : "None recorded"))
         )}
       </Row>
+    ) : null;
+  // Top 25 item 4: still being made ready past the set time. A question for the ward, never an
+  // automatic opening: Ready below is the only way the bed is offered again.
+  const staleFor =
+    cleaningReminderOn && isPreparing && typeof bedItem?.preparingReleaseId === "string"
+      ? stalePreparingReleases(unit.id, bedReleases, now).find(
+          (entry) => entry.release.id === bedItem.preparingReleaseId,
+        )?.minutes
+      : undefined;
+  const readyNote =
+    staleFor !== undefined ? (
+      <p className={styles.meta} data-testid="ward-drawer-cleaning-reminder">
+        Being made ready for {durMinutes(staleFor)}. If the bed is ready, tap Ready so it is offered again.
+      </p>
     ) : null;
   const prepNote = dueForPrep ? (
     <p className={styles.meta} data-testid="ward-drawer-discharge-prep">
@@ -360,6 +376,7 @@ export function WardBedDossierDrawer({
         onKeyDown={onKeyDown}
         planRows={barrierRow}
         planNote={prepNote}
+        readyNote={readyNote}
       />
     );
   }
@@ -440,6 +457,7 @@ export function WardBedDossierDrawer({
                   </Row>
                   <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
                 </dl>
+                {readyNote}
               </Section>
             </div>
           </>
@@ -841,6 +859,8 @@ interface PhoneBedSheetProps {
   planRows?: ReactNode;
   /** Top 25: a short note under Plan to leave (flagged). */
   planNote?: ReactNode;
+  /** Top 25: a short note on a bed being made ready (flagged). */
+  readyNote?: ReactNode;
 }
 
 /**
@@ -885,6 +905,7 @@ function PhoneBedSheet({
   onKeyDown,
   planRows,
   planNote,
+  readyNote,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
   const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
@@ -957,6 +978,7 @@ function PhoneBedSheet({
                 <Row label="Candidate">No patient match is recorded for this bed.</Row>
                 {bedItem?.designation ? <Row label="Bed">{bedItem.designation}</Row> : null}
               </dl>
+              {readyNote}
             </>
           ) : (
             <>

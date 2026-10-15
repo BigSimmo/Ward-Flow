@@ -1,6 +1,10 @@
 "use client";
 
-import { bedsPendingPreparation, releaseBand } from "@/components/ward-management/ward-bed-availability";
+import {
+  bedsPendingPreparation,
+  releaseBand,
+  stalePreparingReleases,
+} from "@/components/ward-management/ward-bed-availability";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
@@ -272,6 +276,7 @@ export function WardHomeTab({
   const phoneSheets = phonePanel !== undefined;
   const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlow();
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
+  const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -912,6 +917,21 @@ export function WardHomeTab({
           : "No discharge barrier recorded",
         tone: admission.dischargeBarrier ? "warning" : "neutral",
         action: { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
+      });
+    }
+  }
+  // Top 25 item 4: a bed still being made ready past the set time asks the ward to confirm it is
+  // ready. The row only opens the bed; Ready in the bed panel is what offers it again.
+  if (cleaningReminderOn) {
+    for (const { release, minutes } of stalePreparingReleases(unit.id, bedReleases, now)) {
+      const bed = (bedsList ?? []).find((item) => item.preparingReleaseId === release.id);
+      if (!bed) continue;
+      laterToday.push({
+        key: `preparing-${release.id}`,
+        title: `${bed.bedLabel} still being made ready`,
+        detail: `For ${durMinutes(minutes)}. Is it ready now?`,
+        tone: "warning",
+        action: { label: "Check bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
       });
     }
   }
