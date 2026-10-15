@@ -39,7 +39,7 @@ describe("transport officer job cards name the patient", () => {
         unlinked++;
         expect(line).toHaveTextContent("Not recorded");
       }
-      expect(line.textContent).not.toMatch(/PT-|Unknown Patient/);
+      expect(line.textContent).not.toMatch(/PT-|Name not recorded/);
     }
     expect(linked, "at least one seeded job has a linked patient").toBeGreaterThan(0);
     // Every seeded record now names a real patient (Josh, 25 Sept 2026: demo data only as linked
@@ -67,7 +67,7 @@ describe("transport officer job cards name the patient", () => {
       );
       const line = screen.getByTestId(`ward-officer-patient-${job.id}`);
       expect(line).toHaveTextContent("Not recorded");
-      expect(line.textContent).not.toMatch(/PT-|Unknown Patient/);
+      expect(line.textContent).not.toMatch(/PT-|Name not recorded/);
     } finally {
       live.patientId = saved;
     }

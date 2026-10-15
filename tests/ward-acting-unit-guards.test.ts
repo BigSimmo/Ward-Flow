@@ -150,8 +150,10 @@ describe("a ward cannot act on another ward's bed release", () => {
       const added = addedRejections(seeded, after);
 
       expect(added.map((rejection) => rejection.reason)).toEqual([
-        `${type} was raised acting as unit ${intruder} but release ${release.id} belongs to unit ${release.unitId}`,
+        `${type} was raised acting as unit ${intruder} but this bed release belongs to unit ${release.unitId}`,
       ]);
+      // The refusal is shown on screen, so it names the release in words, never by its record number.
+      expect(added[0]?.reason).not.toContain(release.id);
       expect(added[0]?.attempted).toBe(type);
 
       // Refused, not merely complained about: the releases themselves must be untouched.
@@ -195,7 +197,7 @@ describe("a ward cannot record another ward's patient back from an emergency dep
     const added = addedRejections(seeded, after);
 
     expect(added.map((rejection) => rejection.reason)).toEqual([
-      `${TYPE} was raised acting as unit ${intruder} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+      `${TYPE} was raised acting as unit ${intruder} but this stay belongs to unit ${admission.unitId}`,
     ]);
     expect(added[0]?.attempted).toBe(TYPE);
     expect(after.admissions).toEqual(seeded.admissions);

@@ -120,6 +120,7 @@ import {
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
+import { movementHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -880,9 +881,7 @@ export function PatientNowScreen({
         }
       : undefined,
     transportHref:
-      liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
-        ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
-        : undefined,
+      liveMovement && !pathname.includes(movementHref(liveMovement.id)) ? movementHref(liveMovement.id) : undefined,
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1534,11 +1533,7 @@ export function PatientNowScreen({
         barMain:
           isPhone && (mode === "idle" || mode === "cto") ? (
             <Link
-              href={
-                livePatient
-                  ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
-                  : "/mockups/ward-flow/referrals/new"
-              }
+              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/mockups/ward-flow/referrals/new"}
               className={buttonClass({ variant: "pri" })}
               data-testid="ward-person-refer-outpatient"
             >
@@ -2199,7 +2194,7 @@ export function PatientNowScreen({
                   <Link
                     href={
                       livePatient
-                        ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                        ? raiseReferralHref({ patientId: livePatient.id })
                         : "/mockups/ward-flow/referrals/new"
                     }
                     className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}

@@ -89,7 +89,7 @@ import {
   type BoardRow,
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { unitHref } from "@/components/ward-management/shell/ward-facade";
+import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
@@ -752,7 +752,7 @@ function PersonPanel({
             <span className="sr-only"> to State bed coordination desk</span>
           </button>
         )}
-        <Link className={styles.btn} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.btn} href={movementHref(movement.id)}>
           Journey
         </Link>
       </div>
@@ -805,7 +805,7 @@ function RegisterItem({
       </button>
     );
   return (
-    <Link className={styles.brow} href={`/mockups/ward-flow/movements/${movement.id}`} data-testid={testId}>
+    <Link className={styles.brow} href={movementHref(movement.id)} data-testid={testId}>
       {children}
     </Link>
   );

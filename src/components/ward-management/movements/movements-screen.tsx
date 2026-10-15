@@ -98,6 +98,7 @@ import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ArrivalsAheadList } from "./arrivals-ahead-list";
 import arrivalsStyles from "./arrivals-ahead-list.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -2326,7 +2327,7 @@ function StageRow({
       </span>
       <Link
         className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true, className: flow.review })}
-        href={`/mockups/ward-flow/movements/${movement.id}`}
+        href={movementHref(movement.id)}
         aria-label={`Review patient ${patientInfo.formalName}`}
         title="Open the Patient page"
       >
@@ -2424,7 +2425,7 @@ function TransportRow({ leg, units, name }: { leg: TransportLegRow; units: Unit[
       clock={{ value: splitDuration(Math.max(leg.minutesSinceBooked, 0)), sub: "since accepted" }}
       attributes={[`Provider: ${leg.provider}`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.action} href={movementHref(movement.id)}>
           Review patient
         </Link>
       }
@@ -2454,7 +2455,7 @@ function UnacceptedTransportRow({ movement, units, name }: { movement: Movement;
         `To ${destinationLabel}`,
       ]}
       actions={
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.action} href={movementHref(movement.id)}>
           Review patient
         </Link>
       }
@@ -2473,7 +2474,7 @@ function NoTransportRecordRow({ movement, units, name }: { movement: Movement; u
       clock={{ value: "No job", sub: "No transport time recorded" }}
       attributes={[`Provider: Not recorded`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.action} href={movementHref(movement.id)}>
           Review patient
         </Link>
       }

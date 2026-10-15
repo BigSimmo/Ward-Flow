@@ -345,7 +345,7 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
         <div className={styles.shortlistHeaderTop}>
           <h3 className={`${styles.shortlistMovementId} ${shortlistStyles.subjectId}`}>
             <small>Referral</small>
-            {referral.id}
+            {patientInfo.umrn}
           </h3>
           <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={referral.urgency}>
             {urgencyTierLabel(referral.urgency)}

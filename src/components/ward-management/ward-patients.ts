@@ -256,8 +256,16 @@ export function patientCohort(
   return "Adult";
 }
 
-/** A UMRN as people type or paste it into an address: two letters then digits (shell-6). */
-export const UMRN_IN_ADDRESS = /^[A-Za-z]{2}\d+$/u;
+/** A UMRN as people type or paste it into an address (shell-6): the synthetic two letters then
+ *  digits, or the real WA shape of one letter then seven digits. Either is refused in an address. */
+export const UMRN_IN_ADDRESS = /^[A-Za-z]{1,2}\d+$/u;
+
+/** A UMRN with its label, "UMRN UM100047". An empty or unrecorded one reads "UMRN not recorded". */
+export function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN ${umrn}`;
+}
 
 /**
  * `Family, Given`: the one way a list or identity line names a patient (shell-8, 13 Oct 2026), the

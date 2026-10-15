@@ -44,7 +44,7 @@ describe("Command referral placement panel names the patient", () => {
     try {
       const fact = openReferral("RF-001");
       expect(fact).toHaveTextContent("Not recorded");
-      expect(fact.textContent).not.toMatch(/PT-|Unknown Patient/);
+      expect(fact.textContent).not.toMatch(/PT-|Name not recorded/);
     } finally {
       live.patientId = saved;
     }

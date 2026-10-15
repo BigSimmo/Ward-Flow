@@ -18,6 +18,7 @@ import { edHref, movementHref, patientHref, wardBoardHref } from "@/components/w
 import { unitReadyBedCount } from "./ward-smart-search";
 
 import styles from "./global-search-preview.module.css";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 
 /**
  * THE RIGHT-HAND PREVIEW OF THE HEADER SEARCH PALETTE (Josh, 8 Oct 2026, option B).
@@ -260,7 +261,7 @@ function MovementPreview({
         ) : null}
         {linkedReferral ? (
           <Action
-            href={`/mockups/ward-flow/referrals?referral=${encodeURIComponent(linkedReferral.id)}`}
+            href={referralBoardHref(linkedReferral.id)}
             onOpen={onOpen}
             testId="ward-global-search-preview-open-referral"
           >
@@ -366,7 +367,7 @@ function PersonPreview({
         ) : null}
         {linkedReferral ? (
           <Action
-            href={`/mockups/ward-flow/referrals?referral=${encodeURIComponent(linkedReferral.id)}`}
+            href={referralBoardHref(linkedReferral.id)}
             onOpen={onOpen}
             testId="ward-global-search-preview-open-referral"
           >

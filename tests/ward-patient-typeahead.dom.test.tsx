@@ -173,13 +173,16 @@ describe("PatientTypeahead — D4: the referral line matches the actual referral
     // The defect: this used to read "waiting for a decision" regardless of state. It must not, for
     // a referral that has actually been accepted.
     expect(within(acceptedRow).queryByText(/waiting for a decision/i)).not.toBeInTheDocument();
-    expect(within(acceptedRow).getByText(new RegExp(ACCEPTED_REFERRAL.id))).toBeInTheDocument();
+    // D-39: the line says the referral's state, never its record number.
+    expect(within(acceptedRow).getByText("Referral — accepted")).toBeInTheDocument();
+    expect(within(acceptedRow).queryByText(new RegExp(ACCEPTED_REFERRAL.id))).not.toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: "" } });
     fireEvent.change(input, { target: { value: "Marrowby" } });
     const declinedRow = screen.getByTestId("ward-patient-typeahead-option-PT-003");
     expect(within(declinedRow).queryByText(/waiting for a decision/i)).not.toBeInTheDocument();
-    expect(within(declinedRow).getByText(new RegExp(DECLINED_REFERRAL.id))).toBeInTheDocument();
+    expect(within(declinedRow).getByText("Referral — declined")).toBeInTheDocument();
+    expect(within(declinedRow).queryByText(new RegExp(DECLINED_REFERRAL.id))).not.toBeInTheDocument();
   });
 
   it("says a referral is not LINKED, never that none exists, when nothing points at this patient", () => {

@@ -35,6 +35,7 @@ import { serviceRollup } from "@/components/ward-management/ward-morning-rollup"
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { decodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const COORDINATOR_ROUTE = "/mockups/ward-flow";
@@ -456,7 +457,8 @@ describe("Ward Flow sidebar attention block, scoped to the reader's own place", 
 
     for (const link of links) {
       const href = link.getAttribute("href") ?? "";
-      const movementId = href.replace("/mockups/ward-flow/movements/", "");
+      // D-39: the link carries the address code; decode it back to the journey it names.
+      const movementId = decodeRecordAddress(href.replace("/mockups/ward-flow/movements/", "")) ?? href;
       const movement = seed.movements.find((candidate) => candidate.id === movementId);
       expect(movement, `${movementId} (rendered) is not a real seeded movement`).toBeTruthy();
       expect(destinationUnit(movement!, seed.units)?.id).toBe(wardUnitWithAttention!.id);

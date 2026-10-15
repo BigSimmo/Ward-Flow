@@ -9,6 +9,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
+  NAME_NOT_RECORDED,
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
   type ResolvedPatientInfo,
@@ -79,7 +80,7 @@ function getPatientDisplayName(
     return resolved.displayName;
   } catch {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    return movement.id ? "Unknown Patient" : "Name not recorded";
+    return NAME_NOT_RECORDED;
   }
 }
 

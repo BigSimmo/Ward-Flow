@@ -42,6 +42,7 @@ import {
   type RepatDraft,
 } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 export type PlanPatient = {
   displayName: string;
@@ -535,10 +536,7 @@ function RecordedReturn({
               <StatusGlyph tone="neutral" size={10} /> Movement opened
             </span>
             {returnMovementId ? (
-              <Link
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                href={`/mockups/ward-flow/movements/${encodeURIComponent(returnMovementId)}`}
-              >
+              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={movementHref(returnMovementId)}>
                 Open movement
               </Link>
             ) : null}

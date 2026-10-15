@@ -20,6 +20,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById, NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * MERGE 03 — the patient movement board (`MovementsView`) and the coordinator's live transport
@@ -183,7 +184,7 @@ describe("the Movements screen", () => {
       expect(link, `movement ${movement.id} has no "Review patient" link on its stage row`).toBeInTheDocument();
       expect(link, `movement ${movement.id}'s stage-row link does not point at its own workspace`).toHaveAttribute(
         "href",
-        `/mockups/ward-flow/movements/${movement.id}`,
+        movementHref(movement.id),
       );
     }
   });
@@ -306,7 +307,7 @@ describe("the Movements screen", () => {
       expect(row).toHaveTextContent("No accepted time recorded");
       expect(within(row).getByRole("link", { name: /Review patient/u })).toHaveAttribute(
         "href",
-        `/mockups/ward-flow/movements/${movement!.id}`,
+        movementHref(movement!.id),
       );
       const worklist = screen.getByRole("region", { name: "Movement worklist" });
       fireEvent.click(within(worklist).getByRole("radio", { name: "By transport leg, and what has none" }));

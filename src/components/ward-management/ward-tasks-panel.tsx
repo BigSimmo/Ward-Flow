@@ -8,6 +8,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
 import styles from "./ward-tasks-panel.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * **THE GLOBAL TASKS PANEL — what mounts `WardTasksDrawer` and what decides when it is open.**
@@ -77,7 +78,7 @@ export function WardTasksPanel() {
       setOpen(false);
       router.push(
         href ??
-          `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+          `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
     },
     [router],

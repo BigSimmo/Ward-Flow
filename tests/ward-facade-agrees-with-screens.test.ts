@@ -696,8 +696,11 @@ describe("every href the facade builds lands on a route that exists", () => {
        * than leaving it as a redirect stub.)
        */
       const pageSource = readFileSync(pageFile, "utf8");
+      // D-39 (15 Oct 2026): a record page may redirect an OLD raw-id link to its coded address, but
+      // it must still render a screen itself. A stub that only forwards renders nothing.
+      const rendersAScreen = /return\s*\(?\s*</u.test(pageSource);
       expect(
-        pageSource.includes("redirect("),
+        pageSource.includes("redirect(") && !rendersAScreen,
         `${entry.name} points at ${entry.route}, whose page redirects rather than rendering`,
       ).toBe(false);
     },
@@ -725,12 +728,18 @@ function stripComments(source: string): string {
  * doc comment) and writes no return line of its own, so it has nothing to name here.
  */
 const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: string }[] = [
-  { name: "patientHref", line: "return `/mockups/ward-flow/people/${encodeURIComponent(patientId)}`;" },
+  {
+    name: "patientHref",
+    line: "return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;",
+  },
   { name: "unitHref", line: "return `/mockups/ward-flow/ward/${encodeURIComponent(unitId)}`;" },
   { name: "wardBoardHref", line: "return `/mockups/ward-flow/board/${encodeURIComponent(unitId)}`;" },
   { name: "teamHref", line: "return `/mockups/ward-flow/community/${encodeURIComponent(teamId)}`;" },
   { name: "edHref", line: "return `/mockups/ward-flow/ed/${encodeURIComponent(edId)}`;" },
-  { name: "movementHref", line: "return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;" },
+  {
+    name: "movementHref",
+    line: "return `/mockups/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;",
+  },
   { name: "handoverHref", line: 'return "/mockups/ward-flow/handover";' },
   { name: "settingsHref", line: 'return "/mockups/ward-flow/settings";' },
   { name: "patientSearchHref", line: 'return "/mockups/ward-flow/search";' },
@@ -757,7 +766,7 @@ const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: s
   { name: "raiseReferralHref", line: "return `/mockups/ward-flow/referrals/new?${query.toString()}`;" },
   {
     name: "dischargeHref",
-    line: "return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;",
+    line: "return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;",
   },
 ] as const;
 
