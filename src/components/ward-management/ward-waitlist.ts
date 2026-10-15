@@ -29,5 +29,9 @@ export function waitlistStands(movement: Movement, unitId: string): boolean {
   for (const withdrawal of movement.withdrawnReferrals) {
     if (withdrawal.unitId === unitId) endedAt = Math.max(endedAt, withdrawal.at);
   }
-  return endedAt <= waitlistedAt || endedAt === Number.NEGATIVE_INFINITY;
+  if (endedAt === Number.NEGATIVE_INFINITY) return true;
+  if (endedAt !== waitlistedAt) return endedAt < waitlistedAt;
+  // Same minute on the clock. A waitlist answer keeps the ward's live referral and a withdrawal or
+  // ordinary decline removes it, so the referral still being live means the waitlist came last.
+  return movement.referredUnitIds.includes(unitId);
 }

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  seedWardFlowStateAt,
+  wardFlowReducer,
+  type WardFlowState,
+} from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 
 const UNIT = "unit-under-test";
@@ -9,7 +15,14 @@ const UNIT = "unit-under-test";
 function bareMovement(): Movement {
   const movement = seedWardFlowStateAt(0).movements[0];
   if (!movement) throw new Error("expected a seeded movement");
-  return { ...movement, waitlistedUnitIds: [], declines: [], withdrawnReferrals: [] };
+  return {
+    ...movement,
+    referredUnitIds: [],
+    waitlistedUnitIds: [],
+    declines: [],
+    withdrawnReferrals: [],
+    referralAnswerHistory: undefined,
+  };
 }
 
 describe("waitlistStands", () => {
@@ -81,5 +94,95 @@ describe("waitlistStands", () => {
       ],
     };
     expect(waitlistStands(movement, UNIT)).toBe(true);
+  });
+
+  it("ends a same minute withdrawal and re-referral, which leaves no fresh waitlist answer", () => {
+    const movement: Movement = {
+      ...bareMovement(),
+      referredUnitIds: [UNIT],
+      waitlistedUnitIds: [UNIT],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      withdrawnReferrals: [{ unitId: UNIT, at: 1_000, reason: "coordinator_withdrew" }],
+      referralAnswerHistory: [
+        { unitId: UNIT, at: 1_000, answer: "waitlisted" },
+        { unitId: UNIT, at: 1_000, answer: "withdrawn" },
+      ],
+    };
+    expect(waitlistStands(movement, UNIT)).toBe(false);
+  });
+
+  describe("records from before the answer history", () => {
+    it("ends when the withdrawal lands in the same minute as the waitlist answer", () => {
+      const movement: Movement = {
+        ...bareMovement(),
+        waitlistedUnitIds: [UNIT],
+        declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+        withdrawnReferrals: [{ unitId: UNIT, at: 1_000, reason: "coordinator_withdrew" }],
+      };
+      expect(waitlistStands(movement, UNIT)).toBe(false);
+    });
+
+    it("holds when a same minute waitlist answer leaves the referral live", () => {
+      const movement: Movement = {
+        ...bareMovement(),
+        referredUnitIds: [UNIT],
+        waitlistedUnitIds: [UNIT],
+        declines: [
+          { unitId: UNIT, at: 1_000, reason: "no_bed" },
+          { unitId: UNIT, at: 2_000, reason: "no_bed" },
+        ],
+        withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
+      };
+      expect(waitlistStands(movement, UNIT)).toBe(true);
+    });
+  });
+
+  it("ends through the reducer when the ward is waitlisted and withdrawn in the same minute", () => {
+    const seeded = seedWardFlowState();
+    const unit = seeded.units[0];
+    const source = seeded.movements.find((movement) => !movement.closure);
+    if (!unit || !source) throw new Error("expected a seeded ward and open movement");
+    const movementId = "WF-WAITLIST-SAME-MINUTE";
+    let state: WardFlowState = {
+      ...seeded,
+      movements: [
+        ...seeded.movements,
+        {
+          ...source,
+          id: movementId,
+          stage: "destination_review",
+          referredUnitIds: [unit.id],
+          acceptedUnitId: undefined,
+          admissionId: undefined,
+          declines: [],
+          withdrawnReferrals: [],
+          waitlistedUnitIds: undefined,
+          referralAnswerHistory: undefined,
+          closure: undefined,
+        },
+      ],
+    };
+    state = wardFlowReducer(state, {
+      type: "DECLINE",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId,
+      unitId: unit.id,
+      reason: "no_bed",
+    });
+    const waitlisted = state.movements.find((movement) => movement.id === movementId)!;
+    expect(waitlistStands(waitlisted, unit.id)).toBe(true);
+    state = wardFlowReducer(state, {
+      type: "WITHDRAW_WARD_REQUEST",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId,
+      unitId: unit.id,
+      reason: "another_reason",
+    });
+    expect(state.rejections).toEqual([]);
+    const withdrawn = state.movements.find((movement) => movement.id === movementId)!;
+    expect(withdrawn.waitlistedUnitIds).toEqual([unit.id]);
+    expect(waitlistStands(withdrawn, unit.id)).toBe(false);
   });
 });
