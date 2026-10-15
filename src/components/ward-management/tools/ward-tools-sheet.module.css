@@ -1,6 +1,6 @@
 /*
  * The Tools sheet (Tools review, 15 Oct 2026): one scroll, four groups, rows with a framed icon.
- * Same card language as the drawer it replaces (`ward-bar.module.css` .toolsSection and .toolItem).
+ * Same card language as the five-tab drawer it replaced. Service now sits above Do now.
  * Tokens only (`--wf-*`), no literal colour.
  */
 .sheet {
@@ -606,6 +606,67 @@
   display: none;
 }
 
+/* Service now: the standing figures across the network, a quick look with no tap. */
+.glance {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+}
+
+.glanceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.glanceCell {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.glanceCell dt {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.glanceCell dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.glanceCell small {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.glanceValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.glanceCell[data-flagged="true"] {
+  border-color: var(--wf-line-2);
+}
+
+.glanceNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
 @media (max-width: 48rem) {
   .row {
     min-height: 56px;
@@ -630,5 +691,18 @@
 
   .fieldRow {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .glanceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* iOS zooms the page into any field set below 16px, so phone and touch fields use 16px. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .search input,
+  .select,
+  .input {
+    font-size: max(1rem, 16px);
   }
 }

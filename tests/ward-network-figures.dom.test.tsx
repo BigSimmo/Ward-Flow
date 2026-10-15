@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -10,11 +10,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
-import {
-  NetworkFigures,
-  ToolsContactDirectory,
-  toolsDirectoryEntries,
-} from "@/components/ward-management/tools/ward-tools-workspace";
+// The Tools contact directory went with the old Tools tabs (Tools review, 15 Oct 2026). Contacts
+// now reads the On-call directory, pinned in tests/ward-tools-sheet.dom.test.tsx.
+import { NetworkFigures } from "@/components/ward-management/tools/ward-network-figures";
 import { WardFlowProvider, useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
@@ -64,43 +62,5 @@ describe("whole-network tools figures", () => {
     const before = count();
     fireEvent.click(screen.getByRole("button", { name: "Advance test clock" }));
     expect(count()).toBeGreaterThan(before);
-  });
-});
-
-describe("contact directory", () => {
-  it("covers each ward and service, with clearly marked mock methods and retained published contacts", () => {
-    const entries = toolsDirectoryEntries(allUnits());
-    expect(entries.filter((entry) => entry.category === "wards").map((entry) => entry.id)).toEqual(
-      allUnits().map((unit) => unit.id),
-    );
-    expect(new Set(entries.map((entry) => entry.category))).toEqual(
-      new Set(["wards", "ed", "community", "switchboards", "coordinators", "transport", "escalation"]),
-    );
-    expect(entries.find((entry) => entry.name === "Bentley" && entry.category === "community")).toMatchObject({
-      phone: "08 9416 3800",
-      mockPhone: false,
-    });
-    expect(entries.every((entry) => entry.phone && entry.email)).toBe(true);
-    expect(entries.filter((entry) => entry.mockEmail).every((entry) => entry.email?.endsWith("@example.invalid"))).toBe(
-      true,
-    );
-  });
-  it("combines search with contact types and never dials mock contacts", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ToolsContactDirectory onNavigate={vi.fn()} />
-      </WardFlowProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Bed flow" }));
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "north" } });
-    const list = screen.getByRole("list", { name: "Contact directory" });
-    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
-    expect(within(list).getByRole("link")).toHaveAttribute("href", "/mockups/ward-flow/on-call#ward-reach-bed");
-    expect(list.querySelector('a[href^="tel:"]')).toBeNull();
-    expect(list.querySelector('a[href^="mailto:"]')).toBeNull();
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "no such contact" } });
-    expect(screen.getByText("No matching contacts")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Reset search" }));
-    expect(within(list).getAllByRole("listitem").length).toBeGreaterThan(10);
   });
 });

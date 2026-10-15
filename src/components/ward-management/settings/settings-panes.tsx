@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ChangeEvent } from "react";
 import {
+  BookOpen,
   BellOff,
   BellRing,
   ClipboardList,
@@ -25,6 +26,7 @@ import {
 
 import type { NotificationSupport } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { phonePushRow, type PhonePushState } from "@/components/ward-management/shell/ward-phone-push";
+import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
@@ -832,6 +834,14 @@ export function DataPane({
               <Link className={styles.inlineLink} href="/mockups/ward-flow/governance">
                 Open
               </Link>
+            </p>
+            {/* Moved here from Tools (Tools review, 15 Oct 2026): a builder reference, not a ward task. */}
+            <p className={styles.cardNote}>
+              <BookOpen size={14} aria-hidden="true" />
+              Product design reference
+              <a className={styles.inlineLink} href={digestHref()} target="_blank" rel="noopener noreferrer">
+                Ward Flow Digest
+              </a>
             </p>
           </Card>
         </div>

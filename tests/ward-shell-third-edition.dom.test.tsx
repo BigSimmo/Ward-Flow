@@ -692,7 +692,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps scenario controls and the role switcher under Shift desk while account utilities stay out", async () => {
+  it("keeps the one Demo panel and the role switcher in the Tools sheet while account utilities stay out", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -700,14 +700,15 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    expect(withinDialog.queryByRole("button", { name: /^Demo$/ })).toBeNull();
-    await user.click(withinDialog.getByRole("button", { name: /^Shift desk$/ }));
-    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeVisible();
+    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top and
+    // the scenario controls sit in the Demo row at the foot.
+    expect(withinDialog.queryByRole("button", { name: /^Shift desk$/ })).toBeNull();
+    expect(await withinDialog.findByRole("button", { name: /^Change view/ }, { timeout: 15_000 })).toBeVisible();
+    await user.click(withinDialog.getByTestId("ward-tools-toggle-demo"));
+    expect(withinDialog.getByTestId("ward-tools-demo-panel")).toBeVisible();
+    expect(withinDialog.getByRole("region", { name: "Demo" })).toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
-    // The role switcher renders its own labelled control — asserting the heading it sits under
-    // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Scenario controls")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {

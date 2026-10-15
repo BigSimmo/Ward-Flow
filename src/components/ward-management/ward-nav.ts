@@ -512,11 +512,11 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     "/mockups/ward-flow/reports/downtime",
-    "The printable downtime pack. Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",
+    "The printable downtime pack. Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
   [
     "/mockups/ward-flow/reports/chronology",
-    "The PIR patient chronology (D-37, WF-57). Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",
+    "The PIR patient chronology (D-37, WF-57). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
 ]);
 

@@ -623,12 +623,15 @@ sovereign-specific test file exists.
 
 ## `tools/`
 
-**Not a route.** Both components here are opened as drawers from the global top bar
-(`shell/ward-bar.tsx`, around its "Catchment resolver" and "MHA deadline calculator" tools
-sections), reachable from every ward screen rather than mounted by any one `page.tsx`. **Mockup:**
-none in `SCREEN-MAP.md` — these are chrome, not a drawn screen. **Dispatches:** none. **Reads:**
-`ward-catchment.ts` (resolver) and `ward-flow-provider.tsx` (calculator, for the live clock).
-**Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-mha-calculator.test.ts`.
+**Not a route.** Everything here renders inside the Tools sheet (`ward-tools-sheet.tsx`), opened as a
+drawer from the global top bar (`shell/ward-bar.tsx`) on every ward screen rather than mounted by any
+one `page.tsx`. Form times also shows as a card on Legal forms. **Mockup:** none in `SCREEN-MAP.md`;
+these are chrome, not a drawn screen. **Dispatches:** demo events only, from `ward-demo-panel.tsx`.
+**Reads:** `ward-catchment.ts` (resolver), the On-call directory (contacts), `standingFigures` and the
+bed derivations (Service now, All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
+demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-sheet.dom.test.tsx`,
+`ward-tools-sheet-helpers.test.ts`, `ward-network-figures.dom.test.tsx`, `ward-form-time-input.test.ts`,
+`ward-bar-figures-telemetry.dom.test.tsx`.
 
 - **`src/components/ward-management/tools/ward-catchment-resolver.module.css`** (525 lines) —
   styles for the resolver.
@@ -636,12 +639,10 @@ none in `SCREEN-MAP.md` — these are chrome, not a drawn screen. **Dispatches:*
   catchment-area lookup tool (which service/site covers a given postcode/suburb). Imports
   `ward-catchment.ts` and `ward-service-colors.ts`. `WardCatchmentResolver` is the component
   mounted by `ward-bar.tsx`.
-- **`src/components/ward-management/tools/ward-mha-calculator.module.css`** (354 lines) — styles for
-  the calculator.
-- **`src/components/ward-management/tools/ward-mha-calculator.tsx`** (758 lines) — Mental Health Act
-  2014 deadline calculator. Per the repo-wide rule (`AGENTS.md` "Mental Health Act wording"), it
-  must never compute or display a real statutory time limit; check this file first if that rule is
-  ever suspected broken. `WardMhaCalculator` is the component mounted by `ward-bar.tsx`.
+- **`src/components/ward-management/tools/ward-form-times.tsx`** and **`ward-form-time-input.ts`** —
+  Form times, which replaced the MHA form calculator on 15 Oct 2026. It shows back a time a person
+  typed and how far it is from the demo clock. Per rule D5 it must never compute or display a real
+  statutory time limit; check these files first if that rule is ever suspected broken.
 
 ## `tracker/`
 
@@ -717,7 +718,7 @@ from the separate `ward/` folder — the two are easy to conflate by name), plus
    pinned key set, not just a convention.** `OnCallRole` has exactly three fields (`id`, `role`,
    `shift`); `tests/ward-on-call-holds-no-people.test.ts` pins them. Adding `name`, `phone`,
    `extension`, `pager` or `email` is a designed-in red, not an oversight to "fix".
-8. **`tools/ward-mha-calculator.tsx` must never compute or show a real Mental Health Act statutory
+8. **`tools/ward-form-times.tsx` must never compute or show a real Mental Health Act statutory
    deadline** — the repo-wide rule in `AGENTS.md` ("Mental Health Act wording") applies here
    directly, and this is the one file in this whole map where breaking it is easiest to do by
    accident.

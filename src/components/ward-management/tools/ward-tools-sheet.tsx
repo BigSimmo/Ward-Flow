@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import {
+  BarChart3,
   BedDouble,
   BedSingle,
   CalendarClock,
@@ -36,6 +37,8 @@ import { WardBedFinder } from "./ward-bed-finder";
 import { WardToolsContacts } from "./ward-tools-contacts";
 import { WardDemoPanel } from "./ward-demo-panel";
 import { WardFormTimes } from "./ward-form-times";
+import { NetworkFigures } from "./ward-network-figures";
+import { WardServiceNow } from "./ward-service-now";
 import styles from "./ward-tools-sheet.module.css";
 
 const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver), {
@@ -44,7 +47,8 @@ const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").
 
 const root = "/mockups/ward-flow";
 
-export type ToolsSheetToolId = "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo";
+export type ToolsSheetToolId =
+  "figures" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo";
 
 export type WardToolsSheetProps = {
   isPhone: boolean;
@@ -207,10 +211,11 @@ function BedSummary() {
 
 /**
  * The Tools sheet, rebuilt from the 15 Oct 2026 Tools review (`/mnt/project-files/reviews/
- * tools-sidebar-review-2026-10-15.md`): one scrolling sheet in four groups instead of five tabs.
- * Do now, Look up, Print and share, then Demo at the foot. Figures, Appearance, Settings, the Digest
- * and the repeated shortcut grids are gone because the rail and Statistics already carry them.
- * Phone uses the same sheet; Bed meeting TV stays desktop only.
+ * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Service now (the
+ * network figures at a glance, with All figures below), then Do now, Look up, Print and share, More
+ * pages and Demo at the foot. Appearance, Settings, the Digest and the repeated shortcut grids are
+ * gone because the rail already carries them. Phone uses the same sheet; Bed meeting TV stays
+ * desktop only.
  */
 export function WardToolsSheet({
   isPhone,
@@ -276,6 +281,17 @@ export function WardToolsSheet({
           <WardRoleSwitcher />
         </span>
       </div>
+
+      <Group title="Service now">
+        <WardServiceNow />
+        {tool(
+          "figures",
+          BarChart3,
+          "All figures",
+          "Beds, flow and waits across the network",
+          <NetworkFigures onNavigate={onNavigate} />,
+        )}
+      </Group>
 
       <Group title="Do now">
         <button type="button" className={styles.row} onClick={onNewReferral}>

@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
 
 vi.mock("next/navigation", () => ({
@@ -30,10 +31,17 @@ function renderSheet(isPhone = false) {
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {
     renderSheet();
-    for (const group of ["Do now", "Look up", "Print and share", "More pages", "Demo"]) {
+    for (const group of ["Service now", "Do now", "Look up", "Print and share", "More pages", "Demo"]) {
       expect(screen.getByRole("region", { name: group })).toBeTruthy();
     }
-    for (const gone of ["Figures at a glance", "Appearance", "Ward Flow Digest", "Shift desk", "Utilities"]) {
+    for (const gone of [
+      "Figures at a glance",
+      "Appearance",
+      "Ward Flow Digest",
+      "Shift desk",
+      "Utilities",
+      "Directory",
+    ]) {
       expect(screen.queryByText(gone)).toBeNull();
     }
     expect(screen.queryByRole("link", { name: /Settings/u })).toBeNull();
@@ -91,5 +99,38 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(panel).getByRole("radiogroup", { name: "Demo scenario" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "+15 min" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "Reset demo" })).toBeTruthy();
+  });
+
+  it("shows the network figures at a glance, and opens every figure in place", () => {
+    renderSheet();
+    const glance = screen.getByTestId("ward-tools-service-now");
+    for (const label of ["Ready now", "Waiting", "Longest wait", "Deadline passed"]) {
+      expect(within(glance).getByText(label)).toBeTruthy();
+    }
+    expect(glance.textContent).toContain("Whole network, synthetic figures.");
+    expect(glance.querySelectorAll('[data-flagged="true"]').length).toBeLessThanOrEqual(2);
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
+    expect(screen.getByTestId("ward-stats-drawer-content")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Open statistics/u }).getAttribute("href")).toBe(
+      "/mockups/ward-flow/statistics",
+    );
+  });
+});
+
+describe("Form times on the Perth clock", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("starts from the demo clock, read from Perth midnight", () => {
+    // Carried over from the retired MHA form calculator: 16:30 UTC is 00:30 on Saturday in Perth.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-25T16:30:00.000Z"));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFormTimes />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByLabelText("Date written on form")).toHaveValue("2026-09-26");
+    expect(screen.getByLabelText("Time written on form")).toHaveValue("10:42");
+    expect(screen.getByRole("status").textContent).toContain("on the demo clock");
   });
 });

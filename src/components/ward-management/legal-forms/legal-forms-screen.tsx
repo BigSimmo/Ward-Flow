@@ -84,7 +84,6 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import { WardFormTimes } from "../tools/ward-form-times";
-import { useToolsPreview } from "../tools/ward-tools-preview";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
@@ -171,8 +170,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const [copied, setCopied] = useState<string | null>(null);
   const [phoneTasks, setPhoneTasks] = useState(false);
   const isPhone = useIsPhone();
-  // Tools review mockup: the Form times card shows here with `?tools=new`.
-  const toolsPreview = useToolsPreview();
   const isTabletPortrait = useIsTabletPortrait();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
@@ -631,18 +628,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           </ul>
         </CardBody>
       </Card>
-      {toolsPreview ? (
-        <Card aria-label="Check a form time" className={styles.formTimesCard}>
-          <CardHead
-            title="Check a form time"
-            level={2}
-            aside={<span className={styles.meta}>Moved here from Tools</span>}
-          />
-          <CardBody>
-            <WardFormTimes />
-          </CardBody>
-        </Card>
-      ) : null}
+      {/* Form times (Tools review, 15 Oct 2026): typed times only, rule D5. Also in Tools. */}
+      <Card aria-label="Check a form time" className={styles.formTimesCard}>
+        <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
+        <CardBody>
+          <WardFormTimes />
+        </CardBody>
+      </Card>
     </div>
   );
 

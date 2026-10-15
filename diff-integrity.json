@@ -381,6 +381,34 @@
       "after": 10,
       "reason": "The 15 removed cases drove the retired full-page New referral form (referral-intake.tsx), deleted with Josh's approval on 8 Oct 2026 when the referral slide-out (option B) became the only place a referral is written. Destination rules the slide-out still has are kept here and in tests/ward-referral-drawer-sheet.dom.test.tsx.",
       "approvedOn": "2026-10-08"
+    },
+    {
+      "path": "tests/ward-mha-calculator.test.ts",
+      "before": 23,
+      "after": 0,
+      "reason": "Retired with the MHA form calculator (Tools review, Josh approved 15 Oct 2026). The calculator ran after-hours and weekend checks, hour caps and reference presets on typed times, which rule D5 forbids. Form times replaces it with typed times only. The typed-time parser and formatter cases moved to tests/ward-form-time-input.test.ts, the Perth-midnight clock case to tests/ward-tools-sheet.dom.test.tsx, and the keyboard case to tests/ward-a11y-keyboard-scroll.dom.test.tsx.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-mha-calculator.dom.test.tsx",
+      "before": 2,
+      "after": 0,
+      "reason": "Retired with the MHA form calculator (Tools review, Josh approved 15 Oct 2026). The calculator ran after-hours and weekend checks, hour caps and reference presets on typed times, which rule D5 forbids. Form times replaces it with typed times only. The typed-time parser and formatter cases moved to tests/ward-form-time-input.test.ts, the Perth-midnight clock case to tests/ward-tools-sheet.dom.test.tsx, and the keyboard case to tests/ward-a11y-keyboard-scroll.dom.test.tsx.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-mha-form-caps.dom.test.tsx",
+      "before": 2,
+      "after": 0,
+      "reason": "Retired with the MHA form calculator (Tools review, Josh approved 15 Oct 2026). The calculator ran after-hours and weekend checks, hour caps and reference presets on typed times, which rule D5 forbids. Form times replaces it with typed times only. The typed-time parser and formatter cases moved to tests/ward-form-time-input.test.ts, the Perth-midnight clock case to tests/ward-tools-sheet.dom.test.tsx, and the keyboard case to tests/ward-a11y-keyboard-scroll.dom.test.tsx.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-network-figures.dom.test.tsx",
+      "before": 5,
+      "after": 3,
+      "reason": "Renamed from tests/ward-tools-workspace.dom.test.tsx when the old Tools tabs went (Tools review, Josh approved 15 Oct 2026). Its two contact directory cases covered the Tools directory, which was removed. Contacts now reads the On-call directory and is pinned in tests/ward-tools-sheet.dom.test.tsx and tests/ward-bar-figures-telemetry.dom.test.tsx.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }

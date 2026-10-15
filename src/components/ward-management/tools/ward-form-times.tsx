@@ -5,7 +5,12 @@ import { useId, useMemo, useState } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlowClock } from "../ward-flow-provider";
 import { LEGAL_CLOCK_FORM_CODES, LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "../ward-legal-clock";
-import { formatStatutoryDateTime, parseDateTimeInput, toDateInputValue, toTimeInputValue } from "./ward-mha-calculator";
+import {
+  formatStatutoryDateTime,
+  parseDateTimeInput,
+  toDateInputValue,
+  toTimeInputValue,
+} from "./ward-form-time-input";
 import styles from "./ward-tools-sheet.module.css";
 
 function formLabel(code: string) {
