@@ -520,10 +520,15 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     4,
     (state, random) => {
       const current = state.admissions.filter((stay) => stay.state === "pulled" || stay.state === "occupied");
-      // A bed held for another journey on the stay's ward: the placement that must be refused.
+      // A bed held for another open journey on the stay's ward: the placement that must be refused.
       const heldFor = (stay: (typeof current)[number]) =>
         state.movements
-          .filter((movement) => movement.acceptedUnitId === stay.unitId && movement.admissionId !== stay.id)
+          .filter(
+            (movement) =>
+              movement.closure === undefined &&
+              movement.acceptedUnitId === stay.unitId &&
+              movement.admissionId !== stay.id,
+          )
           .map((movement) => movement.heldBedNumber)
           .filter((bed): bed is number => bed !== undefined);
       const nearHeld = current.filter((stay) => heldFor(stay).length > 0);
