@@ -54,3 +54,9 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
+
+@media (max-width: 600px) {
+  .touchTarget {
+    min-height: 48px;
+  }
+}

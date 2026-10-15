@@ -101,6 +101,7 @@ export function WardDischargeCriteriaCard({
                 {canTick ? (
                   <Checkbox
                     label={item.criterion}
+                    className={styles.touchTarget}
                     checked={item.metAt !== null}
                     onChange={(event) => toggleMet(item.criterion, event.target.checked)}
                   />
@@ -124,6 +125,7 @@ export function WardDischargeCriteriaCard({
               <Checkbox
                 key={criterion}
                 label={criterion}
+                className={styles.touchTarget}
                 checked={chosen.includes(criterion)}
                 onChange={(event) =>
                   setChosen((current) =>
@@ -136,11 +138,13 @@ export function WardDischargeCriteriaCard({
             ))}
             <Checkbox
               label="Set by the treating psychiatrist"
+              className={styles.touchTarget}
               checked={attested}
               onChange={(event) => setAttested(event.target.checked)}
             />
             <div className={styles.actions}>
               <Button
+                className={styles.touchTarget}
                 variant="sec"
                 disabled={chosen.length === 0 || !attested}
                 onClick={() => {
@@ -154,7 +158,7 @@ export function WardDischargeCriteriaCard({
               >
                 Save criteria
               </Button>
-              <Button variant="ghost" onClick={() => setEditing(false)}>
+              <Button className={styles.touchTarget} variant="ghost" onClick={() => setEditing(false)}>
                 Cancel
               </Button>
             </div>
@@ -169,12 +173,13 @@ export function WardDischargeCriteriaCard({
         {!editing && onChange ? (
           <div className={styles.actions}>
             {ineligible === null ? (
-              <Button variant="sec" onClick={openEditor}>
+              <Button className={styles.touchTarget} variant="sec" onClick={openEditor}>
                 {items.length === 0 ? "Set criteria" : status.kind === "lapsed" ? "Review criteria" : "Change criteria"}
               </Button>
             ) : null}
             {items.length > 0 ? (
               <Button
+                className={styles.touchTarget}
                 variant="ghost"
                 onClick={() => onChange({ criteria: null, met: [], setByTreatingPsychiatrist: false })}
               >
