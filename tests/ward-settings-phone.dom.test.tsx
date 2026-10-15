@@ -15,6 +15,11 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/ward-model";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
+import {
+  CLINICAL_VALUE_LIST,
+  clinicalValueStatusText,
+  unsignedClinicalValueCount,
+} from "@/components/ward-management/ward-clinical-values";
 
 /**
  * Settings v10 pass 3: the phone is its own design (a compact profile hero, Find a setting, the
@@ -130,5 +135,33 @@ describe("Settings on a phone", () => {
     const defaults = document.querySelector('[data-setting="fixed-defaults"]');
     expect(defaults).not.toBeNull();
     expect(defaults!.closest("[hidden]"), "Fixed defaults are hidden on the phone").toBeNull();
+  });
+
+  // Josh, 15 Oct 2026 (phone mockup B): a two-way switch swaps Fixed defaults for the clinical values.
+  it("switches the Reference card between Fixed defaults and the clinical values on a phone", () => {
+    asPhone();
+    renderSettings();
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-data")).getByRole("button"));
+    const list = screen.getByRole("radiogroup", { name: "Reference list" });
+    expect(within(list).getByRole("radio", { name: /Fixed defaults/ })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByTestId("ward-settings-clinical-values-phone")).toBeNull();
+
+    fireEvent.click(within(list).getByRole("radio", { name: /Clinical values/ }));
+    const values = screen.getByTestId("ward-settings-clinical-values-phone");
+    expect(values).toHaveTextContent(
+      `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values wait on clinical sign-off`,
+    );
+    for (const entry of CLINICAL_VALUE_LIST) {
+      const row = within(values).getByTestId(`ward-settings-clinical-value-phone-${entry.id}`);
+      expect(row).toHaveTextContent(entry.name);
+      expect(row).toHaveTextContent(clinicalValueStatusText(entry));
+    }
+    expect(document.querySelector('[data-setting="fixed-defaults"]')!.closest("[hidden]")).not.toBeNull();
+  });
+
+  it("adds no phone switch or phone list on desktop", () => {
+    renderSettings();
+    expect(screen.queryByRole("radiogroup", { name: "Reference list" })).toBeNull();
+    expect(screen.queryByTestId("ward-settings-clinical-values-phone")).toBeNull();
   });
 });
