@@ -256,6 +256,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
     reason: "Owner mandate 2026-09-21: clinical handover sheet displays patient name and UMRN for each active journey.",
   },
   {
+    file: "ward-referral-visibility.ts",
+    reason:
+      "Owner's choice, 15 Oct 2026 (decision card, Engine safety thread): the community team page reads " +
+      "the community-scoped projection, so that projection copies the referral's own patient link across " +
+      "by name. One referral's own person, for community-screen.tsx above, never another destination.",
+  },
+  {
     file: "community/community-screen.tsx",
     reason:
       "Community team hub: resolves and displays patient identity for active community care and referral episodes.",
@@ -310,7 +317,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(25);
+    // 25 → 26 on 2026-10-15: ward-referral-visibility.ts, the community projection the team page now reads.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(26);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

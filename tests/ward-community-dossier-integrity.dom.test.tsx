@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -74,7 +75,10 @@ function start(props: { referrals?: Referral[]; teamId?: string } = {}) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Probe />
-      <CommunityScreen teamId={props.teamId ?? TEAM_ID} referrals={props.referrals} />
+      <CommunityScreen
+        teamId={props.teamId ?? TEAM_ID}
+        referrals={props.referrals && communityScopedReferrals(props.referrals)}
+      />
     </WardFlowProvider>,
   );
 }
