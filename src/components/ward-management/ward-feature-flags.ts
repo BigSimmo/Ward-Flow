@@ -202,6 +202,15 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
+  "top25-walk-round": {
+    label: "Phone walk round",
+    description:
+      "On a phone, a bed strip above the ward's bed list walks the ward one bed at a time in bed order, with reviewed and changed marks for this round.",
+    owner: "Josh",
+    added: "2026-10-15",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh signs off the item in the real screens after review.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;

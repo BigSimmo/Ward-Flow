@@ -1,0 +1,151 @@
+/* Item 23, option D: the phone walk round. Phone only, tokens only. */
+
+.walk {
+  display: flex;
+  flex-direction: column;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.progressLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  overflow: hidden;
+}
+
+.track i {
+  display: block;
+  height: 100%;
+  background: var(--wf-success);
+}
+
+.strip {
+  display: flex;
+  gap: var(--wf-s-1);
+  overflow-x: auto;
+  padding-bottom: var(--wf-s-1);
+}
+
+.stripBed {
+  flex: 0 0 auto;
+  min-width: var(--wf-target, 28px);
+  min-height: var(--wf-touch, 44px);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.stripBed[data-tone="danger"] {
+  border-color: var(--wf-danger, var(--wf-line-3));
+}
+
+.stripBed[data-tone="warning"] {
+  border-color: var(--wf-warning);
+}
+
+.stripBed[data-reviewed="true"] {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  text-decoration: line-through;
+}
+
+.stripBed[aria-current="true"] {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+}
+
+.cardTop,
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.position {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.cardName {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: var(--wf-fs-16, 16px);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.cardNo {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.cardNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.cardDays {
+  margin-left: auto;
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.marks,
+.rowMarks {
+  display: flex;
+  gap: var(--wf-s-1);
+  margin: 0;
+}
+
+.changed,
+.done {
+  padding: 1px 6px;
+  border-radius: var(--wf-r-sm, 4px);
+  font-size: var(--wf-fs-11, 11px);
+  font-weight: 600;
+}
+
+.changed {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.done {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}

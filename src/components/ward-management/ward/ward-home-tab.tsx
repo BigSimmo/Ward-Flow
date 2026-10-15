@@ -54,6 +54,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { pullBlockedReason } from "./ward-arrivals-corridor";
+import { WalkRoundRowMarks, WardWalkRound, type WalkRoundMark } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
@@ -277,6 +278,7 @@ export function WardHomeTab({
   const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlow();
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
+  const walkRoundOn = useWardFeatureFlag("top25-walk-round");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -608,6 +610,90 @@ export function WardHomeTab({
     ];
     return groups.filter((group) => group.rows.length > 0);
   })();
+
+  // Phone grouped bed list. With the walk round on, a row starts the walk from that bed and shows
+  // its reviewed and changed marks.
+  const walkRowLabel = (name: string, marks: WalkRoundMark) =>
+    [name, marks.changed ? "changed this round" : "", marks.reviewed ? "reviewed" : "", "walk from this bed"]
+      .filter(Boolean)
+      .join(", ");
+  const phoneGroupList = (mark?: (bedNumber: number) => WalkRoundMark, walkFrom?: (bedNumber: number) => void) => (
+    <div className={styles.phoneGroups} data-testid="ward-phone-bed-groups">
+      {phoneGroups.map((group) => {
+        const settledFolded = group.id === "settled" && !showSettled && !highlighting;
+        const arrivedToday = group.rows.filter((row) => row.bed.stayDays === 0).length;
+        const rows = settledFolded ? group.rows.slice(0, Math.max(3, arrivedToday)) : group.rows;
+        return (
+          <section key={group.id} aria-label={`${group.title}, ${group.rows.length}`}>
+            <h3 className={styles.phoneGroupHead}>
+              {group.tone ? <StatusGlyph tone={group.tone} size={9} /> : null}
+              <span>{group.title}</span>
+              <Count n={group.rows.length} />
+            </h3>
+            <ul className={styles.phoneRows}>
+              {rows.map((row) => (
+                <li key={row.bed.bedNumber}>
+                  <button
+                    type="button"
+                    className={styles.phoneRow}
+                    data-act={row.glyph === "danger" ? "true" : undefined}
+                    data-dim={isLit(row) ? undefined : "true"}
+                    aria-haspopup={walkFrom ? undefined : "dialog"}
+                    aria-label={
+                      mark ? walkRowLabel(row.accessibleName, mark(Number(row.bed.bedNumber))) : row.accessibleName
+                    }
+                    ref={(element) => registerBedTrigger?.(Number(row.bed.bedNumber), element)}
+                    onClick={() => {
+                      if (walkFrom) walkFrom(Number(row.bed.bedNumber));
+                      else onSelectBed?.(Number(row.bed.bedNumber));
+                    }}
+                  >
+                    <span className={styles.phoneRowNo} aria-hidden="true">
+                      {row.number}
+                    </span>
+                    <span className={styles.phoneRowText} aria-hidden="true">
+                      <span className={styles.phoneRowName}>{row.name}</span>
+                      {mark ? <WalkRoundRowMarks mark={mark(Number(row.bed.bedNumber))} /> : null}
+                      <span className={styles.phoneRowNote}>
+                        {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
+                        <span>
+                          {group.id === "settled" && row.bed.stayDays === 0 && row.note === row.stateWord
+                            ? "Arrived today"
+                            : row.note === row.name
+                              ? row.free
+                                ? "Ready"
+                                : row.bed.status === "closed"
+                                  ? "Not offered"
+                                  : row.stateWord
+                              : row.note}
+                        </span>
+                      </span>
+                    </span>
+                    <span className={styles.phoneRowDays} aria-hidden="true">
+                      {row.days || (row.free ? "Free" : "")}
+                      {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {settledFolded && group.rows.length > rows.length ? (
+              <button
+                type="button"
+                className={styles.phoneMore}
+                aria-expanded="false"
+                onClick={() => {
+                  setShowSettled(true);
+                }}
+              >
+                Show all {group.rows.length} settled beds
+              </button>
+            ) : null}
+          </section>
+        );
+      })}
+    </div>
+  );
 
   const bedByAdmission = (admissionId: string | undefined) =>
     admissionId === undefined ? undefined : (bedsList ?? []).find((item) => item.admissionId === admissionId);
@@ -1735,77 +1821,23 @@ export function WardHomeTab({
           {bedRows.length === 0 ? (
             <p className={styles.v6Empty}>No beds are recorded for {unit.name}.</p>
           ) : isPhone ? (
-            <div className={styles.phoneGroups} data-testid="ward-phone-bed-groups">
-              {phoneGroups.map((group) => {
-                const settledFolded = group.id === "settled" && !showSettled && !highlighting;
-                const arrivedToday = group.rows.filter((row) => row.bed.stayDays === 0).length;
-                const rows = settledFolded ? group.rows.slice(0, Math.max(3, arrivedToday)) : group.rows;
-                return (
-                  <section key={group.id} aria-label={`${group.title}, ${group.rows.length}`}>
-                    <h3 className={styles.phoneGroupHead}>
-                      {group.tone ? <StatusGlyph tone={group.tone} size={9} /> : null}
-                      <span>{group.title}</span>
-                      <Count n={group.rows.length} />
-                    </h3>
-                    <ul className={styles.phoneRows}>
-                      {rows.map((row) => (
-                        <li key={row.bed.bedNumber}>
-                          <button
-                            type="button"
-                            className={styles.phoneRow}
-                            data-act={row.glyph === "danger" ? "true" : undefined}
-                            data-dim={isLit(row) ? undefined : "true"}
-                            aria-haspopup="dialog"
-                            aria-label={row.accessibleName}
-                            ref={(element) => registerBedTrigger?.(Number(row.bed.bedNumber), element)}
-                            onClick={() => {
-                              onSelectBed?.(Number(row.bed.bedNumber));
-                            }}
-                          >
-                            <span className={styles.phoneRowNo} aria-hidden="true">
-                              {row.number}
-                            </span>
-                            <span className={styles.phoneRowText} aria-hidden="true">
-                              <span className={styles.phoneRowName}>{row.name}</span>
-                              <span className={styles.phoneRowNote}>
-                                {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
-                                <span>
-                                  {group.id === "settled" && row.bed.stayDays === 0 && row.note === row.stateWord
-                                    ? "Arrived today"
-                                    : row.note === row.name
-                                      ? row.free
-                                        ? "Ready"
-                                        : row.bed.status === "closed"
-                                          ? "Not offered"
-                                          : row.stateWord
-                                      : row.note}
-                                </span>
-                              </span>
-                            </span>
-                            <span className={styles.phoneRowDays} aria-hidden="true">
-                              {row.days || (row.free ? "Free" : "")}
-                              {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {settledFolded && group.rows.length > rows.length ? (
-                      <button
-                        type="button"
-                        className={styles.phoneMore}
-                        aria-expanded="false"
-                        onClick={() => {
-                          setShowSettled(true);
-                        }}
-                      >
-                        Show all {group.rows.length} settled beds
-                      </button>
-                    ) : null}
-                  </section>
-                );
-              })}
-            </div>
+            walkRoundOn ? (
+              <WardWalkRound
+                beds={bedRows.map((row) => ({
+                  bedNumber: Number(row.bed.bedNumber),
+                  number: row.number,
+                  name: row.name,
+                  note: row.note,
+                  glyph: row.glyph,
+                  days: row.days,
+                  accessibleName: row.accessibleName,
+                }))}
+                onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
+                renderList={(mark, walkFrom) => phoneGroupList(mark, walkFrom)}
+              />
+            ) : (
+              phoneGroupList()
+            )
           ) : boardView === "board" ? (
             <ul className={styles.bedTiles} aria-label={`Beds at ${unit.name}`}>
               {shownBeds.map((row) => (
