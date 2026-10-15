@@ -102,7 +102,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   authority for each consequential action, and report which state was actually reached.
 - After a pause, refresh the branch and target state before integrating. Preserve other threads'
   changes; do not rebase, force or reset unclear work.
-- Historical fold incidents: [`archive/dated-notes/HOW-TO-FOLD-2026-09-10.md`](archive/dated-notes/HOW-TO-FOLD-2026-09-10.md).
+- Historical fold incidents: `archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim).
 
 - **Review server when visual review is needed** (the steward): `node scripts/ward-flow/review-server.mjs --dist
 .next-playwright/<run-id>/dist [--port 3700]` serves a finished journeys build with the same offline
