@@ -14,6 +14,7 @@ import {
   isPastExpectedDischarge,
   stayBand,
   stayDayNumber,
+  type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
@@ -129,6 +130,32 @@ export function dailySheetGroups(people: readonly DailySheetPerson[]): DailyShee
     noDate: people.filter((person) => person.expectedDays === null),
     awayFromWard: people.filter((person) => person.awayAtEdHours !== null),
   };
+}
+
+/** The sheet's person rows for one ward, from its occupied beds. Shared with the ward TV view so
+ *  the two read the same rows. */
+export function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
+  return admissionsForUnit(admissions, unitId)
+    .filter(bedIsOccupied)
+    .map((admission) => ({
+      key: admission.id,
+      days: daysInBed(admission, now),
+      dayNumber: stayDayNumber(daysInBed(admission, now)),
+      bandLabel: stayBand(admission, now)?.label ?? null,
+      pastDate: isPastExpectedDischarge(admission, now),
+      sex: admission.sex,
+      homeRegion: admission.homeRegion,
+      tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
+      awayAtEdHours:
+        admission.awayAtEmergencyDepartmentSince === null
+          ? null
+          : Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60)),
+      expectedDays:
+        admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+          ? Math.floor((admission.expectedDischargeAt - now) / 1440)
+          : null,
+      blockReason: admission.blockReason,
+    }));
 }
 
 /**
@@ -432,27 +459,7 @@ export function WardDailySheet({
   const resolvedPeople = useMemo(() => {
     if (people !== undefined) return people;
     if (!unit) return [];
-    return admissionsForUnit(admissionSource, unit.id)
-      .filter(bedIsOccupied)
-      .map((admission) => ({
-        key: admission.id,
-        days: daysInBed(admission, currentNow),
-        dayNumber: stayDayNumber(daysInBed(admission, currentNow)),
-        bandLabel: stayBand(admission, currentNow)?.label ?? null,
-        pastDate: isPastExpectedDischarge(admission, currentNow),
-        sex: admission.sex,
-        homeRegion: admission.homeRegion,
-        tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
-        awayAtEdHours:
-          admission.awayAtEmergencyDepartmentSince === null
-            ? null
-            : Math.max(0, Math.floor((currentNow - admission.awayAtEmergencyDepartmentSince) / 60)),
-        expectedDays:
-          admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
-            ? Math.floor((admission.expectedDischargeAt - currentNow) / 1440)
-            : null,
-        blockReason: admission.blockReason,
-      }));
+    return dailySheetPeople(admissionSource, unit.id, currentNow);
   }, [people, unit, currentNow, admissionSource]);
 
   const resolvedMovement = useMemo(() => {

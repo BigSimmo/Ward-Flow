@@ -14,6 +14,7 @@ import { wardNavCountLabel, type WardNavCount, type WardNavCounts } from "./ward
 import { useWardNavCounts } from "./use-ward-nav-counts";
 import { buildActionInbox, destinationUnit, isOpen } from "./ward-derivations";
 import { useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
+import { useWardFeatureFlagCheck } from "./shell/ward-feature-flag-store";
 
 import styles from "./ward-sidebar.module.css";
 
@@ -61,6 +62,7 @@ export function WardSidebarNav({
    * `use-ward-nav-counts.ts` for why neither is a prop, and why both trees must read one source.
    */
   const { role, shellRole, counts, placeId } = useWardNavCounts();
+  const flagOn = useWardFeatureFlagCheck();
   const { movements, units, plannedAdmissions = [] } = useWardFlowSelect("movements", "units", "plannedAdmissions");
   const now = useWardFlowClock();
   /*
@@ -147,7 +149,7 @@ export function WardSidebarNav({
       <WardSidebarGroup
         label="Boards"
         items={orderBoardsForRole(
-          WARD_NAV.filter((item) => item.group === "board"),
+          WARD_NAV.filter((item) => item.group === "board" && flagOn(item.flag)),
           shellRole,
         )}
         counts={counts}

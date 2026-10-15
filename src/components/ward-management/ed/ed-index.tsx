@@ -45,7 +45,10 @@ import {
   RowTrend,
 } from "@/components/wf";
 import {
+  ED_HELD_STAGES,
   ED_HOME_SERVICE_BAND_ORDER,
+  ED_LEAVING_STAGES,
+  ED_STAGE_LABELS,
   edHomeSummaries,
   edWaitingSeries,
   type EdSummary,
@@ -115,17 +118,9 @@ type EdRow = {
   trend: number[];
 };
 
-const STAGE_LABEL: Record<MovementStage, string> = {
-  placement_requested: "No bed yet",
-  destination_review: "Finding a ward",
-  accepted_awaiting_bed: "Bed accepted",
-  pulled: "Bed pulled",
-  handover_ready: "Handover ready",
-  moving: "In transit",
-  arrived: "Arrived",
-};
-const HELD: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled"];
-const LEAVING: readonly MovementStage[] = ["handover_ready", "moving"];
+const STAGE_LABEL = ED_STAGE_LABELS;
+const HELD = ED_HELD_STAGES;
+const LEAVING = ED_LEAVING_STAGES;
 
 const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 const PIPS_SHOWN = 12;
