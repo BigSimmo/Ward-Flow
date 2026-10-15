@@ -76,7 +76,8 @@ export const WARD_FEATURE_FLAGS = {
     owner: "Josh",
     added: "2026-10-15",
     defaults: { development: true, demo: true, production: false },
-    removeWhen: "Josh signs off the item in the real screens after review, and clinical governance agrees the criteria list.",
+    removeWhen:
+      "Josh signs off the item in the real screens after review, and clinical governance agrees the criteria list.",
   },
   "top25-discharge-notices": {
     label: "Discharge support notices",

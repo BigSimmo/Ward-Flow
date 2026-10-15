@@ -92,6 +92,7 @@ export function WardDischargeCriteriaCard({
           ) : null}
           <span>{summary}</span>
         </p>
+        {eligibility === "voluntary" ? <p className={styles.hint}>Legal status recorded as voluntary.</p> : null}
 
         {!editing && items.length > 0 ? (
           <ul className={styles.list}>
@@ -158,7 +159,9 @@ export function WardDischargeCriteriaCard({
               </Button>
             </div>
             {chosen.length === 0 || !attested ? (
-              <p className={styles.hint}>Choose at least one criterion and confirm the treating psychiatrist set them.</p>
+              <p className={styles.hint}>
+                Choose at least one criterion and confirm the treating psychiatrist set them.
+              </p>
             ) : null}
           </fieldset>
         ) : null}

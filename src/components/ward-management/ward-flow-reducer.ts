@@ -6707,7 +6707,8 @@ export function reduceClinicalEvent(
       if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
         return reject(state, event, "Discharge criteria can only be set by the patient's own ward.");
       }
-      if (admission.state !== "occupied") return reject(state, event, "Discharge criteria are for a patient on the ward.");
+      if (admission.state !== "occupied")
+        return reject(state, event, "Discharge criteria are for a patient on the ward.");
       const movement = dischargeMovement(state, admission);
       const patient = uniqueRecord(state.patients, admission.patientId);
       const eligibility = criteriaEligibility(patient?.legalStatus, movement?.legalStatus);

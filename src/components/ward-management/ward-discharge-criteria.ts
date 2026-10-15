@@ -126,8 +126,7 @@ export function nextDischargeCriteria(
   }
 
   const items = current?.items ?? [];
-  const sameList =
-    items.length === criteria.length && items.every((item, index) => item.criterion === criteria[index]);
+  const sameList = items.length === criteria.length && items.every((item, index) => item.criterion === criteria[index]);
   if (!change.setByTreatingPsychiatrist) {
     if (!current || !sameList) return { refusal: "Discharge criteria are set by the treating psychiatrist." };
     if (now >= current.setAt + CLINICAL_VALUES.dischargeCriteriaValidity.value) {

@@ -89,9 +89,9 @@ describe("nextDischargeCriteria and dischargeCriteriaStatus", () => {
     expect(nextDischargeCriteria(null, { ...change, setByTreatingPsychiatrist: false }, "voluntary", now)).toEqual({
       refusal: "Discharge criteria are set by the treating psychiatrist.",
     });
-    expect(
-      nextDischargeCriteria(null, { ...change, criteria: ["Feeling better"] }, "voluntary", now),
-    ).toEqual({ refusal: "Discharge criteria must be chosen from the list." });
+    expect(nextDischargeCriteria(null, { ...change, criteria: ["Feeling better"] }, "voluntary", now)).toEqual({
+      refusal: "Discharge criteria must be chosen from the list.",
+    });
   });
 
   it("ticks a criterion met without restarting the validity, and reads all met", () => {
