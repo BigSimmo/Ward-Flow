@@ -569,7 +569,7 @@ function TeamPhone({
               ),
               value: followUp?.notArranged ?? "none",
             },
-            { id: "due", label: "Due out, 7d", value: dueOutWeek },
+            { id: "due", label: "Due out within 7 days", value: dueOutWeek },
             {
               id: "past",
               label: (

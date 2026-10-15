@@ -41,7 +41,8 @@ const expectedFor = (movementId: string) => {
     referrals: seed.referrals,
     movements: seed.movements,
   });
-  return { name: info.displayName, umrn: info.umrn };
+  // F-06 (phone review, Oct 2026): list rows name a patient family name first, as the census does.
+  return { name: info.formalName, umrn: info.umrn };
 };
 
 function walk(dir: string): string[] {

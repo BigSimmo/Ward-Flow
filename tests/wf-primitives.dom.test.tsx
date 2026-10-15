@@ -216,10 +216,14 @@ describe("LiveChip", () => {
     const onTogglePause = vi.fn();
     const { rerender } = render(<LiveChip state="live" age="1s" onTogglePause={onTogglePause} />);
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
-    await userEvent.click(screen.getByRole("button", { name: "Pause demo updates" }));
+    // F-19 (WCAG 2.5.3): the name starts with the pill's own words.
+    expect(screen.getByRole("button", { name: /pause demo updates$/ })).toHaveAccessibleName(
+      "Demo 1s, pause demo updates",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /pause demo updates$/ }));
     expect(onTogglePause).toHaveBeenCalledOnce();
     rerender(<LiveChip state="paused" onTogglePause={onTogglePause} />);
-    expect(screen.getByRole("button", { name: "Pause demo updates" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Paused, pause demo updates" })).toHaveAttribute("aria-pressed", "true");
     rerender(<LiveChip state="stale" asAt={new Date(2026, 9, 7, 10, 26)} />);
     expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
   });

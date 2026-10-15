@@ -290,6 +290,9 @@ export function PatientTypeahead({
           className={styles.input}
           type="text"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          enterKeyHint="search"
           spellCheck={false}
           /*
            * ⚠️ NO `role="combobox"` AND NO `aria-expanded`, AND BOTH ABSENCES ARE DELIBERATE.

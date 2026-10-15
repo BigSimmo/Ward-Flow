@@ -162,6 +162,7 @@ export function SearchAdornment({
             aria-label="Date of birth"
             inputMode="numeric"
             autoComplete="off"
+            enterKeyHint="search"
           />
         </span>
       ) : null}
@@ -202,6 +203,7 @@ export function PhoneDobField({ dob, onDob }: { dob: string; onDob: (next: strin
         placeholder="Date of birth, DD/MM/YYYY"
         inputMode="numeric"
         autoComplete="off"
+        enterKeyHint="search"
       />
     </label>
   );

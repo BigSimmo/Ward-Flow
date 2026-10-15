@@ -322,7 +322,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
         ? hold
           ? lapsed
             ? hold.label
-            : `Pulled, ${hold.short}`
+            : `Bed held, ${hold.short}`
           : "Bed held"
         : "Accepted, no bed held yet",
       time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,

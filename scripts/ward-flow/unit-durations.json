@@ -62,7 +62,7 @@
     "tests/maintained-doc-links.test.ts": 0.2,
     "tests/merge-loss-audit.test.ts": 0.1,
     "tests/metro-pulse-circle.dom.test.tsx": 1.1,
-    "tests/mobile-keyboard-viewport.test.ts": 0.1,
+    "tests/ward-mobile-keyboard-viewport.test.ts": 0.1,
     "tests/mockup-crawler-policy.test.ts": 0.1,
     "tests/mockup-retirement.test.ts": 0.2,
     "tests/navigation-back-button.dom.test.tsx": 1.1,

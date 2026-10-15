@@ -163,9 +163,12 @@
   .lg {
     width: 100%;
   }
-  /* Phone: near solid, so the page under the dialog never reads through it. */
+  /* Phone: solid, so the page under the dialog never reads through it. F-21: no backdrop blur
+     either, which flickers on iPhone while the body scrolls (phone bars are solid, D-45). */
   .panel {
-    background-color: color-mix(in srgb, var(--wf-overlay) 85%, var(--wf-glass-sheet, var(--wf-glass-thick)));
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 

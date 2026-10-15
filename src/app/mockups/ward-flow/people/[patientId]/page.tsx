@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";

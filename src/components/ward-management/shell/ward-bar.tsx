@@ -79,8 +79,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-sections";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 export { WardDemoClockPopover };
-import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
-import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,
@@ -138,8 +137,8 @@ import styles from "./ward-bar.module.css";
  *   `buildActionInbox` — the same acknowledge/complete/reopen list the second-edition chrome
  *   already showed. It draws its own header (`<h2>Tasks</h2>`, a count, a close button), so the
  *   `<Sheet>` wrapping it renders with `headerHidden` to avoid a second header.
- * - **Tools** reuses the shared clinical calculations and contact mappings. Shift desk links
- *   to existing operational workflows; the owner requested removal of the Demo section.
+ * - **Tools** is the one sheet in `../tools/ward-tools-sheet.tsx` (Tools review, 15 Oct 2026). It
+ *   reuses the shared figures, catchment and contact mappings, with the demo controls in one panel.
  * - **"Place"** reuses `wardPlaceFor(pathname, units)` (`../ward-place.ts`), the one function a
  *   pathname resolves to a place name through — same call `WardShellHeader` (the component this
  *   bar supersedes) already makes, rendering nothing when the route names no place.

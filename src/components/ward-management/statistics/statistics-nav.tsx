@@ -42,11 +42,24 @@ interface StatisticsNavProps {
   variant?: "hero" | "chips";
 }
 
-const PHONE_SECTIONS: StatisticsNavSection[] = ["hub", "compare", "weekly"];
-
-/** The current chip scrolls into the row's view, so a sub-route never hides its own chip. */
+/**
+ * The current chip scrolls into the row's view, so a later section (Teams, Weekly) never hides
+ * its own chip. Only the row scrolls, never the page.
+ */
 function scrollActiveIntoView(node: HTMLAnchorElement | null) {
-  node?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  if (!node) return;
+  // Measured from the screen, not offsetLeft, and again on the next frame: WebKit showed the
+  // Weekly chip still off the right edge when the row was measured before fonts and layout settled.
+  const reveal = () => {
+    const row = node.parentElement;
+    if (!row) return;
+    const rowBox = row.getBoundingClientRect();
+    const chipBox = node.getBoundingClientRect();
+    if (chipBox.left < rowBox.left) row.scrollLeft += chipBox.left - rowBox.left;
+    else if (chipBox.right > rowBox.right) row.scrollLeft += chipBox.right - rowBox.right;
+  };
+  reveal();
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(reveal);
 }
 
 /** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
@@ -125,37 +138,30 @@ export function StatisticsNav({
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
 
   if (variant === "chips") {
-    // v10 phone: one unit's page leads with "< All Services" (its kind's index) in place of that
-    // kind's own chip; the other sections follow.
+    // Phone review F-12 (15 Oct 2026): every statistics screen shows the same eight chips, in the
+    // desktop track's order, scrolling sideways, so no section is reachable only from another. On
+    // one unit's page its kind's chip leads with a back chevron, as it opens that kind's index.
     const unitKinds: StatisticsNavSection[] = ["service", "ward", "ed", "community"];
-    const backTo =
-      activeSlug && unitKinds.includes(activeSection) ? items.find((item) => item.id === activeSection) : undefined;
+    const onUnitPage = Boolean(activeSlug) && unitKinds.includes(activeSection);
     return (
       <nav className={styles.chipNav} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
-        {backTo ? (
-          <Link href={backTo.href} className={styles.chip} data-testid="ward-statistics-nav-back">
-            <ChevronLeft size={14} aria-hidden="true" />
-            All {backTo.label}
-          </Link>
-        ) : null}
-        {items
-          // Device audit 11 Oct 2026: eight sections is a desktop model. A phone keeps Summary,
-          // Compare and Weekly, plus the section it is on so the current chip is always there.
-          .filter(
-            (item) => item !== backTo && (PHONE_SECTIONS.includes(item.id) || (item.id === activeSection && !backTo)),
-          )
-          .map((item) => (
+        {items.map((item) => {
+          const current = item.id === activeSection;
+          return (
             <Link
               key={item.id}
               href={item.href}
               className={styles.chip}
-              aria-current={item.id === activeSection ? "page" : undefined}
-              ref={item.id === activeSection ? scrollActiveIntoView : undefined}
+              aria-current={current ? "page" : undefined}
+              ref={current ? scrollActiveIntoView : undefined}
+              data-testid={current && onUnitPage ? "ward-statistics-nav-back" : undefined}
             >
+              {current && onUnitPage ? <ChevronLeft size={14} aria-hidden="true" /> : null}
               {item.label}
               {item.count !== undefined ? <span className={styles.chipCount}>{item.count}</span> : null}
             </Link>
-          ))}
+          );
+        })}
       </nav>
     );
   }

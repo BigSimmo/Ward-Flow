@@ -38,7 +38,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
-import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
+import { PhoneBody, PhoneDotKey, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -259,7 +259,8 @@ export function StatisticsWardsIndexScreen() {
               onToggle={() => toggleChip("none-ready", !chips.has("none-ready"))}
               pressed={chips.has("none-ready")}
             />
-            <HeroStat value={pulledBeds} label="Pulled" />
+            {/* Phone review F-24: "Pulled" alone is shorthand; the desktop label says what it means. */}
+            <HeroStat value={pulledBeds} label="Pulled, not arrived" />
           </>
         ),
       }}
@@ -359,6 +360,9 @@ export function StatisticsWardsIndexScreen() {
               </Fragment>
             ))}
           </PhoneList>
+          <PhoneDotKey testId="ward-statistics-wards-dot-key">
+            {`Amber dot: ${BED_ALERT_THRESHOLD_PERCENT}% or more of beds in use`}
+          </PhoneDotKey>
         </PhoneBody>
       ) : (
         <>

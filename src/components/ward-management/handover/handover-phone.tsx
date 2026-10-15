@@ -14,6 +14,7 @@ import {
   FactGrid,
   FilterChip,
   Icon,
+  LiveChip,
   PhoneHero,
   PhoneSheet,
   PillTabs,
@@ -450,7 +451,13 @@ export function HandoverPhone({
         level={1}
         data-testid="ward-handover-phone-hero"
         eyebrow={`${clock} ${current.label.toLowerCase()} · ${scopeLabel.toLowerCase()}`}
-        chip={<span className={styles.heroCountdown}>{countdown}</span>}
+        // F-08 (phone review, Oct 2026): the standard Demo pill sits beside the countdown.
+        chip={
+          <span className={styles.heroChips}>
+            <LiveChip state="live" age={null} onHero />
+            <span className={styles.heroCountdown}>{countdown}</span>
+          </span>
+        }
         // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
         // agrees with the two figures beneath it.
         title={`${actCount + dueCount} to hand over`}
