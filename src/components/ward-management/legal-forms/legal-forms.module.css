@@ -138,7 +138,7 @@
   padding: 0 8px;
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-1);
@@ -211,7 +211,7 @@
   margin-left: 4px;
   padding: 0 7px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
@@ -238,7 +238,7 @@
   height: var(--wf-h-sm);
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-seg-item);
 }
 
 .heroFilters button[aria-pressed="true"] {
@@ -255,7 +255,7 @@
   height: var(--wf-h-sm);
   padding: 0 12px;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-on-hero-fill);
   color: var(--wf-hero-ink);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -350,7 +350,7 @@
   height: 26px;
   padding: 0 10px 0 8px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -522,7 +522,7 @@ button.taskLabel[aria-pressed="true"] {
   padding: 0 6px;
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   letter-spacing: 0;
 }
@@ -789,7 +789,7 @@ button.taskLabel[aria-pressed="true"] {
   height: 26px;
   padding: 0 10px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
 }
@@ -1022,7 +1022,7 @@ button.taskLabel[aria-pressed="true"] {
   min-height: 36px;
   padding: 4px 10px 4px 4px;
   border: 1px solid transparent;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: none;
   color: var(--wf-ink-1);
   font: inherit;

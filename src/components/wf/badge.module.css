@@ -1,5 +1,6 @@
 /* Badge (`.bd`): neutral body, coloured glyph. The text carries the meaning. Counts are tabular
-   sans and ids are mono (v9). */
+   sans and ids are mono (v9). Refined buttons (15 Oct 2026): a badge is a plain filled label with
+   no edge, so only things you can press have an outline. */
 
 .bd {
   display: inline-flex;
@@ -10,12 +11,12 @@
   min-width: 0;
   padding: 0 8px 0 7px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
   color: var(--wf-ink-1);
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-line-2);
+  background: var(--wf-track);
+  border: 1px solid transparent;
   vertical-align: middle;
 }
 

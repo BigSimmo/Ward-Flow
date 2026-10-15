@@ -114,7 +114,7 @@
 .serviceNav button span {
   min-width: 18px;
   padding: 0 5px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface-2);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
@@ -239,7 +239,7 @@
   height: var(--wf-h-sm);
   padding: 0;
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
   cursor: pointer;

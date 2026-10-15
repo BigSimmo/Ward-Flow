@@ -405,7 +405,7 @@
     gap: var(--wf-s-2);
     margin-left: 0;
   }
-  /* The actions share the row as 48px pills; a round icon button keeps its own width. */
+  /* The actions share the row as 48px buttons; an icon button keeps its own width. */
   .aside > :not([data-wf-live]) {
     flex: 1 1 0;
     min-width: 0;
@@ -413,7 +413,7 @@
   .aside > :is(button, a):not([data-wf-live]) {
     justify-content: center;
     min-height: var(--spacing-tap, 3rem);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
   .aside > button:not(:has(> :not(svg))) {
     flex: 0 0 var(--spacing-tap, 3rem);
@@ -444,7 +444,7 @@
   .hero [data-wf-live] > button > [aria-hidden="true"] {
     height: 22px;
     padding: 0 10px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
   }
   /* The pill with its folded pause (device audit, 11 Oct 2026) keeps a 48px tall hit area. */
   /* `[aria-pressed]` lifts this over page rules that give every button a 48px min-height. */
@@ -454,7 +454,7 @@
     min-width: 0;
     min-height: 44px;
     margin-block: -11px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
   }
   .hero [data-wf-live] > button::after {
     content: "";
@@ -541,7 +541,7 @@
   margin: 0;
   height: var(--wf-h-sm);
   padding: 0 var(--wf-s-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .inline .value {

@@ -213,7 +213,7 @@
   min-height: 32px;
   padding: 0 12px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
   font: inherit;
