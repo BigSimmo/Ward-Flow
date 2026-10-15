@@ -1,4 +1,3 @@
-import { filterCommandPaletteItems } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   DEFAULT_BROADCAST_DURATION_MINUTES,
@@ -75,8 +74,6 @@ export {
   // #21 EDD Drift & Confidence Indicator
   deriveEddDriftBadge,
   type EddDriftBadge,
-  // #22 Global Command Palette Filter
-  filterCommandPaletteItems,
   // #25 Broadcast Alert Auto-Expiry & Stand-Down Lifecycle
   DEFAULT_BROADCAST_DURATION_MINUTES,
   DEFAULT_BROADCAST_EXTENSION_MINUTES,
@@ -332,39 +329,6 @@ export function deriveStepDownPullBoard(
     }
   }
   return matches;
-}
-
-// ============================================================================
-// #10 — Leave-to-Discharge Fast-Track & 1-Tap Return Restoration
-// ============================================================================
-
-export interface LeaveFastTrackInput {
-  id: string;
-  unitId: string;
-  leaveStartedAt: Instant | string;
-  leaveDestination?: string;
-}
-
-export interface LeaveFastTrackState {
-  id: string;
-  unitId: string;
-  elapsedHours: number;
-  promptsDischargeConversion: boolean;
-  canReturnOneTap: true;
-  dischargeDestination?: string;
-}
-
-export function deriveLeaveFastTrack(leave: LeaveFastTrackInput, now: Instant | string): LeaveFastTrackState {
-  const elapsedMinutes = Math.max(0, toMinutes(now) - toMinutes(leave.leaveStartedAt));
-  const elapsedHours = Math.floor(elapsedMinutes / 60);
-  return {
-    id: leave.id,
-    unitId: leave.unitId,
-    elapsedHours,
-    promptsDischargeConversion: elapsedHours >= 24,
-    canReturnOneTap: true,
-    ...(leave.leaveDestination !== undefined ? { dischargeDestination: leave.leaveDestination } : {}),
-  };
 }
 
 // ============================================================================
@@ -651,66 +615,6 @@ export function createUndoWindowState(input: {
     durationMs: input.durationMs ?? 8000,
     canUndo: true,
   };
-}
-
-// ============================================================================
-// #18 — Virtual Discharge Lounge / Transit Chair Early Bed Release
-// ============================================================================
-
-export interface DischargeLoungeCandidate {
-  id: string;
-  clinicallyCleared: boolean;
-  scriptsReady: boolean;
-  awaitingAfternoonTransport: boolean;
-  highRisk: boolean;
-  seclusion: boolean;
-  legalStatus?: "voluntary" | "involuntary" | "hospital_order" | string;
-}
-
-export function deriveDischargeLoungeEligible(
-  candidates: readonly DischargeLoungeCandidate[],
-): DischargeLoungeCandidate[] {
-  return candidates.filter(
-    (c) =>
-      c.clinicallyCleared &&
-      c.scriptsReady &&
-      c.awaitingAfternoonTransport &&
-      !c.highRisk &&
-      !c.seclusion &&
-      c.legalStatus === "voluntary",
-  );
-}
-
-export function releaseBedToDischargeLounge<
-  T extends {
-    id: string;
-    availableBeds?: number;
-    loungeOccupied?: number;
-    allocatable?: number;
-    cleaningNotified?: boolean;
-    releasedCandidateIds?: string[];
-  },
->(unit: T, candidateId?: string): T {
-  if (candidateId && Array.isArray(unit.releasedCandidateIds) && unit.releasedCandidateIds.includes(candidateId)) {
-    return unit;
-  }
-  if (!candidateId && unit.cleaningNotified === true) {
-    return unit;
-  }
-  const next = { ...unit, cleaningNotified: true };
-  if (typeof next.availableBeds === "number") {
-    next.availableBeds += 1;
-  }
-  if (typeof next.loungeOccupied === "number") {
-    next.loungeOccupied += 1;
-  }
-  if (typeof next.allocatable === "number") {
-    next.allocatable += 1;
-  }
-  if (candidateId) {
-    next.releasedCandidateIds = [...(unit.releasedCandidateIds ?? []), candidateId];
-  }
-  return next;
 }
 
 // ============================================================================

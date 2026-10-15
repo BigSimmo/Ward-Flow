@@ -140,7 +140,7 @@ export function AlertsPane({
   notifications?: boolean;
   notificationPermission?: NotificationSupport;
   onNotificationsChange?: (next: boolean) => void;
-  /** Feature 4, 10 Oct 2026: phone alerts through the shared Azure workspace, per device. */
+  /** Feature 4, 10 Oct 2026: phone alerts through the shared workspace backend, per device. */
   phonePush?: PhonePushState;
   onPhonePushChange?: (next: boolean) => void;
   buzz: boolean;

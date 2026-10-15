@@ -15,7 +15,7 @@
 
 **Spec:** [`docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md`](../specs/2026-08-18-ward-flow-metro-patient-flow-design.md) — §6 (roles and screens), §7 (how a movement travels), §8 (ordering the queue), §10 (failure behaviour), §11 (success criteria).
 
-**Read first:** [`docs/archive/ward-flow-phase-handoff.md`](../../archive/ward-flow-phase-handoff.md) — Phase 1's rulings, parked findings and repo traps. Several parked items land in files this phase touches.
+**Read first:** `docs/archive/ward-flow-phase-handoff.md` (removed in the 15 Oct 2026 docs trim) — Phase 1's rulings, parked findings and repo traps. Several parked items land in files this phase touches.
 
 ## Global Constraints
 

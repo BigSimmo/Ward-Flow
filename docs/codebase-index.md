@@ -4,15 +4,15 @@
 governs appearance; current engine/source/tests govern behaviour. Start with the
 [Ward README](ward-flow/README.md) and [task evidence](task-receipts.md).
 
-| Area               | Current source and scope                                                                                                                                                                                                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Routes             | `src/app/mockups/ward-flow/`: coordinator root [page.tsx](../src/app/mockups/ward-flow/page.tsx), unit board [board/[unitId]/page.tsx](../src/app/mockups/ward-flow/board/%5BunitId%5D/page.tsx), [handover/page.tsx](../src/app/mockups/ward-flow/handover/page.tsx)                      |
-| Engine and screens | `src/components/ward-management/`: [provider](../src/components/ward-management/ward-flow-provider.tsx), [reducer](../src/components/ward-management/ward-flow-reducer.ts) and role-specific screen modules                                                                                |
-| Clock              | The provider reads elapsed wall-clock time and ticks every 30 seconds; controlled initial/test clocks are separate                                                                                                                                                                         |
-| Backend            | [backend/ward-flow](../backend/ward-flow/README.md): owner-specific Azure Blob sessions and opt-in coordinator-only PostgreSQL shared commands/audit. [Azure setup](../backend/ward-flow/SETUP-SHARED-AZURE.md) discovers existing resources; local source does not prove hosted readiness |
-| API                | `src/app/api/health/` is [liveness](../src/app/api/health/route.ts) `{status:"ok"}`; `src/app/api/local-project-id/` identifies local preview checkout/runtime                                                                                                                             |
-| Shared support     | `src/lib/developer-area/`, `src/app/icons/` and shared UI/helpers; inspect affected imports rather than every historical map                                                                                                                                                               |
-| Tooling/history    | `scripts/`, `tests/`, `docs/`: [package commands](../package.json), scoped gates and the [dated detailed code map](ward-flow/code-map/README.md)                                                                                                                                           |
+| Area               | Current source and scope                                                                                                                                                                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routes             | `src/app/mockups/ward-flow/`: coordinator root [page.tsx](../src/app/mockups/ward-flow/page.tsx), unit board [board/[unitId]/page.tsx](../src/app/mockups/ward-flow/board/%5BunitId%5D/page.tsx), [handover/page.tsx](../src/app/mockups/ward-flow/handover/page.tsx) |
+| Engine and screens | `src/components/ward-management/`: [provider](../src/components/ward-management/ward-flow-provider.tsx), [reducer](../src/components/ward-management/ward-flow-reducer.ts) and role-specific screen modules                                                           |
+| Clock              | The provider reads elapsed wall-clock time and ticks every 30 seconds; controlled initial/test clocks are separate                                                                                                                                                    |
+| Backend            | [backend/ward-flow](../backend/ward-flow/README.md): opt-in coordinator-only shared commands/audit. Provider in [DATABASE.md](ward-flow/DATABASE.md); local source does not prove hosted readiness                                                                    |
+| API                | `src/app/api/health/` is [liveness](../src/app/api/health/route.ts) `{status:"ok"}`; `src/app/api/local-project-id/` identifies local preview checkout/runtime                                                                                                        |
+| Shared support     | `src/lib/developer-area/`, `src/app/icons/` and shared UI/helpers; inspect affected imports rather than every historical map                                                                                                                                          |
+| Tooling/history    | `scripts/`, `tests/`, `docs/`: [package commands](../package.json), scoped gates and the [dated detailed code map](ward-flow/code-map/README.md)                                                                                                                      |
 
 ## Ward repository layout
 
@@ -21,7 +21,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 | `.design/`      | Design briefs, reviews and screenshot evidence; not runtime modules |
 | `.githooks/`    | Local commit/push hooks                                             |
 | `.github/`      | Ward Flow CI and CodSpeed workflows and repository metadata         |
-| `backend/`      | Separate synthetic Azure development backend                        |
+| `backend/`      | Separate synthetic shared-workspace backend                         |
 | `bench/`        | CodSpeed/Vitest performance benchmarks (`npm run bench`)            |
 | `data/`         | Reference datasets and generated source snapshots                   |
 | `design/`       | Figma mapping, sync metadata and tokens; not an appearance mandate  |
@@ -62,7 +62,7 @@ provenance, not current provider/design/workflow authority; the screen map prese
 <!-- docs-script-refs:historical-start -->
 
 The former PsychSift codebase index that used to follow here is preserved, unchanged, in
-[`docs/archive/historical-psychsift-codebase-index.md`](archive/historical-psychsift-codebase-index.md).
+`docs/archive/historical-psychsift-codebase-index.md` (removed in the 15 Oct 2026 docs trim).
 It is not current Ward Flow guidance.
 
 <!-- docs-script-refs:historical-end -->

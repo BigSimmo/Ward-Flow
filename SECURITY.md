@@ -18,7 +18,7 @@ Never include credentials, tokens, patient information or private service conten
 ## Scope and versions
 
 Reports may concern the current repository's UI, local API routes, authentication,
-persistence and separate Azure/PostgreSQL backend code. Name the affected revision.
+persistence and the separate shared-workspace backend code (`backend/ward-flow/`). Name the affected revision.
 Third-party service vulnerabilities belong with their vendor; integration defects
 in Ward remain in scope. Do not use PsychSift's Supabase or Railway resources.
 

@@ -21,19 +21,6 @@ export function setForceDynamicLoading(force: boolean) {
   forceDynamicLoading = force;
 }
 
-vi.mock("@azure/msal-browser", () => ({
-  PublicClientApplication: class {
-    initialize = async () => {};
-    handleRedirectPromise = async () => null;
-    getActiveAccount = () => null;
-    getAllAccounts = () => [];
-    setActiveAccount = () => {};
-    acquireTokenSilent = async () => ({ accessToken: "" });
-    loginRedirect = async () => {};
-    logoutRedirect = async () => {};
-  },
-}));
-
 vi.mock("next/link", async () => {
   const React = await import("react");
   return {

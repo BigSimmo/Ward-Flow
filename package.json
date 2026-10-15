@@ -131,10 +131,11 @@
     "docs:check-links": "node scripts/check-maintained-doc-links.mjs",
     "docs:maintain": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --write",
     "docs:maintain:check": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --check",
+    "docs:facts": "node scripts/doc-facts.mjs",
+    "docs:facts:write": "node scripts/doc-facts.mjs --write",
     "ward:classify": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify"
   },
   "dependencies": {
-    "@azure/msal-browser": "^5.25.0",
     "@next/env": "16.3.6",
     "lucide-react": "^1.34.0",
     "next": "^16.3.6",

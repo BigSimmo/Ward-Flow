@@ -434,18 +434,6 @@ test("runtime summary refuses UPDATE on the audit and push ID sequences", () => 
   assert.match(RUNTIME_SUMMARY, /AS sequence_restricted/);
 });
 
-test("Azure startup refuses a database without the complete migration 5 ledger", async () => {
-  const { verifyAzureMigrations } = await import("./postgres.mjs");
-  const pool = (versions) => ({ query: async () => ({ rows: [{ versions }] }) });
-  await verifyAzureMigrations(pool([1, 2, 3, 4, 5]));
-  for (const versions of [null, [], [1, 2], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
-    await assert.rejects(verifyAzureMigrations(pool(versions)), /Unsafe or unprepared Azure/);
-  await assert.rejects(
-    verifyAzureMigrations({ query: async () => Promise.reject(new Error("offline")) }),
-    /verification unavailable/,
-  );
-});
-
 test("pg_cron policy normalisation accepts the stock owner filter in any deparse format and refuses anything wider", () => {
   // Mirrors the SQL: strip whitespace and parentheses, then name/text casts; quotes and case kept.
   const normalise = (expr) =>
