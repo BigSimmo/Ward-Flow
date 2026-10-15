@@ -36,6 +36,8 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useRoleGate, type RoleGate } from "@/components/ward-management/ward-role-gate";
+import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -119,6 +121,7 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
+const OPEN_GATE: RoleGate = { allowed: true, buttonProps: {}, note: null };
 
 export function MovementWorkspaceCockpit({
   movementId,
@@ -139,7 +142,11 @@ export function MovementWorkspaceCockpit({
     "admissions",
   );
   const now = useWardFlowClock();
-  const raise = useWardRaise("coordinator");
+  // A ward embed raises in its own name (CodeAnt on #342), so actions only a coordinator may take
+  // show as off with the reason instead of borrowing the coordinator's role.
+  const raise = useWardRaise(role);
+  const gate = useRoleGate();
+  const lock = (type: WardFlowEventType): RoleGate => (role === "ward" ? gate(type) : OPEN_GATE);
 
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);
   const mastheadInfo = patient ? resolveSubjectPatient(patient, { patients, referrals, movements }) : undefined;
@@ -480,22 +487,26 @@ export function MovementWorkspaceCockpit({
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                data-testid="ward-console-record-gender-submit"
-                className={styles.controlButton}
-                disabled={genderRecordDraft === undefined}
-                onClick={() => {
-                  if (genderRecordDraft === undefined) return;
-                  raise("RECORD_MOVEMENT_GENDER", {
-                    movementId: patient.id,
-                    gender: genderRecordDraft,
-                  });
-                  setGenderRecordDraft(undefined);
-                }}
-              >
-                Record gender
-              </button>
+              <>
+                <button
+                  type="button"
+                  data-testid="ward-console-record-gender-submit"
+                  className={styles.controlButton}
+                  disabled={genderRecordDraft === undefined}
+                  {...lock("RECORD_MOVEMENT_GENDER").buttonProps}
+                  onClick={() => {
+                    if (genderRecordDraft === undefined) return;
+                    raise("RECORD_MOVEMENT_GENDER", {
+                      movementId: patient.id,
+                      gender: genderRecordDraft,
+                    });
+                    setGenderRecordDraft(undefined);
+                  }}
+                >
+                  Record gender
+                </button>
+                {lock("RECORD_MOVEMENT_GENDER").note}
+              </>
             </div>
           ) : null}
 
@@ -1204,6 +1215,14 @@ export function MovementWorkspaceCockpit({
    * Action Command Center rendering function
    */
   function renderActions(movement: Movement) {
+    // A ward acts for the ward holding the bed, and cancels transport as the sending ward that booked
+    // it, the same claim the patient page makes (`patient-transit-operations.tsx`).
+    const holdingWard = role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {};
+    const sendingUnitId =
+      (movement.referralId
+        ? referrals.find((referral) => referral.id === movement.referralId)?.originUnitId
+        : undefined) ?? admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId;
+    const sendingWard = role === "ward" && sendingUnitId ? { actingUnitId: sendingUnitId } : {};
     const earlierStages = MOVEMENT_STAGES.slice(0, Math.max(MOVEMENT_STAGES.indexOf(movement.stage), 0));
     const acceptedStageIndex = MOVEMENT_STAGES.indexOf(movement.stage);
     const orphanedJob = orphanedTransport(movement);
@@ -1239,18 +1258,22 @@ export function MovementWorkspaceCockpit({
                     : "Not flagged — and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
               </p>
               {!open && !movement.flaggedUrgent ? null : movement.flaggedUrgent ? (
-                <button
-                  type="button"
-                  className={styles.controlButton}
-                  data-testid="ward-console-urgent-flag-toggle"
-                  onClick={() =>
-                    raise("CLEAR_MOVEMENT_URGENT_FLAG", {
-                      movementId: movement.id,
-                    })
-                  }
-                >
-                  Remove the urgent flag
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={styles.controlButton}
+                    data-testid="ward-console-urgent-flag-toggle"
+                    {...lock("CLEAR_MOVEMENT_URGENT_FLAG").buttonProps}
+                    onClick={() =>
+                      raise("CLEAR_MOVEMENT_URGENT_FLAG", {
+                        movementId: movement.id,
+                      })
+                    }
+                  >
+                    Remove the urgent flag
+                  </button>
+                  {lock("CLEAR_MOVEMENT_URGENT_FLAG").note}
+                </>
               ) : (
                 <div className={styles.controlRow}>
                   <label className="sr-only" htmlFor="ward-console-urgent-flag-reason">
@@ -1277,27 +1300,31 @@ export function MovementWorkspaceCockpit({
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    className={styles.controlButton}
-                    data-testid="ward-console-urgent-flag-toggle"
-                    aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-                    aria-describedby={urgentFlagReason === undefined ? "ward-console-urgent-flag-blocked" : undefined}
-                    title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
-                    onClick={
-                      urgentFlagReason === undefined
-                        ? ignoreUnavailableActivation
-                        : () => {
-                            raise("FLAG_MOVEMENT_URGENT", {
-                              movementId: movement.id,
-                              reason: urgentFlagReason,
-                            });
-                            setUrgentFlagReason(undefined);
-                          }
-                    }
-                  >
-                    Flag this patient as urgent
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={styles.controlButton}
+                      data-testid="ward-console-urgent-flag-toggle"
+                      aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
+                      aria-describedby={urgentFlagReason === undefined ? "ward-console-urgent-flag-blocked" : undefined}
+                      title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
+                      {...lock("FLAG_MOVEMENT_URGENT").buttonProps}
+                      onClick={
+                        urgentFlagReason === undefined
+                          ? ignoreUnavailableActivation
+                          : () => {
+                              raise("FLAG_MOVEMENT_URGENT", {
+                                movementId: movement.id,
+                                reason: urgentFlagReason,
+                              });
+                              setUrgentFlagReason(undefined);
+                            }
+                      }
+                    >
+                      Flag this patient as urgent
+                    </button>
+                    {lock("FLAG_MOVEMENT_URGENT").note}
+                  </>
                   {urgentFlagReason === undefined ? (
                     <span id="ward-console-urgent-flag-blocked" className="sr-only">
                       {URGENT_FLAG_UNCHOSEN}
@@ -1436,6 +1463,7 @@ export function MovementWorkspaceCockpit({
                         ? ignoreUnavailableActivation
                         : () => {
                             raise("CANCEL_TRANSPORT", {
+                              ...sendingWard,
                               movementId: movement.id,
                               reason: cancelTransportReason,
                             });
@@ -1515,39 +1543,43 @@ export function MovementWorkspaceCockpit({
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    className={styles.controlButton}
-                    data-testid="ward-console-stop-transport"
-                    aria-disabled={
-                      stopTransportReason === undefined || stopTransportWhereabouts === undefined ? "true" : undefined
-                    }
-                    aria-describedby={
-                      stopTransportReason === undefined || stopTransportWhereabouts === undefined
-                        ? "ward-console-stop-transport-blocked"
-                        : undefined
-                    }
-                    title={
-                      stopTransportReason === undefined || stopTransportWhereabouts === undefined
-                        ? "Choose a reason and where the patient is first."
-                        : undefined
-                    }
-                    onClick={
-                      stopTransportReason === undefined || stopTransportWhereabouts === undefined
-                        ? ignoreUnavailableActivation
-                        : () => {
-                            raise("STOP_TRANSPORT", {
-                              movementId: movement.id,
-                              reason: stopTransportReason,
-                              whereabouts: stopTransportWhereabouts,
-                            });
-                            setStopTransportReason(undefined);
-                            setStopTransportWhereabouts(undefined);
-                          }
-                    }
-                  >
-                    Stop transport
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={styles.controlButton}
+                      data-testid="ward-console-stop-transport"
+                      aria-disabled={
+                        stopTransportReason === undefined || stopTransportWhereabouts === undefined ? "true" : undefined
+                      }
+                      aria-describedby={
+                        stopTransportReason === undefined || stopTransportWhereabouts === undefined
+                          ? "ward-console-stop-transport-blocked"
+                          : undefined
+                      }
+                      title={
+                        stopTransportReason === undefined || stopTransportWhereabouts === undefined
+                          ? "Choose a reason and where the patient is first."
+                          : undefined
+                      }
+                      {...lock("STOP_TRANSPORT").buttonProps}
+                      onClick={
+                        stopTransportReason === undefined || stopTransportWhereabouts === undefined
+                          ? ignoreUnavailableActivation
+                          : () => {
+                              raise("STOP_TRANSPORT", {
+                                movementId: movement.id,
+                                reason: stopTransportReason,
+                                whereabouts: stopTransportWhereabouts,
+                              });
+                              setStopTransportReason(undefined);
+                              setStopTransportWhereabouts(undefined);
+                            }
+                      }
+                    >
+                      Stop transport
+                    </button>
+                    {lock("STOP_TRANSPORT").note}
+                  </>
                   {stopTransportReason === undefined || stopTransportWhereabouts === undefined ? (
                     <span id="ward-console-stop-transport-blocked" className="sr-only">
                       Choose a reason and where the patient is first.
@@ -1571,6 +1603,7 @@ export function MovementWorkspaceCockpit({
                   data-testid="ward-console-release-held-bed"
                   onClick={() =>
                     raise("RELEASE_HELD_BED", {
+                      ...holdingWard,
                       movementId: movement.id,
                     })
                   }
@@ -1638,37 +1671,41 @@ export function MovementWorkspaceCockpit({
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    className={styles.controlButton}
-                    data-testid="ward-console-record-diversion"
-                    aria-disabled={diversionReason === undefined || diversionPlace === undefined ? "true" : undefined}
-                    aria-describedby={
-                      diversionReason === undefined || diversionPlace === undefined
-                        ? "ward-console-diversion-blocked"
-                        : undefined
-                    }
-                    title={
-                      diversionReason === undefined || diversionPlace === undefined
-                        ? "Choose a reason and where the patient is first."
-                        : undefined
-                    }
-                    onClick={
-                      diversionReason === undefined || diversionPlace === undefined
-                        ? ignoreUnavailableActivation
-                        : () => {
-                            raise("RECORD_DIVERSION", {
-                              movementId: movement.id,
-                              reason: diversionReason,
-                              place: diversionPlace,
-                            });
-                            setDiversionReason(undefined);
-                            setDiversionPlace(undefined);
-                          }
-                    }
-                  >
-                    Record a diversion
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={styles.controlButton}
+                      data-testid="ward-console-record-diversion"
+                      aria-disabled={diversionReason === undefined || diversionPlace === undefined ? "true" : undefined}
+                      aria-describedby={
+                        diversionReason === undefined || diversionPlace === undefined
+                          ? "ward-console-diversion-blocked"
+                          : undefined
+                      }
+                      title={
+                        diversionReason === undefined || diversionPlace === undefined
+                          ? "Choose a reason and where the patient is first."
+                          : undefined
+                      }
+                      {...lock("RECORD_DIVERSION").buttonProps}
+                      onClick={
+                        diversionReason === undefined || diversionPlace === undefined
+                          ? ignoreUnavailableActivation
+                          : () => {
+                              raise("RECORD_DIVERSION", {
+                                movementId: movement.id,
+                                reason: diversionReason,
+                                place: diversionPlace,
+                              });
+                              setDiversionReason(undefined);
+                              setDiversionPlace(undefined);
+                            }
+                      }
+                    >
+                      Record a diversion
+                    </button>
+                    {lock("RECORD_DIVERSION").note}
+                  </>
                   {diversionReason === undefined || diversionPlace === undefined ? (
                     <span id="ward-console-diversion-blocked" className="sr-only">
                       Choose a reason and where the patient is first.
@@ -1692,6 +1729,7 @@ export function MovementWorkspaceCockpit({
                   data-testid="ward-console-release-diverted-bed"
                   onClick={() =>
                     raise("RELEASE_DIVERTED_BED", {
+                      ...holdingWard,
                       movementId: movement.id,
                     })
                   }
@@ -1758,27 +1796,31 @@ export function MovementWorkspaceCockpit({
                         </option>
                       ))}
                     </select>
-                    <button
-                      type="button"
-                      className={styles.controlButton}
-                      data-testid="ward-console-withdraw-acceptance"
-                      aria-disabled={withdrawReason === undefined ? "true" : undefined}
-                      aria-describedby={withdrawReason === undefined ? "ward-console-withdraw-blocked" : undefined}
-                      title={withdrawReason === undefined ? WITHDRAW_REASON_UNCHOSEN : undefined}
-                      onClick={
-                        withdrawReason === undefined
-                          ? ignoreUnavailableActivation
-                          : () => {
-                              raise("WITHDRAW_ACCEPTANCE", {
-                                movementId: movement.id,
-                                reason: withdrawReason,
-                              });
-                              setWithdrawReason(undefined);
-                            }
-                      }
-                    >
-                      Withdraw the acceptance
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className={styles.controlButton}
+                        data-testid="ward-console-withdraw-acceptance"
+                        aria-disabled={withdrawReason === undefined ? "true" : undefined}
+                        aria-describedby={withdrawReason === undefined ? "ward-console-withdraw-blocked" : undefined}
+                        title={withdrawReason === undefined ? WITHDRAW_REASON_UNCHOSEN : undefined}
+                        {...lock("WITHDRAW_ACCEPTANCE").buttonProps}
+                        onClick={
+                          withdrawReason === undefined
+                            ? ignoreUnavailableActivation
+                            : () => {
+                                raise("WITHDRAW_ACCEPTANCE", {
+                                  movementId: movement.id,
+                                  reason: withdrawReason,
+                                });
+                                setWithdrawReason(undefined);
+                              }
+                        }
+                      >
+                        Withdraw the acceptance
+                      </button>
+                      {lock("WITHDRAW_ACCEPTANCE").note}
+                    </>
                     {withdrawReason === undefined ? (
                       <span id="ward-console-withdraw-blocked" className="sr-only">
                         {WITHDRAW_REASON_UNCHOSEN}
@@ -1859,33 +1901,39 @@ export function MovementWorkspaceCockpit({
                         </option>
                       ))}
                     </select>
-                    <button
-                      type="button"
-                      className={styles.controlButton}
-                      data-testid="ward-console-step-back-stage"
-                      aria-disabled={stepBackTo === undefined || stepBackReason === undefined ? "true" : undefined}
-                      aria-describedby={
-                        stepBackTo === undefined || stepBackReason === undefined
-                          ? "ward-console-step-back-blocked"
-                          : undefined
-                      }
-                      title={stepBackTo === undefined || stepBackReason === undefined ? STEP_BACK_UNCHOSEN : undefined}
-                      onClick={
-                        stepBackTo === undefined || stepBackReason === undefined
-                          ? ignoreUnavailableActivation
-                          : () => {
-                              raise("STEP_BACK_STAGE", {
-                                movementId: movement.id,
-                                to: stepBackTo,
-                                reason: stepBackReason,
-                              });
-                              setStepBackTo(undefined);
-                              setStepBackReason(undefined);
-                            }
-                      }
-                    >
-                      Correct the record
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className={styles.controlButton}
+                        data-testid="ward-console-step-back-stage"
+                        aria-disabled={stepBackTo === undefined || stepBackReason === undefined ? "true" : undefined}
+                        aria-describedby={
+                          stepBackTo === undefined || stepBackReason === undefined
+                            ? "ward-console-step-back-blocked"
+                            : undefined
+                        }
+                        title={
+                          stepBackTo === undefined || stepBackReason === undefined ? STEP_BACK_UNCHOSEN : undefined
+                        }
+                        {...lock("STEP_BACK_STAGE").buttonProps}
+                        onClick={
+                          stepBackTo === undefined || stepBackReason === undefined
+                            ? ignoreUnavailableActivation
+                            : () => {
+                                raise("STEP_BACK_STAGE", {
+                                  movementId: movement.id,
+                                  to: stepBackTo,
+                                  reason: stepBackReason,
+                                });
+                                setStepBackTo(undefined);
+                                setStepBackReason(undefined);
+                              }
+                        }
+                      >
+                        Correct the record
+                      </button>
+                      {lock("STEP_BACK_STAGE").note}
+                    </>
                     {stepBackTo === undefined || stepBackReason === undefined ? (
                       <span id="ward-console-step-back-blocked" className="sr-only">
                         {STEP_BACK_UNCHOSEN}
