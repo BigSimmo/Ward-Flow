@@ -24,30 +24,12 @@ import {
   type UndoStepType,
 } from "../src/components/ward-management/ward-undo";
 
-import { applyFirstAccepted, undoOf } from "./helpers/ward-legal-figure-sweep";
+import { applyFirstAccepted, undoComparableWorld, undoOf } from "./helpers/ward-legal-figure-sweep";
 
 const NOW = NOW_ANCHOR;
 const stored = (state: WardFlowState) => JSON.parse(JSON.stringify({ ...state, rejections: [] })) as unknown;
 
-/** Everything except the append-only audit log, refusals and the undo bookkeeping. */
-function world(state: WardFlowState) {
-  const {
-    auditEvents: _a,
-    auditSequence: _s,
-    undoRecords: _u,
-    rejections: _r,
-    dischargeRevisions: _d,
-    units,
-    ...rest
-  } = state;
-  void [_a, _s, _u, _r, _d];
-  // A unit's revision and the id counters (ids are never reused) move forward by design; every
-  // record must match exactly.
-  return {
-    ...Object.fromEntries(Object.entries(rest).filter(([, value]) => typeof value !== "number")),
-    units: units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, revision: 0 } })),
-  };
-}
+const world = undoComparableWorld;
 
 /** The first candidate of `type` the reducer accepts on `state`, as the sweep builds it. */
 function step(state: WardFlowState, type: WardFlowEvent["type"]) {
