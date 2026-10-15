@@ -1760,8 +1760,9 @@ export function WardBoard({
           <h2 id="ward-board-unit-name" className={styles.unitName} data-testid="ward-board-unit-name">
             {unit.name}
           </h2>
+          {/* Phone review F-27: place first, then service, as the ward home's own place line reads. */}
           <p className={styles.siteName} data-testid="ward-board-site-name">
-            <strong>{site.service}</strong> · {site.name}
+            {site.name} · <strong>{site.service}</strong>
           </p>
           {/* Item 44, build plan task G2, §3 "Bed board": this page is about ONE named place (§2
            *  "Never hidden", S4) and is never itself narrowed by the chosen service — this states
@@ -1801,7 +1802,8 @@ export function WardBoard({
           </p>
           <p className={styles.headline} data-testid="ward-board-headline">
             <span className={styles.headlineValue}>{available}</span>
-            <span className={styles.headlineLabel}>ready bed{available === 1 ? "" : "s"}</span>
+            {/* Phone review F-27: the ward home's word for the same figure. */}
+            <span className={styles.headlineLabel}>Ready now</span>
           </p>
           {/*
             Its OWN sentence, never a figure beside the figure — `ward-screen.tsx` found in a browser
