@@ -17,7 +17,9 @@ import {
   type DischargeDelayMetadata,
   type DischargeDelayReason,
 } from "@/components/ward-management/ward-change-reasons";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { MINUTES_PER_DAY, currentDueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
+import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import {
   deriveAfternoonDischarges,
   deriveRefusalRecoveryAction,
@@ -118,7 +120,7 @@ export interface GhostPreparingBedAlert {
 export function deriveGhostPreparingBeds(
   beds: readonly (BedRelease | GhostPreparingBedInput)[],
   now: Instant | string,
-  thresholdMinutes = 61,
+  thresholdMinutes = CLINICAL_VALUES.preparingBedStale.value,
 ): GhostPreparingBedAlert[] {
   const nowMin = toMinutes(now);
   const alerts: GhostPreparingBedAlert[] = [];
@@ -217,7 +219,7 @@ export function deriveTMinus24hDischargePrompts<T extends TMinus24hCandidate>(
     const eddMin = toMinutesOrNaN(rawEdd);
     if (Number.isNaN(eddMin)) return false;
     const diff = eddMin - nowMin;
-    return diff > 0 && diff <= 24 * 60;
+    return diff > 0 && diff <= CLINICAL_VALUES.dischargePrepWindow.value;
   });
 }
 
@@ -388,7 +390,8 @@ export function deriveCtoFollowUpHandshake(input: CtoFollowUpInput): CtoFollowUp
     if (
       !Number.isNaN(followUpMin) &&
       !Number.isNaN(referenceMin) &&
-      (followUpMin < referenceMin || followUpMin - referenceMin > 7 * 24 * 60)
+      (followUpMin < referenceMin ||
+        followUpMin - referenceMin > CLINICAL_VALUES.ctoFollowUpWindow.value * MINUTES_PER_DAY)
     ) {
       missingFields.push("followUpAppointmentAt");
     }
@@ -400,7 +403,7 @@ export function deriveCtoFollowUpHandshake(input: CtoFollowUpInput): CtoFollowUp
     blocksDischarge: false,
     missingFields,
     summary: warningActive
-      ? "Advisory: record community case manager and 7-day follow-up slot before departure"
+      ? `Advisory: record community case manager and ${CLINICAL_VALUES.ctoFollowUpWindow.value}-day follow-up slot before departure`
       : "CTO community handover complete",
     clearsCommunityFollowUpDelay: !warningActive,
   };
@@ -427,7 +430,7 @@ export interface StuckHandoverSlaResult {
 
 export function deriveStuckHandoverSla(input: StuckHandoverInput, now: Instant | string): StuckHandoverSlaResult {
   const elapsedMinutes = Math.max(0, toMinutes(now) - toMinutes(input.acceptedAt));
-  const threshold = input.slaMinutes ?? 60;
+  const threshold = input.slaMinutes ?? CLINICAL_VALUES.handoverStuck.value;
   const isMovingOrArrived =
     input.stage === "in_transit" || input.stage === "moving" || input.stage === "arrived" || input.stage === "placed";
   const isStuck = !isMovingOrArrived && elapsedMinutes >= threshold;
@@ -467,13 +470,13 @@ export function deriveEdBreachLadder(waiters: readonly EdWaiterInput[], now: Ins
       const waitHours = Math.floor(elapsedMinutes / 60);
       let tier: EdEscalationTier = "normal";
       let actionLabel = "Standard placement review";
-      if (waitHours >= 24) {
+      if (elapsedMinutes >= CLINICAL_VALUES.longWait.value) {
         tier = "24h_critical";
         actionLabel = "Executive Escalation & Priority Pull";
-      } else if (waitHours >= 12) {
+      } else if (elapsedMinutes >= CLINICAL_VALUES.edSecondEscalation.value) {
         tier = "12h_escalate";
         actionLabel = "State Coordinator Multi-Ward Broadcast";
-      } else if (waitHours >= 8) {
+      } else if (elapsedMinutes >= CLINICAL_VALUES.edSeverePressure.value) {
         tier = "8h_warning";
         actionLabel = "Early Duty Consultant Review";
       }
@@ -481,7 +484,7 @@ export function deriveEdBreachLadder(waiters: readonly EdWaiterInput[], now: Ins
         id: w.id,
         waitHours,
         tier,
-        edgeAct: waitHours >= 22,
+        edgeAct: elapsedMinutes >= CLINICAL_VALUES.edLadderActNowEdge.value,
         actionLabel,
       };
     })
@@ -612,7 +615,7 @@ export function createUndoWindowState(input: {
     actionId: input.actionId,
     label: input.label,
     createdAtMs: input.createdAtMs,
-    durationMs: input.durationMs ?? 8000,
+    durationMs: input.durationMs ?? UNDO_TOAST_MS,
     canUndo: true,
   };
 }
@@ -620,6 +623,10 @@ export function createUndoWindowState(input: {
 // ============================================================================
 // #19 — Paper-Form Statutory Expiry Radar (4h Amber / 1h Red & 48h/24h/<6h)
 // ============================================================================
+// Red keeps its one-hour mark (the urgent warning default) and amber the radar's own four-hour mark
+// (`paperFormRadarAmber`). Either widens when Settings sets a longer warning (`currentDueSoonThresholds`)
+// and never narrows, so a form keeps every warning it had while the figures wait for sign-off.
+// `warning_4h` and `critical_1h` stay as internal names.
 
 export interface PaperLegalFormInput {
   id: string;
@@ -641,6 +648,9 @@ export function derivePaperLegalExpiryRadar(
   now: Instant | string,
 ): PaperLegalExpiryRadarItem[] {
   const nowMin = toMinutes(now);
+  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  const redMinutes = Math.max(CLINICAL_VALUES.dueSoonUrgent.value, urgentMinutes);
+  const amberMinutes = Math.max(CLINICAL_VALUES.paperFormRadarAmber.value, soonMinutes, redMinutes);
   return forms
     .map((form) => {
       const rawExpiry = form.expiresAt ?? form.dueAt;
@@ -659,9 +669,9 @@ export function derivePaperLegalExpiryRadar(
       let urgency: PaperLegalExpiryRadarItem["urgency"] = "normal";
       if (remainingMinutes <= 0) {
         urgency = "expired";
-      } else if (remainingMinutes <= 60) {
+      } else if (remainingMinutes <= redMinutes) {
         urgency = "critical_1h";
-      } else if (remainingMinutes <= 240) {
+      } else if (remainingMinutes <= amberMinutes) {
         urgency = "warning_4h";
       }
       return {
@@ -669,7 +679,7 @@ export function derivePaperLegalExpiryRadar(
         formType: form.formType,
         remainingMinutes: Math.max(0, remainingMinutes),
         urgency,
-        edgeAct: remainingMinutes <= 360,
+        edgeAct: remainingMinutes <= CLINICAL_VALUES.paperFormRadarEdge.value,
       };
     })
     .sort((a, b) => {
@@ -700,12 +710,13 @@ export function deriveMaroonedPatientDossier(
   candidates: readonly MaroonedPatientCandidate[],
   options?: { minDaysDelayed?: number },
 ): MaroonedPatientDossierEntry[] {
-  const minDays = options?.minDaysDelayed ?? 7;
+  const minDays = options?.minDaysDelayed ?? CLINICAL_VALUES.longStayPrompt.value;
   return candidates
     .filter(
       (c) =>
         c.clinicallyReadyForDischarge &&
-        (c.daysDelayed >= minDays || (c.hoursDelayed !== undefined && c.hoursDelayed > 72)),
+        (c.daysDelayed >= minDays ||
+          (c.hoursDelayed !== undefined && c.hoursDelayed > CLINICAL_VALUES.delayedDischargeEscalation.value)),
     )
     .sort((a, b) => b.daysDelayed - a.daysDelayed)
     .map((c) => ({
@@ -762,7 +773,7 @@ export function deriveAwolTrackerSummary(record: AwolRecordInput, now: Instant |
     ...record,
     elapsedMinutes,
     bedStatus: record.bedHeld ? "held_on_awol" : "released",
-    holdWarningActive: elapsedMinutes >= 240,
+    holdWarningActive: elapsedMinutes >= CLINICAL_VALUES.awolBedHoldWarning.value,
     completedSteps,
     totalSteps: 6,
     fractionLabel: `${completedSteps}/6 steps done`,
