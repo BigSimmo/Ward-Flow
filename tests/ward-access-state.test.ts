@@ -8,6 +8,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { INBOX_CATEGORIES } from "../src/components/ward-management/ward-inbox-reducer";
+import { syntheticGovernanceAuditEvents } from "../src/components/ward-management/ward-governance-seed";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "../src/components/ward-management/ward-role-access";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
 import { unitHealthService } from "../src/components/ward-management/ward-service-scope";
@@ -316,6 +317,41 @@ describe("a command from a desk", () => {
     expect(send({ type: "REVIEW_AUDIT_EVENT", eventId: "audit-out" })).toMatch(/outside/);
     expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-in" })).toBeNull();
     expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-out" })).toMatch(/outside/);
+  });
+
+  it("keeps a service coordinator to the seeded governance entries about its own service", () => {
+    const seeded = syntheticGovernanceAuditEvents(state);
+    const verdicts = [...new Set(state.units.map((unit) => unitHealthService(unit)!))].map((service) => {
+      const access: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+      const world: WardFlowState = {
+        ...state,
+        auditReviews: seeded.map((event, index) => ({
+          id: `review-seed-${index}`,
+          eventId: event.id,
+          generation: state.worldGeneration,
+          at: NOW_ANCHOR,
+          byRole: "coordinator",
+          decision: "reviewed",
+        })),
+      };
+      const sent = new Set(scopeWardFlowState(world, access, options).state.auditReviews.map((r) => r.eventId));
+      return seeded.map((event) => {
+        const refused = commandScopeRefusal(
+          world,
+          access,
+          { type: "REVIEW_AUDIT_EVENT", role: "coordinator", eventId: event.id },
+          options,
+        );
+        // A review is sent exactly when the entry may be reviewed.
+        expect(sent.has(event.id)).toBe(refused === null);
+        return refused === null;
+      });
+    });
+    // Somewhere a seeded entry is outside a service, so the check is not passing by default.
+    expect(verdicts.flat()).toContain(false);
+    // A configuration entry is the statewide desk's, so no service may review it.
+    const configuration = seeded.findIndex((event) => event.subject.kind === "configuration");
+    if (configuration >= 0) expect(verdicts.every((row) => row[configuration] === false)).toBe(true);
   });
 
   it("is never refused for the statewide coordinator", () => {

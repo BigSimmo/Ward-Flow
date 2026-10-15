@@ -16,6 +16,7 @@
 import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/alerts/ward-broadcast-model";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   bookingPersonShown,
@@ -62,19 +63,39 @@ const inboxRows =
       }),
     ) as WardFlowState[K];
 
+/** What an audit entry's subject is checked against: the desk's own stays, journeys, referrals and wards. */
+type AuditScope = {
+  readonly admissionIds: ReadonlySet<string>;
+  readonly movements: readonly { readonly id: string }[];
+  readonly referrals: readonly { readonly id: string }[];
+  readonly unitIn: (unitId: string) => boolean;
+};
+
+/**
+ * The seeded governance entries (`ward-governance-seed.ts`) about this coordinator's own scope.
+ * They are derived from the whole workspace, never stored, so their ids are not in `auditEvents`.
+ */
+function seededAuditIdsInScope(state: WardFlowState, scope: AuditScope): Set<string> {
+  return new Set(
+    syntheticGovernanceAuditEvents(state)
+      .filter((event) => auditSubjectInScope(event, scope))
+      .map((event) => event.id),
+  );
+}
+
 /** Is an audit entry about something the desk sees. Configuration and unresolved entries are not. */
-function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
+function auditSubjectInScope(event: AuditEvent, scope: AuditScope): boolean {
   const subject = event.subject;
   const has = (ids: readonly { id: string }[], id: string) => ids.some((item) => item.id === id);
   switch (subject.kind) {
     case "admission":
-      return context.admissionIds.has(subject.admissionId);
+      return scope.admissionIds.has(subject.admissionId);
     case "movement":
-      return has(context.scoped.movements, subject.movementId);
+      return has(scope.movements, subject.movementId);
     case "referral":
-      return has(context.scoped.referrals, subject.referralId);
+      return has(scope.referrals, subject.referralId);
     case "bed-release":
-      return context.unitIn(subject.unitId);
+      return scope.unitIn(subject.unitId);
     default:
       return false;
   }
@@ -146,12 +167,18 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // Audit: a coordinator's own scope; every other desk keeps only the record-access receipts its
   // own stays need, because an opened discharge record is read against its receipt.
   auditEvents: (context) => context.auditEvents,
+  // A review goes with its entry. The seeded governance entries are derived, never stored, so each
+  // is worked out from the whole workspace and kept only when its subject is in the desk's scope.
   auditReviews: (context) => {
     if (!context.coordinator) return [];
-    const kept = new Set(context.auditEvents.map((event) => event.id));
-    return context.state.auditReviews.filter(
-      (review: AuditReview) => kept.has(review.eventId) || review.eventId.startsWith("audit-seed-"),
-    );
+    const kept = seededAuditIdsInScope(context.state, {
+      admissionIds: context.admissionIds,
+      movements: context.scoped.movements,
+      referrals: context.scoped.referrals,
+      unitIn: context.unitIn,
+    });
+    for (const event of context.auditEvents) kept.add(event.id);
+    return context.state.auditReviews.filter((review: AuditReview) => kept.has(review.eventId));
   },
   // Coordinator records, narrowed to the coordinator's own service.
   rejections: () => [],
@@ -209,7 +236,7 @@ export function scopeWardFlowState(
   };
   const auditEvents = state.auditEvents.filter((event) =>
     coordinator
-      ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
+      ? auditSubjectInScope(event, { admissionIds, movements: scoped.movements, referrals: scoped.referrals, unitIn })
       : event.category === "record-access" &&
         event.subject.kind === "admission" &&
         admissionIds.has(event.subject.admissionId),
@@ -343,6 +370,17 @@ export function commandScopeRefusal(
     referrals: scoped.referrals.filter((referral) => !glass(referral)),
   });
   const all = recordIds(state);
+  // A seeded governance entry can be reviewed, so its id counts as a record too. A coordinator may
+  // name only the ones about its own scope.
+  for (const event of syntheticGovernanceAuditEvents(state)) all.add(event.id);
+  if (access.role === "coordinator")
+    for (const id of seededAuditIdsInScope(state, {
+      admissionIds: new Set(scoped.admissions.map((admission) => admission.id)),
+      movements: scoped.movements,
+      referrals: scoped.referrals,
+      unitIn: (unitId) => unitInScope(access.scope, unitId, places),
+    }))
+      writable.add(id);
   for (const text of commandStrings(command)) {
     if (all.has(text) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));
