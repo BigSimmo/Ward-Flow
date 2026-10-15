@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -75,7 +76,10 @@ function start(props: { referrals?: Referral[]; teamId?: string } = {}) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Probe />
-      <CommunityScreen teamId={props.teamId ?? TEAM_ID} referrals={props.referrals} />
+      <CommunityScreen
+        teamId={props.teamId ?? TEAM_ID}
+        referrals={props.referrals && communityScopedReferrals(props.referrals)}
+      />
     </WardFlowProvider>,
   );
 }
@@ -112,6 +116,32 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     expect(dossier).toHaveTextContent("No patient or clinical information has been inferred");
     expect(within(dossier).getByRole("button", { name: "Accept referral" })).toBeDisabled();
     expect(dossier).not.toHaveTextContent(/PT-4409|RF-8824|clear pathology/);
+  });
+
+  it("does not open another community team's referral in this team's drawer", () => {
+    start({
+      referrals: [
+        fixture({
+          id: "other-team-referral",
+          destinations: [{ destination: { kind: "community_team", teamName: "Bentley" }, state: "queued" }],
+        }),
+      ],
+    });
+    openReferral("other-team-referral");
+    expect(screen.getByRole("dialog", { name: "Referral unavailable" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Referral Triage: other-team-referral" })).not.toBeInTheDocument();
+  });
+
+  it("still reads a broken referral link as a gap, not as an empty team", () => {
+    // The page holds only community-scoped referrals (FD-23). A referral id that matches nothing in
+    // the full record must still make the list not computable rather than measured empty.
+    const admission = { ...seed.admissions[0]!, referralId: "no-such-referral" };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CommunityScreen teamId={TEAM_ID} admissions={[admission]} referrals={[]} />
+      </WardFlowProvider>,
+    );
+    expect(document.body).toHaveTextContent("A bed carries no link back to the referral that named this team");
   });
 
   it("keeps a withdrawn dossier current and does not report successful acceptance", () => {
