@@ -87,6 +87,7 @@ import { GENDERS, patientAgeYears, type Gender, type Patient } from "@/component
 
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, wardSites, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
@@ -3502,9 +3503,8 @@ function WardReferralDrawerContent({
                                     arm.withdrawnAt === undefined,
                                 ),
                               ).length +
-                              movements.filter(
-                                (movement) => movement.waitlistedUnitIds?.includes(unit.unitId) && !movement.closure,
-                              ).length;
+                              movements.filter((movement) => !movement.closure && waitlistStands(movement, unit.unitId))
+                                .length;
                             return (
                               <label
                                 key={unit.unitId}

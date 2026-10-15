@@ -2097,13 +2097,17 @@ export function withdrawAllLiveRequestsForReferrer(
   now: Instant,
   /** Who ended the referral. A coordinator withdrawing it is recorded as such, not as the referrer. */
   reason: "referrer_withdrew" | "coordinator_withdrew" = "referrer_withdrew",
-): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals"> {
+): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals" | "referralAnswerHistory"> {
   return {
     acceptedUnitId: undefined,
     referredUnitIds: [],
     withdrawnReferrals: [
       ...movement.withdrawnReferrals,
       ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason })),
+    ],
+    referralAnswerHistory: [
+      ...(movement.referralAnswerHistory ?? []),
+      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, answer: "withdrawn" as const })),
     ],
   };
 }
@@ -2748,6 +2752,10 @@ export function reduceClinicalEvent(
         acceptedUnitId: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          ...withdrawnLiveRequests.map((referral) => ({ ...referral, answer: "withdrawn" as const })),
+        ],
         edOutcome: "for_community_follow_up",
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
@@ -3110,6 +3118,10 @@ export function reduceClinicalEvent(
         stage: "accepted_awaiting_bed",
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          ...withdrawn.map((referral) => ({ ...referral, answer: "withdrawn" as const })),
+        ],
         // A response arrived; what is outstanding is the bed. Richer prose is a ward's own
         // observation.
         blocker: STAGE_TRANSITION_BLOCKERS.accepted,
@@ -3372,6 +3384,10 @@ export function reduceClinicalEvent(
         withdrawnReferrals: [
           ...movement.withdrawnReferrals,
           { unitId: event.unitId, at: event.now, reason: "coordinator_withdrew", detail: event.reason },
+        ],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          { unitId: event.unitId, at: event.now, answer: "withdrawn" },
         ],
         // RA1: only the last live request going changes `blocker`.
         blocker: remainingUnitIds.length === 0 ? STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn : movement.blocker,
@@ -3761,6 +3777,10 @@ export function reduceClinicalEvent(
           ...movement,
           waitlistedUnitIds,
           declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
+          referralAnswerHistory: [
+            ...(movement.referralAnswerHistory ?? []),
+            { unitId: event.unitId, at: event.now, answer: "waitlisted" },
+          ],
         };
         const next = replaceMovement(state, movement.id, updated);
         return appendNotices(next, [
@@ -3793,6 +3813,10 @@ export function reduceClinicalEvent(
         referredUnitIds: remainingReferredUnitIds,
         declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
         stage: "destination_review",
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          { unitId: event.unitId, at: event.now, answer: "declined" },
+        ],
         // Ruling 4: a decline leaves the stage unchanged and is labelled a Decline, never a
         // step-back. This entry exists for the floor that every stage-assigning case appends
         // exactly one entry.
