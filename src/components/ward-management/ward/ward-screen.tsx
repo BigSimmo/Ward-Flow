@@ -66,8 +66,10 @@ import {
   minuteOfDay,
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
+  deriveAfternoonDischarges,
   isOpen,
   isStoppedTransportAwaitingRelease,
   overridesAgainstUnit,
@@ -129,6 +131,7 @@ import {
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
+import { WardDischargeNotices } from "./ward-discharge-notices";
 import { type WardFlowTab, WardHomeTab, type WardShiftView, wardActNowCount } from "./ward-home-tab";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
 
@@ -345,6 +348,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
+  // Top 25 item 5: the bed drawer asks for the discharge barrier of a stay due out soon.
+  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
+  const barrierGate = useRoleGate()("SET_DISCHARGE_BARRIER");
+  // Top 25 item 1: confirming a discharge offers its pharmacy, transport and cleaning notices.
+  const dischargeNoticesOn = useWardFeatureFlag("top25-discharge-notices");
+  const [noticesForRelease, setNoticesForRelease] = useState<string | null>(null);
   const isPhone = useIsPhone();
   const [phonePanel, setPhonePanel] = useState<"shift" | "flow" | null>(null);
   // A sheet left open when the screen widens past the phone is closed, not reopened on return.
@@ -2164,6 +2173,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       releaseId,
       actingUnitId: unitId,
     });
+    if (dischargeNoticesOn) setNoticesForRelease(releaseId);
   }
 
   // Bed-model rework (2026-08-28): lifting the blocked flag. The stage is untouched — a confirmed
@@ -2895,6 +2905,26 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </nav>
         ) : null}
 
+        {(() => {
+          // Top 25 item 1: shown only once the confirm was accepted, named by bed, never by person.
+          const release =
+            dischargeNoticesOn && noticesForRelease !== null
+              ? bedReleases.find((candidate) => candidate.id === noticesForRelease && candidate.state === "confirmed")
+              : undefined;
+          if (!release) return null;
+          const stay = admissions.find((admission) => admission.id === release.admissionId);
+          const bed = bedsList.find((item) => item.admissionId === release.admissionId);
+          const dueSoon = stay !== undefined && deriveAfternoonDischarges([stay], now).length > 0;
+          return (
+            <WardDischargeNotices
+              bedLabel={bed?.bedLabel ?? "this bed"}
+              dueSoonHours={dueSoon ? Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60) : null}
+              onClose={() => {
+                setNoticesForRelease(null);
+              }}
+            />
+          );
+        })()}
         {/* ───────── TAB 1: WORTH YOUR ATTENTION ───────── */}
         <section
           className={styles.tabPanel}
@@ -3482,6 +3512,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   }
                   fullReferralHref={fullWardReferralHref(selectedBedItem?.patientInfo?.patient?.id)}
                   roleLockNote={wardRoleLockNote}
+                  onSetBarrier={
+                    dischargePrepOn && barrierGate.allowed
+                      ? (admissionId, barrier) => {
+                          dispatch({
+                            type: "SET_DISCHARGE_BARRIER",
+                            role: routeRole,
+                            now,
+                            actingUnitId: unitId,
+                            admissionId,
+                            barrier,
+                          });
+                          setToastMessage(
+                            barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
+                          );
+                        }
+                      : undefined
+                  }
                 />
               );
             })()

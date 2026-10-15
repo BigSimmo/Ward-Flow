@@ -683,6 +683,7 @@ export function subjectId(event: WardFlowEvent): string {
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
     case "REPLY_BROADCAST_ALERT":
       return event.alertId;
     case "RAISE_PULL_NOW":
@@ -6945,6 +6946,7 @@ export function reduceClinicalEvent(
     case "DISPATCH_BROADCAST_ALERT":
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
     case "RAISE_PULL_NOW":
     case "REPLY_BROADCAST_ALERT": {
       const next = reduceBroadcastAlertEvent(state, event, decision, reject);

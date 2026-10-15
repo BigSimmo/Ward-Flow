@@ -1190,6 +1190,7 @@ export function candidateEvents(
         unitIds.map((unitId) => ({ type, role, now, alertId: alert.id, unitId })),
       );
     case "STAND_DOWN_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
       return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id }));
     // Global alerts (10 Oct 2026): a Pull now for every movement, then each ward answering every
     // live alert. Read from live state, like the broadcast trio above.

@@ -1,3 +1,4 @@
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -168,6 +169,24 @@ export function preMatchCleaningState(
   const medicalPause =
     movement.medicalDeterioration !== undefined && movement.medicalDeterioration.resumedAt === undefined;
   return { bedsBeingMadeReady, medicalPause };
+}
+
+/**
+ * Top 25 item 4: this unit's beds still being made ready past `CLINICAL_VALUES.preparingBedStale`,
+ * timed from the release's last recorded change (`confirmedAt`, restamped by `RECORD_LEAVING` and
+ * `SET_BED_PREPARATION`). A reminder to confirm the bed is ready, read only: nothing here opens a
+ * bed or changes a count (Q4). Oldest first.
+ */
+export function stalePreparingReleases(
+  unitId: string,
+  releases: readonly BedRelease[],
+  now: Instant,
+): { release: BedRelease; minutes: number }[] {
+  return releases
+    .filter((release) => release.unitId === unitId && release.state === "discharged" && release.preparing)
+    .map((release) => ({ release, minutes: Math.max(0, now - release.confirmedAt) }))
+    .filter((entry) => entry.minutes >= CLINICAL_VALUES.preparingBedStale.value)
+    .sort((left, right) => right.minutes - left.minutes);
 }
 
 /**

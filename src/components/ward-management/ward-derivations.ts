@@ -22,8 +22,8 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
-  MINUTES_PER_DAY,
   clockState,
   formatElapsed,
   formatInstant,
@@ -2258,18 +2258,19 @@ function toInstantMinutes(val: Instant | string): number {
 }
 
 /**
- * Afternoon Discharge & Parallel Support-Service Unblocker (#1).
- * Surfaces occupied admissions with an expected discharge today or within the next 24h window
- * so wards can trigger parallel Pharmacy (TTO), Transport, and Cleaning dispatches early.
+ * Top 25 items 1 and 5: occupied stays whose ward's own expected discharge falls from now to the
+ * discharge prep window ahead (`CLINICAL_VALUES.dischargePrepWindow`). The ward discharge prep
+ * prompt and the discharge support notices both read this one list, so they always agree.
  */
 export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant | string): Admission[] {
   const nowMin = toInstantMinutes(now);
+  const windowMinutes = CLINICAL_VALUES.dischargePrepWindow.value;
   return admissions.filter((adm) => {
     if (!bedIsOccupied(adm) || adm.expectedDischargeAt === null || !Number.isFinite(adm.expectedDischargeAt)) {
       return false;
     }
     const diff = adm.expectedDischargeAt - nowMin;
-    return diff >= 0 && diff <= MINUTES_PER_DAY;
+    return diff >= 0 && diff <= windowMinutes;
   });
 }
 

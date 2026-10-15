@@ -2211,6 +2211,16 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * Top 25 item 25: keep an active broadcast alert live for longer. The added time is the
+       * fixed `DEFAULT_BROADCAST_EXTENSION_MINUTES`, never a typed value. Ids only.
+       */
+      type: "EXTEND_BROADCAST_ALERT";
+      role: WardFlowRole;
+      now: Instant;
+      alertId: string;
+    }
+  | {
+      /**
        * Global alerts, 10 Oct 2026: the coordinator asks the accepting ward (or the wards still
        * considering the referral) to pull one patient now. Ids only, no typed text.
        */
@@ -2996,6 +3006,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.
