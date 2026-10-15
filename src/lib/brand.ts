@@ -57,13 +57,6 @@ export const BRAND_CATCHPHRASE_BARE = "From referral to bed";
 export const BRAND_DESCRIPTION = `Private psychiatric bed-flow coordination prototype for WA hospitals — ${BRAND_CATCHPHRASE_BARE.toLowerCase()}.`;
 
 /**
- * The install prompt's own line. It stays contextual rather than reusing the
- * catchphrase, because at that moment the user is being asked to do one
- * specific thing and the sheet should name the benefit of doing it.
- */
-export const BRAND_INSTALL_TAGLINE = "Clinical guidelines on your home screen.";
-
-/**
  * What the Ward Flow navigation drawer *is*, for assistive technology.
  *
  * The phone drawer shows the catchphrase where this sentence used to sit, but a

@@ -10,7 +10,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
  * fact with no bed change is "patient"; an event the engine records nothing for, or that only logs a
  * request, is "neither".
  */
-export type EventHistoryCategory = "bed" | "patient" | "both" | "neither";
+type EventHistoryCategory = "bed" | "patient" | "both" | "neither";
 
 export interface EventTypeHistoryConfig {
   category: EventHistoryCategory;

@@ -30,7 +30,7 @@ export const PATIENT_MODES: Record<
 };
 
 /** True while the movement is still moving someone: not closed, not arrived, stay not departed. */
-export function isOpenMovement(movement: Movement | undefined, admission?: Admission): boolean {
+function isOpenMovement(movement: Movement | undefined, admission?: Admission): boolean {
   return Boolean(movement && !movement.closure && movement.stage !== "arrived" && admission?.state !== "departed");
 }
 

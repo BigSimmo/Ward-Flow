@@ -13,7 +13,7 @@
  * Two or more early taps on a button that opens or toggles something are not replayed, because a
  * second press could undo the first. Any other button is pressed at most once.
  */
-export const WARD_HEADER_READY_ATTRIBUTE = "data-wf-bar-ready";
+const WARD_HEADER_READY_ATTRIBUTE = "data-wf-bar-ready";
 
 const HEADER_BUTTON = '[data-testid="ward-bar"] button[data-testid]';
 /** An older tap than this is stale: the reader has moved on. */

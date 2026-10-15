@@ -57,7 +57,7 @@ const recordUnknownReason = createBoundedDiagnosticRecorder({
 });
 
 /** Enum resilience per SPEC §7: an unrecognised reason renders `Unknown` and never throws. */
-export function missingValuePhrase(reason: MissingValueReason): string {
+function missingValuePhrase(reason: MissingValueReason): string {
   const phrase = Object.hasOwn(PHRASES, reason) ? PHRASES[reason] : undefined;
   if (typeof phrase === "string") return phrase;
   const key = String(reason);

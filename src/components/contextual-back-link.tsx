@@ -12,13 +12,13 @@ type WindowWithNavigation = Window & {
   navigation?: NavigationCapability;
 };
 
-export function canNavigateBack(): boolean {
+function canNavigateBack(): boolean {
   if (typeof window === "undefined") return false;
   const canGoBack = (window as WindowWithNavigation).navigation?.canGoBack;
   return typeof canGoBack === "boolean" ? canGoBack : window.history.length > 1;
 }
 
-export function navigateContextuallyBack(
+function navigateContextuallyBack(
   router: Pick<ReturnType<typeof useRouter>, "back" | "replace">,
   fallbackHref: string,
 ) {
