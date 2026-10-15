@@ -54,12 +54,16 @@ describe("typed date of birth", () => {
     expect(parseDob("010219900")).toBeNull();
   });
 
-  it("refuses a day or month that cannot exist", () => {
+  it("refuses a date that cannot exist", () => {
     expect(parseDob("99999999")).toBeNull();
     expect(parseDob("01131990")).toBeNull();
     expect(parseDob("00011990")).toBeNull();
     expect(parseDob("32/01/1990")).toBeNull();
     expect(parseDob("1990-13-01")).toBeNull();
+    expect(parseDob("31/04/1990")).toBeNull();
+    expect(parseDob("29021990")).toBeNull();
+    expect(parseDob("1990-02-29")).toBeNull();
+    expect(parseDob("29022000")).toBe("2000-02-29");
     expect(parseDob("31121990")).toBe("1990-12-31");
   });
 });

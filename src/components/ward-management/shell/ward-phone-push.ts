@@ -14,7 +14,6 @@
  */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { WARD_DEVELOPER_HUB_HREF } from "@/components/ward-management/ward-nav";
-import { setActNowAppBadge } from "./ward-act-now-notifications";
 
 export const PHONE_PUSH_WORKER_URL = "/ward-flow-push-sw.js";
 /**
@@ -147,11 +146,9 @@ export function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
 /**
  * Before sign-out: revoke this account's record for this device, then drop the browser
  * subscription, so the next account on a shared device starts with alerts off. Leaves alone a
- * browser subscription this account does not own. The act-now count on the app icon is cleared
- * too, so the next account never sees this one's count. Best effort: errors are swallowed.
+ * browser subscription this account does not own. Best effort: errors are swallowed.
  */
 export async function releasePhonePush(api: PhonePushApi): Promise<void> {
-  setActNowAppBadge(0);
   try {
     if (!phonePushSupported()) return;
     const subscription = await currentSubscription();

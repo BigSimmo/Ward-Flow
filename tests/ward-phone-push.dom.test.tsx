@@ -401,17 +401,6 @@ describe("releasePhonePush before sign-out", () => {
     await releasePhonePush(api);
     expect(api.pushUnsubscribe).not.toHaveBeenCalled();
   });
-
-  it("clears the act-now count on the app icon, so the next account never sees it", async () => {
-    const clearAppBadge = vi.fn(() => Promise.resolve());
-    Object.defineProperty(navigator, "clearAppBadge", { value: clearAppBadge, configurable: true });
-    try {
-      await releasePhonePush(fakeApi());
-      expect(clearAppBadge).toHaveBeenCalledTimes(1);
-    } finally {
-      Reflect.deleteProperty(navigator, "clearAppBadge");
-    }
-  });
 });
 
 /* The shared connection's phone calls and sign-out ------------------------------------------ */
