@@ -1,5 +1,6 @@
 import { expect, test } from "playwright/test";
 
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { expectAccessible } from "./helpers/ward-release-gate";
 
 /**
@@ -9,8 +10,8 @@ import { expectAccessible } from "./helpers/ward-release-gate";
  *
  * The journeys scan screens mid-task. This sweep opens each route fresh, so a screen no journey
  * reaches is still checked. Redirect-only routes (command, constellation, escalation, exceptions,
- * queue) are left out because they land on a route already listed. Person and movement pages are
- * left out because their record ids are being renamed; the journeys reach them through the app.
+ * queue) are left out because they land on a route already listed. One seeded person and one
+ * seeded movement stand in for the record pages, opened by their coded addresses.
  * Synthetic data only.
  */
 
@@ -31,10 +32,12 @@ const ROUTES = [
   "/hub",
   "/legal-forms",
   "/movements",
+  `/movements/${encodeRecordAddress("WF-001")}`,
   "/network",
   "/on-call",
   "/out-of-area",
   "/people/new",
+  `/people/${encodeRecordAddress("PT-001")}`,
   "/referrals",
   "/referrals/new",
   "/reports/chronology",

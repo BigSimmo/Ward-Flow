@@ -532,7 +532,7 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
         className={`${compare.chartBody} ${detail.scrolls}`}
         tabIndex={0}
         role="region"
-        aria-label="Ward comparison chart"
+        aria-label={view === "chart" ? "Ward comparison chart" : "Ward comparison table"}
       >
         {rows.length === 0 ? (
           <p className={styles.empty} data-testid="ward-statistics-compare-ward-chart-empty">

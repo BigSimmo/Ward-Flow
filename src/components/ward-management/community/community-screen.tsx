@@ -3786,6 +3786,8 @@ export function CommunityScreen({
                                   setActiveDrawer("pxDrawer");
                                 }}
                                 onKeyDown={(event) => {
+                                  // Keys from the contact button inside the row stay with that button.
+                                  if (event.target !== event.currentTarget) return;
                                   if (event.key !== "Enter" && event.key !== " ") return;
                                   event.preventDefault();
                                   setSelectedPatientId(egr.patientId);
