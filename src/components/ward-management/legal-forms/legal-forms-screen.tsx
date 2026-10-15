@@ -83,6 +83,7 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
+import { WardFormTimes } from "../tools/ward-form-times";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
@@ -625,6 +626,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               );
             })}
           </ul>
+        </CardBody>
+      </Card>
+      {/* Form times (Tools review, 15 Oct 2026): typed times only, rule D5. Also in Tools. */}
+      <Card aria-label="Check a form time" className={styles.formTimesCard}>
+        <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
+        <CardBody>
+          <WardFormTimes />
         </CardBody>
       </Card>
     </div>

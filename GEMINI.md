@@ -1,7 +1,3 @@
-# Ward Flow: Gemini project entrypoint
+# Ward Flow: Gemini entry point
 
-Owning repository: `BigSimmo/Ward-Flow`. Before writes, verify the checkout, branch, remotes and exact-file ownership (`D:/Repos/ward-flow-logs/sign-out.md` is enforced by default in `.githooks/pre-commit`, with `SKIP_SIGNOUT_GUARD=1` available only as an explicit per-commit opt-in for interactive single-user sessions, never for concurrent multi-agent work); preserve concurrent work. Read the applicable [project instructions](AGENTS.md) and relevant scoped safeguards before acting. Repository identity, synthetic/clinical/privacy controls and provider/publication authority remain binding. A different project's history or services grants no authority here.
-
-At task start, checkpoint, blocker, resume and completion, follow [task lifecycle and receipt handoff](docs/task-receipts.md). Reuse the original task identity and unique owning project. Evidence determines completion; a terminal turn or local export does not prove reconciliation, acceptance or release. Update the relevant owned documentation when evidence shows drift; route claimed-file improvements to their owner. Receipts contain only explicitly sanitised metadata.
-
-Shared personal preferences come from the host's supported global adapter, maintained from the user's `ai-rules/global-rules.md`. Read that source on demand through the current global adapter; route shared-rule amendments to its owner. Project safeguards remain applicable under the host hierarchy. This adapter is concise; relevant project instructions must still be read in full when their topic applies. Verify loaded context in a fresh session; existing chats may retain older instructions.
+Every rule for this repository is in [AGENTS.md](AGENTS.md). Read it before acting.

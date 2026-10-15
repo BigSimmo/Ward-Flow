@@ -185,7 +185,7 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     const user = userEvent.setup();
     renderWardRoute();
     await user.click(screen.getByTestId("ward-bar-tools-trigger"));
-    await user.click(screen.getByRole("button", { name: "Shift desk" }));
-    expect(screen.getAllByRole("button", { name: /change view/i })).toHaveLength(1);
+    // The Tools sheet is a `next/dynamic` chunk, and Change view sits at its top (Tools review).
+    expect(await screen.findAllByRole("button", { name: /change view/i }, { timeout: 15_000 })).toHaveLength(1);
   });
 });
