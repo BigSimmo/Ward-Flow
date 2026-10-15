@@ -2094,13 +2094,17 @@ export function withdrawAllLiveRequestsForReferrer(
   now: Instant,
   /** Who ended the referral. A coordinator withdrawing it is recorded as such, not as the referrer. */
   reason: "referrer_withdrew" | "coordinator_withdrew" = "referrer_withdrew",
-): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals"> {
+): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals" | "referralAnswerHistory"> {
   return {
     acceptedUnitId: undefined,
     referredUnitIds: [],
     withdrawnReferrals: [
       ...movement.withdrawnReferrals,
       ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason })),
+    ],
+    referralAnswerHistory: [
+      ...(movement.referralAnswerHistory ?? []),
+      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, answer: "withdrawn" as const })),
     ],
   };
 }
@@ -3809,11 +3813,11 @@ export function reduceClinicalEvent(
         ...movement,
         referredUnitIds: remainingReferredUnitIds,
         declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
+        stage: "destination_review",
         referralAnswerHistory: [
           ...(movement.referralAnswerHistory ?? []),
           { unitId: event.unitId, at: event.now, answer: "declined" },
         ],
-        stage: "destination_review",
         // Ruling 4: a decline leaves the stage unchanged and is labelled a Decline, never a
         // step-back. This entry exists for the floor that every stage-assigning case appends
         // exactly one entry.

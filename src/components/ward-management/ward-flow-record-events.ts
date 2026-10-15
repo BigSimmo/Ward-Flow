@@ -399,6 +399,14 @@ export function reduceRecordedFactEvent(
         acceptedUnitId: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          ...withdrawnLiveRequests.map((referral) => ({
+            unitId: referral.unitId,
+            at: referral.at,
+            answer: "withdrawn" as const,
+          })),
+        ],
         edOutcome: event.outcome,
         // A booked-but-uncollected job is cancelled in the same update that closes the movement.
         transport:
@@ -728,6 +736,14 @@ export function reduceRecordedFactEvent(
         acceptedUnitId: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          ...withdrawnLiveRequests.map((referral) => ({
+            unitId: referral.unitId,
+            at: referral.at,
+            answer: "withdrawn" as const,
+          })),
+        ],
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
       const outcomeNotices: Notice[] = [];

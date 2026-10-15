@@ -111,6 +111,17 @@ describe("waitlistStands", () => {
     expect(waitlistStands(movement, UNIT)).toBe(false);
   });
 
+  it("ends when a later withdrawal was written without an answer history entry", () => {
+    const movement: Movement = {
+      ...bareMovement(),
+      waitlistedUnitIds: [UNIT],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "referrer_withdrew" }],
+      referralAnswerHistory: [{ unitId: UNIT, at: 1_000, answer: "waitlisted" }],
+    };
+    expect(waitlistStands(movement, UNIT)).toBe(false);
+  });
+
   describe("records from before the answer history", () => {
     it("ends when the withdrawal lands in the same minute as the waitlist answer", () => {
       const movement: Movement = {
