@@ -374,6 +374,18 @@ describe("the scoped workspace", () => {
     expect(records.logEntry({ ...entry, unitId, actingUnitId: otherUnit.id })).toBe(false);
     expect(records.logEntry(entry)).toBe(false);
     expect(records.logEntry({ ...entry, unitId, plannedAdmissionId: "synthetic" })).toBe(false);
+    // A review is an audit event about another audit event, and follows the event it reviews.
+    const releaseId = state.bedReleases.find((release) => own(release.unitId))?.id;
+    if (releaseId) {
+      const about = { kind: "bed-release", releaseId, unitId } as const;
+      const events = [
+        { id: "kept", subject: about },
+        { id: "review", subject: { kind: "audit-event", eventId: "kept" } as const },
+        { id: "config", subject: { kind: "configuration" } as const },
+        { id: "review-of-config", subject: { kind: "audit-event", eventId: "config" } as const },
+      ];
+      expect(records.auditEvents(events).map((event) => event.id)).toEqual(["kept", "review"]);
+    }
   });
 
   it("hides counts below the small-number threshold", () => {

@@ -26,7 +26,7 @@ import {
   scopeWorkspace,
   smallNumberText,
 } from "@/components/ward-management/ward-access-scope";
-import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
+import type { AuditReview } from "@/components/ward-management/ward-audit";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
@@ -37,7 +37,7 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import {
@@ -239,17 +239,24 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     // keeps only the records about its own service's wards, journeys and referrals (Josh's yes,
     // 15 Oct 2026), so a whole network record or another service's never reaches it.
     const scope = coordinatorRecordScope(scoped, context.bedReleases, unitIn);
-    const auditInScope = (event: AuditEvent) => scope.subject(event.subject);
     const reviewInScope = (actor: WardRecordActor) => {
       // A review can be of a seeded governance entry, so the governance read is the fuller list.
       const read = context.readGovernanceAuditEvents?.(actor) ?? context.readAuditEvents(actor);
-      const kept = new Set(read.status === "allowed" ? read.value.filter(auditInScope).map((event) => event.id) : []);
+      const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
       return (review: AuditReview) => kept.has(review.eventId);
     };
-    const auditRead = <T,>(read: RecordRead<readonly T[]>, keep: (item: T) => boolean): RecordRead<readonly T[]> => {
+    // A refusal that names no journey (a refused record command records "none") is the desk's own
+    // and stays, so the screen that sent it hears the refusal (review on PR #345).
+    const allMovementIds = new Set<string>(context.movements.map((movement) => movement.id));
+    const rejectionInScope = (rejection: Rejection) =>
+      !allMovementIds.has(rejection.movementId) || scope.movementIds.has(rejection.movementId);
+    const auditRead = <T,>(
+      read: RecordRead<readonly T[]>,
+      keep: (items: readonly T[]) => T[],
+    ): RecordRead<readonly T[]> => {
       if (!coordinator) return denied;
       if (wholeNetwork || read.status !== "allowed") return read;
-      return { status: "allowed", value: read.value.filter(keep) };
+      return { status: "allowed", value: keep(read.value) };
     };
     const outsideHandle = { generation: -1, requestId: -1 } as const;
     return {
@@ -267,18 +274,18 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
           admissionIds.has(admissionId) ? context.openDischargeRecord(actor, admissionId) : outsideHandle,
         readDischargeRecord: (actor, admissionId, handle) =>
           admissionIds.has(admissionId) ? context.readDischargeRecord(actor, admissionId, handle) : denied,
-        readAuditEvents: (actor) => auditRead(context.readAuditEvents(actor), auditInScope),
+        readAuditEvents: (actor) => auditRead(context.readAuditEvents(actor), scope.auditEvents),
         readAuditReviews: (actor) =>
-          auditRead(context.readAuditReviews(actor), wholeNetwork ? () => true : reviewInScope(actor)),
+          auditRead(context.readAuditReviews(actor), (reviews) => {
+            if (wholeNetwork) return [...reviews];
+            const keep = reviewInScope(actor);
+            return reviews.filter(keep);
+          }),
         readGovernanceAuditEvents: (actor) =>
           coordinator && context.readGovernanceAuditEvents
-            ? auditRead(context.readGovernanceAuditEvents(actor), auditInScope)
+            ? auditRead(context.readGovernanceAuditEvents(actor), scope.auditEvents)
             : denied,
-        rejections: wholeNetwork
-          ? context.rejections
-          : coordinator
-            ? context.rejections.filter((rejection) => scope.movementIds.has(rejection.movementId))
-            : [],
+        rejections: wholeNetwork ? context.rejections : coordinator ? context.rejections.filter(rejectionInScope) : [],
         eventLog: wholeNetwork ? context.eventLog : coordinator ? (context.eventLog ?? []).filter(scope.logEntry) : [],
         bedReleases: byUnit(context.bedReleases),
         leaveBeds: byUnit(context.leaveBeds),

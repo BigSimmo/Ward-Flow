@@ -604,6 +604,8 @@ export function coordinatorRecordScope(
 ): {
   movementIds: ReadonlySet<string>;
   subject(subject: AuditSubject): boolean;
+  /** The events in scope. One about another audit event (a review) follows the event it is about. */
+  auditEvents<E extends { id: string; subject: AuditSubject }>(events: readonly E[]): E[];
   logEntry(entry: EventLogEntry): boolean;
 } {
   const movementIds = new Set(scoped.movements.map((movement) => movement.id));
@@ -637,7 +639,20 @@ export function coordinatorRecordScope(
     ].filter((answer): answer is boolean => answer !== undefined);
     return named.length > 0 && named.every(Boolean);
   };
-  return { movementIds, subject, logEntry };
+  const auditEvents = <E extends { id: string; subject: AuditSubject }>(events: readonly E[]): E[] => {
+    const kept = new Set(events.filter((event) => subject(event.subject)).map((event) => event.id));
+    // A review of a review follows its chain, so repeat until nothing more joins.
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const event of events)
+        if (event.subject.kind === "audit-event" && !kept.has(event.id) && kept.has(event.subject.eventId)) {
+          kept.add(event.id);
+          grew = true;
+        }
+    }
+    return events.filter((event) => kept.has(event.id));
+  };
+  return { movementIds, subject, auditEvents, logEntry };
 }
 
 /**
