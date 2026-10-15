@@ -124,10 +124,13 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
     expect(candidates[2]).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("shortlist-referral-cap-warning")).toHaveTextContent("more than the usual 2");
     expect(screen.getByTestId("ward-shortlist-refer")).toHaveAttribute("aria-disabled", "true");
+    // Override sends the same referral, so it waits for the same reason.
+    expect(screen.getByTestId("ward-shortlist-override-toggle")).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Reason for asking more wards"), {
       target: { value: "Clinical urgency needs a wider search" },
     });
     expect(screen.getByTestId("ward-shortlist-refer")).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByTestId("ward-shortlist-override-toggle")).not.toHaveAttribute("aria-disabled");
     act(() => setWardFeatureFlagOnDevice("top25-referral-cap", null));
   });
 });

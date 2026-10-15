@@ -818,7 +818,7 @@ export function ShortlistPanel({
   // fresh, so an override attempted against a non-referable movement is refused by the reducer
   // exactly like Refer would be, the refusal surfaces on the Exceptions drawer via `rejections`,
   // and no local flag here is ever left claiming a success that did not happen.
-  const canOverride = hasReferSelection;
+  const canOverride = hasReferSelection && !capReasonMissing;
   // Same fact as `allSelectedReferable`. A ward that only declined before is NOT one of these, so
   // the "Use Override instead" sentence below can never be shown about it again.
   const firstIneligibleSelected = referredCandidates.find(
@@ -835,8 +835,9 @@ export function ShortlistPanel({
           : firstIneligibleSelected
             ? `Not eligible — ${candidateReason(firstIneligibleSelected.verdict)}. Use Override instead.`
             : "Eligibility could not be determined for one of the selected wards.";
-  const overrideUnavailableReason =
-    "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
+  const overrideUnavailableReason = capReasonMissing
+    ? "Choose a reason for asking more wards than usual."
+    : "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
   const { factors } = operationalScore(movement, now);
@@ -904,7 +905,7 @@ export function ShortlistPanel({
     event.preventDefault();
     if (!needsGenderPlacement) return;
     const reason = genderPlacementReason.trim();
-    if (reason.length === 0 || !genderPlacementChecked) return;
+    if (reason.length === 0 || !genderPlacementChecked || capReasonMissing) return;
     // Membership-checked here as well as in the reducer, the same discipline `handleOverrideSubmit`
     // holds to for `OVERRIDE_REASONS` — the reducer's check is the one that matters; this one keeps
     // a malformed value from being reported on screen as recorded.
@@ -968,6 +969,7 @@ export function ShortlistPanel({
       unitIds: [...referTargets],
       overrideReason: reason as OverrideReason,
       overrideSignOff: { role: overrideSignOffRole, name: signOffName },
+      ...(overReferralCap && capReason ? { overCapReason: capReason } : {}),
     });
     setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
     setOverrideOpen(false);
@@ -2130,7 +2132,7 @@ export function ShortlistPanel({
                   <button
                     type="submit"
                     className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                    disabled={genderPlacementReason.trim().length === 0 || !genderPlacementChecked}
+                    disabled={genderPlacementReason.trim().length === 0 || !genderPlacementChecked || capReasonMissing}
                     data-testid="ward-shortlist-gender-placement-submit"
                   >
                     Record reason and place
