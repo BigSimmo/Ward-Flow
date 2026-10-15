@@ -11,7 +11,7 @@ Inspect the exact database target, ownership and contents first. Preserve a reco
 Use a supported PostgreSQL database reserved for synthetic data, with verified TLS and a restricted application login separate from its administrator. Set these values privately:
 
 - `WARD_DATABASE_PROVIDER=postgres`, `WARD_SHARED_ENABLED=true`, `WARD_DATA_MODE=prototype`.
-- `WARD_AUTH_PROVIDER=supabase` (the only sign-in provider), with its coordinator allowlist settings.
+- `WARD_AUTH_PROVIDER=supabase` (the only sign-in provider) with its settings: `WARD_SUPABASE_PROJECT_REF`, `WARD_SUPABASE_URL`, `WARD_SUPABASE_PUBLISHABLE_KEY` and the `WARD_COORDINATOR_USER_IDS` allowlist. Startup refuses the backend without them, even when PostgreSQL is the database.
 - `WARD_POSTGRES_DATABASE_URL` for the fixed `wardflow_backend` login and `WARD_POSTGRES_MIGRATION_DATABASE_URL` for a different administrator on the same hostname, port and database.
 - `WARD_WORKSPACE_ID` for a synthetic workspace and `WARD_ALLOWED_ORIGIN` for the verified frontend origin.
 - `WARD_POSTGRES_CA_CERT_FILE` when the server uses a CA not already trusted by Node.

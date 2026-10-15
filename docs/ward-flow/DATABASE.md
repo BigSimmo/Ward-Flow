@@ -17,8 +17,9 @@
 This page records the chosen provider. It does not prove the hosted backend is running or
 connected. Hosted state is separate evidence.
 
-Other documents link here instead of restating the provider, project ID or settings. When the
-database changes, change this page and the decision log, and the rest stays correct.
+Other documents may name the provider in passing, but they link here for the project ID,
+settings and how to change it. When the database changes, change this page and the decision
+log first, then search the docs for the old provider's name and update any passing mention.
 
 ## Where the provider is chosen
 
