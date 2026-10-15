@@ -153,6 +153,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
@@ -1285,6 +1287,9 @@ export function EdScreen({ edId }: EdScreenProps) {
     admissions,
   } = useWardFlow();
   const now = useWardFlowClock();
+  // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
+  const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
+  const { inboxSnoozes } = useWardFlow();
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
@@ -2805,6 +2810,34 @@ export function EdScreen({ edId }: EdScreenProps) {
       ? () => setPhoneSheetFor(flag.recordId)
       : undefined,
   }));
+  // Top 25 item 6 (flag top25-needs-you-roles): one Needs you for the signed in role. The shared
+  // task rows owned by the ED (`inboxItemsForRole`) for this department's people join the list,
+  // once per person not already listed above.
+  if (needsYouRolesOn) {
+    const listed = new Set(needsYouFlags.map((flag) => flag.recordId));
+    const owned = inboxItemsForRole(
+      activeTaskItems(
+        { movements, units, configuration, inboxSnoozes, admissions, patients: registryPatients, referrals },
+        now,
+      ),
+      "ed",
+    );
+    for (const item of owned) {
+      const movement = movements.find((m) => m.id === item.movementId);
+      if (!movement || movement.originEdId !== thisEdId || listed.has(movement.id)) continue;
+      listed.add(movement.id);
+      needsYouItems.push({
+        key: `task-${item.id}`,
+        actNow: item.tone === "danger",
+        kind: item.title,
+        person: resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements }).formalName,
+        when: item.owner,
+        onOpen: patients.some((patient) => patient.id === movement.id)
+          ? () => setPhoneSheetFor(movement.id)
+          : undefined,
+      });
+    }
+  }
   const activeHeroChip = heroChips.find((chip) => chip.id === heroHighlight);
 
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
