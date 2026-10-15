@@ -276,8 +276,10 @@ export async function capacityReady(page: Page, unitId: string, unitName: string
     if ((await wards.getAttribute("aria-checked")) !== "true") await wards.click();
     const strip = page.getByRole("img", { name: new RegExp(`^${escapeForRegExp(unitName)}: `, "u") }).first();
     await expect(strip).toBeVisible();
-    const match = /: (\d+) ready/u.exec((await strip.getAttribute("aria-label")) ?? "");
-    return match ? Number(match[1]) : 0;
+    const label = (await strip.getAttribute("aria-label")) ?? "";
+    const match = /: (\d+) ready/u.exec(label);
+    expect(match, `the ${unitName} bed strip must state its ready count: "${label}"`).not.toBeNull();
+    return Number(match![1]);
   }
   await openCapacityTable(page, unitId);
   return capacityFigure(page, unitId, "ward-capacity-network-ready");

@@ -1047,6 +1047,10 @@ function replaceBedRelease(state: WardFlowState, releaseId: string, next: BedRel
 function withAdmissionDischargeDecision(state: WardFlowState, admissionId: string, at: Instant | null): WardFlowState {
   const admission = findAdmission(state, admissionId);
   if (!admission) return state;
+  // A stay already confirmed keeps its own confirmation time: the release agrees with it, so
+  // restamping would rewrite when the discharge was decided. A revert still clears it, because the
+  // ward has said the discharge is no longer decided.
+  if (at !== null && admission.dischargeConfirmedAt !== null) return state;
   return replaceAdmission(state, admissionId, {
     ...admission,
     dischargeConfirmedAt: at,

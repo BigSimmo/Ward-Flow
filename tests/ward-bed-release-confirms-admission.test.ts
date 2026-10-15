@@ -64,6 +64,29 @@ describe("confirming a bed release confirms the stay's discharge", () => {
     expect(stay?.dischargeConfirmedBy).toBeNull();
   });
 
+  it("a stay confirmed earlier keeps its own confirmation time", () => {
+    const { state: seed, release } = expectedReleaseOnOccupiedStay();
+    const earlier = NOW_ANCHOR - 60;
+    const state = {
+      ...seed,
+      admissions: seed.admissions.map((stay) =>
+        stay.id === release.admissionId
+          ? { ...stay, dischargeConfirmedAt: earlier, dischargeConfirmedBy: "Ward manager" as const }
+          : stay,
+      ),
+    };
+    const next = wardFlowReducer(state, {
+      type: "CONFIRM_BED_RELEASE",
+      role: "ward",
+      now: NOW_ANCHOR,
+      releaseId: release.id,
+      actingUnitId: release.unitId,
+    });
+    expect(next.bedReleases.find((candidate) => candidate.id === release.id)?.state).toBe("confirmed");
+    const stay = next.admissions.find((candidate) => candidate.id === release.admissionId);
+    expect(stay?.dischargeConfirmedAt).toBe(earlier);
+  });
+
   it("a refused confirmation leaves the stay untouched", () => {
     const { state, release } = expectedReleaseOnOccupiedStay();
     const next = wardFlowReducer(state, {

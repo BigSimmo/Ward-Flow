@@ -71,11 +71,17 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await expectAccessible(page, testInfo, "ED raise form, filled");
   await page.getByTestId("ward-ed-referral-submit").click();
 
-  const patientRowsAfter = await page
-    .locator('[data-testid^="ward-ed-patient-"]')
-    .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-testid") ?? ""));
-  const raised = patientRowsAfter.filter((id) => !patientRowsBefore.has(id));
-  expect(raised, "exactly one new movement must appear on the ED's patient board").toHaveLength(1);
+  // The new row renders after the submit; read the board until it appears.
+  const raisedRows = async () =>
+    (
+      await page
+        .locator('[data-testid^="ward-ed-patient-"]')
+        .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-testid") ?? ""))
+    ).filter((id) => !patientRowsBefore.has(id));
+  await expect
+    .poll(raisedRows, { message: "exactly one new movement must appear on the ED's patient board" })
+    .toHaveLength(1);
+  const raised = await raisedRows();
   const movementId = raised[0]!.replace("ward-ed-patient-", "");
   await expectNoReloadSince(page, "raising the ED referral");
 
@@ -128,6 +134,7 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await expectAccessible(page, testInfo, "ward arrivals with the accepted patient");
   await pull.click();
   await expect(pull).toHaveCount(0);
+  await expectAccessible(page, testInfo, "ward arrivals after the pull");
   await expectNoReloadSince(page, "the ward accepting and pulling");
 });
 
@@ -160,6 +167,7 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
 
   await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(0);
+  await expectAccessible(page, testInfo, "capacity board after the ward's figures");
   await expectNoReloadSince(page, "returning to the capacity board");
 });
 
@@ -203,6 +211,7 @@ test("Transfer with transport: the officer runs a booked job to delivery and the
         await check.getByRole("button", { name: "Collected, record reason" }).click();
       }
     }
+    await expectAccessible(page, testInfo, `officer job detail after ${stage}`);
   }
   await expectNoReloadSince(page, "the officer's transport steps");
 
@@ -217,6 +226,7 @@ test("Transfer with transport: the officer runs a booked job to delivery and the
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
   await expect.poll(() => wardFigure(page, "occupied")).toBe(occupiedBefore + 1);
+  await expectAccessible(page, testInfo, "ward Home after the arrival");
   await expectNoReloadSince(page, "confirming arrival");
 });
 
@@ -278,10 +288,14 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
   await departure.getByRole("button", { name: "Record departure", exact: true }).click();
   await expect(departure).toHaveCount(0);
+  // The person has left, so the board no longer lists their discharge.
+  await expect(shiftItem).toHaveCount(0);
+  await expectAccessible(page, testInfo, "ward bed board after the departure");
   await expectNoReloadSince(page, "recording the departure");
 
   // The coordinator's board shows one more ready bed.
   await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(readyBefore + 1);
+  await expectAccessible(page, testInfo, "capacity board after the departure");
   await expectNoReloadSince(page, "returning to the capacity board");
 });
