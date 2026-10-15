@@ -2472,11 +2472,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
                         const admissionId = detailRelease.admissionId;
                         recordWardDeparture(admissionId, detailRelease.unitId, departureDestination);
-                        offerDeparture({
-                          success: `Recorded: ${who} has left the ward.`,
-                          undo: (at) => ({ type: "UNDO_DEPARTURE", role: "coordinator", now: at, admissionId }),
-                          undone: `Undone. ${who} is back in their bed.`,
-                        });
+                        // Unguarded, as the hand-built toast was: in a shared workspace the departure
+                        // may not be in state yet, so the record seen next could be an older one.
+                        offerDeparture(
+                          {
+                            success: `Recorded: ${who} has left the ward.`,
+                            undo: (at) => ({ type: "UNDO_DEPARTURE", role: "coordinator", now: at, admissionId }),
+                            undone: `Undone. ${who} is back in their bed.`,
+                          },
+                          { guard: false },
+                        );
                       }}
                     >
                       Record departure

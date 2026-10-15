@@ -33,8 +33,8 @@ type Pending = {
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
   /**
-   * False for `offer`: the step was dispatched elsewhere, so the record kept before it is unknown
-   * and a record seen now could be an older one. Undo then sends no record number, as before.
+   * False when an `offer` caller cannot be sure the record seen next is its own (for example a
+   * shared workspace dispatch still on its way). Undo then sends no record number.
    */
   guard?: boolean;
 };
@@ -179,8 +179,8 @@ export function useUndoableStep({
       setToken((value) => value + 1);
     },
     /** Offers Undo for a step another component on the page has already recorded. */
-    offer(step: UndoableStep) {
-      pendingRef.current = { prior: rejectionCountRef.current, ...step, guard: false };
+    offer(step: UndoableStep, options?: { guard?: boolean }) {
+      pendingRef.current = { prior: rejectionCountRef.current, ...step, guard: options?.guard };
       setToken((value) => value + 1);
     },
   };
