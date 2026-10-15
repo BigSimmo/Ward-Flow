@@ -2,7 +2,7 @@
 
 import { useEffect, type RefObject } from "react";
 import { lockPageScroll } from "@/components/ui/sheet-focus";
-import { useModalFocus } from "@/components/wf/use-modal-focus";
+import { useModalFocus } from "@/components/wf";
 
 /**
  * Ward dialog lifecycle for a hand-built modal panel, on the one shared contract (`useModalFocus`):
