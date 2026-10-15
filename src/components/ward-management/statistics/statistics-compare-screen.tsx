@@ -527,7 +527,13 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
           ]}
         />
       </div>
-      <CardBody flush className={`${compare.chartBody} ${detail.scrolls}`}>
+      <CardBody
+        flush
+        className={`${compare.chartBody} ${detail.scrolls}`}
+        tabIndex={0}
+        role="region"
+        aria-label="Ward comparison chart"
+      >
         {rows.length === 0 ? (
           <p className={styles.empty} data-testid="ward-statistics-compare-ward-chart-empty">
             No wards recorded.

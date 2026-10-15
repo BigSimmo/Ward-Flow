@@ -806,7 +806,7 @@ export function MovementsScreen() {
   const phoneCorridors = rankCorridorPairs(corridors);
   // The live transport legs: the side card's feed on the larger screen, a sheet on phone.
   const transportFeed = (onPicked?: () => void) => (
-    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs" tabIndex={0}>
+    <div className={styles.transportRunsFeed} role="region" aria-label="Active transport legs" tabIndex={0}>
       {legs.map((leg) => {
         const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
         const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
