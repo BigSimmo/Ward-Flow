@@ -1,0 +1,30 @@
+{
+  "$comment": "Words that describe something Ward Flow no longer uses. scripts/doc-facts.mjs warns on every current mention in maintained docs and fails a pull request that adds a new one. Add a term when a decision retires something; remove it once nothing should ever warn again. Dated records, archives and the files listed in historicalFiles are history and are never scanned. Inside a maintained doc, keep a deliberate historical mention by wrapping it in the docs-script-refs:historical-start and docs-script-refs:historical-end markers.",
+  "terms": [
+    {
+      "id": "azure",
+      "pattern": "\\bazure|\\bentra\\b",
+      "flags": "i",
+      "since": "2026-10-15",
+      "why": "Supabase is Ward Flow's database and sign-in service. Azure (Functions, Blob Storage, PostgreSQL) and Microsoft Entra ID are retired.",
+      "instead": "Name Supabase, or quote the current value with <!-- fact:database-provider --> from docs/FACTS.md. Delete the mention, or fence it as history."
+    }
+  ],
+  "historicalFiles": [
+    "docs/FACTS.md",
+    "docs/ward-flow-task-ledger.md",
+    "docs/ward-flow-ledger.md",
+    "docs/ward-flow/STATUS.md",
+    "docs/ward-flow/decisions.md",
+    "docs/ward-flow/OWNER-RULINGS.md",
+    "docs/task-receipts.md"
+  ],
+  "historicalPathPatterns": [
+    "(^|/)archive/",
+    "(^|/)audit/",
+    "(^|/)lessons/",
+    "(^|/)node_modules/",
+    "^docs/ward-flow-phase-3-workspace/",
+    "\\d{4}-\\d{2}-\\d{2}"
+  ]
+}

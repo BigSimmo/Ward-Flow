@@ -334,6 +334,7 @@ export const WRITE_GENERATOR_STEPS = [
   },
   { label: "update-docs-inventory", args: ["scripts/update-docs-inventory.mjs"] },
   { label: "generate-site-map", args: ["scripts/run-tsx.mjs", "scripts/generate-site-map.ts"] },
+  { label: "doc-facts", args: ["scripts/doc-facts.mjs", "--write"] },
 ];
 
 export const CHECK_INDEX_STEPS = [
@@ -354,6 +355,7 @@ export const CHECK_INTEGRITY_GATE_STEPS = [
   { label: "check-stale-docs", args: ["scripts/check-stale-docs.mjs"] },
   { label: "check-ward-legal-language", args: ["scripts/ward-flow/check-ward-legal-language.mjs"] },
   { label: "check-ward-reference", args: ["scripts/ward-flow/check-ward-reference.mjs"] },
+  { label: "doc-facts", args: ["scripts/doc-facts.mjs"] },
 ];
 
 export function runCheckMode({ root = DEFAULT_ROOT } = {}) {

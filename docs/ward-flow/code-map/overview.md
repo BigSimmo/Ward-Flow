@@ -31,16 +31,16 @@ Historically, the source monorepo held **two products that shared one Next.js ap
 Ward Flow borrows the app frame (Next.js, the request proxy, a developer access gate, a handful
 of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 
-| Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                          |
-| ------------------------------------------------------------ | -----: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                             |
-| Ward Flow routes `src/app/mockups/ward-flow/`                |     57 | **50 `page.tsx`** (**52 total routes** incl. `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
-| Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                    |
-| Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                       |
-| Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                            |
-| PsychSift `src/` (all, incl. Ward)                           |  1,765 | —                                                                                                                             |
-| PsychSift tests (non-Ward)                                   | ~1,085 | 769 unit + 46 browser specs                                                                                                   |
-| `supabase/migrations/`                                       |    234 | none mention Ward Flow                                                                                                        |
+| Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                                 |
+| ------------------------------------------------------------ | -----: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                                    |
+| Ward Flow routes `src/app/mockups/ward-flow/`                |     57 | **<!-- fact:ward-route-count -->50<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->52<!-- /fact --> total routes** incl. `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                           |
+| Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                              |
+| Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                                   |
+| PsychSift `src/` (all, incl. Ward)                           |  1,765 | —                                                                                                                                                                                                                    |
+| PsychSift tests (non-Ward)                                   | ~1,085 | 769 unit + 46 browser specs                                                                                                                                                                                          |
+| `supabase/migrations/`                                       |    234 | none mention Ward Flow                                                                                                                                                                                               |
 
 ### How the pieces fit
 

@@ -60,6 +60,8 @@ function requireWorkflow(source) {
     /^ {8}run: npm run docs:check-links$/mu,
     /^ {8}run: npm run docs:check-index$/mu,
     /^ {8}run: npm run docs:check-inventory$/mu,
+    // Facts and retired terms: the PR base must reach the check so new retired-term lines fail.
+    /WARD_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}\n {8}run: node scripts\/doc-facts\.mjs$/mu,
     /run: node scripts\/ward-flow\/check-clinical-governance-gate\.mjs/u,
     /steps\.plan\.outputs\.owner_index == 'true'/u,
     /steps\.plan\.outputs\.rules_index == 'true'/u,
