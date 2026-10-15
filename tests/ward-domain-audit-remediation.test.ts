@@ -437,7 +437,11 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     });
     expect(next.rejections).toEqual([]);
     expect(valid(next)).toBe(true);
-    expect(next.units.find((unit) => unit.id === movement.acceptedUnitId)?.arrivalCapacityConflicts).toHaveLength(1);
+    // The seeded pulled bed already sits outside the empty count, so a full observation is no
+    // conflict and the arrival takes no second bed (release gate, 15 Oct 2026).
+    const unitAfter = next.units.find((unit) => unit.id === movement.acceptedUnitId);
+    expect(unitAfter?.arrivalCapacityConflicts ?? []).toHaveLength(0);
+    expect(unitAfter?.empty.value).toBe(0);
   });
   it("retains a legitimate authored moving journey without inventing an admission", () => {
     const state = seedWardFlowState();
