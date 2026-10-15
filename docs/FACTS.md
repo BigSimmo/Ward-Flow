@@ -11,8 +11,8 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set                               | `backend/ward-flow/config.mjs`  |
 | `latest-migration`  | 005-retention-and-indexes                   | Newest shared-workspace database migration                                              | `backend/ward-flow/migrations/` |
 | `migration-count`   | 5                                           | Numbered database migrations                                                            | `backend/ward-flow/migrations/` |
-| `ward-route-count`  | 50                                          | `page.tsx` routes under `/mockups/ward-flow`                                            | `src/app/mockups/ward-flow/`    |
-| `app-route-count`   | 52                                          | Pages and route handlers under `/mockups`: the Ward Flow routes plus sign-in and digest | `src/app/mockups/`              |
+| `ward-route-count`  | 51                                          | `page.tsx` routes under `/mockups/ward-flow`                                            | `src/app/mockups/ward-flow/`    |
+| `app-route-count`   | 53                                          | Pages and route handlers under `/mockups`: the Ward Flow routes plus sign-in and digest | `src/app/mockups/`              |
 | `latest-decision`   | D-56                                        | Newest entry in the decision log                                                        | `docs/ward-flow/decisions.md`   |
 | `next-decision`     | D-57                                        | Number to use for the next decision                                                     | `docs/ward-flow/decisions.md`   |
 | `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                                 | `package.json`                  |

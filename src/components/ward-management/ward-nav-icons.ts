@@ -20,6 +20,7 @@ import {
   Siren,
   TriangleAlert,
   Truck,
+  Tv,
   UserPlus,
   Users,
   Waypoints,
@@ -101,4 +102,6 @@ export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
   // A balance scale, distinct from every icon above: this is the one destination whose subject is
   // a legal instrument rather than a place, a person, a vehicle or a board of patients.
   "legal-forms": Scale,
+  // A television: the one destination meant to be read from across a meeting room.
+  "bed-meeting": Tv,
 };

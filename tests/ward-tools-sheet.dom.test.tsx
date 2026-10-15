@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
@@ -72,6 +73,26 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(escalation.getAttribute("aria-disabled")).toBe("true");
     expect(escalation.textContent).toContain("Not wired in this prototype.");
     expect(screen.queryByRole("button", { name: /Bed meeting TV/u })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Bed meeting TV/u })).toBeNull();
+  });
+
+  it("links Bed meeting TV on desktop while its flag is on, and hides it while the flag is off", () => {
+    const { unmount } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("link", { name: /Bed meeting TV/u }).getAttribute("href")).toBe(
+      "/mockups/ward-flow/bed-meeting",
+    );
+    unmount();
+    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
+    try {
+      renderSheet();
+      expect(screen.queryByRole("link", { name: /Bed meeting TV/u })).toBeNull();
+    } finally {
+      act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
+    }
   });
 
   it("opens a requested tool once, then tells the parent so a later open starts closed", async () => {
@@ -99,6 +120,8 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(panel).getByRole("radiogroup", { name: "Demo scenario" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "+15 min" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "Reset demo" })).toBeTruthy();
+    // The one tap Demo reset (#298) lives in the same panel, behind its own flag.
+    expect(within(panel).getByTestId("ward-demo-reset-winter-surge")).toBeTruthy();
   });
 
   it("shows the network figures at a glance, and opens every figure in place", () => {

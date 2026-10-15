@@ -2,6 +2,7 @@
 
 import { type ChangeEvent, useRef, useState } from "react";
 
+import { WardDemoReset } from "../demo-reset/ward-demo-reset";
 import { formatInstant } from "../ward-clock";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { WARD_SCENARIOS, scenarioLabels } from "../ward-scenarios";
@@ -10,7 +11,7 @@ import styles from "./ward-tools-sheet.module.css";
 /**
  * Tools, Demo (Tools review item 9, 15 Oct 2026): the one place the prototype's scenario, clock and
  * scenario file are changed. It replaces the Shift desk "Scenario controls" menu and the footer clock
- * popover, which repeated the same controls, and is where the Demo reset cards land. Every event is
+ * popover, which repeated the same controls, and holds the one tap Demo reset (`demo-reset` flag). Every event is
  * raised with `role: "demo"` exactly as before, and every string says demo, never clinical.
  */
 export function WardDemoPanel() {
@@ -127,6 +128,7 @@ export function WardDemoPanel() {
       >
         Reset demo
       </button>
+      <WardDemoReset />
       <p className={styles.note}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
       <p className={styles.liveNote} role="status">
         {message}

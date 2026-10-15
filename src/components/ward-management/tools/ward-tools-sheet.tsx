@@ -32,6 +32,8 @@ import { WardRoleSwitcher } from "../ward-role-switcher";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
+import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { WARD_BED_MEETING_TV_HREF } from "../ward-nav";
 import { bedSummaryText } from "./ward-bed-summary";
 import { WardBedFinder } from "./ward-bed-finder";
 import { WardToolsContacts } from "./ward-tools-contacts";
@@ -215,7 +217,7 @@ function BedSummary() {
  * network figures at a glance, with All figures below), then Do now, Look up, Print and share, More
  * pages and Demo at the foot. Appearance, Settings, the Digest and the repeated shortcut grids are
  * gone because the rail already carries them. Phone uses the same sheet; Bed meeting TV stays
- * desktop only.
+ * desktop only and shows while its `bed-meeting-tv` flag is on.
  */
 export function WardToolsSheet({
   isPhone,
@@ -225,6 +227,7 @@ export function WardToolsSheet({
   openRequest,
   onRequestHandled,
 }: WardToolsSheetProps) {
+  const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
   const toggle = (id: ToolsSheetToolId) =>
@@ -388,9 +391,15 @@ export function WardToolsSheet({
           "Text for the exec on-call email or Teams",
           <BedSummary />,
         )}
-        {isPhone ? null : (
-          <UnwiredRow icon={Tv} name="Bed meeting TV" reason="Arrives with the Bed meeting TV change." />
-        )}
+        {bedMeetingTvOn && !isPhone ? (
+          <LinkRow
+            href={WARD_BED_MEETING_TV_HREF}
+            icon={Tv}
+            name="Bed meeting TV"
+            detail="Read only view for the meeting room screen"
+            onNavigate={onNavigate}
+          />
+        ) : null}
         <LinkRow
           href={DOWNTIME_PACK_HREF}
           icon={Printer}

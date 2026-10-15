@@ -17,6 +17,7 @@
  */
 
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import type { WardFeatureFlag } from "@/components/ward-management/ward-feature-flags";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 
@@ -181,7 +182,8 @@ export type WardNavId =
   | "statistics"
   | "on-call"
   | "hub"
-  | "legal-forms";
+  | "legal-forms"
+  | "bed-meeting";
 
 export type WardNavItem = {
   id: WardNavId;
@@ -190,6 +192,8 @@ export type WardNavItem = {
   group: WardNavGroup;
   /** True when the href names one specific synthetic ward or department rather than a section. */
   exampleOnly?: boolean;
+  /** Shown only while this feature flag is on (`ward-feature-flags.ts`). */
+  flag?: WardFeatureFlag;
 };
 
 /**
@@ -210,6 +214,16 @@ export const WARD_ALERTS_HREF = "/mockups/ward-flow/alerts";
 export const WARD_CAPACITY_HREF = "/mockups/ward-flow/capacity";
 export const WARD_COMMAND_HREF = "/mockups/ward-flow/command";
 export const WARD_ED_HREF = "/mockups/ward-flow/ed";
+/** The bed meeting TV view (`bed-meeting/bed-meeting-tv.tsx`), behind the `bed-meeting-tv` flag. */
+export const WARD_BED_MEETING_TV_HREF = "/mockups/ward-flow/bed-meeting";
+
+/** A TV screen: a bed meeting (`?service=` a health service or `all`), one ward (`?ward=`) or one ED (`?ed=`). */
+export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string } = {}): string {
+  if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}`;
+  if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}`;
+  if (view.service !== undefined) return `${WARD_BED_MEETING_TV_HREF}?service=${encodeURIComponent(view.service)}`;
+  return WARD_BED_MEETING_TV_HREF;
+}
 
 /**
  * `role` — entry points for the role screens `WardRoleSwitcher` offers (Coordinator, Ward,
@@ -373,6 +387,17 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * none of the others'.
    */
   { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Legal forms", group: "board" },
+  /*
+   * The bed meeting TV view (Josh, 15 Oct 2026): unfinished work shipped in the real app behind a
+   * feature flag rather than on a hidden page. Listed only while `bed-meeting-tv` is on.
+   */
+  {
+    id: "bed-meeting",
+    href: WARD_BED_MEETING_TV_HREF,
+    label: "Bed meeting TV",
+    group: "board",
+    flag: "bed-meeting-tv",
+  },
 ];
 
 /**
