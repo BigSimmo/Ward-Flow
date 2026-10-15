@@ -1,3 +1,4 @@
+// @ts-check
 import { VerifierUnavailableError } from "./auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 
