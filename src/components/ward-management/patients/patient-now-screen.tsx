@@ -104,6 +104,7 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, etaPresetText, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   Badge,
   Button,
@@ -262,6 +263,8 @@ export function PatientNowScreen({
       "rejections",
     );
   const now = useWardFlowClock();
+  // Top 25 item 24: time away and the held bed review warning on the absent without leave card.
+  const awolTracker = useWardFeatureFlag("top25-awol-tracker");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
@@ -864,6 +867,7 @@ export function PatientNowScreen({
 
   const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
+    awolTracker,
     movement: liveMovement,
     admission: resolved.liveAdmission,
     patient: livePatient,

@@ -24,6 +24,7 @@ import type {
   BedPreparationNote,
   BedReleaseBlocker,
   OverrideReason,
+  ReferralCapReason,
   CancelTransportReason,
   GenderPlacementReason,
   LegalFormReceiptCorrectionReason,
@@ -418,6 +419,13 @@ export type WardFlowEvent =
        * high-acuity override. `true` when the coordinator ticked it; never `false`.
        */
       genderPlacementChecked?: true;
+      /**
+       * Top 25 item 2 (`top25-referral-cap`, owner ruling 15 Oct 2026): the reason for asking more
+       * wards at once than `WardConfiguration.parallelReferralCap`. Without it the cap still refuses,
+       * exactly as before; with a reason from `REFERRAL_CAP_REASONS` the extra ward is asked and the
+       * reason is kept in the audit trail. Only a screen with the flag on sends it.
+       */
+      overCapReason?: ReferralCapReason;
     }
   /**
    * ⚠️ `overrideReason` is on all three placement events, not just `REFER_TO_UNITS`, because of the
@@ -2203,6 +2211,16 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * Top 25 item 25: keep an active broadcast alert live for longer. The added time is the
+       * fixed `DEFAULT_BROADCAST_EXTENSION_MINUTES`, never a typed value. Ids only.
+       */
+      type: "EXTEND_BROADCAST_ALERT";
+      role: WardFlowRole;
+      now: Instant;
+      alertId: string;
+    }
+  | {
+      /**
        * Global alerts, 10 Oct 2026: the coordinator asks the accepting ward (or the wards still
        * considering the referral) to pull one patient now. Ids only, no typed text.
        */
@@ -2988,6 +3006,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.

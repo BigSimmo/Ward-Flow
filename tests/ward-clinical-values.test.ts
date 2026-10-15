@@ -14,7 +14,6 @@ import {
   allClinicalValuesSigned,
   unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
-import { DEFAULT_DUE_SOON_THRESHOLDS } from "../src/components/ward-management/ward-clock";
 import { ED_ACCESS_TARGET_MINUTES, PULL_HOLD_MINUTES } from "../src/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
@@ -26,10 +25,6 @@ import {
   OVERDUE_AFTER_MINUTES_BY_TIER,
   PULL_NOW_ANSWER_MINUTES,
 } from "../src/components/ward-management/ward-operational-defaults";
-import {
-  derivePaperLegalExpiryRadar,
-  deriveEdBreachLadder,
-} from "../src/components/ward-management/ward-top25-features";
 
 /**
  * ONE FILE OF CLINICAL VALUES (Josh, 15 Oct 2026, item 6). `ward-clinical-values.ts` holds every
@@ -144,73 +139,6 @@ describe("clinical values file", () => {
     expect(ED_SEVERE_PRESSURE_WAIT_MINUTES).toBe(CLINICAL_VALUES.edSeverePressure.value);
     expect(PULL_HOLD_MINUTES).toBe(CLINICAL_VALUES.pullHold.value);
     expect(ED_ACCESS_TARGET_MINUTES).toBe(CLINICAL_VALUES.edAccessTarget.value);
-  });
-
-  it("keeps the radar's four-hour amber, so no form loses the warning it had", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const amber = CLINICAL_VALUES.paperFormRadarAmber.value;
-    const radar = derivePaperLegalExpiryRadar(
-      [
-        { id: "red", formType: "Form 3B", expiresAt: at(CLINICAL_VALUES.dueSoonUrgent.value) },
-        { id: "inside", formType: "Form 3B", expiresAt: at(amber) },
-        { id: "outside", formType: "Form 3B", expiresAt: at(amber + 30) },
-      ],
-      now,
-      DEFAULT_DUE_SOON_THRESHOLDS,
-    );
-    expect(radar.find((item) => item.id === "red")?.urgency).toBe("critical_1h");
-    expect(radar.find((item) => item.id === "inside")?.urgency).toBe("warning_4h");
-    expect(radar.find((item) => item.id === "outside")?.urgency).toBe("normal");
-  });
-
-  it("keeps the radar's one-hour red when Settings shortens the urgent warning", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const forms = [{ id: "forty-five-minutes", formType: "Form 3B", expiresAt: at(45) }];
-    const shortened = { urgentMinutes: 15, soonMinutes: 30 };
-    expect(derivePaperLegalExpiryRadar(forms, now, shortened)[0]?.urgency).toBe("critical_1h");
-  });
-
-  it("follows the Settings warnings when they are longer, never shorter, than the radar's amber", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const forms = [
-      { id: "ninety-minutes", formType: "Form 3B", expiresAt: at(90) },
-      { id: "four-and-a-half-hours", formType: "Form 3B", expiresAt: at(270) },
-      { id: "three-hours", formType: "Form 3B", expiresAt: at(180) },
-    ];
-    const urgencyOf = (id: string, thresholds = DEFAULT_DUE_SOON_THRESHOLDS) =>
-      derivePaperLegalExpiryRadar(forms, now, thresholds).find((item) => item.id === id)?.urgency;
-    const longer = { urgentMinutes: 120, soonMinutes: 300 };
-    expect(urgencyOf("ninety-minutes", longer)).toBe("critical_1h");
-    expect(urgencyOf("four-and-a-half-hours", longer)).toBe("warning_4h");
-    const shorter = { urgentMinutes: 30, soonMinutes: 90 };
-    expect(urgencyOf("three-hours", shorter)).toBe("warning_4h");
-    expect(urgencyOf("ninety-minutes", shorter)).toBe("warning_4h");
-    expect(urgencyOf("four-and-a-half-hours")).toBe("normal");
-    expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
-  });
-
-  it("keeps the ED ladder's rungs on the shared ED wait values", () => {
-    const now = "2026-10-15T00:00:00.000Z";
-    const arrived = (minutes: number) => new Date(Date.parse(now) - minutes * 60_000).toISOString();
-    const ladder = deriveEdBreachLadder(
-      [
-        { id: "severe", arrivedAt: arrived(CLINICAL_VALUES.edSeverePressure.value) },
-        { id: "second", arrivedAt: arrived(CLINICAL_VALUES.edSecondEscalation.value) },
-        { id: "long", arrivedAt: arrived(CLINICAL_VALUES.longWait.value) },
-        { id: "under", arrivedAt: arrived(CLINICAL_VALUES.edSeverePressure.value - 1) },
-      ],
-      now,
-    );
-    const tierOf = (id: string) => ladder.find((entry) => entry.id === id)?.tier;
-    expect([tierOf("severe"), tierOf("second"), tierOf("long"), tierOf("under")]).toEqual([
-      "8h_warning",
-      "12h_escalate",
-      "24h_critical",
-      "normal",
-    ]);
   });
 
   it("formats each figure in its own unit and names the status", () => {

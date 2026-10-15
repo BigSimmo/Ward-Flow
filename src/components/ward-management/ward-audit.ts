@@ -13,6 +13,8 @@ import {
   BED_RELEASE_BLOCKERS,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
   OVERRIDE_REASONS,
+  REFERRAL_CAP_REASONS,
+  type ReferralCapReason,
   type BedPreparationNote,
   type BedReleaseBlocker,
   type LegalFormReceiptCorrectionReason,
@@ -127,6 +129,8 @@ type OverrideDetails = {
   targets: readonly { unitId: string | null; outcome: "accepted" | "denied"; reasonCode: AuditReason }[];
   /** v10 pass 3: the second sign-off kept with an accepted override; absent when none was given. */
   secondSignOff?: { role: WardFlowRole | null; name: string };
+  /** Top 25 item 2: the reason for asking more wards than the referral cap; absent when within it. */
+  overCapReason?: ReferralCapReason;
 };
 export type BedReleaseAuditFacts = {
   state: BedRelease["state"] | null;
@@ -259,6 +263,8 @@ export type AuditCategory = AuditEvent["category"];
 export type AuditDecision = Pick<AuditBase, "outcome" | "reasonCode"> & {
   targets?: OverrideDetails["targets"];
   overrideFactRecorded?: boolean;
+  /** Top 25 item 2: an accepted `REFER_TO_UNITS` that went past the referral cap with a reason. */
+  overCapRecorded?: boolean;
 };
 export const finiteInstant = (value: unknown): Instant | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -636,6 +642,10 @@ export function captureAuditEvent(
             reasonCode: decision.reasonCode,
           })),
       };
+      // Top 25 item 2: kept only when this accepted referral actually went past the cap.
+      const overCapReason =
+        event.type === "REFER_TO_UNITS" ? enumValue(REFERRAL_CAP_REASONS, event.overCapReason) : null;
+      if (overCapReason !== null && decision.overCapRecorded === true) details.overCapReason = overCapReason;
       // v10 pass 3: the second sign-off, kept only with an override this event actually recorded.
       const signOff = "overrideSignOff" in event ? event.overrideSignOff : undefined;
       if (signOff !== undefined && decision.overrideFactRecorded === true && typeof signOff.name === "string")

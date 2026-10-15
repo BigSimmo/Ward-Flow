@@ -123,6 +123,8 @@ import {
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, type SignOffCheck } from "./handover-panels";
 import { HandoverBeds } from "./handover-beds";
+import { LongStaySummary } from "./long-stay-summary";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
 import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
@@ -377,6 +379,7 @@ export function HandoverPage() {
     "inboxSnoozes",
   );
   const now = useWardFlowClock();
+  const longStayOn = useWardFeatureFlag("top25-long-stay-dossier");
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
@@ -1412,6 +1415,15 @@ export function HandoverPage() {
             pick(id);
           }}
         />
+        {longStayOn ? (
+          <LongStaySummary
+            admissions={admissions.filter((admission) => wards.some((ward) => ward.id === admission.unitId))}
+            bedReleases={bedReleases}
+            now={now}
+            nameFor={(admission) => resolveAdmissionPatient(admission, patients, referrals).name}
+            wardFor={(unitId) => wardOf(unitId)?.name ?? "Ward not recorded"}
+          />
+        ) : null}
       </TabPanel>
     );
   } else if (tab === "hist") {

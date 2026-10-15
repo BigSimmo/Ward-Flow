@@ -7,6 +7,7 @@ import { answerSilenceReminder } from "@/components/ward-management/delays/delay
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -188,6 +189,8 @@ export function CoordinatorScreen() {
     "supportNotifications",
     "inboxSnoozes",
   );
+  // Top 25 item 12: name a stuck handover once the transport booked target has passed.
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
 
@@ -490,6 +493,7 @@ export function CoordinatorScreen() {
           supportNotifications,
           plannedAdmissions,
           leaveBeds,
+          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
         },
         now,
       ).map((item) => {
@@ -511,17 +515,19 @@ export function CoordinatorScreen() {
       supportNotifications,
       plannedAdmissions,
       leaveBeds,
+      stuckHandoverOn,
       now,
     ],
   );
+  const suggestAnotherWard = useWardFeatureFlag("top25-silent-ward");
   const silenceReminders = useMemo(() => {
     const notes = new Map<string, string>();
     for (const movement of openMovements) {
-      const copy = answerSilenceReminder(movement, referrals, now);
+      const copy = answerSilenceReminder(movement, referrals, now, { suggestAnotherWard });
       if (copy !== undefined) notes.set(movement.id, copy);
     }
     return notes;
-  }, [openMovements, referrals, now]);
+  }, [openMovements, referrals, now, suggestAnotherWard]);
 
   // OD-3: the coordinator's unrestricted reads. Not scoped to open or to the ED filter: an override
   // or a decline that was made does not stop having been made.

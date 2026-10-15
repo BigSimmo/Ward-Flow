@@ -99,6 +99,9 @@ import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, fitKind, type FitKind } from "./home-fit";
+import { NextWardAfterRefusal } from "./next-ward-after-refusal";
+import { PreMatchCleaningNote } from "./prematch-cleaning-note";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
 
 /**
@@ -439,6 +442,8 @@ export function ShortlistPanel({
   const resolvePatientIdentity = usePatientOf();
   // Phone (v10 Home "Patient open"): a 2x2 facts card and less text. Desktop is unchanged.
   const isPhone = useIsPhone();
+  const nextWardOn = useWardFeatureFlag("top25-next-ward");
+  const preMatchCleaningOn = useWardFeatureFlag("top25-prematch-cleaning");
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
   const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId");
@@ -2268,6 +2273,30 @@ export function ShortlistPanel({
             )}
           </details>
         );
+      })()}
+
+      {nextWardOn ? (
+        <NextWardAfterRefusal
+          movement={movement}
+          units={units}
+          now={now}
+          chosenUnitIds={referTargets}
+          slotsLeft={parallelReferralCap - liveUnitIds.length - referTargets.length}
+          onChoose={(unitId) => {
+            toggleReferTarget(unitId);
+            onSelectUnit(unitId);
+          }}
+        />
+      ) : null}
+
+      {(() => {
+        // Top 25 item 15: only the ward this patient is matched to (accepted) or offered to
+        // (explicitly selected), never the list's orientation default.
+        const matchedUnitId = movement.acceptedUnitId ?? selectedUnitId;
+        const matchedUnit = matchedUnitId ? units.find((unit) => unit.id === matchedUnitId) : undefined;
+        return preMatchCleaningOn && matchedUnit ? (
+          <PreMatchCleaningNote movement={movement} unit={matchedUnit} bedReleases={bedReleases} />
+        ) : null;
       })()}
 
       {/* Task 2: urgency and legal status can change mid-flight, each change recorded with who
