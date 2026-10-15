@@ -359,6 +359,11 @@ describe("broadcast alerts for a desk", () => {
     expect(scopeBroadcastAlerts([everyone], wardDesk, state.units, places)).toHaveLength(1);
   });
 
+  it("keeps only the desk's own acknowledgements on a directive", () => {
+    const [seen] = scopeBroadcastAlerts([base], wardDesk, state.units, places);
+    expect(seen.acknowledgedUnits).toEqual([unitId]);
+  });
+
   it("trims a bed call to a service coordinator's own service", () => {
     const service = places.unitService(unitId)!;
     const elsewhere = state.units.find((unit) => places.unitService(unit.id) !== service)!;

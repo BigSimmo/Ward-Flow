@@ -480,11 +480,15 @@ export function scopeBroadcastAlerts(
   places: PlaceLookup,
 ): BroadcastAlert[] {
   const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
+  const deskIn = (id: string) => unitIn(id) || edInScope(access.scope, id, places);
   return alerts.flatMap((alert) => {
     if (alert.targetUnitIds === undefined) {
-      if (alert.targetScope === "all") return [alert];
-      const asked = directiveDesks(alert, units).some((id) => unitIn(id) || edInScope(access.scope, id, places));
-      return asked ? [alert] : [];
+      if (alert.targetScope !== "all" && !directiveDesks(alert, units).some(deskIn)) return [];
+      // Only the desk's own acknowledgements, so no desk counts or names another's (review on PR #330).
+      const acknowledged = alert.acknowledgedUnits.filter(deskIn);
+      return [
+        acknowledged.length === alert.acknowledgedUnits.length ? alert : { ...alert, acknowledgedUnits: acknowledged },
+      ];
     }
     const own = alert.targetUnitIds.filter(unitIn);
     if (own.length === 0) return [];
