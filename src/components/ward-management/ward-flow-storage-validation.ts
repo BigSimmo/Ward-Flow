@@ -628,7 +628,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     target === undefined || target === null || targets.has(target);
   const movementById = new Map(state.movements.map((movement) => [movement.id, movement]));
   const admissionById = new Map(state.admissions.map((admission) => [admission.id, admission]));
-  const unitById = new Map(state.units.map((unit) => [unit.id, unit]));
+  const stateUnitById = new Map(state.units.map((unit) => [unit.id, unit]));
   const referralById = new Map(state.referrals.map((referral) => [referral.id, referral]));
 
   for (const unit of state.units) {
@@ -684,7 +684,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
       return false;
   }
   for (const admission of state.admissions) {
-    const ward = unitById.get(admission.unitId);
+    const ward = stateUnitById.get(admission.unitId);
     if (!ward || (admission.bedNumber !== undefined && admission.bedNumber > ward.beds)) return false;
     if (
       !reference(admission.patientId, patientIds) ||

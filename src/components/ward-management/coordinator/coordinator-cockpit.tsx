@@ -29,17 +29,17 @@ export function CoordinatorCockpit({ className, onDispatchAction, children }: Co
     latest.current = { dispatch: wardFlow.dispatch, now, onDispatchAction };
   });
   const coordinatorDispatch = React.useCallback((event: WardFlowEvent) => {
-    const { dispatch, now: latestNow, onDispatchAction: onAction } = latest.current;
+    const inputs = latest.current;
     const coordinatorEvent: WardFlowEvent = {
       ...event,
       // Owner ruling 13 Oct: the cockpit is the coordinator's surface, so every dispatch carries the coordinator role.
       role: "coordinator",
-      now: event.now ?? latestNow,
+      now: event.now ?? inputs.now,
     } as WardFlowEvent;
-    if (onAction) {
-      onAction(coordinatorEvent);
+    if (inputs.onDispatchAction) {
+      inputs.onDispatchAction(coordinatorEvent);
     } else {
-      dispatch(coordinatorEvent);
+      inputs.dispatch(coordinatorEvent);
     }
   }, []);
 
