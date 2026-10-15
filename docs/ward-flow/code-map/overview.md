@@ -305,11 +305,11 @@ Activity/Tasks/Tools drawers and the primary action), `ward-broadcast-banner.tsx
 open drawers), `ward-command-activity.ts`, `ward-service-bed-alerts.ts`, small stores for sound,
 wallboard and service.
 
-**Retired chrome still on disk, not mounted:** `ward-management-navigation.tsx` (`ClinicalRail`),
-`ward-sidebar-content.tsx`, `ward-chrome-header.tsx`, `ward-chrome-search.tsx`,
+**Retired chrome still on disk, not mounted:** `ward-management-navigation.tsx` (`WardModeNavigation`),
+`ward-chrome-header.tsx`, `ward-chrome-search.tsx`,
 `ward-standing-strip.tsx`, the `WardShellHeader` export in `ward-shell.tsx`,
-`use-ward-sidebar-collapsed.ts`, and `shell/ward-shell-tokens.module.css` (empty stub). These
-are the only files that import PsychSift's `BrandMark`.
+`use-ward-sidebar-collapsed.ts`, and `shell/ward-shell-tokens.module.css` (empty stub). No
+production file draws PsychSift's `BrandMark` since `ClinicalRail` was removed on 15 Oct 2026.
 
 **Shared UI primitives** at the root: `ward-panel`, `ward-chip` (six worded states; throws
 without text), `ward-bar.tsx` (a small stacked-bar chart; **not** the same as `shell/ward-bar.tsx`),
@@ -437,8 +437,8 @@ Generators: `screen-map`, `mockup-manifest`, `owner-rulings-index`, `rules-index
 `check-clinical-governance-gate`. Dev: `dev-with-organisation`, `serve-mockups`,
 `contact-sheet`, `organisation(-core)`. Visual audits (manual, Playwright): `audit-*`,
 `adversarial-visual-audit`, `inspect-targets`, `test-drawer`, `verify-movement-horizon`,
-`table-sweep`, `token-collision-scan`. Coordination: `chat-control`, `whois`, `role-map.py`,
-`folded.sh`, `sync-lessons`, `audit-lessons`. The `audit/` subfolder is explicitly not part of
+`table-sweep`, `token-collision-scan`. Coordination: `role-map.py`, `sync-lessons`,
+`audit-lessons`. The `audit/` subfolder is explicitly not part of
 the fold gates.
 
 ---

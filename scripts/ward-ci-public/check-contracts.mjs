@@ -56,19 +56,10 @@ function requireWorkflow(source) {
     /npm run check:ward-expected-reds/u,
     /check:ward-expected-reds -- --print-signatures/u,
     /npm run test:e2e:ward-journeys/u,
-    /screen-verification\.mjs --check/u,
     /^ {8}run: npm run docs:check-links$/mu,
-    /^ {8}run: npm run docs:check-index$/mu,
-    /^ {8}run: npm run docs:check-inventory$/mu,
     // Facts and retired terms: the PR or merge-queue base must reach the check so new retired-term lines fail.
     /WARD_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.merge_group\.base_sha \}\}\n {8}run: node scripts\/doc-facts\.mjs$/mu,
     /run: node scripts\/ward-flow\/check-clinical-governance-gate\.mjs/u,
-    /steps\.plan\.outputs\.owner_index == 'true'/u,
-    /steps\.plan\.outputs\.rules_index == 'true'/u,
-    /steps\.plan\.outputs\.organisation == 'true'/u,
-    /owner-rulings-index\.mjs --check/u,
-    /rules-index\.mjs --check/u,
-    /organisation\.mjs --check --source working-tree/u,
     /id: chromium\n\s*timeout-minutes: 8/u,
     /run: node scripts\/ward-ci-public\/install-chromium\.mjs/u,
     /dependency-review-action@[0-9a-f]{40}/u,
@@ -114,21 +105,25 @@ function requireWorkflow(source) {
   assert.ok(buildJob, "the production build job is required");
   assert.doesNotMatch(buildJob, /^(?!\s*#).*WARD_GATE_BUILD/mu);
   assert.match(buildJob, /next\/dist\/bin\/next build --webpack/u);
-  // Railway builds with Node 24.19.0 (docs/hosting.md); the deploy build must use the same.
-  assert.match(buildJob, /node-version: "24\.19\.0"/u);
+  // One Node version everywhere: every job reads .nvmrc, which matches Railway's Node
+  // (docs/hosting.md, RAILPACK_NODE_VERSION). No job may pin its own literal version.
+  assert.match(buildJob, /node-version-file: \.nvmrc/u);
+  assert.doesNotMatch(source, /node-version: /u);
   // Whole-tree lint on non-PR runs is enforcing: the eslint command is the step's whole `run:`,
   // not wrapped in an `if !` that downgrades failure to a warning.
   assert.match(
     source,
-    /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--quiet[^\n]*\n/u,
+    /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--max-warnings 0[^\n]*\n/u,
   );
   assert.doesNotMatch(source, /if ! node[^\n]*eslint/u);
   // The coverage job must judge the thresholds: it may never set the shard flag that drops them, and it
   // must expect a blob from every unit shard.
   const jobText = (name) =>
     new RegExp(`^ {2}${name}:\\n([\\s\\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\\n|(?![\\s\\S]))`, "mu").exec(source)?.[1];
-  for (const gate of ["docs:check-links", "docs:check-index", "docs:check-inventory"])
-    assert.ok(jobText("static")?.includes(`run: npm run ${gate}\n`), `${gate} must run in the static job`);
+  assert.ok(
+    jobText("static")?.includes("run: npm run docs:check-links\n"),
+    "docs:check-links must run in the static job",
+  );
   const coverageJob = jobText("coverage");
   assert.ok(coverageJob, "the coverage job is required");
   assert.doesNotMatch(coverageJob, /WARD_COVERAGE_BLOB_DIR/u);
@@ -149,7 +144,6 @@ for (const bad of [
   workflow.replace("timeout-minutes: 8", "timeout-minutes: 30"),
   workflow.replace("run: node scripts/ward-ci-public/install-chromium.mjs", "run: npx playwright install chromium"),
   workflow.replace("run: node scripts/ward-flow/check-clinical-governance-gate.mjs", "run: echo skipped"),
-  workflow.replace("owner-rulings-index.mjs --check", "owner-rulings-index.mjs"),
   workflow.replace("if: always()", "if: success()"),
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
@@ -197,12 +191,10 @@ for (const bad of [
   workflow.replaceAll("fail-fast: false", "fail-fast: true"),
   workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
   workflow.replace("node scripts/ward-ci-public/changed-checks.mjs", "echo skipped"),
-  ...["docs:check-links", "docs:check-index", "docs:check-inventory"].map((gate) =>
-    workflow.replace(`run: npm run ${gate}`, "run: echo skipped documentation gate"),
-  ),
+  workflow.replace("run: npm run docs:check-links", "run: echo skipped documentation gate"),
   workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
   workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
-  workflow.replace('node-version: "24.19.0"', 'node-version: "24.15.0"'),
+  workflow.replace("node-version-file: .nvmrc", 'node-version: "24.15.0"'),
   workflow.replace(
     "        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",
     "        run: |\n          if ! node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",

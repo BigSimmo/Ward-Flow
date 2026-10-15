@@ -882,6 +882,7 @@ function Registers({
       data-part={part === "all" ? undefined : part}
     >
       <div className={styles.sideB} hidden={part === "quiet"}>
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div className={styles.seg} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
@@ -1983,6 +1984,7 @@ export function DelaysBoard({
                       </th>
                     </tr>
                   </thead>
+                  {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
                   <tbody role="rowgroup" onKeyDown={onListKey}>
                     {body}
                   </tbody>

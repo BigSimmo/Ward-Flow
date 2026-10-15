@@ -1,47 +1,63 @@
 # Ward Flow
 
-[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/BigSimmo/Ward-Flow?utm_source=badge)
-
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
-**All patient data is synthetic. This is a development prototype, not an approved system for real patient care.**
+**All patient data is synthetic. This is a development prototype, not an approved system for real patient care.** Never enter real patient information.
 
-## Hosted prototype
+[Open the hosted prototype](https://ward-flow-production.up.railway.app/mockups/ward-flow).
 
-[Open Ward Flow](https://ward-flow-production.up.railway.app/).
+## Quick start
 
-The 27 September 2026 hosting record describes a separate **Ward Flow** Railway project connected to `main`. Its current hosted state was not rechecked in the 2 October documentation repair. See [hosting and database decisions](docs/hosting.md) for the dated configuration and limitations.
-
-**Ward Flow must never connect to PsychSift's Supabase or Railway resources.** By default, the UI runs on browser-local synthetic state. For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses Ward Flow's **dedicated synthetic-only Supabase project**, operating exclusively on 100% synthetic data. The current provider and how to change it are recorded in [DATABASE.md](docs/ward-flow/DATABASE.md); see also [the backend guide](backend/ward-flow/README.md). Local source does not prove hosted provisioning, credentials or connectivity.
-
-## About this repository
-
-This is the public source snapshot of the main local Ward Flow branch, published with the owner's permission on 27 September 2026. It includes the application's source, synthetic fixtures, tests, documentation and existing tooling. It starts with fresh Git history, separate from PsychSift.
-
-- Source snapshot: `f31140455260178209ca21e6fad05d046fd193a6`.
-- Project entry point: [Ward Flow documentation](docs/ward-flow/README.md).
-- Architecture: [current orientation](docs/codebase-index.md); the [dated code map](docs/ward-flow/code-map/README.md) preserves detailed source history.
-- Current task scope and evidence: [task lifecycle](docs/task-receipts.md). [Historical status](docs/ward-flow/STATUS.md) preserves dated decisions and limitations; verify them against current source before commissioning work.
-- Original source README: [local source README](README.local-source.md).
-
-## Local development
-
-The package specifies Node.js 24.15 or later within version 24, and npm 11. Use the versions in `package.json` and `.node-version`.
+You need Node.js 24.19.0 (`.nvmrc`) and npm 11. Any OS works.
 
 ```sh
-npm ci
-npm run ensure
+npm ci            # installs dependencies and the Git hooks
+npm run ensure    # starts or reuses the dev server and prints its URL
 ```
 
-Use the URL printed by the launcher and open `/mockups/ward-flow`. By default, Ward Flow uses synthetic browser-local state; no Supabase or OpenAI credentials are required (and PsychSift's Supabase or Railway credentials must never be used). Optional shared-workspace settings for Ward Flow's dedicated synthetic Supabase project are documented in `.env.example`, [DATABASE.md](docs/ward-flow/DATABASE.md) and [the backend guide](backend/ward-flow/README.md). Never commit a real `.env.local` or credentials.
+Open the printed URL plus `/mockups/ward-flow`. No credentials are needed: by default the app runs on synthetic, browser-local state. See [local first run](docs/ward-flow/LOCAL-FIRST-RUN.md) for the details.
 
-## Publication scope
+The shared backend has its own packages. Install them once before `npm run test:backend` (which builds the backend engine, then runs its tests):
 
-This upload preserves the current project; it does not claim a fresh build or test pass. Existing scripts, historical documents and local workflow instructions may still refer to the original workstation, local-only development policy or retired PsychSift tooling. Those references do not connect this repository to the original deployment.
+```sh
+npm ci --prefix backend/ward-flow
+```
 
-The upload record reported GitHub Actions disabled on 27 September 2026. By the 2 October local inspection, this repository includes a dedicated Ward Flow CI workflow; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Passing runs and deployment require separate evidence. Railway deployment was documented as a separate GitHub integration. Do not enable inherited automation without adapting and reviewing it for this repository.
+## Everyday commands
 
-The 27 September upload excluded Git history, uncommitted work from other sessions, local environment files, installed dependencies, build output and machine-specific agent/editor configuration. Later commits have changed the source snapshot; inspect this repository's history for the current revision. The original source README remains linked above.
+| Task                                                 | Command                                   |
+| ---------------------------------------------------- | ----------------------------------------- |
+| One unit test file (fast)                            | `npx vitest run tests/ward-model.test.ts` |
+| Unit tests for your changes                          | `npm run test:related`                    |
+| All unit tests                                       | `npm run test`                            |
+| Lint (zero warnings allowed)                         | `npm run lint`                            |
+| Typecheck                                            | `npm run typecheck`                       |
+| Format the files you changed                         | `npm run format -- --files <paths>`       |
+| Ward browser journeys                                | `npm run test:e2e:ward-journeys`          |
+| Release gate journeys (desktop Chrome, phone WebKit) | `npm run test:e2e:release-gate`           |
+| Shared backend tests                                 | `npm run test:backend`                    |
+| Pre-push checks for your change                      | `npm run verify:pr-local`                 |
+
+## How it fits together
+
+- **Framework:** Next.js 16 with React 19 and TypeScript. Styling is CSS Modules.
+- **Screens:** routes live under [`src/app/mockups/ward-flow/`](src/app/mockups/ward-flow/). Screen components and the workflow engine live under [`src/components/ward-management/`](src/components/ward-management/).
+- **State:** one reducer holds the ward flow (referrals, movements, beds, transport, delays). Screens dispatch actions to it, and the synthetic seed data lives beside it.
+- **Shared workspace (optional):** [`backend/ward-flow/`](backend/ward-flow/README.md) saves the shared state to Ward Flow's own synthetic-only database. The current provider is in [DATABASE.md](docs/ward-flow/DATABASE.md). Ward Flow must never connect to PsychSift's Supabase or Railway resources.
+- **Tests:** Vitest unit and DOM tests in [`tests/`](tests/), Playwright journeys in `tests/*.spec.ts`.
+
+## Continuous integration and deploys
+
+- Every pull request runs [Ward Flow CI](.github/workflows/ward-flow.yml): static checks, eight unit shards, browser journeys, the release gate, a secret scan and a production build. `Ward Flow required` is the single check that sums them up.
+- Dependabot opens grouped dependency updates each Monday.
+- Railway deploys `main` automatically through its GitHub integration. Build, start and health check settings are recorded in [hosting](docs/hosting.md). A green CI run does not prove a deploy; check the hosted app directly.
+
+## Where to read next
+
+- [Ward Flow documentation](docs/ward-flow/README.md): the product, accepted design and working behaviour.
+- [AGENTS.md](AGENTS.md) and [how we work](docs/ward-flow/HOW-WE-WORK.md): rules for contributors and coding agents.
+- [Decisions](docs/ward-flow/decisions.md) and [current facts](docs/FACTS.md).
+- [Original source README](README.local-source.md), kept for history.
 
 ## Licence
 

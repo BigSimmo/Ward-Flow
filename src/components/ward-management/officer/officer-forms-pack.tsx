@@ -191,6 +191,7 @@ function PackUploadDialog({
 
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={onClose}>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
       <div
         ref={dialogRef}
         className={styles.modalDialog}
@@ -212,6 +213,7 @@ function PackUploadDialog({
         </header>
         <div className={styles.modalBody}>
           {needsCode ? (
+            // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
             <div className={styles.codeChoice} role="radiogroup" aria-label="Which form" onKeyDown={moveCode}>
               {slot.codes.map((option, index) => (
                 <button

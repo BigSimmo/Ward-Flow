@@ -54,14 +54,14 @@ const eslintConfig = defineConfig([
       "jsx-a11y/label-has-associated-control": "error",
     },
   },
-  // The rest of the jsx-a11y recommended set that source already passes, so none of these can
-  // regress. `aria-role` ignores components because `role` is also the Ward Flow role prop
-  // (`role="coordinator"`). Not yet enabled because existing code breaks them and each case needs
-  // a judgement (many are scrollable regions or row actions that axe accepts):
-  // no-noninteractive-tabindex, no-noninteractive-element-interactions,
-  // click-events-have-key-events, no-static-element-interactions, interactive-supports-focus,
-  // no-interactive-element-to-noninteractive-role, no-noninteractive-element-to-interactive-role,
-  // no-redundant-roles (list roles kept for Safari) and no-autofocus.
+  // The rest of the jsx-a11y recommended set. `aria-role` ignores components because `role` is also
+  // the Ward Flow role prop (`role="coordinator"`). Options follow the plugin's recommended config,
+  // widened only for patterns this site uses on purpose:
+  // - a scrollable region, tab panel or feed takes tabIndex={0} so keyboard users can scroll it
+  //   (axe's scrollable-region-focusable asks for exactly that);
+  // - list and table roles are written out where CSS display would strip them in Safari;
+  // - a tab list or radio group handles arrow keys on the group while its children take focus.
+  // A case that still needs a judgement carries an eslint-disable-next-line with its reason.
   {
     files: ["src/**/*.{jsx,tsx}"],
     rules: {
@@ -74,6 +74,60 @@ const eslintConfig = defineConfig([
       "jsx-a11y/aria-role": ["error", { ignoreNonDOM: true }],
       "jsx-a11y/aria-unsupported-elements": "error",
       "jsx-a11y/autocomplete-valid": "error",
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/interactive-supports-focus": [
+        "error",
+        { tabbable: ["button", "checkbox", "link", "searchbox", "spinbutton", "switch", "textbox"] },
+      ],
+      "jsx-a11y/no-autofocus": "error",
+      "jsx-a11y/no-interactive-element-to-noninteractive-role": [
+        "error",
+        { tr: ["none", "presentation"], canvas: ["img"], td: ["cell"] },
+      ],
+      "jsx-a11y/no-noninteractive-element-interactions": [
+        "error",
+        {
+          handlers: ["onClick", "onError", "onLoad", "onMouseDown", "onMouseUp", "onKeyPress", "onKeyDown", "onKeyUp"],
+          alert: ["onKeyUp", "onKeyDown", "onKeyPress"],
+          body: ["onError", "onLoad"],
+          dialog: ["onKeyUp", "onKeyDown", "onKeyPress"],
+          iframe: ["onError", "onLoad"],
+          img: ["onError", "onLoad"],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-element-to-interactive-role": [
+        "error",
+        {
+          ul: ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+          ol: ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+          li: ["menuitem", "menuitemradio", "menuitemcheckbox", "option", "row", "tab", "treeitem"],
+          table: ["grid"],
+          td: ["gridcell"],
+          fieldset: ["radiogroup", "presentation"],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-tabindex": [
+        "error",
+        { tags: [], roles: ["tabpanel", "region", "feed"], allowExpressionValues: true },
+      ],
+      "jsx-a11y/no-redundant-roles": [
+        "error",
+        {
+          nav: ["navigation"],
+          ul: ["list"],
+          ol: ["list"],
+          li: ["listitem"],
+          thead: ["rowgroup"],
+          tbody: ["rowgroup"],
+        },
+      ],
+      "jsx-a11y/no-static-element-interactions": [
+        "error",
+        {
+          allowExpressionValues: true,
+          handlers: ["onClick", "onMouseDown", "onMouseUp", "onKeyPress", "onKeyDown", "onKeyUp"],
+        },
+      ],
       "jsx-a11y/heading-has-content": "error",
       "jsx-a11y/html-has-lang": "error",
       "jsx-a11y/iframe-has-title": "error",

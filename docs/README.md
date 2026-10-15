@@ -9,7 +9,7 @@ Start with the maintained entry points below. The inherited catalogue preserves 
 discovery; it is not a complete current inventory or proof that every listed procedure applies.
 The [task contract](task-receipts.md) preserves one original objective and existing task IDs.
 
-`npm run check:ward-doc-links` checks relative paths in `docs/ward-flow`, including history.
+`npm run docs:check-links` checks relative links and anchors in every tracked Markdown file, outside marked history sections.
 For maintained Markdown elsewhere, use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
 (repeat `--file` for each owned file); `--anchors` additionally checks supported Markdown headings.
 Explicit selection excludes paired historical sections. Web URLs, reference-style links and

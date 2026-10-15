@@ -930,5 +930,3 @@ export function WardCatchmentResolver({
     </div>
   );
 }
-
-export default WardCatchmentResolver;

@@ -528,6 +528,62 @@
       "after": 3,
       "reason": "The removed case asserted that the FD-23 screen-boundary guard lists community/community-team-hub.tsx. That screen was deleted on 15 Oct 2026 as unreachable dead code (Josh approved dead-code deletion that day). The live team page, community/community-screen.tsx, reads the full referral record, so it cannot replace the entry until that is fixed; the gap was routed to the Engine safety workstream rather than hidden by a weaker assertion.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-sidebar.dom.test.tsx",
+      "before": 24,
+      "after": 0,
+      "reason": "The file tested the old ClinicalRail sidebar (icon rail, labelled panel, phone drawer, counts and attention block). Nothing mounted it after the shared WardBar and WardRail chrome replaced it, and its last live import went when the Tools sheet (#302) took over the demo controls. Josh approved removing ClinicalRail, WardSidebarFooter and WardDemoControls on 15 Oct 2026. Its reachability check for the community index moved to tests/ward-community-index.dom.test.tsx against WardRail, and its D11 sandbox scan moved to tests/ward-nav.test.ts against the live rail.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ci-cache-safety.test.ts",
+      "before": 58,
+      "after": 2,
+      "reason": "Removed the suites that read PsychSift's monorepo .github/workflows/ci.yml (monorepo job routing, the PR-required aggregate's cancelled-vs-failed shell, visual baseline routing and Lighthouse budget routing) and the one case asserting on the deleted setup-node-cached composite action. ci.yml does not exist in BigSimmo/Ward-Flow, so all four suites were describe.skipIf'd on every run and verified nothing; the three composite actions under .github/actions/ were used by no workflow and were deleted in the same change (fix list 6.7 and 5.10, 15 Oct 2026). Ward Flow CI is .github/workflows/ward-flow.yml, whose contracts are enforced by scripts/ward-ci-public/check-contracts.mjs in the static job. The two live cases (no auto-merge workflow, npm cache in ward-flow.yml) remain.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-fold-queue-current.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Tested scripts/ward-flow/fold-queue-current.mjs, which listed READY commits in the retired fold queue. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-trial-merge.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Tested scripts/ward-flow/trial-merge.mjs, which trial-merged the fold queue into the old local ward line. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-flow-chat-control.test.ts",
+      "before": 44,
+      "after": 0,
+      "reason": "Tested scripts/ward-flow/chat-control.mjs, the lead, builder and verifier lease tool. The whole suite was describe.runIf(existsSync(docs/ward-flow/control)) and that folder is absent from this repository, so none of the 44 cases ran here. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-whois-register.test.ts",
+      "before": 7,
+      "after": 0,
+      "reason": "Tested scripts/ward-flow/whois.mjs, which mapped a chat to its folder in the old worktree layout. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-logs-commit.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Tested scripts/ward-flow/logs-commit.mjs, which committed notes in D:/Repos/ward-flow-logs. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-fold-lock.test.ts",
+      "before": 13,
+      "after": 0,
+      "reason": "Tested fold-lock.mjs and fold-preflight.mjs, both already refusing as retired. The three ready-check.mjs remote refusal cases it also carried were RE-POINTED, not dropped: they live on in tests/ward-ready-check-remote-boundary.test.ts, which strips host GIT_* controls so they also run in a cloud container. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }
