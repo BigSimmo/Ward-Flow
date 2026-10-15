@@ -122,7 +122,12 @@ export function WardDemoPanel() {
           <button type="button" className={styles.secondaryButton} onClick={saveToFile}>
             Save to file
           </button>
-          <button type="button" className={styles.secondaryButton} onClick={() => fileInputRef.current?.click()}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            {...lock}
+            onClick={() => fileInputRef.current?.click()}
+          >
             Load from file
           </button>
           <input

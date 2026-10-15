@@ -186,7 +186,7 @@ describe("role screens dispatch only what their route's role may take", () => {
         ...source.matchAll(/\braise\(\s*"([A-Z_]+)"/g),
       ].map((match) => match[1] as EventType);
       // A screen raises as its own route's desk.
-      for (const [, raisedAs] of source.matchAll(/useWardRaise\(\s*"([a-z]+)"/g)) expect(raisedAs, file).toBe(role);
+      for (const [, raisedAs] of source.matchAll(/useWardRaise\(\s*"([a-z_]+)"/g)) expect(raisedAs, file).toBe(role);
       expect(types.length, "no dispatch found; update this list if the screen moved").toBeGreaterThan(0);
       for (const type of new Set(types)) {
         expect(EVENT_TYPES).toContain(type);
