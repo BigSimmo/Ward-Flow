@@ -30,6 +30,7 @@ import {
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import {
@@ -1231,6 +1232,14 @@ export type InboxItem = {
  */
 export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">> & {
   plannedAdmissions?: readonly PlannedAdmission[];
+  /**
+   * Top 25 item 12 (flag `top25-stuck-handover`): when set, a "Transport awaiting departure" row
+   * whose transport was accepted at least this many minutes ago is named a stuck handover for the
+   * sending team. Callers pass the configured transport booked target
+   * (`configuration.transportBookedTargetMinutes`), never a separate figure. Left out, the row is
+   * exactly as before.
+   */
+  stuckHandoverMinutes?: number;
 };
 
 export function buildActionInbox(
@@ -1347,14 +1356,22 @@ export function buildActionInbox(
   );
   for (const movement of stalledTransport) {
     if (!movement.transport) continue;
+    const acceptedAt = movement.transport.acceptedAt as Instant;
+    const stuckAfter = records?.stuckHandoverMinutes;
+    const waited = now - acceptedAt;
+    // Same id, kind and tone either way, so counts, snoozes and act-now figures never move with
+    // the flag: only the wording and the owner say the handover is stuck.
+    const stuck = stuckAfter !== undefined && waited >= stuckAfter;
     items.push({
       id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,
       tone: "warning",
       icon: Truck,
-      title: "Transport awaiting departure",
-      detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
-      owner: movement.owner,
+      title: stuck ? "Handover waiting too long" : "Transport awaiting departure",
+      detail: stuck
+        ? `${movement.id} · transport accepted ${formatInstant(acceptedAt)}, not left after ${splitDuration(waited)}. Target ${splitDuration(stuckAfter)}`
+        : `${movement.id} · accepted ${formatInstant(acceptedAt)}`,
+      owner: stuck ? "Sending team" : movement.owner,
       movementId: movement.id,
       since: movement.transport.acceptedAt,
     });
@@ -2304,6 +2321,32 @@ export function deriveTopCompatibleWards(
       return a.unit.name.localeCompare(b.unit.name);
     });
   return scored.slice(0, cap);
+}
+
+export interface NextWardsAfterRefusal {
+  /** The most recent decline, so the screen can say why the last ward said no. */
+  latestDecline: Decline;
+  /** Eligible wards not yet asked, best first, from the same rules as `deriveTopCompatibleWards`. */
+  candidates: CompatibleWardCandidate[];
+}
+
+/**
+ * Next best ward after a refusal (Top 25 item 3, flag `top25-next-ward`). Once a ward has declined
+ * and none has accepted, this suggests the wards nobody has asked yet that pass every eligibility
+ * gate, ranked by `deriveTopCompatibleWards`. A ward that declined or still holds a live request
+ * is never suggested. It only suggests: the coordinator still chooses and refers with
+ * `REFER_TO_UNITS`.
+ */
+export function deriveNextWardsAfterRefusal(
+  movement: Movement,
+  units: readonly Unit[],
+  now: Instant,
+): NextWardsAfterRefusal | undefined {
+  if (movement.declines.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
+  const latestDecline = movement.declines.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
+  const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
+  const notAsked = units.filter((unit) => !asked.has(unit.id));
+  return { latestDecline, candidates: deriveTopCompatibleWards(movement, notAsked, PARALLEL_REFERRAL_CAP, now) };
 }
 
 export interface RefusalRecoveryAction {

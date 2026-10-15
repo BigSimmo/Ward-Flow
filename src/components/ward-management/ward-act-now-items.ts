@@ -52,6 +52,7 @@ export function taskItems(source: TaskSource, now: Instant): InboxItem[] {
       referrals: source.referrals,
       supportNotifications: source.supportNotifications,
       plannedAdmissions: source.plannedAdmissions,
+      stuckHandoverMinutes: source.stuckHandoverMinutes,
     }),
     ...decisionTargetInboxItems(open, now, source.configuration),
   ];

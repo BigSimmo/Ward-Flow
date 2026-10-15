@@ -151,6 +151,26 @@ export function bedsPendingPreparation(unitId: string, releases: BedRelease[]): 
 }
 
 /**
+ * Pre-match a bed while it is being made ready (Top 25 item 15, flag `top25-prematch-cleaning`).
+ * A bed being made ready stays offered and counted (`SET_BED_PREPARATION`), so a patient can be
+ * matched to its ward while it is cleaned; only the pull waits. This says whether the ward a
+ * patient is matched or offered to has a bed being made ready, and whether the patient's placement
+ * is paused for an unresumed ED medical deterioration (`Movement.medicalDeterioration`, D-34).
+ * Replaces the showcase's `canPreMatchCleaningBed`, which read a deterioration off the bed.
+ */
+export function preMatchCleaningState(
+  movement: { medicalDeterioration?: { at: Instant; resumedAt?: Instant } },
+  unitId: string,
+  releases: BedRelease[],
+): { bedsBeingMadeReady: number; medicalPause: boolean } | undefined {
+  const bedsBeingMadeReady = bedsPendingPreparation(unitId, releases);
+  if (bedsBeingMadeReady === 0) return undefined;
+  const medicalPause =
+    movement.medicalDeterioration !== undefined && movement.medicalDeterioration.resumedAt === undefined;
+  return { bedsBeingMadeReady, medicalPause };
+}
+
+/**
  * Beds a patient may actually be PULLED into right now — available, and ready.
  *
  * ⚠️ **THIS IS NOT `availableNow`, AND THE DIFFERENCE IS DELIBERATE.** This file's own header says

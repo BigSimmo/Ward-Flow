@@ -8,6 +8,7 @@ import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
+import { EdAdmissionChecklist } from "./ed-admission-checklist";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
@@ -33,7 +34,9 @@ import {
   examinationRevokedWhileBedHeld,
   stageCopy,
   transportLeg,
+  deriveNextWardsAfterRefusal,
 } from "@/components/ward-management/ward-derivations";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   clockState,
   formatElapsed,
@@ -1292,6 +1295,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
   const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
   const { inboxSnoozes } = useWardFlow();
+  const nextWardOn = useWardFeatureFlag("top25-next-ward");
+  const admissionChecklistOn = useWardFeatureFlag("top25-admission-checklist");
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
@@ -1944,6 +1949,12 @@ export function EdScreen({ edId }: EdScreenProps) {
   };
 
   const priorityFlags: PriorityFlag[] = [];
+  // Top 25 item 3 (flag `top25-next-ward`): names the eligible wards nobody has asked yet. The
+  // coordinator refers from the shortlist, so this only tells the department who is next.
+  const nextWardsSentence = (m: Movement) => {
+    const names = deriveNextWardsAfterRefusal(m, units, now)?.candidates.map((c) => c.unit.name) ?? [];
+    return names.length === 0 ? " No other eligible ward is left to ask." : ` Next eligible: ${names.join(", ")}.`;
+  };
   for (const m of patients) {
     const flagPatientInfo = resolveSubjectPatient(m, {
       patients: registryPatients,
@@ -1990,7 +2001,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.`,
+        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.${nextWardOn ? nextWardsSentence(m) : ""}`,
         when: "declined",
         actionLabel: "Ask another ward",
         onAction: () => setSelectedPatientId(m.id),
@@ -4330,6 +4341,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                 const expandedCards = (
                   <>
                     <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
+                    {admissionChecklistOn && movement.acceptedUnitId !== undefined ? (
+                      <EdAdmissionChecklist movement={movement} referrals={referrals} />
+                    ) : null}
                     <section className={styles.expandedCard} aria-label={`Where ${patientInfo.displayName} is up to`}>
                       <h3 className={styles.expandedHeading}>Where they are up to</h3>
                       <ol className={styles.upTo}>
