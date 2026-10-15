@@ -20,7 +20,6 @@ import type {
 import { referralState } from "@/components/ward-management/ward-referrals";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 import type {
-  ClearanceChecklist,
   ReferralChart,
   ReferralContact,
   ReferralIntakeDetails,
@@ -384,10 +383,11 @@ export type CommunityScopedReferral = {
  * The submitted intake as a community team may see it. Declared field by field, so a field the
  * drawer gains later does not arrive here unless somebody decides it should.
  *
- * ⚠️ **TWO PARTS OF THE DRAWER'S INTAKE ARE CUT, AND BOTH CUTS ARE FD-23.** `arrival` is the
- * proposed arrival at a bed or an emergency department, and `needs` of kind `"ed"` is what an
- * emergency department was asked to prepare. Either tells a community team the person was also sent
- * somewhere else. Community needs are this team's own and stay.
+ * ⚠️ **THREE PARTS OF THE DRAWER'S INTAKE ARE CUT, AND ALL THREE CUTS ARE FD-23.** `arrival` is
+ * the proposed arrival at a bed or an emergency department, `clearanceChecklist` is written only for
+ * a ward referral, and `needs` of kind `"ed"` is what an emergency department was asked to prepare.
+ * Each tells a community team the person was also sent somewhere else. Community needs are this
+ * team's own and stay.
  */
 export type CommunityScopedIntake = {
   catchment: ReferralIntakeDetails["catchment"];
@@ -399,7 +399,6 @@ export type CommunityScopedIntake = {
   charts: ReferralChart[];
   additionalDocuments: boolean;
   referrer: ReferralContact;
-  clearanceChecklist?: ClearanceChecklist;
   needs?: Extract<ReferralNeeds, { kind: "community" }>;
 };
 
@@ -414,7 +413,6 @@ function communityScopedIntake(intake: ReferralIntakeDetails): CommunityScopedIn
     charts: intake.charts,
     additionalDocuments: intake.additionalDocuments,
     referrer: intake.referrer,
-    ...(intake.clearanceChecklist !== undefined ? { clearanceChecklist: intake.clearanceChecklist } : {}),
     ...(intake.needs?.kind === "community" ? { needs: intake.needs } : {}),
   };
 }
