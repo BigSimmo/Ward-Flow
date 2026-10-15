@@ -87,6 +87,43 @@ describe("confirming a bed release confirms the stay's discharge", () => {
     expect(stay?.dischargeConfirmedAt).toBe(earlier);
   });
 
+  it("a coordinator's confirmation records the time but does not name the ward manager", () => {
+    const { state, release } = expectedReleaseOnOccupiedStay();
+    const next = wardFlowReducer(state, {
+      type: "CONFIRM_BED_RELEASE",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      releaseId: release.id,
+      actingUnitId: release.unitId,
+    });
+    expect(next.rejections).toHaveLength(state.rejections.length);
+    const stay = next.admissions.find((candidate) => candidate.id === release.admissionId);
+    expect(stay?.dischargeConfirmedAt).toBe(NOW_ANCHOR);
+    expect(stay?.dischargeConfirmedBy).toBeNull();
+  });
+
+  it("confirming and reverting each move the stay's discharge revision", () => {
+    const { state, release } = expectedReleaseOnOccupiedStay();
+    const before = state.dischargeRevisions[release.admissionId] ?? 0;
+    const confirmed = wardFlowReducer(state, {
+      type: "CONFIRM_BED_RELEASE",
+      role: "ward",
+      now: NOW_ANCHOR,
+      releaseId: release.id,
+      actingUnitId: release.unitId,
+    });
+    expect(confirmed.dischargeRevisions[release.admissionId]).toBe(before + 1);
+    const reverted = wardFlowReducer(confirmed, {
+      type: "REVERT_BED_RELEASE",
+      role: "ward",
+      now: NOW_ANCHOR + 5,
+      releaseId: release.id,
+      actingUnitId: release.unitId,
+      waitingOn: "Nothing outstanding",
+    });
+    expect(reverted.dischargeRevisions[release.admissionId]).toBe(before + 2);
+  });
+
   it("a refused confirmation leaves the stay untouched", () => {
     const { state, release } = expectedReleaseOnOccupiedStay();
     const next = wardFlowReducer(state, {
