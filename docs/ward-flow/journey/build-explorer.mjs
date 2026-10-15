@@ -502,15 +502,14 @@ if (problems.length) {
  * be. Both numbers are counted here rather than typed, so neither can go stale: one from the
  * engine slices' own `return reject(` sites, one from the curated list.
  */
-const engineSources = [
-  "ward-flow-reducer.ts",
-  "ward-flow-record-events.ts",
-  "ward-flow-undo-events.ts",
-].map((file) =>
+const engineSources = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map((file) =>
   fs.readFileSync(path.resolve(here, `../../../src/components/ward-management/${file}`), "utf8"),
 );
 const reducerSrc = engineSources[0];
-const refusalsInEngine = engineSources.reduce((total, source) => total + (source.match(/return reject\(/g) || []).length, 0);
+const refusalsInEngine = engineSources.reduce(
+  (total, source) => total + (source.match(/return reject\(/g) || []).length,
+  0,
+);
 const refusalsNamed = actions.reduce((n, a) => n + (a.refuses || []).length, 0);
 if (!refusalsInEngine) {
   console.error("REFUSING TO BUILD — found no refusals in the engine slices, so the coverage line would be a lie.");

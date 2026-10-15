@@ -183,7 +183,6 @@ if (!hitsByLine.size) {
   process.exit(1);
 }
 
-const src = reducerText.split("\n");
 const refusalSites = SOURCES.flatMap((source) =>
   source.text
     .split("\n")
@@ -207,20 +206,25 @@ const rows = refusalSites.map(({ file, line }) => {
  * rather than as one number for the whole file. The case a line belongs to is the nearest
  * `case "EVENT":` above it, and the bucket ends where the next one begins.
  */
-const caseStarts = [];
-for (let i = 0; i < src.length; i++) {
-  const m = src[i].match(/^\s{2,10}case "([A-Z][A-Z0-9_]*)":/);
-  if (m) caseStarts.push({ event: m[1], line: i + 1 });
-}
-if (caseStarts.length < 40) {
-  console.error(
-    `REFUSING — only ${caseStarts.length} reducer cases were found, so the per-action figures would be wrong.`,
-  );
+// Each source has its own line numbers, so each gets its own list of case starts.
+const caseStartsBySource = new Map(
+  SOURCES.map((source) => {
+    const starts = [];
+    source.text.split("\n").forEach((text, i) => {
+      const m = text.match(/^\s{2,10}case "([A-Z][A-Z0-9_]*)":/);
+      if (m) starts.push({ event: m[1], line: i + 1 });
+    });
+    return [source.id, starts];
+  }),
+);
+const caseCount = [...caseStartsBySource.values()].reduce((n, starts) => n + starts.length, 0);
+if (caseCount < 40) {
+  console.error(`REFUSING — only ${caseCount} reducer cases were found, so the per-action figures would be wrong.`);
   process.exit(1);
 }
-const eventAt = (line) => {
+const eventAt = (file, line) => {
   let found = null;
-  for (const c of caseStarts) {
+  for (const c of caseStartsBySource.get(file)) {
     if (c.line <= line) found = c.event;
     else break;
   }
@@ -228,8 +232,7 @@ const eventAt = (line) => {
 };
 const byEvent = {};
 for (const r of rows) {
-  if (r.file !== "reducer") continue;
-  const ev = eventAt(r.line);
+  const ev = eventAt(r.file, r.line);
   if (!ev) continue;
   byEvent[ev] = byEvent[ev] || { refusals: 0, unknown: 0, neverReached: 0 };
   byEvent[ev].refusals++;
