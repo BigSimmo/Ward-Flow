@@ -931,7 +931,10 @@ export function MovementsScreen() {
               </span>
             }
             titleMeta={
-              isPhone ? undefined : (
+              // F-08 (phone review, Oct 2026): the phone hero says its records are invented, as Home does.
+              isPhone ? (
+                "Prototype data, invented records"
+              ) : (
                 <span className={flow.heroTitleMeta}>
                   {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
                 </span>
@@ -1127,7 +1130,8 @@ export function MovementsScreen() {
             >
               <ArrowRightLeft size={16} className={flow.phNavIcon} aria-hidden="true" />
               <span className={flow.phNavText}>
-                <strong>Corridors</strong>
+                {/* F-24 (phone review, Oct 2026): plain words for a corridor, an ED to ward pairing. */}
+                <strong>ED to ward routes</strong>
                 <span>
                   <b>{activeCorridorCount}</b> active · {refusedCorridors.length} declined today
                 </span>
@@ -1183,8 +1187,8 @@ export function MovementsScreen() {
             <PhoneSheet
               open={phoneSheet === "corridors"}
               onClose={() => setPhoneSheet(null)}
-              title="Corridors"
-              description="ED to ward, people now"
+              title="ED to ward routes"
+              description="People now, by ED and accepting ward"
               height="tall"
             >
               {phoneCorridors.length === 0 ? (

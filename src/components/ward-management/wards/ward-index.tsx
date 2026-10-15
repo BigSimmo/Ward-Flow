@@ -620,7 +620,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           }
           titleMeta={
             isPhone
-              ? `${units.length} wards · ${statewidePercent === null ? "occupancy not recorded" : `${statewidePercent.toFixed(1)}% occupied`} · ${pulled} pulled`
+              ? `${units.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${statewidePercent.toFixed(1)}% in use`} · ${pulled} pulled`
               : undefined
           }
           stats={
@@ -1219,7 +1219,7 @@ function WardPhoneList({
                           {row.stale ? (
                             <>
                               <StatusGlyph tone="warning" size={8} />
-                              <span>{durMinutes(Math.max(0, now - row.confirmedAt))} stale, ask NUM</span>
+                              <span>Count {durMinutes(Math.max(0, now - row.confirmedAt))} old, ask the ward</span>
                             </>
                           ) : (
                             <>
@@ -1240,7 +1240,7 @@ function WardPhoneList({
                         </span>
                         <span className={styles.phoneRowShare}>
                           {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
-                          {pct}% occupied
+                          {pct}% in use
                         </span>
                       </span>
                     </button>
@@ -1251,6 +1251,11 @@ function WardPhoneList({
           </div>
         );
       })}
+      {/* Phone review F-25: the amber dot marks two things here, so the key names both. */}
+      <p className={styles.phoneDotKey} data-testid="ward-index-phone-dot-key">
+        <StatusGlyph tone="warning" size={8} />
+        <span>{`Amber dot: ${NEAR_FULL * 100}% or more in use, or a bed count not confirmed in time`}</span>
+      </p>
     </section>
   );
 }

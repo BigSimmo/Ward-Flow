@@ -367,17 +367,23 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               </span>
             }
             title={
-              <button
-                type="button"
-                className={phone.who}
-                aria-haspopup="dialog"
-                aria-label={name ? `${name}, change patient` : "Choose a patient"}
-                onClick={() => setPickerOpen(true)}
-                data-testid="ward-chronology-phone-who"
-              >
-                <span className={phone.whoName}>{name ?? "Choose a patient"}</span>
-                <ChevronDown size={18} aria-hidden="true" />
-              </button>
+              // Phone review F-33: one picker. With nobody chosen the title only says so, and the
+              // body's button is the way in; once chosen the name in the title changes patient.
+              chronology ? (
+                <button
+                  type="button"
+                  className={phone.who}
+                  aria-haspopup="dialog"
+                  aria-label={name ? `${name}, change patient` : "Change patient"}
+                  onClick={() => setPickerOpen(true)}
+                  data-testid="ward-chronology-phone-who"
+                >
+                  <span className={phone.whoName}>{name ?? "Change patient"}</span>
+                  <ChevronDown size={18} aria-hidden="true" />
+                </button>
+              ) : (
+                "No patient chosen"
+              )
             }
             sub={
               chronology ? (
@@ -472,7 +478,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             </>
           ) : (
             <div className={phone.choose}>
-              <p>No patient chosen.</p>
               <Button variant="pri" className={phone.barPrimary} onClick={() => setPickerOpen(true)}>
                 Choose a patient
               </Button>

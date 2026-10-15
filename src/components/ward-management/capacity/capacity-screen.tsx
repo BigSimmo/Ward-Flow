@@ -705,7 +705,7 @@ export function CapacityScreen() {
                   }}
                 />
                 <HeroStat value={totalPulled} label="Beds pulled" tone={totalPulled > 0 ? "warning" : undefined} />
-                <HeroStat value={occupancyPercentText} label="Of beds full" />
+                <HeroStat value={occupancyPercentText} label="Of beds in use" />
               </>
             ) : undefined
           }

@@ -9,13 +9,19 @@ import { activeActNowItems } from "@/components/ward-management/ward-act-now-ite
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 
-import { newActNowItems, showActNowNotification, useActNowNotificationPreference } from "./ward-act-now-notifications";
+import {
+  newActNowItems,
+  setActNowAppBadge,
+  showActNowNotification,
+  useActNowNotificationPreference,
+} from "./ward-act-now-notifications";
 
 /**
  * Sends a browser notification when a new act-now (red) alert appears in this tab, including an
  * overdue decision target. Renders nothing. The first reading is taken as the baseline, so opening
  * the app or turning the setting on never floods the screen with alerts that were already there.
- * Snoozed rows are off the active list; one that returns after its snooze counts as new.
+ * Snoozed rows are off the active list; one that returns after its snooze counts as new. Also keeps
+ * the installed app's icon badge at the act-now count, where the browser supports it.
  */
 export function WardActNowNotifier() {
   const router = useRouter();
@@ -60,6 +66,12 @@ export function WardActNowNotifier() {
       router.push(WARD_ALERTS_HREF);
     });
   }, [actNow, enabled, router, sessionAdopted, worldGeneration]);
+
+  // PWA plan item 8: the same act-now count on the Home Screen icon. A count only, never names.
+  const actNowCount = actNow.length;
+  useEffect(() => {
+    if (sessionAdopted) setActNowAppBadge(actNowCount);
+  }, [actNowCount, sessionAdopted]);
 
   return null;
 }

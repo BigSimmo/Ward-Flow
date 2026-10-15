@@ -7,6 +7,7 @@ import {
   getActNowNotificationPreference,
   newActNowItems,
   notificationSupport,
+  setActNowAppBadge,
   setActNowNotificationPreference,
   showActNowNotification,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
@@ -126,5 +127,34 @@ describe("act-now notifications", () => {
         options: { body: "Bed pull expiring. Synthetic demo data.", tag: "ward-flow-act-now" },
       },
     ]);
+  });
+});
+
+// PWA plan item 8 (Oct 2026): the installed app's icon carries the act-now count, never names.
+describe("act-now app badge", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "setAppBadge");
+    Reflect.deleteProperty(navigator, "clearAppBadge");
+  });
+
+  it("sets the count, and clears it at zero", () => {
+    const setAppBadge = vi.fn(async () => {});
+    const clearAppBadge = vi.fn(async () => {});
+    Object.defineProperty(navigator, "setAppBadge", { value: setAppBadge, configurable: true });
+    Object.defineProperty(navigator, "clearAppBadge", { value: clearAppBadge, configurable: true });
+    setActNowAppBadge(3);
+    expect(setAppBadge).toHaveBeenCalledWith(3);
+    setActNowAppBadge(0);
+    expect(clearAppBadge).toHaveBeenCalledTimes(1);
+    expect(setAppBadge).toHaveBeenCalledTimes(1);
+  });
+
+  it("does nothing where badges are unsupported, and never throws when refused", async () => {
+    expect(() => setActNowAppBadge(2)).not.toThrow();
+    const refused = vi.fn(() => Promise.reject(new DOMException("Not allowed", "NotAllowedError")));
+    Object.defineProperty(navigator, "setAppBadge", { value: refused, configurable: true });
+    expect(() => setActNowAppBadge(2)).not.toThrow();
+    await Promise.resolve();
+    expect(refused).toHaveBeenCalledWith(2);
   });
 });

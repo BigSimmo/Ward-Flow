@@ -144,15 +144,19 @@ export function WeeklyReportScreen() {
       <main id="main-content" className={styles.main}>
         <StatisticsHero
           section="weekly"
-          eyebrow={isPhone ? "Weekly report" : <>Weekly report · synthetic demo data</>}
+          eyebrow={isPhone ? "Statistics · Weekly report" : <>Weekly report · synthetic demo data</>}
           title="Weekly operations"
           phone={{
             sub: weekRange,
             stats: (
               <>
                 <HeroStat value={report.edWaits.count} label={`ED waits ${longHoursLabel}+`} />
-                <HeroStat value={report.outOfArea.bedDays} label="Out of area days" />
-                <HeroStat value={occupancyText} label="Occupancy" />
+                {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
+                <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
+                <HeroStat
+                  value={occupancyText}
+                  label={offset === 0 ? "Average in use, last full week" : "Average in use, this week so far"}
+                />
               </>
             ),
           }}
@@ -264,7 +268,7 @@ export function WeeklyReportScreen() {
                 ]}
               />
             </PhoneCard>
-            <PhoneCard icon={BedDouble} title="Occupancy" aside={`${report.occupancy.beds} beds`}>
+            <PhoneCard icon={BedDouble} title="Beds in use" aside={`${report.occupancy.beds} beds`}>
               <PhoneFacts
                 flush
                 facts={[

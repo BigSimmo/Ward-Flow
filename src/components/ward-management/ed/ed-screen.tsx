@@ -36,6 +36,7 @@ import {
   clockState,
   formatElapsed,
   formatInstantWithDay,
+  minuteOfDayFromClockText,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
@@ -542,8 +543,9 @@ const DEFAULT_DRAFT: ReferralDraftState = {
 };
 
 /**
- * `HH:MM` from an `<input type="time">` to minutes since midnight, or `undefined` for anything
- * this cannot read with certainty.
+ * `HH:MM` from an `<input type="time">`, or a typed "09:30" or "0930" (F-01: the iPhone number pad
+ * has no ":"), to minutes since midnight, or `undefined` for anything this cannot read with
+ * certainty. The reading itself is `minuteOfDayFromClockText` (`ward-clock.ts`).
  *
  * ⚠️ **IT REFUSES RATHER THAN GUESSES, AND THAT IS THE WHOLE POINT OF IT.** A half-typed or
  * malformed time returns `undefined`, so the referral is raised carrying NO deadline — a state
@@ -556,15 +558,7 @@ const DEFAULT_DRAFT: ReferralDraftState = {
  * invents a timezone for them.
  */
 function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
+  return minuteOfDayFromClockText(value);
 }
 
 /**
@@ -1952,7 +1946,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "danger",
         kind: "Form expiry passed",
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         why: `Form ${m.legalForm.code} passed its deadline at ${formatInstantWithDay(m.legalForm.dueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
         when: `passed ${splitDuration(Math.max(now - m.legalForm.dueAt, 0))} ago`,
@@ -1967,7 +1961,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "warn",
         kind: "Transport not booked",
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) + " holds the bed" : "A bed is held"} and no transport is booked. The handover cannot be marked ready until it is.`,
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
@@ -1985,7 +1979,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "warn",
         kind: "Every ward asked has declined",
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.`,
         when: "declined",
@@ -1998,7 +1992,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "good",
         kind: "Acceptance received",
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) : "Unit"} has accepted this person. The bed has not been pulled, so they are still in the department.`,
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
@@ -2011,7 +2005,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "quiet",
         kind: "Left the department",
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) : "Unit"} is expecting this person. The department's part is done.`,
         when: "in transit",
@@ -2025,7 +2019,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "danger",
         kind: "Arrival late",
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         why: `Estimated ward time was ${arrivalEtaLabel(estimatedArrivalAt, now)}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes have passed (${OPERATIONAL_DEFAULT_LABEL}) and they have not been marked arrived.`,
         when: `late ${splitDuration(Math.max(now - (estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES), 0))}`,
@@ -2038,7 +2032,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         tone: "quiet",
         kind: `Waiting ${LONG_WAIT_TEXT}`,
         recordId: m.id,
-        personName: flagPatientInfo.displayName,
+        personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${urgencyTierLabel(m.urgency)}`,
         why: `Waiting in the emergency department for ${splitDuration(now - m.openedAt)}, over ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL}).`,
         when: `waiting ${splitDuration(now - m.openedAt)}`,

@@ -43,6 +43,7 @@ import {
   Frac,
   Hero,
   Icon,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -628,6 +629,8 @@ export function AddPatientForm() {
           <PhoneHero
             level={1}
             eyebrow="Patients"
+            // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
+            chip={<LiveChip state="live" onHero />}
             title="Add a patient"
             sub="Identity only · same duplicate check"
             data-testid="ward-add-patient-phone-hero"
@@ -784,6 +787,7 @@ export function AddPatientForm() {
             <Card aria-labelledby="apIdH">
               <CardHead
                 id="apIdH"
+                className={styles.idHead}
                 icon={UserRound}
                 title="Identity"
                 aside={
@@ -800,6 +804,10 @@ export function AddPatientForm() {
                     aria-label="UMRN (Unit Medical Record Number)"
                     aria-required="true"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     placeholder="UMRN not recorded"
                     className={styles.mono}
                     value={draft.umrn}
@@ -821,6 +829,10 @@ export function AddPatientForm() {
                     data-testid="ward-add-patient-given-name"
                     aria-required="true"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     value={draft.givenName}
                     onChange={(event) => setDraftField("givenName")(event.target.value)}
                   />
@@ -830,6 +842,10 @@ export function AddPatientForm() {
                     data-testid="ward-add-patient-family-name"
                     aria-required="true"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     value={draft.familyName}
                     onChange={(event) => setDraftField("familyName")(event.target.value)}
                   />

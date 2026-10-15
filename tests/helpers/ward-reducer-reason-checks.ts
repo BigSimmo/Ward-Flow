@@ -11,7 +11,8 @@ function runtimeReducerImport(declaration: ts.ImportDeclaration): string | undef
   if (!clause || !ts.isStringLiteral(declaration.moduleSpecifier)) return undefined;
   if (!hasRuntimeBinding(clause)) return undefined;
   const name = declaration.moduleSpecifier.text;
-  if (!name.endsWith("-reducer")) return undefined;
+  // The reducer's RECORD_* and UNDO_* cases live in ward-flow-record-events.ts and ward-flow-undo-events.ts.
+  if (!name.endsWith("-reducer") && !/ward-flow-[a-z-]+-events$/u.test(name)) return undefined;
   return name;
 }
 

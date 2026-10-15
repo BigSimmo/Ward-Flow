@@ -38,8 +38,11 @@
   cursor: pointer;
 }
 
-.who:hover {
-  background: var(--wf-hover);
+/* F-28: hover only where there is a pointer that hovers, so a tap leaves no sticky highlight. */
+@media (hover: hover) {
+  .who:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .avatar {
@@ -118,7 +121,8 @@
   flex: none;
   align-items: center;
   gap: 8px;
-  min-height: 42px;
+  /* F-22: a 44px box, the phone's touch height. */
+  min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--wf-line-3);
   border-radius: var(--wf-r-pill);
@@ -141,7 +145,7 @@
 .search input {
   flex: 1;
   min-width: 0;
-  min-height: 40px;
+  min-height: 42px;
   border: 0;
   background: transparent;
   color: var(--wf-ink-1);
@@ -204,8 +208,10 @@
   min-height: 58px;
 }
 
-.row:hover {
-  background: var(--wf-hover);
+@media (hover: hover) {
+  .row:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .row:focus-visible,
