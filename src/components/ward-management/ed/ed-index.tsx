@@ -404,7 +404,13 @@ export function EdIndex() {
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         <Hero
-          eyebrow={isPhone ? "Emergency · Statewide" : `Emergency · Statewide · ${rows.length} departments`}
+          // F-09 (phone review, Oct 2026): the phone eyebrow names how many EDs there are, so the "All
+          // EDs" count agrees with it; the title counts the EDs with someone waiting.
+          eyebrow={
+            isPhone
+              ? `Emergency · Statewide · ${rows.length} EDs`
+              : `Emergency · Statewide · ${rows.length} departments`
+          }
           level={1}
           title={
             <>
@@ -416,8 +422,8 @@ export function EdIndex() {
             // v10 phone: one quiet line under the title in place of the checking foot.
             isPhone
               ? waiting > 0 && longestRow
-                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
-                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
+                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
+                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
               : undefined
           }
           aside={

@@ -46,6 +46,7 @@ import { occupiedBeds } from "./statistics-occupancy";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   PhoneBody,
+  PhoneDotKey,
   PhoneFacts,
   PhoneList,
   PhoneSheetRow,
@@ -667,7 +668,7 @@ function OverviewPhone({
           </FilterChip>
         ))}
       </ScrollRow>
-      <PhoneList label="Wards by occupancy, fullest first">
+      <PhoneList label="Wards by share of beds in use, fullest first">
         {sorted.slice(0, showAll ? undefined : PHONE_WARDS_SHOWN).map((ward) => (
           <PhoneListRow
             key={ward.id}
@@ -693,6 +694,9 @@ function OverviewPhone({
           <PhoneShowAll total={sorted.length} open={showAll} onToggle={() => setShowAll((value) => !value)} />
         ) : null}
       </PhoneList>
+      <PhoneDotKey testId="ward-statistics-overview-dot-key">
+        {`Amber dot: ${BED_ALERT_THRESHOLD_PERCENT}% or more of beds in use`}
+      </PhoneDotKey>
       <PhoneSheetRow
         icon={Filter}
         title="Empty to ready"

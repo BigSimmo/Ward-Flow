@@ -71,6 +71,14 @@
   font: 400 var(--wf-fs-14) / 1 var(--wf-font);
 }
 
+/* Phone: 16px so iOS Safari does not zoom the page on focus. */
+@media (max-width: 48rem) {
+  .changeField select,
+  .changeField input {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .changeHint {
   flex: 1 1 10rem;
   align-self: center;

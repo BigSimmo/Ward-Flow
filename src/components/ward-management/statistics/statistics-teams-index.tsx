@@ -126,8 +126,8 @@ export function StatisticsTeamsIndexScreen() {
         stats: (
           <>
             <HeroStat value={withDateTotal} label="With a date" />
-            <HeroStat value={active.length} label="Teams with one in" />
-            <HeroStat value={dueOutWeekTotal} label="Due out, 7d" />
+            <HeroStat value={active.length} label="Teams with a patient in a bed" />
+            <HeroStat value={dueOutWeekTotal} label="Due out within 7 days" />
           </>
         ),
       }}

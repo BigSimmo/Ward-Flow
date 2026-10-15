@@ -98,7 +98,13 @@
 
 .statusPipAlarm {
   background: var(--danger, var(--ward-danger));
-  animation: pulseAlarm 2s infinite ease-in-out;
+}
+
+/* F-34: the alarm pip pulses only for people who have not asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .statusPipAlarm {
+    animation: pulseAlarm 2s infinite ease-in-out;
+  }
 }
 
 .statusPipAlarm::after {

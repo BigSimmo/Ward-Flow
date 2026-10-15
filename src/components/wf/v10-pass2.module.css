@@ -487,12 +487,15 @@
   }
 }
 
+/* F-34: the scroll-driven fade runs only for people who have not asked for reduced motion. */
 @supports (animation-timeline: scroll()) {
-  .chips {
-    padding-inline-end: 24px;
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-    animation: wfRowFade linear both;
-    animation-timeline: scroll(self inline);
+  @media (prefers-reduced-motion: no-preference) {
+    .chips {
+      padding-inline-end: 24px;
+      -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      animation: wfRowFade linear both;
+      animation-timeline: scroll(self inline);
+    }
   }
 }

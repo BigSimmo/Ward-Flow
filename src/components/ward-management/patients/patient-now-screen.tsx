@@ -57,7 +57,13 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
-import { PatientTransitOperations } from "./patient-transit-operations";
+import dynamic from "next/dynamic";
+import { preloadWhenIdle } from "../preload-when-idle";
+// F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
+// fetched once the page is idle, rather than with the patient page.
+const loadTransitOperations = () => import("./patient-transit-operations");
+const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
+preloadWhenIdle(loadTransitOperations);
 import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
@@ -1787,8 +1793,13 @@ export function PatientNowScreen({
             }
             phoneEyebrow={
               phoneMovement ? (
-                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling on one line.
-                `Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
+                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling. F-05 (phone
+                // review, Oct 2026): the observation level is its own chip, and the line may wrap to a
+                // second line rather than cut it off.
+                <span className={styles.phMoveEyebrow}>
+                  {`Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}`}
+                  {liveMovement?.specialling ? <span className={styles.phObsChip}>1:1 specialling</span> : null}
+                </span>
               ) : (
                 <span className={styles.phEyebrow}>
                   <StatusGlyph tone={modeMeta.tone} size={10} />

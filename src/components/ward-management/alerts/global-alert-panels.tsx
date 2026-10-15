@@ -90,7 +90,7 @@ export function PullNowCard({ alert, onStandDown }: { alert: BroadcastAlert; onS
     <article
       className={styles.card}
       data-act-now={overdue ? "true" : undefined}
-      aria-label={`Pull now, ${subject.displayName}`}
+      aria-label={`Pull now for ${subject.displayName}`}
     >
       <div className={styles.cardHead}>
         <StatusGlyph tone={overdue ? "danger" : "neutral"} size={10} />

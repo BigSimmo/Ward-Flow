@@ -114,7 +114,8 @@ export function EdOverview({
           }
           sub={
             <>
-              Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · live
+              {/* F-08 (phone review, Oct 2026): "updating", since "live" beside the Demo pill contradicts it. */}
+              Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · updating
             </>
           }
           figures={chips

@@ -5,7 +5,7 @@
 // Rendered only on phone; the larger screen keeps the network aside these rows stand in for.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ChevronRight, DoorOpen } from "lucide-react";
+import { Activity, ChevronRight, Clock, DoorOpen } from "lucide-react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -47,6 +47,12 @@ export function CapacityPhoneOverview({
 
   return (
     <div className={styles.phoneOverview}>
+      <p className={styles.phoneDotKey} data-testid="capacity-phone-dot-key">
+        <StatusGlyph tone="warning" size={9} />
+        <span>Amber dot: short of beds, or no ready bed.</span>
+        <Clock size={12} aria-hidden="true" className={styles.phoneStaleIcon} />
+        <span>Stale: count not confirmed in time.</span>
+      </p>
       <section aria-labelledby="capacity-phone-needs-you">
         <h2 id="capacity-phone-needs-you" className={styles.phoneOverviewHead}>
           <span>Needs you</span>
@@ -75,8 +81,13 @@ export function CapacityPhoneOverview({
                       </span>
                     </span>
                   </span>
+                  {/* Phone review F-25: a stale count takes a clock, so it never reads as "Short". */}
                   <span className={styles.phoneOverviewTag}>
-                    <StatusGlyph tone="warning" size={9} />
+                    {isFresh(row.unit) ? (
+                      <StatusGlyph tone="warning" size={9} />
+                    ) : (
+                      <Clock size={12} aria-hidden="true" className={styles.phoneStaleIcon} />
+                    )}
                     {isFresh(row.unit) ? "No bed" : "Stale"}
                   </span>
                 </button>

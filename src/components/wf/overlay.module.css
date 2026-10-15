@@ -258,10 +258,13 @@
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
    keep the glass card above. A toast that closes itself (Undo or timed) shows no X, as drawn. */
 @media (max-width: 48rem) {
+  /* F-15: 12px above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
+     92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. */
   .toastRegion {
+    --wf-toast-rest: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 12px);
     left: 12px;
     right: 12px;
-    bottom: 92px;
+    bottom: var(--wf-toast-rest);
     padding: 0;
     align-items: center;
   }
@@ -269,12 +272,12 @@
   /* A page's sticky phone action bar (Patient's "Record search done") sits just above the dock:
      the toast lifts over it (the bar's 48px button plus its padding) so Undo never covers it. */
   :global(html:has([data-wf-phone-action-bar])) .toastRegion {
-    bottom: calc(92px + 76px);
+    bottom: calc(var(--wf-toast-rest) + 76px);
   }
 
   /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
   :global(html:has([role="dialog"][aria-modal="true"])) .toastRegion {
-    bottom: 136px;
+    bottom: calc(var(--wf-toast-rest) + 44px);
   }
 
   .toast {

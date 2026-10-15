@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
-import { GroupHead, Icon, IconTile, PhoneSheet, buttonClass, cx } from "@/components/wf";
+import { GroupHead, Icon, IconTile, PhoneSheet, StatusGlyph, buttonClass, cx } from "@/components/wf";
 
 import styles from "./statistics-phone-body.module.css";
 
@@ -61,6 +61,19 @@ export function PhoneShowAll({ total, open, onToggle }: { total: number; open: b
         {open ? "Show fewer" : `Show all ${total}`}
       </button>
     </li>
+  );
+}
+
+/**
+ * The one-line key under a list whose rows carry an amber dot (phone review F-25, 15 Oct 2026),
+ * so the dot's meaning is written down where it is used.
+ */
+export function PhoneDotKey({ children, testId }: { children: ReactNode; testId?: string }) {
+  return (
+    <p className={styles.dotKey} data-testid={testId}>
+      <StatusGlyph tone="warning" size={9} />
+      <span>{children}</span>
+    </p>
   );
 }
 

@@ -184,7 +184,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementHoldArrival.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("In transit, 4h hold · Self Arrival");
+      expect(pill).toHaveTextContent("In transit, bed held 4h · Self Arrival");
     });
 
     it("renders default 4h hold pill when movement.stage is pulled without arrivalDetails", () => {
@@ -201,7 +201,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-hold-${movementPulled.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("Pulled, 4h hold");
+      expect(pill).toHaveTextContent("Bed held 4h");
     });
   });
 

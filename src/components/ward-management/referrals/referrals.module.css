@@ -5399,6 +5399,13 @@
   font: 400 var(--wf-fs-13) / 1 var(--wf-font);
 }
 
+/* Phone: 16px so iOS Safari does not zoom the page when the decline reason opens. */
+@media (max-width: 48rem) {
+  .v10AskActions .select {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .v10AskActions .acceptPresentationBtn {
   min-height: var(--wf-h-md, 2.25rem);
   padding: 0 var(--wf-s-4);

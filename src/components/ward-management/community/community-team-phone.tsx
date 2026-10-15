@@ -6,6 +6,7 @@ import { Clock, Info, Phone, Plus, Search, Shapes, Users, type LucideIcon } from
 import {
   Button,
   GroupHead,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -160,6 +161,8 @@ export function CommunityTeamPhone({
           className={css.teamHero}
           data-testid="ward-community-phone-hero"
           eyebrow={`Community team · ${teamName}`}
+          // F-08 (phone review, Oct 2026): the standard Demo pill.
+          chip={<LiveChip state="live" onHero />}
           title={`${caseload} on the caseload`}
           sub={sub}
           actions={

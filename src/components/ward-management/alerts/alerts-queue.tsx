@@ -96,7 +96,7 @@ function RowAction({ entry, handlers, size = "sm" }: { entry: QueueEntry; handle
         size={size}
         variant="ghost"
         className={styles.btn}
-        aria-label={`Return ${entry.item.title} now, ${entry.subject.displayName}`}
+        aria-label={`Return ${entry.item.title} now for ${entry.subject.displayName}`}
         onClick={() => handlers.onReturn(entry)}
       >
         Return now
@@ -155,11 +155,11 @@ function OpenButton({ entry, handlers }: { entry: QueueEntry; handlers: QueueHan
       type="button"
       className={styles.rowOpen}
       aria-current={handlers.selectedId === entry.item.id ? "true" : undefined}
-      aria-label={`Open ${entry.item.title}, ${entry.subject.displayName}`}
+      aria-label={`Open ${entry.item.title} for ${entry.subject.displayName}`}
       data-testid="ward-alerts-open"
       onClick={() => handlers.onSelect(entry)}
     >
-      {entry.item.title}
+      <span className={styles.rowOpenText}>{entry.item.title}</span>
     </button>
   );
 }

@@ -114,6 +114,7 @@ import {
   PhoneSheet,
   PillTabs,
   Kbd,
+  LiveChip,
   Segmented,
   Select,
   SrOnly,
@@ -739,7 +740,7 @@ function AlertsWorkspace() {
         dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
       const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking, admission);
       const kind = alertKindOf(inboxItemId);
-      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
+      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"} for ${subject.displayName} ${subject.umrn}`;
     };
     for (const [id, list] of Object.entries(inboxAcknowledgements)) {
       list.forEach((entry, index) =>
@@ -997,9 +998,11 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
+  // F-09 (phone review, Oct 2026): the title counts act now alerts assigned to you and not yet
+  // seen, a part of the Act now figure, so it says so rather than reading as a different total.
   const heroTitle =
     needYouCount > 0
-      ? `${needYouCount} need${needYouCount === 1 ? "s" : ""} you now`
+      ? `${needYouCount} act now, new to you`
       : actEntries.length > 0
         ? `${actEntries.length} to act on now`
         : "No alert needs you";
@@ -1159,7 +1162,7 @@ function AlertsWorkspace() {
           id: entry.item.id,
           at: entry.raised!,
           shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
-          title: `${entry.item.title}, ${entry.subject.displayName}, raised ${formatInstantWithDay(entry.raised!, now)}`,
+          title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
         }))}
       acted={history
         .filter((entry) => entry.action)
@@ -1250,6 +1253,8 @@ function AlertsWorkspace() {
                   : "Checking every condition below"
               }
               eyebrow="Alerts"
+              // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
+              chip={<LiveChip state={live.paused ? "paused" : "live"} onHero />}
               figures={[
                 {
                   id: "act",
@@ -1270,7 +1275,8 @@ function AlertsWorkspace() {
                 {
                   id: "mine",
                   value: yoursCount,
-                  label: "Yours",
+                  // F-09: says what it counts, so it reads beside the title's smaller number.
+                  label: "Assigned to you",
                   pressed: pill === "mine",
                   onPress: () => togglePill("mine"),
                 },
