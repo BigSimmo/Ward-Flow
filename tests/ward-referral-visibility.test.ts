@@ -482,9 +482,31 @@ const ALLOWED_COMMUNITY_PROJECTION_FIELDS = [
   "urgency",
   "originSiteCode",
   "transportNeeded",
+  // 15 Oct 2026, owner's choice that the live team page reads this projection: the story is on every
+  // referral, so it is always present. See `CommunityScopedReferral` for the reason beside each key.
+  "history",
   // Singular, and that is the whole rule in one key name: a community team sees the one addressing
   // that is its own. `destinations` — the plural the full `Referral` carries — must never appear here.
   "addressing",
+].sort();
+
+/** The level-1 keys present only when the referral records them. Same date and ruling as `history`. */
+const OPTIONAL_COMMUNITY_PROJECTION_FIELDS = ["patientId", "sendingTeamName", "medicalClearance", "intake"].sort();
+
+/** The keys of the submitted intake a community team may see. `arrival` and the ward-only
+ *  `clearanceChecklist` are cut, and so is `needs` of kind "ed": each says the person was also sent
+ *  to a ward or an emergency department. */
+const ALLOWED_COMMUNITY_INTAKE_FIELDS = [
+  "catchment",
+  "reasonForReferral",
+  "legalStatus",
+  "riskFlags",
+  "medicalClearance",
+  "triageAndRampCompleted",
+  "charts",
+  "additionalDocuments",
+  "referrer",
+  "needs",
 ].sort();
 
 /**
@@ -1211,9 +1233,28 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
         urgency: 2,
         originSiteCode: "RPH",
         transportNeeded: false,
+        patientId: "PT-0001",
+        sendingTeamName: "Inner City Clinic",
+        history: "Canonical history.",
+        medicalClearance: { cleared: true, at: RAISED_AT },
+        intake: {
+          catchment: { teamName: "Inner City Clinic", confirmed: true },
+          reasonForReferral: "Follow-up",
+          legalStatus: "Voluntary",
+          riskFlags: [],
+          medicalClearance: { cleared: true },
+          triageAndRampCompleted: true,
+          charts: [],
+          additionalDocuments: false,
+          referrer: { name: "Synthetic referrer", email: "", phone: "", role: "GP", location: "Clinic" },
+          needs: { kind: "community" },
+        },
         addressing,
       };
-      expect(Object.keys(canonical).sort()).toEqual(ALLOWED_COMMUNITY_PROJECTION_FIELDS);
+      expect(Object.keys(canonical).sort()).toEqual(
+        [...ALLOWED_COMMUNITY_PROJECTION_FIELDS, ...OPTIONAL_COMMUNITY_PROJECTION_FIELDS].sort(),
+      );
+      expect(Object.keys(canonical.intake).sort()).toEqual(ALLOWED_COMMUNITY_INTAKE_FIELDS);
       expect(Object.keys(canonical.addressing).sort()).toEqual(ALLOWED_COMMUNITY_ADDRESSING_FIELDS);
       expect(Object.keys(canonical.addressing.destination).sort()).toEqual(ALLOWED_COMMUNITY_DESTINATION_FIELDS);
     });
@@ -1431,9 +1472,72 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
           "is the seed's community-only referral — find out what happened to it.",
       ).toBeGreaterThan(0);
       for (const projection of projections) {
-        expect(Object.keys(projection).sort()).toEqual(ALLOWED_COMMUNITY_PROJECTION_FIELDS);
+        // Every always-present key, plus only optional keys this seeded referral really records.
+        const keys = Object.keys(projection);
+        for (const key of ALLOWED_COMMUNITY_PROJECTION_FIELDS) expect(keys).toContain(key);
+        for (const key of keys) {
+          expect(
+            [...ALLOWED_COMMUNITY_PROJECTION_FIELDS, ...OPTIONAL_COMMUNITY_PROJECTION_FIELDS],
+            `the seeded community projection carries "${key}"`,
+          ).toContain(key);
+        }
+        const nested = ["medicalClearance", "intake"].filter((key) => keys.includes(key));
+        expect(nested, "no seeded community referral records a clearance or an intake yet").toEqual([]);
         expect(sweep(projection).objectPaths.sort()).toEqual([...COMMUNITY_PROJECTION_OBJECT_PATHS].sort());
       }
+    });
+
+    it("cuts the parts of the intake that say the person was also sent elsewhere", () => {
+      // 15 Oct 2026: the live team page shows the intake, so the projection carries it, minus the
+      // proposed arrival, the ward clearance checklist and any ED needs. Each belongs to a ward or
+      // an emergency department.
+      const intake = {
+        catchment: { teamName: "Inner City Clinic", confirmed: true as const },
+        reasonForReferral: "Follow-up after discharge",
+        legalStatus: "Voluntary",
+        riskFlags: [],
+        medicalClearance: { cleared: true },
+        triageAndRampCompleted: true,
+        charts: [],
+        additionalDocuments: false,
+        referrer: { name: "Synthetic referrer", email: "", phone: "", role: "GP", location: "Clinic" },
+        arrival: { transport: "Ambulance", reference: "AMB-ELSEWHERE", estimatedAt: "2026-10-15T10:00+08:00" },
+        clearanceChecklist: { observations: "done" as const },
+      };
+      const referral = (needs: NonNullable<Referral["intake"]>["needs"]): Referral => ({
+        id: "RF-LOCAL-COMMUNITY-INTAKE",
+        destinations: [
+          { destination: { kind: "community_team", teamName: "Inner City Clinic" }, state: "queued" },
+          {
+            destination: { kind: "emergency_department", edId: allEmergencyDepartments()[0].id, purpose: "bed" },
+            state: "queued",
+          },
+        ],
+        ageBand: "Adult",
+        homeRegion: "Perth Metropolitan",
+        suburb: { kind: "named", name: "Armadale" },
+        source: "community",
+        raisedAt: RAISED_AT,
+        urgency: 2,
+        originSiteCode: "RPH",
+        transportNeeded: false,
+        ...FIXTURE_HISTORY,
+        intake: { ...intake, needs },
+      });
+
+      const withEdNeeds = communityScopedReferral(referral({ kind: "ed", comingBy: "Ambulance" }))!;
+      expect(withEdNeeds.intake, "the intake did not come across at all").toBeDefined();
+      expect(Object.keys(withEdNeeds.intake!)).not.toContain("arrival");
+      expect(Object.keys(withEdNeeds.intake!)).not.toContain("clearanceChecklist");
+      expect(Object.keys(withEdNeeds.intake!)).not.toContain("needs");
+      expect(sweep(withEdNeeds).primitives).not.toContain("AMB-ELSEWHERE");
+      for (const key of Object.keys(withEdNeeds.intake!)) {
+        expect(ALLOWED_COMMUNITY_INTAKE_FIELDS, `the community intake carries "${key}"`).toContain(key);
+      }
+
+      // Positive control: community needs are this team's own and stay.
+      const withCommunityNeeds = communityScopedReferral(referral({ kind: "community", homeVisit: true }))!;
+      expect(withCommunityNeeds.intake?.needs).toEqual({ kind: "community", homeVisit: true });
     });
   });
 
