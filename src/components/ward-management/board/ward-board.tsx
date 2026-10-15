@@ -36,9 +36,15 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import { calendarDateOf, minuteOfDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstant,
+  minuteOfDay,
+  MINUTES_PER_DAY,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
+import { DAY_SHIFT_END_MINUTE, pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -1738,10 +1744,12 @@ export function WardBoard({
     }
   };
 
+  // The same day-shift end as the sidebar handover countdown, so the board never names another time.
+  const handoverAt = formatInstant(DAY_SHIFT_END_MINUTE);
   const shiftDigest =
     shiftTiles.length > 0
-      ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at 15:30.`
-      : "Nothing needs you before the handover at 15:30.";
+      ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at ${handoverAt}.`
+      : `Nothing needs you before the handover at ${handoverAt}.`;
 
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">

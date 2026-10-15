@@ -693,9 +693,20 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         ? "Patient"
         : /^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
           ? "Movement"
-          : /^\/mockups\/ward-flow\/statistics\/(services|wards|eds|teams)\/?$/u.test(pathname)
-            ? ({ services: "Services", wards: "Wards", eds: "EDs", teams: "Teams" } as const)[
-                pathname.replace(/\/$/u, "").split("/").pop() as "services" | "wards" | "eds" | "teams"
+          : // The statistics tab's own word, so the lean bar never mixes "Statistics compare" with "EDs".
+            /^\/mockups\/ward-flow\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
+            ? (
+                {
+                  services: "Services",
+                  wards: "Wards",
+                  eds: "EDs",
+                  teams: "Teams",
+                  overview: "Overview",
+                  compare: "Compare",
+                } as const
+              )[
+                pathname.replace(/\/$/u, "").split("/").pop() as
+                  "services" | "wards" | "eds" | "teams" | "overview" | "compare"
               ]
             : /^\/mockups\/ward-flow\/statistics\/weekly\/?$/u.test(pathname)
               ? "Weekly"

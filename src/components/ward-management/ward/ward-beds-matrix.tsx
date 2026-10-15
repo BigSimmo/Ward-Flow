@@ -5,6 +5,8 @@ import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 
@@ -520,7 +522,7 @@ export function WardBedsMatrix({
               Needs you this shift
             </span>
             <span className={styles.shiftSubtitle}>
-              {visibleShiftItems.length} of {shiftItems.length} before handover at 15:30
+              {visibleShiftItems.length} of {shiftItems.length} before handover at {formatInstant(DAY_SHIFT_END_MINUTE)}
             </span>
           </div>
 
