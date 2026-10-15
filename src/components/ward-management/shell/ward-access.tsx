@@ -120,12 +120,15 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     };
     const { breakGlassPatientIds, ...rest } = scoped;
     // Break glass is read only: an event about a person seen only through it is refused here, before
-    // the reducer, and said aloud. Movement ids are traced to their person.
-    const glassMovementIds = new Set<string>(
-      scoped.movements
-        .filter((movement) => movement.patientId && breakGlassPatientIds.has(movement.patientId))
-        .map((movement) => movement.id),
-    );
+    // the reducer, and said aloud. Movement, stay and referral ids are traced to their person, so a
+    // write keyed only by one of those is caught too (review on PR #330).
+    const glassIds = (items: readonly { id: string; patientId?: string | null }[]) =>
+      new Set<string>(
+        items.filter((item) => item.patientId && breakGlassPatientIds.has(item.patientId)).map((item) => item.id),
+      );
+    const glassMovementIds = glassIds(scoped.movements);
+    const glassAdmissionIds = glassIds(scoped.admissions);
+    const glassReferralIds = glassIds(scoped.referrals);
     // A coordinator's preview is read only: nothing it does lands in the shared workspace (review on
     // PR #330), so a previewed ward never appears to have acted.
     const dispatch: WardFlowContextValue["dispatch"] = previewing
@@ -133,21 +136,48 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       : breakGlassPatientIds.size === 0
         ? context.dispatch
         : (event) => {
-            const fields = event as { patientId?: unknown; movementId?: unknown };
+            const fields = event as {
+              patientId?: unknown;
+              movementId?: unknown;
+              admissionId?: unknown;
+              referralId?: unknown;
+            };
+            const names = (value: unknown, ids: ReadonlySet<string>) => typeof value === "string" && ids.has(value);
             const touchesGlass =
-              (typeof fields.patientId === "string" && breakGlassPatientIds.has(fields.patientId)) ||
-              (typeof fields.movementId === "string" && glassMovementIds.has(fields.movementId));
+              names(fields.patientId, breakGlassPatientIds) ||
+              names(fields.movementId, glassMovementIds) ||
+              names(fields.admissionId, glassAdmissionIds) ||
+              names(fields.referralId, glassReferralIds);
             if (touchesGlass) {
               announceToWardShell("Read only. This record was opened outside your care.");
               return;
             }
             context.dispatch(event);
           };
+    // The record readers close over the whole workspace, so they are narrowed to the desk's own stays
+    // too (review on PR #330). Audit and governance records stay the coordinator's.
+    const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
+    const denied = { status: "denied" } as const;
+    const outsideHandle = { generation: -1, requestId: -1 } as const;
     return {
       glass: breakGlassPatientIds,
       scoped: {
         ...rest,
         dispatch,
+        readDischargeRecords: (actor, unitId) => {
+          const read = context.readDischargeRecords(actor, unitId);
+          return read.status === "allowed"
+            ? { status: "allowed", value: read.value.filter((record) => admissionIds.has(record.admissionId)) }
+            : read;
+        },
+        openDischargeRecord: (actor, admissionId) =>
+          admissionIds.has(admissionId) ? context.openDischargeRecord(actor, admissionId) : outsideHandle,
+        readDischargeRecord: (actor, admissionId, handle) =>
+          admissionIds.has(admissionId) ? context.readDischargeRecord(actor, admissionId, handle) : denied,
+        readAuditEvents: (actor) => (coordinator ? context.readAuditEvents(actor) : denied),
+        readAuditReviews: (actor) => (coordinator ? context.readAuditReviews(actor) : denied),
+        readGovernanceAuditEvents: (actor) =>
+          coordinator && context.readGovernanceAuditEvents ? context.readGovernanceAuditEvents(actor) : denied,
         rejections: coordinator ? context.rejections : [],
         eventLog: coordinator ? context.eventLog : [],
         bedReleases: byUnit(context.bedReleases),
@@ -422,7 +452,8 @@ export function WardIdleLock() {
   const [locked, setLocked] = useState(false);
   const minutes = CLINICAL_VALUES.idleLock.value;
   useEffect(() => {
-    if (!on || accessIsWholeNetwork(access)) return;
+    // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
+    if (!on) return;
     const lock = () => {
       lockWardDesk();
       setLocked(true);

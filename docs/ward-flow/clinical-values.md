@@ -78,7 +78,7 @@ governance sign-off before real patient use (D-54).
 | Access and privacy | Emergency department keeps sight of a patient after they reach the ward for | 24 hours | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `edHandoffWindow` |
 | Access and privacy | Ward keeps sight of a patient after they leave, for the follow up, for | 7 days | Synthetic value | No decision recorded (role access plan, 15 Oct 2026); the same figure as the 7 day follow up | None recorded | `wardHandoffWindow` |
 | Access and privacy | A shared computer locks after no use for | 15 minutes | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `idleLock` |
-| Access and privacy | Executive figures below this are shown as fewer than this | 5 | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `smallNumberHidden` |
+| Access and privacy | Planned, not applied yet: executive figures below this to show as fewer than this | 5 | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `smallNumberHidden` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->

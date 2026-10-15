@@ -157,6 +157,49 @@ describe("the scoped workspace", () => {
     expect(glass.breakGlassPatientIds.size).toBe(0);
   });
 
+  it("shows a ward only its own lines of a referral sent to several wards", () => {
+    const source = state.referrals.find((referral) =>
+      referral.destinations.some((line) => line.destination.kind === "psychiatric_ward"),
+    )!;
+    const line = source.destinations.find((item) => item.destination.kind === "psychiatric_ward")!;
+    const other = state.units.find((unit) => unit.id !== unitId)!;
+    const asWard = (id: string) => ({
+      ...line,
+      acceptedUnitId: undefined,
+      destination: { ...line.destination, unitId: id },
+    });
+    const parallel = { ...source, destinations: [asWard(unitId), asWard(other.id)] } as typeof source;
+    const scoped = scopeWorkspace({ ...state, referrals: [parallel] }, wardDesk, { now: NOW_ANCHOR, places });
+    const seen = scoped.referrals.find((referral) => referral.id === parallel.id);
+    expect(seen?.destinations).toHaveLength(1);
+    expect(seen?.destinations[0].destination).toMatchObject({ unitId });
+  });
+
+  it("gives a community team its catchment clients' stays as ward and dates only", () => {
+    const admission = state.admissions.find((item) => item.patientId !== null)!;
+    const patient = state.patients.find((item) => item.id === admission.patientId)!;
+    const team = "Synthetic catchment team";
+    const workspace = {
+      ...state,
+      referrals: [],
+      patients: state.patients.map((item) =>
+        item.id === patient.id ? { ...item, catchmentCommunityTeam: team } : item,
+      ),
+    };
+    const scoped = scopeWorkspace(
+      workspace,
+      { role: "community", scope: { kind: "team", teamName: team } },
+      { now: NOW_ANCHOR, places },
+    );
+    const seen = scoped.admissions.find((item) => item.id === admission.id)!;
+    expect(seen.unitId).toBe(admission.unitId);
+    expect(seen.tentativeDiagnosis).toBeNull();
+    expect(seen.careJourney).toBeUndefined();
+    expect(seen.followUp).toBeNull();
+    expect(seen.referralId).toBeNull();
+    expect(seen.movementId).toBeNull();
+  });
+
   it("names no patient to the executive", () => {
     const scoped = scope({ role: "executive", scope: { kind: "statewide" } });
     // Every patient with a movement, stay or referral is counted; none is named.

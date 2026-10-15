@@ -132,9 +132,38 @@ function anonymousPatient(patient: Patient): Patient {
   } as Patient;
 }
 
-/** An admission with dates and ward only, for a community team watching its catchment client. */
+/**
+ * An admission with ward and dates only, for a community team watching its catchment client. Built
+ * field by field, never spread, so nothing clinical (diagnosis, care journey, blockers, absence,
+ * follow-up detail, the referral and movement joins) reaches the team (review on PR #330).
+ */
 function datesOnlyAdmission(admission: Admission): Admission {
-  return { ...admission, tentativeDiagnosis: null };
+  return {
+    id: admission.id,
+    unitId: admission.unitId,
+    patientId: admission.patientId,
+    sex: admission.sex,
+    state: admission.state,
+    pulledAt: admission.pulledAt,
+    arrivedAt: admission.arrivedAt,
+    expectedDischargeAt: admission.expectedDischargeAt,
+    dischargeConfirmedAt: admission.dischargeConfirmedAt,
+    leftAt: admission.leftAt,
+    leavingDestination: admission.leavingDestination,
+    specialling: false,
+    highAcuity: false,
+    referralId: null,
+    movementId: null,
+    homeRegion: null,
+    tentativeDiagnosis: null,
+    awayAtEmergencyDepartmentSince: null,
+    dischargeDateMoves: 0,
+    dischargeDateSetAt: null,
+    dischargeDateSetBy: null,
+    dischargeConfirmedBy: null,
+    blockReason: null,
+    followUp: null,
+  };
 }
 
 function noticeInScope(notice: Notice, access: WardAccess, places: PlaceLookup): boolean {
@@ -254,7 +283,16 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       );
       referrals = workspace.referrals.flatMap((referral) => {
         if (!referralIds.has(referral.id) && !referralDestinationUnitIds(referral).some(unitIn)) return [];
-        const trimmed = trimReferral(referral, (addressing) => addressing.destination.kind === "psychiatric_ward");
+        // Only this ward's own lines: a parallel referral never tells it which other wards were asked
+        // or what they said (review on PR #330). A line naming no ward yet stays, as it is open to all.
+        const trimmed = trimReferral(
+          referral,
+          (addressing) =>
+            addressing.destination.kind === "psychiatric_ward" &&
+            (addressing.acceptedUnitId !== undefined
+              ? unitIn(addressing.acceptedUnitId)
+              : addressing.destination.unitId === undefined || unitIn(addressing.destination.unitId)),
+        );
         return trimmed ? [trimmed] : [];
       });
       break;
@@ -366,8 +404,10 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 }
 
 /**
- * Executive figures: any count under the small number line shows as "fewer than N", and a total
- * whose parts include a hidden one is rounded so the hidden part cannot be worked back.
+ * Executive figures, planned: a count under the small number line words as "fewer than N". NOT YET
+ * APPLIED to any Statistics screen (review on PR #330), so the executive still sees exact counts,
+ * without names. Wiring it in, with totals rounded so a hidden part cannot be worked back, is a
+ * follow-up.
  */
 export function smallNumberText(count: number): string {
   const line = CLINICAL_VALUES.smallNumberHidden.value;

@@ -507,7 +507,7 @@ export const CLINICAL_VALUES = {
   },
   smallNumberHidden: {
     ...SYNTHETIC,
-    name: "Executive figures below this are shown as fewer than this",
+    name: "Planned, not applied yet: executive figures below this to show as fewer than this",
     group: "Access and privacy",
     value: 5,
     unit: "count",
