@@ -496,6 +496,6 @@ describe("WardNotificationCenter DOM Component", () => {
     render(<WardNotificationCenter {...defaultProps} now={700} movements={movements} patients={patients} />);
 
     expect(screen.getByText(/Overdue Inbound Arrival: John Doe/)).toBeInTheDocument();
-    expect(screen.queryByText(/Unknown Patient/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Name not recorded/)).not.toBeInTheDocument();
   });
 });

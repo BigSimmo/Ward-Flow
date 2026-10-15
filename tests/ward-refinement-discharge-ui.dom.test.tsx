@@ -202,7 +202,8 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
     openInesRecord();
     const details = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(details).toHaveTextContent("AD-RPHS-14");
+    // D-39: the admission number is no longer shown beside the person.
+    expect(details).not.toHaveTextContent("AD-RPHS-14");
     expect(details).toHaveTextContent("UMRN UM100003");
 
     fireEvent.change(screen.getByRole("combobox", { name: "Patient link" }), {

@@ -70,7 +70,9 @@ describe("a community team sees its own notices and can mark them read", () => {
 
     const section = screen.getByTestId("ward-community-notices");
     expect(section).toHaveTextContent("1 unread");
-    expect(section).toHaveTextContent(`referred a patient for community follow-up: referral`);
+    // D-39: the notice no longer quotes the referral number.
+    expect(section).toHaveTextContent("referred a patient for community follow-up.");
+    expect(section).not.toHaveTextContent(/RF-/);
 
     // RB4's own wording: the referral is also on this team's real waiting list, not only in the
     // notice inbox — the two are separate facts and both must hold.

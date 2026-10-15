@@ -83,7 +83,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
     for (const card of cards) {
       const movementId = card.getAttribute("data-row-id")!;
       const recorded = expectedFor(movementId);
-      if (recorded.name !== "Unknown Patient") linked += 1;
+      if (recorded.name !== "Name not recorded") linked += 1;
       expect(card.textContent, movementId).toContain(recorded.name);
       expect(card.textContent, movementId).toContain(recorded.umrn);
     }

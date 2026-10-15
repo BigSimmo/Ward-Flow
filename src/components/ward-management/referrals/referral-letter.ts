@@ -74,7 +74,7 @@ export function referralIsbarText(
 ): string {
   const to = input.recipients.length ? input.recipients.join(" and ") : NOT_RECORDED;
   return [
-    `I: ${value(input.patientName)}, ${value(input.ageSex)}, UMRN ${value(input.umrn)}. ${sent.referralId} sent ${sent.sentAt} to ${to}.`,
+    `I: ${value(input.patientName)}, ${value(input.ageSex)}, UMRN ${value(input.umrn)}. Referral sent ${sent.sentAt} to ${to}.`,
     `S: ${value(input.urgency)}. ${value(input.legalStatus)}.`,
     `B: ${value(input.history)}`,
     `A: Risks ${input.risks.length ? input.risks.join(", ").toLowerCase() : "none selected"}. Medical clearance ${value(input.clearance).toLowerCase()}${input.clearanceChecklist?.trim() ? ` (${input.clearanceChecklist.trim().toLowerCase()})` : ""}.`,

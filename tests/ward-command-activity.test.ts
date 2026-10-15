@@ -153,4 +153,34 @@ describe("Command activity from current records", () => {
     );
     expect(result.content.changes.find((change) => change.id.startsWith("movement-opened:"))?.category).toBe("other");
   });
+  it("leaves the number off a refusal about a referral or bed release (D-39)", () => {
+    const state = seedWardFlowState();
+    const referral = state.referrals[0]!;
+    const release = state.bedReleases[0]!;
+    const result = deriveCommandActivity({
+      ...state,
+      rejections: [
+        {
+          id: "rejection-referral",
+          at: NOW_ANCHOR,
+          movementId: referral.id,
+          attempted: "TRIAGE_REFERRAL",
+          reason: `referral ${referral.id} is already triaged`,
+        },
+        {
+          id: "rejection-release",
+          at: NOW_ANCHOR,
+          movementId: release.id,
+          attempted: "RELEASE_BED",
+          reason: `release ${release.id} belongs to another unit`,
+        },
+      ],
+      now: NOW_ANCHOR,
+    });
+
+    const referralLine = result.content.changes.find((event) => event.id === "rejection:rejection-referral")!;
+    const releaseLine = result.content.changes.find((event) => event.id === "rejection:rejection-release")!;
+    expect(referralLine.text).toBe("TRIAGE_REFERRAL was refused. this referral is already triaged");
+    expect(releaseLine.text).toBe("RELEASE_BED was refused. this bed release belongs to another unit");
+  });
 });

@@ -12,6 +12,7 @@ import { Count, durMinutes } from "@/components/wf";
 import { wardOffersOutsideQueue } from "./home-ward-offers";
 import styles from "./referrals.module.css";
 import o from "./ward-offers-section.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * S-8 (audit 13 Oct 2026): the ward offers sent straight from Home, listed once below the queue.
@@ -51,7 +52,7 @@ export function WardOffersSection({
           const referredAt = movement.referredAt;
           return (
             <li key={movement.id} data-testid={`ward-referral-board-ward-offer-${movement.id}`}>
-              <Link href={`/mockups/ward-flow/movements/${encodeURIComponent(movement.id)}`} className={o.row}>
+              <Link href={movementHref(movement.id)} className={o.row}>
                 <strong>{nameFor(who.displayName, who.umrn)}</strong>
                 <span className={o.meta}>
                   Offered to{" "}

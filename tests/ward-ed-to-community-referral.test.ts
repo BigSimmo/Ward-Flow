@@ -338,7 +338,8 @@ describe("finding 3 (2026-09-17 review): REFER_TO_COMMUNITY_TEAM reuses a queued
     expect(notice).toBeDefined();
     expect(notice?.about).toEqual({ movementId: movement.id, referralId: linkedReferral.id });
     expect(notice?.sentence).toContain("reusing the existing queued referral");
-    expect(notice?.sentence).toContain(linkedReferral.id);
+    // D-39: the sentence never quotes the referral number; `about` keeps it for the link.
+    expect(notice?.sentence).not.toContain(linkedReferral.id);
 
     const updatedMovement = after.movements.find((m) => m.id === movement.id)!;
     expect(updatedMovement.edOutcome).toBe("for_community_follow_up");

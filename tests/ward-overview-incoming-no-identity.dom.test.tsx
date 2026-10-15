@@ -19,7 +19,7 @@ describe("the ward overview before a ward accepts", () => {
   it("shows an incoming referral with no name, no UMRN and no WF number", () => {
     expect(awaiting, "the seed must hold a referral awaiting a ward's answer").toBeDefined();
     const person = resolveSubjectPatient(awaiting, seed);
-    expect(person.displayName, "the seed must link this referral to a named patient").not.toBe("Unknown Patient");
+    expect(person.displayName, "the seed must link this referral to a named patient").not.toBe("Name not recorded");
 
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
