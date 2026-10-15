@@ -80,7 +80,8 @@ const SIGN_OUT_FILE =
  * @param {string} [platform]
  */
 export function signOutLogOptional(env = process.env, platform = process.platform) {
-  return env.WARD_SIGNOUT_FILE === undefined && env.WARD_FLOW_LOGS === undefined && platform !== "win32";
+  // Empty values count as unset, matching the || fallbacks in SIGN_OUT_FILE above.
+  return !env.WARD_SIGNOUT_FILE && !env.WARD_FLOW_LOGS && platform !== "win32";
 }
 
 /** Read both the headed legacy log and the current rebuilt, headingless active log. */

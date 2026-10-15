@@ -153,6 +153,8 @@ describe("signOutLogOptional", () => {
     expect(signOutLogOptional({}, "win32")).toBe(false);
     expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "/tmp/typo.md" }, "linux")).toBe(false);
     expect(signOutLogOptional({ WARD_FLOW_LOGS: "/tmp/typo" }, "linux")).toBe(false);
+    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: "" }, "linux")).toBe(true);
+    expect(signOutLogOptional({ WARD_FLOW_LOGS: "" }, "win32")).toBe(false);
   });
 });
 
