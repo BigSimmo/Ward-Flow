@@ -45,6 +45,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -57,18 +58,29 @@ const ALLOW_MARKER = "precommit-scan: allow";
 // Pure helpers (exported for tests)
 // ---------------------------------------------------------------------------
 
-const SIGN_OUT_FILE = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
+// Inline copy of scripts/ward-flow/logs-root.mjs (tests copy this script alone into fixtures):
+// WARD_SIGNOUT_FILE, else WARD_FLOW_LOGS, else D:/Repos/ward-flow-logs on Windows and
+// ~/ward-flow-logs elsewhere.
+const SIGN_OUT_FILE =
+  process.env.WARD_SIGNOUT_FILE ??
+  path
+    .join(
+      process.env.WARD_FLOW_LOGS ??
+        (process.platform === "win32" ? "D:/Repos/ward-flow-logs" : path.join(os.homedir(), "ward-flow-logs")),
+      "sign-out.md",
+    )
+    .replace(/\\/g, "/");
 
 /**
  * The shared log lives on Josh's Windows machine. Only an unnamed default log off Windows (a cloud
  * container, a Linux or macOS clone) may be absent without blocking. An explicit WARD_SIGNOUT_FILE
- * or a Windows default that cannot be found still fails closed, so a typo or an unmounted drive
+ * or WARD_FLOW_LOGS, or a Windows default that cannot be found still fails closed, so a typo or an unmounted drive
  * never switches the guard off.
  * @param {Record<string, string | undefined>} [env]
  * @param {string} [platform]
  */
 export function signOutLogOptional(env = process.env, platform = process.platform) {
-  return env.WARD_SIGNOUT_FILE === undefined && platform !== "win32";
+  return env.WARD_SIGNOUT_FILE === undefined && env.WARD_FLOW_LOGS === undefined && platform !== "win32";
 }
 
 /** Read both the headed legacy log and the current rebuilt, headingless active log. */
