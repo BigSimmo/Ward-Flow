@@ -41,7 +41,7 @@ function availabilityLine(
 ): { tone: "success" | "warning" | "neutral"; text: string } {
   const now = availability(entry, minute);
   if (now.kind === "none") return { tone: "neutral", text: "No line recorded" };
-  if (now.kind === "on" && now.allDay) return { tone: "success", text: "On now, 24 hours" };
+  if (now.kind === "on" && now.allDay) return { tone: "success", text: now.email ? "Inbox open" : "On now, all day" };
   if (now.kind === "on") return { tone: now.soon ? "warning" : "success", text: `On now until ${hhmm(now.until)}` };
   return { tone: "neutral", text: `Opens ${hhmm(now.opens)}` };
 }
