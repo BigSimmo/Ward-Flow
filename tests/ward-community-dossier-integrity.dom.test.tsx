@@ -20,6 +20,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Referral } from "@/components/ward-management/ward-model";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
 const TEAM_NAME = "Mead Centre (Armadale)";
 const TEAM_ID = communityTeamSlug(TEAM_NAME);
@@ -85,7 +86,11 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     (medicalClearance) => {
       start({ referrals: [fixture({ medicalClearance })] });
       openReferral("dossier-test");
-      const dossier = screen.getByRole("dialog", { name: "Referral Triage: dossier-test" });
+      // D-39: the dialog names the person by name and UMRN, never by the referral number.
+      const dossier = screen.getByRole("dialog", {
+        name: `Referral Triage: ${patientIdentityLine(resolveSubjectPatient(fixture({}), seed))}`,
+      });
+      expect(screen.queryByRole("dialog", { name: /dossier-test/ })).toBeNull();
       expect(dossier).toHaveTextContent("History not recorded");
       expect(dossier).toHaveTextContent(
         medicalClearance
@@ -135,9 +140,9 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.click(screen.getByRole("button", { name: "Log team contact" }));
     expect(document.getElementById("actionToastMsg")).toHaveTextContent("does not record patient or referral contact");
     fireEvent.click(screen.getByRole("button", { name: "Review" }));
-    expect(
-      screen.getByRole("dialog", { name: `Referral Triage: ${screen.getByTestId("referral-id").textContent}` }),
-    ).toBeInTheDocument();
+    const referralId = screen.getByTestId("referral-id").textContent!;
+    expect(screen.getByRole("dialog", { name: /^Referral Triage: / })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: new RegExp(referralId) })).toBeNull();
   });
 
   it("discloses the unsupported dossier editor and unavailable patient follow-up", () => {

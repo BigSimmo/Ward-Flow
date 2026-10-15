@@ -65,7 +65,7 @@ describe("the bed board says what the reducer actually did", () => {
     expect(toast.textContent ?? "").not.toMatch(/\bAD-[A-Z0-9-]+/u);
   });
 
-  it("D9: the side panel never reads Unknown Patient, for any occupied bed on the ward", () => {
+  it("D9: the side panel never reads Name not recorded, for any occupied bed on the ward", () => {
     const { container } = renderBoard(unitWithDueDischarge());
     const tiles = [...container.querySelectorAll<HTMLElement>('[data-bed-kind="occupied"]')];
     expect(tiles.length).toBeGreaterThan(0);
@@ -73,7 +73,7 @@ describe("the bed board says what the reducer actually did", () => {
       fireEvent.click(within(tile).getByRole("button"));
       const detail = screen.getByTestId("ward-board-detail");
       expect(detail).toHaveAttribute("data-detail-kind", "occupied");
-      expect(detail).not.toHaveTextContent("Unknown Patient");
+      expect(detail).not.toHaveTextContent("Name not recorded");
     }
   });
 });

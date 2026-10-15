@@ -159,7 +159,9 @@ describe("the preview pane ties a person, their referral and their open movement
     );
 
     const referralSection = screen.getByTestId("ward-patient-search-preview-referral");
-    expect(within(referralSection).getByText(new RegExp(linkedReferral.id))).toBeInTheDocument();
+    // D-39: the tie says "This referral", never the referral number.
+    expect(within(referralSection).getByText("This referral")).toBeInTheDocument();
+    expect(within(referralSection).queryByText(new RegExp(linkedReferral.id))).not.toBeInTheDocument();
 
     // Owner, 26 Sept 2026: the movement tie no longer prints the WF id as visible text — it links
     // to the movement by id under the label "Open this movement".
@@ -210,7 +212,9 @@ describe("the preview pane ties a person, their referral and their open movement
     );
 
     const referralSection = screen.getByTestId("ward-patient-search-preview-referral");
-    expect(within(referralSection).getByText(new RegExp(linkedReferral.id))).toBeInTheDocument();
+    // D-39: the tie says "This referral", never the referral number.
+    expect(within(referralSection).getByText("This referral")).toBeInTheDocument();
+    expect(within(referralSection).queryByText(new RegExp(linkedReferral.id))).not.toBeInTheDocument();
 
     const personSection = screen.getByTestId("ward-patient-search-preview-person");
     expect(within(personSection).getByText(new RegExp(patient.umrn))).toBeInTheDocument();

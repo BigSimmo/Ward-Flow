@@ -114,7 +114,7 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     const longest = screen.getByTestId("ward-stat-ed-longest-wait").textContent ?? "";
     expect(longest).toContain("not yet admitted");
     expect(longest).not.toMatch(/WF-/u);
-    expect(longest).not.toContain("Unknown Patient");
+    expect(longest).not.toContain("Name not recorded");
     expect(longest).toContain("2d 2h");
     // The regression this whole file exists to stop: a wait this long printed as a bare number of
     // minutes on a sibling screen while every other screen printed hours and minutes.
@@ -156,7 +156,7 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     // AD- numbers only on Statistics (Owner, 13 Oct 2026) and never a WF- id (D-39): no name, no UMRN.
     expect(rowPast48.textContent).toContain("Not yet admitted");
     expect(table.textContent).not.toMatch(/WF-/u);
-    expect(table.textContent).not.toContain("Unknown Patient");
+    expect(table.textContent).not.toContain("Name not recorded");
 
     // Longest first: WF-past48's row precedes WF-under's in document order.
     const rows = within(table).getAllByRole("row");
