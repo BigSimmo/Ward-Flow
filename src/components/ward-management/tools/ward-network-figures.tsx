@@ -7,8 +7,10 @@ import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { occupiedBeds } from "../statistics/statistics-occupancy";
-import { dayOf, formatInstant } from "../ward-clock";
+import { dayOf, formatInstant, minutesUntil, splitDuration, type Instant } from "../ward-clock";
+import type { Movement } from "../ward-model";
 import { isOpen } from "../ward-derivations";
+import { edById, edShortName } from "../ward-sites";
 import { StatusGlyph } from "@/components/wf";
 import styles from "./ward-network-figures.module.css";
 
@@ -36,7 +38,9 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
     leaveBeds,
     now,
     chromeRole: "coordinator",
-  }).filter((figure) => ["passed", "within-hour", "longest"].includes(figure.key));
+  })
+    .filter((figure) => ["passed", "within-hour", "longest"].includes(figure.key))
+    .map((figure) => (figure.key === "longest" ? longestWait(open, now) : figure));
   const groups = [
     {
       id: "capacity",
@@ -189,4 +193,22 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
       </Link>
     </div>
   );
+}
+
+/**
+ * The longest wait reads as a duration with the ED it started from. The shared strip's version carries
+ * the movement's internal reference and the word "waiting", which cut the label off in this grid
+ * (Tools polish, Josh approved 15 Oct 2026).
+ */
+function longestWait(open: readonly Movement[], now: Instant) {
+  const worst = open.reduce<Movement | undefined>(
+    (found, movement) => (found === undefined || movement.openedAt < found.openedAt ? movement : found),
+    undefined,
+  );
+  return {
+    key: "longest",
+    label: "Longest wait",
+    value: worst === undefined ? "—" : splitDuration(Math.max(minutesUntil(now, worst.openedAt), 0)),
+    sub: worst === undefined ? undefined : `From ${edShortName(edById(worst.originEdId)) || "an unrecorded ED"}`,
+  };
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   BarChart3,
   BedDouble,
@@ -22,7 +22,6 @@ import {
   Printer,
   Scale,
   Search,
-  Siren,
   Tv,
   type LucideIcon,
 } from "lucide-react";
@@ -106,35 +105,6 @@ function LinkRow({
       <RowText icon={icon} name={name} detail={detail} />
       <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
     </Link>
-  );
-}
-
-/** A row that is offered but not connected: it says so, keeps its tab stop and does nothing. */
-function UnwiredRow({ icon: Icon, name, reason }: { icon: LucideIcon; name: string; reason: string }) {
-  const id = useId();
-  return (
-    <button
-      type="button"
-      className={styles.row}
-      aria-disabled="true"
-      aria-describedby={id}
-      data-unwired="true"
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-    >
-      <span className={styles.rowIcon} aria-hidden="true">
-        <Icon aria-hidden="true" strokeWidth={1.75} />
-      </span>
-      <span className={styles.rowText}>
-        <strong>{name}</strong>
-        <em>Not wired in this prototype.</em>
-        <small id={id} className={styles.unwiredReason}>
-          {reason}
-        </small>
-      </span>
-    </button>
   );
 }
 
@@ -376,11 +346,6 @@ export function WardToolsSheet({
             </Link>
           </>,
         )}
-        <UnwiredRow
-          icon={Siren}
-          name="Escalation check"
-          reason="Waiting for signed occupancy and ED wait trigger values."
-        />
       </Group>
 
       <Group title="Print and share">

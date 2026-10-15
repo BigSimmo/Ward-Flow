@@ -51,6 +51,16 @@ describe("whole-network tools figures", () => {
     fireEvent.click(screen.getByRole("button", { name: "All figures" }));
     expect(screen.getByText("Total beds")).toBeVisible();
   });
+  it("shows the longest wait as a duration with its ED, never a movement reference", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <NetworkFigures />
+      </WardFlowProvider>,
+    );
+    const figure = screen.getByText("Longest wait").parentElement;
+    expect(figure?.textContent).not.toMatch(/WF-|waiting/u);
+    expect(figure?.querySelector("small")?.textContent).toMatch(/\S/u);
+  });
   it("updates recorded deadline totals when the shared clock advances", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

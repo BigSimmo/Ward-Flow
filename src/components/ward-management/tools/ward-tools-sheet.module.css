@@ -111,19 +111,6 @@
   outline-offset: -2px;
 }
 
-.row[data-unwired="true"] {
-  cursor: default;
-}
-
-.row[data-unwired="true"] .rowText strong {
-  color: var(--wf-ink-2);
-}
-
-.unwiredReason {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-}
-
 .rowIcon {
   display: grid;
   place-items: center;

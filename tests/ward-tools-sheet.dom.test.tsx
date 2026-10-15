@@ -67,11 +67,11 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
   });
 
-  it("says plainly which rows are not wired, and keeps Bed meeting TV off the phone", () => {
+  it("offers no unbuilt rows, and keeps Bed meeting TV off the phone", () => {
     renderSheet(true);
-    const escalation = screen.getByRole("button", { name: /Escalation check/u });
-    expect(escalation.getAttribute("aria-disabled")).toBe("true");
-    expect(escalation.textContent).toContain("Not wired in this prototype.");
+    // Escalation check stays out until its trigger values are signed (Tools polish, 15 Oct 2026).
+    expect(screen.queryByRole("button", { name: /Escalation check/u })).toBeNull();
+    expect(screen.queryByText("Not wired in this prototype.")).toBeNull();
     expect(screen.queryByRole("button", { name: /Bed meeting TV/u })).toBeNull();
     expect(screen.queryByRole("link", { name: /Bed meeting TV/u })).toBeNull();
   });
