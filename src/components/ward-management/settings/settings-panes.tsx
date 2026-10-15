@@ -47,6 +47,7 @@ import {
 } from "@/components/wf";
 
 import type { RowDensity } from "./row-density";
+import { FeatureFlagsCard } from "./feature-flags-card";
 import { PreviewTag, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import type { PublishedThreshold, ThresholdState } from "./settings-thresholds";
@@ -783,6 +784,8 @@ export function DataPane({
           </Card>
         </div>
       </div>
+
+      <FeatureFlagsCard />
 
       <Card aria-labelledby="reference-title" data-setting="thresholds">
         <CardHead

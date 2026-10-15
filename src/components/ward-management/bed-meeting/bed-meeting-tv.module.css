@@ -1,0 +1,280 @@
+/* The bed meeting TV view (`bed-meeting-tv.tsx`). Large type for a meeting room screen read from
+ * across the room, sized with the viewport so a 1080p TV and a 4K TV both fill sensibly. Tokens
+ * only. In browser full screen the view is the whole screen, so it paints its own ground. */
+
+.tv {
+  --tv-gap: clamp(var(--wf-s-3), 1.2vw, var(--wf-s-8));
+  --tv-body: clamp(var(--wf-fs-16), 1.45vw, 2.25rem);
+  --tv-small: clamp(var(--wf-fs-14), 0.95vw, 1.5rem);
+  --tv-row: clamp(var(--wf-fs-15), 1.2vw, 1.9rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tv-gap);
+  min-height: 100%;
+  padding: var(--tv-gap);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--tv-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.tv:fullscreen {
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--tv-gap);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(var(--wf-fs-28), 2.6vw, 4rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.sub {
+  margin: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+}
+
+.actions {
+  display: flex;
+  gap: var(--wf-s-2);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-row-touch);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / 1 var(--wf-font);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.action svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.action:hover {
+  background: var(--wf-surface-2);
+}
+
+.action:focus-visible,
+.offLink:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--tv-gap);
+  margin: 0;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--tv-gap);
+  border: 1px solid var(--wf-line);
+  border-top: 6px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.tile[data-tone="warning"] {
+  border-top-color: var(--wf-warning);
+}
+
+.tile[data-tone="danger"] {
+  border-top-color: var(--wf-danger);
+}
+
+.tileLabel {
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+  font-weight: 600;
+}
+
+.tileValue {
+  margin: 0;
+  font-size: clamp(3rem, 5.2vw, 8rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tile[data-tone="danger"] .tileValue {
+  color: var(--wf-danger-ink);
+}
+
+.tileDetail {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+}
+
+.panels {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--tv-gap);
+}
+
+.panel {
+  min-width: 0;
+  font-size: var(--tv-row);
+  padding: var(--tv-gap);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.panelTitle {
+  margin: 0 0 var(--wf-s-3);
+  font-size: var(--tv-body);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  font-weight: 400;
+}
+
+.table thead th {
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+  font-weight: 600;
+}
+
+.table tbody th {
+  font-weight: 600;
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table .num {
+  text-align: right;
+  padding-left: var(--wf-s-3);
+}
+
+.table tr[data-long] td:last-child,
+.list li[data-long] .wait {
+  color: var(--wf-danger-ink);
+  font-weight: 700;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "who wait"
+    "where where";
+  column-gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.who {
+  grid-area: who;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.where {
+  grid-area: where;
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+}
+
+.where:empty {
+  display: none;
+}
+
+.wait {
+  grid-area: wait;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.list li[data-status="Held up"] .wait {
+  color: var(--wf-warning-ink);
+}
+
+.empty,
+.more {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+}
+
+.footer {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-14);
+}
+
+.off {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-8) var(--wf-s-6);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-16);
+}
+
+.offTitle {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+}
+
+.offLink {
+  color: var(--wf-accent);
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

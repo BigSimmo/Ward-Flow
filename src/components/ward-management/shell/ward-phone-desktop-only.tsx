@@ -18,7 +18,10 @@ import styles from "./ward-phone-desktop-only.module.css";
  * gated (`tests/ui-ward-statistics-journey.spec.ts`). Hidden above 48rem, so desktop and tablet
  * never see it; Show anyway still opens the page.
  */
-const DESKTOP_ONLY_PREFIXES: readonly string[] = [];
+const DESKTOP_ONLY_PREFIXES: readonly string[] = [
+  // The bed meeting TV view (15 Oct 2026) is a meeting room screen, and is left out of the phone menu.
+  "/mockups/ward-flow/bed-meeting",
+];
 
 export function isPhoneDesktopOnlyPath(pathname: string): boolean {
   return DESKTOP_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

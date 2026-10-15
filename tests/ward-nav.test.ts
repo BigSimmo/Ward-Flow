@@ -54,6 +54,7 @@ import { WardModeWorkspace } from "@/components/ward-management/ward-management-
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
+import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
@@ -1302,6 +1303,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
+  // 15 Oct 2026: the bed meeting TV view, behind the `bed-meeting-tv` feature flag (on in tests).
+  { route: `${ROUTE_PREFIX}/bed-meeting`, render: () => createElement(BedMeetingTvScreen) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
   { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(OfficerScreen) },
@@ -1430,7 +1433,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      */
     // 39, not 36: the three read-only reports (statistics/weekly, reports/downtime, reports/chronology), 9 Oct 2026.
     // 43, not 39: the four statistics index pages (services, wards, eds, teams), 9 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(43);
+    // 44: the bed meeting TV view, 15 Oct 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(44);
   });
 });
 
