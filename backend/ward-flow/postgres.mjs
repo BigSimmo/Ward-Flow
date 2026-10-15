@@ -141,6 +141,15 @@ export function createWorkspaceStore(
     }
     if (rows[0]?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
     if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
+    // `viewer()` ran before this transaction. A revoke takes this same lock, so checking again
+    // here means a role removed in between stops this request too.
+    if (view?.membershipId) {
+      const active = await client.query(
+        "SELECT 1 FROM ward_flow.memberships WHERE id=$1 AND workspace_id=$2 AND revoked_at IS NULL AND expires_at > $3",
+        [view.membershipId, workspaceId, at],
+      );
+      if (!active.rowCount) throw new Error("role-ended");
+    }
     return rows[0];
   }
   /**

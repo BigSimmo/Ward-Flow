@@ -975,6 +975,17 @@ test(
       // A removed role stops at the next request, and the audit still names it.
       assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 200);
       assert.equal((await store.viewer(nurse)).access.role, "community");
+      // A change that looked up its role just before the revoke is stopped inside the lock.
+      await assert.rejects(
+        store.command(
+          nurse,
+          randomUUID(),
+          999,
+          { type: "FLAG_BED_RELEASE", role: "ward", admissionId: elsewhere.id },
+          { view: nurseView },
+        ),
+        /role-ended/,
+      );
       assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
       // Audit rows are never removed, so 008 cannot be rolled back once a role has acted.
       const client = await pool.connect();

@@ -116,6 +116,17 @@ test("the server forwards the authenticated actor and conflict result", async ()
   assert.equal(calls[0][0], coordinator);
   assert.equal(calls[0][1], commandId);
 });
+test("a role removed while a request is in flight answers 403, not a server error", async () => {
+  const { handler } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw new Error("role-ended");
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 403);
+  assert.match((await response.json()).error, /No Ward Flow role/);
+});
+
 test("clinical labels and invalid command envelopes are rejected", async () => {
   const { calls, handler } = setup();
   for (const invalid of [

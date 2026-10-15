@@ -329,6 +329,8 @@ export function createSharedHandler({
       });
       return reply(result.status, result.body);
     } catch (error) {
+      if (error?.message === "role-ended")
+        return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
       if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
       const storage = storageFailure(error);
