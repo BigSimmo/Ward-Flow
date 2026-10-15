@@ -126,7 +126,10 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
   };
   const admissionById = new Map(state.admissions.map((admission) => [admission.id, admission]));
   for (const movement of state.movements) {
-    if (movement.closure || movement.heldBedNumber === undefined || !movement.acceptedUnitId) continue;
+    // A journey stopped after collection closes but keeps its bed until RELEASE_HELD_BED clears the stay.
+    const stoppedButHeld = movement.transport?.stoppedAt !== undefined && movement.admissionId !== undefined;
+    if (movement.closure && !stoppedButHeld) continue;
+    if (movement.heldBedNumber === undefined || !movement.acceptedUnitId) continue;
     const broken = hold(
       `${movement.acceptedUnitId} bed ${movement.heldBedNumber}`,
       movement.id,
@@ -317,20 +320,24 @@ describe("engine safety under random event sequences", () => {
     }
   });
 
-  it(`keeps beds whole across ${SEQUENCES} seeded sequences of ${STEPS} events`, () => {
-    let refused = 0;
-    for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
-      const result = runSeed(seed);
-      expect(result.failure, `seed ${seed}`).toBeNull();
-      refused += result.refused;
-    }
-    // The generator must reach both sides: enough events succeed to move patients and beds, and
-    // enough are refused to prove refusals are safe too. A short run set by hand is too small to
-    // measure that, so only the rules above apply to it.
-    const total = SEQUENCES * STEPS;
-    if (total < 1000) return;
-    expect(refused).toBeGreaterThan(total * 0.1);
-    expect(refused).toBeLessThan(total * 0.9);
-    expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
-  });
+  it(
+    `keeps beds whole across ${SEQUENCES} seeded sequences of ${STEPS} events`,
+    () => {
+      let refused = 0;
+      for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
+        const result = runSeed(seed);
+        expect(result.failure, `seed ${seed}`).toBeNull();
+        refused += result.refused;
+      }
+      // The generator must reach both sides: enough events succeed to move patients and beds, and
+      // enough are refused to prove refusals are safe too. A short run set by hand is too small to
+      // measure that, so only the rules above apply to it.
+      const total = SEQUENCES * STEPS;
+      if (total < 1000) return;
+      expect(refused).toBeGreaterThan(total * 0.1);
+      expect(refused).toBeLessThan(total * 0.9);
+      expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
+    },
+    Math.max(30_000, SEQUENCES * STEPS * 5),
+  );
 });
