@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -147,7 +148,7 @@ function renderTeamScreen(movementId: string | null, patientId: Admission["patie
             state: "pulled",
           }),
         ]}
-        referrals={[referral]}
+        referrals={communityScopedReferrals([referral])}
       />
     </WardFlowProvider>,
   );

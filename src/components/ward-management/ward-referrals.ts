@@ -203,7 +203,7 @@ export function referralState(referral: Referral): ReferralState {
  * directly for the same reason, and `isAwaitingTeamAnswer` (`community-derivations.ts`) delegates
  * here rather than holding a second copy of the rule.
  */
-export function isAwaitingAnswer(addressing: ReferralAddressing): boolean {
+export function isAwaitingAnswer(addressing: Pick<ReferralAddressing, "state" | "withdrawnAt">): boolean {
   return addressing.state === "queued" && addressing.withdrawnAt === undefined;
 }
 
@@ -891,7 +891,7 @@ export function catchmentSuburbOf(suburb: ReferralSuburb): string | null {
   return suburb.kind === "named" ? suburb.name : null;
 }
 
-export function referralClocks(referral: Referral, now: Instant): ReferralClocks {
+export function referralClocks(referral: Pick<Referral, "raisedAt" | "triagedAt">, now: Instant): ReferralClocks {
   const { raisedAt, triagedAt } = referral;
   // ⚠️ OPEN QUESTION (lint clean-up, 2026-10-04): an earlier comment here said presence should read
   // `inDepartmentAt ?? triagedAt`, matching `hasArrivedInDepartment`, and computed that value — but
