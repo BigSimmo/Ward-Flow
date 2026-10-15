@@ -2680,6 +2680,7 @@ function WardReferralDrawerContent({
                           <Link
                             className={styles.btn}
                             href={alreadyOpenHref ?? "/mockups/ward-flow/referrals"}
+                            data-own-leave-guard="true"
                             onClick={(event) => {
                               if (dirty) {
                                 event.preventDefault();

@@ -76,6 +76,8 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!anchor) return;
+      // A link that asks for itself (an in-app dialog) opts out, so the browser prompt does not stack on it.
+      if (anchor.hasAttribute("data-own-leave-guard")) return;
       if (anchor.target && anchor.target !== "_self") return;
       if (anchor.hasAttribute("download")) return;
 

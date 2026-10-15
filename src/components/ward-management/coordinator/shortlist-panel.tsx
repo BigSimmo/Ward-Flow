@@ -3,7 +3,7 @@
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
-import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useContext, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
@@ -1276,7 +1276,7 @@ export function ShortlistPanel({
                   </span>
                   {!movement.referredUnitIds.includes(acceptedUnit.id) ? (
                     <Link
-                      href={`/mockups/ward-flow/ward/${encodeURIComponent(acceptedUnit.id)}`}
+                      href={unitHref(acceptedUnit.id)}
                       data-testid={`ward-shortlist-open-ward-desk-${acceptedUnit.id}`}
                       className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                       onClick={() => {
@@ -1382,7 +1382,7 @@ export function ShortlistPanel({
                 ) : null}
                 {unit ? (
                   <Link
-                    href={`/mockups/ward-flow/ward?unit=${encodeURIComponent(unit.id)}`}
+                    href={unitHref(unit.id)}
                     data-testid={`ward-shortlist-open-ward-desk-${unit.id}`}
                     className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.wardDeskLink}`}
                     onClick={() => {

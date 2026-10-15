@@ -48,7 +48,8 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
 
   it("raises .shortlistOverrideButton and .allocationButtonTouch min-height to at least 2.75rem (44px) and raises --wf-phone-pill-gap to 8px", () => {
     const shortlistCss = readCss("src/components/ward-management/coordinator/shortlist-panel.module.css");
-    expect(shortlistCss).toMatch(/\.shortlistOverrideButton[^{]*\{[^}]*min-height:\s*2\.75rem/);
+    const overrideMinHeight = shortlistCss.match(/\.shortlistOverrideButton[^{]*\{[^}]*min-height:\s*([\d.]+)rem/);
+    expect(Number(overrideMinHeight?.[1])).toBeGreaterThanOrEqual(2.75);
     expect(shortlistCss).not.toMatch(/min-height:\s*2\.125rem/);
 
     const v6Tokens = readCss("src/app/ward-flow-v6-tokens.css");
