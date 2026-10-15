@@ -35,7 +35,7 @@ import type { Movement, MovementId, Unit } from "@/components/ward-management/wa
  * already subtracted from the figure the ward publishes. An acceptance and a live referral change
  * no figure at all: the ward still advertises the bed while one or three people are counting on it.
  */
-export type ContentionClaimKind =
+type ContentionClaimKind =
   /** Listed in `Movement.referredUnitIds` — a live referral, and up to `PARALLEL_REFERRAL_CAP` of them may name the same unit. */
   | "referred"
   /** `Movement.acceptedUnitId`, awaiting a bed. The ward has said yes and nothing has been reserved yet. */
@@ -43,7 +43,7 @@ export type ContentionClaimKind =
   /** Accepted AND pulled: a reservation that has already reduced the unit's `allocatable` figure. */
   | "pulled";
 
-export type ContentionClaim = {
+type ContentionClaim = {
   movementId: MovementId;
   kind: ContentionClaimKind;
   /**
@@ -54,7 +54,7 @@ export type ContentionClaim = {
   reflectedInAllocatable: boolean;
 };
 
-export type UnitContention = {
+type UnitContention = {
   unitId: string;
   /** The ward's own confirmed figure, already net of every pull against it. */
   allocatable: number;
@@ -199,7 +199,7 @@ export type ContentionPair = {
   unreflectedClaims: number;
 };
 
-export type ContentionPairMember = {
+type ContentionPairMember = {
   movementId: MovementId;
   claim: ContentionClaim;
 };

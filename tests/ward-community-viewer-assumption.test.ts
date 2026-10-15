@@ -27,7 +27,6 @@ import { stripAllComments } from "./helpers/strip-source-comments";
  */
 
 const VISIBILITY_PATH = resolve(process.cwd(), "src/components/ward-management/ward-referral-visibility.ts");
-const BOUNDARY_TEST_PATH = resolve(process.cwd(), "tests/ward-referral-screen-boundary.test.ts");
 
 function communityScopedReferralTypeBody(source: string): string {
   const match = /export type CommunityScopedReferral = \{([\s\S]*?)\n\};/u.exec(source);
@@ -100,16 +99,8 @@ describe("the community-viewer assumption, inverted for the projection that now 
     expect(source).not.toMatch(/scopedReferralFor|referralForRole|referralForViewer/u);
   });
 
-  it("WARD_FACING in the screen-boundary guard now contains the community screen, so FD-23 covers it", () => {
-    const source = readFileSync(BOUNDARY_TEST_PATH, "utf8");
-    // Comment-stripped -- see tests/ward-guard-comment-blindness.test.ts. Proved by mutation:
-    // renaming the real array entry away and adding a decoy comment carrying the original literal
-    // text ("community/community-team-hub.tsx") inside the array body left this check green against
-    // the unstripped source.
-    const codeOnly = stripAllComments(source);
-    const match = /const WARD_FACING: readonly string\[\] = \[([\s\S]*?)\]\.map/u.exec(codeOnly);
-    expect(match, "WARD_FACING array literal not found -- the extractor above needs updating").toBeTruthy();
-    const listBody = match![1];
-    expect(listBody).toMatch(/community\/community-team-hub\.tsx/u);
-  });
+  // A fourth case asserted that WARD_FACING in the screen-boundary guard named
+  // community/community-team-hub.tsx. That screen was deleted on 15 Oct 2026 as unreachable, and
+  // the live team page (community/community-screen.tsx) reads the full referral record, so it
+  // cannot join FD-23 until that is fixed. The gap is with the Engine safety workstream.
 });

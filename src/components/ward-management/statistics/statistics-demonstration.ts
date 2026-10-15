@@ -110,7 +110,7 @@ const __demonstration: unique symbol = Symbol("ward-flow-demonstration-series");
 /** One point on a demonstration trend — a value some number of days before the instant the series
  *  was generated against. `daysAgo` counts down to 0 at the most recent point, so a caller drawing
  *  the series left-to-right in calendar order reads `points` in the order it already comes in. */
-export type DemonstrationPoint = Readonly<{
+type DemonstrationPoint = Readonly<{
   daysAgo: number;
   value: number;
 }>;
@@ -156,7 +156,7 @@ export type DemonstrationWalkShape = Readonly<{
   maxValue?: number;
 }>;
 
-export const DEFAULT_TREND_LENGTH = 30;
+const DEFAULT_TREND_LENGTH = 30;
 
 function assertNonEmpty(value: string, field: string): void {
   if (value.trim() === "") {

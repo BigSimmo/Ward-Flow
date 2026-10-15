@@ -6,7 +6,7 @@ import type { Ref, SelectHTMLAttributes } from "react";
 import { FormField } from "@/components/ui/form-field";
 import { cn, fieldControl } from "@/components/ui-primitives";
 
-export type SelectOption = { value: string; label: string; disabled?: boolean };
+type SelectOption = { value: string; label: string; disabled?: boolean };
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "id" | "children"> & {
   label: string;

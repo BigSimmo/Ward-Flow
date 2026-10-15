@@ -49,5 +49,3 @@ export function CoordinatorCockpit({ className, onDispatchAction, children }: Co
     </WardFlowContext.Provider>
   );
 }
-
-export default CoordinatorCockpit;

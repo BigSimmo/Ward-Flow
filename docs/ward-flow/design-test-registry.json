@@ -242,7 +242,7 @@
       "mockup": "governance-third-edition.html",
       "route": "/governance",
       "folder": "governance",
-      "component": "src/components/ward-management/governance/governance-screen.tsx",
+      "component": "src/components/ward-management/ward-management-modes.tsx",
       "testFiles": ["tests/ward-governance-claims.test.ts", "tests/ward-browser-build-css.test.ts"],
       "invariants": {
         "protectedClinicalFields": ["auditLog", "overrideReason", "legalReviewDate"],

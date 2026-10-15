@@ -42,7 +42,7 @@ export function isCsrfGuardedApiRequest(method: string, pathname: string): boole
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
-export const WARD_FLOW_CSRF_HEADER = "x-ward-flow-csrf";
+const WARD_FLOW_CSRF_HEADER = "x-ward-flow-csrf";
 
 export type ApiMutationCsrfVerdict =
   | { allowed: true }

@@ -170,17 +170,6 @@ describe("the breakpoint scale", () => {
   const KNOWN_BREAKPOINTS = [
     // PR12 clinical metadata changes from two to four bounded columns at 52rem.
     "src/components/ward-management/referrals/referrals.module.css: 52",
-    // ⚠️ ADDED 2026-09-04, AND THE GATE HAD BEEN RED SINCE THESE TWO FILES LANDED. `ed-home` (48)
-    // and `ed-service-bands` (60) are part of the ED cluster's design-language adoption; both were
-    // committed without their rows, so this assertion was failing on the integration line at the
-    // same time as `COVERING_THE_GROUND`'s `freed` half in the sibling contract test. Two red gates,
-    // neither noticed, because nobody's work happened to touch either file.
-    //
-    // ⚠️ AND `ed-service-bands.module.css` WAS ON NOBODY'S FILE LIST. It is a tenth file in a
-    // cluster two separate surveys described as nine, which is exactly how its 60 went unpinned. A
-    // walk and a hand-written brief disagreed and the walk was right.
-    "src/components/ward-management/ed/ed-home.module.css: 48",
-    "src/components/ward-management/ed/ed-service-bands.module.css: 60",
     "src/components/ward-management/board/board.module.css: 60",
     // Third-edition Bed board: the served drawing changes its fact band at 1200px. The app keeps
     // ten engine-derived facts rather than the drawing's nine, so this exact 75rem rung changes the
