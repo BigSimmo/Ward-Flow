@@ -37,6 +37,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
@@ -106,6 +107,7 @@ export function StatisticsWardScreen({
   admissions?: Admission[];
 }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlowSelect("dayZero");
@@ -249,13 +251,13 @@ export function StatisticsWardScreen({
         scope: unit.name,
         figures: () => [
           ["Beds", unit.beds],
-          ["Occupied", wardOccupancy.occupied],
-          ["In use (occupied or pulled)", wardOccupancy.inUse],
+          ["Occupied", small(wardOccupancy.occupied)],
+          ["In use (occupied or pulled)", small(wardOccupancy.inUse)],
           ["Occupancy percent (occupied or pulled)", occupancyPct],
-          ["Pulled, not arrived", wardOccupancy.pulled],
+          ["Pulled, not arrived", small(wardOccupancy.pulled)],
           ["Ready", capacity.available],
           ["Average stay, days", averageStay ?? "none"],
-          ["Due out, 7 days", dueThisWeek],
+          ["Due out, 7 days", small(dueThisWeek)],
         ],
       }}
       phone={{
@@ -265,12 +267,12 @@ export function StatisticsWardScreen({
         stats: (
           <>
             <HeroStat
-              value={wardOccupancy.inUse}
+              value={small(wardOccupancy.inUse)}
               label="In use"
               tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
             />
             <HeroStat value={capacity.available} label="Ready" />
-            <HeroStat value={wardOccupancy.pulled} label="Pulled" />
+            <HeroStat value={small(wardOccupancy.pulled)} label="Pulled" />
           </>
         ),
       }}
@@ -278,9 +280,9 @@ export function StatisticsWardScreen({
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
               out; the export still carries it. */}
-          <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
+          <HeroStat value={small(wardOccupancy.inUse)} label={`In use, ${occupancyPct}%`} />
           <HeroStat
-            value={wardOccupancy.pulled}
+            value={small(wardOccupancy.pulled)}
             label={
               <span className={styles.flagged}>
                 {wardOccupancy.pulled > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -290,7 +292,7 @@ export function StatisticsWardScreen({
           />
           <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
           {averageStay === null ? null : <HeroStat value={`${averageStay}d`} label="Average stay" />}
-          <HeroStat value={dueThisWeek} label="Due out, 7 days" />
+          <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
         </>
       }
     >

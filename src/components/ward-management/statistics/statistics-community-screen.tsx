@@ -22,6 +22,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -78,6 +79,7 @@ import detail from "./statistics-detail.module.css";
  */
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlowSelect("dayZero");
@@ -198,18 +200,24 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         stem: team.id,
         scope: team.name,
         figures: () => [
-          ...figureRows.map((row) => [HERO_LABELS[row.key], figureText(row.figure)] as const),
-          ["No follow-up yet", figures.discharged.kind === "measured" ? notArranged.length : "none"],
+          ...figureRows.map(
+            (row) =>
+              [
+                HERO_LABELS[row.key],
+                row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure),
+              ] as const,
+          ),
+          ["No follow-up yet", figures.discharged.kind === "measured" ? small(notArranged.length) : "none"],
         ],
       }}
       phone={{
-        sub: `${dueOutWeek} due out in the next 7 days`,
+        sub: `${small(dueOutWeek)} due out in the next 7 days`,
         stats: (
           <>
-            <HeroStat value={inBedCount ?? "none"} label="In a bed" />
-            <HeroStat value={withDateCount ?? "none"} label="With a date" />
+            <HeroStat value={inBedCount === null ? "none" : small(inBedCount)} label="In a bed" />
+            <HeroStat value={withDateCount === null ? "none" : small(withDateCount)} label="With a date" />
             <HeroStat
-              value={inBedCount === null || withDateCount === null ? "none" : inBedCount - withDateCount}
+              value={inBedCount === null || withDateCount === null ? "none" : small(inBedCount - withDateCount)}
               label="No date"
             />
           </>
@@ -225,14 +233,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                   data-testid={`ward-statistics-community-kpi-${row.key}`}
                   data-unmeasured={isUnmeasured(row.figure) || undefined}
                 >
-                  {row.figure.kind === "measured" ? row.figure.value : "none"}
+                  {row.figure.kind === "measured" ? small(row.figure.value) : "none"}
                 </span>
               }
               label={HERO_LABELS[row.key]}
             />
           ))}
           <HeroStat
-            value={figures.discharged.kind === "measured" ? notArranged.length : "none"}
+            value={figures.discharged.kind === "measured" ? small(notArranged.length) : "none"}
             label={
               <span className={styles.flagged}>
                 {figures.discharged.kind === "measured" && notArranged.length > 0 ? (

@@ -25,6 +25,8 @@ import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-br
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { AuditSubject } from "@/components/ward-management/ward-audit";
+import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import type { Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -137,6 +139,66 @@ function withoutDiagnosis(movement: Movement): Movement {
   const rest: Movement = { ...movement };
   delete rest.tentativeDiagnosis;
   return rest;
+}
+
+/** What a collection reads beyond the always present fields, copied only when recorded. */
+const COLLECTION_FIELDS = [
+  "patientId",
+  "referralId",
+  "transportNeed",
+  "gender",
+  "legalForm",
+  "acceptedUnitId",
+  "acceptedAt",
+  "heldBedNumber",
+  "allocatedBed",
+  "transport",
+  "closure",
+  "admissionId",
+  "examination",
+  "pullExpiresAt",
+  "plannedMoveAt",
+  "arrivalMode",
+  "arrivalDetails",
+  "arrivalException",
+  "medicalClearance",
+  "uploadedForms",
+] as const satisfies readonly (keyof Movement)[];
+
+/**
+ * An open transport job with only what a collection needs (role access plan, Josh's yes 15 Oct
+ * 2026): who, from where, to which ward, legal status, safety and the job itself. Built field by
+ * field, never spread, so no diagnosis, decline, referral answer, override, owner or change history
+ * reaches the officer. The required histories it never reads are empty, and only cancelled
+ * transports are kept from the unwind trail.
+ */
+function collectionMovement(movement: Movement): Movement {
+  const trimmed: Record<string, unknown> = {
+    id: movement.id,
+    originEdId: movement.originEdId,
+    openedAt: movement.openedAt,
+    flaggedUrgent: movement.flaggedUrgent,
+    urgency: movement.urgency,
+    cohort: movement.cohort,
+    security: movement.security,
+    sex: movement.sex,
+    specialling: movement.specialling,
+    highAcuity: movement.highAcuity,
+    legalStatus: movement.legalStatus,
+    stage: movement.stage,
+    owner: "",
+    referredUnitIds: [],
+    declines: [],
+    statusChanges: [],
+    urgencyChanges: [],
+    overrides: [],
+    withdrawnReferrals: [],
+    stageChanges: [],
+    unwinds: movement.unwinds.filter((unwind) => unwind.kind === "transport_cancelled"),
+    blocker: movement.blocker,
+  };
+  for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
+  return trimmed as Movement;
 }
 
 /** A referral with only what a count needs: no typed history, corrections, diagnosis or intake. */
@@ -418,8 +480,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
           movement.closure === undefined,
       );
       // A collection needs who, where, legal status and safety, never the working diagnosis
-      // (review on PR #330).
-      movements = movements.map(withoutDiagnosis);
+      // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026).
+      movements = movements.map(collectionMovement);
       officer = true;
       break;
     }
@@ -515,15 +577,67 @@ export function scopeBroadcastAlerts(
 }
 
 /**
- * Executive figures, planned: a count under the small number line words as "fewer than N". NOT YET
- * APPLIED to any Statistics screen (review on PR #330), so the executive still sees exact counts,
- * without names. Wiring it in, with totals rounded so a hidden part cannot be worked back, is a
- * follow-up.
+ * Executive figures (Josh's yes, 15 Oct 2026): a count of people under the small number line words
+ * as "fewer than N". `useSmallNumber` applies it to the Statistics headline figures and their
+ * export. Tables and charts below the headline still show exact counts, and totals are not rounded,
+ * so a hidden part can still be worked back from them. That is a later pass.
  */
 export function smallNumberText(count: number): string {
   const line = CLINICAL_VALUES.smallNumberHidden.value;
   if (count > 0 && count < line) return `fewer than ${line}`;
   return String(count);
+}
+
+/**
+ * Which coordinator records a service coordinator keeps (Josh's yes, 15 Oct 2026): those about its
+ * own service's wards, journeys, referrals, stays and bed releases. A record naming anything outside
+ * the scope, or naming nothing at all (a configuration change), stays the statewide desk's.
+ */
+export function coordinatorRecordScope(
+  scoped: {
+    movements: readonly { id: string }[];
+    referrals: readonly { id: string }[];
+    admissions: readonly { id: string }[];
+  },
+  bedReleases: readonly { id: string; unitId: string }[],
+  unitIn: (unitId: string) => boolean,
+): {
+  movementIds: ReadonlySet<string>;
+  subject(subject: AuditSubject): boolean;
+  logEntry(entry: EventLogEntry): boolean;
+} {
+  const movementIds = new Set(scoped.movements.map((movement) => movement.id));
+  const referralIds = new Set(scoped.referrals.map((referral) => referral.id));
+  const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
+  const releaseIds = new Set(bedReleases.filter((release) => unitIn(release.unitId)).map((release) => release.id));
+  const subject = (record: AuditSubject): boolean => {
+    switch (record.kind) {
+      case "admission":
+        return admissionIds.has(record.admissionId) && unitIn(record.unitId);
+      case "movement":
+        return movementIds.has(record.movementId);
+      case "referral":
+        return referralIds.has(record.referralId);
+      case "bed-release":
+        return releaseIds.has(record.releaseId) && unitIn(record.unitId);
+      default:
+        return false;
+    }
+  };
+  const logEntry = (entry: EventLogEntry): boolean => {
+    const named = [
+      entry.movementId === undefined ? undefined : movementIds.has(entry.movementId),
+      entry.referralId === undefined ? undefined : referralIds.has(entry.referralId),
+      entry.admissionId === undefined ? undefined : admissionIds.has(entry.admissionId),
+      entry.releaseId === undefined ? undefined : releaseIds.has(entry.releaseId),
+      entry.unitId === undefined ? undefined : unitIn(entry.unitId),
+      entry.actingUnitId === undefined ? undefined : unitIn(entry.actingUnitId),
+      // A planned admission is the statewide desk's booking list.
+      entry.plannedAdmissionId === undefined ? undefined : false,
+    ].filter((answer): answer is boolean => answer !== undefined);
+    return named.length > 0 && named.every(Boolean);
+  };
+  return { movementIds, subject, logEntry };
 }
 
 /**

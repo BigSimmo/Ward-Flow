@@ -8,6 +8,7 @@ import { seedWardFlowState } from "../src/components/ward-management/ward-flow-r
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import {
+  coordinatorRecordScope,
   scopeBroadcastAlerts,
   scopeWorkspace,
   smallNumberText,
@@ -308,6 +309,71 @@ describe("the scoped workspace", () => {
     }
     for (const patient of scoped.patients) expect(patient.umrn).toBe("");
     expect(scoped.referrals).toEqual([]);
+  });
+
+  it("trims an officer's job to what the collection needs", () => {
+    const job = state.movements.find((movement) => movement.transport !== undefined)!;
+    const open = {
+      ...job,
+      transport: { ...job.transport!, arrivedAt: undefined },
+      closure: undefined,
+      owner: "Synthetic owner",
+      referredUnitIds: [unitId],
+      declines: [{ unitId, at: NOW_ANCHOR, reason: "no_bed" }],
+      unwinds: [
+        { at: NOW_ANCHOR, kind: "stage_corrected", by: "coordinator" },
+        { at: NOW_ANCHOR, kind: "transport_cancelled", by: "officer" },
+      ],
+    } as unknown as typeof job;
+    const [trimmed] = scopeWorkspace(
+      { ...state, movements: [open] },
+      { role: "officer", scope: { kind: "jobs" } },
+      {
+        now: NOW_ANCHOR,
+        places,
+      },
+    ).movements;
+    expect(trimmed.transport).toEqual(open.transport);
+    expect(trimmed.legalStatus).toBe(open.legalStatus);
+    expect(trimmed.originEdId).toBe(open.originEdId);
+    expect(trimmed.owner).toBe("");
+    expect(trimmed.referredUnitIds).toEqual([]);
+    expect(trimmed.declines).toEqual([]);
+    expect(trimmed.statusChanges).toEqual([]);
+    expect(trimmed.tentativeDiagnosis).toBeUndefined();
+    expect(trimmed.unwinds.map((unwind) => unwind.kind)).toEqual(["transport_cancelled"]);
+  });
+
+  it("keeps a service coordinator's records to its own service", () => {
+    const service = places.unitService(unitId)!;
+    const own = (id: string) => places.unitService(id) === service;
+    const otherUnit = state.units.find((unit) => !own(unit.id))!;
+    const scoped = scope({ role: "coordinator", scope: { kind: "service", service } });
+    const records = coordinatorRecordScope(scoped, state.bedReleases, own);
+    const outside = state.movements.find((movement) => !scoped.movements.some((kept) => kept.id === movement.id));
+    if (scoped.movements[0]) {
+      expect(records.subject({ kind: "movement", movementId: scoped.movements[0].id, patientId: null })).toBe(true);
+      expect(
+        records.logEntry({
+          type: "PULL_PATIENT",
+          role: "coordinator",
+          now: undefined,
+          accepted: true,
+          movementId: scoped.movements[0].id,
+        }),
+      ).toBe(true);
+    }
+    if (outside) {
+      expect(records.subject({ kind: "movement", movementId: outside.id, patientId: null })).toBe(false);
+      expect(records.movementIds.has(outside.id)).toBe(false);
+    }
+    expect(records.subject({ kind: "configuration" })).toBe(false);
+    const entry = { type: "PULL_PATIENT", role: "coordinator", now: undefined, accepted: true } as const;
+    expect(records.logEntry({ ...entry, unitId })).toBe(true);
+    expect(records.logEntry({ ...entry, unitId: otherUnit.id })).toBe(false);
+    expect(records.logEntry({ ...entry, unitId, actingUnitId: otherUnit.id })).toBe(false);
+    expect(records.logEntry(entry)).toBe(false);
+    expect(records.logEntry({ ...entry, unitId, plannedAdmissionId: "synthetic" })).toBe(false);
   });
 
   it("hides counts below the small-number threshold", () => {

@@ -20,7 +20,14 @@ import { Button, buttonClass } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { scopeBroadcastAlerts, scopeWorkspace } from "@/components/ward-management/ward-access-scope";
+import {
+  coordinatorRecordScope,
+  scopeBroadcastAlerts,
+  scopeWorkspace,
+  smallNumberText,
+} from "@/components/ward-management/ward-access-scope";
+import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
+import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -134,6 +141,18 @@ function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
 }
 
 /**
+ * Executive figures (role access plan, Josh's yes 15 Oct 2026): a count of people under the small
+ * number line reads "fewer than 5" on the Statistics headline figures, so a small group cannot be
+ * picked out. Beds and wards stay exact, and every other desk sees exact counts.
+ */
+export function useSmallNumber(): (count: number) => number | string {
+  const on = useWardFeatureFlag("role-access");
+  const access = useEffectiveWardAccess();
+  const hide = on && access.role === "executive";
+  return useCallback((count: number) => (hide ? smallNumberText(count) : count), [hide]);
+}
+
+/**
  * Re-provides the app context, scoped. A statewide coordinator gets the original value back, so the
  * flag costs nothing on the coordinator's own view.
  */
@@ -214,6 +233,22 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     // too (review on PR #330). Audit and governance records stay the coordinator's.
     const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
     const denied = { status: "denied" } as const;
+    // Audit, governance, refusals and the event log are the coordinator's. A service coordinator
+    // keeps only the records about its own service's wards, journeys and referrals (Josh's yes,
+    // 15 Oct 2026), so a whole network record or another service's never reaches it.
+    const scope = coordinatorRecordScope(scoped, context.bedReleases, unitIn);
+    const auditInScope = (event: AuditEvent) => scope.subject(event.subject);
+    const reviewInScope = (actor: WardRecordActor) => {
+      // A review can be of a seeded governance entry, so the governance read is the fuller list.
+      const read = context.readGovernanceAuditEvents?.(actor) ?? context.readAuditEvents(actor);
+      const kept = new Set(read.status === "allowed" ? read.value.filter(auditInScope).map((event) => event.id) : []);
+      return (review: AuditReview) => kept.has(review.eventId);
+    };
+    const auditRead = <T,>(read: RecordRead<readonly T[]>, keep: (item: T) => boolean): RecordRead<readonly T[]> => {
+      if (!coordinator) return denied;
+      if (wholeNetwork || read.status !== "allowed") return read;
+      return { status: "allowed", value: read.value.filter(keep) };
+    };
     const outsideHandle = { generation: -1, requestId: -1 } as const;
     return {
       glass: breakGlassPatientIds,
@@ -230,15 +265,22 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
           admissionIds.has(admissionId) ? context.openDischargeRecord(actor, admissionId) : outsideHandle,
         readDischargeRecord: (actor, admissionId, handle) =>
           admissionIds.has(admissionId) ? context.readDischargeRecord(actor, admissionId, handle) : denied,
-        readAuditEvents: (actor) => (coordinator ? context.readAuditEvents(actor) : denied),
-        readAuditReviews: (actor) => (coordinator ? context.readAuditReviews(actor) : denied),
+        readAuditEvents: (actor) => auditRead(context.readAuditEvents(actor), auditInScope),
+        readAuditReviews: (actor) =>
+          auditRead(context.readAuditReviews(actor), wholeNetwork ? () => true : reviewInScope(actor)),
         readGovernanceAuditEvents: (actor) =>
-          coordinator && context.readGovernanceAuditEvents ? context.readGovernanceAuditEvents(actor) : denied,
-        rejections: coordinator ? context.rejections : [],
-        eventLog: coordinator ? context.eventLog : [],
+          coordinator && context.readGovernanceAuditEvents
+            ? auditRead(context.readGovernanceAuditEvents(actor), auditInScope)
+            : denied,
+        rejections: wholeNetwork
+          ? context.rejections
+          : coordinator
+            ? context.rejections.filter((rejection) => scope.movementIds.has(rejection.movementId))
+            : [],
+        eventLog: wholeNetwork ? context.eventLog : coordinator ? (context.eventLog ?? []).filter(scope.logEntry) : [],
         bedReleases: byUnit(context.bedReleases),
         leaveBeds: byUnit(context.leaveBeds),
-        refreshRequests: coordinator ? context.refreshRequests : [],
+        refreshRequests: wholeNetwork ? context.refreshRequests : coordinator ? byUnit(context.refreshRequests) : [],
         // Bed calls name the wards they ask, so a desk sees only calls to its own wards. A directive
         // with no named wards is for everyone. Undo records hold whole before and after records, and
         // a saved scenario is the whole workspace, so both stay the statewide desk's. A service
