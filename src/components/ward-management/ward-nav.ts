@@ -217,6 +217,13 @@ export const WARD_ED_HREF = "/mockups/ward-flow/ed";
 /** The bed meeting TV view (`bed-meeting/bed-meeting-tv.tsx`), behind the `bed-meeting-tv` flag. */
 export const WARD_BED_MEETING_TV_HREF = "/mockups/ward-flow/bed-meeting";
 
+/** A TV screen: the network bed meeting, or one ward (`?ward=`) or one emergency department (`?ed=`). */
+export function bedMeetingTvHref(view: { ward?: string; ed?: string } = {}): string {
+  if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}`;
+  if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}`;
+  return WARD_BED_MEETING_TV_HREF;
+}
+
 /**
  * `role` — entry points for the role screens `WardRoleSwitcher` offers (Coordinator, Ward,
  * Officer, Emergency department — see that component's own doc comment). Coordinator is

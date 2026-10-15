@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Tv } from "lucide-react";
+import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import {
   Button,
@@ -76,6 +78,7 @@ export function EdOverview({
   onRaiseReferral,
 }: Props) {
   const isPhone = useIsPhone();
+  const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
@@ -180,7 +183,22 @@ export function EdOverview({
           }
           foot={<CheckingFoot items={checks} />}
           footAside={<span>Board updates once a minute</span>}
-          aside={raiseButton}
+          aside={
+            <>
+              {/* This department's own TV screen, behind the `bed-meeting-tv` flag. */}
+              {tvViewsOn ? (
+                <Link
+                  href={bedMeetingTvHref({ ed: departmentId })}
+                  className={buttonClass({ variant: "onHero", size: "sm" })}
+                  data-testid="ward-ed-open-tv"
+                >
+                  <Tv size={14} aria-hidden="true" />
+                  On TV
+                </Link>
+              ) : null}
+              {raiseButton}
+            </>
+          }
         />
       )}
       <nav className={styles.strip} aria-label="Emergency departments">

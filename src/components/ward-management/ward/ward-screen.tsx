@@ -12,8 +12,11 @@ import {
   Printer,
   Search,
   Send,
+  Tv,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -340,6 +343,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
+  const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
   const isPhone = useIsPhone();
   const [phonePanel, setPhonePanel] = useState<"shift" | "flow" | null>(null);
   // A sheet left open when the screen widens past the phone is closed, not reopened on return.
@@ -2822,6 +2826,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <FileText size={16} aria-hidden="true" />
                     Shift brief
                   </button>
+                  {/* This ward's own TV screen, behind the `bed-meeting-tv` flag. Desktop only. */}
+                  {tvViewsOn && !isPhone ? (
+                    <Link
+                      className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
+                      href={bedMeetingTvHref({ ward: unit.id })}
+                      data-testid="ward-open-tv"
+                    >
+                      <Tv size={16} aria-hidden="true" />
+                      On TV
+                    </Link>
+                  ) : null}
                   <Link
                     className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide} ${styles.toolSolo}`}
                     href={handoverHref}

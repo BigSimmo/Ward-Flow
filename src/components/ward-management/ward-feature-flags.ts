@@ -34,13 +34,13 @@ export type WardFeatureFlagDefinition = {
 
 export const WARD_FEATURE_FLAGS = {
   "bed-meeting-tv": {
-    label: "Bed meeting TV view",
+    label: "TV views",
     description:
-      "A read only, large type view of the bed meeting figures for the meeting room screen, linked from the menu and Tools.",
+      "Read only, large type screens for the bed meeting, one ward or one ED, linked from the menu, Tools, Capacity, each ward and each ED.",
     owner: "Josh",
     added: "2026-10-15",
     defaults: { development: true, demo: true, production: false },
-    removeWhen: "Josh signs off the TV view after a real bed meeting trial.",
+    removeWhen: "Josh signs off the TV views after a real bed meeting, ward and ED trial.",
   },
   "demo-reset": {
     label: "One tap demo reset",

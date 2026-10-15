@@ -1,12 +1,12 @@
-/* The bed meeting TV view (`bed-meeting-tv.tsx`). Large type for a meeting room screen read from
- * across the room, sized with the viewport so a 1080p TV and a 4K TV both fill sensibly. Tokens
- * only. In browser full screen the view is the whole screen, so it paints its own ground. */
+/* The TV views (`bed-meeting-tv.tsx`). Large type for a screen read from across a room, sized with
+ * the viewport so a 1080p TV and a 4K TV both fill sensibly. Tokens only. In browser full screen
+ * the view is the whole screen, so it paints its own ground. */
 
 .tv {
-  --tv-gap: clamp(var(--wf-s-3), 1.2vw, var(--wf-s-8));
-  --tv-body: clamp(var(--wf-fs-16), 1.45vw, 2.25rem);
+  --tv-gap: clamp(var(--wf-s-3), 1.1vw, var(--wf-s-8));
+  --tv-body: clamp(var(--wf-fs-16), 1.4vw, 2.25rem);
   --tv-small: clamp(var(--wf-fs-14), 0.95vw, 1.5rem);
-  --tv-row: clamp(var(--wf-fs-15), 1.2vw, 1.9rem);
+  --tv-row: clamp(var(--wf-fs-15), 1.15vw, 1.9rem);
   display: flex;
   flex-direction: column;
   gap: var(--tv-gap);
@@ -30,9 +30,18 @@
   gap: var(--tv-gap);
 }
 
+.eyebrow {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--tv-small);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .title {
   margin: 0;
-  font-size: clamp(var(--wf-fs-28), 2.6vw, 4rem);
+  font-size: clamp(var(--wf-fs-28), 2.5vw, 4rem);
   font-weight: 700;
   line-height: 1.1;
 }
@@ -45,6 +54,7 @@
 
 .actions {
   display: flex;
+  align-items: flex-start;
   gap: var(--wf-s-2);
 }
 
@@ -73,10 +83,94 @@
 }
 
 .action:focus-visible,
-.offLink:focus-visible {
+.offLink:focus-visible,
+.pickerMenu a:focus-visible {
   outline: 2px solid var(--wf-accent);
   outline-offset: 2px;
 }
+
+/* The screen picker: plain links in a disclosure, so a TV can be pointed at one screen for good. */
+.picker {
+  position: relative;
+}
+
+.picker > summary {
+  list-style: none;
+}
+
+.picker > summary::-webkit-details-marker {
+  display: none;
+}
+
+.picker[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+.pickerMenu {
+  position: absolute;
+  z-index: 2;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + var(--wf-s-2));
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: var(--wf-s-4) var(--wf-s-8);
+  max-block-size: 70vh;
+  padding: var(--wf-s-4) var(--wf-s-6);
+  overflow-y: auto;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: 0 var(--wf-s-2) var(--wf-s-8) color-mix(in srgb, var(--wf-ink-1) 18%, transparent);
+  font-size: var(--wf-fs-15);
+}
+
+.pickerMenu > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
+.pickerMenu > .pickerWards {
+  display: block;
+  column-count: 2;
+  column-gap: var(--wf-s-6);
+}
+
+.pickerWards a {
+  display: block;
+  break-inside: avoid;
+}
+
+.pickerHeading {
+  margin: 0 0 var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  column-span: all;
+}
+
+.pickerMenu a {
+  padding: var(--wf-s-1) 0;
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+
+.pickerMenu a:hover {
+  color: var(--wf-accent);
+  text-decoration: underline;
+}
+
+.pickerMenu a[aria-current="page"] {
+  color: var(--wf-accent);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * The big boxes. Three designs under review (`TV_TILE_DESIGNS`); `recommended` is the base rule
+ * set and the other two override it.
+ * ---------------------------------------------------------------------------------------------- */
 
 .tiles {
   display: grid;
@@ -86,51 +180,189 @@
 }
 
 .tile {
+  --tile-accent: var(--wf-line-2);
+  --tile-ink: var(--wf-ink-2);
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-1);
-  padding: var(--tv-gap);
+  gap: var(--wf-s-2);
+  padding: var(--tv-gap) var(--tv-gap) var(--tv-gap) calc(var(--tv-gap) + var(--wf-s-2));
+  overflow: hidden;
   border: 1px solid var(--wf-line);
-  border-top: 6px solid var(--wf-line-2);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
 }
 
-.tile[data-tone="warning"] {
-  border-top-color: var(--wf-warning);
+.tile::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--wf-s-2);
+  background: var(--tile-accent);
 }
 
 .tile[data-tone="danger"] {
-  border-top-color: var(--wf-danger);
+  --tile-accent: var(--wf-danger);
+  --tile-ink: var(--wf-danger-ink);
+  border-color: color-mix(in srgb, var(--wf-danger) 35%, var(--wf-line));
+  background: color-mix(in srgb, var(--wf-danger) 7%, var(--wf-surface));
+}
+
+.tile[data-tone="warning"] {
+  --tile-accent: var(--wf-warning);
+  --tile-ink: var(--wf-warning-ink);
+  border-color: color-mix(in srgb, var(--wf-warning) 35%, var(--wf-line));
+  background: color-mix(in srgb, var(--wf-warning) 8%, var(--wf-surface));
+}
+
+.tile[data-tone="good"] {
+  --tile-accent: var(--wf-success);
+  --tile-ink: var(--wf-success-ink);
 }
 
 .tileLabel {
-  color: var(--wf-ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
   font-size: var(--tv-small);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.tileStatus {
+  flex: none;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tile-accent) 18%, var(--wf-surface));
+  color: var(--tile-ink);
+  font-size: clamp(var(--wf-fs-12), 0.75vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tile[data-tone="neutral"] .tileStatus {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
 }
 
 .tileValue {
   margin: 0;
-  font-size: clamp(3rem, 5.2vw, 8rem);
-  font-weight: 700;
+  color: var(--wf-ink-1);
+  font-size: var(--tv-value-size, clamp(3rem, 4.4vw, 7rem));
+  font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1;
+  white-space: nowrap;
+}
+
+/* A duration ("7d 1h") is twice as wide as a count, so it takes a smaller figure to stay in its box. */
+.tileValue[data-long] {
+  font-size: calc(var(--tv-value-size, clamp(3rem, 4.4vw, 7rem)) * 0.62);
 }
 
 .tile[data-tone="danger"] .tileValue {
   color: var(--wf-danger-ink);
 }
 
+.tileMeter {
+  margin: 0;
+  block-size: clamp(6px, 0.45vw, 12px);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
+}
+
+.tileMeter > span {
+  display: block;
+  block-size: 100%;
+  inline-size: var(--tv-meter);
+  border-radius: inherit;
+  background: var(--tile-accent);
+}
+
+.tile[data-tone="neutral"] .tileMeter > span {
+  background: var(--wf-ink-3);
+}
+
 .tileDetail {
   margin: 0;
   color: var(--wf-ink-2);
   font-size: var(--tv-small);
+  line-height: 1.3;
 }
+
+/* Conservative: the first version, tightened. A coloured top edge, no status word or bar. */
+.tiles[data-design="conservative"] .tile {
+  padding: var(--tv-gap);
+  border-top: 6px solid var(--tile-accent);
+  background: var(--wf-surface);
+}
+
+.tiles[data-design="conservative"] .tile::before,
+.tiles[data-design="conservative"] .tileStatus,
+.tiles[data-design="conservative"] .tileMeter {
+  display: none;
+}
+
+.tiles[data-design="conservative"] .tileLabel {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.tiles[data-design="conservative"] {
+  --tv-value-size: clamp(2.75rem, 3.8vw, 6rem);
+}
+
+/* Bold: the whole box takes the colour, and the figure fills it. */
+.tiles[data-design="bold"] .tile {
+  padding: var(--tv-gap);
+  border: 0;
+  background: var(--wf-surface-2);
+}
+
+.tiles[data-design="bold"] .tile::before,
+.tiles[data-design="bold"] .tileMeter {
+  display: none;
+}
+
+.tiles[data-design="bold"] .tile[data-tone="danger"] {
+  background: var(--wf-danger);
+}
+
+.tiles[data-design="bold"] .tile[data-tone="warning"] {
+  background: var(--wf-warning);
+}
+
+.tiles[data-design="bold"] .tile[data-tone="danger"] :is(.tileLabel, .tileValue, .tileDetail, .tileStatus) {
+  color: var(--wf-on-accent);
+}
+
+.tiles[data-design="bold"] .tile[data-tone="warning"] :is(.tileLabel, .tileValue, .tileDetail, .tileStatus) {
+  color: var(--wf-ink-1);
+}
+
+.tiles[data-design="bold"] .tileStatus {
+  padding: 0;
+  background: none;
+}
+
+.tiles[data-design="bold"] {
+  --tv-value-size: clamp(3.5rem, 6vw, 9.5rem);
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * The panels.
+ * ---------------------------------------------------------------------------------------------- */
 
 .panels {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: var(--tv-gap);
 }
 
@@ -148,6 +380,16 @@
   font-size: var(--tv-body);
   line-height: 1.2;
   font-weight: 700;
+}
+
+.panelFigure {
+  margin: 0 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.panelFigure b {
+  color: var(--wf-ink-1);
+  font-size: 1.6em;
 }
 
 .table {
@@ -232,8 +474,52 @@
   white-space: nowrap;
 }
 
-.list li[data-status="Held up"] .wait {
+.list li[data-status="Held up"] :is(.wait, .who) {
   color: var(--wf-warning-ink);
+}
+
+/* The ED view's 12 hour trend: one bar per point, the last one now. */
+.trend {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  align-items: end;
+  gap: var(--wf-s-2);
+  block-size: clamp(12rem, 22vw, 28rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trend li {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: end;
+  block-size: 100%;
+  text-align: center;
+}
+
+.trendValue {
+  font-weight: 700;
+}
+
+.trendBar {
+  display: block;
+  block-size: max(var(--tv-bar), 2px);
+  border-radius: var(--wf-r-md) var(--wf-r-md) 0 0;
+  background: var(--wf-accent);
+}
+
+.trend li:last-child .trendBar {
+  background: var(--wf-accent-strong);
+}
+
+.trendLabel {
+  padding-top: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+  line-height: 1.2;
+  text-align: center;
 }
 
 .empty,
@@ -275,6 +561,7 @@
   }
 
   .panels {
+    grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
