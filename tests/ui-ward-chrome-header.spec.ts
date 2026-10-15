@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
+import { personPath } from "./helpers/ward-record-url";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/ward-management/ward-nav";
 
@@ -414,7 +415,7 @@ test.describe("@mockup Ward shell bar", () => {
     // click outright rather than silently succeeding against an unreachable element.
     await firstResult.click();
     await expect(page, "clicking the first visible result must navigate to that person's own record").toHaveURL(
-      /\/mockups\/ward-flow\/people\/PT-001(?:$|[/?#])/,
+      new RegExp(`${personPath("PT-001")}(?:$|[/?#])`),
       { timeout: 10_000 },
     );
   });
