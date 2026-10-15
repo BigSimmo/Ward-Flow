@@ -66,6 +66,24 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByRole("button", { name: /Bed meeting TV/u })).toBeNull();
   });
 
+  it("opens a requested tool once, then tells the parent so a later open starts closed", async () => {
+    const onRequestHandled = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardToolsSheet
+          isPhone={false}
+          roleLabel="Bed coordinator"
+          onNavigate={vi.fn()}
+          onNewReferral={vi.fn()}
+          openRequest={{ tool: "demo", seq: 1 }}
+          onRequestHandled={onRequestHandled}
+        />
+      </WardFlowProvider>,
+    );
+    expect(await screen.findByTestId("ward-tools-demo-panel")).toBeTruthy();
+    await vi.waitFor(() => expect(onRequestHandled).toHaveBeenCalledTimes(1));
+  });
+
   it("keeps the demo controls together behind one Demo row", () => {
     renderSheet();
     fireEvent.click(screen.getByTestId("ward-tools-toggle-demo"));

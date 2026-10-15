@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 
 import { useWardFlow } from "../ward-flow-provider";
-import { bedsPendingPreparation } from "../ward-bed-availability";
+import { bedsPendingPreparation, boundedBedAvailability } from "../ward-bed-availability";
 import { designationSummary, lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { unitHealthService } from "../ward-service-scope";
@@ -50,12 +50,16 @@ export function findBeds(units: readonly Unit[], releases: BedRelease[], filters
     .filter((unit) => !filters.involuntary || unit.authorised)
     .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
     .map((unit) => {
+      // Capped at the board's Ready figure, min(allocatable, empty) under R-B-09, so this never
+      // shows more beds than the board or the bed summary.
+      const ready = boundedBedAvailability(unit).available;
+      const locked = Math.min(lockedBedsFree(unit), ready);
       const free =
         filters.bed === "locked"
-          ? lockedBedsFree(unit)
+          ? locked
           : filters.bed === "open"
-            ? openBedsFree(unit)
-            : lockedBedsFree(unit) + openBedsFree(unit);
+            ? Math.min(openBedsFree(unit), ready - locked)
+            : ready;
       const service = unitHealthService(unit);
       return {
         unit,

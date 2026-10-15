@@ -57,6 +57,8 @@ export type WardToolsSheetProps = {
   onNewReferral: () => void;
   /** A tool to open on arrival, and a counter so the same request can be made again. */
   openRequest?: { tool: ToolsSheetToolId; seq: number };
+  /** Called once the request is used, so the parent can clear it and a later open starts at the top. */
+  onRequestHandled?: () => void;
 };
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
@@ -209,7 +211,14 @@ function BedSummary() {
  * and the repeated shortcut grids are gone because the rail and Statistics already carry them.
  * Phone uses the same sheet; Bed meeting TV stays desktop only.
  */
-export function WardToolsSheet({ isPhone, roleLabel, onNavigate, onNewReferral, openRequest }: WardToolsSheetProps) {
+export function WardToolsSheet({
+  isPhone,
+  roleLabel,
+  onNavigate,
+  onNewReferral,
+  openRequest,
+  onRequestHandled,
+}: WardToolsSheetProps) {
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
   const toggle = (id: ToolsSheetToolId) =>
@@ -229,15 +238,16 @@ export function WardToolsSheet({ isPhone, roleLabel, onNavigate, onNewReferral, 
     let scroll = 0;
     const frame = window.requestAnimationFrame(() => {
       setOpen((current) => new Set(current).add(openRequest.tool));
-      scroll = window.requestAnimationFrame(() =>
-        rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: "smooth" }),
-      );
+      scroll = window.requestAnimationFrame(() => {
+        rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: "smooth" });
+        onRequestHandled?.();
+      });
     });
     return () => {
       window.cancelAnimationFrame(frame);
       window.cancelAnimationFrame(scroll);
     };
-  }, [openRequest]);
+  }, [openRequest, onRequestHandled]);
 
   const tool = (id: ToolsSheetToolId, icon: LucideIcon, name: string, detail: string, body: ReactNode) => (
     <ToolRow

@@ -623,6 +623,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const appearance = useAppearanceStore();
   const toolsPreview = useToolsPreview();
   const [toolsOpenRequest, setToolsOpenRequest] = useState<{ tool: ToolsSheetToolId; seq: number } | undefined>();
+  const clearToolsOpenRequest = useCallback(() => setToolsOpenRequest(undefined), []);
   useEffect(
     () => subscribeToolsTool((tool) => setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }))),
     [],
@@ -2120,6 +2121,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               )
             }
             openRequest={toolsOpenRequest}
+            onRequestHandled={clearToolsOpenRequest}
           />
         ) : null}
         <div className={styles.toolsNav} role="group" aria-label="Tools sections" hidden={toolsPreview}>

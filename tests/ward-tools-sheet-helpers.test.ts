@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { boundedBedAvailability, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { bedSummaryText } from "@/components/ward-management/tools/ward-bed-summary";
@@ -54,8 +54,17 @@ describe("Tools sheet, Find a bed", () => {
     });
     for (const match of matches) {
       expect(match.unit.authorised).toBe(true);
-      expect(match.free).toBe(lockedBedsFree(match.unit));
+      expect(match.free).toBe(Math.min(lockedBedsFree(match.unit), boundedBedAvailability(match.unit).available));
     }
+  });
+
+  it("never shows more beds than the board's Ready figure", () => {
+    const ward = seed.units.find((unit) => !unit.isClosed && unit.cohort === "Adult" && unit.allocatable.value > 1)!;
+    const crowded = { ...ward, empty: { ...ward.empty, value: 1 } };
+    const [match] = findBeds([crowded], bedReleases, DEFAULT_BED_FINDER_FILTERS);
+    expect(match?.free).toBe(1);
+    const none = { ...ward, empty: { ...ward.empty, value: 0 } };
+    expect(findBeds([none], bedReleases, DEFAULT_BED_FINDER_FILTERS)).toEqual([]);
   });
 
   it("puts wards in the home service first", () => {
