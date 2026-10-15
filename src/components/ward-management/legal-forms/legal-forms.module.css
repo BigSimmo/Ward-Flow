@@ -1561,3 +1561,9 @@ button.taskLabel[aria-pressed="true"] {
     min-height: 0;
   }
 }
+
+@media (max-width: 48rem) {
+  .codeChip {
+    min-height: 48px;
+  }
+}
