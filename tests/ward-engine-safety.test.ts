@@ -24,7 +24,9 @@ import { isValidStoredWardFlowState } from "@/components/ward-management/ward-fl
 import { MOVEMENT_STAGES, REFERRAL_ADDRESSING_STATES } from "@/components/ward-management/ward-model";
 import { WARD_SCENARIOS, type WardScenario } from "@/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { undoStepTypeFor } from "@/components/ward-management/ward-undo";
 import { FUZZED_EVENT_TYPES, nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
+import { undoComparableWorld, undoOf } from "./helpers/ward-legal-figure-sweep";
 
 const envCount = (name: string, fallback: number) => {
   const value = Number(process.env[name]);
@@ -208,7 +210,36 @@ function applyAndCheck(
         return { rule: "a refused event changes no bed", detail: `refused ${event.type} changed ${key}` };
     }
   }
-  return bedInvariantViolation(next) ?? (checkStorage ? storageViolation(next) : null) ?? { next };
+  return (
+    bedInvariantViolation(next) ??
+    (checkStorage ? storageViolation(next) : null) ??
+    (next.rejections.length === state.rejections.length ? undoViolation(state, event, next) : null) ?? { next }
+  );
+}
+
+/** Every step type the random run took back and found restored. */
+const UNDONE_STEP_TYPES = new Set<WardFlowEvent["type"]>();
+
+/**
+ * Master plan 5.2: an accepted step that offers Undo can be taken back at once, by the role that
+ * acted, and the undo restores the world exactly as it was before the step.
+ */
+function undoViolation(before: WardFlowState, event: WardFlowEvent, applied: WardFlowState): Violation | null {
+  if (!undoStepTypeFor(event.type)) return null;
+  // A step that changed nothing leaves nothing to undo (an officer's Delivered on a journey with
+  // no transport job, for one).
+  const earlier = JSON.stringify(undoComparableWorld(before));
+  if (JSON.stringify(undoComparableWorld(applied)) === earlier) return null;
+  const undone = undoOf(event, applied, event.now + 1);
+  if (!undone)
+    return { rule: "an accepted step can be undone straight away", detail: `${event.type} could not be undone` };
+  if (JSON.stringify(undoComparableWorld(undone.state)) !== earlier)
+    return {
+      rule: "undo restores the earlier state",
+      detail: `${undone.type} did not restore the world before ${event.type}`,
+    };
+  UNDONE_STEP_TYPES.add(event.type);
+  return null;
 }
 
 /** Applies events in order from a fresh seed, checking every rule after every event. */
@@ -337,6 +368,8 @@ describe("engine safety under random event sequences", () => {
       expect(refused).toBeGreaterThan(total * 0.1);
       expect(refused).toBeLessThan(total * 0.9);
       expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
+      // Enough undoable steps are accepted that the undo rule is tested, not passed by default.
+      expect(UNDONE_STEP_TYPES.size).toBeGreaterThan(8);
     },
     Math.max(30_000, SEQUENCES * STEPS * 5),
   );
