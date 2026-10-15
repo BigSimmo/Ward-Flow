@@ -5019,6 +5019,15 @@ export function reduceClinicalEvent(
           `RECEIVE_REFERRAL raised as role ed must carry source ed_medical, not ${event.source}`,
         );
       }
+      // Role access plan (15 Oct 2026): a ward raises a referral in its own name only as the
+      // sending ward. Any other source would file it under someone else.
+      if (event.role === "ward" && event.source !== "psychiatric_ward") {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must carry source psychiatric_ward, not ${event.source}`,
+        );
+      }
       if (event.source === "psychiatric_ward") {
         if (!event.originUnitId || !findUnit(state, event.originUnitId)) {
           return reject(

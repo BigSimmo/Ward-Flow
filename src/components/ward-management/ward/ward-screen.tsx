@@ -83,6 +83,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -363,9 +364,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "patients",
   );
   const now = useWardFlowClock();
+  const raise = useWardRaise("ward");
 
-  // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
-  // listed cross-role pair in `ward-role-permissions.ts`.
+  // Feature 11: Raise referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
+  // takes it from a ward only as source `psychiatric_ward` with this ward as the sender.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
@@ -1148,10 +1150,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleConfirmMorningRollup() {
     if (!unit) return;
-    dispatch({
-      type: "CONFIRM_MORNING_ROLLUP",
-      role: "ward",
-      now,
+    raise("CONFIRM_MORNING_ROLLUP", {
       unitId: unit.id,
       actingUnitId: unit.id,
       expectedDischarges: releasesCountedToday.length,
@@ -1163,10 +1162,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleAcknowledgeNotice(noticeId: string) {
     if (!unit) return;
-    dispatch({
-      type: "MARK_NOTICE_READ",
-      role: "ward",
-      now,
+    raise("MARK_NOTICE_READ", {
       noticeId,
       actingPlaceId: unit.id,
     });
@@ -1600,7 +1596,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
     dispatch({
       type: "RECEIVE_REFERRAL",
-      role: "community",
+      role: "ward",
       now,
       ...(verifiedPatientId ? { patientId: verifiedPatientId } : {}),
       ageBand: unit.cohort,
@@ -1716,10 +1712,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      dispatch({
-        type: "PLACE_IN_BED",
-        role: "ward",
-        now,
+      raise("PLACE_IN_BED", {
         admissionId: pick.admissionId,
         bedNumber,
         actingUnitId: boardUnitId,
@@ -1736,10 +1729,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      dispatch({
-        type: "ACCEPT_IN_PRINCIPLE",
-        role: "ward",
-        now,
+      raise("ACCEPT_IN_PRINCIPLE", {
         movementId: pick.movementId,
         unitId: boardUnitId,
         actingUnitId: boardUnitId,
@@ -1756,10 +1746,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      dispatch({
-        type: "ACCEPT_REFERRAL",
-        role: "ward",
-        now,
+      raise("ACCEPT_REFERRAL", {
         referralId: pick.referralId,
         destinationKind: "psychiatric_ward",
         unitId: boardUnitId,
@@ -1806,10 +1793,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({
-      type: "DECLINE",
-      role: "ward",
-      now,
+    raise("DECLINE", {
       movementId,
       unitId: wardUnitId,
       actingUnitId: wardUnitId,
@@ -1831,10 +1815,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
     acceptUndoRef.current = { movementId, unitId };
-    dispatch({
-      type: "ACCEPT_IN_PRINCIPLE",
-      role: "ward",
-      now,
+    raise("ACCEPT_IN_PRINCIPLE", {
       movementId,
       unitId,
       actingUnitId: unitId,
@@ -1846,10 +1827,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const targetUnit = units.find((u) => u.id === unitId);
     if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
-    dispatch({
-      type: "PULL_PATIENT",
-      role: "ward",
-      now,
+    raise("PULL_PATIENT", {
       movementId,
       unitId,
       actingUnitId: unitId,
@@ -1877,20 +1855,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // allowlist entry could never have come off, because nothing could see the fix. Verbosity here
     // buys visibility to the static guards, which is the trade this file should always take.
     if (attempted === "ACCEPT_IN_PRINCIPLE") {
-      dispatch({
-        type: "ACCEPT_IN_PRINCIPLE",
-        role: "ward",
-        now,
+      raise("ACCEPT_IN_PRINCIPLE", {
         movementId,
         unitId: wardUnitId,
         actingUnitId: wardUnitId,
         overrideReason,
       });
     } else {
-      dispatch({
-        type: "PULL_PATIENT",
-        role: "ward",
-        now,
+      raise("PULL_PATIENT", {
         movementId,
         unitId: wardUnitId,
         actingUnitId: wardUnitId,
@@ -2000,10 +1972,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // stops *this* caller misusing the event — it is what stops any other call site writing to a
     // unit it did not claim to be acting as, and what puts that claim on the event where the
     // reducer can compare it.
-    dispatch({
-      type: "CONFIRM_CAPACITY",
-      role: "ward",
-      now,
+    raise("CONFIRM_CAPACITY", {
       unitId: wardUnitId,
       actingUnitId: unitId,
       value: Math.floor(parsed),
@@ -2023,10 +1992,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       return;
     }
     if (Number.isFinite(parsed) && parsed >= 0) {
-      dispatch({
-        type: "CONFIRM_CAPACITY",
-        role: "ward",
-        now,
+      raise("CONFIRM_CAPACITY", {
         unitId: wardUnitId,
         actingUnitId: unitId,
         value: Math.floor(parsed),
@@ -2034,10 +2000,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       });
     }
     if (!isRollupConfirmedToday) {
-      dispatch({
-        type: "CONFIRM_MORNING_ROLLUP",
-        role: "ward",
-        now,
+      raise("CONFIRM_MORNING_ROLLUP", {
         unitId: unit.id,
         actingUnitId: unit.id,
         expectedDischarges: releasesCountedToday.length,
@@ -2136,10 +2099,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // legal-transition gating in the render below), so the reducer is never asked for a transition
   // the row does not itself offer.
   function confirmBedRelease(releaseId: string) {
-    dispatch({
-      type: "CONFIRM_BED_RELEASE",
-      role: "ward",
-      now,
+    raise("CONFIRM_BED_RELEASE", {
       releaseId,
       actingUnitId: unitId,
     });
@@ -2149,10 +2109,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Bed-model rework (2026-08-28): lifting the blocked flag. The stage is untouched — a confirmed
   // discharge that becomes unstuck is still confirmed.
   function clearBedReleaseBlock(releaseId: string) {
-    dispatch({
-      type: "CLEAR_BED_RELEASE_BLOCK",
-      role: "ward",
-      now,
+    raise("CLEAR_BED_RELEASE_BLOCK", {
       releaseId,
       actingUnitId: unitId,
     });
@@ -2188,10 +2145,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     };
     if (recordWardDeparture) recordWardDeparture(admissionId, unitId, drawerLeavingDestination);
     else
-      dispatch({
-        type: "RECORD_LEAVING",
-        role: "ward",
-        now,
+      raise("RECORD_LEAVING", {
         admissionId,
         actingUnitId: unitId,
         leavingDestination: drawerLeavingDestination,
@@ -2206,10 +2160,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // screen's own route parameter, and the reducer compares it against the leave bed's own
   // `unitId` before ending it.
   function endLeaveBed(leaveBedId: string) {
-    dispatch({
-      type: "END_LEAVE_BED",
-      role: "ward",
-      now,
+    raise("END_LEAVE_BED", {
       leaveBedId,
       actingUnitId: unitId,
     });
@@ -2272,10 +2223,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!releaseReason) return;
     // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` above —
     // it states which ward the caller says it is; it does not prove it.
-    dispatch({
-      type: "RELEASE_PULL",
-      role: "ward",
-      now,
+    raise("RELEASE_PULL", {
       movementId,
       actingUnitId: unitId,
       reason: releaseReason,
@@ -3379,18 +3327,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             // A blocked release clears the stay's reason with it; otherwise the stay's own
                             // reason is cleared, so nothing is refused as a no-op.
                             if (pendingRelease && pendingRelease.blocker !== null) {
-                              dispatch({
-                                type: "CLEAR_BED_RELEASE_BLOCK",
-                                role: "ward",
-                                now,
+                              raise("CLEAR_BED_RELEASE_BLOCK", {
                                 releaseId: pendingRelease.id,
                                 actingUnitId: unitId,
                               });
                             } else if (stay && stay.blockReason !== null) {
-                              dispatch({
-                                type: "CLEAR_STAY_DISCHARGE_BLOCKER",
-                                role: "ward",
-                                now,
+                              raise("CLEAR_STAY_DISCHARGE_BLOCKER", {
                                 admissionId,
                                 actingUnitId: unitId,
                               });
@@ -3402,19 +3344,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           // With a bed release the release event keeps the stay's reason in step; without
                           // one the stay records it directly.
                           if (pendingRelease) {
-                            dispatch({
-                              type: "BLOCK_BED_RELEASE",
-                              role: "ward",
-                              now,
+                            raise("BLOCK_BED_RELEASE", {
                               releaseId: pendingRelease.id,
                               actingUnitId: unitId,
                               blocker: validBlocker,
                             });
                           } else {
-                            dispatch({
-                              type: "RECORD_STAY_DISCHARGE_BLOCKER",
-                              role: "ward",
-                              now,
+                            raise("RECORD_STAY_DISCHARGE_BLOCKER", {
                               admissionId,
                               actingUnitId: unitId,
                               blocker: validBlocker,
@@ -3435,10 +3371,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       );
                       return;
                     }
-                    dispatch({
-                      type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-                      role: "ward",
-                      now,
+                    raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
                       admissionId: selectedBedItem.admissionId,
                       actingUnitId: unitId,
                     });
@@ -3446,10 +3379,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   }}
                   onMarkBack={(bedNum) => {
                     if (selectedBedItem?.admissionId) {
-                      dispatch({
-                        type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-                        role: "ward",
-                        now,
+                      raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
                         admissionId: selectedBedItem.admissionId,
                         actingUnitId: unitId,
                       });
@@ -3460,10 +3390,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     // A4-24: one tap clears the release this bed is being made ready for.
                     const releaseId = selectedBedItem?.preparingReleaseId;
                     if (!releaseId) return;
-                    dispatch({
-                      type: "SET_BED_PREPARATION",
-                      role: "ward",
-                      now,
+                    raise("SET_BED_PREPARATION", {
                       releaseId,
                       actingUnitId: unitId,
                       preparing: false,
