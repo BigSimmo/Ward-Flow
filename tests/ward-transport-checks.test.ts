@@ -197,7 +197,7 @@ describe("arrival gaps with no transport leg (audit r1 item 4)", () => {
 });
 
 describe("every time box reads a typed clock time by the same rule", () => {
-  // Minute 600 of day 2 is 10:00 on the day after day zero.
+  // Minute 600 of day 2 is 10:00, two days after day zero.
   const now = 2 * 1440 + 600;
   const startOfToday = 2 * 1440;
 

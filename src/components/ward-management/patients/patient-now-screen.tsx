@@ -70,7 +70,7 @@ import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode, type PatientMode } from "./patient-mode";
 import { buildPatientStatus, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
-import { MINUTES_PER_DAY, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   TRANSPORT_EXCEPTION_REASON_LABELS,
   holdEndsBeforeEta,
@@ -496,11 +496,9 @@ export function PatientNowScreen({
   function openTransportForm() {
     setTransportCadDraft(displayCadNumber ?? "");
     const savedEta = liveMovement?.transport?.estimatedAt;
-    // A saved ETA after midnight is shown as its clock time plus "tomorrow", so reading the box
-    // back gives the same instant and the bed hold warning still fires.
-    const savedEtaTomorrow =
-      savedEta !== undefined && Math.floor(savedEta / MINUTES_PER_DAY) > Math.floor(now / MINUTES_PER_DAY);
-    const refillText = savedEta === undefined ? "" : `${formatInstant(savedEta)}${savedEtaTomorrow ? " tomorrow" : ""}`;
+    // A saved ETA on another day keeps its day word ("tomorrow"), so the box reads back as the
+    // same instant and the bed hold warning still fires.
+    const refillText = savedEta === undefined ? "" : formatInstantWithDay(savedEta, now);
     setTransportEtaDraft(refillText);
     setTransportEtaRefill(savedEta === undefined ? undefined : { text: refillText, at: savedEta });
     setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
