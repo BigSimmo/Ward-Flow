@@ -3859,7 +3859,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                     ) : null}
                     {movement.arrivalDetails ? (
                       movement.arrivalDetails.estimatedArrivalAt !== undefined ? (
-                        now > movement.arrivalDetails.estimatedArrivalAt + 60 ? (
+                        now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
                           <span
                             className={styles.transitBadgeOverdue}
                             data-testid={`ward-ed-transit-badge-${movement.id}`}

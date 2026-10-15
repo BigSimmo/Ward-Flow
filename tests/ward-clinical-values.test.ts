@@ -357,6 +357,59 @@ describe("no clinical threshold typed outside the values file", () => {
   });
 });
 
+/**
+ * Inline comparisons that once carried a registry value as a bare number (Codex review, 15 Oct 2026).
+ * Each shape names the rule it stands for, so a match says which value to read instead.
+ */
+const INLINE_SHAPES: ReadonlyArray<{ rule: string; shape: RegExp }> = [
+  { rule: "lateArrivalGrace", shape: /(?:\beta|estimatedArrivalAt)\s*\+\s*\d/ },
+  { rule: "longStayPrompt", shape: /\.days\s*>=?\s*\d|daysInBed\([^)]*\)\s*\?\?\s*0\)\s*>=?\s*\d/ },
+  { rule: "longWait", shape: /openedAt\s*>=?\s*\d{3,}/ },
+  { rule: "silentWardFirstReminder or silentWardSecondReminder", shape: /elapsedMinutes\s*[<>]=?\s*\d{2,}/ },
+  { rule: "dueSoonUrgent (currentDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
+];
+
+function inlineThresholdsIn(source: string): string[] {
+  return source.split("\n").flatMap((line, index) => {
+    if (/^\s*(?:\/\/|\*)/.test(line)) return [];
+    return INLINE_SHAPES.filter(({ shape }) => shape.test(line)).map(({ rule }) => `line ${index + 1}: ${rule}`);
+  });
+}
+
+describe("no clinical threshold compared inline", () => {
+  it("catches the shapes it looks for (anti-vacuity)", () => {
+    const planted = [
+      "return now > eta + 60;",
+      "occupant.days >= 7 &&",
+      "(daysInBed(admission, now) ?? 0) >= 7",
+      "now - movement.openedAt >= 1440,",
+      "if (elapsedMinutes < 120) continue;",
+      "dueAt - now < 60;",
+      "tone: remaining <= 60 ? 1 : 2,",
+      "// a comment saying eta + 60 is fine",
+      "return now > eta + LATE_ARRIVAL_GRACE_MINUTES;",
+    ].join("\n");
+    expect(inlineThresholdsIn(planted).map((hit) => hit.split(": ")[0])).toEqual([
+      "line 1",
+      "line 2",
+      "line 3",
+      "line 4",
+      "line 5",
+      "line 6",
+      "line 7",
+    ]);
+  });
+
+  it("finds none in the ward directory", () => {
+    const found = wardFiles(WARD_DIR).flatMap((full) => {
+      const file = relative(WARD_DIR, full).replaceAll("\\", "/");
+      if (file === VALUES_FILE || FIXTURE_FILE.test(file)) return [];
+      return inlineThresholdsIn(readFileSync(full, "utf8")).map((hit) => `${file} ${hit}`);
+    });
+    expect(found, "A clinical value is compared as a bare number. Read it from ward-clinical-values.ts.").toEqual([]);
+  });
+});
+
 // ---- The doc is the list --------------------------------------------------------------------
 
 describe("docs/ward-flow/clinical-values.md", () => {
