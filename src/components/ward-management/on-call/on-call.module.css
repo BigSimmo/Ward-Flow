@@ -358,7 +358,7 @@
 .jumpButton {
   display: inline-flex;
   align-items: center;
-  height: 26px;
+  height: 32px;
   padding: 0 7px;
   border: 0;
   border-radius: var(--wf-r-ctl);
