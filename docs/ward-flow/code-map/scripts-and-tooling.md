@@ -64,7 +64,8 @@ run individually per file; nothing here was executed. Back to [the code map inde
   from the hand-authored `PAIRS`/`SUPERSEDED` roster in `screen-pairs.mjs`, cross-checked against
   every mockup, route source and screen folder actually on disk. `--check` fails on a stale map
   **or** on anything unmapped/unreachable it discovers that `PAIRS` does not cover — the
-  UNREACHABLE check is what would have caught `ed-home.tsx` (imported by nothing, no route).
+  UNREACHABLE check is what would have caught `ed-home.tsx` (imported by nothing, no route, since
+  removed by PR #306 on 15 Oct 2026).
 - **`scripts/ward-flow/screen-pairs.mjs`** (99 lines) — Not a script (no CLI, no shebang): the
   single hand-authored `PAIRS`/`SUPERSEDED` roster (mockup file ↔ route ↔ screen folder ↔
   in-build-plan flag), imported by `screen-map.mjs` and `screen-verification.mjs` so the list

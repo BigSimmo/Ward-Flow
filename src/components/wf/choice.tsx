@@ -288,7 +288,7 @@ export type FilterChipProps = {
   className?: string;
 };
 
-/** Toggle chip for quick filters (`aria-pressed`). Pressed gets a 3:1 edge, never a colour fill. */
+/** Toggle chip for quick filters (`aria-pressed`). Pressed takes the accent tint and edge. */
 export function FilterChip({
   pressed,
   onPressedChange,
@@ -307,7 +307,9 @@ export function FilterChip({
       onClick={() => onPressedChange(!pressed)}
     >
       {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-      <span className={styles.chipLabel}>{children}</span>
+      <span className={styles.chipLabel} data-text={typeof children === "string" ? children : undefined}>
+        {children}
+      </span>
       {count != null ? <Count n={count} className={styles.k} /> : null}
     </button>
   );

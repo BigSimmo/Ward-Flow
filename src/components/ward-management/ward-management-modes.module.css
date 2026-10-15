@@ -152,7 +152,7 @@
   align-items: center;
   gap: var(--ward-space-6);
   border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   padding: var(--ward-space-3) var(--ward-space-8);
   font-size: var(--text-3xs);
   font-weight: 680;

@@ -28,16 +28,14 @@ Back to [the code map index](README.md).
 packages (below), that resolves to eleven distinct project files. Ordered by number of importing Ward
 files.
 
-- **`src/components/ui-primitives.tsx`** (5 lines) — a barrel: `export * from` four files under
-  `src/components/primitive-recipes/` (`recipes.ts` 137, `composer.ts` 42, `clinical.tsx` 171,
-  `feedback.tsx` 410) plus `MetroPulseCircle` from `src/components/ui/metro-pulse-circle.tsx` (82).
-  Imported by 14 Ward files for shared control recipes (`cn`, `toolbarButton`, buttons, badges) —
-  e.g. `ward-management/ward/ward-screen.tsx`, `ward-management/ed/ed-screen.tsx`,
-  `ward-management/ward-role-switcher.tsx`. One of the four re-exported files, `clinical.tsx`,
-  itself imports `@/lib/source-authority-registry` (497 lines) and `@/lib/types` (1,187 lines) —
-  PsychSift's clinical-citation classification code. Because the barrel is `export *`, every Ward
-  file that imports anything from `ui-primitives` pulls that module graph into its dependency tree,
-  whether or not the Ward file ever renders a clinical-citation element.
+- **`src/components/ui-primitives.tsx`** (2 lines) — a barrel: `export * from` two files under
+  `src/components/primitive-recipes/` (`recipes.ts` 137, `feedback.tsx` 273). Imported by 18 Ward
+  files for shared control recipes (`cn`, `toolbarButton`, buttons, badges) — e.g.
+  `ward-management/ward/ward-screen.tsx`, `ward-management/ed/ed-screen.tsx`,
+  `ward-management/ward-role-switcher.tsx`. It no longer re-exports `MetroPulseCircle` or
+  the PsychSift `clinical.tsx` recipes (that file is gone), so the clinical-citation code is no
+  longer reached. `recipes.ts` still re-exports `cn`, so the barrel still reaches the shared
+  `src/lib/cn.ts` and `tailwind-merge.ts` helpers (see the retirement list below).
 - **`src/lib/client-store-factory.ts`** (32 lines) — `createBrowserStore`, an SSR-safe store built
   on React's `useSyncExternalStore`. Imported by 7 Ward files: `shell/ward-bar.tsx`,
   `shell/ward-rail.tsx`, `shell/ward-service-store.ts`, `use-ward-sidebar-collapsed.ts`,
@@ -153,9 +151,8 @@ files.
   Flow page gets the whole sheet: the v2 design tokens Ward's own `ward-tokens.module.css` aliases
   (overview map §3.4), plus one token defined directly here rather than in any Ward file —
   `--spacing-ward-phone-bar: 3.5rem` (line 134, "Ward Flow's fixed phone navigation bar and the
-  matching content reserve") — used by 5 Ward CSS modules (`escalation.module.css`,
-  `tracker/live-tracker.module.css`, `ward-chrome-header.module.css`,
-  `ward-management-modes.module.css`, `ward-sidebar.module.css`; two of the five belong to chrome
+  matching content reserve") — used by 3 Ward CSS modules (`ward-chrome-header.module.css`,
+  `ward-management-modes.module.css`, `ward-sidebar.module.css`; two of the three belong to chrome
   the overview map records as retired or unreachable). Also carries `@source not "./mockups"` and
   `@source not "../components/**/*mockup*"` (lines 5-6), which exclude `src/app/mockups/**` and
   mockup-named component folders from Tailwind's utility scan for this sheet;
@@ -197,23 +194,20 @@ these:
   `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`. Ward Flow has no request path independent
   of these; none of its 41 `page.tsx` routes (`git ls-files
 'src/app/mockups/ward-flow/**/page.tsx' | wc -l`, this tip) render without them.
-- **`src/components/ui-primitives.tsx`** and its five underlying files
-  (`primitive-recipes/{recipes,composer,clinical,feedback}.ts(x)`, `ui/metro-pulse-circle.tsx`) — 14
-  Ward files import from the barrel; deleting it breaks compilation across most of the screen
-  folders.
+- **`src/components/ui-primitives.tsx`** and its two underlying files
+  (`primitive-recipes/{recipes,feedback}.ts(x)`) — 18 Ward files import from the barrel; deleting
+  it breaks compilation across most of the screen folders.
 - **`src/lib/client-store-factory.ts`** — the rail, service selector and sidebar-collapsed state all
   depend on it.
 - **`src/components/developer-area/ward-flow-access-gate.tsx`** — removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key. The proxy still lets
   `/mockups/ward-flow` past the mockups-layout 404 through the developer-area header.
 - **`src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx`** — the sign-in route has
   nothing else to render.
-- **The most surprising dependency:** `src/lib/source-authority-registry.ts` (497 lines) and
-  `src/lib/types.ts` (1,187 lines) — PsychSift's clinical-citation classification code — are pulled
-  in transitively through `primitive-recipes/clinical.tsx` inside the `ui-primitives` barrel.
-  Nothing about either file looks Ward-related, and no Ward screen renders a clinical-citation
-  badge, but a PsychSift retirement cleanup that deletes them breaks the barrel's `export *` — and
-  therefore every one of the 14 Ward files that imports `cn` or any other `ui-primitives` export —
-  unless the `clinical.tsx` re-export line is dropped from the barrel first.
+- **Former PsychSift dependency, now gone:** the barrel used to re-export
+  `primitive-recipes/clinical.tsx`, which pulled in PsychSift's `src/lib/source-authority-registry.ts`
+  and `src/lib/types.ts`. All three files have since been removed and the barrel narrowed, so the
+  `ui-primitives` import no longer reaches the clinical-citation code. It still reaches `cn.ts`
+  and `tailwind-merge.ts` through `recipes.ts`.
 - Lower-risk (single or double importer, easy to patch around if removed): `ui/sheet.tsx`,
   `ui/missing-value.tsx`, `contextual-back-link.tsx`, `clinical-dashboard/brand.tsx` (only reached by
   already-retired chrome), `ui/tooltip.tsx`, `ui/sheet-focus.ts`, `lib/form-register.ts` (+ its own
@@ -324,12 +318,10 @@ Findings from that trace worth knowing before any Ward Flow task:
    production code (hex-token, z-index-ladder, button-wiring and lucide-icon-aria rules all apply)
    even though it is a synthetic, never-deployed prototype. Do not assume a Ward file can skip these
    rules because it "is a mockup".
-3. **The `ui-primitives` barrel pulls in clinical-citation code.** Importing anything from
-   `@/components/ui-primitives` — 14 Ward files do — pulls in
-   `primitive-recipes/clinical.tsx`'s own imports, `@/lib/source-authority-registry.ts` (497 lines)
-   and `@/lib/types.ts` (1,187 lines), because the barrel is `export *`. A PsychSift-retirement pass
-   that deletes those two files first, before narrowing the barrel, breaks every Ward file that
-   imports `cn` or any other primitive.
+3. **The `ui-primitives` barrel is `export *`.** 18 Ward files import from it. It now re-exports
+   only `primitive-recipes/recipes.ts` and `feedback.tsx` (the PsychSift `clinical.tsx` recipes are
+   gone), but removing either of those still breaks every Ward file that imports `cn` or any other
+   primitive.
 4. **Ward Flow's error-boundary coverage has a real, documented gap, not a hypothetical one.**
    `ward-flow/error.tsx` cannot catch a throw from `ward-flow/layout.tsx` itself (same-segment rule
    in Next 16), so `src/app/mockups/error.tsx` (154 lines) was added specifically to close that —
