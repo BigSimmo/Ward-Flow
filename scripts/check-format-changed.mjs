@@ -118,17 +118,23 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
   if (write) {
     const partial = partialStagedFiles(root, files);
     if (partial.length) throw new Error(`Refusing to rewrite partially staged files: ${partial.join(", ")}`);
-    const { unsignedWardFiles, signOutConflicts } = await import("./pre-commit-checks.mjs");
+    const { unsignedWardFiles, signOutConflicts, signOutLogOptional } = await import("./pre-commit-checks.mjs");
     const log = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
-    if (!existsSync(log)) throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
-    const claims = readFileSync(log, "utf8");
-    const branch = git(root, ["branch", "--show-current"]).trim();
-    const missing = unsignedWardFiles(files, claims, branch, root);
-    const clashes = signOutConflicts(files, claims, branch, root);
-    if (missing.length || clashes.length)
-      throw new Error(
-        `Formatting ownership not established: ${[...missing, ...clashes].map((value) => (typeof value === "string" ? value : JSON.stringify(value))).join("; ")}`,
-      );
+    if (!existsSync(log)) {
+      // Same rule as the pre-commit guard: only an unnamed default log off Windows may be absent.
+      if (!signOutLogOptional())
+        throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
+      console.warn(`Sign-out log not found at ${log}; formatting the named files without an ownership check.`);
+    } else {
+      const claims = readFileSync(log, "utf8");
+      const branch = git(root, ["branch", "--show-current"]).trim();
+      const missing = unsignedWardFiles(files, claims, branch, root);
+      const clashes = signOutConflicts(files, claims, branch, root);
+      if (missing.length || clashes.length)
+        throw new Error(
+          `Formatting ownership not established: ${[...missing, ...clashes].map((value) => (typeof value === "string" ? value : JSON.stringify(value))).join("; ")}`,
+        );
+    }
   }
   const prettierBin = path.join(root, "node_modules/prettier/bin/prettier.cjs");
   if (!existsSync(prettierBin)) throw new Error("Locked local Prettier unavailable; no network fallback.");

@@ -13,6 +13,7 @@ import {
   findStaleRefs,
   collectInstructionDocs,
 } from "../scripts/check-docs-script-refs.mjs";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 const historical = [
   "npm run missing-current",
   "<!-- docs-script-refs:historical-start -->",
@@ -112,7 +113,8 @@ test("tooling map describes retirement without offering the importer as a genera
 test(
   "receipt exporter verifies real Git destinations, ancestry and non-blank completion evidence",
   { timeout: 90_000 },
-  () => {
+  (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = mkdtempSync(join(tmpdir(), "ward-receipt-boundaries-"));
     const checkout = join(root, "checkout");
     const output = join(root, "receipts");
