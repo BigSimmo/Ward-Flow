@@ -99,51 +99,68 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     }
   }
 
-  const jwks = { keys: new Map(), fetchedAt: -Infinity, attemptedAt: -Infinity };
+  const jwks = { keys: new Map(), fetchedAt: -Infinity, attemptedAt: -Infinity, pending: null };
   async function publishedKey(kid) {
     const at = now();
     const fresh = at - jwks.fetchedAt < JWKS_TTL_MS;
-    if ((fresh && jwks.keys.has(kid)) || at - jwks.attemptedAt < JWKS_RETRY_MS) return jwks.keys.get(kid) ?? null;
-    jwks.attemptedAt = at;
-    try {
-      const keys = await supabaseGet("/auth/v1/.well-known/jwks.json", {}, async (response) => {
-        if (!response.ok) throw new Error("JWKS unavailable");
-        const body = await response.json();
-        if (!Array.isArray(body?.keys)) throw new Error("JWKS unavailable");
-        const next = new Map();
-        for (const jwk of body.keys.slice(0, 20)) {
-          const alg = jwk?.alg ?? Object.keys(ALGORITHMS).find((name) => ALGORITHMS[name].kty === jwk?.kty);
-          if (typeof jwk?.kid !== "string" || !Object.hasOwn(ALGORITHMS, alg) || ALGORITHMS[alg].kty !== jwk.kty)
-            continue;
-          try {
-            next.set(jwk.kid, { alg, key: createPublicKey({ key: jwk, format: "jwk" }) });
-          } catch {
-            // A key Node cannot read is skipped; tokens signed with it fall back to Supabase.
-          }
-        }
-        return next;
-      });
-      jwks.keys = keys;
-      jwks.fetchedAt = at;
-    } catch {
-      // Keep the last good keys. Tokens they cannot verify fall back to Supabase.
+    if (fresh && jwks.keys.has(kid)) return jwks.keys.get(kid);
+    if (jwks.pending) {
+      await jwks.pending;
+      return jwks.keys.get(kid) ?? null;
     }
+    if (at - jwks.attemptedAt < JWKS_RETRY_MS) return null;
+    jwks.attemptedAt = at;
+    jwks.pending = (async () => {
+      try {
+        const keys = await supabaseGet("/auth/v1/.well-known/jwks.json", {}, async (response) => {
+          if (!response.ok) throw new Error("JWKS unavailable");
+          const body = await response.json();
+          if (!Array.isArray(body?.keys)) throw new Error("JWKS unavailable");
+          const next = new Map();
+          for (const jwk of body.keys.slice(0, 20)) {
+            const alg = jwk?.alg ?? Object.keys(ALGORITHMS).find((name) => ALGORITHMS[name].kty === jwk?.kty);
+            if (typeof jwk?.kid !== "string" || !Object.hasOwn(ALGORITHMS, alg) || ALGORITHMS[alg].kty !== jwk.kty)
+              continue;
+            try {
+              next.set(jwk.kid, { alg, key: createPublicKey({ key: jwk, format: "jwk" }) });
+            } catch {
+              // A key Node cannot read is skipped; tokens signed with it fall back to Supabase.
+            }
+          }
+          return next;
+        });
+        jwks.keys = keys;
+        jwks.fetchedAt = now();
+      } catch {
+        // Expired keys must not remain trusted when the refresh fails.
+        jwks.keys = new Map();
+        jwks.fetchedAt = -Infinity;
+      } finally {
+        jwks.pending = null;
+      }
+    })();
+    await jwks.pending;
     return jwks.keys.get(kid) ?? null;
   }
 
   const confirmed = new Map();
-  const limits = { windowStart: -Infinity, total: 0, addresses: new Map() };
-  function allowRemoteCheck(address) {
+  const limits = { windowStart: -Infinity, total: 0, addresses: new Map(), subjects: new Map() };
+  function allowRemoteCheck(address, subject) {
     const at = now();
     if (at - limits.windowStart >= LIMIT_WINDOW_MS) {
       limits.windowStart = at;
       limits.total = 0;
       limits.addresses.clear();
+      limits.subjects.clear();
     }
     const key = limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
     const used = limits.addresses.get(key) ?? 0;
-    if (used >= REMOTE_CHECKS_PER_ADDRESS || limits.total >= REMOTE_CHECKS_TOTAL) return false;
+    const subjectUsed = limits.subjects.get(subject) ?? 0;
+    // Keep one coordinator's forged tokens from consuming the shared allowance for others.
+    if (used >= REMOTE_CHECKS_PER_ADDRESS || subjectUsed >= REMOTE_CHECKS_PER_ADDRESS || limits.total >= REMOTE_CHECKS_TOTAL)
+      return false;
     limits.addresses.set(key, used + 1);
+    limits.subjects.set(subject, subjectUsed + 1);
     limits.total += 1;
     return true;
   }
@@ -202,7 +219,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const known = confirmed.get(tokenKey);
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
-    if (!allowRemoteCheck(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(clientAddress, subject)) throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);

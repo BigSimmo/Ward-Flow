@@ -102,6 +102,26 @@ test("Supabase being down for the keys still lets a legacy check through, and ne
   await assert.rejects(refusing.verify(signed("ES256", "ec-1")), /Unauthorised/);
 });
 
+test("expired published keys are not used after a failed refresh", async () => {
+  let at = Date.now();
+  let keys = published;
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    fetch: async (url) => {
+      calls.push(url);
+      if (url === JWKS) return keys ? Response.json(keys) : new Response(null, { status: 503 });
+      return Response.json({ id: coordinator });
+    },
+  });
+  const token = signed("ES256", "ec-1");
+  assert.equal(await verify(token), coordinator);
+  at += 10 * 60_000;
+  keys = null;
+  assert.equal(await verify(token), coordinator);
+  assert.deepEqual(calls, [JWKS, JWKS, USER]);
+});
+
 test("a confirmed legacy token is reused for a minute, never past its expiry", async () => {
   let at = Date.now();
   const { calls, verify } = setup({ clock: () => at });
@@ -145,11 +165,10 @@ test("the shared API and readiness answer 429 with Retry-After when the limit is
   }
 });
 
-test("the client address is the entry the hosting proxy appended, else the socket", () => {
-  assert.equal(
-    clientAddress({ headers: { "x-forwarded-for": "10.0.0.1, 203.0.113.9" }, socket: { remoteAddress: "x" } }),
-    "203.0.113.9",
-  );
+test("the client address trusts forwarded headers only from configured proxies", () => {
+  const incoming = { headers: { "x-forwarded-for": "10.0.0.1, 203.0.113.9" }, socket: { remoteAddress: "proxy" } };
+  assert.equal(clientAddress(incoming), "proxy");
+  assert.equal(clientAddress(incoming, ["proxy"]), "203.0.113.9");
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "127.0.0.1" } }), "127.0.0.1");
   assert.equal(clientAddress({ headers: {}, socket: {} }), "unknown");
 });

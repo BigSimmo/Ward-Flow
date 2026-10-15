@@ -124,13 +124,15 @@ export function createHandler({
 }
 
 /**
- * The address sign-in checks are limited by: the last X-Forwarded-For entry, which the hosting
- * proxy appends (a client can add entries before it, never after), else the socket's own address.
+ * The address sign-in checks use forwarded headers only when the socket peer is a configured
+ * trusted proxy. Direct clients cannot choose their rate-limit address.
  */
-export function clientAddress(incoming) {
+export function clientAddress(incoming, trustedProxyAddresses = []) {
+  const socketAddress = incoming.socket?.remoteAddress || "unknown";
+  if (!trustedProxyAddresses.includes(socketAddress)) return socketAddress.slice(0, 64);
   const forwarded = incoming.headers["x-forwarded-for"];
   const last = typeof forwarded === "string" ? (forwarded.split(",").at(-1)?.trim() ?? "") : "";
-  return (last || incoming.socket?.remoteAddress || "unknown").slice(0, 64);
+  return (last || socketAddress).slice(0, 64);
 }
 
 /**
@@ -152,7 +154,9 @@ export function listen(handler, config) {
             ? {}
             : { body: /** @type {BodyInit} */ (/** @type {unknown} */ (Readable.toWeb(incoming))), duplex: "half" }),
         });
-        const response = await handler(request, { clientAddress: clientAddress(incoming) });
+        const response = await handler(request, {
+          clientAddress: clientAddress(incoming, config.trustedProxyAddresses),
+        });
         outgoing.writeHead(response.status, Object.fromEntries(response.headers));
         outgoing.end(Buffer.from(await response.arrayBuffer()));
       } catch (error) {
