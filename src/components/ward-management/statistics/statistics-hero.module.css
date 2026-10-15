@@ -163,7 +163,7 @@
   width: 100%;
   justify-content: center;
   min-height: var(--spacing-tap, 3rem);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .phoneTitleAction [data-testid="ward-statistics-unit-stepper"] {
@@ -177,7 +177,7 @@
   justify-content: center;
   width: var(--spacing-tap, 3rem);
   height: var(--spacing-tap, 3rem);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .phoneTitleAction [data-testid="ward-statistics-unit-stepper"] > a:first-child {

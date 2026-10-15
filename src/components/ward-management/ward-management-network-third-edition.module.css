@@ -206,14 +206,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-track);
   background: var(--wf-surface-2);
 }
 
 .phoneViewTabs .viewTab {
   justify-content: center;
   min-height: var(--wf-touch);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-14);
 }

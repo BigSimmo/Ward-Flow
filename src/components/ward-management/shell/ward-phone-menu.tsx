@@ -942,7 +942,19 @@ export function WardPhoneMenu({
   const flagOn = useWardFeatureFlagCheck();
   const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole, flagOn);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
-  const flow = useWardFlowSelect(
+  const {
+    movements,
+    units,
+    configuration,
+    inboxSnoozes,
+    leaveBeds,
+    admissions,
+    patients,
+    referrals,
+    supportNotifications,
+    plannedAdmissions,
+    now: flowNow,
+  } = useWardFlowSelect(
     "movements",
     "units",
     "configuration",
@@ -955,9 +967,41 @@ export function WardPhoneMenu({
     "plannedAdmissions",
     "now",
   );
+  // `useWardFlowSelect` returns a new object each render, so the memo lists the fields it reads, not
+  // that object: typing in the menu search must not recount the act-now tasks.
   const actNowCount = useMemo(
-    () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
-    [shellRole, flow],
+    () =>
+      wardTasksAreActionableForRole(shellRole)
+        ? activeActNowItems(
+            {
+              movements,
+              units,
+              configuration,
+              inboxSnoozes,
+              leaveBeds,
+              admissions,
+              patients,
+              referrals,
+              supportNotifications,
+              plannedAdmissions,
+            },
+            flowNow,
+          ).length
+        : 0,
+    [
+      shellRole,
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      leaveBeds,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      flowNow,
+    ],
   );
   const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
 

@@ -273,7 +273,7 @@ describe("the set of ward files that render through a portal", () => {
       "is covered by ward-phone-menu.module.css's `.sheet, .sheet *` print reset.",
     "shell/ward-bar.tsx":
       "renders three drawers (Activity, Tasks, Tools) through <Sheet> -> OverlayPortal. Their " +
-      "content is covered by ward-bar.module.css's `.activitySection, .toolsSection, .tasksBody` " +
+      "content is covered by ward-bar.module.css's `.drawerSheet, .activitySection, .tasksBody` " +
       "print reset, which is LOAD-BEARING the same way ward-sidebar.module.css's is.",
     // M6's per-movement detail drawer. This guard reddened on it the moment M6 met the
     // six-branch fold and COULD NOT have reddened earlier — the file did not exist on any
