@@ -73,14 +73,52 @@ function seedInputs() {
 }
 
 describe("the bed meeting TV view", () => {
-  it("keeps the screen awake while shown, asks again on return and lets go on leaving", async () => {
+  it("does not keep the screen awake while the page is out of sight, as under the phone card", async () => {
     const release = vi.fn(() => Promise.resolve());
     const request = vi.fn(() => Promise.resolve({ release }));
+    let report: (isIntersecting: boolean) => void = () => {};
+    class FakeObserver {
+      constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+        report = (isIntersecting) => callback([{ isIntersecting }]);
+      }
+      observe() {}
+      disconnect() {}
+    }
+    Object.defineProperty(navigator, "wakeLock", { value: { request }, configurable: true });
+    vi.stubGlobal("IntersectionObserver", FakeObserver);
+    try {
+      renderTv();
+      await act(async () => {});
+      expect(request).not.toHaveBeenCalled();
+      act(() => report(true));
+      await act(async () => {});
+      expect(request).toHaveBeenCalledWith("screen");
+      act(() => report(false));
+      await act(async () => {});
+      expect(release).toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      Reflect.deleteProperty(navigator, "wakeLock");
+    }
+  });
+
+  it("keeps the screen awake while shown, asks again on return and lets go on leaving", async () => {
+    const release = vi.fn(() => Promise.resolve());
+    const lock = { released: false, release };
+    const request = vi.fn(() => Promise.resolve(lock));
     Object.defineProperty(navigator, "wakeLock", { value: { request }, configurable: true });
     try {
       const view = renderTv();
       await act(async () => {});
       expect(request).toHaveBeenCalledWith("screen");
+      // A held lock is not asked for twice.
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await act(async () => {});
+      expect(request).toHaveBeenCalledTimes(1);
+      // The browser drops the lock when the tab is hidden, so it is asked for again on return.
+      lock.released = true;
       act(() => {
         document.dispatchEvent(new Event("visibilitychange"));
       });
