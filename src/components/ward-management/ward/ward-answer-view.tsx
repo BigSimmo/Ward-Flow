@@ -1138,7 +1138,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           data-testid={`ward-decline-form-${activeMovement.id}`}
                         >
                           <fieldset className={styles.declineFieldset}>
-                            <legend className={styles.declineLegend}>Decline reason for {activeMovement.id}</legend>
+                            <legend className={styles.declineLegend}>Decline reason for this patient</legend>
                             {DECLINE_REASONS.map((reason) => (
                               <label key={reason} className={styles.declineOption}>
                                 <input
@@ -1448,7 +1448,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   type="text"
                   className={styles.formInput}
                   id="ward-answer-allocating-movement"
-                  value={`${activeMovement.id} (${activeMovement.cohort})`}
+                  // No identity before acceptance (owner, 26 Sept 2026), so the tier and referral time tell
+                  // two waiting requests from the same cohort apart (D-39).
+                  value={`Incoming patient (${activeMovement.cohort}), Tier ${activeMovement.urgency}${activeMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(activeMovement.referredAt, now)}`}`}
                   readOnly
                 />
               </div>

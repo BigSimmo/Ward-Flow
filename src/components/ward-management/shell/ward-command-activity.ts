@@ -10,7 +10,11 @@ import type {
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { edPressure, type EdPressure } from "@/components/ward-management/ward-pressure";
-import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withoutRecordNumbers,
+  withUmrnInPlaceOfMovementIds,
+} from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
@@ -135,11 +139,14 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     });
   }
 
+  // D-39: each line names the patient by UMRN, never by a WF journey or RF referral number.
+  const lookup = { patients, referrals, movements };
   for (const referral of referrals) {
+    const umrn = resolveSubjectPatient(referral, lookup).umrn;
     events.push({
       at: referral.raisedAt,
       id: `referral-raised:${referral.id}`,
-      text: `${referral.id} referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
+      text: `${umrn} referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
       tone: "info",
       category: "referral",
     });
@@ -147,7 +154,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: referral.triagedAt,
         id: `referral-triaged:${referral.id}:${referral.triagedAt}`,
-        text: `${referral.id} triaged.`,
+        text: `${umrn} triaged.`,
         tone: "info",
         category: "referral",
       });
@@ -158,7 +165,9 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     events.push({
       at: rejection.at,
       id: `rejection:${rejection.id}`,
-      text: `${rejection.movementId}: ${rejection.attempted} was refused. ${rejection.reason}`,
+      // A journey number becomes the patient's UMRN below. Any other record (a referral, stay, bed
+      // release or leave bed) has no line of its own here, so its number is left off (D-39).
+      text: `${rejection.movementId.startsWith("WF-") ? `${rejection.movementId}: ` : ""}${rejection.attempted} was refused. ${withoutRecordNumbers(rejection.reason)}`,
       tone: "danger",
       category: "other",
     });
@@ -180,8 +189,6 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const queuedReferrals = counts.referrals?.value ?? 0;
   const bedsReady = counts.capacity?.value ?? 0;
   const urgentDelays = counts.delays?.value ?? 0;
-  // D-39: each line names the patient by UMRN, never by the WF journey number.
-  const lookup = { patients, referrals, movements };
   const shown = ordered
     .slice(0, 20)
     .map((event) => ({ ...event, text: withUmrnInPlaceOfMovementIds(event.text, lookup) }));

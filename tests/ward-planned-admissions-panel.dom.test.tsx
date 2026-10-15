@@ -193,6 +193,6 @@ describe("planned admissions panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Convert" }));
     expect(screen.getByTestId("provider-name")).toHaveTextContent("Initials RK");
     expect(screen.getByTestId("hook-name")).toHaveTextContent("Initials RK");
-    expect(document.body.textContent).not.toMatch(/Unknown Patient/);
+    expect(document.body.textContent).not.toMatch(/Name not recorded/);
   });
 });

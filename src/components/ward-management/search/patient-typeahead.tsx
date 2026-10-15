@@ -531,7 +531,7 @@ function PatientOption({
   onChoose: () => void;
 }) {
   const referral = referrals.find((candidate) => candidate.patientId === patient.id);
-  const referralLine = referral ? referralLineText(referralState(referral), referral.id) : null;
+  const referralLine = referral ? referralLineText(referralState(referral)) : null;
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- combobox option: the input handles the keys through aria-activedescendant
@@ -576,14 +576,14 @@ function PatientOption({
 
 /** One sentence per `ReferralState` — see the doc comment above for why a fixed sentence was the
  *  defect. */
-function referralLineText(state: ReferralState, referralId: string): string {
+function referralLineText(state: ReferralState): string {
   switch (state) {
     case "accepted":
-      return `Referral ${referralId} — accepted`;
+      return "Referral — accepted";
     case "declined":
-      return `Referral ${referralId} — declined`;
+      return "Referral — declined";
     case "queued":
-      return `Referral ${referralId} — waiting for a decision`;
+      return "Referral — waiting for a decision";
   }
 }
 

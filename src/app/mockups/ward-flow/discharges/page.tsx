@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
+import { recordIdFromAddress } from "@/components/ward-management/shell/ward-record-address";
 
 export const metadata: Metadata = {
   title: "Discharges — Ward Flow",
@@ -14,5 +15,9 @@ export default async function WardDischargesPage({
   searchParams?: Promise<{ admissionId?: string | string[] }>;
 }) {
   const { admissionId } = (await searchParams) ?? {};
-  return <DischargeBoard initialAdmissionId={typeof admissionId === "string" ? admissionId : undefined} />;
+  return (
+    <DischargeBoard
+      initialAdmissionId={typeof admissionId === "string" ? recordIdFromAddress(admissionId) : undefined}
+    />
+  );
 }

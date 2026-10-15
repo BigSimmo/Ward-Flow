@@ -1887,7 +1887,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                           {activeRecord.identity.kind === "linked" && (
                             <span className={pageStyles.mono}>UMRN {activeRecord.identity.patient.umrn}</span>
                           )}
-                          <span className={pageStyles.mono}>{activeRecord.admissionId}</span>
                           <span>{unitLabel(selectedUnit, activeRecord.unitId)}</span>
                         </p>
                       </div>
@@ -2433,12 +2432,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             <dd>{detailRelease.preparationNote ?? "In progress · reason not recorded"}</dd>
                           </>
                         )}
-                        {!linkedReleaseRecord ? (
-                          <>
-                            <dt>Release ID</dt>
-                            <dd className={pageStyles.mono}>{detailRelease.id}</dd>
-                          </>
-                        ) : null}
                       </dl>
                     </div>
                   </>

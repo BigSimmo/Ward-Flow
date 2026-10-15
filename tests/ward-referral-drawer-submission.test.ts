@@ -80,16 +80,16 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
       false,
     );
   });
-  it("heads an unidentified referral's inbox card with the referrer's description, not Unknown Patient", () => {
+  it("heads an unidentified referral's inbox card with the referrer's description, not Name not recorded", () => {
     const history = "Not yet identified, synthetic adult in a blue jacket\nSynthetic patient story";
     const state = wardFlowReducer(seedWardFlowState(), { ...event(), history });
     expect(state.rejections).toHaveLength(0);
     const created = state.referrals.at(-1)!;
     const own = wardReferralInboxEntries(state.referrals, "scgh-adult-open").find((entry) => entry.id === created.id)!;
     expect(own.patientId).toBeUndefined();
-    expect(referralInboxName(own, "Unknown Patient")).toBe("Not yet identified, synthetic adult in a blue jacket");
-    expect(referralInboxName({ ...own, history: "Synthetic patient story" }, "Unknown Patient")).toBe(
-      "Unknown Patient",
+    expect(referralInboxName(own, "Name not recorded")).toBe("Not yet identified, synthetic adult in a blue jacket");
+    expect(referralInboxName({ ...own, history: "Synthetic patient story" }, "Name not recorded")).toBe(
+      "Name not recorded",
     );
     expect(referralInboxName({ ...own, patientId: "PT-001" as typeof own.patientId }, "Resolved Name")).toBe(
       "Resolved Name",

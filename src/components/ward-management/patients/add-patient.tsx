@@ -60,6 +60,8 @@ import {
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 
 import styles from "./add-patient.module.css";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
@@ -424,7 +426,7 @@ export function AddPatientForm() {
       submitIntentRef.current = "profile";
       const params = new URLSearchParams();
       params.set("new", "1");
-      params.set("patientId", added[0].id);
+      params.set("patientId", encodeRecordAddress(added[0].id));
       const siteCode = FACILITY_TO_SITE_CODE[facility];
       if (siteCode) {
         params.set("site", siteCode);
@@ -439,7 +441,7 @@ export function AddPatientForm() {
       router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
       return;
     }
-    router.push(`/mockups/ward-flow/people/${added[0].id}`);
+    router.push(patientHref(added[0].id));
   }, [patients, rejections, router, toast, facility, healthService, triageUrgency, legalStatus, presentingComplaint]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -602,7 +604,7 @@ export function AddPatientForm() {
                         size: "sm",
                         className: styles.dupOpen,
                       })}
-                      href={`/mockups/ward-flow/people/${patient.id}`}
+                      href={patientHref(patient.id)}
                     >
                       Use this record
                     </Link>
@@ -1105,7 +1107,7 @@ export function AddPatientForm() {
                 <ul className={styles.recentList}>
                   {recentRecords.map((p) => (
                     <li key={p.id}>
-                      <Link className={styles.recentRow} href={`/mockups/ward-flow/people/${p.id}`}>
+                      <Link className={styles.recentRow} href={patientHref(p.id)}>
                         <span className={styles.recentName}>
                           <b>
                             {p.familyName}, {p.givenName}

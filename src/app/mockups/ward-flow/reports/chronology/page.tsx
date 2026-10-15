@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
+import { recordIdFromAddress } from "@/components/ward-management/shell/ward-record-address";
 
 export const metadata: Metadata = {
   title: "Patient chronology — Ward Flow",
@@ -14,5 +15,9 @@ export default async function WardPatientChronologyPage({
   searchParams: Promise<{ patient?: string | string[] }>;
 }) {
   const { patient } = await searchParams;
-  return <PatientChronologyScreen initialPatientId={typeof patient === "string" ? patient : undefined} />;
+  return (
+    <PatientChronologyScreen
+      initialPatientId={typeof patient === "string" ? recordIdFromAddress(patient) : undefined}
+    />
+  );
 }

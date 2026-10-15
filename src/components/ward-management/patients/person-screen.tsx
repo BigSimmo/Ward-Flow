@@ -11,6 +11,7 @@ import sharedStyles from "@/components/ward-management/ward-shared.module.css";
 
 import styles from "./person.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * A PERSON'S OWN SCREEN. The subject is the PERSON, not a request for a bed.
@@ -319,7 +320,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
                   <h2 className={styles.sectionHeading}>Referral</h2>
                   <Link
                     className={styles.primaryButton}
-                    href={`/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(person.id)}`}
+                    href={raiseReferralHref({ patientId: person.id })}
                     data-testid="ward-person-refer"
                   >
                     {/* "Refer Patient" is the owner's wording, ruling 9, 2026-09-03. It replaced

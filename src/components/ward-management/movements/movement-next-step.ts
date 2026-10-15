@@ -1,5 +1,6 @@
 import { transportLeg, transportNeedState } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Movements overhaul (9 Oct 2026, option A): the one next step for an open movement and who owns
@@ -73,5 +74,5 @@ export function isCoordinatorStep(step: MovementNextStep | null): step is Moveme
 export function nextStepTarget(step: MovementNextStep, movementId: string): { href: string; where: string } {
   return step.kind === "escalate"
     ? { href: "/mockups/ward-flow", where: "the coordinator screen" }
-    : { href: `/mockups/ward-flow/movements/${movementId}`, where: "the Patient page" };
+    : { href: movementHref(movementId), where: "the Patient page" };
 }

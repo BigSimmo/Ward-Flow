@@ -82,7 +82,14 @@ import type {
   CommunityScopedAddressing,
   CommunityScopedReferral,
 } from "@/components/ward-management/ward-referral-visibility";
-import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import {
+  patientIdentityLine,
+  resolveSubjectPatient,
+  NAME_NOT_RECORDED,
+  UMRN_NOT_RECORDED,
+  withUmrnInPlaceOfMovementIds,
+  type PatientResolutionSubject,
+} from "@/components/ward-management/ward-patient-resolver";
 import {
   COMMUNITY_DECLINE_REASONS,
   TRANSPORT_LEGAL_STATUSES,
@@ -135,6 +142,7 @@ import {
   DEMO_COMMUNITY_INPATIENTS,
   DEMO_COMMUNITY_EGRESS,
   DEMO_COMMUNITY_CASELOAD,
+  DEMO_COMMUNITY_UMRNS,
   DEMO_COMMUNITY_STAFF,
   resolveCommunityTeamConfig,
 } from "./community-demo-cohort";
@@ -499,6 +507,14 @@ export function CommunityScreen({
     () => ({ patients, referrals: referrals ?? liveReferrals, movements }),
     [patients, referrals, liveReferrals, movements],
   );
+  // D-39: a person is named by name and UMRN through the resolver, never by a referral, admission or
+  // patient record number. The demonstration cohort holds a UMRN only on its caseload rows.
+  const identityOf = (subject: PatientResolutionSubject) =>
+    patientIdentityLine(resolveSubjectPatient(subject, umrnLookup));
+  const demoUmrnOf = (patientId: string) =>
+    DEMO_COMMUNITY_CASELOAD.find((row) => row.patientId === patientId)?.umrn ??
+    DEMO_COMMUNITY_UMRNS[patientId] ??
+    UMRN_NOT_RECORDED;
   const team =
     communityTeamById(teamId) ??
     (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
@@ -707,7 +723,7 @@ export function CommunityScreen({
       setActiveDrawer("referralDrawer");
     } else if (action === "Assign") {
       setActiveModal({ type: "assign", referral });
-      setToastMessage(`Assign ${referral.id}: Not wired in this prototype.`);
+      setToastMessage("Assign referral: Not wired in this prototype.");
     }
   }
 
@@ -1018,7 +1034,7 @@ export function CommunityScreen({
     (acceptanceRefusal
       ? `Referral was not accepted: ${acceptanceRefusal.reason}`
       : pendingAcceptance && acceptedAddressing?.state === "accepted"
-        ? `Referral ${pendingAcceptance.id} accepted for ${team.name} follow-up. No clinician assignment was recorded.`
+        ? `Referral for ${identityOf({ referralId: pendingAcceptance.id })} accepted for ${team.name} follow-up. No clinician assignment was recorded.`
         : pendingAcceptance
           ? "Awaiting referral acceptance result."
           : null);
@@ -1178,8 +1194,8 @@ export function CommunityScreen({
     const oldest = waitingReferrals[0];
     attentionItems.push(
       <>
-        <strong>{oldest.id}</strong> has waited {referralWaitLine(oldest, now)} for an answer from this team — the
-        longest of the {waitingReferrals.length} referral{waitingReferrals.length === 1 ? "" : "s"} waiting.
+        <strong>{identityOf(oldest)}</strong> has waited {referralWaitLine(oldest, now)} for an answer from this team —
+        the longest of the {waitingReferrals.length} referral{waitingReferrals.length === 1 ? "" : "s"} waiting.
       </>,
     );
   }
@@ -1187,9 +1203,10 @@ export function CommunityScreen({
     const { admission, acceptedAt, arrivedAt } = shortestAcceptanceToAdmissionGap;
     attentionItems.push(
       <>
-        <strong>{admission.id}</strong> was admitted {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after
-        this team accepted them — the shortest gap of the {admittedWhileAlreadyWithTeam.length} admitted while already
-        with this team, and the one worth checking first.
+        <strong>{identityOf(admission)}</strong> was admitted{" "}
+        {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after this team accepted them — the shortest gap
+        of the {admittedWhileAlreadyWithTeam.length} admitted while already with this team, and the one worth checking
+        first.
       </>,
     );
   }
@@ -2097,7 +2114,7 @@ export function CommunityScreen({
                   id: row.key,
                   testId: `ward-community-phone-cto-${row.referralId}`,
                   name: phoneName(person, "No person on file"),
-                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? row.referralId}`,
+                  meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? UMRN_NOT_RECORDED}`,
                   time: caseloadRecordedExpiryLabel(row, now),
                   onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
                 };
@@ -2557,7 +2574,11 @@ export function CommunityScreen({
                   <WardFigure
                     label="Longest wait"
                     value={waitingReferrals.length === 0 ? "None waiting" : referralWaitLine(waitingReferrals[0], now)}
-                    sub={waitingReferrals.length === 0 ? undefined : `${waitingReferrals[0].id} · since it was raised`}
+                    sub={
+                      waitingReferrals.length === 0
+                        ? undefined
+                        : `${identityOf(waitingReferrals[0])} · since it was raised`
+                    }
                   />
                 </WardFigureStrip>
               </div>
@@ -2835,9 +2856,7 @@ export function CommunityScreen({
                               style={{ cursor: "pointer" }}
                             >
                               <div className={styles.refCardHead}>
-                                <span className={styles.refId}>
-                                  {referral.id} · {referral.priorityLabel}
-                                </span>
+                                <span className={styles.refId}>Referral · {referral.priorityLabel}</span>
                                 <span className={styles.refWait} data-breach={referral.isBreach ? "true" : undefined}>
                                   {referral.waitLabel}
                                 </span>
@@ -2854,7 +2873,7 @@ export function CommunityScreen({
                                   }}
                                 >
                                   <b className={styles.patientIdWrap}>
-                                    {referral.patientId} ({referral.patientDetails})
+                                    {demoUmrnOf(referral.patientId)} ({referral.patientDetails})
                                   </b>
                                 </button>
                                 <span className={`${styles.statusPillBadge} ${styles[referral.legalStatusTone]}`}>
@@ -2873,7 +2892,9 @@ export function CommunityScreen({
                                   type="button"
                                   className={styles.btnSmPrimary}
                                   onClick={() => {
-                                    setToastMessage(`Accepted ${referral.id} into community triage.`);
+                                    setToastMessage(
+                                      `Accepted the referral for ${demoUmrnOf(referral.patientId)} into community triage.`,
+                                    );
                                   }}
                                 >
                                   {referral.primaryActionLabel}
@@ -2892,7 +2913,9 @@ export function CommunityScreen({
                                   type="button"
                                   className={styles.btnSmSec}
                                   onClick={() => {
-                                    setToastMessage(`Decline option for ${referral.id} recorded.`);
+                                    setToastMessage(
+                                      `Decline option for the referral for ${demoUmrnOf(referral.patientId)} recorded.`,
+                                    );
                                   }}
                                 >
                                   {referral.declineActionLabel}
@@ -2991,9 +3014,7 @@ export function CommunityScreen({
                                 data-prio={`p${referral.urgency}${referral.source === "ed_medical" ? " ed" : ""}`}
                               >
                                 <div className={styles.refCardHead}>
-                                  <span className={styles.refId}>
-                                    {referral.id} · {urgencyTierLabel(referral.urgency)}
-                                  </span>
+                                  <span className={styles.refId}>Referral · {urgencyTierLabel(referral.urgency)}</span>
                                   <span
                                     className={styles.refWait}
                                     data-breach={referral.urgency === 1 ? "true" : undefined}
@@ -3006,8 +3027,7 @@ export function CommunityScreen({
                                   return (
                                     <div className={styles.refPatientRow}>
                                       <b className={styles.patientIdWrap}>
-                                        {referral.patientId ?? referral.id}{" "}
-                                        {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
+                                        {identityOf(referral)} {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
                                       </b>
                                       <span
                                         className={`${styles.statusPillBadge} ${referral.urgency === 1 ? styles.danger : styles.neutral}`}
@@ -3334,7 +3354,8 @@ export function CommunityScreen({
                               style={{ cursor: "pointer" }}
                             >
                               <td style={{ whiteSpace: "nowrap" }}>
-                                <b className={styles.patientIdWrap}>{inp.patientId}</b> ({inp.patientDetails})
+                                <b className={styles.patientIdWrap}>{demoUmrnOf(inp.patientId)}</b> (
+                                {inp.patientDetails})
                               </td>
                               <td>
                                 {inp.wardName} ({inp.healthService})
@@ -3444,7 +3465,7 @@ export function CommunityScreen({
                               return (
                                 <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
                                   <td style={{ whiteSpace: "nowrap" }}>
-                                    <b className={styles.patientIdWrap}>{admission.patientId ?? admission.id}</b>
+                                    <b className={styles.patientIdWrap}>{identityOf(admission)}</b>
                                     {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
                                   </td>
                                   <td>
@@ -3596,7 +3617,7 @@ export function CommunityScreen({
                               data-testid={`ward-community-accepted-before-admission-${admission.id}`}
                             >
                               <th scope="row">
-                                <span className={styles.patientIdWrap}>{admission.id}</span>
+                                <span className={styles.patientIdWrap}>{identityOf(admission)}</span>
                               </th>
                               <td>{unitName(admission.unitId, units)}</td>
                               <td>{stayLabel(admission, now)}</td>
@@ -3752,7 +3773,8 @@ export function CommunityScreen({
                                 style={{ cursor: "pointer" }}
                               >
                                 <td style={{ whiteSpace: "nowrap" }}>
-                                  <b className={styles.patientIdWrap}>{egr.patientId}</b> ({egr.patientDetails})
+                                  <b className={styles.patientIdWrap}>{demoUmrnOf(egr.patientId)}</b> (
+                                  {egr.patientDetails})
                                 </td>
                                 <td>{egr.dischargingUnit}</td>
                                 <td>{egr.dischargeDatePlan}</td>
@@ -4150,7 +4172,7 @@ export function CommunityScreen({
                               style={{ cursor: "pointer" }}
                             >
                               <td>
-                                <b>{row.umrn}</b> · {row.patientId}
+                                <b>{row.umrn}</b>
                               </td>
                               <td>{row.ageSex}</td>
                               <td>
@@ -4272,10 +4294,14 @@ export function CommunityScreen({
                             return (
                               <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>
                                 <td>
-                                  <strong>{row.patientId ?? "No person on file"}</strong>
+                                  <strong>
+                                    {row.patientId === undefined || row.patientId === null
+                                      ? "No person on file"
+                                      : phoneName(phonePerson(row.patientId), NAME_NOT_RECORDED)}
+                                  </strong>
                                   {/* The age band sits under the person, as the v6 table carries it. */}
                                   <span className={styles.caseloadMeta}>
-                                    {row.umrn ?? row.referralId} · {row.ageBand}
+                                    {row.umrn ?? UMRN_NOT_RECORDED} · {row.ageBand}
                                   </span>
                                 </td>
                                 <td>
@@ -4626,7 +4652,8 @@ export function CommunityScreen({
             >
               <div className={styles.modalHeader}>
                 <h3 id="community-modal-title" className={styles.modalTitle}>
-                  {activeModal.type === "review" ? "Review referral" : "Assign referral"}: {activeModal.referral.id}
+                  {activeModal.type === "review" ? "Review referral" : "Assign referral"}:{" "}
+                  {identityOf(activeModal.referral)}
                 </h3>
                 <button
                   type="button"
@@ -4643,7 +4670,7 @@ export function CommunityScreen({
                 </p>
                 <div className={styles.modalDetailsList}>
                   <p>
-                    <strong>Referral:</strong> {activeModal.referral.id}
+                    <strong>Patient:</strong> {identityOf(activeModal.referral)}
                   </p>
                   <p>
                     <strong>Urgency:</strong> {urgencyTierLabel(activeModal.referral.urgency)}
@@ -4715,12 +4742,12 @@ export function CommunityScreen({
                     <span id="pxDrawerHeading">
                       {selectedPatient
                         ? `Patient Dossier: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
-                        : `Patient Dossier: ${selectedPatientId || "PT-4409"}`}
+                        : `Patient Dossier: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
                     </span>
                   )}
                   {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
                     <span id="refDrawerHeading">
-                      {selectedReferral ? `Referral Triage: ${selectedReferral.id}` : "Referral unavailable"}
+                      {selectedReferral ? `Referral Triage: ${identityOf(selectedReferral)}` : "Referral unavailable"}
                     </span>
                   )}
                   {(activeDrawer === "activity" || activeDrawer === "activityDrawer") &&
@@ -4984,7 +5011,7 @@ export function CommunityScreen({
                                 })
                               }
                             >
-                              Open admission {admission.id} · {admission.state}
+                              Open admission · {unitName(admission.unitId, units)} · {admission.state}
                             </button>
                           ))}
                         {careRead?.status === "allowed" ? (
@@ -5013,14 +5040,10 @@ export function CommunityScreen({
                       <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                           <div>
-                            <b>Referral ID:</b>{" "}
-                            <span className={styles.mono} id="refDrawerId">
-                              {selectedReferral?.id ?? "Not found"}
-                            </span>
-                          </div>
-                          <div>
                             <b>Patient:</b>{" "}
-                            <span id="refDrawerPatient">{selectedReferral?.patientId ?? "Not recorded"}</span>
+                            <span id="refDrawerPatient">
+                              {selectedReferral ? identityOf(selectedReferral) : "Not recorded"}
+                            </span>
                           </div>
                           <div>
                             <b>Referring Service:</b>{" "}

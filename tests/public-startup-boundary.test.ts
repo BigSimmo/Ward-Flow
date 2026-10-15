@@ -10,6 +10,7 @@ import {
   unsignedWardFiles,
   WARD_FLOW_IDENTITY_ANCHOR,
 } from "../scripts/pre-commit-checks.mjs";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const freshness = path.join(repoRoot, "scripts/check-base-freshness.mjs");
@@ -125,7 +126,8 @@ describe("public startup boundary", () => {
     }
   });
 
-  it("public sign-out check uses main and ignores Database checkout claims", () => {
+  it("public sign-out check uses main and ignores Database checkout claims", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const other = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log = path.join(cwd, "sign-out.md");
@@ -150,7 +152,8 @@ describe("public startup boundary", () => {
     }
   });
 
-  it("pre-commit ownership accepts a public sign-out and ignores old Database claims", () => {
+  it("pre-commit ownership accepts a public sign-out and ignores old Database claims", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const file = "scripts/ward-flow/sign-out-check.mjs";
     const root = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log =
@@ -165,7 +168,8 @@ describe("public startup boundary", () => {
     }
   });
 
-  it("pre-commit ownership still blocks another public branch's claim", () => {
+  it("pre-commit ownership still blocks another public branch's claim", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const file = "scripts/ward-flow/sign-out-check.mjs";
     const root = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const other = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
@@ -184,7 +188,8 @@ describe("public startup boundary", () => {
     }
   });
 
-  it("old Database ownership does not grant a public takeover", () => {
+  it("old Database ownership does not grant a public takeover", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const file = "scripts/ward-flow/sign-out-check.mjs";
     const root = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log =
