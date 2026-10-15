@@ -1759,7 +1759,9 @@ function departAdmission(
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         };
-  const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination };
+  // Leaving ends any discharge blocker too: the stay is over, so it must not carry a "held up" reason
+  // into history, the same way its bed release loses its blocker below.
+  const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination, blockReason: null };
   const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
   // Owner ruling 2026-09-25: a leave bed belongs to one stay. Leaving ends it in the same write, so
   // "on leave" never counts a bed whose occupant has gone. No bed figure moves here: the figures

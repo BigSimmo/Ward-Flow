@@ -164,6 +164,30 @@ describe("a stay-level discharge blocker, recorded before any bed release exists
       expect(find(fromOther, person.id).blockReason).toBe(BED_RELEASE_BLOCKERS[2]);
     });
 
+    it("leaving clears the blocker on both the release and the stay", () => {
+      const state = seedWardFlowState();
+      const person = freshOccupant(state);
+      const flagged = flag(record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]), person);
+      expect(releaseOf(flagged, person.id).blocker).toBe(BED_RELEASE_BLOCKERS[0]);
+
+      const left = wardFlowReducer(flagged, {
+        type: "RECORD_LEAVING",
+        role: "ward",
+        now: NOW,
+        admissionId: person.id,
+        actingUnitId: person.unitId,
+        leavingDestination: "discharged-to-the-community",
+      });
+
+      expect(left.rejections).toHaveLength(state.rejections.length);
+      const gone = find(left, person.id);
+      expect(gone.state).toBe("departed");
+      expect(gone.blockReason).toBeNull();
+      const release = left.bedReleases.find((r) => r.admissionId === person.id);
+      expect(release?.state).toBe("discharged");
+      expect(release?.blocker).toBeNull();
+    });
+
     it("a release flagged with no stay blocker stays unblocked", () => {
       const state = seedWardFlowState();
       const person = freshOccupant(state);
