@@ -226,7 +226,12 @@ export function applyMarkers(text, factsByName) {
 export function loadRetiredConfig(root = ROOT) {
   const config = JSON.parse(read(root, RETIRED_TERMS));
   return {
-    terms: config.terms.map((t) => ({ ...t, regex: new RegExp(t.pattern, `${t.flags ?? ""}g`.replace(/g+/u, "g")) })),
+    terms: config.terms.map((t) => ({
+      ...t,
+      regex: new RegExp(t.pattern, `${t.flags ?? ""}g`.replace(/g+/u, "g")),
+      // A line that itself says the thing is retired is current, not stale.
+      allowRegex: t.allowWhen ? new RegExp(t.allowWhen, "iu") : null,
+    })),
     historicalFiles: new Set(config.historicalFiles ?? []),
     historicalPatterns: (config.historicalPathPatterns ?? []).map((p) => new RegExp(p, "u")),
   };
@@ -250,7 +255,7 @@ export function findRetiredTerms(file, text, config) {
     for (const term of config.terms) {
       term.regex.lastIndex = 0;
       const match = term.regex.exec(line);
-      if (match) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
+      if (match && !term.allowRegex?.test(line)) hits.push({ file, line: index + 1, term: term.id, text: match[0] });
     }
   });
   return hits;

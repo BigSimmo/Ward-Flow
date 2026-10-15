@@ -18,7 +18,15 @@ import {
 const fenceStart = "<!-- docs-script-refs:historical-start -->";
 const fenceEnd = "<!-- docs-script-refs:historical-end -->";
 const config = {
-  terms: [{ id: "azure", regex: /\bazure|\bentra\b/gi, why: "retired", instead: "Supabase" }],
+  terms: [
+    {
+      id: "azure",
+      regex: /\bazure|\bentra\b/gi,
+      allowRegex: /\b(retired|removed)\b/iu,
+      why: "retired",
+      instead: "Supabase",
+    },
+  ],
   historicalFiles: new Set(["docs/log.md"]),
   historicalPatterns: [/(^|\/)archive\//u, /\d{4}-\d{2}-\d{2}/u],
 };
@@ -81,6 +89,10 @@ describe("retired terms", () => {
     ]);
   });
 
+  it("lets a line that says the term is retired pass", () => {
+    expect(findRetiredTerms("a.md", "Azure was retired on 15 October.\nAzure Storage removed.", config)).toEqual([]);
+  });
+
   it("does not match words that merely start with entra", () => {
     expect(findRetiredTerms("a.md", "the entrance and entrants", config)).toEqual([]);
   });
@@ -103,6 +115,11 @@ describe("retired terms", () => {
     const shipped = loadRetiredConfig();
     expect(shipped.terms.map((t: { id: string }) => t.id)).toContain("azure");
     expect(isHistoricalPath("docs/ward-flow-task-ledger.md", shipped)).toBe(true);
+    expect(
+      findRetiredTerms("a.md", "Azure is retired (D-55).\nDeploy to Azure.", shipped).map(
+        (h: { line: number }) => h.line,
+      ),
+    ).toEqual([2]);
   });
 });
 

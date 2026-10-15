@@ -73,7 +73,8 @@ anyone remembering to update docs:
 - **Retired terms.** [`retired-terms.json`](retired-terms.json) lists words for things Ward Flow no
   longer uses, with why and what to say instead. Existing mentions in maintained docs show as CI
   warnings (a to-do list, never a block). A pull request that adds a new mention fails, so the
-  backlog only shrinks. Archives, dated records and append-only logs are never scanned; fence a
+  backlog only shrinks. A line that itself says the thing is retired, removed or replaced passes.
+  Archives, dated records and append-only logs are never scanned; fence a
   deliberate historical mention elsewhere with the paired markers below.
 
 When a decision retires something, add its term to `retired-terms.json` in the same pull request.
