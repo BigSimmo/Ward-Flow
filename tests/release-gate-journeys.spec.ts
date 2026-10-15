@@ -26,7 +26,8 @@ import { escapeForRegExp } from "./helpers/ward-place-names";
  * 1. ED referral to bed offer: the ED raises a referral into a movement, the coordinator offers a
  *    ward, and the ward accepts and pulls the patient.
  * 2. Morning bed meeting: a ward confirms its numbers and the coordinator's capacity board moves.
- * 3. Transfer with transport: the officer runs a booked job to delivery and the ward confirms arrival.
+ * 3. Transfer with transport: the ED books transport for a pulled patient, the officer delivers them,
+ *    and the ward confirms arrival into the patient's own stay.
  * 4. Discharge with bed release: a ward confirms a release, the person leaves, and the bed is ready.
  *
  * Each runs on desktop Chrome (1440px) and phone WebKit (390x844) through the release-gate projects
@@ -171,20 +172,56 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await expectNoReloadSince(page, "returning to the capacity board");
 });
 
-test("Transfer with transport: the officer runs a booked job to delivery and the ward confirms arrival", async ({
+test("Transfer with transport: the ED books transport, the officer delivers, and the ward confirms arrival", async ({
   page,
 }, testInfo) => {
-  // WF-005 is seeded with transport booked and accepted by the officer, bound for its accepted ward.
-  const movementId = "WF-005";
-  const unitId = wardMovements.find((movement) => movement.id === movementId)?.acceptedUnitId;
-  expect(unitId, `fixture assumption: ${movementId} has an accepted ward`).toBeTruthy();
-  const unitName = unitById(unitId!)!.name;
+  // WF-004 is seeded pulled into its accepted ward with a linked stay waiting for the patient, and
+  // no transport booked yet. A hand-authored transport job has no stay, so arrival could only move
+  // the ward's count; this one proves the patient's own stay becomes an occupied bed.
+  const movementId = "WF-004";
+  const movement = wardMovements.find((candidate) => candidate.id === movementId);
+  expect(movement?.stage, `fixture assumption: ${movementId} is pulled`).toBe("pulled");
+  expect(movement?.transport, `fixture assumption: ${movementId} has no transport booked`).toBeUndefined();
+  const admissionId = movement!.admissionId;
+  expect(admissionId, `fixture assumption: ${movementId} has a linked stay`).toBeTruthy();
+  const unitId = movement!.acceptedUnitId!;
+  const unitName = unitById(unitId)!.name;
 
-  await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "load" });
-  await waitForScreen(page, "ward-officer-screen");
+  // The sending ED records clearance, books the job and marks the patient ready for handover.
+  await page.goto(`/mockups/ward-flow/ed/${movement!.originEdId}`, { waitUntil: "load" });
+  await waitForScreen(page, "ward-ed-screen");
   await plantSentinel(page);
-  await expectAccessible(page, testInfo, "officer job list");
+  // The patient's sheet carries clearance and the next step. Desktop opens it from the name, the
+  // phone from the board row.
+  if (isPhoneLayout(page)) await page.getByTestId(`ward-ed-patient-${movementId}`).click();
+  else await page.getByTestId(`ward-ed-row-name-${movementId}`).click();
+  const personSheet = page.getByTestId(`ward-ed-phone-sheet-${movementId}`);
+  await expect(personSheet).toBeVisible();
+  const medicalPlacement = personSheet.getByTestId(`ward-ed-medical-placement-${movementId}`);
+  await medicalPlacement.getByRole("button", { name: "Record medically cleared", exact: true }).click();
+  await medicalPlacement.getByRole("button", { name: "Confirm medically cleared", exact: true }).click();
+  await expect(medicalPlacement.getByRole("status")).toContainText("Recorded medically cleared.");
+  await expectAccessible(page, testInfo, "ED person sheet after clearance");
+  await personSheet.getByRole("button", { name: "Transport booked", exact: true }).click();
+  const booking = page.getByTestId(`ward-ed-book-transport-${movementId}`);
+  await expect(booking).toBeVisible();
+  await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
+  await page.getByTestId(`ward-ed-transport-escort-no-${movementId}`).click();
+  await page.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-GATE-0001");
+  await page.getByTestId(`ward-ed-transport-legal-status-involuntary-${movementId}`).click();
+  await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
+  await expectAccessible(page, testInfo, "ED transport booking, filled");
+  await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
+  await expect(booking).toHaveCount(0);
+  await personSheet.getByRole("button", { name: "Mark handover ready", exact: true }).click();
+  await expectAccessible(page, testInfo, "ED person sheet after handover ready");
+  await page.keyboard.press("Escape");
+  await expect(personSheet).toHaveCount(0);
+  await expectNoReloadSince(page, "booking transport and marking handover ready");
 
+  // The officer accepts the job and runs it through en route, collected and delivered.
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-officer"), "ward-officer-screen");
+  await expectAccessible(page, testInfo, "officer job list");
   const select = page.getByTestId(`ward-officer-select-${movementId}`);
   await expect(async () => {
     await select.click();
@@ -192,8 +229,9 @@ test("Transfer with transport: the officer runs a booked job to delivery and the
   }).toPass({ timeout: 15_000 });
   const detail = page.getByTestId("ward-officer-detail");
   await expectAccessible(page, testInfo, "officer job detail");
+  await expect(detail.getByTestId(`ward-officer-transport-legal-status-${movementId}`)).not.toContainText("Legal now");
 
-  for (const stage of ["enroute", "collect", "arrive"] as const) {
+  for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
     const button = detail.getByTestId(`ward-officer-${stage}-${movementId}`);
     await expect(button).not.toHaveAttribute("aria-disabled", "true");
     await button.click();
@@ -215,8 +253,8 @@ test("Transfer with transport: the officer runs a booked job to delivery and the
   }
   await expectNoReloadSince(page, "the officer's transport steps");
 
-  // The receiving ward closes the movement by confirming arrival, and its occupied count rises.
-  await goToDesk(page, wardDesk(unitId!, unitName), "ward-unit-screen");
+  // The receiving ward closes the movement by confirming arrival.
+  await goToDesk(page, wardDesk(unitId, unitName), "ward-unit-screen");
   const wardScreen = page.getByTestId("ward-unit-screen");
   const occupiedBefore = await wardFigure(page, "occupied");
   expect(Number.isNaN(occupiedBefore)).toBe(false);
@@ -225,9 +263,31 @@ test("Transfer with transport: the officer runs a booked job to delivery and the
   await wardScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
+  // One patient, one bed: Occupied rises by exactly one.
   await expect.poll(() => wardFigure(page, "occupied")).toBe(occupiedBefore + 1);
   await expectAccessible(page, testInfo, "ward Home after the arrival");
   await expectNoReloadSince(page, "confirming arrival");
+
+  // The bed board shows this patient's own stay as an occupied bed.
+  await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
+  if (isPhoneLayout(page)) {
+    await page
+      .getByRole("region", { name: "Wards", exact: true })
+      .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
+      .first()
+      .click();
+    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
+  } else {
+    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
+    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+  }
+  await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
+  await waitForScreen(page, "ward-board");
+  await expectAccessible(page, testInfo, "ward bed board after the arrival");
+  // The phone board leads with its work list and keeps the bed grid in the page, so read the tile's
+  // state rather than its visibility.
+  await expect(page.locator(`li:has(> #ward-board-tile-${admissionId})`)).toHaveAttribute("data-bed-kind", "occupied");
+  await expectNoReloadSince(page, "opening the bed board");
 });
 
 test("Discharge with bed release: a ward confirms a release, the person leaves, and the bed is ready on the board", async ({

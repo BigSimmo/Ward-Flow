@@ -41,6 +41,19 @@ function replaceMovement(state: WardFlowState, id: string, next: Movement): Ward
   return { ...state, movements: state.movements.map((m) => (m.id === id ? next : m)) };
 }
 
+/**
+ * WF-004's stay is a seeded pull, already inside the ward's counts, so its arrival adds nobody
+ * (release gate, 15 Oct 2026). Marking the stay as pulled by WF-004 itself, as a live pull is,
+ * makes the arrival count the person, which is what these gender cases measure.
+ */
+function asLivePull(state: WardFlowState, movementId: `WF-${string}`): WardFlowState {
+  const admissionId = movement(state, movementId).admissionId;
+  return {
+    ...state,
+    admissions: state.admissions.map((a) => (a.id === admissionId ? { ...a, movementId } : a)),
+  };
+}
+
 describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () => {
   it("PATIENT_ARRIVED counts a Male-sex, Female-gender movement as female", () => {
     const state = seeded();
@@ -49,6 +62,32 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
     // recorded. Give it a gender opposite its sex, and mark transport not needed so
     // `PATIENT_ARRIVED` can fire straight from `pulled` (owner answer 10, second round,
     // 2026-09-17) without walking the whole transport chain.
+    const withGender: Movement = {
+      ...base,
+      gender: "Female",
+      transportNeed: { needed: false, at: NOW - 10 },
+    };
+    const before = asLivePull(replaceMovement(state, "WF-004", withGender), "WF-004");
+    const beforeUnit = unit(before, "bty-adult-secure");
+
+    const after = wardFlowReducer(before, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      now: NOW,
+      movementId: "WF-004",
+      actingUnitId: "bty-adult-secure",
+    });
+
+    expect(after.rejections).toHaveLength(0);
+    const afterUnit = unit(after, "bty-adult-secure");
+    expect(afterUnit.sexMix.Female).toBe((beforeUnit.sexMix.Female ?? 0) + 1);
+    // The sex bucket must NOT move just because `movement.sex` is "Male" — gender decides.
+    expect(afterUnit.sexMix.Male).toBe(beforeUnit.sexMix.Male ?? 0);
+  });
+
+  it("PATIENT_ARRIVED reconciles a seeded pulled stay when gender changes before arrival", () => {
+    const state = seeded();
+    const base = movement(state, "WF-004");
     const withGender: Movement = {
       ...base,
       gender: "Female",
@@ -67,9 +106,8 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
 
     expect(after.rejections).toHaveLength(0);
     const afterUnit = unit(after, "bty-adult-secure");
+    expect(afterUnit.sexMix.Male).toBe((beforeUnit.sexMix.Male ?? 0) - 1);
     expect(afterUnit.sexMix.Female).toBe((beforeUnit.sexMix.Female ?? 0) + 1);
-    // The sex bucket must NOT move just because `movement.sex` is "Male" — gender decides.
-    expect(afterUnit.sexMix.Male).toBe(beforeUnit.sexMix.Male ?? 0);
   });
 
   it("PATIENT_ARRIVED counts a Non-binary gender under its recorded sex", () => {
@@ -80,7 +118,7 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
       gender: "Non-binary",
       transportNeed: { needed: false, at: NOW - 10 },
     };
-    const before = replaceMovement(state, "WF-004", withGender);
+    const before = asLivePull(replaceMovement(state, "WF-004", withGender), "WF-004");
     const beforeUnit = unit(before, "bty-adult-secure");
 
     const after = wardFlowReducer(before, {
