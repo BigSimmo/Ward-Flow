@@ -175,7 +175,13 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
   for (const [error, status, outcome, fields] of [
     [outage, 503, "storage_unavailable", { errorName: "Error", errorCode: "57P01" }],
     [new Error("Connection terminated unexpectedly"), 503, "storage_unavailable", { errorName: "Error" }],
-    [fault, 500, "server_error", { errorName: "TypeError", message: fault.message }],
+    [fault, 500, "server_error", { errorName: "TypeError" }],
+    [
+      Object.assign(new Error('column "secret value" does not exist'), { code: "42703" }),
+      500,
+      "server_error",
+      { errorName: "Error", errorCode: "42703" },
+    ],
   ]) {
     const { logs, handler } = setup(coordinator, "prototype", {
       command: async () => {
@@ -199,7 +205,10 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
 });
 test("storage failures are told apart from code faults", () => {
   assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ECONNREFUSED" })), true);
-  assert.equal(storageFailure(Object.assign(new Error("x"), { code: "23514" })), true);
+  for (const code of ["08006", "53300", "57P01", "58030", "40001", "40P01"])
+    assert.equal(storageFailure(Object.assign(new Error("x"), { code })), true, code);
+  for (const code of ["23514", "42703", "P0001", "ENGINE"])
+    assert.equal(storageFailure(Object.assign(new Error("x"), { code })), false, code);
   assert.equal(storageFailure(new Error("timeout exceeded when trying to connect")), true);
   assert.equal(storageFailure(new RangeError("Invalid time value")), false);
   assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ERR_INVALID_ARG_TYPE" })), false);

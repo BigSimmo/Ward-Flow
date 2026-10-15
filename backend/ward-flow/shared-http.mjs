@@ -18,35 +18,48 @@ const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
 
 /**
- * True when the database could not do the work: a PostgreSQL SQLSTATE (five characters), a Node
- * network error code (ECONNRESET and similar, not ERR_ codes) or a known pool or store message. Anything else is a
- * code fault, which the API reports as 500 rather than blaming the database.
+ * PostgreSQL SQLSTATEs that mean the database could not do the work now: connection (08),
+ * insufficient resources (53), operator intervention such as a shutdown (57), system error (58),
+ * a serialization failure or a deadlock. Any other SQLSTATE is a query fault that retrying will not
+ * clear, so it is a code fault.
+ */
+const STORAGE_SQLSTATE = /^(?:(?:08|53|57|58)[0-9A-Z]{3}|40001|40P01)$/;
+/** Node network error codes for a database that cannot be reached. */
+const NETWORK_CODES = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ECONNABORTED",
+  "ETIMEDOUT",
+  "EPIPE",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+]);
+
+/**
+ * True when the database could not do the work: an outage SQLSTATE, a Node network error code or a
+ * known pool or store message. Anything else is a code fault, which the API reports as 500 rather
+ * than blaming the database.
  */
 export function storageFailure(error) {
   const code = error?.code;
   return (
-    (typeof code === "string" && /^(?:[0-9A-Z]{5}|E(?!RR_)[A-Z_]+)$/.test(code)) ||
+    (typeof code === "string" && (STORAGE_SQLSTATE.test(code) || NETWORK_CODES.has(code))) ||
     STORAGE_MESSAGES.test(String(error?.message ?? ""))
   );
 }
 
 /**
- * Closed diagnostic fields for an unexpected error. A database error keeps only its name and code,
- * since PostgreSQL messages can quote values. A code fault keeps a short URL-free message too,
- * because without it the log cannot say what broke.
+ * Closed diagnostic fields for an unexpected error: its name and code only. No message, since a
+ * PostgreSQL or engine message can quote values from the request. The request ID ties the entry
+ * to the response the caller saw.
  */
-function failureFields(error, storage) {
+function failureFields(error) {
   const code = error?.code;
   return {
     errorName: typeof error?.name === "string" ? error.name.slice(0, 60) : "Error",
     ...(typeof code === "string" || typeof code === "number" ? { errorCode: String(code).slice(0, 40) } : {}),
-    ...(storage
-      ? {}
-      : {
-          message: String(error?.message ?? "")
-            .replace(/https?:\/\/\S+/g, "[url]")
-            .slice(0, 160),
-        }),
   };
 }
 
@@ -220,7 +233,7 @@ export function createSharedHandler({
       if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
       const storage = storageFailure(error);
-      note.failure = failureFields(error, storage);
+      note.failure = failureFields(error);
       return storage
         ? reply(
             503,
