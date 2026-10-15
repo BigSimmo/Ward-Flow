@@ -57,9 +57,10 @@ function decodeJwt(token) {
  * VerifierRateLimitedError (429) when a client address has made too many remote checks.
  *
  * A token is first checked here: shape, expiry, issuer and a listed coordinator, then its
- * signature against Supabase's published keys (cached). Only a token signed with a key that is not
- * published, such as a legacy shared-secret token, is sent to /auth/v1/user, behind a per-address
- * limit. Junk tokens never reach Supabase. A token verified locally stays valid until it expires
+ * signature against Supabase's published keys (cached). A signed token naming a key that is not in
+ * the current list is refused here. Only a legacy shared-secret token, or any token while the key
+ * list cannot be read, is sent to /auth/v1/user, behind a per-address limit. Junk tokens never
+ * reach Supabase. A token verified locally stays valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
  */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
@@ -100,15 +101,24 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const jwks = { keys: new Map(), fetchedAt: -Infinity, attemptedAt: -Infinity, pending: null };
+  /** The published key for a kid, and whether the key list is current (younger than the cache lifetime). */
+  function cachedKey(kid) {
+    const current = now() - jwks.fetchedAt < JWKS_TTL_MS;
+    return { key: current ? (jwks.keys.get(kid) ?? null) : null, current };
+  }
+  /**
+   * Keys older than the cache lifetime are never used, even when a refresh fails, so a key Supabase
+   * has removed stops working. Concurrent requests share one refresh.
+   */
   async function publishedKey(kid) {
-    const at = now();
-    const fresh = at - jwks.fetchedAt < JWKS_TTL_MS;
-    if (fresh && jwks.keys.has(kid)) return jwks.keys.get(kid);
+    const cached = cachedKey(kid);
+    if (cached.key) return cached;
     if (jwks.pending) {
       await jwks.pending;
-      return jwks.keys.get(kid) ?? null;
+      return cachedKey(kid);
     }
-    if (at - jwks.attemptedAt < JWKS_RETRY_MS) return null;
+    const at = now();
+    if (at - jwks.attemptedAt < JWKS_RETRY_MS) return cached;
     jwks.attemptedAt = at;
     jwks.pending = (async () => {
       try {
@@ -130,17 +140,15 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
           return next;
         });
         jwks.keys = keys;
-        jwks.fetchedAt = now();
+        jwks.fetchedAt = at;
       } catch {
-        // Expired keys must not remain trusted when the refresh fails.
-        jwks.keys = new Map();
-        jwks.fetchedAt = -Infinity;
+        // Keys stay usable until the cache lifetime ends. After that, tokens fall back to Supabase.
       } finally {
         jwks.pending = null;
       }
     })();
     await jwks.pending;
-    return jwks.keys.get(kid) ?? null;
+    return cachedKey(kid);
   }
 
   const confirmed = new Map();
@@ -157,7 +165,11 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const used = limits.addresses.get(key) ?? 0;
     const subjectUsed = limits.subjects.get(subject) ?? 0;
     // Keep one coordinator's forged tokens from consuming the shared allowance for others.
-    if (used >= REMOTE_CHECKS_PER_ADDRESS || subjectUsed >= REMOTE_CHECKS_PER_ADDRESS || limits.total >= REMOTE_CHECKS_TOTAL)
+    if (
+      used >= REMOTE_CHECKS_PER_ADDRESS ||
+      subjectUsed >= REMOTE_CHECKS_PER_ADDRESS ||
+      limits.total >= REMOTE_CHECKS_TOTAL
+    )
       return false;
     limits.addresses.set(key, used + 1);
     limits.subjects.set(subject, subjectUsed + 1);
@@ -194,7 +206,10 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       throw new InvalidCredentialError("Unauthorised");
     const algorithm = ALGORITHMS[jwt.header.alg];
     if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {
-      const published = await publishedKey(jwt.header.kid);
+      const { key: published, current } = await publishedKey(jwt.header.kid);
+      // A current key list without this kid means Supabase does not sign with it, so the token
+      // is not sent to Supabase. Answered as unavailable, so a client retries after a rotation.
+      if (!published && current) throw new VerifierUnavailableError("Signing key not published");
       if (published) {
         const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
         let valid = false;

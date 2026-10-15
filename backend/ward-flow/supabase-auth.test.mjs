@@ -83,15 +83,43 @@ test("a forged, altered or wrong-audience signed token is refused without asking
   assert.deepEqual(calls, [JWKS]);
 });
 
-test("an unpublished key falls back to Supabase, and the keys are re-read at most once a minute", async () => {
+test("a key missing from the current list is refused without asking Supabase, and re-read at most once a minute", async () => {
   let at = Date.now();
-  const { calls, verify } = setup({ clock: () => at });
-  assert.equal(await verify(signed("ES256", "rotated")), coordinator);
-  assert.equal(await verify(signed("ES256", "rotated", claims({ jti: "second" }))), coordinator);
-  assert.deepEqual(calls, [JWKS, USER, USER]);
+  let keys = { keys: [published.keys[1]] };
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    fetch: async (url) => {
+      calls.push(url);
+      return url === JWKS ? Response.json(keys) : Response.json({ id: coordinator });
+    },
+  });
+  for (const jti of ["first", "second"])
+    await assert.rejects(verify(signed("ES256", "ec-1", claims({ jti }))), VerifierUnavailableError);
+  assert.deepEqual(calls, [JWKS], "made-up or rotated keys never reach /auth/v1/user");
+  keys = published;
   at += 61_000;
-  await verify(signed("ES256", "rotated", claims({ jti: "third" })));
-  assert.deepEqual(calls, [JWKS, USER, USER, JWKS, USER]);
+  assert.equal(await verify(signed("ES256", "ec-1", claims({ jti: "third" }))), coordinator);
+  assert.deepEqual(calls, [JWKS, JWKS]);
+});
+
+test("keys older than the cache lifetime are not used when a refresh fails", async () => {
+  let at = Date.now();
+  let up = true;
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    fetch: async (url) => {
+      calls.push(url);
+      if (url !== JWKS) return Response.json({ id: coordinator });
+      return up ? Response.json(published) : new Response(null, { status: 503 });
+    },
+  });
+  assert.equal(await verify(signed("ES256", "ec-1")), coordinator);
+  up = false;
+  at += 10 * 60_000;
+  assert.equal(await verify(signed("ES256", "ec-1", claims({ jti: "stale" }))), coordinator);
+  assert.deepEqual(calls, [JWKS, JWKS, USER], "a stale key list sends the token to Supabase instead");
 });
 
 test("Supabase being down for the keys still lets a legacy check through, and never fails open", async () => {
@@ -134,7 +162,7 @@ test("a confirmed legacy token is reused for a minute, never past its expiry", a
   assert.equal(calls.length, 2);
 });
 
-test("remote checks are limited per client address before anything is sent", async () => {
+test("remote checks are limited per client address and per coordinator before anything is sent", async () => {
   const { calls, verify } = setup();
   for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS; index += 1)
     await verify(legacy(claims({ jti: String(index) })), { clientAddress: "203.0.113.9" });
@@ -143,8 +171,40 @@ test("remote checks are limited per client address before anything is sent", asy
     VerifierRateLimitedError,
   );
   assert.equal(calls.length, REMOTE_CHECKS_PER_ADDRESS);
-  assert.equal(await verify(legacy(claims({ jti: "other" })), { clientAddress: "198.51.100.4" }), coordinator);
+  // The same coordinator from another address has used its own allowance too.
+  await assert.rejects(
+    verify(legacy(claims({ jti: "other" })), { clientAddress: "198.51.100.4" }),
+    VerifierRateLimitedError,
+  );
   assert.equal(await verify(signed("ES256", "ec-1"), { clientAddress: "203.0.113.9" }), coordinator);
+});
+
+test("one coordinator's checks cannot use up the allowance for the others", async () => {
+  const other = randomUUID();
+  const calls = [];
+  const verify = createSupabaseAuthenticator(
+    { ...config, coordinatorIds: [coordinator, other] },
+    {
+      fetch: async (url) => {
+        calls.push(url);
+        return Response.json({ id: other });
+      },
+    },
+  );
+  for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS; index += 1)
+    await verify(legacy(claims({ jti: String(index) })), { clientAddress: `198.51.100.${index}` }).catch(() => {});
+  await assert.rejects(
+    verify(legacy(claims({ jti: "over" })), { clientAddress: "203.0.113.50" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(await verify(legacy(claims({ sub: other })), { clientAddress: "203.0.113.50" }), other);
+});
+
+test("requests arriving together share one read of the published keys", async () => {
+  const { calls, verify } = setup();
+  const tokens = Array.from({ length: 5 }, (_, index) => signed("ES256", "ec-1", claims({ jti: String(index) })));
+  assert.deepEqual(await Promise.all(tokens.map((token) => verify(token))), Array(5).fill(coordinator));
+  assert.deepEqual(calls, [JWKS]);
 });
 
 test("the shared API and readiness answer 429 with Retry-After when the limit is reached", async () => {
