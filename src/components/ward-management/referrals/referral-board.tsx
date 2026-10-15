@@ -1597,7 +1597,7 @@ function QueuedSection({
                             onSelect(referral.id);
                           }}
                         >
-                          {nameFor(patientInfo.displayName, patientInfo.umrn)}
+                          {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
                           <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
@@ -1740,7 +1740,7 @@ function QueuedSection({
                     </span>
                     <span className={a.cardMain}>
                       <span className={a.cardName}>
-                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                         <ReadmissionFlag
                           flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
@@ -1896,7 +1896,7 @@ function DecidedSection({
                     <td>
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1945,7 +1945,7 @@ function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral)}, </span>
-                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
                         <span
                           className={styles.v6RowOutcome}
                           data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}

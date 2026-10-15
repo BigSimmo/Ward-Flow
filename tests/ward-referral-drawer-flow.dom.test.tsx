@@ -164,8 +164,9 @@ describe("approved four-tab referral drawer journey", () => {
     expect(inbox).toHaveTextContent("Waitlisted");
     const board = screen.getByTestId("ward-referral-board-screen");
     // Option A (9 Oct 2026): filters highlight and never hide, so the waitlisted referral is on the queue as it stands.
-    expect(board).toHaveTextContent("Tobias Wren");
-    fireEvent.click(within(board).getAllByRole("button", { name: /Tobias Wren/ })[0]);
+    // Phone review F-06 (Oct 2026): queue rows read family name first, as the census does.
+    expect(board).toHaveTextContent("Wren, Tobias");
+    fireEvent.click(within(board).getAllByRole("button", { name: /Wren, Tobias/ })[0]);
     fireEvent.click(within(board).getByRole("tab", { name: "Patient" }));
     expect(board).toHaveTextContent("Synthetic patient story for inbox review");
   }, 90_000);
