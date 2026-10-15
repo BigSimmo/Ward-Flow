@@ -10,6 +10,11 @@ export interface DirtyStateGuardOptions {
   onRestore?: (cachedValue: string) => void;
   /** Browsers show their own beforeunload wording. */
   confirmMessage?: string;
+  /**
+   * A link this guard's owner already confirms for itself (an in-app dialog). Only this guard skips it, so
+   * any other mounted guard still prompts. Pass a stable function.
+   */
+  skipAnchor?: (anchor: HTMLAnchorElement) => boolean;
 }
 
 /** Removes legacy typed drafts without reading their contents. */
@@ -29,7 +34,7 @@ export function clearWardFlowDraftCaches(): void {
 /** D18: typed text stays in memory. Warn on unload, client navigation, and purge caches from older versions. */
 export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   const normalized: DirtyStateGuardOptions = typeof options === "boolean" ? { isDirty: options } : options;
-  const { key, isDirty, confirmMessage } = normalized;
+  const { key, isDirty, confirmMessage, skipAnchor } = normalized;
 
   useEffect(() => {
     clearWardFlowDraftCaches();
@@ -76,8 +81,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!anchor) return;
-      // A link that asks for itself (an in-app dialog) opts out, so the browser prompt does not stack on it.
-      if (anchor.hasAttribute("data-own-leave-guard")) return;
+      if (skipAnchor?.(anchor)) return;
       if (anchor.target && anchor.target !== "_self") return;
       if (anchor.hasAttribute("download")) return;
 
@@ -118,7 +122,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
 
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
-  }, [isDirty, confirmMessage]);
+  }, [isDirty, confirmMessage, skipAnchor]);
 
   return { clearDraft };
 }

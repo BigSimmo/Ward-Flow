@@ -752,6 +752,9 @@ function patientKeyFor(
   return open ? open.id : `${PATIENT_KEY_PREFIX}${patientId}`;
 }
 
+/** The "Where this case is" link asks through the drawer's own dialog, so this guard leaves it alone. */
+const isOwnLeaveGuardAnchor = (anchor: HTMLAnchorElement) => anchor.hasAttribute("data-own-leave-guard");
+
 function WardReferralDrawerContent({
   onClose,
   onSelectPatient,
@@ -1079,6 +1082,7 @@ function WardReferralDrawerContent({
   });
   useDirtyStateGuard({
     isDirty: !sentReferralId && (dirty || draftKeptAt !== null),
+    skipAnchor: isOwnLeaveGuardAnchor,
   });
   const requestClose = useCallback(() => {
     if (guardOpen) setGuardOpen(false);
