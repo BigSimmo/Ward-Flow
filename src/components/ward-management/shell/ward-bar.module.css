@@ -1341,7 +1341,10 @@
     gap: 5px;
     font-size: var(--t-0);
     font-weight: 500;
-    color: var(--wf-ink-2);
+    /* Inherited from the bar's ink rule below. WebKit can leave this button on the light face when
+       the bar takes the ink band, because it misses the descendant restyle; a custom property set on
+       the bar itself always reaches it (release gate, 15 Oct 2026). */
+    color: var(--wf-bar-scope-ink, var(--wf-ink-2));
   }
 
   /* The visible line is small; the hit area still reaches 48px tall. */
@@ -3046,6 +3049,7 @@
       )
     ) {
     --wf-focus-ring: var(--wf-hero-ink);
+    --wf-bar-scope-ink: var(--wf-hero-ink-2);
     background: var(--wf-hero-1);
     border-bottom-color: var(--wf-hero-1);
     color: var(--wf-hero-ink);
