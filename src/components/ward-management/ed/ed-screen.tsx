@@ -1,6 +1,8 @@
 "use client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
@@ -1291,6 +1293,8 @@ export function EdScreen({ edId }: EdScreenProps) {
     [admissions, registryPatients, referrals, movements, units],
   );
   const accessTarget = configuration.edAccessTargetMinutes;
+  // Top 25 item 13: one set of long wait steps from the shared thresholds, desktop board only.
+  const edWaitStepsOn = useWardFeatureFlag("top25-ed-wait-ladder");
   // The configured pull hold; until 25 Sept 2026 the transit badges said "4h hold" whatever it was.
   const holdLabel =
     configuration.pullHoldMinutes % 60 === 0
@@ -5412,6 +5416,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                           {waitTone ? <StatusGlyph tone={waitTone} size={8} /> : null}
                           <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
                         </span>
+                        {edWaitStepsOn && edWaitStep(minutesInDepartment) ? (
+                          <span className={styles.a2Sub} data-testid={`ward-ed-wait-step-${movement.id}`}>
+                            {edWaitStep(minutesInDepartment)?.label}
+                          </span>
+                        ) : null}
                         <span
                           className={overTarget ? styles.a2Sub : "sr-only"}
                           data-testid={`ward-ed-access-target-${movement.id}`}
