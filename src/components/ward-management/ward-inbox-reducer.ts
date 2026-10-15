@@ -14,7 +14,7 @@ import {
   type InboxSnoozeEntry,
 } from "./ward-inbox-snooze";
 
-export type InboxAcknowledgement = {
+type InboxAcknowledgement = {
   at: Instant;
   by: string;
 };
@@ -105,7 +105,7 @@ export function inboxItemKindOf(inboxItemId: string): InboxItemKind | undefined 
  * safe. `buildActionInbox` and `decisionTargetInboxItems` must agree with this list (pinned in
  * `tests/ward-inbox-snooze.test.ts`).
  */
-export const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
+const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
   "transport_awaiting_departure",
   "target_pending_referral_decision",
   "target_pending_transfer_acceptance",

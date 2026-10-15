@@ -170,7 +170,7 @@ function localCalendarDate(value: unknown): Date | null {
   return date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
 }
 
-export function nextPlannedAdmissionId(sequence: number): string {
+function nextPlannedAdmissionId(sequence: number): string {
   return `PA-${String(sequence).padStart(2, "0")}`;
 }
 

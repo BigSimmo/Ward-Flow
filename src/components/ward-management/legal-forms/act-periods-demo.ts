@@ -114,7 +114,7 @@ export function actPeriodFor(code: string): ActPeriod | undefined {
   return Object.prototype.hasOwnProperty.call(actPeriodsDemo, code) ? actPeriodsDemo[code] : undefined;
 }
 
-export function periodLengthText(length: PeriodLength): string {
+function periodLengthText(length: PeriodLength): string {
   if ("hours" in length) return `${length.hours} hours`;
   if ("days" in length) return `${length.days} days`;
   return `${length.months} months`;
@@ -207,7 +207,7 @@ export function actPeriodLineText(reading: ActPeriodReading, movement: Movement,
  * 2026). Used only to order the "Time not written" group; never shown as a figure or a deadline.
  * Undefined when the form has no sourced period.
  */
-export function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): number | undefined {
+function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): number | undefined {
   const code = movement.legalForm?.code;
   const period = code === undefined ? undefined : actPeriodFor(code);
   if (!period) return undefined;

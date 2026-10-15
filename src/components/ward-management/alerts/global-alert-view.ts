@@ -52,7 +52,7 @@ export function directiveDesks(alert: BroadcastAlert, units: readonly Unit[]): s
 }
 
 /** The ward and ED desks a target covers: every ED desk for every unit or ED liaison. */
-export function desksInBroadcastScope(
+function desksInBroadcastScope(
   units: readonly Unit[],
   scope: BroadcastTargetScope,
 ): { wards: string[]; eds: string[] } {
@@ -143,7 +143,7 @@ export function bannerEntriesForDesk(
   );
 }
 
-export type ReplyRow = { unitId: string; name: string; reply?: BroadcastReply };
+type ReplyRow = { unitId: string; name: string; reply?: BroadcastReply };
 
 export type ReplyBoard = {
   rows: ReplyRow[];

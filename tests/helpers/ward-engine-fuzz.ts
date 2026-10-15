@@ -371,7 +371,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
           escortRequired: chance(inner, 0.5),
           cadNumber: `CAD${int(inner, 1000, 9999)}`,
           transportLegalStatus: pick(inner, TRANSPORT_LEGAL_STATUSES),
-          estimatedAt: NOW_ANCHOR + int(inner, 10, 600),
+          estimatedAt: currentNow + int(inner, 10, 600),
         }),
       )(state, random);
       // The sending side books transport, never the receiving ward.
@@ -519,21 +519,70 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [
     4,
     (state, random) => {
-      const admission = admissionFor(state, random, ["occupied", "pulled"]);
+      const current = state.admissions.filter((stay) => stay.state === "pulled" || stay.state === "occupied");
+      // A bed held on the stay's ward for another open journey or an accepted referral not yet
+      // arrived there (as `heldBedRefusal` reads them): the placement that must be refused.
+      const heldFor = (stay: (typeof current)[number]) =>
+        [
+          ...state.movements
+            .filter(
+              (movement) =>
+                movement.closure === undefined &&
+                movement.acceptedUnitId === stay.unitId &&
+                movement.admissionId !== stay.id,
+            )
+            .map((movement) => movement.heldBedNumber),
+          ...state.referrals
+            .filter(
+              (referral) =>
+                !state.movements.some(
+                  (movement) =>
+                    movement.referralId === referral.id &&
+                    movement.stage === "arrived" &&
+                    movement.acceptedUnitId === stay.unitId,
+                ),
+            )
+            .flatMap((referral) => referral.destinations)
+            .filter(
+              (arm) =>
+                arm.state === "accepted" &&
+                arm.destination.kind === "psychiatric_ward" &&
+                (arm.acceptedUnitId ?? arm.destination.unitId) === stay.unitId,
+            )
+            .map((arm) => arm.heldBedNumber),
+        ].filter((bed): bed is number => bed !== undefined);
+      const nearHeld = current.filter((stay) => heldFor(stay).length > 0);
+      // A pulled stay of a journey in transit, so a later stop of that transport leaves a numbered
+      // bed held (the stopped-transport hold rule).
+      const inTransit = current.filter(
+        (stay) =>
+          stay.state === "pulled" &&
+          state.movements.some((movement) => movement.admissionId === stay.id && movement.stage === "moving"),
+      );
+      const roll = random();
+      const admission =
+        nearHeld.length > 0 && roll < 0.4
+          ? pick(random, nearHeld)
+          : inTransit.length > 0 && roll < 0.6
+            ? pick(random, inTransit)
+            : admissionFor(state, random, ["occupied", "pulled"]);
       if (!admission) return null;
-      // Often aim at a bed already taken or held on the same ward: the case that must be refused.
-      const taken = [
-        ...state.admissions.filter((other) => other.unitId === admission.unitId).map((other) => other.bedNumber),
-        ...state.movements
-          .filter((movement) => movement.acceptedUnitId === admission.unitId)
-          .map((movement) => movement.heldBedNumber),
-      ].filter((bed): bed is number => bed !== undefined);
+      const held = heldFor(admission);
+      // Otherwise often aim at a bed another stay is already in.
+      const occupied = current
+        .filter((other) => other.unitId === admission.unitId)
+        .map((other) => other.bedNumber)
+        .filter((bed): bed is number => bed !== undefined);
       return {
         type: "PLACE_IN_BED",
         admissionId: admission.id,
         actingUnitId: admission.unitId,
         bedNumber:
-          taken.length > 0 && chance(random, 0.4) ? pick(random, taken) : bedOn(state, random, admission.unitId),
+          held.length > 0 && roll < 0.4
+            ? pick(random, held)
+            : occupied.length > 0 && chance(random, 0.4)
+              ? pick(random, occupied)
+              : bedOn(state, random, admission.unitId),
       };
     },
   ],
@@ -548,7 +597,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
         unitId: admission.unitId,
         actingUnitId: admission.unitId,
         admissionId: admission.id,
-        expectedReturn: NOW_ANCHOR + int(random, 60, 2880),
+        expectedReturn: currentNow + int(random, 60, 2880),
         ...(chance(random, 0.3) ? { kind: pick(random, ["off_ward", "medical_trip"]) } : {}),
       };
     },
@@ -576,7 +625,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
         actingUnitId: admission.unitId,
         admissionId: admission.id,
         waitingOn: pick(random, BED_RELEASE_WAITING_ON),
-        expectedAt: NOW_ANCHOR + int(random, 30, 1440),
+        expectedAt: currentNow + int(random, 30, 1440),
         ...(chance(random, 0.2) ? { blocker: pick(random, BED_RELEASE_BLOCKERS) } : {}),
       };
     },
@@ -609,16 +658,24 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     (state, random) => {
       const unit = pick(random, state.units);
       if (!unit) return null;
-      const patient = chance(random, 0.7) ? pick(random, state.patients) : undefined;
+      // Mostly patients with no bed yet, since a patient in a bed is refused a booking.
+      const inBed = new Set(
+        state.admissions
+          .filter((stay) => stay.state === "pulled" || stay.state === "occupied")
+          .map((stay) => stay.patientId),
+      );
+      const free = state.patients.filter((candidate) => !inBed.has(candidate.id));
+      const patient = chance(random, 0.7) ? pick(random, chance(random, 0.8) ? free : state.patients) : undefined;
       return {
         type: "BOOK_PLANNED_ADMISSION",
+        calendarDate: "2026-10-15",
         patientId: patient?.id ?? null,
         initials: patient ? null : "AB",
         sex: pick(random, ["Female", "Male"]),
         reason: pick(random, PLANNED_ADMISSION_REASONS),
         unitId: unit.id,
         actingUnitId: unit.id,
-        expectedArrivalAt: NOW_ANCHOR + int(random, 0, 2880),
+        expectedArrivalAt: currentNow + int(random, 0, 2880),
         expectedStayDays: int(random, 1, 21),
         legalStatus: pick(random, LEGAL_STATUSES),
         ageBand: unit.cohort,
@@ -675,6 +732,12 @@ function chooseBuilder(random: Random): Builder {
   return BUILDERS[BUILDERS.length - 1][1];
 }
 
+/**
+ * The event time `nextEvent` is building for, so planned times sit ahead of the run's clock rather
+ * than the fixed anchor (a long run would otherwise book arrivals in the past).
+ */
+let currentNow = NOW_ANCHOR;
+
 /** The demonstration clock the screens would pass: anchor, plus elapsed time, plus jumps. */
 export function nowFor(state: WardFlowState, step: number): number {
   return NOW_ANCHOR + state.clockOffsetMinutes + step * 5;
@@ -682,13 +745,14 @@ export function nowFor(state: WardFlowState, step: number): number {
 
 /** The next event for this state. Never null: retries until a builder has a subject. */
 export function nextEvent(state: WardFlowState, random: Random, step: number): WardFlowEvent {
+  currentNow = nowFor(state, step);
   for (;;) {
     const draft = chooseBuilder(random)(state, random);
     if (!draft) continue;
     const permitted = EVENT_ROLE[draft.type];
     const role = chance(random, 0.9) && permitted.length > 0 ? pick(random, permitted) : pick(random, ALL_ROLES);
     FUZZED_EVENT_TYPES.add(draft.type);
-    const event = { now: nowFor(state, step), ...draft, role: draft.role ?? role };
+    const event = { now: currentNow, ...draft, role: draft.role ?? role };
     return event as unknown as WardFlowEvent;
   }
 }
