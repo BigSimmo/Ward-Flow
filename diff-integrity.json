@@ -493,6 +493,13 @@
       "after": 3,
       "reason": "The removed case asserted that the FD-23 screen-boundary guard lists community/community-team-hub.tsx. That screen was deleted on 15 Oct 2026 as unreachable dead code (Josh approved dead-code deletion that day). The live team page, community/community-screen.tsx, reads the full referral record, so it cannot replace the entry until that is fixed; the gap was routed to the Engine safety workstream rather than hidden by a weaker assertion.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-sidebar.dom.test.tsx",
+      "before": 24,
+      "after": 0,
+      "reason": "The file tested the old ClinicalRail sidebar (icon rail, labelled panel, phone drawer, counts and attention block). Nothing mounted it after the shared WardBar and WardRail chrome replaced it, and its last live import went when the Tools sheet (#302) took over the demo controls. Josh approved removing ClinicalRail, WardSidebarFooter and WardDemoControls on 15 Oct 2026. Its reachability check for the community index moved to tests/ward-community-index.dom.test.tsx against WardRail, and its D11 sandbox scan moved to tests/ward-nav.test.ts against the live rail.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }

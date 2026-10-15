@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
 
-// Same reason as every sibling dom suite: `ClinicalRail` renders next/link anchors, and jsdom
+// Same reason as every sibling dom suite: `WardRail` renders next/link anchors, and jsdom
 // cannot provide an App Router context.
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { ClinicalRail } from "@/components/ward-management/ward-management-navigation";
+import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -82,7 +82,7 @@ function teamLinksIn(main: HTMLElement): HTMLAnchorElement[] {
  * right shape: the rail is rendered once for a fact about the rail, not once per assertion.
  */
 const railHrefs: string[] = (() => {
-  const { container } = renderInProvider(<ClinicalRail />);
+  const { container } = renderInProvider(<WardRail />);
   return [...container.querySelectorAll("a[href]")].map((anchor) => anchor.getAttribute("href") ?? "");
 })();
 
