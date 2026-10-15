@@ -73,7 +73,7 @@ const id = text.min(1);
 const history = (shape: z.ZodRawShape) => z.array(z.looseObject({ at: finite, ...shape }));
 const legalFormRule = z.looseObject({
   code: text,
-  region: z.custom((region) => ["metro", "country"].includes(String(region))).optional(),
+  region: z.enum(["metro", "country"]).optional(),
 });
 const medicalClearanceRule = z.looseObject({ cleared: bool, at: finite });
 const closureRule = z.looseObject({ at: finite, outcome: text, reason: text });
@@ -439,7 +439,7 @@ const broadcastAlert = z.looseObject({
       // The banner looks up each answer and reason label, so an unknown one is refused here.
       z.looseObject({
         unitId: text,
-        answer: z.custom((answer) => Object.hasOwn(BROADCAST_ANSWER_LABELS, String(answer))),
+        answer: z.string().refine((answer) => Object.hasOwn(BROADCAST_ANSWER_LABELS, answer)),
         at: finite,
         reason: z.enum(REFERRAL_DECLINE_REASONS).optional(),
         beds: finite.optional(),
