@@ -295,6 +295,9 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         // Counts only: no typed narrative or working diagnosis reaches an executive (review on PR #330).
         referrals = referrals.map(countsOnlyReferral);
         movements = movements.map(withoutDiagnosis);
+        admissions = admissions.map((admission) =>
+          admission.tentativeDiagnosis === null ? admission : { ...admission, tentativeDiagnosis: null },
+        );
       }
       break;
     }

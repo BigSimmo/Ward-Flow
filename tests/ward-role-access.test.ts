@@ -282,6 +282,7 @@ describe("the scoped workspace", () => {
       expect(referral.history).toBe("");
     }
     for (const movement of scoped.movements) expect("tentativeDiagnosis" in movement).toBe(false);
+    for (const admission of scoped.admissions) expect(admission.tentativeDiagnosis).toBeNull();
   });
 
   it("gives the access admin no patient data at all", () => {
