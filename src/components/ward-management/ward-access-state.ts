@@ -13,6 +13,7 @@
  * Pure and browser free: the backend bundles this module through `build-engine.mjs`, so the server
  * and the screens use one rule.
  */
+import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/alerts/ward-broadcast-model";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
@@ -294,7 +295,9 @@ function commandStrings(value: unknown, into: string[] = [], depth = 0): string[
  * Why this desk may not send this command, or `null` when it may. The command may name only
  * records the desk sees in its own right: any patient, movement, stay, referral, booking, bed
  * release, leave bed, notice or alert outside its scope, or seen only through break glass, refuses
- * it. A desk acts only from its own place (`actingUnitId`, `actingPlaceId`, `actingTeamId`).
+ * it. A desk acts only from its own place (`actingUnitId`, `actingPlaceId`, `actingTeamId`), and a
+ * command aimed at one ward or ED (`unitId`) must aim inside it. `unitIds` on a referral names the
+ * wards being asked, which may be anywhere, so it is left alone.
  */
 export function commandScopeRefusal(
   state: WardFlowState,
@@ -325,6 +328,12 @@ export function commandScopeRefusal(
   const scope = access.scope;
   const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
+  if (
+    typeof command.unitId === "string" &&
+    !placeIn(command.unitId) &&
+    !(access.role === "coordinator" && command.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID)
+  )
+    return outside;
   if (typeof command.actingPlaceId === "string" && !placeIn(command.actingPlaceId)) return outside;
   if (
     typeof command.actingTeamId === "string" &&

@@ -134,6 +134,39 @@ describe("a command from a desk", () => {
     );
   });
 
+  it("is refused when it aims at another ward, even with no acting place", () => {
+    const other = state.units.find((unit) => unit.id !== ownUnit)!.id;
+    const site = places.unitSiteCode(ownUnit)!;
+    const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: site } };
+    const elsewhere = state.units.find((unit) => places.unitSiteCode(unit.id) !== site)!.id;
+    expect(
+      commandScopeRefusal(
+        state,
+        bedManager,
+        { type: "SEND_WARD_BUZZ", role: "bed_manager", unitId: elsewhere },
+        options,
+      ),
+    ).toMatch(/outside/);
+    expect(
+      commandScopeRefusal(state, bedManager, { type: "SEND_WARD_BUZZ", role: "bed_manager", unitId: ownUnit }, options),
+    ).toBeNull();
+    expect(
+      commandScopeRefusal(state, ward, { type: "CONFIRM_MORNING_ROLLUP", role: "ward", unitId: other }, options),
+    ).toMatch(/outside/);
+    // A referral may ask wards anywhere.
+    expect(
+      commandScopeRefusal(
+        state,
+        {
+          role: "coordinator",
+          scope: { kind: "service", service: unitHealthService(state.units.find((unit) => unit.id === ownUnit)!)! },
+        },
+        { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [elsewhere] },
+        options,
+      ),
+    ).toBeNull();
+  });
+
   it("is refused for a patient seen only through break glass", () => {
     const grants = [{ patientId: otherAdmission.patientId!, until: NOW_ANCHOR + 60 }];
     const withGrant = { ...options, grants };
