@@ -132,15 +132,6 @@ const RECORDED: readonly { readonly file: string; readonly measured: number; rea
   { file: "ed/ed.module.css", measured: 0, because: "CLEARED 2026-09-06, with add-patient and person." },
   { file: "patients/person.module.css", measured: 0, because: "CLEARED 2026-09-06, with add-patient and ed." },
   {
-    file: "tools/ward-mha-calculator.module.css",
-    measured: 6,
-    because:
-      "Recorded 2026-09-25 (test fixer). New MHA calculator tool; every reach is the fallback in " +
-      "`var(--ward-warning, var(--warning-text))`-shaped pairs behind a declared --ward-* alias. " +
-      "15 -> 6 on 2026-10-13: the unused-CSS sweep removed the never-applied statusUrgent, " +
-      "statusCritical and statusLapsed rules.",
-  },
-  {
     file: "ward-global-search.module.css",
     measured: 0,
     because:
