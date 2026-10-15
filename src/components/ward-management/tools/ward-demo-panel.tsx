@@ -16,7 +16,8 @@ import styles from "./ward-tools-sheet.module.css";
  * raised with `role: "demo"` exactly as before, and every string says demo, never clinical.
  */
 export function WardDemoPanel() {
-  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
+  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice, sharedDemoControls } = useWardFlow();
+  if (!sharedDemoControls) return null;
   const now = useWardFlowClock();
   const [message, setMessage] = useState<string | null>(null);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
@@ -77,7 +78,7 @@ export function WardDemoPanel() {
             className={styles.scenarioCard}
             onClick={() => {
               dispatch({ type: "SET_SCENARIO", role: "demo", now, scenario: candidate });
-              setMessage(`${scenarioLabels[candidate]} loaded.`);
+              setMessage("Scenario change requested; waiting for the shared board.");
             }}
           >
             <strong>{scenarioLabels[candidate]}</strong>
@@ -129,7 +130,7 @@ export function WardDemoPanel() {
         className={styles.resetButton}
         onClick={() => {
           dispatch({ type: "RESET_SCENARIO", role: "demo", now });
-          setMessage("Demo reset to the start of the scenario.");
+          setMessage("Demo reset requested; waiting for the shared board.");
         }}
       >
         Reset demo

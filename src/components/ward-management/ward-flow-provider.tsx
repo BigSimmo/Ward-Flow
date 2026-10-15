@@ -716,6 +716,7 @@ function WardFlowWorld({
   anchorOffsetMinutes: number;
   mountedAtAbsolute: number | null;
   shared: WardSharedConnection;
+  sharedDemoControls: boolean;
 }) {
   /**
    * How far the demo's day sits from the day the fixture was authored on. Read ONCE, at mount, so
@@ -1189,6 +1190,7 @@ function WardFlowWorld({
       plannedAdmissions: state.plannedAdmissions ?? EMPTY_ARRAY,
       supportNotifications: state.supportNotifications ?? EMPTY_ARRAY,
       eventLog: shared.enabled ? (shared.eventLog ?? EMPTY_ARRAY) : (container.eventLog ?? EMPTY_ARRAY),
+      sharedDemoControls: !shared.enabled || shared.demoControls === true,
       dispatch,
       focusMovementId,
       setFocusMovementId,
@@ -1214,6 +1216,7 @@ function WardFlowWorld({
       container.eventLog,
       shared.enabled,
       shared.eventLog,
+      shared.demoControls,
       dayZero,
       dispatch,
       focusMovementId,

@@ -1218,7 +1218,7 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
-                    disabled={!resultsCurrent}
+                    disabled={!resultsCurrent || !wardFlow?.sharedDemoControls}
                     data-testid="ward-global-search-cmd-advance-clock"
                     onClick={() => {
                       if (wardFlow) {
