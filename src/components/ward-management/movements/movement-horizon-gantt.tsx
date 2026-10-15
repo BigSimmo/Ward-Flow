@@ -140,6 +140,7 @@ export function MovementHorizonGantt({
 
   const scrubberId = useId();
   const serviceFilterId = useId();
+  const diagramAreaId = useId();
   const horizonRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(isEnlarged, horizonRef, () => setIsEnlarged(false));
 
@@ -315,7 +316,7 @@ export function MovementHorizonGantt({
             type="button"
             className={buttonClass({ variant: "ghost", size: "sm", className: styles.phBtn })}
             id="toggleHorizonDiagram"
-            aria-controls="horizonDiagramArea"
+            aria-controls={diagramAreaId}
             aria-expanded={!isCollapsed}
             disabled={isEnlarged}
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -326,7 +327,7 @@ export function MovementHorizonGantt({
       </div>
 
       {!isCollapsed && (
-        <div id="horizonDiagramArea" className={styles.diagramArea}>
+        <div id={diagramAreaId} className={styles.diagramArea}>
           {/* Scrub row: step back, the slider, step forward, the time it points at, then Reset. */}
           <div className={styles.ganttControlsBar}>
             <div className={styles.ganttScrubberWrap}>
@@ -600,7 +601,9 @@ export function MovementHorizonGantt({
                 corridors.length === 0 ? (
                   <p className={styles.railEmpty}>No open movement currently has an accepting ward.</p>
                 ) : (
-                  <ol className={styles.corridorRanks}>
+                  // Scrolls when the list is long, so it takes a tab stop (axe scrollable-region-focusable).
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
+                  <ol className={styles.corridorRanks} tabIndex={0} aria-label="Accepted corridors, busiest first">
                     {rankedPairs.map((corridor) => {
                       const ed = edById(corridor.originEdId);
                       const unit = units.find((candidate) => candidate.id === corridor.acceptedUnitId);

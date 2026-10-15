@@ -884,12 +884,31 @@ export function activateWardNetwork(sites: Site[]): void {
   wardSites = sites;
 }
 
+/*
+ * The flattened unit and department lists are rebuilt only when the network is re-pointed. Screens
+ * call these (and `edById`) many times per render, and rebuilding them every time was
+ * a visible part of the phone's first load (fix list 7.6, October 2026). Callers must not change
+ * the returned lists in place.
+ */
+let flattenedFor: Site[] | undefined;
+let unitList: Unit[] = [];
+let edList: EmergencyDepartment[] = [];
+
+function flattened(): void {
+  if (flattenedFor === wardSites) return;
+  unitList = wardSites.flatMap((site) => site.units);
+  edList = wardSites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
+  flattenedFor = wardSites;
+}
+
 export function allUnits(): Unit[] {
-  return wardSites.flatMap((site) => site.units);
+  flattened();
+  return unitList;
 }
 
 export function allEmergencyDepartments(): EmergencyDepartment[] {
-  return wardSites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
+  flattened();
+  return edList;
 }
 
 /** Returns `undefined` for an unknown id. Never falls back to a different unit. */

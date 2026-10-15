@@ -467,7 +467,8 @@
 }
 
 .off {
-  color: var(--wf-ink-off);
+  /* A shade darker than --wf-ink-off, so "None" still reads at 4.5:1 on a flagged (tinted) row. */
+  color: color-mix(in srgb, var(--wf-ink-off) 80%, var(--wf-ink-1));
   font-size: var(--wf-fs-12);
 }
 

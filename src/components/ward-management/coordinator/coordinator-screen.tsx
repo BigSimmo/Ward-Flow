@@ -61,7 +61,7 @@ import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
 import { HomeWardSheet } from "./home-phone-sheets";
 import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
-import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
+import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
 import shortlistStyles from "./shortlist-panel.module.css";
 import {
   SinceLastLookPanel,
