@@ -168,6 +168,7 @@ export function useModalFocus({
       // Move focus explicitly rather than trusting the platform's Tab order, which varies by
       // browser for programmatically focused buttons.
       event.preventDefault();
+      if (capture) event.stopImmediatePropagation();
       if (focusable.length === 0) {
         panel?.focus();
         return;
