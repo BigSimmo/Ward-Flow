@@ -11,7 +11,7 @@ Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 - Host the synthetic prototype on Railway in its own **Ward Flow** project.
 - Connect only `BigSimmo/Ward-Flow`, branch `main`.
 - **Ward Flow must never connect to PsychSift's Supabase or Railway resources**, database, services or credentials.
-- For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses either its **dedicated Ward Flow synthetic-only Supabase project (`zakzoemeedfepxcstsou`)** or its **dedicated Ward Flow Azure Functions / PostgreSQL backend**, operating exclusively on 100% synthetic data. No shared backend was created by this initial Railway hosting task; the backend presets are described in [the backend guide](../backend/ward-flow/README.md) and [Supabase/Azure presets](../backend/ward-flow/SETUP-SUPABASE.md). Those guides do not establish current hosted provider state.
+- For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses Ward Flow's **dedicated synthetic-only Supabase project**, operating exclusively on 100% synthetic data. The current provider and how to change it are recorded in [DATABASE.md](ward-flow/DATABASE.md). No shared backend was created by this initial Railway hosting task; see [the backend guide](../backend/ward-flow/README.md). Those guides do not establish current hosted provider state.
 - The default browser-local state is not a shared database. There is no production identity or access-control system for real patients; use invented data only.
 - Historical local-only and PsychSift hosting instructions in the imported documents describe the original source checkout. They do not authorise deploying this repository into PsychSift.
 
@@ -37,7 +37,7 @@ Railway service settings hold the build and start commands. Railpack installs th
 - Build setting: `node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack` (includes Next.js type checking).
 - Start setting: `node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT`.
 - Variables: `NODE_ENV=production`, `PORT=8080`, `NEXT_PUBLIC_MOCKUPS_ENABLED=true`, `NEXT_PUBLIC_SITE_URL=https://ward-flow-production.up.railway.app`, `RAILPACK_NODE_VERSION=24.19.0`.
-- The setup record reported no Supabase, Azure, OpenAI or other database/provider credentials for this service. Current settings were not inspected.
+- The setup record reported no Supabase, OpenAI or other database/provider credentials for this service. Current settings were not inspected.
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.
 

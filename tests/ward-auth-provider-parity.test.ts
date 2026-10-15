@@ -8,17 +8,14 @@ describe("browser auth provider selection", () => {
   // with the CSP side for every combination of the public settings.
   it("agrees between the sign-in adapter and the CSP for every public setting combination", () => {
     const selectors = ["", " supabase ", "entra", "unknown"];
-    const ids = ["", "00000000-0000-4000-8000-0000000000aa"];
     const urls = ["", "https://zakzoemeedfepxcstsou.supabase.co"];
     for (const selector of selectors)
-      for (const tenant of ids)
-        for (const client of ids)
-          for (const url of urls) {
-            vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", selector);
-            vi.stubEnv("NEXT_PUBLIC_WARD_TENANT_ID", tenant);
-            vi.stubEnv("NEXT_PUBLIC_WARD_CLIENT_ID", client);
-            vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", url);
-            expect(selectWardAuthProvider()).toBe(resolveWardAuthProvider());
-          }
+      for (const url of urls) {
+        vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", selector);
+        vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", url);
+        expect(selectWardAuthProvider()).toBe(resolveWardAuthProvider());
+      }
+    vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "");
+    expect(selectWardAuthProvider()).toBe("supabase");
   });
 });
