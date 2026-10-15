@@ -172,7 +172,7 @@
   font-size: 12px; /* 12px floor */
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: var(--pill, 999px);
+  border-radius: var(--wf-r-ctl);
   background: var(--good-soft);
   color: var(--good-ink, var(--good));
   border: 1px solid var(--good-soft);

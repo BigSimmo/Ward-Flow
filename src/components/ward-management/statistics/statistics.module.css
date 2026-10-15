@@ -404,7 +404,7 @@
  */
 [data-ward-design="third-edition"] .prototypeBadge {
   border-color: var(--line-strong);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--surface-2);
   color: var(--ink-soft);
   font-family: var(--body);
