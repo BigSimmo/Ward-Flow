@@ -57,10 +57,10 @@ git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- docs/ward-flow/mockups/
 
 ### Third pass: dated plans, reports, handovers and audit output
 
-A third trim removed 544 more files that no code, test, script or agent instruction reads:
+A third trim removed 539 more files that no code, test, script or agent instruction reads:
 
-- 360 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README, `product-refinement/VISUAL-REVIEW.md` and every plan the code cites stay)
-- `docs/ward-flow/sdd-rescued/`, `register/`, `handover/`, `handovers/`, `reviews/`, `triage/`, `outstanding/`, `rescued/`, `merge/` and `evidence/`, apart from any file the code cites
+- 356 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README, `product-refinement/VISUAL-REVIEW.md`, the type floor record a lesson cites and every plan the code cites stay)
+- `docs/ward-flow/sdd-rescued/`, `register/`, `handover/`, `handovers/`, `reviews/`, `triage/`, `outstanding/`, `rescued/`, `merge/` and `evidence/`, apart from any file the code or a live doc cites
 - the September reports in `docs/ward-flow/reports/`
 - dated chat prompts, pre-registrations, finding registers and test sweeps at the top of `docs/ward-flow/`
 - `docs/ward-flow/audit-artefacts/stabilisation-suite-report.json` (4 MB of test output, which `scripts/ward-flow/audit/measure-ward-suite.mjs` writes again when run)

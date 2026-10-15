@@ -1,0 +1,4520 @@
+{
+  "RECORD_NOT_BASELINE": "Raw type-floor enumeration measured 2026-09-11 at worktree tip 528bb60708 (ward master line 1c45f97c42 + docs). A dated record of one tree; nothing should diff against it. Limits in README.md beside this file.",
+  "measuredAtSha": "528bb60708",
+  "lineSha": "1c45f97c42",
+  "measuredOn": "2026-09-11",
+  "viewport": 1600,
+  "reads": "getComputedStyle(el).fontSize per element with own text nodes; unresolved tokens report as the inherited size",
+  "base": "http://localhost:3290",
+  "when": "2026-09-11T14:14:54.817Z",
+  "results": {
+    "/mockups/ward-flow": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|coordinator.prototypeBadge|10||||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||11||||",
+          "n": 1,
+          "s": ["This screen is . It orders operational p"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 44,
+          "s": ["not a medical device", "WF-018", "WF-009"]
+        },
+        {
+          "k": "span|coordinator.exceptionsToggleRecordCount|10||||",
+          "n": 1,
+          "s": ["0 refused"]
+        },
+        {
+          "k": "span|coordinator.regionCount|10||||",
+          "n": 2,
+          "s": ["8 departments", "43 open movements"]
+        },
+        {
+          "k": "p|coordinator.pressureRule|10||||",
+          "n": 1,
+          "s": ["Ordered worst first: breached deadlines,"]
+        },
+        {
+          "k": "span|coordinator.pressureSiteCode|11|U|||",
+          "n": 8,
+          "s": ["RGH", "PEEL", "SJGM"]
+        },
+        {
+          "k": "span|coordinator.pressureStats|10||||",
+          "n": 8,
+          "s": ["8 waiting · longest 2d 14h", "8 waiting · longest 1d 5h", "5 waiting · longest 15h 52m"]
+        },
+        {
+          "k": "button|coordinator.queueTabActive coordinator.queueTab|10||||",
+          "n": 1,
+          "s": ["Patients"]
+        },
+        {
+          "k": "span|coordinator.queueTabCount|10||||",
+          "n": 2,
+          "s": ["43", "6"]
+        },
+        {
+          "k": "button|coordinator.queueTab|10||||",
+          "n": 1,
+          "s": ["Referrals"]
+        },
+        {
+          "k": "span|coordinator.queueFlag|10||||",
+          "n": 1,
+          "s": ["Flagged urgent"]
+        },
+        {
+          "k": "span|coordinator.queueTier|10||||",
+          "n": 43,
+          "s": ["Tier 3 · least urgent", "Tier 1 · most urgent", "Tier 1 · most urgent"]
+        },
+        {
+          "k": "span||10||||",
+          "n": 87,
+          "s": ["40m waiting", "Older adult · Open · from SCGH", "7h 00m waiting"]
+        },
+        {
+          "k": "span|coordinator.queueScore|10||||",
+          "n": 43,
+          "s": ["Operational 12", "Operational 53", "Operational 50"]
+        },
+        {
+          "k": "strong||11|||Z|",
+          "n": 12,
+          "s": ["RF-001", "RF-009", "RF-005"]
+        },
+        {
+          "k": "span|coordinator.queueTier|10|||Z|",
+          "n": 6,
+          "s": ["Tier 2 · urgent", "Tier 2 · urgent", "Tier 2 · urgent"]
+        },
+        {
+          "k": "span||10|||Z|",
+          "n": 12,
+          "s": ["40m waiting", "Youth · Perth Metropolitan · from ARM", "35m waiting"]
+        },
+        {
+          "k": "h3|coordinator.diagramColumnHeading|10|U|||",
+          "n": 2,
+          "s": ["Emergency departments", "Inpatient units"]
+        },
+        {
+          "k": "span|coordinator.diagramEdCode|11|U|||",
+          "n": 8,
+          "s": ["RGH", "PEEL", "SJGM"]
+        },
+        {
+          "k": "span|coordinator.diagramEdName|10||||",
+          "n": 8,
+          "s": [
+            "Rockingham General Hospital Emergency De",
+            "Peel Health Campus Emergency Department",
+            "St John of God Midland Emergency Departm"
+          ]
+        },
+        {
+          "k": "span|coordinator.diagramEdStats|10||||",
+          "n": 8,
+          "s": ["8 waiting", "8 waiting", "5 waiting"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["Statewide flow hub"]
+        },
+        {
+          "k": "h4|coordinator.diagramServiceHeading|10|U|||",
+          "n": 5,
+          "s": ["North Metro", "East Metro", "South Metro"]
+        },
+        {
+          "k": "span|coordinator.diagramUnitName|11||||",
+          "n": 23,
+          "s": ["SCGH Adult Open", "SCGH Older Adult", "Graylands Adult Secure"]
+        },
+        {
+          "k": "span|coordinator.diagramUnitCapability|10||||",
+          "n": 23,
+          "s": ["All open · Adult · 24 beds", "All open · Older adult · 16 beds", "All locked · Adult · 15 beds"]
+        },
+        {
+          "k": "span|coordinator.diagramBedChip|10||||",
+          "n": 138,
+          "s": ["Ready 2", "Held 3", "Blocked 0"]
+        },
+        {
+          "k": "span|coordinator.diagramBeingMadeReady|11||||",
+          "n": 1,
+          "s": ["1 of the ready bed is still being made r"]
+        },
+        {
+          "k": "span|coordinator.diagramUnauthorisedBadge|10||||",
+          "n": 2,
+          "s": ["Not authorised — MHA 2014", "Not authorised — MHA 2014"]
+        },
+        {
+          "k": "span|coordinator.exceptionsToggleRecordCount|10|||Z|",
+          "n": 3,
+          "s": ["6 declines", "0 overrides", "0 refused"]
+        },
+        {
+          "k": "span|coordinator.exceptionsToggleCount|10|||Z|",
+          "n": 1,
+          "s": ["4 exceptions"]
+        },
+        {
+          "k": "button|coordinator.registerTab|10||||",
+          "n": 3,
+          "s": ["Declines", "Overrides", "Refused actions"]
+        },
+        {
+          "k": "span|coordinator.registerTabCount|10||||",
+          "n": 4,
+          "s": ["6", "0", "4"]
+        },
+        {
+          "k": "button|coordinator.registerTabActive coordinator.registerTab|10||||",
+          "n": 1,
+          "s": ["Exceptions"]
+        },
+        {
+          "k": "span|coordinator.regionCount|10|||Z|",
+          "n": 2,
+          "s": ["6 declines", "0 overrides"]
+        },
+        {
+          "k": "span|decline-register.entryMeta|10|||Z|",
+          "n": 12,
+          "s": ["22:08", "Declined by RGH Adult Secure", "21:58"]
+        },
+        {
+          "k": "span|decline-register.entryReason|11|||Z|",
+          "n": 6,
+          "s": ["capability mismatch", "specialling unavailable", "bed pulled for earlier referral"]
+        },
+        {
+          "k": "p|override-register.placeholder|11|||Z|",
+          "n": 1,
+          "s": ["No override has been recorded."]
+        },
+        {
+          "k": "p|coordinator.exceptionsCoverageNote|10||||",
+          "n": 1,
+          "s": ["This lists the three exception categorie"]
+        },
+        {
+          "k": "span|coordinator.exceptionTitle|11||||",
+          "n": 4,
+          "s": ["Bed pull expired", "Multiple destinations declined", "Transport awaiting departure"]
+        },
+        {
+          "k": "span|coordinator.exceptionDetail|10||||",
+          "n": 4,
+          "s": ["WF-004 · 10m overdue", "WF-009 · 5 destinations have declined", "WF-005 · accepted 21:43"]
+        },
+        {
+          "k": "span|coordinator.exceptionOwner|10||||",
+          "n": 4,
+          "s": ["Flow coordinator", "Flow coordinator", "ED mental health team"]
+        },
+        {
+          "k": "h3|coordinator.refusalsHeading|11|||Z|",
+          "n": 1,
+          "s": ["Refused actions"]
+        },
+        {
+          "k": "p|coordinator.placeholder|11|||Z|",
+          "n": 1,
+          "s": ["No refused actions recorded yet."]
+        },
+        {
+          "k": "p|coordinator.placeholder|11||||",
+          "n": 1,
+          "s": ["Select a movement from the priority queu"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward Flow",
+      "path": "/mockups/ward-flow"
+    },
+    "/mockups/ward-flow/network": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "p||11||||",
+          "n": 1,
+          "s": ["Services as nodes · movements as routes "]
+        },
+        {
+          "k": "span|ward-management-modes.prototypeBadge|10||||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 3,
+          "s": ["Updated 22:13", "Scenario set on 15 Aug 2026 · WA", "Review matches, cross-catchment escalati"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 1,
+          "s": ["Statewide coordination focus"]
+        },
+        {
+          "k": "span|ward-management-network.pipelineLabel|10||||",
+          "n": 7,
+          "s": ["1 Placement requested", "2 Destination review", "3 Accepted, awaiting bed"]
+        },
+        {
+          "k": "span|ward-management-network.pipelineSplit|10||||",
+          "n": 1,
+          "s": ["6 arrived · 1 did not proceed"]
+        },
+        {
+          "k": "span|ward-management-network.count|10||||",
+          "n": 2,
+          "s": ["43", "6"]
+        },
+        {
+          "k": "span|ward-management-network.elapsed|10||||",
+          "n": 49,
+          "s": ["1h 35m waiting", "3h 00m waiting", "4h 20m waiting"]
+        },
+        {
+          "k": "span|ward-management-network.queueMeta|10||||",
+          "n": 98,
+          "s": ["Adult · Open ward", "East Metro · Referred for psychiatric ex", "Older adult · Open ward"]
+        },
+        {
+          "k": "span|ward-management-network.tier|10||||",
+          "n": 45,
+          "s": ["1", "2", "1"]
+        },
+        {
+          "k": "span|ward-management-network.schematicBadge|10||||",
+          "n": 1,
+          "s": ["Schematic, not geographic"]
+        },
+        {
+          "k": "button|ward-management-network.focusToggle|10||||",
+          "n": 1,
+          "s": ["Focus diagram"]
+        },
+        {
+          "k": "strong||10|U|||",
+          "n": 6,
+          "s": ["NORTH METRO", "WACHS", "EAST METRO"]
+        },
+        {
+          "k": "span||10||||",
+          "n": 7,
+          "s": ["4 ready", "4 ready", "9 ready"]
+        },
+        {
+          "k": "span|ward-management-network.serviceCapability|10||||",
+          "n": 23,
+          "s": ["All open · Adult", "All open · Older", "All locked · Adult"]
+        },
+        {
+          "k": "span|ward-management-network.bedChip|10||||",
+          "n": 130,
+          "s": ["2", "3", "0"]
+        },
+        {
+          "k": "span|ward-management-network.bedTime|10||||",
+          "n": 23,
+          "s": ["21:58", "21:55", "21:53"]
+        },
+        {
+          "k": "span|ward-management-network.beingMadeReady|11||||",
+          "n": 2,
+          "s": ["1 of the ready beds still being made rea", "1 of the ready beds still being made rea"]
+        },
+        {
+          "k": "span|ward-management-network.hubMeta|10||||",
+          "n": 1,
+          "s": ["WF-001 routing · 43 open movements"]
+        },
+        {
+          "k": "span|ward-management-network.legendTitle|10||||",
+          "n": 1,
+          "s": ["Legend"]
+        },
+        {
+          "k": "span|ward-management-network.legendItem|10||||",
+          "n": 7,
+          "s": ["Ready", "Bed held", "Confirmed today"]
+        },
+        {
+          "k": "b||10||||",
+          "n": 8,
+          "s": ["Ready", "Held", "Confirmed"]
+        },
+        {
+          "k": "p|ward-management-network.patientLine|10||||",
+          "n": 1,
+          "s": ["Adult · Open ward · East Metro service"]
+        },
+        {
+          "k": "p|ward-management-network.patientSubLine|10||||",
+          "n": 2,
+          "s": ["Referred for psychiatric examination · R", "Placement requested · waiting 1h 35m wai"]
+        },
+        {
+          "k": "span|sr-only|10||SR||",
+          "n": 1,
+          "s": ["Comparison factor"]
+        },
+        {
+          "k": "th||10||||",
+          "n": 8,
+          "s": ["1 SCGH Adult Open", "2 ARM Adult Open", "3 RPH Adult Secure"]
+        },
+        {
+          "k": "td||10||||",
+          "n": 9,
+          "s": ["Different health service", "Same health service", "Same health service"]
+        },
+        {
+          "k": "p|ward-management-network.tierNote|10||||",
+          "n": 1,
+          "s": ["Eligibility only orders candidates insid"]
+        },
+        {
+          "k": "button|ward-management-network.factorsToggle|10||||",
+          "n": 1,
+          "s": ["Eligibility gates (11)"]
+        },
+        {
+          "k": "span|ward-management-network.ownerLabel|10||||",
+          "n": 1,
+          "s": ["Current owner"]
+        },
+        {
+          "k": "p|ward-management-network.assurance|10||||",
+          "n": 1,
+          "s": ["System suggests, you decide. No automati"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/movements/WF-001"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward Flow network diagram",
+      "path": "/mockups/ward-flow/network"
+    },
+    "/mockups/ward-flow/delays": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|delays.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every waiting patient, refusal and escal"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 3,
+          "s": ["Under 8 hours", "8 to 24 hours", "Over 24 hours"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 3,
+          "s": ["27", "14", "2"]
+        },
+        {
+          "k": "span|delays.ownerSub|10||||",
+          "n": 5,
+          "s": [
+            "Your decision, or a legal deadline runni",
+            "Waiting on a ward to answer or a bed to ",
+            "Waiting on the referring department"
+          ]
+        },
+        {
+          "k": "span|delays.ownerHot|10||||",
+          "n": 1,
+          "s": ["2 needing attention now"]
+        },
+        {
+          "k": "p|delays.foot|11||||",
+          "n": 3,
+          "s": [
+            "The waiting time is counted from arrival",
+            "The coloured left edge is who is holding",
+            "One blocker per person — the worst thing"
+          ]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 2,
+          "s": ["Pressing an owner marks those people in ", "Worst blocker first, then longest wait."]
+        },
+        {
+          "k": "span|ward-controls.pillCount|11||||",
+          "n": 3,
+          "s": ["43", "13", "1"]
+        },
+        {
+          "k": "span|delays.personWait |10||||",
+          "n": 41,
+          "s": ["7h 00m", "10h 56m", "3h 00m"]
+        },
+        {
+          "k": "span|delays.personCause|10||||",
+          "n": 43,
+          "s": [
+            "No suitable bed anywhere in the network",
+            "No suitable bed anywhere in the network",
+            "Awaiting a ward's answer"
+          ]
+        },
+        {
+          "k": "span|delays.personMeta|10||||",
+          "n": 43,
+          "s": [
+            "Adult · Needs a locked bed · Tier 1 · mo",
+            "Older adult · Needs a locked bed · Tier ",
+            "Older adult · An open bed suits · Tier 2"
+          ]
+        },
+        {
+          "k": "span|delays.personSince|10||||",
+          "n": 43,
+          "s": ["nothing recorded for 3m", "nothing recorded for 10h 56m", "nothing recorded for 3h 00m"]
+        },
+        {
+          "k": "span|delays.personWait delays.personWaitLong|10||||",
+          "n": 2,
+          "s": ["2d 14h", "1d 5h"]
+        },
+        {
+          "k": "span|delays.grpName|10|U|||",
+          "n": 4,
+          "s": ["Yours", "Wards", "Transport"]
+        },
+        {
+          "k": "span|delays.grpN|10||||",
+          "n": 4,
+          "s": ["21", "13", "8"]
+        },
+        {
+          "k": "span|delays.causeMeta|10||||",
+          "n": 3,
+          "s": ["that is you", "the pull lapsed before the bed was used", "each has a named bed"]
+        },
+        {
+          "k": "button|delays.tabBtn delays.tabBtnActive|10|U|||",
+          "n": 1,
+          "s": ["Escalations"]
+        },
+        {
+          "k": "span|delays.tabNum |10||||",
+          "n": 2,
+          "s": ["1", "7"]
+        },
+        {
+          "k": "button|delays.tabBtn |10|U|||",
+          "n": 1,
+          "s": ["Resolved today"]
+        },
+        {
+          "k": "p|delays.paneScope|10||||",
+          "n": 1,
+          "s": ["An escalation records that somebody was "]
+        },
+        {
+          "k": "span|delays.rowWhen|10||||",
+          "n": 1,
+          "s": ["3m ago"]
+        },
+        {
+          "k": "span|delays.rowWho|10||||",
+          "n": 1,
+          "s": ["to State bed coordination desk"]
+        },
+        {
+          "k": "span|delays.rowSub|11||||",
+          "n": 1,
+          "s": ["22:10"]
+        },
+        {
+          "k": "span|delays.attentionWho|11||||",
+          "n": 2,
+          "s": ["WF-009", "WF-308"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Delays — Ward Flow",
+      "path": "/mockups/ward-flow/delays"
+    },
+    "/mockups/ward-flow/capacity": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|capacity.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every bed count, ward name and waiting p"]
+        },
+        {
+          "k": "div|capacity.who|11||||",
+          "n": 4,
+          "s": [
+            "Detained, or assessed as needing one",
+            "Not detained, and not assessed as needin",
+            "Older adult, locked or open — the age gr"
+          ]
+        },
+        {
+          "k": "p|capacity.foot|11||||",
+          "n": 1,
+          "s": ["A shortfall row is a fact about supply a"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 1,
+          "s": ["This table says where a bed KIND is shor"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 2,
+          "s": ["Locked ready", "Open ready"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 2,
+          "s": ["8", "19"]
+        },
+        {
+          "k": "li|bed-map.legendItem|11||||",
+          "n": 5,
+          "s": ["Ready", "Ready — still being made ready (counted ", "Held — not offered"]
+        },
+        {
+          "k": "span|bed-map.serviceCount|11||||",
+          "n": 5,
+          "s": ["4 wards", "7 wards", "5 wards"]
+        },
+        {
+          "k": "span|bed-map.wardCounts|11||||",
+          "n": 23,
+          "s": [
+            "2 ready · 3 held · none blocked · 19 occ",
+            "1 ready · none held · none blocked · 15 ",
+            "1 ready · 1 held · none blocked · 13 occ"
+          ]
+        },
+        {
+          "k": "span|ward-controls.pillCount|11||||",
+          "n": 4,
+          "s": ["23", "20", "7"]
+        },
+        {
+          "k": "span|capacity.groupWardCount|11||||",
+          "n": 5,
+          "s": ["4 wards", "7 wards", "5 wards"]
+        },
+        {
+          "k": "div|capacity.who|11|||Z|",
+          "n": 23,
+          "s": ["Sir Charles Gairdner Hospital", "Sir Charles Gairdner Hospital", "Graylands Hospital"]
+        },
+        {
+          "k": "span|ward-freshness.stamp ward-tokens.wardTokens|11|||Z|",
+          "n": 23,
+          "s": [
+            "Confirmed 21:58 · NUM SCGH Adult Open",
+            "Confirmed 21:55 · NUM SCGH Older Adult",
+            "Confirmed 21:53 · NUM Graylands Adult Se"
+          ]
+        },
+        {
+          "k": "small|capacity.beingMadeReady|11|||Z|",
+          "n": 1,
+          "s": ["1 still being made ready"]
+        },
+        {
+          "k": "span|capacity.attentionWho|11||||",
+          "n": 6,
+          "s": ["A locked adult bed", "An open adult bed", "An older-adult bed"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Capacity - Ward Flow",
+      "path": "/mockups/ward-flow/capacity"
+    },
+    "/mockups/ward-flow/movements": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|movements.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every patient journey, transport leg and"]
+        },
+        {
+          "k": "h3|ward-record-row.groupTitle|11|U|||",
+          "n": 7,
+          "s": ["Placement requested", "Destination review", "Accepted, awaiting bed"]
+        },
+        {
+          "k": "span|ward-record-row.groupCount|11||||",
+          "n": 7,
+          "s": ["18 people", "5 people", "6 people"]
+        },
+        {
+          "k": "span|ward-record-row.groupNote|11||||",
+          "n": 7,
+          "s": [
+            "A destination has been asked for; nothin",
+            "At least one unit is weighing up whether",
+            "A unit has agreed in principle, but no b"
+          ]
+        },
+        {
+          "k": "small|ward-record-row.clockSub|11||||",
+          "n": 58,
+          "s": ["in journey", "in journey", "in journey"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 381,
+          "s": ["Adult", "Male", "Voluntary"]
+        },
+        {
+          "k": "span|ward-record-row.sep|11||||",
+          "n": 323,
+          "s": ["·", "·", "·"]
+        },
+        {
+          "k": "p|movements.foot|11||||",
+          "n": 2,
+          "s": [", which outranks everything.", "have no transport leg booked yet, and ar"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 2,
+          "s": ["Sorted by wait, longest first — except a", "35 of 43 open movements"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 5,
+          "s": ["Booked", "En route", "Collected"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 2,
+          "s": ["2", "6"]
+        },
+        {
+          "k": "span|ward-bar.zero|11||||",
+          "n": 3,
+          "s": ["none", "none", "none"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/movements/WF-019",
+        "/mockups/ward-flow/movements/WF-020",
+        "/mockups/ward-flow/movements/WF-316",
+        "/mockups/ward-flow/movements/WF-315",
+        "/mockups/ward-flow/movements/WF-312",
+        "/mockups/ward-flow/movements/WF-309",
+        "/mockups/ward-flow/movements/WF-308",
+        "/mockups/ward-flow/movements/WF-305",
+        "/mockups/ward-flow/movements/WF-329",
+        "/mockups/ward-flow/movements/WF-302",
+        "/mockups/ward-flow/movements/WF-326",
+        "/mockups/ward-flow/movements/WF-301",
+        "/mockups/ward-flow/movements/WF-323",
+        "/mockups/ward-flow/movements/WF-322",
+        "/mockups/ward-flow/movements/WF-319",
+        "/mockups/ward-flow/movements/WF-001",
+        "/mockups/ward-flow/movements/WF-012",
+        "/mockups/ward-flow/movements/WF-018",
+        "/mockups/ward-flow/movements/WF-009",
+        "/mockups/ward-flow/movements/WF-017",
+        "/mockups/ward-flow/movements/WF-013",
+        "/mockups/ward-flow/movements/WF-002",
+        "/mockups/ward-flow/movements/WF-010",
+        "/mockups/ward-flow/movements/WF-310",
+        "/mockups/ward-flow/movements/WF-303",
+        "/mockups/ward-flow/movements/WF-324",
+        "/mockups/ward-flow/movements/WF-003",
+        "/mockups/ward-flow/movements/WF-008",
+        "/mockups/ward-flow/movements/WF-317",
+        "/mockups/ward-flow/movements/WF-311",
+        "/mockups/ward-flow/movements/WF-304",
+        "/mockups/ward-flow/movements/WF-004",
+        "/mockups/ward-flow/movements/WF-325",
+        "/mockups/ward-flow/movements/WF-011",
+        "/mockups/ward-flow/movements/WF-016",
+        "/mockups/ward-flow/movements/WF-318",
+        "/mockups/ward-flow/movements/WF-015",
+        "/mockups/ward-flow/movements/WF-005",
+        "/mockups/ward-flow/movements/WF-313",
+        "/mockups/ward-flow/movements/WF-306",
+        "/mockups/ward-flow/movements/WF-006",
+        "/mockups/ward-flow/movements/WF-014",
+        "/mockups/ward-flow/movements/WF-327",
+        "/mockups/ward-flow/movements/WF-320",
+        "/mockups/ward-flow/movements/WF-314",
+        "/mockups/ward-flow/movements/WF-307",
+        "/mockups/ward-flow/movements/WF-007",
+        "/mockups/ward-flow/movements/WF-328",
+        "/mockups/ward-flow/movements/WF-300",
+        "/mockups/ward-flow/movements/WF-321"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Movements - Ward Flow",
+      "path": "/mockups/ward-flow/movements"
+    },
+    "/mockups/ward-flow/governance": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "p||11||||",
+          "n": 1,
+          "s": ["Assurance, audit and synthetic data boun"]
+        },
+        {
+          "k": "span|ward-management-modes.prototypeBadge|10||||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 3,
+          "s": ["Updated 22:13", "Scenario set on 15 Aug 2026 · WA", "Review matches, cross-catchment escalati"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 1,
+          "s": ["Statewide coordination focus"]
+        },
+        {
+          "k": "span|ward-modes-second-edition.panelBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "dt||10|U|||",
+          "n": 2,
+          "s": ["Median time, referral to a ward acceptin", "Average units contacted per patient"]
+        },
+        {
+          "k": "span|ward-modes-second-edition.effectivenessBasis|10||||",
+          "n": 2,
+          "s": ["from 1 of 27 recorded acceptances", "from 32 of 50 movements that referred at"]
+        },
+        {
+          "k": "small||10||||",
+          "n": 1,
+          "s": ["units"]
+        },
+        {
+          "k": "p|ward-modes-second-edition.droppedMeasureNote|10||||",
+          "n": 1,
+          "s": ["A third success measure — legal deadline"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Governance - Ward Flow",
+      "path": "/mockups/ward-flow/governance"
+    },
+    "/mockups/ward-flow/statistics": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 5,
+          "s": [
+            "not real figures",
+            "The heading says “so far” because that i",
+            "Every one of the reasons the model allow"
+          ]
+        },
+        {
+          "k": "span|statistics.indexDescription|10||||",
+          "n": 5,
+          "s": [
+            "Figures about the prototype as a whole, ",
+            "Every ward beside the other wards, and e",
+            "Everything the model can honestly say ab"
+          ]
+        },
+        {
+          "k": "p|statistics.figureNote|10||||",
+          "n": 11,
+          "s": [
+            "A measured count, whatever its value. No",
+            "Nothing on a movement marks the network ",
+            "A nought means the count ran over that r"
+          ]
+        },
+        {
+          "k": "span||10||||",
+          "n": 7,
+          "s": ["3", "7", "8"]
+        },
+        {
+          "k": "em||10||||",
+          "n": 1,
+          "s": ["at once"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/statistics/overview",
+        "/mockups/ward-flow/statistics/compare",
+        "/mockups/ward-flow/statistics/service/North%20Metro",
+        "/mockups/ward-flow/statistics/service/East%20Metro",
+        "/mockups/ward-flow/statistics/service/South%20Metro",
+        "/mockups/ward-flow/statistics/service/WACHS",
+        "/mockups/ward-flow/statistics/service/Private",
+        "/mockups/ward-flow/statistics/community/albany",
+        "/mockups/ward-flow/statistics/community/alma-street",
+        "/mockups/ward-flow/statistics/community/alma-street-central",
+        "/mockups/ward-flow/statistics/community/alma-street-cockburn",
+        "/mockups/ward-flow/statistics/community/alma-street-fremantle",
+        "/mockups/ward-flow/statistics/community/alma-street-melville",
+        "/mockups/ward-flow/statistics/community/armadale",
+        "/mockups/ward-flow/statistics/community/armadale-mead-centre",
+        "/mockups/ward-flow/statistics/community/armadale-mead",
+        "/mockups/ward-flow/statistics/community/bentley",
+        "/mockups/ward-flow/statistics/community/bunbury",
+        "/mockups/ward-flow/statistics/community/central-great-southern",
+        "/mockups/ward-flow/statistics/community/central-wheatbelt",
+        "/mockups/ward-flow/statistics/community/central-wheatbelt-h-s",
+        "/mockups/ward-flow/statistics/community/clarkson",
+        "/mockups/ward-flow/statistics/community/east-wheatbelt",
+        "/mockups/ward-flow/statistics/community/east-wheatbelt-hs",
+        "/mockups/ward-flow/statistics/community/eudoria-street-gosnells",
+        "/mockups/ward-flow/statistics/community/eudoria-street-thornlie",
+        "/mockups/ward-flow/statistics/community/gascoyne",
+        "/mockups/ward-flow/statistics/community/gascoyne-h-s",
+        "/mockups/ward-flow/statistics/community/gascoyne-hs",
+        "/mockups/ward-flow/statistics/community/geraldton-hs",
+        "/mockups/ward-flow/statistics/community/great-south",
+        "/mockups/ward-flow/statistics/community/great-southern",
+        "/mockups/ward-flow/statistics/community/icc",
+        "/mockups/ward-flow/statistics/community/inner-city",
+        "/mockups/ward-flow/statistics/community/inner-city-central",
+        "/mockups/ward-flow/statistics/community/inner-city-clinic",
+        "/mockups/ward-flow/statistics/community/joondalup",
+        "/mockups/ward-flow/statistics/community/kimberley",
+        "/mockups/ward-flow/statistics/community/kimberley-hs",
+        "/mockups/ward-flow/statistics/community/kwinana",
+        "/mockups/ward-flow/statistics/community/lower-great-southern",
+        "/mockups/ward-flow/statistics/community/mead-centre-armadale",
+        "/mockups/ward-flow/statistics/community/mead-centre-kelmscott",
+        "/mockups/ward-flow/statistics/community/meade-centre-armadale",
+        "/mockups/ward-flow/statistics/community/merredin",
+        "/mockups/ward-flow/statistics/community/midland",
+        "/mockups/ward-flow/statistics/community/midwest-h-s",
+        "/mockups/ward-flow/statistics/community/mills-street",
+        "/mockups/ward-flow/statistics/community/mirrabooka",
+        "/mockups/ward-flow/statistics/community/murchison-hs",
+        "/mockups/ward-flow/statistics/community/narrogin",
+        "/mockups/ward-flow/statistics/community/north-west",
+        "/mockups/ward-flow/statistics/community/north-goldfield-h-s",
+        "/mockups/ward-flow/statistics/community/northam",
+        "/mockups/ward-flow/statistics/community/nth-goldfield-h-s",
+        "/mockups/ward-flow/statistics/community/nth-goldfield-hs",
+        "/mockups/ward-flow/statistics/community/osborne",
+        "/mockups/ward-flow/statistics/community/osborne-park",
+        "/mockups/ward-flow/statistics/community/peel",
+        "/mockups/ward-flow/statistics/community/pilbara",
+        "/mockups/ward-flow/statistics/community/rockingham",
+        "/mockups/ward-flow/statistics/community/south-east-coastal",
+        "/mockups/ward-flow/statistics/community/southern-coastal-hs",
+        "/mockups/ward-flow/statistics/community/subiaco",
+        "/mockups/ward-flow/statistics/community/swan",
+        "/mockups/ward-flow/statistics/community/upper-great-southern",
+        "/mockups/ward-flow/statistics/community/west-pilbara",
+        "/mockups/ward-flow/statistics/community/western-h-s",
+        "/mockups/ward-flow/statistics/community/western-hs",
+        "/mockups/ward-flow/statistics/community/wheat-belt",
+        "/mockups/ward-flow/statistics/community/wheatbelt-hs"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Statistics — Ward Flow",
+      "path": "/mockups/ward-flow/statistics"
+    },
+    "/mockups/ward-flow/wards": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|ward-index.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This page is . Every ward listed here is"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "p|ward-index.provenance|10||||",
+          "n": 1,
+          "s": ["This is a way in, not a bed state. It sh"]
+        },
+        {
+          "k": "span|ward-index.wardKind|10||||",
+          "n": 23,
+          "s": ["Adult · Open", "Older adult · Open", "Adult · Locked"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/ward/scgh-adult-open",
+        "/mockups/ward-flow/ward/scgh-older-adult",
+        "/mockups/ward-flow/ward/gry-adult-secure",
+        "/mockups/ward-flow/ward/gry-older-adult",
+        "/mockups/ward-flow/ward/rph-older-adult",
+        "/mockups/ward-flow/ward/arm-adult-open",
+        "/mockups/ward-flow/ward/sjgm-adult-open",
+        "/mockups/ward-flow/ward/bty-adult-secure",
+        "/mockups/ward-flow/ward/bty-older-adult",
+        "/mockups/ward-flow/ward/bty-youth",
+        "/mockups/ward-flow/ward/fsh-adult-secure",
+        "/mockups/ward-flow/ward/fsh-older-adult",
+        "/mockups/ward-flow/ward/rgh-adult-secure",
+        "/mockups/ward-flow/ward/fre-adult-open",
+        "/mockups/ward-flow/ward/fre-older-adult",
+        "/mockups/ward-flow/ward/alb-adult-open",
+        "/mockups/ward-flow/ward/bun-adult-open",
+        "/mockups/ward-flow/ward/brm-adult-secure",
+        "/mockups/ward-flow/ward/ger-adult-open",
+        "/mockups/ward-flow/ward/kun-adult-open",
+        "/mockups/ward-flow/ward/sjgs-adult-open",
+        "/mockups/ward-flow/ward/sjgs-adult-secure"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "All wards — Ward Flow",
+      "path": "/mockups/ward-flow/wards"
+    },
+    "/mockups/ward-flow/community": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|community-index.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "kbd|community-index.kbdHint|10||||",
+          "n": 1,
+          "s": ["/"]
+        },
+        {
+          "k": "span|community-index.chipCount|10||||",
+          "n": 2,
+          "s": ["64", "22"]
+        },
+        {
+          "k": "button|community-index.azRailButton|10||||",
+          "n": 26,
+          "s": ["A", "B", "C"]
+        },
+        {
+          "k": "p|community-index.stripLabel|10|U|||",
+          "n": 1,
+          "s": ["Recently opened"]
+        },
+        {
+          "k": "p|community-index.familyCardLabel|10|U|||",
+          "n": 9,
+          "s": [
+            "Central Wheatbelt — 2 entries read alike",
+            "East Wheatbelt — 2 entries read alike",
+            "Gascoyne — 3 entries read alike"
+          ]
+        },
+        {
+          "k": "button|community-index.readsAlike|10||||",
+          "n": 22,
+          "s": [
+            "Reads like 3 others — check you have the",
+            "Reads like 3 others — check you have the",
+            "Reads like 1 other — check you have the "
+          ]
+        },
+        {
+          "k": "p|community-index.provenance|10||||",
+          "n": 3,
+          "s": [
+            "These teams are listed alphabetically be",
+            "This is a way in, not a caseload. It sho",
+            "Some names below carry a marker reading "
+          ]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 5,
+          "s": ["reads like others", "The marker never means two entries are t", "no"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/community/central-wheatbelt",
+        "/mockups/ward-flow/community/central-wheatbelt-h-s",
+        "/mockups/ward-flow/community/east-wheatbelt",
+        "/mockups/ward-flow/community/east-wheatbelt-hs",
+        "/mockups/ward-flow/community/gascoyne",
+        "/mockups/ward-flow/community/gascoyne-h-s",
+        "/mockups/ward-flow/community/gascoyne-hs",
+        "/mockups/ward-flow/community/inner-city",
+        "/mockups/ward-flow/community/inner-city-clinic",
+        "/mockups/ward-flow/community/kimberley-hs",
+        "/mockups/ward-flow/community/kimberley",
+        "/mockups/ward-flow/community/mead-centre-armadale",
+        "/mockups/ward-flow/community/armadale-mead-centre",
+        "/mockups/ward-flow/community/armadale-mead",
+        "/mockups/ward-flow/community/meade-centre-armadale",
+        "/mockups/ward-flow/community/nth-goldfield-hs",
+        "/mockups/ward-flow/community/north-goldfield-h-s",
+        "/mockups/ward-flow/community/nth-goldfield-h-s",
+        "/mockups/ward-flow/community/western-hs",
+        "/mockups/ward-flow/community/western-h-s",
+        "/mockups/ward-flow/community/wheat-belt",
+        "/mockups/ward-flow/community/wheatbelt-hs",
+        "/mockups/ward-flow/community/albany",
+        "/mockups/ward-flow/community/alma-street",
+        "/mockups/ward-flow/community/alma-street-central",
+        "/mockups/ward-flow/community/alma-street-cockburn",
+        "/mockups/ward-flow/community/alma-street-fremantle",
+        "/mockups/ward-flow/community/alma-street-melville",
+        "/mockups/ward-flow/community/armadale",
+        "/mockups/ward-flow/community/bentley",
+        "/mockups/ward-flow/community/bunbury",
+        "/mockups/ward-flow/community/central-great-southern",
+        "/mockups/ward-flow/community/clarkson",
+        "/mockups/ward-flow/community/eudoria-street-gosnells",
+        "/mockups/ward-flow/community/eudoria-street-thornlie",
+        "/mockups/ward-flow/community/geraldton-hs",
+        "/mockups/ward-flow/community/great-south",
+        "/mockups/ward-flow/community/great-southern",
+        "/mockups/ward-flow/community/icc",
+        "/mockups/ward-flow/community/inner-city-central",
+        "/mockups/ward-flow/community/joondalup",
+        "/mockups/ward-flow/community/kwinana",
+        "/mockups/ward-flow/community/lower-great-southern",
+        "/mockups/ward-flow/community/mead-centre-kelmscott",
+        "/mockups/ward-flow/community/merredin",
+        "/mockups/ward-flow/community/midland",
+        "/mockups/ward-flow/community/midwest-h-s",
+        "/mockups/ward-flow/community/mills-street",
+        "/mockups/ward-flow/community/mirrabooka",
+        "/mockups/ward-flow/community/murchison-hs",
+        "/mockups/ward-flow/community/narrogin",
+        "/mockups/ward-flow/community/north-west",
+        "/mockups/ward-flow/community/northam",
+        "/mockups/ward-flow/community/osborne",
+        "/mockups/ward-flow/community/osborne-park",
+        "/mockups/ward-flow/community/peel",
+        "/mockups/ward-flow/community/pilbara",
+        "/mockups/ward-flow/community/rockingham",
+        "/mockups/ward-flow/community/south-east-coastal",
+        "/mockups/ward-flow/community/southern-coastal-hs",
+        "/mockups/ward-flow/community/subiaco",
+        "/mockups/ward-flow/community/swan",
+        "/mockups/ward-flow/community/upper-great-southern",
+        "/mockups/ward-flow/community/west-pilbara"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "All community teams — Ward Flow",
+      "path": "/mockups/ward-flow/community"
+    },
+    "/mockups/ward-flow/ward/rph-adult-secure": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|ward.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This is RPH Adult Secure's own view. Eve"]
+        },
+        {
+          "k": "h2|ward.sectionHeading|10|U|||",
+          "n": 6,
+          "s": ["This ward", "Ward figures, right now", "Awaiting your answer"]
+        },
+        {
+          "k": "span|ward-freshness.stamp ward-tokens.wardTokens|11||||",
+          "n": 6,
+          "s": ["Confirmed 21:53", "As at 22:13", "Confirmed 21:53 · NUM RPH Adult Secure"]
+        },
+        {
+          "k": "span|ward.heroCtaSub|10||||",
+          "n": 1,
+          "s": ["20 beds · 1 ready"]
+        },
+        {
+          "k": "p|ward.heroAvailability|10||||",
+          "n": 1,
+          "s": ["Always available — an unanswered questio"]
+        },
+        {
+          "k": "p|ward.confirmSkipNote|10||||",
+          "n": 3,
+          "s": [
+            "Leaving this blank does not stop you ope",
+            "That stamp is the bed flagged most recen",
+            "That stamp is the bed recorded most rece"
+          ]
+        },
+        {
+          "k": "span|ward.recordStamp|11||||",
+          "n": 2,
+          "s": ["Last flagged 22:03 · NUM RPH Adult Secur", "Last recorded 21:13 · NUM RPH Adult Secu"]
+        },
+        {
+          "k": "span|ward.bedChip|10||||",
+          "n": 8,
+          "s": ["Ready 1", "Held 1", "Blocked 0"]
+        },
+        {
+          "k": "p|ward.bedNote|10||||",
+          "n": 1,
+          "s": ["Ready, held, blocked and occupied add up"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 2,
+          "s": ["Held", "Confirmed"]
+        },
+        {
+          "k": "label|ward.capacityLabel|10||||",
+          "n": 1,
+          "s": ["Confirm allocatable beds for RPH Adult S"]
+        },
+        {
+          "k": "p|ward.capacityConfirmed|10||||",
+          "n": 4,
+          "s": [
+            "Currently confirmed 1 at 21:53. Writes t",
+            "Records what the discharge is waiting on",
+            "A bed being made ready is still offered "
+          ]
+        },
+        {
+          "k": "span|ward.capacityLabel|10||||",
+          "n": 5,
+          "s": [
+            "Flag a bed coming free at RPH Adult Secu",
+            "Bed releases at RPH Adult Secure",
+            "Beds being made ready at RPH Adult Secur"
+          ]
+        },
+        {
+          "k": "label|ward.declineLegend|10||||",
+          "n": 4,
+          "s": ["Waiting on", "Expected free", "Blocker"]
+        },
+        {
+          "k": "p|ward.declineHint|10||||",
+          "n": 1,
+          "s": ["One only — the one that will take longes"]
+        },
+        {
+          "k": "span|ward.cardMeta|10||||",
+          "n": 4,
+          "s": ["Expected 22:58", "Expected return 03:13", "Accepted, awaiting bed"]
+        },
+        {
+          "k": "p|override-register.placeholder|11||||",
+          "n": 1,
+          "s": ["No override has been recorded."]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward — RPH Adult Secure",
+      "path": "/mockups/ward-flow/ward/rph-adult-secure"
+    },
+    "/mockups/ward-flow/board/rph-adult-secure": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "p|board.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype — not a medical devi"]
+        },
+        {
+          "k": "dt|board.triageLabel|10|U|||",
+          "n": 6,
+          "s": ["Ready", "Confirmed today", "Expected today"]
+        },
+        {
+          "k": "dd|board.triageLedNote|10||||",
+          "n": 1,
+          "s": ["shown in Going out"]
+        },
+        {
+          "k": "p|board.flowRowLine|11||||",
+          "n": 3,
+          "s": ["Male, from Peel", "Bed given away 6 hours ago", "Reported by Ward manager"]
+        },
+        {
+          "k": "p|board.flowNote|10||||",
+          "n": 3,
+          "s": [
+            "No arrival time is shown: the record hol",
+            "These are beds, not people: a bed releas",
+            "A transfer to another psychiatric ward c"
+          ]
+        },
+        {
+          "k": "span|board.flowToggleLabel|10|U|||",
+          "n": 1,
+          "s": ["Going out shows"]
+        },
+        {
+          "k": "p|board.flowRowBlocker|11||||",
+          "n": 1,
+          "s": ["Held up by: Awaiting accommodation — rec"]
+        },
+        {
+          "k": "li|board.legendItem|11||||",
+          "n": 7,
+          "s": ["Under 2 weeks", "2 weeks – 1 month", "1–3 months"]
+        },
+        {
+          "k": "span|board.daysUnit|10|U|||",
+          "n": 17,
+          "s": ["days", "days", "days"]
+        },
+        {
+          "k": "span|board.pastMark|10|U|||",
+          "n": 3,
+          "s": ["Past date", "Past date", "Past date"]
+        },
+        {
+          "k": "span|board.waiting|11||||",
+          "n": 1,
+          "s": ["Empty, waiting"]
+        },
+        {
+          "k": "span|board.awayMark|10|U|||",
+          "n": 2,
+          "s": ["At ED", "At ED"]
+        },
+        {
+          "k": "span|board.heldLabel|11||||",
+          "n": 1,
+          "s": ["Held"]
+        },
+        {
+          "k": "span|board.emptyLabel|11||||",
+          "n": 1,
+          "s": ["Ready"]
+        },
+        {
+          "k": "p|board.peopleAbsence|11||||",
+          "n": 1,
+          "s": ["Any diagnosis shown is tentative: a broa"]
+        },
+        {
+          "k": "p|board.sheetNote|10|||Z|",
+          "n": 6,
+          "s": [
+            "No arrival time is shown: the record hol",
+            "Beds are not people: a bed release recor",
+            "Held-up reasons are about the BED, from "
+          ]
+        },
+        {
+          "k": "li|board.sheetRowLine|11|||Z|",
+          "n": 8,
+          "s": [
+            "Kimberley: 3 people, soonest due now or ",
+            "South West: 2 people, soonest due now or",
+            "Perth Metropolitan: 1 person, soonest du"
+          ]
+        },
+        {
+          "k": "span|board.sheetRowBand|11|||Z|",
+          "n": 7,
+          "s": ["1–3 months", "Over 3 months", "Under 2 weeks"]
+        },
+        {
+          "k": "p|board.sheetRowLine|11|||Z|",
+          "n": 23,
+          "s": [
+            "Female, from South West",
+            "Tentative diagnosis: Schizophrenia, schi",
+            "Held up by: Awaiting accommodation."
+          ]
+        },
+        {
+          "k": "span|board.personBand|11|||Z|",
+          "n": 17,
+          "s": ["Under 2 weeks", "1–3 months", "Over 3 months"]
+        },
+        {
+          "k": "span|board.pastMark|10|U||Z|",
+          "n": 3,
+          "s": ["Past date", "Past date", "Past date"]
+        },
+        {
+          "k": "p|board.personLine|11|||Z|",
+          "n": 33,
+          "s": [
+            "Tentative diagnosis: none recorded.",
+            "Date set by Ward manager, and moved once",
+            "Tentative diagnosis: Schizophrenia, schi"
+          ]
+        },
+        {
+          "k": "p|board.personBlocker|11|||Z|",
+          "n": 2,
+          "s": ["Held up by: Awaiting accommodation.", "Held up by: Awaiting clean."]
+        },
+        {
+          "k": "p|board.footnote|11||||",
+          "n": 1,
+          "s": ["20 tiles, one per recorded bed. A tile c"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward board — Ward Flow",
+      "path": "/mockups/ward-flow/board/rph-adult-secure"
+    },
+    "/mockups/ward-flow/transport/officer": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|officer.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["No officer identity exists in this model"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["every"]
+        },
+        {
+          "k": "span|officer.jobMeta|10||||",
+          "n": 8,
+          "s": ["Accepted · 5h 30m waiting", "Collected · 8h 20m waiting", "Collected · 8h 00m waiting"]
+        },
+        {
+          "k": "button|officer.actionButton|10||||",
+          "n": 4,
+          "s": ["Accepted", "En route", "Collected"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Transport officer — Ward Flow",
+      "path": "/mockups/ward-flow/transport/officer"
+    },
+    "/mockups/ward-flow/ed/peel-ed": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|ed.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This is Peel Health Campus Emergency Dep"]
+        },
+        {
+          "k": "h2|ed.sectionHeading|10|U|||",
+          "n": 7,
+          "s": ["Expects · 0 patients", "Referrals · 1 patient", "Recently answered · 1 referral"]
+        },
+        {
+          "k": "span|ed.cardMeta|10||||",
+          "n": 15,
+          "s": ["For psychiatric review", "For psychiatric review", "Handover ready"]
+        },
+        {
+          "k": "p|ed.cardMeta|10||||",
+          "n": 7,
+          "s": ["Adult · Peel", "Decided 15:13", "Adult · Open · Female · Detained awaitin"]
+        },
+        {
+          "k": "span|ed.outstandingLabel|10|U|||",
+          "n": 19,
+          "s": ["Medically cleared", "Going to", "Waiting to move"]
+        },
+        {
+          "k": "span||10||||",
+          "n": 11,
+          "s": ["Not assessed", "FRE Adult Open", "Acceptance time not recorded"]
+        },
+        {
+          "k": "p|ed.referralState|10||||",
+          "n": 9,
+          "s": ["Accepted.", "Accepted at FRE Adult Open", "Destination review"]
+        },
+        {
+          "k": "span|ed.tierLabel|10||||",
+          "n": 13,
+          "s": ["Tier 2 · urgent", "Tier 3 · least urgent", "Tier 1 · most urgent"]
+        },
+        {
+          "k": "p|ed.outstandingItem|10||||",
+          "n": 8,
+          "s": ["— Accepted", "— Form 3B (Continuation of detention) · ", "— Bed pulled — ready to mark the handove"]
+        },
+        {
+          "k": "span|ed.policeFlag|10|U|||",
+          "n": 1,
+          "s": ["Police in attendance"]
+        },
+        {
+          "k": "th||10|U|||",
+          "n": 5,
+          "s": ["Unit", "Cohort", "Security"]
+        },
+        {
+          "k": "th||10||||",
+          "n": 23,
+          "s": ["SCGH Adult Open", "SCGH Older Adult", "Graylands Adult Secure"]
+        },
+        {
+          "k": "td||10||||",
+          "n": 92,
+          "s": ["Adult", "All open", "2"]
+        },
+        {
+          "k": "small|ed.beingMadeReady|11||||",
+          "n": 1,
+          "s": ["1 still being made ready"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Emergency department — Ward Flow",
+      "path": "/mockups/ward-flow/ed/peel-ed"
+    },
+    "/mockups/ward-flow/handover": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|handover.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This handover is . It is an operational "]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Shift handover — Ward Flow",
+      "path": "/mockups/ward-flow/handover"
+    },
+    "/mockups/ward-flow/search": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 4,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|search.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This search is . It looks up people alre"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "label|patient-typeahead.label|11|U|||",
+          "n": 1,
+          "s": ["Search"]
+        },
+        {
+          "k": "p|patient-typeahead.guidance|11||||",
+          "n": 1,
+          "s": ["Related spellings are found too. Press t"]
+        },
+        {
+          "k": "label||10||||",
+          "n": 1,
+          "s": ["Stage"]
+        },
+        {
+          "k": "label|search.field ward-shared.field|10||||",
+          "n": 1,
+          "s": ["Department"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/movements/WF-001",
+        "/mockups/ward-flow/movements/WF-002",
+        "/mockups/ward-flow/movements/WF-003",
+        "/mockups/ward-flow/movements/WF-004",
+        "/mockups/ward-flow/movements/WF-005",
+        "/mockups/ward-flow/movements/WF-006",
+        "/mockups/ward-flow/movements/WF-009",
+        "/mockups/ward-flow/movements/WF-010",
+        "/mockups/ward-flow/movements/WF-011",
+        "/mockups/ward-flow/movements/WF-012",
+        "/mockups/ward-flow/movements/WF-013",
+        "/mockups/ward-flow/movements/WF-014",
+        "/mockups/ward-flow/movements/WF-015",
+        "/mockups/ward-flow/movements/WF-016",
+        "/mockups/ward-flow/movements/WF-017",
+        "/mockups/ward-flow/movements/WF-018",
+        "/mockups/ward-flow/movements/WF-019",
+        "/mockups/ward-flow/movements/WF-020",
+        "/mockups/ward-flow/movements/WF-301",
+        "/mockups/ward-flow/movements/WF-302",
+        "/mockups/ward-flow/movements/WF-303",
+        "/mockups/ward-flow/movements/WF-304",
+        "/mockups/ward-flow/movements/WF-305",
+        "/mockups/ward-flow/movements/WF-306",
+        "/mockups/ward-flow/movements/WF-308",
+        "/mockups/ward-flow/movements/WF-309",
+        "/mockups/ward-flow/movements/WF-310",
+        "/mockups/ward-flow/movements/WF-311",
+        "/mockups/ward-flow/movements/WF-312",
+        "/mockups/ward-flow/movements/WF-313",
+        "/mockups/ward-flow/movements/WF-315",
+        "/mockups/ward-flow/movements/WF-316",
+        "/mockups/ward-flow/movements/WF-317",
+        "/mockups/ward-flow/movements/WF-318",
+        "/mockups/ward-flow/movements/WF-319",
+        "/mockups/ward-flow/movements/WF-320",
+        "/mockups/ward-flow/movements/WF-322",
+        "/mockups/ward-flow/movements/WF-323",
+        "/mockups/ward-flow/movements/WF-324",
+        "/mockups/ward-flow/movements/WF-325",
+        "/mockups/ward-flow/movements/WF-326",
+        "/mockups/ward-flow/movements/WF-327",
+        "/mockups/ward-flow/movements/WF-329"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Patient search — Ward Flow",
+      "path": "/mockups/ward-flow/search"
+    },
+    "/mockups/ward-flow/hub": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|hub.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p|hub.asAt|10||||",
+          "n": 1,
+          "s": ["As at , Perth"]
+        },
+        {
+          "k": "b||10||||",
+          "n": 1,
+          "s": ["22:14"]
+        },
+        {
+          "k": "p|hub.searchHint|10||||",
+          "n": 1,
+          "s": ["Arrow keys move through the results, Ent"]
+        },
+        {
+          "k": "button|hub.kindTabActive hub.kindTab|10||||",
+          "n": 1,
+          "s": ["All"]
+        },
+        {
+          "k": "span|hub.tabCount|10||||",
+          "n": 4,
+          "s": ["41", "23", "8"]
+        },
+        {
+          "k": "button|hub.kindTab|10||||",
+          "n": 3,
+          "s": ["Wards", "EDs", "Community"]
+        },
+        {
+          "k": "h2|hub.groupHead|10|U|||",
+          "n": 3,
+          "s": ["Wards", "Emergency departments", "Community mental health teams"]
+        },
+        {
+          "k": "span|hub.groupCount|10|U|||",
+          "n": 4,
+          "s": ["23", "8", "10"]
+        },
+        {
+          "k": "p|hub.subGroupHead|10||||",
+          "n": 4,
+          "s": ["North Metro", "East Metro", "South Metro"]
+        },
+        {
+          "k": "span|hub.resultSub|10||||",
+          "n": 41,
+          "s": [
+            "Sir Charles Gairdner Hospital · North Me",
+            "Sir Charles Gairdner Hospital · North Me",
+            "Graylands Hospital · North Metro"
+          ]
+        },
+        {
+          "k": "span|hub.resultStat|10||||",
+          "n": 21,
+          "s": ["2 ready", "1 ready", "1 ready"]
+        },
+        {
+          "k": "span|hub.resultStatStale hub.resultStat|10||||",
+          "n": 2,
+          "s": ["0 ready", "0 ready"]
+        },
+        {
+          "k": "span|hub.flagPill|10||||",
+          "n": 2,
+          "s": ["stale", "stale"]
+        },
+        {
+          "k": "p|hub.subGroupHead|10|U|||",
+          "n": 1,
+          "s": ["WACHS"]
+        },
+        {
+          "k": "h3||10|U|||",
+          "n": 7,
+          "s": ["Beds, network-wide", "Needs attention", "Ready beds by service"]
+        },
+        {
+          "k": "span|hub.capacityLbl|10||||",
+          "n": 3,
+          "s": ["Ready to admit now", "Vacant, not yet cleared", "Beds across 23 wards"]
+        },
+        {
+          "k": "span|hub.legendItem|10||||",
+          "n": 3,
+          "s": ["Ready 27", "Not yet cleared 13", "Out of service 4"]
+        },
+        {
+          "k": "span|hub.decisionRef|10||||",
+          "n": 3,
+          "s": ["Graylands Older Adult", "Kununurra Adult Open", "FSH Older Adult"]
+        },
+        {
+          "k": "span|hub.firstFlag|10|U|||",
+          "n": 1,
+          "s": ["Do this first — both"]
+        },
+        {
+          "k": "p|hub.decisionReason|11||||",
+          "n": 3,
+          "s": [
+            "No ready beds, and the last bed confirma",
+            "No ready beds, and the last bed confirma",
+            "No ready beds right now."
+          ]
+        },
+        {
+          "k": "button|hub.rowAction|10||||",
+          "n": 3,
+          "s": ["View", "View", "View"]
+        },
+        {
+          "k": "td|hub.capacityLbl|10||||",
+          "n": 4,
+          "s": ["North Metro", "East Metro", "South Metro"]
+        },
+        {
+          "k": "td|hub.capacityLbl|10|U|||",
+          "n": 1,
+          "s": ["WACHS"]
+        },
+        {
+          "k": "p||11||||",
+          "n": 3,
+          "s": [
+            "The 23 wards, the hospitals and health s",
+            "Every bed figure — ready to admit, vacan",
+            "Ready beds and physically-empty-but-not-"
+          ]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Search hub — Ward Flow",
+      "path": "/mockups/ward-flow/hub"
+    },
+    "/mockups/ward-flow/discharges": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|discharges.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This board is . It shows only what a war"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "span|ward-freshness.stamp ward-tokens.wardTokens|11||||",
+          "n": 9,
+          "s": [
+            "Confirmed 21:39 · NUM FSH Adult Secure",
+            "Confirmed 21:24 · NUM RGH Adult Secure",
+            "Confirmed 22:04 · NUM RPH Adult Secure"
+          ]
+        },
+        {
+          "k": "p|discharges.cardService|10|||Z|",
+          "n": 18,
+          "s": ["South Metro", "Confirmed", "South Metro"]
+        },
+        {
+          "k": "span|ward-freshness.stamp ward-tokens.wardTokens|11|||Z|",
+          "n": 9,
+          "s": [
+            "Confirmed 21:39 · NUM FSH Adult Secure",
+            "Confirmed 21:24 · NUM RGH Adult Secure",
+            "Confirmed 22:04 · NUM RPH Adult Secure"
+          ]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Discharges — Ward Flow",
+      "path": "/mockups/ward-flow/discharges"
+    },
+    "/mockups/ward-flow/referrals": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|referrals.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This board is . Every unit is listed in "]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "span|referrals.cardService|10|||Z|",
+          "n": 6,
+          "s": [
+            "Youth · Female · Perth Metropolitan",
+            "Adult · not a ward referral · Perth Metr",
+            "Older adult · Male · Perth Metropolitan"
+          ]
+        },
+        {
+          "k": "p|referrals.cardService|10|||Z|",
+          "n": 10,
+          "s": ["1h 00m before decision · 22:09", "22m before decision · 22:06", "1h 20m before decision · 22:04"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Referral board — Ward Flow",
+      "path": "/mockups/ward-flow/referrals"
+    },
+    "/mockups/ward-flow/referrals/new": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|referrals.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 2,
+          "s": ["This form is . It records a small set of", "It is stored and sent exactly as you typ"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 2,
+          "s": ["not a medical device", "The written history is free text."]
+        },
+        {
+          "k": "h2|referrals.asideCardTitle|11|U|||",
+          "n": 3,
+          "s": ["Progress", "What this referral will record", "What sending does"]
+        },
+        {
+          "k": "dt|referrals.summaryTerm|11|U|||",
+          "n": 12,
+          "s": ["Age band", "Sex", "Home region"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Raise a referral — Ward Flow",
+      "path": "/mockups/ward-flow/referrals/new"
+    },
+    "/mockups/ward-flow/out-of-area": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|out-of-area.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This board is . Every bed, every occupan"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "p|out-of-area.provenance|10||||",
+          "n": 1,
+          "s": ["This is not a live statewide count. Ever"]
+        },
+        {
+          "k": "p|out-of-area.cardBand|10|||Z|",
+          "n": 18,
+          "s": ["Three hours or more from home", "Three hours or more from home", "Three hours or more from home"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Out of area — Ward Flow",
+      "path": "/mockups/ward-flow/out-of-area"
+    },
+    "/mockups/ward-flow/statistics/overview": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics-sections.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 2,
+          "s": ["not real figures", "no declines-per-ward figure"]
+        },
+        {
+          "k": "p|statistics-sections.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["Across all services"]
+        },
+        {
+          "k": "th||11|U|||",
+          "n": 2,
+          "s": ["Stage", "Reason"]
+        },
+        {
+          "k": "th|statistics-v4.n|11|U|||",
+          "n": 2,
+          "s": ["Admissions", "Declines"]
+        },
+        {
+          "k": "p|statistics-sections.note|10||||",
+          "n": 4,
+          "s": [
+            "Every one of the four stages has a row a",
+            "Every one of the reasons the model allow",
+            "Adding one is not just arithmetic. Wheth"
+          ]
+        },
+        {
+          "k": "p|statistics.chartCaption|10||||",
+          "n": 2,
+          "s": ["Admissions started per day across the ne", "If the model could compute this, it woul"]
+        },
+        {
+          "k": "span|statistics.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Demonstration data"]
+        },
+        {
+          "k": "b||10||||",
+          "n": 1,
+          "s": ["how many admissions began each day acros"]
+        },
+        {
+          "k": "span||10||||",
+          "n": 1,
+          "s": ["7"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Statistics across all services — Ward Flow",
+      "path": "/mockups/ward-flow/statistics/overview"
+    },
+    "/mockups/ward-flow/statistics/compare": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics-sections.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 3,
+          "s": ["not real figures", "The average wait after being accepted", "open placements from a department"]
+        },
+        {
+          "k": "p|statistics-sections.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["Ward and ED comparisons"]
+        },
+        {
+          "k": "p|statistics-sections.note|10||||",
+          "n": 5,
+          "s": [
+            "Anything keyed to the department a perso",
+            "A sixth ward measure exists and is not a",
+            "Every figure here counts , never the dep"
+          ]
+        },
+        {
+          "k": "h3|statistics-sections.subHeading|10|U|||",
+          "n": 2,
+          "s": ["Wards", "Emergency departments"]
+        },
+        {
+          "k": "span|statistics-sections.unitKind|10||||",
+          "n": 31,
+          "s": ["Royal Perth Hospital", "Royal Perth Hospital", "Sir Charles Gairdner Hospital"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/statistics/ward/rph-adult-secure",
+        "/mockups/ward-flow/statistics/ward/rph-older-adult",
+        "/mockups/ward-flow/statistics/ward/scgh-adult-open",
+        "/mockups/ward-flow/statistics/ward/scgh-older-adult",
+        "/mockups/ward-flow/statistics/ward/fsh-adult-secure",
+        "/mockups/ward-flow/statistics/ward/fsh-older-adult",
+        "/mockups/ward-flow/statistics/ward/arm-adult-open",
+        "/mockups/ward-flow/statistics/ward/sjgm-adult-open",
+        "/mockups/ward-flow/statistics/ward/rgh-adult-secure",
+        "/mockups/ward-flow/statistics/ward/fre-adult-open",
+        "/mockups/ward-flow/statistics/ward/fre-older-adult",
+        "/mockups/ward-flow/statistics/ward/bty-adult-secure",
+        "/mockups/ward-flow/statistics/ward/bty-older-adult",
+        "/mockups/ward-flow/statistics/ward/bty-youth",
+        "/mockups/ward-flow/statistics/ward/gry-adult-secure",
+        "/mockups/ward-flow/statistics/ward/gry-older-adult",
+        "/mockups/ward-flow/statistics/ward/alb-adult-open",
+        "/mockups/ward-flow/statistics/ward/bun-adult-open",
+        "/mockups/ward-flow/statistics/ward/brm-adult-secure",
+        "/mockups/ward-flow/statistics/ward/ger-adult-open",
+        "/mockups/ward-flow/statistics/ward/kun-adult-open",
+        "/mockups/ward-flow/statistics/ward/sjgs-adult-open",
+        "/mockups/ward-flow/statistics/ward/sjgs-adult-secure",
+        "/mockups/ward-flow/statistics/ed/rph-ed",
+        "/mockups/ward-flow/statistics/ed/scgh-ed",
+        "/mockups/ward-flow/statistics/ed/fsh-ed",
+        "/mockups/ward-flow/statistics/ed/arm-ed",
+        "/mockups/ward-flow/statistics/ed/sjgm-ed",
+        "/mockups/ward-flow/statistics/ed/rgh-ed",
+        "/mockups/ward-flow/statistics/ed/jhc-ed",
+        "/mockups/ward-flow/statistics/ed/peel-ed"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward and ED comparisons — Ward Flow",
+      "path": "/mockups/ward-flow/statistics/compare"
+    },
+    "/mockups/ward-flow/statistics/ed/peel-ed": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics-sections.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 2,
+          "s": ["not real figures", "But the second figure is not “the ward j"]
+        },
+        {
+          "k": "p|statistics-sections.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["One ward or emergency department in deta"]
+        },
+        {
+          "k": "p|statistics-sections.note|10||||",
+          "n": 3,
+          "s": [
+            "A name and a hospital, and nothing else.",
+            "A movement counts as open until it close",
+            "Never summed into one figure: they are d"
+          ]
+        },
+        {
+          "k": "h3|statistics-sections.subHeading|10|U|||",
+          "n": 8,
+          "s": ["On the list", "Marked urgent", "No ward yet"]
+        },
+        {
+          "k": "p|statistics.chartCaption|10||||",
+          "n": 1,
+          "s": ["One dot per open placement from this dep"]
+        },
+        {
+          "k": "th||10|U|||",
+          "n": 3,
+          "s": ["Movement", "Urgent", "Ward status"]
+        },
+        {
+          "k": "th|statistics.n|10|U|||",
+          "n": 1,
+          "s": ["Elapsed wait"]
+        },
+        {
+          "k": "em||10||||",
+          "n": 1,
+          "s": ["no allocatable bed remains"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/statistics/compare"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Emergency department statistics — Ward Flow",
+      "path": "/mockups/ward-flow/statistics/ed/peel-ed"
+    },
+    "/mockups/ward-flow/statistics/ward/rph-adult-secure": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics-sections.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not real figures"]
+        },
+        {
+          "k": "p|statistics-sections.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["One ward or emergency department in deta"]
+        },
+        {
+          "k": "p|statistics-sections.note|10||||",
+          "n": 4,
+          "s": [
+            "A name and a hospital, and nothing else.",
+            "Both charts below are demonstration data",
+            "Every one of the 8 blockers the model al"
+          ]
+        },
+        {
+          "k": "h3|statistics-sections.subHeading|10|U|||",
+          "n": 10,
+          "s": ["Empty", "Allocatable", "Ready"]
+        },
+        {
+          "k": "p|statistics.chartCaption|10||||",
+          "n": 4,
+          "s": [
+            "RPH Adult Secure — occupied beds",
+            "If the model could compute this, it woul",
+            "RPH Adult Secure — beds ready to admit"
+          ]
+        },
+        {
+          "k": "span|statistics.prototypeBadge|10|U|||",
+          "n": 2,
+          "s": ["Demonstration data", "Demonstration data"]
+        },
+        {
+          "k": "b||10||||",
+          "n": 2,
+          "s": ["how many of this ward's beds were occupi", "how many beds on this ward were ready to"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/statistics/compare"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward statistics — Ward Flow",
+      "path": "/mockups/ward-flow/statistics/ward/rph-adult-secure"
+    },
+    "/mockups/ward-flow/constellation": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "p||11||||",
+          "n": 1,
+          "s": ["Services as nodes · movements as routes "]
+        },
+        {
+          "k": "span|ward-management-modes.prototypeBadge|10||||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 3,
+          "s": ["Updated 22:14", "Scenario set on 15 Aug 2026 · WA", "Review matches, cross-catchment escalati"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 1,
+          "s": ["Statewide coordination focus"]
+        },
+        {
+          "k": "span|ward-management-network.pipelineLabel|10||||",
+          "n": 7,
+          "s": ["1 Placement requested", "2 Destination review", "3 Accepted, awaiting bed"]
+        },
+        {
+          "k": "span|ward-management-network.pipelineSplit|10||||",
+          "n": 1,
+          "s": ["6 arrived · 1 did not proceed"]
+        },
+        {
+          "k": "span|ward-management-network.count|10||||",
+          "n": 2,
+          "s": ["43", "6"]
+        },
+        {
+          "k": "span|ward-management-network.elapsed|10||||",
+          "n": 49,
+          "s": ["1h 35m waiting", "3h 00m waiting", "4h 20m waiting"]
+        },
+        {
+          "k": "span|ward-management-network.queueMeta|10||||",
+          "n": 98,
+          "s": ["Adult · Open ward", "East Metro · Referred for psychiatric ex", "Older adult · Open ward"]
+        },
+        {
+          "k": "span|ward-management-network.tier|10||||",
+          "n": 45,
+          "s": ["1", "2", "1"]
+        },
+        {
+          "k": "span|ward-management-network.schematicBadge|10||||",
+          "n": 1,
+          "s": ["Schematic, not geographic"]
+        },
+        {
+          "k": "button|ward-management-network.focusToggle|10||||",
+          "n": 1,
+          "s": ["Focus diagram"]
+        },
+        {
+          "k": "strong||10|U|||",
+          "n": 6,
+          "s": ["NORTH METRO", "WACHS", "EAST METRO"]
+        },
+        {
+          "k": "span||10||||",
+          "n": 7,
+          "s": ["4 ready", "4 ready", "9 ready"]
+        },
+        {
+          "k": "span|ward-management-network.serviceCapability|10||||",
+          "n": 23,
+          "s": ["All open · Adult", "All open · Older", "All locked · Adult"]
+        },
+        {
+          "k": "span|ward-management-network.bedChip|10||||",
+          "n": 130,
+          "s": ["2", "3", "0"]
+        },
+        {
+          "k": "span|ward-management-network.bedTime|10||||",
+          "n": 23,
+          "s": ["21:59", "21:56", "21:54"]
+        },
+        {
+          "k": "span|ward-management-network.beingMadeReady|11||||",
+          "n": 2,
+          "s": ["1 of the ready beds still being made rea", "1 of the ready beds still being made rea"]
+        },
+        {
+          "k": "span|ward-management-network.hubMeta|10||||",
+          "n": 1,
+          "s": ["WF-001 routing · 43 open movements"]
+        },
+        {
+          "k": "span|ward-management-network.legendTitle|10||||",
+          "n": 1,
+          "s": ["Legend"]
+        },
+        {
+          "k": "span|ward-management-network.legendItem|10||||",
+          "n": 7,
+          "s": ["Ready", "Bed held", "Confirmed today"]
+        },
+        {
+          "k": "b||10||||",
+          "n": 8,
+          "s": ["Ready", "Held", "Confirmed"]
+        },
+        {
+          "k": "p|ward-management-network.patientLine|10||||",
+          "n": 1,
+          "s": ["Adult · Open ward · East Metro service"]
+        },
+        {
+          "k": "p|ward-management-network.patientSubLine|10||||",
+          "n": 2,
+          "s": ["Referred for psychiatric examination · R", "Placement requested · waiting 1h 35m wai"]
+        },
+        {
+          "k": "span|sr-only|10||SR||",
+          "n": 1,
+          "s": ["Comparison factor"]
+        },
+        {
+          "k": "th||10||||",
+          "n": 8,
+          "s": ["1 SCGH Adult Open", "2 ARM Adult Open", "3 RPH Adult Secure"]
+        },
+        {
+          "k": "td||10||||",
+          "n": 9,
+          "s": ["Different health service", "Same health service", "Same health service"]
+        },
+        {
+          "k": "p|ward-management-network.tierNote|10||||",
+          "n": 1,
+          "s": ["Eligibility only orders candidates insid"]
+        },
+        {
+          "k": "button|ward-management-network.factorsToggle|10||||",
+          "n": 1,
+          "s": ["Eligibility gates (11)"]
+        },
+        {
+          "k": "span|ward-management-network.ownerLabel|10||||",
+          "n": 1,
+          "s": ["Current owner"]
+        },
+        {
+          "k": "p|ward-management-network.assurance|10||||",
+          "n": 1,
+          "s": ["System suggests, you decide. No automati"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/movements/WF-001"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Ward Flow network diagram",
+      "path": "/mockups/ward-flow/network"
+    },
+    "/mockups/ward-flow/escalation": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|delays.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every waiting patient, refusal and escal"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 3,
+          "s": ["Under 8 hours", "8 to 24 hours", "Over 24 hours"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 3,
+          "s": ["27", "14", "2"]
+        },
+        {
+          "k": "span|delays.ownerSub|10||||",
+          "n": 5,
+          "s": [
+            "Your decision, or a legal deadline runni",
+            "Waiting on a ward to answer or a bed to ",
+            "Waiting on the referring department"
+          ]
+        },
+        {
+          "k": "span|delays.ownerHot|10||||",
+          "n": 1,
+          "s": ["2 needing attention now"]
+        },
+        {
+          "k": "p|delays.foot|11||||",
+          "n": 3,
+          "s": [
+            "The waiting time is counted from arrival",
+            "The coloured left edge is who is holding",
+            "One blocker per person — the worst thing"
+          ]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 2,
+          "s": ["Pressing an owner marks those people in ", "Worst blocker first, then longest wait."]
+        },
+        {
+          "k": "span|ward-controls.pillCount|11||||",
+          "n": 3,
+          "s": ["43", "13", "1"]
+        },
+        {
+          "k": "span|delays.personWait |10||||",
+          "n": 41,
+          "s": ["7h 00m", "10h 56m", "3h 00m"]
+        },
+        {
+          "k": "span|delays.personCause|10||||",
+          "n": 43,
+          "s": [
+            "No suitable bed anywhere in the network",
+            "No suitable bed anywhere in the network",
+            "Awaiting a ward's answer"
+          ]
+        },
+        {
+          "k": "span|delays.personMeta|10||||",
+          "n": 43,
+          "s": [
+            "Adult · Needs a locked bed · Tier 1 · mo",
+            "Older adult · Needs a locked bed · Tier ",
+            "Older adult · An open bed suits · Tier 2"
+          ]
+        },
+        {
+          "k": "span|delays.personSince|10||||",
+          "n": 43,
+          "s": ["nothing recorded for 3m", "nothing recorded for 10h 56m", "nothing recorded for 3h 00m"]
+        },
+        {
+          "k": "span|delays.personWait delays.personWaitLong|10||||",
+          "n": 2,
+          "s": ["2d 14h", "1d 5h"]
+        },
+        {
+          "k": "span|delays.grpName|10|U|||",
+          "n": 4,
+          "s": ["Yours", "Wards", "Transport"]
+        },
+        {
+          "k": "span|delays.grpN|10||||",
+          "n": 4,
+          "s": ["21", "13", "8"]
+        },
+        {
+          "k": "span|delays.causeMeta|10||||",
+          "n": 3,
+          "s": ["that is you", "the pull lapsed before the bed was used", "each has a named bed"]
+        },
+        {
+          "k": "button|delays.tabBtn delays.tabBtnActive|10|U|||",
+          "n": 1,
+          "s": ["Escalations"]
+        },
+        {
+          "k": "span|delays.tabNum |10||||",
+          "n": 2,
+          "s": ["1", "7"]
+        },
+        {
+          "k": "button|delays.tabBtn |10|U|||",
+          "n": 1,
+          "s": ["Resolved today"]
+        },
+        {
+          "k": "p|delays.paneScope|10||||",
+          "n": 1,
+          "s": ["An escalation records that somebody was "]
+        },
+        {
+          "k": "span|delays.rowWhen|10||||",
+          "n": 1,
+          "s": ["3m ago"]
+        },
+        {
+          "k": "span|delays.rowWho|10||||",
+          "n": 1,
+          "s": ["to State bed coordination desk"]
+        },
+        {
+          "k": "span|delays.rowSub|11||||",
+          "n": 1,
+          "s": ["22:11"]
+        },
+        {
+          "k": "span|delays.attentionWho|11||||",
+          "n": 2,
+          "s": ["WF-009", "WF-308"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Delays — Ward Flow",
+      "path": "/mockups/ward-flow/delays"
+    },
+    "/mockups/ward-flow/exceptions": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|delays.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every waiting patient, refusal and escal"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 3,
+          "s": ["Under 8 hours", "8 to 24 hours", "Over 24 hours"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 3,
+          "s": ["27", "14", "2"]
+        },
+        {
+          "k": "span|delays.ownerSub|10||||",
+          "n": 5,
+          "s": [
+            "Your decision, or a legal deadline runni",
+            "Waiting on a ward to answer or a bed to ",
+            "Waiting on the referring department"
+          ]
+        },
+        {
+          "k": "span|delays.ownerHot|10||||",
+          "n": 1,
+          "s": ["2 needing attention now"]
+        },
+        {
+          "k": "p|delays.foot|11||||",
+          "n": 3,
+          "s": [
+            "The waiting time is counted from arrival",
+            "The coloured left edge is who is holding",
+            "One blocker per person — the worst thing"
+          ]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 2,
+          "s": ["Pressing an owner marks those people in ", "Worst blocker first, then longest wait."]
+        },
+        {
+          "k": "span|ward-controls.pillCount|11||||",
+          "n": 3,
+          "s": ["43", "13", "1"]
+        },
+        {
+          "k": "span|delays.personWait |10||||",
+          "n": 41,
+          "s": ["7h 00m", "10h 56m", "3h 00m"]
+        },
+        {
+          "k": "span|delays.personCause|10||||",
+          "n": 43,
+          "s": [
+            "No suitable bed anywhere in the network",
+            "No suitable bed anywhere in the network",
+            "Awaiting a ward's answer"
+          ]
+        },
+        {
+          "k": "span|delays.personMeta|10||||",
+          "n": 43,
+          "s": [
+            "Adult · Needs a locked bed · Tier 1 · mo",
+            "Older adult · Needs a locked bed · Tier ",
+            "Older adult · An open bed suits · Tier 2"
+          ]
+        },
+        {
+          "k": "span|delays.personSince|10||||",
+          "n": 43,
+          "s": ["nothing recorded for 3m", "nothing recorded for 10h 56m", "nothing recorded for 3h 00m"]
+        },
+        {
+          "k": "span|delays.personWait delays.personWaitLong|10||||",
+          "n": 2,
+          "s": ["2d 14h", "1d 5h"]
+        },
+        {
+          "k": "span|delays.grpName|10|U|||",
+          "n": 4,
+          "s": ["Yours", "Wards", "Transport"]
+        },
+        {
+          "k": "span|delays.grpN|10||||",
+          "n": 4,
+          "s": ["21", "13", "8"]
+        },
+        {
+          "k": "span|delays.causeMeta|10||||",
+          "n": 3,
+          "s": ["that is you", "the pull lapsed before the bed was used", "each has a named bed"]
+        },
+        {
+          "k": "button|delays.tabBtn delays.tabBtnActive|10|U|||",
+          "n": 1,
+          "s": ["Escalations"]
+        },
+        {
+          "k": "span|delays.tabNum |10||||",
+          "n": 2,
+          "s": ["1", "7"]
+        },
+        {
+          "k": "button|delays.tabBtn |10|U|||",
+          "n": 1,
+          "s": ["Resolved today"]
+        },
+        {
+          "k": "p|delays.paneScope|10||||",
+          "n": 1,
+          "s": ["An escalation records that somebody was "]
+        },
+        {
+          "k": "span|delays.rowWhen|10||||",
+          "n": 1,
+          "s": ["3m ago"]
+        },
+        {
+          "k": "span|delays.rowWho|10||||",
+          "n": 1,
+          "s": ["to State bed coordination desk"]
+        },
+        {
+          "k": "span|delays.rowSub|11||||",
+          "n": 1,
+          "s": ["22:11"]
+        },
+        {
+          "k": "span|delays.attentionWho|11||||",
+          "n": 2,
+          "s": ["WF-009", "WF-308"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Delays — Ward Flow",
+      "path": "/mockups/ward-flow/delays"
+    },
+    "/mockups/ward-flow/morning": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|capacity.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every bed count, ward name and waiting p"]
+        },
+        {
+          "k": "div|capacity.who|11||||",
+          "n": 4,
+          "s": [
+            "Detained, or assessed as needing one",
+            "Not detained, and not assessed as needin",
+            "Older adult, locked or open — the age gr"
+          ]
+        },
+        {
+          "k": "p|capacity.foot|11||||",
+          "n": 1,
+          "s": ["A shortfall row is a fact about supply a"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 1,
+          "s": ["This table says where a bed KIND is shor"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 2,
+          "s": ["Locked ready", "Open ready"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 2,
+          "s": ["8", "19"]
+        },
+        {
+          "k": "li|bed-map.legendItem|11||||",
+          "n": 5,
+          "s": ["Ready", "Ready — still being made ready (counted ", "Held — not offered"]
+        },
+        {
+          "k": "span|bed-map.serviceCount|11||||",
+          "n": 5,
+          "s": ["4 wards", "7 wards", "5 wards"]
+        },
+        {
+          "k": "span|bed-map.wardCounts|11||||",
+          "n": 23,
+          "s": [
+            "2 ready · 3 held · none blocked · 19 occ",
+            "1 ready · none held · none blocked · 15 ",
+            "1 ready · 1 held · none blocked · 13 occ"
+          ]
+        },
+        {
+          "k": "span|ward-controls.pillCount|11||||",
+          "n": 4,
+          "s": ["23", "20", "7"]
+        },
+        {
+          "k": "span|capacity.groupWardCount|11||||",
+          "n": 5,
+          "s": ["4 wards", "7 wards", "5 wards"]
+        },
+        {
+          "k": "div|capacity.who|11|||Z|",
+          "n": 23,
+          "s": ["Sir Charles Gairdner Hospital", "Sir Charles Gairdner Hospital", "Graylands Hospital"]
+        },
+        {
+          "k": "span|ward-freshness.stamp ward-tokens.wardTokens|11|||Z|",
+          "n": 23,
+          "s": [
+            "Confirmed 21:59 · NUM SCGH Adult Open",
+            "Confirmed 21:56 · NUM SCGH Older Adult",
+            "Confirmed 21:54 · NUM Graylands Adult Se"
+          ]
+        },
+        {
+          "k": "small|capacity.beingMadeReady|11|||Z|",
+          "n": 1,
+          "s": ["1 still being made ready"]
+        },
+        {
+          "k": "span|capacity.attentionWho|11||||",
+          "n": 6,
+          "s": ["A locked adult bed", "An open adult bed", "An older-adult bed"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Capacity - Ward Flow",
+      "path": "/mockups/ward-flow/capacity"
+    },
+    "/mockups/ward-flow/queue": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|delays.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every waiting patient, refusal and escal"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 3,
+          "s": ["Under 8 hours", "8 to 24 hours", "Over 24 hours"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 3,
+          "s": ["27", "14", "2"]
+        },
+        {
+          "k": "span|delays.ownerSub|10||||",
+          "n": 5,
+          "s": [
+            "Your decision, or a legal deadline runni",
+            "Waiting on a ward to answer or a bed to ",
+            "Waiting on the referring department"
+          ]
+        },
+        {
+          "k": "span|delays.ownerHot|10||||",
+          "n": 1,
+          "s": ["2 needing attention now"]
+        },
+        {
+          "k": "p|delays.foot|11||||",
+          "n": 3,
+          "s": [
+            "The waiting time is counted from arrival",
+            "The coloured left edge is who is holding",
+            "One blocker per person — the worst thing"
+          ]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 2,
+          "s": ["Pressing an owner marks those people in ", "Worst blocker first, then longest wait."]
+        },
+        {
+          "k": "span|ward-controls.pillCount|11||||",
+          "n": 3,
+          "s": ["43", "13", "1"]
+        },
+        {
+          "k": "span|delays.personWait |10||||",
+          "n": 41,
+          "s": ["7h 00m", "10h 56m", "3h 00m"]
+        },
+        {
+          "k": "span|delays.personCause|10||||",
+          "n": 43,
+          "s": [
+            "No suitable bed anywhere in the network",
+            "No suitable bed anywhere in the network",
+            "Awaiting a ward's answer"
+          ]
+        },
+        {
+          "k": "span|delays.personMeta|10||||",
+          "n": 43,
+          "s": [
+            "Adult · Needs a locked bed · Tier 1 · mo",
+            "Older adult · Needs a locked bed · Tier ",
+            "Older adult · An open bed suits · Tier 2"
+          ]
+        },
+        {
+          "k": "span|delays.personSince|10||||",
+          "n": 43,
+          "s": ["nothing recorded for 3m", "nothing recorded for 10h 56m", "nothing recorded for 3h 00m"]
+        },
+        {
+          "k": "span|delays.personWait delays.personWaitLong|10||||",
+          "n": 2,
+          "s": ["2d 14h", "1d 5h"]
+        },
+        {
+          "k": "span|delays.grpName|10|U|||",
+          "n": 4,
+          "s": ["Yours", "Wards", "Transport"]
+        },
+        {
+          "k": "span|delays.grpN|10||||",
+          "n": 4,
+          "s": ["21", "13", "8"]
+        },
+        {
+          "k": "span|delays.causeMeta|10||||",
+          "n": 3,
+          "s": ["that is you", "the pull lapsed before the bed was used", "each has a named bed"]
+        },
+        {
+          "k": "button|delays.tabBtn delays.tabBtnActive|10|U|||",
+          "n": 1,
+          "s": ["Escalations"]
+        },
+        {
+          "k": "span|delays.tabNum |10||||",
+          "n": 2,
+          "s": ["1", "7"]
+        },
+        {
+          "k": "button|delays.tabBtn |10|U|||",
+          "n": 1,
+          "s": ["Resolved today"]
+        },
+        {
+          "k": "p|delays.paneScope|10||||",
+          "n": 1,
+          "s": ["An escalation records that somebody was "]
+        },
+        {
+          "k": "span|delays.rowWhen|10||||",
+          "n": 1,
+          "s": ["3m ago"]
+        },
+        {
+          "k": "span|delays.rowWho|10||||",
+          "n": 1,
+          "s": ["to State bed coordination desk"]
+        },
+        {
+          "k": "span|delays.rowSub|11||||",
+          "n": 1,
+          "s": ["22:11"]
+        },
+        {
+          "k": "span|delays.attentionWho|11||||",
+          "n": 2,
+          "s": ["WF-009", "WF-308"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Delays — Ward Flow",
+      "path": "/mockups/ward-flow/delays"
+    },
+    "/mockups/ward-flow/transport": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|movements.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["Every patient journey, transport leg and"]
+        },
+        {
+          "k": "h3|ward-record-row.groupTitle|11|U|||",
+          "n": 7,
+          "s": ["Placement requested", "Destination review", "Accepted, awaiting bed"]
+        },
+        {
+          "k": "span|ward-record-row.groupCount|11||||",
+          "n": 7,
+          "s": ["18 people", "5 people", "6 people"]
+        },
+        {
+          "k": "span|ward-record-row.groupNote|11||||",
+          "n": 7,
+          "s": [
+            "A destination has been asked for; nothin",
+            "At least one unit is weighing up whether",
+            "A unit has agreed in principle, but no b"
+          ]
+        },
+        {
+          "k": "small|ward-record-row.clockSub|11||||",
+          "n": 58,
+          "s": ["in journey", "in journey", "in journey"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 381,
+          "s": ["Adult", "Male", "Voluntary"]
+        },
+        {
+          "k": "span|ward-record-row.sep|11||||",
+          "n": 323,
+          "s": ["·", "·", "·"]
+        },
+        {
+          "k": "p|movements.foot|11||||",
+          "n": 2,
+          "s": [", which outranks everything.", "have no transport leg booked yet, and ar"]
+        },
+        {
+          "k": "strong||11||||",
+          "n": 2,
+          "s": ["Sorted by wait, longest first — except a", "35 of 43 open movements"]
+        },
+        {
+          "k": "li|ward-bar.keyItem|11||||",
+          "n": 5,
+          "s": ["Booked", "En route", "Collected"]
+        },
+        {
+          "k": "b|ward-bar.count|11||||",
+          "n": 2,
+          "s": ["2", "6"]
+        },
+        {
+          "k": "span|ward-bar.zero|11||||",
+          "n": 3,
+          "s": ["none", "none", "none"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/movements/WF-019",
+        "/mockups/ward-flow/movements/WF-020",
+        "/mockups/ward-flow/movements/WF-316",
+        "/mockups/ward-flow/movements/WF-315",
+        "/mockups/ward-flow/movements/WF-312",
+        "/mockups/ward-flow/movements/WF-309",
+        "/mockups/ward-flow/movements/WF-308",
+        "/mockups/ward-flow/movements/WF-305",
+        "/mockups/ward-flow/movements/WF-329",
+        "/mockups/ward-flow/movements/WF-302",
+        "/mockups/ward-flow/movements/WF-326",
+        "/mockups/ward-flow/movements/WF-301",
+        "/mockups/ward-flow/movements/WF-323",
+        "/mockups/ward-flow/movements/WF-322",
+        "/mockups/ward-flow/movements/WF-319",
+        "/mockups/ward-flow/movements/WF-001",
+        "/mockups/ward-flow/movements/WF-012",
+        "/mockups/ward-flow/movements/WF-018",
+        "/mockups/ward-flow/movements/WF-009",
+        "/mockups/ward-flow/movements/WF-017",
+        "/mockups/ward-flow/movements/WF-013",
+        "/mockups/ward-flow/movements/WF-002",
+        "/mockups/ward-flow/movements/WF-010",
+        "/mockups/ward-flow/movements/WF-310",
+        "/mockups/ward-flow/movements/WF-303",
+        "/mockups/ward-flow/movements/WF-324",
+        "/mockups/ward-flow/movements/WF-003",
+        "/mockups/ward-flow/movements/WF-008",
+        "/mockups/ward-flow/movements/WF-317",
+        "/mockups/ward-flow/movements/WF-311",
+        "/mockups/ward-flow/movements/WF-304",
+        "/mockups/ward-flow/movements/WF-004",
+        "/mockups/ward-flow/movements/WF-325",
+        "/mockups/ward-flow/movements/WF-011",
+        "/mockups/ward-flow/movements/WF-016",
+        "/mockups/ward-flow/movements/WF-318",
+        "/mockups/ward-flow/movements/WF-015",
+        "/mockups/ward-flow/movements/WF-005",
+        "/mockups/ward-flow/movements/WF-313",
+        "/mockups/ward-flow/movements/WF-306",
+        "/mockups/ward-flow/movements/WF-006",
+        "/mockups/ward-flow/movements/WF-014",
+        "/mockups/ward-flow/movements/WF-327",
+        "/mockups/ward-flow/movements/WF-320",
+        "/mockups/ward-flow/movements/WF-314",
+        "/mockups/ward-flow/movements/WF-307",
+        "/mockups/ward-flow/movements/WF-007",
+        "/mockups/ward-flow/movements/WF-328",
+        "/mockups/ward-flow/movements/WF-300",
+        "/mockups/ward-flow/movements/WF-321"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Movements - Ward Flow",
+      "path": "/mockups/ward-flow/movements"
+    },
+    "/mockups/ward-flow/people/new": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|add-patient.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This form is . It records only the four "]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "p|add-patient.duplicateIdle|10||||",
+          "n": 1,
+          "s": ["Existing records have not been checked y"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Add a patient — Ward Flow",
+      "path": "/mockups/ward-flow/people/new"
+    },
+    "/mockups/ward-flow/movements/WF-001": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 1,
+          "s": ["Ward Flow"]
+        },
+        {
+          "k": "span|ward-management.headerCrumb|11||||",
+          "n": 1,
+          "s": ["Movement WF-001"]
+        },
+        {
+          "k": "span|ward-management.prototypeBadge|11||||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "span|ward-management.eyebrow|11|U|||",
+          "n": 1,
+          "s": ["Movement workspace"]
+        },
+        {
+          "k": "span|ward-management.trackWhen|11||||",
+          "n": 7,
+          "s": ["This is where the movement is now, since", "Not reached.", "Not reached."]
+        },
+        {
+          "k": "span|ward-management.rowRisk|11||||",
+          "n": 1,
+          "s": ["More restrictive than this movement requ"]
+        },
+        {
+          "k": "label|ward-management.blockerLabel|11||||",
+          "n": 1,
+          "s": ["What is holding this up? Wards, roles an"]
+        },
+        {
+          "k": "strong||11|U|||",
+          "n": 4,
+          "s": ["Legal status", "Form readiness", "Transport"]
+        },
+        {
+          "k": "span|ward-management.readinessWhere|11||||",
+          "n": 4,
+          "s": [
+            "What the status is, under Legal and form",
+            "The form and its deadline, under Legal a",
+            "The job, provider, escort and form, unde"
+          ]
+        },
+        {
+          "k": "dt|ward-management.factLabel|11|U|||",
+          "n": 15,
+          "s": ["Legal status", "Form", "Status changes"]
+        },
+        {
+          "k": "time|ward-management.timelineWhen|11||||",
+          "n": 1,
+          "s": ["20:39"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Patient movement workspace - Ward Flow",
+      "path": "/mockups/ward-flow/movements/WF-001"
+    },
+    "/mockups/ward-flow/statistics/service/North%20Metro": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics-sections.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 2,
+          "s": ["not real figures", "The remaining referrals are not counted "]
+        },
+        {
+          "k": "p|statistics-sections.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["One health service in detail"]
+        },
+        {
+          "k": "p|statistics-sections.note|10||||",
+          "n": 4,
+          "s": [
+            "A name and a count of real records, and ",
+            "Live, from this prototype's own current ",
+            "A referral may still be queued, may have"
+          ]
+        },
+        {
+          "k": "span||10||||",
+          "n": 2,
+          "s": ["0", "45"]
+        },
+        {
+          "k": "p|statistics.chartCaption|10||||",
+          "n": 4,
+          "s": [
+            "North Metro — patients sent to another s",
+            "If the model could compute this, it woul",
+            "North Metro — patients taken in from ano"
+          ]
+        },
+        {
+          "k": "span|statistics.prototypeBadge|10|U|||",
+          "n": 2,
+          "s": ["Demonstration data", "Demonstration data"]
+        },
+        {
+          "k": "b||10||||",
+          "n": 2,
+          "s": ["how many of this service's own referrals", "how many referrals originating in anothe"]
+        },
+        {
+          "k": "h2||10|U|||",
+          "n": 2,
+          "s": ["Invented figures", "What this cannot yet show"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Health service statistics — Ward Flow",
+      "path": "/mockups/ward-flow/statistics/service/North%20Metro"
+    },
+    "/mockups/ward-flow/statistics/community/albany": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|statistics-sections.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["These are . Every patient, bed, referral"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not real figures"]
+        },
+        {
+          "k": "p|statistics-sections.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["One community team in detail"]
+        },
+        {
+          "k": "p|statistics-sections.note|10||||",
+          "n": 2,
+          "s": ["Every team the referral form can name, i", "These teams are the referral form's voca"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/statistics/community/alma-street",
+        "/mockups/ward-flow/statistics/community/alma-street-central",
+        "/mockups/ward-flow/statistics/community/alma-street-cockburn",
+        "/mockups/ward-flow/statistics/community/alma-street-fremantle",
+        "/mockups/ward-flow/statistics/community/alma-street-melville",
+        "/mockups/ward-flow/statistics/community/armadale",
+        "/mockups/ward-flow/statistics/community/armadale-mead-centre",
+        "/mockups/ward-flow/statistics/community/armadale-mead",
+        "/mockups/ward-flow/statistics/community/bentley",
+        "/mockups/ward-flow/statistics/community/bunbury",
+        "/mockups/ward-flow/statistics/community/central-great-southern",
+        "/mockups/ward-flow/statistics/community/central-wheatbelt",
+        "/mockups/ward-flow/statistics/community/central-wheatbelt-h-s",
+        "/mockups/ward-flow/statistics/community/clarkson",
+        "/mockups/ward-flow/statistics/community/east-wheatbelt",
+        "/mockups/ward-flow/statistics/community/east-wheatbelt-hs",
+        "/mockups/ward-flow/statistics/community/eudoria-street-gosnells",
+        "/mockups/ward-flow/statistics/community/eudoria-street-thornlie",
+        "/mockups/ward-flow/statistics/community/gascoyne",
+        "/mockups/ward-flow/statistics/community/gascoyne-h-s",
+        "/mockups/ward-flow/statistics/community/gascoyne-hs",
+        "/mockups/ward-flow/statistics/community/geraldton-hs",
+        "/mockups/ward-flow/statistics/community/great-south",
+        "/mockups/ward-flow/statistics/community/great-southern",
+        "/mockups/ward-flow/statistics/community/icc",
+        "/mockups/ward-flow/statistics/community/inner-city",
+        "/mockups/ward-flow/statistics/community/inner-city-central",
+        "/mockups/ward-flow/statistics/community/inner-city-clinic",
+        "/mockups/ward-flow/statistics/community/joondalup",
+        "/mockups/ward-flow/statistics/community/kimberley",
+        "/mockups/ward-flow/statistics/community/kimberley-hs",
+        "/mockups/ward-flow/statistics/community/kwinana",
+        "/mockups/ward-flow/statistics/community/lower-great-southern",
+        "/mockups/ward-flow/statistics/community/mead-centre-armadale",
+        "/mockups/ward-flow/statistics/community/mead-centre-kelmscott",
+        "/mockups/ward-flow/statistics/community/meade-centre-armadale",
+        "/mockups/ward-flow/statistics/community/merredin",
+        "/mockups/ward-flow/statistics/community/midland",
+        "/mockups/ward-flow/statistics/community/midwest-h-s",
+        "/mockups/ward-flow/statistics/community/mills-street",
+        "/mockups/ward-flow/statistics/community/mirrabooka",
+        "/mockups/ward-flow/statistics/community/murchison-hs",
+        "/mockups/ward-flow/statistics/community/narrogin",
+        "/mockups/ward-flow/statistics/community/north-west",
+        "/mockups/ward-flow/statistics/community/north-goldfield-h-s",
+        "/mockups/ward-flow/statistics/community/northam",
+        "/mockups/ward-flow/statistics/community/nth-goldfield-h-s",
+        "/mockups/ward-flow/statistics/community/nth-goldfield-hs",
+        "/mockups/ward-flow/statistics/community/osborne",
+        "/mockups/ward-flow/statistics/community/osborne-park",
+        "/mockups/ward-flow/statistics/community/peel",
+        "/mockups/ward-flow/statistics/community/pilbara",
+        "/mockups/ward-flow/statistics/community/rockingham",
+        "/mockups/ward-flow/statistics/community/south-east-coastal",
+        "/mockups/ward-flow/statistics/community/southern-coastal-hs",
+        "/mockups/ward-flow/statistics/community/subiaco",
+        "/mockups/ward-flow/statistics/community/swan",
+        "/mockups/ward-flow/statistics/community/upper-great-southern",
+        "/mockups/ward-flow/statistics/community/west-pilbara",
+        "/mockups/ward-flow/statistics/community/western-h-s",
+        "/mockups/ward-flow/statistics/community/western-hs",
+        "/mockups/ward-flow/statistics/community/wheat-belt",
+        "/mockups/ward-flow/statistics/community/wheatbelt-hs",
+        "/mockups/ward-flow/community/albany"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Community team statistics — Ward Flow",
+      "path": "/mockups/ward-flow/statistics/community/albany"
+    },
+    "/mockups/ward-flow/community/central-wheatbelt": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "h1|community.eyebrow|10|U|||",
+          "n": 1,
+          "s": ["Community team"]
+        },
+        {
+          "k": "span|community.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p|community.footnote|10||||",
+          "n": 4,
+          "s": [
+            "Accepting or declining a referral is not",
+            "This table says this team had accepted t",
+            "A ward's own plan, revisable whenever th"
+          ]
+        },
+        {
+          "k": "p|community.aboutHeading|10|U|||",
+          "n": 1,
+          "s": ["About this page"]
+        },
+        {
+          "k": "p|community.provenance|10||||",
+          "n": 1,
+          "s": ["Everyone below is here because a referra"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 2,
+          "s": ["Anyone whose admission points at a refer", "0 admissions are matched to this team an"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/community/albany",
+        "/mockups/ward-flow/community/alma-street",
+        "/mockups/ward-flow/community/alma-street-central",
+        "/mockups/ward-flow/community/alma-street-cockburn",
+        "/mockups/ward-flow/community/alma-street-fremantle",
+        "/mockups/ward-flow/community/alma-street-melville",
+        "/mockups/ward-flow/community/armadale",
+        "/mockups/ward-flow/community/armadale-mead-centre",
+        "/mockups/ward-flow/community/armadale-mead",
+        "/mockups/ward-flow/community/bentley",
+        "/mockups/ward-flow/community/bunbury",
+        "/mockups/ward-flow/community/central-great-southern",
+        "/mockups/ward-flow/community/central-wheatbelt-h-s",
+        "/mockups/ward-flow/community/clarkson",
+        "/mockups/ward-flow/community/east-wheatbelt",
+        "/mockups/ward-flow/community/east-wheatbelt-hs",
+        "/mockups/ward-flow/community/eudoria-street-gosnells",
+        "/mockups/ward-flow/community/eudoria-street-thornlie",
+        "/mockups/ward-flow/community/gascoyne",
+        "/mockups/ward-flow/community/gascoyne-h-s",
+        "/mockups/ward-flow/community/gascoyne-hs",
+        "/mockups/ward-flow/community/geraldton-hs",
+        "/mockups/ward-flow/community/great-south",
+        "/mockups/ward-flow/community/great-southern",
+        "/mockups/ward-flow/community/icc",
+        "/mockups/ward-flow/community/inner-city",
+        "/mockups/ward-flow/community/inner-city-central",
+        "/mockups/ward-flow/community/inner-city-clinic",
+        "/mockups/ward-flow/community/joondalup",
+        "/mockups/ward-flow/community/kimberley",
+        "/mockups/ward-flow/community/kimberley-hs",
+        "/mockups/ward-flow/community/kwinana",
+        "/mockups/ward-flow/community/lower-great-southern",
+        "/mockups/ward-flow/community/mead-centre-armadale",
+        "/mockups/ward-flow/community/mead-centre-kelmscott",
+        "/mockups/ward-flow/community/meade-centre-armadale",
+        "/mockups/ward-flow/community/merredin",
+        "/mockups/ward-flow/community/midland",
+        "/mockups/ward-flow/community/midwest-h-s",
+        "/mockups/ward-flow/community/mills-street",
+        "/mockups/ward-flow/community/mirrabooka",
+        "/mockups/ward-flow/community/murchison-hs",
+        "/mockups/ward-flow/community/narrogin",
+        "/mockups/ward-flow/community/north-west",
+        "/mockups/ward-flow/community/north-goldfield-h-s",
+        "/mockups/ward-flow/community/northam",
+        "/mockups/ward-flow/community/nth-goldfield-h-s",
+        "/mockups/ward-flow/community/nth-goldfield-hs",
+        "/mockups/ward-flow/community/osborne",
+        "/mockups/ward-flow/community/osborne-park",
+        "/mockups/ward-flow/community/peel",
+        "/mockups/ward-flow/community/pilbara",
+        "/mockups/ward-flow/community/rockingham",
+        "/mockups/ward-flow/community/south-east-coastal",
+        "/mockups/ward-flow/community/southern-coastal-hs",
+        "/mockups/ward-flow/community/subiaco",
+        "/mockups/ward-flow/community/swan",
+        "/mockups/ward-flow/community/upper-great-southern",
+        "/mockups/ward-flow/community/west-pilbara",
+        "/mockups/ward-flow/community/western-h-s",
+        "/mockups/ward-flow/community/western-hs",
+        "/mockups/ward-flow/community/wheat-belt",
+        "/mockups/ward-flow/community/wheatbelt-hs"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Community team — Ward Flow",
+      "path": "/mockups/ward-flow/community/central-wheatbelt"
+    }
+  }
+}
