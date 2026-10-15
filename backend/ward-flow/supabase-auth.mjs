@@ -225,7 +225,13 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
         } catch {
           valid = false;
         }
-        if (!valid || !audience.includes("authenticated") || claims.role !== "authenticated")
+        // Expiry is checked again here: the token may have expired while the keys were read.
+        if (
+          !valid ||
+          claims.exp * 1000 <= now() ||
+          !audience.includes("authenticated") ||
+          claims.role !== "authenticated"
+        )
           throw new InvalidCredentialError("Unauthorised");
         return subject;
       }

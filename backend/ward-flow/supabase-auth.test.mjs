@@ -122,6 +122,19 @@ test("keys older than the cache lifetime are not used when a refresh fails", asy
   assert.deepEqual(calls, [JWKS, JWKS, USER], "a stale key list sends the token to Supabase instead");
 });
 
+test("a token that expires while the keys are being read is refused", async () => {
+  let at = Date.now();
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    fetch: async () => {
+      at += 120_000;
+      return Response.json(published);
+    },
+  });
+  const token = signed("ES256", "ec-1", claims({ exp: Math.floor(at / 1000) + 60 }));
+  await assert.rejects(verify(token), /Unauthorised/);
+});
+
 test("Supabase being down for the keys still lets a legacy check through, and never fails open", async () => {
   const { calls, verify } = setup({ keys: null });
   assert.equal(await verify(signed("ES256", "ec-1")), coordinator);
@@ -229,6 +242,10 @@ test("the client address trusts forwarded headers only from configured proxies",
   const incoming = { headers: { "x-forwarded-for": "10.0.0.1, 203.0.113.9" }, socket: { remoteAddress: "proxy" } };
   assert.equal(clientAddress(incoming), "proxy");
   assert.equal(clientAddress(incoming, ["proxy"]), "203.0.113.9");
+  assert.equal(clientAddress(incoming, ["*"]), "203.0.113.9", "* trusts the proxy a host is only reachable through");
+  const mapped = { headers: { "x-forwarded-for": "203.0.113.9" }, socket: { remoteAddress: "::ffff:10.0.0.2" } };
+  assert.equal(clientAddress(mapped, ["10.0.0.2"]), "203.0.113.9");
+  assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "::ffff:10.0.0.2" } }), "10.0.0.2");
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "127.0.0.1" } }), "127.0.0.1");
   assert.equal(clientAddress({ headers: {}, socket: {} }), "unknown");
 });

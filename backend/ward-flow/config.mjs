@@ -43,7 +43,7 @@ export function readConfig(env = process.env) {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
   const trustedProxyAddresses = (env.WARD_TRUSTED_PROXY_ADDRESSES || "")
     .split(",")
-    .map((address) => address.trim())
+    .map((address) => address.trim().replace(/^::ffff:/i, ""))
     .filter(Boolean);
   const shared = env.WARD_SHARED_ENABLED === "true";
   const dataMode = env.WARD_DATA_MODE || "prototype";

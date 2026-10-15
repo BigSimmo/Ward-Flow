@@ -50,7 +50,8 @@ to `005`. These source files do not establish a current hosted connection or dep
   shared-secret token, or any token while the keys cannot be read, goes to Supabase's
   `/auth/v1/user`, limited to 30 checks a minute per client address, 30 per coordinator and 300 in
   total, and a confirmed token is reused for a minute. The client address is the socket's, or the
-  last `X-Forwarded-For` entry only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`. A locally
+  last `X-Forwarded-For` entry only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
+  (`*` on Railway, which is reachable only through its proxy). A locally
   verified token stays valid until it expires, even after sign-out.
 - Browser settings template: `infra/frontend.env.example`.
 - Migrations (all five required for `/readyz`):
