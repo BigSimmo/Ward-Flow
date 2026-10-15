@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -135,6 +136,18 @@ describe("AddPatientForm", () => {
     await waitFor(() => {
       expect(router.push).toHaveBeenCalledTimes(1);
     });
+    const [target] = router.push.mock.calls[0] as [string];
+    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/PT-A\d+$/);
+  });
+
+  it("treats Enter in a field as Add patient, never as Register & start referral", async () => {
+    router.push.mockClear();
+    const user = userEvent.setup();
+    renderForm();
+    fillDraft();
+    await user.click(screen.getByLabelText("Family name"));
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     const [target] = router.push.mock.calls[0] as [string];
     expect(target).toMatch(/^\/mockups\/ward-flow\/people\/PT-A\d+$/);
   });

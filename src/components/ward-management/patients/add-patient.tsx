@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -468,6 +468,21 @@ export function AddPatientForm() {
     });
   }
 
+  /**
+   * Enter in a field is an implicit submit, and the browser answers it by clicking the FIRST submit
+   * button in the form, which is "Register & start referral". Enter should do the plain, primary
+   * thing (Add patient), so it is routed there. The two buttons stay the only way to start a referral.
+   */
+  function submitPlainOnEnter(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== "Enter" || event.defaultPrevented) return;
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (event.target.type === "button" || event.target.type === "submit") return;
+    event.preventDefault();
+    submitIntentRef.current = "profile";
+    setSubmitIntent("profile");
+    event.currentTarget.requestSubmit();
+  }
+
   function ignoreUnavailableActivation(event: MouseEvent<HTMLButtonElement>) {
     if (isSubmitting) {
       event.preventDefault();
@@ -719,7 +734,12 @@ export function AddPatientForm() {
         )}
 
         <div className={styles.layout}>
-          <form className={styles.form} onSubmit={handleSubmit} data-testid="ward-add-patient-form">
+          <form
+            className={styles.form}
+            onSubmit={handleSubmit}
+            onKeyDown={submitPlainOnEnter}
+            data-testid="ward-add-patient-form"
+          >
             {carriedSearch && assignedSearch !== carriedSearch ? (
               <Card
                 variant="compact"
