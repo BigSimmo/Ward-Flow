@@ -602,6 +602,7 @@ export function MovementHorizonGantt({
                   <p className={styles.railEmpty}>No open movement currently has an accepting ward.</p>
                 ) : (
                   // Scrolls when the list is long, so it takes a tab stop (axe scrollable-region-focusable).
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
                   <ol className={styles.corridorRanks} tabIndex={0} aria-label="Accepted corridors, busiest first">
                     {rankedPairs.map((corridor) => {
                       const ed = edById(corridor.originEdId);

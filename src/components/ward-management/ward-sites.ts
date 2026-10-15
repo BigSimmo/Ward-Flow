@@ -872,7 +872,10 @@ export const STANDARD_WARD_SITES: Site[] = [
  * are the same in every network; only the wards differ.
  *
  * ⚠️ A module-level binding, re-pointed rather than mutated: importers read the live value.
- * Nothing but `activateWardNetwork` may assign it.
+ * Nothing but `activateWardNetwork` may assign it. Starts as the standard network, so knip reads
+ * it as a duplicate of `STANDARD_WARD_SITES`. It is not one: it is re-pointed at runtime.
+ *
+ * @alias
  */
 export let wardSites: Site[] = STANDARD_WARD_SITES;
 

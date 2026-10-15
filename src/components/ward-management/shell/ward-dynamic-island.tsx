@@ -82,7 +82,6 @@ export function WardDynamicIsland({
   return (
     <section
       className={`${styles.islandWrapper} ${wrapperAlignClass} ${className ?? ""}`.trim()}
-      role="region"
       aria-label={ariaLabel ?? (typeof title === "string" ? `${title} HUD` : "Stage HUD")}
       data-testid={testId}
     >

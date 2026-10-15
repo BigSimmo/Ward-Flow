@@ -865,6 +865,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   // brief alone. The scrim is the centring frame; only a click that starts AND ends on the scrim
   // itself closes, so a text selection dragged out of the brief does not dismiss it.
   return createPortal(
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
     <div
       className={styles.scrim}
       data-testid="ward-daily-sheet-scrim"

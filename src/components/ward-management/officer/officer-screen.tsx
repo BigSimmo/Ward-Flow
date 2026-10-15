@@ -2185,6 +2185,7 @@ export function OfficerScreen() {
 
       {/* Form verification dialog */}
       {formModalJob ? (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
         <div
           ref={formModalRef}
           className={styles.modalBackdrop}
@@ -2193,6 +2194,7 @@ export function OfficerScreen() {
           aria-labelledby="form-verify-title"
           onClick={closeFormModal}
         >
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
           <div className={styles.modalDialog} onClick={(e) => e.stopPropagation()}>
             <header className={styles.modalHead}>
               <span className={styles.modalTile} aria-hidden="true">

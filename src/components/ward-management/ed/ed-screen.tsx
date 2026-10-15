@@ -2849,7 +2849,6 @@ export function EdScreen({ edId }: EdScreenProps) {
           aria-label="Raise into a movement"
           hidden={!referralOpen}
           className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
-          tabIndex={0}
         >
           <div className={styles.ph}>
             <h2>Raise into a movement</h2>
@@ -3213,7 +3212,6 @@ export function EdScreen({ edId }: EdScreenProps) {
           data-pane="board"
           className={`${styles.panel} ${styles.full} ${styles.listSection}${!boardTable && fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
           data-handover-view={boardTable && fullscreenBoard ? "true" : undefined}
-          tabIndex={0}
         >
           <div className={styles.ph}>
             <h2>ED psychiatry</h2>
@@ -4463,6 +4461,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           // Since ED page A2 this dialog opens over the patient's sheet, which
                           // inerts everything outside itself; these markers keep the dialog live
                           // and stop the sheet taking its focus back.
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
                           <div
                             ref={transportBackdropRef}
                             className={styles.modalBackdrop}
@@ -4470,6 +4469,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             data-sheet-inert-skip=""
                             data-sheet-portal=""
                           >
+                            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                             <div
                               ref={setTransportDialogNode}
                               className={styles.declineForm}
@@ -5595,6 +5595,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           : `${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length} referred`}
                 </span>
               </div>
+              {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div
                 className={`${styles.tabbar} ${styles.departmentListTabs}`}
                 role="tablist"
@@ -5695,12 +5696,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 className={styles.lstWrap}
                 tabIndex={0}
               >
-                <section
-                  aria-label="Referrals"
-                  className={styles.inboxSection}
-                  data-testid="ward-ed-inbox"
-                  tabIndex={0}
-                >
+                <section aria-label="Referrals" className={styles.inboxSection} data-testid="ward-ed-inbox">
                   <h3 className={styles.inboxSubheading}>
                     Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
                   </h3>
@@ -6532,6 +6528,7 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         {selectedPatient ? (
           <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
             <dialog
               ref={patientDialogRef}
               className={`${styles.menuPanel} ${styles.patientDialog}`}
