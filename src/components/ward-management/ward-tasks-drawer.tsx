@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useId, useRef, useState, type Dispatch } from "react";
+import { useRef, useState, type Dispatch } from "react";
 import { WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -258,7 +258,6 @@ export function WardTasksDrawer({
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
-  const sectionId = useId();
 
   /** A discharge notification row opens its stay on the discharges board; every other row opens
    *  its movement. */
@@ -277,7 +276,7 @@ export function WardTasksDrawer({
   function handleEscape() {
     if (escalating !== null) {
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
-        'li[data-expanded] button[data-escalate], button[data-escalate][aria-expanded="true"]',
+        'button[data-escalate][aria-expanded="true"]',
       );
       setEscalating(null);
       setContact("");
@@ -285,7 +284,11 @@ export function WardTasksDrawer({
       return;
     }
     if (contacting !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        `button[data-contact="${CSS.escape(contacting)}"]`,
+      );
       setContacting(null);
+      trigger?.focus();
       return;
     }
     onClose();
@@ -430,6 +433,7 @@ export function WardTasksDrawer({
           aria-label="Contact"
           title="Contact"
           aria-expanded={contacting === item.id}
+          data-contact={item.id}
           onClick={() => {
             setContacting(contacting === item.id ? null : item.id);
           }}
@@ -506,7 +510,6 @@ export function WardTasksDrawer({
           Who did you escalate to?
           <span className={styles.escalationInput}>
             <input
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- the field appears only after the user asks to escalate, so focus moves to it
               autoFocus
               required
               maxLength={160}
@@ -595,7 +598,6 @@ export function WardTasksDrawer({
       : "Patient not linked";
 
     return (
-      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and focus does the same for the keyboard
       <li
         key={item.id}
         className={styles.row}
@@ -606,8 +608,6 @@ export function WardTasksDrawer({
           if ((event.target as HTMLElement).closest("button, input, form, a")) return;
           setExpandedId(isPhone && isExpanded ? null : item.id);
         }}
-        // On a desktop, tabbing into a row shows its detail, the same as clicking it.
-        onFocus={isPhone ? undefined : () => setExpandedId(item.id)}
       >
         <div className={styles.rowHead}>
           <span className={styles.rowIcon} aria-hidden="true">
@@ -996,10 +996,10 @@ export function WardTasksDrawer({
           ) : (
             <>
               {filteredFacts.length > 0 ? (
-                <section className={styles.section} aria-labelledby={`${sectionId}-facts`}>
+                <section className={styles.section} aria-labelledby="ward-tasks-facts">
                   <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
                     <ShieldCheck aria-hidden="true" />
-                    <h3 id={`${sectionId}-facts`} className={styles.sectionTitle}>
+                    <h3 id="ward-tasks-facts" className={styles.sectionTitle}>
                       Needs attention
                     </h3>
                     <span className={styles.count}>{filteredFacts.length}</span>
@@ -1010,10 +1010,10 @@ export function WardTasksDrawer({
               ) : null}
 
               {filteredCommitments.length > 0 ? (
-                <section className={styles.section} aria-labelledby={`${sectionId}-commitments`}>
+                <section className={styles.section} aria-labelledby="ward-tasks-commitments">
                   <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
                     <ListChecks aria-hidden="true" />
-                    <h3 id={`${sectionId}-commitments`} className={styles.sectionTitle}>
+                    <h3 id="ward-tasks-commitments" className={styles.sectionTitle}>
                       Commitments
                     </h3>
                     <span className={styles.count}>{filteredCommitments.length}</span>
@@ -1025,14 +1025,10 @@ export function WardTasksDrawer({
             </>
           )}
           {snoozedItems.length > 0 ? (
-            <section
-              className={styles.section}
-              aria-labelledby={`${sectionId}-snoozed`}
-              data-testid="ward-tasks-snoozed"
-            >
+            <section className={styles.section} aria-labelledby="ward-tasks-snoozed" data-testid="ward-tasks-snoozed">
               <div className={styles.sectionHead}>
                 <AlarmClock aria-hidden="true" />
-                <h3 id={`${sectionId}-snoozed`} className={styles.sectionTitle}>
+                <h3 id="ward-tasks-snoozed" className={styles.sectionTitle}>
                   Snoozed
                 </h3>
                 <span className={styles.count}>{snoozedItems.length}</span>
