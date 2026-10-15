@@ -201,9 +201,22 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         // a saved scenario is the whole workspace, so both stay the coordinator's (review on PR #330).
         broadcastAlerts: coordinator
           ? context.broadcastAlerts
-          : context.broadcastAlerts.filter(
-              (alert) => alert.targetUnitIds === undefined || alert.targetUnitIds.some(unitIn),
-            ),
+          : context.broadcastAlerts.flatMap((alert) => {
+              if (alert.targetUnitIds === undefined) return [alert];
+              // Only the desk's own wards stay named, as on the movement (review on PR #330).
+              const own = alert.targetUnitIds.filter(unitIn);
+              if (own.length === 0) return [];
+              if (own.length === alert.targetUnitIds.length) return [alert];
+              const names = own.map((id) => context.units.find((unit) => unit.id === id)?.name ?? id);
+              return [
+                {
+                  ...alert,
+                  targetUnitIds: own,
+                  ...(alert.replies ? { replies: alert.replies.filter((reply) => unitIn(reply.unitId)) } : {}),
+                  targetScopeLabel: names.length === 1 ? names[0] : `${names.length} wards`,
+                },
+              ];
+            }),
         undoRecords: coordinator ? context.undoRecords : [],
         saveScenarioFile: coordinator ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
