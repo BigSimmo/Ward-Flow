@@ -204,7 +204,8 @@ export function renderFactsDoc(facts, terms) {
   return lines.join("\n");
 }
 
-const MARKER = /<!-- fact:([a-z0-9-]+) -->([\s\S]*?)<!-- \/fact -->/gu;
+// One line only: a stray opening tag must never reach a closing tag further down the file.
+const MARKER = /<!-- fact:([a-z0-9-]+) -->([^\n]*?)<!-- \/fact -->/gu;
 
 /** Rewrite every fact marker to the current value. Unknown names are returned, never guessed. */
 export function applyMarkers(text, factsByName) {

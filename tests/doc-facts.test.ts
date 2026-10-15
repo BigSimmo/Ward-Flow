@@ -56,6 +56,15 @@ describe("fact markers", () => {
     expect(result.stale).toEqual([{ name: "database-provider", current: "Azure", value: "Supabase" }]);
   });
 
+  it("never matches across lines, so a lone opening tag cannot swallow text", () => {
+    const text =
+      "Quote <!-- fact:database-provider --> like this.\nKeep me.\n<!-- fact:database-provider -->Azure<!-- /fact -->";
+    const result = applyMarkers(text, facts);
+    expect(result.updated).toBe(
+      "Quote <!-- fact:database-provider --> like this.\nKeep me.\n<!-- fact:database-provider -->Supabase<!-- /fact -->",
+    );
+  });
+
   it("leaves an unknown fact untouched and reports its name", () => {
     const text = "<!-- fact:made-up -->1<!-- /fact -->";
     const result = applyMarkers(text, facts);
