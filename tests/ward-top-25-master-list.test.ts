@@ -462,8 +462,16 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     });
     expect(created.activeAlert?.expiresAt).toBe("2026-10-15T12:00:00.000Z");
 
+    // An elapsed alert cannot be revived by extending it.
+    const lateExtend = wardBroadcastReducer(created, {
+      type: "EXTEND_BROADCAST_ALERT",
+      now: "2026-10-15T12:30:00.000Z",
+    });
+    expect(lateExtend.activeAlert?.expiresAt).toBe("2026-10-15T12:00:00.000Z");
+
     const extended = wardBroadcastReducer(created, {
       type: "EXTEND_BROADCAST_ALERT",
+      now: "2026-10-15T09:00:00.000Z",
     });
     expect(extended.activeAlert?.expiresAt).toBe("2026-10-15T14:00:00.000Z");
 
@@ -491,6 +499,82 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
     expect(afterExtend.broadcastAlerts[0]!.expiresAt).toBe(
       withAlert.broadcastAlerts[0]!.expiresAt + DEFAULT_BROADCAST_EXTENSION_MINUTES,
     );
+  });
+
+  it("review hardening: preparing flag, resumedAt 0, swap order, CTO manager and 7-day slot, step-down readiness", () => {
+    // #4 the preparing flag follows the count: the last preparing bed opening clears it, whatever the bed id.
+    const lastBed = completeCleanAndOpenBed(
+      { id: "u-1", preparingBeds: 1, preparing: true, availableBeds: 0 },
+      "bed-9",
+    );
+    expect(lastBed.preparing).toBe(false);
+    expect(lastBed.preparingBeds).toBe(0);
+    const stillPreparing = completeCleanAndOpenBed({ id: "u-2", preparingBeds: 2, preparing: true }, "bed-9");
+    expect(stillPreparing.preparing).toBe(true);
+
+    // #15 a recorded resumption at instant 0 is a resumption.
+    expect(
+      canPreMatchCleaningBed({
+        id: "b-0",
+        status: "preparing",
+        medicalDeterioration: { at: -10, resumedAt: 0 },
+      }),
+    ).toBe(true);
+
+    // #16 the step-down chain pairs the same two requests in either order.
+    const stepDown = { id: "r-sd", fromUnitId: "hdu", toUnitId: "acute", reason: "step_down" };
+    const edToHdu = { id: "r-ed", fromUnitId: "ed", toUnitId: "hdu", reason: "ed_to_hdu" };
+    expect(deriveInterWardStepDownSwaps([stepDown, edToHdu])).toHaveLength(1);
+    expect(deriveInterWardStepDownSwaps([edToHdu, stepDown])).toHaveLength(1);
+
+    // #11 a clinic is a place, not a case manager; with a departure time the follow-up must fall within 7 days.
+    const clinicOnly = deriveCtoFollowUpHandshake({
+      admissionId: "adm-clinic",
+      isCto: true,
+      assignedCaseManager: null,
+      followUpAppointmentAt: "2026-10-20T10:00:00.000Z",
+      communityTreatmentOrder: { clinic: "Mirrabooka CMHT" },
+    });
+    expect(clinicOnly.missingFields).toEqual(["assignedCaseManager"]);
+    const lateSlot = deriveCtoFollowUpHandshake({
+      admissionId: "adm-late",
+      isCto: true,
+      assignedCaseManager: "A. Nurse",
+      followUpAppointmentAt: "2026-11-30T10:00:00.000Z",
+      referenceAt: "2026-10-15T10:00:00.000Z",
+    });
+    expect(lateSlot.missingFields).toEqual(["followUpAppointmentAt"]);
+    const inWeek = deriveCtoFollowUpHandshake({
+      admissionId: "adm-week",
+      isCto: true,
+      assignedCaseManager: "A. Nurse",
+      followUpAppointmentAt: "2026-10-20T10:00:00.000Z",
+      referenceAt: "2026-10-15T10:00:00.000Z",
+    });
+    expect(inWeek.warningActive).toBe(false);
+
+    // #8 a planned destination alone is not step-down readiness.
+    const board = deriveStepDownPullBoard(
+      [
+        {
+          id: "cand-dest",
+          fromUnitId: "fsh-hdu",
+          securityLevel: "HDU",
+          dischargeDestination: "mental_health_step_down",
+          cohort: "Adult",
+        },
+        {
+          id: "cand-denied",
+          fromUnitId: "fsh-hdu",
+          securityLevel: "HDU",
+          stepDownReady: false,
+          dischargeDestination: "mental_health_step_down",
+          cohort: "Adult",
+        },
+      ],
+      [{ id: "open-1", securityLevel: "Open", availableBeds: 2, cohort: "Adult" }],
+    );
+    expect(board).toEqual([]);
   });
 
   it("handles edge cases across #9 custom CLD keys, #15 medical deterioration, #19 malformed dates, #20 >72h UMRN, #21 driftDays, and #24 6-step fraction", () => {
@@ -526,7 +610,7 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
       }),
     ).toBe(true);
 
-    // #19 Malformed date string returns 0 remainingMinutes and "expired" urgency, sorted first
+    // #19 Malformed date string returns "unrecorded" urgency, sorted last
     const radar = derivePaperLegalExpiryRadar(
       [
         { id: "f-later", formType: "Form 6A", expiresAt: "2026-10-15T18:00:00.000Z" },
@@ -535,12 +619,13 @@ describe("Perfected Top 25 Ward Flow Master List — Pure Domain & Derivation Su
       ],
       NOW_ISO,
     );
-    expect(radar.map((r) => r.id)).toEqual(["f-bad", "f-soon", "f-later"]);
-    expect(radar[0]).toMatchObject({
+    // A date that cannot be read is "unrecorded", never a passed deadline, and sorts after the dated forms.
+    expect(radar.map((r) => r.id)).toEqual(["f-soon", "f-later", "f-bad"]);
+    expect(radar[2]).toMatchObject({
       id: "f-bad",
       remainingMinutes: 0,
-      urgency: "expired",
-      edgeAct: true,
+      urgency: "unrecorded",
+      edgeAct: false,
     });
 
     // #20 >72h hoursDelayed and UMRN (D-39) in escalationSummary

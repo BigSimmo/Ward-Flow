@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   Badge,
   Button,
@@ -124,6 +125,8 @@ export function PhoneWalkRoundSheet({
   const [completedIds, setCompletedIds] = useState<string[]>([]);
 
   const handleAction = (row: WalkRoundRowItem) => {
+    // A completed row is done: a second tap, from the list or the sheet, must not run its action again.
+    if (completedIds.includes(row.id)) return;
     setCompletedIds((prev) => (prev.includes(row.id) ? prev : [...prev, row.id]));
     onPrimaryAction?.(row.id);
   };
@@ -197,6 +200,55 @@ export function PhoneWalkRoundSheet({
   );
 }
 
+const subscribeNever = () => () => {};
+
+/** True once the page runs in the browser, so clock-based content never differs from the server render. */
+function useIsClient(): boolean {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+}
+
+/**
+ * #25 — the alert is raised with the real clock when this mounts in the browser, so the banner's own
+ * ticking clock carries it to expiry, and Extend uses the same clock the banner reads.
+ */
+function BroadcastLifecycleCard() {
+  const [broadcastState, setBroadcastState] = useState(() =>
+    wardBroadcastReducer(initialWardBroadcastState, {
+      type: "CREATE_BROADCAST_ALERT",
+      id: "top25-bcast-1",
+      title: "Code Yellow Capacity Surge — Review Morning Discharges",
+      message: "Statewide metropolitan adult occupancy at 97%. Prioritise morning CLD and step-down pulls.",
+      severity: "critical",
+      author: "State Bed Coordination Desk",
+      now: new Date().toISOString(),
+    }),
+  );
+  return (
+    <article className={styles.card} data-testid="top25-item-25">
+      <div className={styles.cardHeader}>
+        <span className={styles.cardRank}>#25</span>
+        <h3 className={styles.cardTitle}>Broadcast Alert Auto-Expiry & Stand-Down Lifecycle</h3>
+        <Chip tone={broadcastState.activeAlert ? "danger" : "ok"}>
+          {broadcastState.activeAlert ? "Active Surge Alert" : "Stood Down"}
+        </Chip>
+      </div>
+      <WardBroadcastBanner
+        activeAlert={broadcastState.activeAlert}
+        onExtend={() =>
+          setBroadcastState((prev) =>
+            wardBroadcastReducer(prev, { type: "EXTEND_BROADCAST_ALERT", now: new Date().toISOString() }),
+          )
+        }
+        onClear={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "CLEAR_BROADCAST_ALERT" }))}
+      />
+    </article>
+  );
+}
+
 export interface WardTop25CockpitProps {
   initialState?: WardFlowState;
 }
@@ -209,6 +261,7 @@ export interface WardTop25CockpitProps {
 export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
   const state = useMemo(() => initialState ?? seedWardFlowState(), [initialState]);
   const now = state.auditCaptureStartedAt;
+  const isClient = useIsClient();
 
   // #6 Role-Scoped Needs You Filter
   const [activeRole, setActiveRole] = useState<"coordinator" | "ward" | "ed">("coordinator");
@@ -278,17 +331,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   // #25 Broadcast Alert Auto-Expiry & Stand-Down State
-  const [broadcastState, setBroadcastState] = useState(() =>
-    wardBroadcastReducer(initialWardBroadcastState, {
-      type: "CREATE_BROADCAST_ALERT",
-      id: "top25-bcast-1",
-      title: "Code Yellow Capacity Surge — Review Morning Discharges",
-      message: "Statewide metropolitan adult occupancy at 97%. Prioritise morning CLD and step-down pulls.",
-      severity: "critical",
-      author: "State Bed Coordination Desk",
-      now: "2026-10-15T08:00:00.000Z",
-    }),
-  );
 
   // Pure derivations across all 25 items
   const afternoonDischarges = useMemo(() => deriveAfternoonDischarges(state.admissions, now), [state.admissions, now]);
@@ -895,12 +937,22 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
           <div className={styles.cardHeader}>
             <span className={styles.cardRank}>#19</span>
             <h3 className={styles.cardTitle}>Paper-Form Statutory Expiry Radar</h3>
-            <Chip tone="danger">{paperExpiryRadar[0]?.urgency}</Chip>
+            <Chip tone={paperExpiryRadar[0]?.urgency === "unrecorded" ? "info" : "danger"}>
+              {paperExpiryRadar[0]?.urgency === "unrecorded" ? "expiry not recorded" : paperExpiryRadar[0]?.urgency}
+            </Chip>
           </div>
           <p className={styles.cardBody}>
             Tracks manually entered paper form timestamps (
-            {paperExpiryRadar.map((f) => `${f.formType}: ${f.remainingMinutes}m`).join(", ")}).
+            {paperExpiryRadar
+              .map((f) =>
+                f.urgency === "unrecorded"
+                  ? `${f.formType}: expiry not recorded`
+                  : `${f.formType}: ${f.remainingMinutes}m`,
+              )
+              .join(", ")}
+            ).
           </p>
+          <LegalLimitsNotChecked variant="tag" />
         </article>
 
         {/* #20 Marooned Long-Stay Patient Escalation Dossier */}
@@ -950,21 +1002,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
         </article>
 
         {/* #25 Broadcast Alert Auto-Expiry & Stand-Down Lifecycle */}
-        <article className={styles.card} data-testid="top25-item-25">
-          <div className={styles.cardHeader}>
-            <span className={styles.cardRank}>#25</span>
-            <h3 className={styles.cardTitle}>Broadcast Alert Auto-Expiry & Stand-Down Lifecycle</h3>
-            <Chip tone={broadcastState.activeAlert ? "danger" : "ok"}>
-              {broadcastState.activeAlert ? "Active Surge Alert" : "Stood Down"}
-            </Chip>
-          </div>
-          <WardBroadcastBanner
-            activeAlert={broadcastState.activeAlert}
-            now="2026-10-15T08:30:00.000Z"
-            onExtend={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "EXTEND_BROADCAST_ALERT" }))}
-            onClear={() => setBroadcastState((prev) => wardBroadcastReducer(prev, { type: "CLEAR_BROADCAST_ALERT" }))}
-          />
-        </article>
+        {isClient ? <BroadcastLifecycleCard /> : <article className={styles.card} data-testid="top25-item-25" />}
       </div>
 
       {/* #22 Global Command Palette Modal */}

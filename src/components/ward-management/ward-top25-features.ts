@@ -10,7 +10,7 @@ import {
   initialWardBroadcastState,
   wardBroadcastReducer,
 } from "@/components/ward-management/alerts/ward-broadcast-reducer";
-import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
+import { openBedsFree, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   DISCHARGE_DELAY_REASONS,
   dischargeDelayMetadata,
@@ -182,8 +182,11 @@ export function completeCleanAndOpenBed<
   if (typeof next.openBedsNow === "number") {
     next.openBedsNow = next.openBedsNow + 1;
   }
-  if ("preparing" in next && typeof next.preparing === "boolean" && (!bedId || bedId === next.id)) {
-    next.preparing = false;
+  if ("preparing" in next && typeof next.preparing === "boolean") {
+    // With a count, the flag follows it: the unit stops preparing only when its last preparing bed opens.
+    const noneLeftPreparing =
+      typeof next.preparingBeds === "number" ? next.preparingBeds === 0 : !bedId || bedId === next.id;
+    if (noneLeftPreparing) next.preparing = false;
   }
   if (bedId) {
     next.cleanedBedIds = [...(next.cleanedBedIds ?? []), bedId];
@@ -293,11 +296,8 @@ export function deriveStepDownPullBoard(
 ): StepDownMatch[] {
   const matches: StepDownMatch[] = [];
   for (const cand of candidates) {
-    const isStepDownReady =
-      cand.stepDownReady === true ||
-      cand.dischargeDestination === "mental_health_step_down" ||
-      cand.dischargeDestination === "supported_accommodation";
-    if (!isStepDownReady) continue;
+    // A planned destination alone is not readiness to leave HDU or secure care: it must be confirmed.
+    if (cand.stepDownReady !== true) continue;
     const compatibleOpenUnitIds = units
       .filter((u) => {
         const isRealUnit = "lockedBeds" in u;
@@ -306,7 +306,7 @@ export function deriveStepDownPullBoard(
           : ("securityLevel" in u && u.securityLevel ? u.securityLevel : "security" in u ? u.security : "Open") ===
             "Open";
         const avail = isRealUnit
-          ? boundedBedAvailability(u as Unit).available
+          ? Math.min(boundedBedAvailability(u as Unit).available, openBedsFree(u as Unit))
           : "availableBeds" in u && typeof u.availableBeds === "number"
             ? u.availableBeds
             : "allocatable" in u && typeof u.allocatable === "number"
@@ -376,6 +376,8 @@ export interface CtoFollowUpInput {
   isCto: boolean;
   assignedCaseManager: string | null;
   followUpAppointmentAt: Instant | string | null;
+  /** Departure time. When given, the follow-up must fall within the 7 days after it. */
+  referenceAt?: Instant | string | null;
   communityTreatmentOrder?: {
     clinic?: string | null;
     nextReviewOn?: Instant | string | null;
@@ -402,7 +404,8 @@ export function deriveCtoFollowUpHandshake(input: CtoFollowUpInput): CtoFollowUp
       clearsCommunityFollowUpDelay: true,
     };
   }
-  const effectiveManager = input.assignedCaseManager || input.communityTreatmentOrder?.clinic || null;
+  // A clinic is a place, not a named case manager, so it never stands in for one.
+  const effectiveManager = input.assignedCaseManager || null;
   const effectiveFollowUp = input.followUpAppointmentAt ?? input.communityTreatmentOrder?.nextReviewOn ?? null;
   const missingFields: string[] = [];
   if (!effectiveManager || !effectiveManager.trim()) {
@@ -415,6 +418,16 @@ export function deriveCtoFollowUpHandshake(input: CtoFollowUpInput): CtoFollowUp
     (typeof effectiveFollowUp === "number" && !Number.isFinite(effectiveFollowUp))
   ) {
     missingFields.push("followUpAppointmentAt");
+  } else if (input.referenceAt !== undefined && input.referenceAt !== null) {
+    const followUpMin = toMinutesOrNaN(effectiveFollowUp);
+    const referenceMin = toMinutesOrNaN(input.referenceAt);
+    if (
+      !Number.isNaN(followUpMin) &&
+      !Number.isNaN(referenceMin) &&
+      (followUpMin < referenceMin || followUpMin - referenceMin > 7 * 24 * 60)
+    ) {
+      missingFields.push("followUpAppointmentAt");
+    }
   }
   const warningActive = missingFields.length > 0;
   return {
@@ -556,7 +569,7 @@ export function canPreMatchCleaningBed(bed: {
   medicalClearanceStatus?: "cleared" | "pending_labs_2h" | "unfit";
   medicalDeterioration?: { at?: Instant | string; resumedAt?: Instant | string } | null;
 }): boolean {
-  if (bed.medicalDeterioration?.at !== undefined && !bed.medicalDeterioration.resumedAt) {
+  if (bed.medicalDeterioration?.at !== undefined && bed.medicalDeterioration.resumedAt === undefined) {
     return false;
   }
   if (bed.medicalClearanceStatus === "unfit") {
@@ -595,7 +608,8 @@ export function deriveInterWardStepDownSwaps(requests: readonly InterWardSwapReq
       if (!reqB || used.has(reqB.id)) continue;
       const isDirectMutualSwap = reqA.fromUnitId === reqB.toUnitId && reqA.toUnitId === reqB.fromUnitId;
       const isStepDownChain =
-        reqA.reason === "step_down" && reqB.reason === "ed_to_hdu" && reqB.toUnitId === reqA.fromUnitId;
+        (reqA.reason === "step_down" && reqB.reason === "ed_to_hdu" && reqB.toUnitId === reqA.fromUnitId) ||
+        (reqB.reason === "step_down" && reqA.reason === "ed_to_hdu" && reqA.toUnitId === reqB.fromUnitId);
       if (isDirectMutualSwap || isStepDownChain) {
         used.add(reqA.id);
         used.add(reqB.id);
@@ -714,7 +728,7 @@ export interface PaperLegalExpiryRadarItem {
   id: string;
   formType: string;
   remainingMinutes: number;
-  urgency: "expired" | "critical_1h" | "warning_4h" | "normal";
+  urgency: "expired" | "critical_1h" | "warning_4h" | "normal" | "unrecorded";
   edgeAct: boolean;
 }
 
@@ -728,12 +742,13 @@ export function derivePaperLegalExpiryRadar(
       const rawExpiry = form.expiresAt ?? form.dueAt;
       const expiryMin = rawExpiry !== undefined ? toMinutesOrNaN(rawExpiry) : Number.NaN;
       if (Number.isNaN(expiryMin)) {
+        // No usable expiry was recorded. That is unknown, never a deadline that has passed.
         return {
           id: form.id,
           formType: form.formType,
           remainingMinutes: 0,
-          urgency: "expired" as const,
-          edgeAct: true,
+          urgency: "unrecorded" as const,
+          edgeAct: false,
         };
       }
       const remainingMinutes = expiryMin - nowMin;
@@ -753,7 +768,10 @@ export function derivePaperLegalExpiryRadar(
         edgeAct: remainingMinutes <= 360,
       };
     })
-    .sort((a, b) => a.remainingMinutes - b.remainingMinutes);
+    .sort((a, b) => {
+      if ((a.urgency === "unrecorded") !== (b.urgency === "unrecorded")) return a.urgency === "unrecorded" ? 1 : -1;
+      return a.remainingMinutes - b.remainingMinutes;
+    });
 }
 
 // ============================================================================

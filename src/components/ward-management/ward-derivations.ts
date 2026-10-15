@@ -2270,7 +2270,9 @@ export function deriveTopCompatibleWards(
   maxCount: number = PARALLEL_REFERRAL_CAP,
   now?: Instant,
 ): CompatibleWardCandidate[] {
-  const cap = Math.max(0, Math.min(maxCount, PARALLEL_REFERRAL_CAP));
+  // Wards already live use up parallel slots, so only the remaining slots can be suggested.
+  const remainingSlots = Math.max(0, PARALLEL_REFERRAL_CAP - movement.referredUnitIds.length);
+  const cap = Math.max(0, Math.min(maxCount, remainingSlots));
   if (cap === 0) return [];
   const effectiveNow = (now ?? Math.max(movement.openedAt, ...units.map((u) => u.allocatable.confirmedAt))) as Instant;
   const originService = movementHealthService(movement);
@@ -2280,7 +2282,10 @@ export function deriveTopCompatibleWards(
       const check = eligibility(movement, unit, effectiveNow);
       const { available } = boundedBedAvailability(unit);
       const isOutOfArea = Boolean(originService && siteByCode(unit.siteCode)?.service !== originService);
-      const failingGates = (check.gates ?? []).filter((g) => !g.pass).map((g) => g.gate);
+      // A previous decline is informational: the ward may be referred again without an override.
+      const failingGates = (check.gates ?? [])
+        .filter((g) => !g.pass && !INFORMATIONAL_GATES.includes(g.gate))
+        .map((g) => g.gate);
       return {
         unit,
         availableNow: available,
@@ -2368,20 +2373,21 @@ export function deriveSilentWards(movements: readonly Movement[], now: Instant |
   const results: SilentWardNotice[] = [];
   for (const m of movements) {
     if (!isOpen(m) || m.acceptedUnitId !== undefined) continue;
-    const declinedIds = new Set(m.declines.map((d) => d.unitId));
-    const withdrawnIds = new Set((m.withdrawnReferrals ?? []).map((w) => w.unitId));
-    const latestReferralChange = [...(m.stageChanges ?? [])]
-      .reverse()
-      .find((c) => c.to === "destination_review" || c.to === "placement_requested");
-    const sentAt =
-      m.referralDecisionOpenedAt ??
-      m.referredAt ??
-      (latestReferralChange ? latestReferralChange.at : (m.openedAt ?? 0));
+    // Only a recorded send time can show a request as overdue. With none, nothing is escalated.
+    const sentAt = m.referralDecisionOpenedAt ?? m.referredAt;
+    if (sentAt === undefined || sentAt === null) continue;
     const elapsedMinutes = Math.max(0, nowMin - sentAt);
     if (elapsedMinutes < 120) continue;
 
+    // `referredUnitIds` is the standing set of live requests, so a re-referred ward shows again. A ward
+    // that answered by waitlisting since the send has replied and is not silent.
+    const waitlistedSinceSend = new Set(
+      m.declines
+        .filter((d) => d.at >= sentAt && (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(d.reason))
+        .map((d) => d.unitId),
+    );
     for (const unitId of m.referredUnitIds) {
-      if (declinedIds.has(unitId) || withdrawnIds.has(unitId)) continue;
+      if (waitlistedSinceSend.has(unitId)) continue;
       const escalationTier = elapsedMinutes >= 240 ? "escalate_4h" : "nudge_2h";
       results.push({
         movementId: m.id,

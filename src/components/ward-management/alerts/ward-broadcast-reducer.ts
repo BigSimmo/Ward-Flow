@@ -424,6 +424,8 @@ export type WardBroadcastStandaloneAction =
     }
   | {
       type: "EXTEND_BROADCAST_ALERT";
+      /** The clock the banner reads, so an elapsed alert cannot be revived by extending it. */
+      now: string | Instant;
       extensionMinutes?: number;
     }
   | {
@@ -460,6 +462,11 @@ export function wardBroadcastReducer(
     }
     case "EXTEND_BROADCAST_ALERT": {
       if (!state.activeAlert) return state;
+      if (state.activeAlert.status !== "active") return state;
+      const toMs = (value: string | Instant) => (typeof value === "number" ? value * 60_000 : Date.parse(value));
+      const expiresMs = toMs(state.activeAlert.expiresAt);
+      const nowMs = toMs(action.now);
+      if (!Number.isFinite(expiresMs) || !Number.isFinite(nowMs) || expiresMs <= nowMs) return state;
       const ext =
         action.extensionMinutes && action.extensionMinutes > 0
           ? action.extensionMinutes
