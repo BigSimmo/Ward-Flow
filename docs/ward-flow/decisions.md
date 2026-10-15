@@ -659,6 +659,33 @@ is inferred.
 - **Decision:** In [`ward-clinical-values.ts`](../../src/components/ward-management/ward-clinical-values.ts), every value with a recorded source (a decision id or an owner answer), 30 of the 44, is marked signed by Josh on 15 October 2026, at the figure the app ran on that day. The 14 values with "No decision recorded" as their source stay synthetic until a decision is made. Where two figures conflicted (for example the 85% bed alert against the 90% amber occupancy band), the figure the app runs on is the one signed. The other figure stays listed under "Other figures seen".
 - **Why:** One file now holds every clinical threshold, so a sign-off can be recorded against each value instead of being implied. Signing is for the prototype. Real-patient or live use still needs formal clinical governance sign-off (D-54), and no value is a legal limit (D-22).
 
+## D-57. Twenty Top 25 items move from the showcase into the real screens, each behind its own flag (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread on the Top 25 review: "Go ahead with all remaining recommendations outstanding", "Single PR").
+- **Decision:** Each item below is built into a real screen from shared state, behind its own `top25-*` flag in [`ward-feature-flags.ts`](../../src/components/ward-management/ward-feature-flags.ts) (on in development and demo, off in production). Timings come from [`ward-clinical-values.ts`](../../src/components/ward-management/ward-clinical-values.ts). The Sovereign showcase and its local fixtures are removed. Items 9 and 16 are not built yet. For item 23 Josh picked option D of the phone mockups.
+  - **1, discharge support notices:** after the ward confirms a discharge, the ward screen lists pharmacy, transport and cleaning with a send button that says "Not wired in this prototype." No event records them yet.
+  - **2, referral cap:** asking more wards than the cap of 3 warns and asks for a reason, kept in the audit trail. Without a reason the engine still refuses. Acceptance already withdraws the other requests.
+  - **3, next ward after a refusal:** the coordinator shortlist suggests the next eligible wards (main eligibility rules) and adds them through the existing Refer path. The ED declined flag names them.
+  - **4, bed being made ready:** a bed still being made ready past `preparingBedStale` asks the ward to tap Ready. Nothing opens a bed or changes a count.
+  - **5, discharge prep:** stays due out within `dischargePrepWindow` (24 hours) show on the ward's This shift list with their barrier. The bed drawer sets the barrier from the 7 item barrier list, from day `longStayPrompt`.
+  - **6, Needs you by role:** one owner to role filter on the shared task list. The ED Needs you adds the ED owned task rows. The coordinator is never limited.
+  - **7, silent ward:** the existing reminders at `silentWardFirstReminder` and `silentWardSecondReminder` suggest asking another ward at the second reminder. Nothing is moved automatically.
+  - **8, step down board:** step down candidates on Capacity are matched by the main eligibility rules (single sex D-31, legal, forensic) through a stay adapter.
+  - **11, seven day follow up:** every discharge shows whether follow up within `ctoFollowUpWindow` (7 days) is booked, with extra items on an active community treatment order. It warns and never blocks.
+  - **12, stuck handover:** the existing Transport awaiting departure row is named "Handover waiting too long" past the transport booked target.
+  - **13, ED wait steps:** one ladder from `edElevatedPressure`, `edSeverePressure`, `longWait` and `veryLongWait`, shown neutrally on ED board rows (D-24).
+  - **14, arrival checklist:** a read only checklist on the ED person card from recorded medical clearance, legal form and transport. Contraband search and medication chart say "Not wired in this prototype."
+  - **15, bed being made ready on a match:** the shortlist notes a bed being made ready and a medical pause read from the movement (D-34).
+  - **17, undo:** the one undo pattern is `useUndoableStep`. Remaining hand made undo toasts are listed for conversion.
+  - **19, paper legal form time left:** the patient forms register uses the one time left rule and the due soon settings (D-29). The radar's 4 hour amber is dropped.
+  - **20, long stay summary:** the handover Beds tab lists stranded stays with barrier, hold and an escalation point at the typed expected date plus `delayedDischargeEscalation`. Not a legal limit.
+  - **21, discharge date moved:** the bed tile and drawer show "Date moved N times" from the recorded count.
+  - **23, phone walk round (option D):** on a phone, a bed strip in bed order sits above the grouped bed list. Tapping a bed walks the ward one bed at a time, with Reviewed, next bed and Back to list. Updates go through the bed's existing panel. Reviewed and changed this round marks are held on screen only, never saved.
+  - **24, absent without leave:** the patient status card shows time away, steps done from the existing list and a bed hold review warning past `awolBedHoldWarning`.
+  - **25, broadcast alerts:** the real banner can extend an alert by 2 hours (new `EXTEND_BROADCAST_ALERT`, same roles as stand down) or stand it down.
+- **Why:** The showcase skipped the shared reducer and used its own unsigned rules. Building each item into the screen that already owns the job, from shared state and signed values, keeps one rule per job. Flags let unfinished items ship without changing production.
+- **Open for Josh:** wording of the referral cap reasons and community treatment order items, WA Health names for the ED wait steps, whether a stuck handover turns red, the start point for the 72 hour escalation, the day 7 limit on recording a barrier, the edited date count of 3, and the unsigned values `awolBedHoldWarning` and `delayedDischargeEscalation`.
+
 ## D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026)
 
 - **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Clinical values file", decision card "Sign the 3").

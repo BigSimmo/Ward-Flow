@@ -155,6 +155,7 @@ export function StatisticsInsightChart({
     URL.revokeObjectURL(url);
   }
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
     <section
       className={styles.chart}
       aria-labelledby={headingId}

@@ -2801,6 +2801,24 @@ button.searchBox:hover {
   outline-offset: 2px;
 }
 
+.refOpen {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+@media (max-width: 48rem) {
+  /* The card's patient line is a touch target, so it keeps the tap floor. */
+  .refOpen {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
 .patientIdWrap {
   white-space: nowrap !important;
   font-family: var(--mono);

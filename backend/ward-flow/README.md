@@ -34,6 +34,17 @@ to `005`. These source files do not establish a current hosted connection or dep
   `postgres-preflight.mjs` (catalogue preflight before migrations), `migrate.mjs` (migrations in
   order) and `migrations.mjs` (the one migration list, latest version and file checksums; a new
   migration is one entry there plus its SQL file).
+- Traffic: the 3 second poll sends `?since=<revision>`, and an unchanged workspace answers with its
+  revision and clock only. A command queued behind others asks for `reply: "revision"`, so its
+  accepted reply has no snapshot. The saved workspace keeps the newest 1,000 audit entries (plus
+  any an audit review names); the `audit` table keeps every one.
+- Commands (`command-schemas.ts`): every command needs a known type, its sender's own allowed role
+  (never defaulted) and bounded plain JSON; the core bed-flow commands also have zod field schemas.
+- Demo controls (advance clock, reset or set scenario) are refused on the shared workspace unless
+  `WARD_SHARED_DEMO_EVENTS=true`.
+- `prune-receipts.mjs` (`npm run prune:receipts:supabase` or `npm run prune:receipts:postgres`): removes
+  command receipts older than 7 days by the database clock. It runs with the migration identity,
+  because the runtime role cannot delete receipts.
 - Checks: `npm test` (set `WARD_TEST_DATABASE_URL` to a loopback PostgreSQL for the real-database
   cases) and `npm run typecheck` (`// @ts-check` on every backend module, using the root install).
 - Supabase adapter: `supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`,

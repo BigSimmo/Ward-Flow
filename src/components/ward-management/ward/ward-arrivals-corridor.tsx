@@ -118,7 +118,7 @@ export function WardArrivalsCorridor({
     setCheckToken((t) => t + 1);
   };
   return (
-    <section aria-label="Coming in" className={styles.corridorWrap} tabIndex={0}>
+    <section aria-label="Coming in" className={styles.corridorWrap}>
       <div className={styles.panelHead}>
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Coming in</h2>

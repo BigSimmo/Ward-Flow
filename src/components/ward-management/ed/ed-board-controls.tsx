@@ -387,6 +387,7 @@ export function EdPresentation({
         {value || "Add presentation…"}
         <Pencil className={styles.editIcon} aria-hidden="true" />
       </button>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
       <dialog
         ref={dialog}
         className={styles.dialog}
@@ -536,6 +537,7 @@ export function EdActionsMenu({
           <b>Patient actions</b>
           <span>{patientName}</span>
         </header>
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- reads the focused button's disabled reason, and the buttons take the keys */}
         <div
           className={styles.actionItems}
           onFocus={(event) =>

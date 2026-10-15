@@ -1,5 +1,6 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
+import { validSharedCommand } from "./command-schemas";
 import { scenarioNetwork } from "../../src/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "../../src/components/ward-management/ward-sites";
 import {
@@ -12,14 +13,39 @@ import { isValidSharedWardFlowState } from "../../src/components/ward-management
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
 /** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
 const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+/** A known type, an explicit allowed role and well-formed fields: see command-schemas.ts. */
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    typeof (value as Record<string, unknown>).type === "string" &&
-    Object.hasOwn(EVENT_ROLE, (value as Record<string, unknown>).type as string)
-  );
+  return validSharedCommand(value);
+}
+
+/** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */
+export function demoOnlyCommand(value: unknown): boolean {
+  const type = (value as { type?: unknown } | null)?.type;
+  if (typeof type !== "string" || !Object.hasOwn(EVENT_ROLE, type)) return false;
+  const roles: readonly string[] = EVENT_ROLE[type as WardFlowEvent["type"]];
+  return roles.length === 1 && roles[0] === "demo";
+}
+
+/**
+ * The newest audit entries kept in the saved workspace. The database audit table is the full
+ * record; the workspace copy only feeds the on-screen views, and an unbounded copy eventually
+ * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept,
+ * and so are this scenario's newest record-access receipts, because an open record is read
+ * against its receipt.
+ */
+export const PERSISTED_AUDIT_EVENTS = 1000;
+export function boundAudit(state: WardFlowState): WardFlowState {
+  const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
+  if (excess <= 0) return state;
+  const kept = new Set(state.auditReviews.map((review) => review.eventId));
+  state.auditEvents
+    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
+    .slice(-PERSISTED_AUDIT_EVENTS)
+    .forEach((entry) => kept.add(entry.id));
+  return {
+    ...state,
+    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
+  };
 }
 
 function changedFacts(before: WardFlowState, after: WardFlowState) {
@@ -80,8 +106,9 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   const type = fields.type as WardFlowEvent["type"];
   const roles = EVENT_ROLE[type];
   // A workflow perspective is not an access grant. The API authorises the named coordinator
-  // before this function runs. Preserve existing ward/ED/officer guards and audit facts.
-  const role = fields.role ?? roles[0];
+  // before this function runs. Preserve existing ward/ED/officer guards and audit facts. The role
+  // is always the sender's own: it is never defaulted to the first allowed role.
+  const role = fields.role;
   if (!roles.includes(role as WardFlowEvent["role"])) throw new Error("invalid-command");
   const event = { ...fields, type, role, now: worldNow(world, at) } as WardFlowEvent;
   let next: WardFlowState;
@@ -97,8 +124,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
   const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);
+  const saved = boundAudit(next);
+  if (saved !== next && !isValidSharedWardFlowState(saved)) throw new Error("invalid-command");
   return {
-    world: { ...world, state: next },
+    world: { ...world, state: saved },
     outcome: "accepted" as const,
     changes: { domainAudit, reset, facts: changedFacts(world.state, next) },
     reason: null,

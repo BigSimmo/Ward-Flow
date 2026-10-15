@@ -4,6 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { childProcessExitCode } from "./child-process-result.mjs";
+import { wardSignOutFile } from "./ward-flow/logs-root.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -119,7 +120,7 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
     const partial = partialStagedFiles(root, files);
     if (partial.length) throw new Error(`Refusing to rewrite partially staged files: ${partial.join(", ")}`);
     const { unsignedWardFiles, signOutConflicts, signOutLogOptional } = await import("./pre-commit-checks.mjs");
-    const log = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
+    const log = wardSignOutFile();
     if (!existsSync(log)) {
       // Same rule as the pre-commit guard: only an unnamed default log off Windows may be absent.
       if (!signOutLogOptional())

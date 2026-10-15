@@ -86,6 +86,7 @@ import {
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
@@ -443,7 +444,8 @@ function PersonPanel({
   const blockerText = movement.blocker.trim();
   const activeBlocker =
     blockerText !== "" && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === blockerText);
-  const silenceReminder = answerSilenceReminder(movement, referrals, now);
+  const suggestAnotherWard = useWardFeatureFlag("top25-silent-ward");
+  const silenceReminder = answerSilenceReminder(movement, referrals, now, { suggestAnotherWard });
   const cleared = isCleared(movement, referrals);
   const lines = wardLines(row, units);
   const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
@@ -880,6 +882,7 @@ function Registers({
       data-part={part === "all" ? undefined : part}
     >
       <div className={styles.sideB} hidden={part === "quiet"}>
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div className={styles.seg} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
@@ -1981,6 +1984,7 @@ export function DelaysBoard({
                       </th>
                     </tr>
                   </thead>
+                  {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
                   <tbody role="rowgroup" onKeyDown={onListKey}>
                     {body}
                   </tbody>

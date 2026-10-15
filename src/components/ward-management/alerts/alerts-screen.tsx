@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   activeSnooze,
   currentInboxOwner,
@@ -181,6 +182,8 @@ function AlertsWorkspace() {
   const clockNow = useWardFlowClock();
   const live = usePageLive();
   const now = live.now;
+  // Top 25 item 12: name a stuck handover once the transport booked target has passed.
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   // Phone layout: the selected alert opens in a sheet instead of the side panel.
   const isPhone = useIsPhone();
   // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
@@ -210,6 +213,7 @@ function AlertsWorkspace() {
           supportNotifications,
           plannedAdmissions,
           leaveBeds,
+          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
         },
         now,
       ).filter(isQueueItem),
@@ -224,6 +228,7 @@ function AlertsWorkspace() {
       supportNotifications,
       plannedAdmissions,
       leaveBeds,
+      stuckHandoverOn,
       now,
     ],
   );
@@ -1891,6 +1896,7 @@ function AlertsWorkspace() {
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
           <div
             ref={modalRef}
             className={styles.modalOverlay}
@@ -1906,6 +1912,7 @@ function AlertsWorkspace() {
               }
             }}
           >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div className={styles.composer} onClick={(e) => e.stopPropagation()}>
               <div className={styles.drawerHead}>
                 <IconTile icon={Radio} />

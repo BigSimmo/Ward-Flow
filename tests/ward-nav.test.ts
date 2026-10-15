@@ -78,7 +78,6 @@ import { DelaysScreen } from "@/components/ward-management/delays/delays-screen"
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
-import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -1178,22 +1177,21 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
   });
 });
 
-describe("ClinicalRail's aria-label is honest for a sandboxed prototype (D11)", () => {
+describe("The Ward Flow rail's aria-label is honest for a sandboxed prototype (D11)", () => {
   /**
-   * Every file that can put a link on a Ward Flow screen, concatenated. The sidebar is now three
-   * surfaces (icon rail, labelled panel, phone drawer) across three files plus the data they all
-   * read, so scanning only `ward-management-navigation.tsx` would leave two of the three
-   * unguarded — and a link out of the sandbox added to the drawer is exactly as wrong as one
-   * added to the rail.
+   * Every file that can put a link on a Ward Flow screen's chrome, concatenated: the live rail, the
+   * bar, its phone menu, and the data they read. The old `ClinicalRail` sidebar and
+   * its drawer were removed on 15 Oct 2026, and this guard moved to the chrome that replaced them.
    */
   const source = [
-    "src/components/ward-management/ward-management-navigation.tsx",
-    "src/components/ward-management/ward-sidebar-content.tsx",
+    "src/components/ward-management/shell/ward-rail.tsx",
+    "src/components/ward-management/shell/ward-bar.tsx",
+    "src/components/ward-management/shell/ward-phone-menu.tsx",
     "src/components/ward-management/ward-nav.ts",
   ]
     .map((file) => readFileSync(path.join(REPO_ROOT, file), "utf8"))
     .join("\n");
-  // A comment-stripped view of the same three files, for the assertions below that check a real
+  // A comment-stripped view of the same four files, for the assertions below that check a real
   // attribute or literal is present — `source` itself stays raw for the two negative checks
   // further down, where an unstripped read is the conservative direction (a stray comment
   // mentioning forbidden text should still fail loudly, not be stripped into a silent pass).
@@ -1207,7 +1205,7 @@ describe("ClinicalRail's aria-label is honest for a sandboxed prototype (D11)", 
     // Comments are stripped before this check: a mutation proved on 2026-09-04 that removing the
     // real `aria-label="Ward Flow"` attribute and leaving only a `//` comment with the same text
     // satisfied the unstripped check.
-    expect(strippedSource).toContain('aria-label="Ward Flow"');
+    expect(strippedSource).toContain('aria-label="Ward Flow sections"');
   });
 
   /**
@@ -1335,7 +1333,6 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
-  { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
   // Read-only reports, 9 Oct 2026 (stream C).
   { route: `${ROUTE_PREFIX}/statistics/weekly`, render: () => createElement(WeeklyReportScreen) },
   // The four statistics index pages, 9 Oct 2026 (Statistics A).
@@ -1434,7 +1431,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 39, not 36: the three read-only reports (statistics/weekly, reports/downtime, reports/chronology), 9 Oct 2026.
     // 43, not 39: the four statistics index pages (services, wards, eds, teams), 9 Oct 2026.
     // 44: the bed meeting TV view, 15 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(44);
+    // 43, not 44: the Sovereign showcase route was deleted once the Top 25 items moved into the real screens, 15 Oct 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(43);
   });
 });
 

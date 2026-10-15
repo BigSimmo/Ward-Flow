@@ -678,7 +678,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
-    (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
@@ -1321,6 +1320,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
           button, which stays the one keyboard and screen-reader control; taps inside the button's
           own container (the button itself, the sheet and its scrim) are left to it. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route */}
       <div
         className={styles.title}
         onClick={

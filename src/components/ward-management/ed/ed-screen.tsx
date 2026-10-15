@@ -1,11 +1,14 @@
 "use client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
+import { EdAdmissionChecklist } from "./ed-admission-checklist";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
@@ -31,6 +34,7 @@ import {
   examinationRevokedWhileBedHeld,
   stageCopy,
   transportLeg,
+  deriveNextWardsAfterRefusal,
 } from "@/components/ward-management/ward-derivations";
 import {
   clockState,
@@ -162,6 +166,7 @@ import {
   patientIdentityLine,
   resolveSubjectPatient,
 } from "@/components/ward-management/ward-patient-resolver";
+import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 
 const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
@@ -1212,12 +1217,20 @@ export function EdScreen({ edId }: EdScreenProps) {
     admissions,
   } = useWardFlow();
   const now = useWardFlowClock();
+  // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
+  const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
+  const { inboxSnoozes } = useWardFlow();
+  const nextWardOn = useWardFeatureFlag("top25-next-ward");
+  const admissionChecklistOn = useWardFeatureFlag("top25-admission-checklist");
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
     [admissions, registryPatients, referrals, movements, units],
   );
   const accessTarget = configuration.edAccessTargetMinutes;
+  // Top 25 item 13: one set of long wait steps from the shared thresholds, desktop board only.
+  const edWaitStepsOn = useWardFeatureFlag("top25-ed-wait-ladder");
   // The configured pull hold; until 25 Sept 2026 the transit badges said "4h hold" whatever it was.
   const holdLabel =
     configuration.pullHoldMinutes % 60 === 0
@@ -1862,6 +1875,12 @@ export function EdScreen({ edId }: EdScreenProps) {
   };
 
   const priorityFlags: PriorityFlag[] = [];
+  // Top 25 item 3 (flag `top25-next-ward`): names the eligible wards nobody has asked yet. The
+  // coordinator refers from the shortlist, so this only tells the department who is next.
+  const nextWardsSentence = (m: Movement) => {
+    const names = deriveNextWardsAfterRefusal(m, units, now)?.candidates.map((c) => c.unit.name) ?? [];
+    return names.length === 0 ? " No other eligible ward is left to ask." : ` Next eligible: ${names.join(", ")}.`;
+  };
   for (const m of patients) {
     const flagPatientInfo = resolveSubjectPatient(m, {
       patients: registryPatients,
@@ -1908,7 +1927,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.`,
+        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.${nextWardOn ? nextWardsSentence(m) : ""}`,
         when: "declined",
         actionLabel: "Ask another ward",
         onAction: () => setSelectedPatientId(m.id),
@@ -2732,6 +2751,44 @@ export function EdScreen({ edId }: EdScreenProps) {
       ? () => setPhoneSheetFor(flag.recordId)
       : undefined,
   }));
+  // Top 25 item 6 (flag top25-needs-you-roles): one Needs you for the signed in role. The shared
+  // task rows owned by the ED (`inboxItemsForRole`) for this department's people join the list,
+  // once per person not already listed above.
+  if (needsYouRolesOn) {
+    const listed = new Set(needsYouFlags.map((flag) => flag.recordId));
+    const owned = inboxItemsForRole(
+      activeTaskItems(
+        {
+          movements,
+          units,
+          configuration,
+          inboxSnoozes,
+          admissions,
+          patients: registryPatients,
+          referrals,
+          // Top 25 item 12: the sending team sees its own stuck handover here too.
+          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
+        },
+        now,
+      ),
+      "ed",
+    );
+    for (const item of owned) {
+      const movement = movements.find((m) => m.id === item.movementId);
+      if (!movement || movement.originEdId !== thisEdId || listed.has(movement.id)) continue;
+      listed.add(movement.id);
+      needsYouItems.push({
+        key: `task-${item.id}`,
+        actNow: item.tone === "danger",
+        kind: item.title,
+        person: resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements }).formalName,
+        when: item.owner,
+        onOpen: patients.some((patient) => patient.id === movement.id)
+          ? () => setPhoneSheetFor(movement.id)
+          : undefined,
+      });
+    }
+  }
   const activeHeroChip = heroChips.find((chip) => chip.id === heroHighlight);
 
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
@@ -2812,7 +2869,6 @@ export function EdScreen({ edId }: EdScreenProps) {
           aria-label="Raise into a movement"
           hidden={!referralOpen}
           className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
-          tabIndex={0}
         >
           <div className={styles.ph}>
             <h2>Raise into a movement</h2>
@@ -3176,7 +3232,6 @@ export function EdScreen({ edId }: EdScreenProps) {
           data-pane="board"
           className={`${styles.panel} ${styles.full} ${styles.listSection}${!boardTable && fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
           data-handover-view={boardTable && fullscreenBoard ? "true" : undefined}
-          tabIndex={0}
         >
           <div className={styles.ph}>
             <h2>ED psychiatry</h2>
@@ -4220,6 +4275,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                 const expandedCards = (
                   <>
                     <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
+                    {admissionChecklistOn && movement.acceptedUnitId !== undefined ? (
+                      <EdAdmissionChecklist movement={movement} referrals={referrals} />
+                    ) : null}
                     <section className={styles.expandedCard} aria-label={`Where ${patientInfo.displayName} is up to`}>
                       <h3 className={styles.expandedHeading}>Where they are up to</h3>
                       <ol className={styles.upTo}>
@@ -4423,12 +4481,14 @@ export function EdScreen({ edId }: EdScreenProps) {
                           // Since ED page A2 this dialog opens over the patient's sheet, which
                           // inerts everything outside itself; these markers keep the dialog live
                           // and stop the sheet taking its focus back.
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
                           <div
                             className={styles.modalBackdrop}
                             onClick={closeTransportDialog}
                             data-sheet-inert-skip=""
                             data-sheet-portal=""
                           >
+                            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                             <div
                               ref={transportDialogRef}
                               className={styles.declineForm}
@@ -5339,6 +5399,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                           {waitTone ? <StatusGlyph tone={waitTone} size={8} /> : null}
                           <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
                         </span>
+                        {edWaitStepsOn && edWaitStep(minutesInDepartment) ? (
+                          <span className={styles.a2Sub} data-testid={`ward-ed-wait-step-${movement.id}`}>
+                            {edWaitStep(minutesInDepartment)?.label}
+                          </span>
+                        ) : null}
                         <span
                           className={overTarget ? styles.a2Sub : "sr-only"}
                           data-testid={`ward-ed-access-target-${movement.id}`}
@@ -5550,6 +5615,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           : `${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length} referred`}
                 </span>
               </div>
+              {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div
                 className={`${styles.tabbar} ${styles.departmentListTabs}`}
                 role="tablist"
@@ -5650,12 +5716,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 className={styles.lstWrap}
                 tabIndex={0}
               >
-                <section
-                  aria-label="Referrals"
-                  className={styles.inboxSection}
-                  data-testid="ward-ed-inbox"
-                  tabIndex={0}
-                >
+                <section aria-label="Referrals" className={styles.inboxSection} data-testid="ward-ed-inbox">
                   <h3 className={styles.inboxSubheading}>
                     Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
                   </h3>
@@ -6487,6 +6548,7 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         {selectedPatient ? (
           <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
             <dialog
               ref={patientDialogRef}
               className={`${styles.menuPanel} ${styles.patientDialog}`}

@@ -14,6 +14,7 @@ Use a supported PostgreSQL database reserved for synthetic data, with verified T
 - `WARD_AUTH_PROVIDER=supabase` (the only sign-in provider) with its settings: `WARD_SUPABASE_PROJECT_REF`, `WARD_SUPABASE_URL`, `WARD_SUPABASE_PUBLISHABLE_KEY` and the `WARD_COORDINATOR_USER_IDS` allowlist. Startup refuses the backend without them, even when PostgreSQL is the database.
 - `WARD_POSTGRES_DATABASE_URL` for the fixed `wardflow_backend` login and `WARD_POSTGRES_MIGRATION_DATABASE_URL` for a different administrator on the same hostname, port and database.
 - `WARD_WORKSPACE_ID` for a synthetic workspace and `WARD_ALLOWED_ORIGIN` for the verified frontend origin.
+- `WARD_TRUSTED_PROXY_ADDRESSES` when a proxy sits in front of the backend (`*` on Railway), so sign-in check limits count each client separately.
 - `WARD_POSTGRES_CA_CERT_FILE` when the server uses a CA not already trusted by Node.
 
 Use percent-encoded credentials. URL query parameters and fragments are refused because they can override the explicit TLS settings. Certificate and hostname verification remain enabled. The [non-secret configuration template](infra/postgres-settings.example.env) has placeholders only. Keep private files and CA material outside Git and deployment archives.
