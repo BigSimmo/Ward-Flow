@@ -1174,12 +1174,12 @@ export function EdScreen({ edId }: EdScreenProps) {
   /**
    * v10 pass 3: a recorded decline shows a toast with Undo (`UNDO_REFERRAL_DECISION`, the ED's own
    * decision only, within the engine's undo window). `pendingDeclineRef` holds the referral just
-   * declined until the rejection check says whether the reducer accepted it; `undoCheckRef` holds
-   * the count before an Undo so a refused Undo can say why.
+   * declined until the rejection check says whether the reducer accepted it; the shared
+   * `useUndoableStep` then offers Undo and says why a refused Undo was refused.
    */
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
-  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
   // A2-1 (audit 13 Oct 2026): a raised referral used to land off screen with no word. The movement
   // ids held before the raise; the new one is announced with a toast that opens its row.
   const raisePendingRef = useRef<Set<string> | null>(null);
@@ -1210,8 +1210,6 @@ export function EdScreen({ edId }: EdScreenProps) {
   const [phoneSheetFor, setPhoneSheetFor] = useState<string | undefined>(undefined);
   const [phoneSheetReason, setPhoneSheetReason] = useState<string | undefined>(undefined);
   const pendingDeclineRef = useRef<string | undefined>(undefined);
-  const undoCheckRef = useRef<number | undefined>(undefined);
-  const [undoCheckToken, setUndoCheckToken] = useState(0);
   type DepartmentTabKey = "review" | "cleared" | "expected" | "forms" | "referred";
   const [departmentListTab, setDepartmentListTab] = useState<DepartmentTabKey>("review");
   const [boardFilter, setBoardFilter] = useState<
@@ -1323,39 +1321,19 @@ export function EdScreen({ edId }: EdScreenProps) {
       setDeclineRejection(undefined);
       const declined = pendingDeclineRef.current;
       if (declined !== undefined) {
-        toast?.push({
-          tone: "success",
-          title: "Referral declined",
-          body: "The referrer sees the reason. Undo puts it back in the inbox.",
-          undo: {
-            durationMs: 8000,
-            onUndo: () => {
-              undoCheckRef.current = rejections.length;
-              dispatch({ type: "UNDO_REFERRAL_DECISION", role: "ed", now, referralId: declined });
-              setUndoCheckToken((token) => token + 1);
-            },
-          },
+        offerStep({
+          success: "Referral declined",
+          undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined }),
+          undone: "Decline undone",
         });
       }
     }
     pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
-    // `toast`, `dispatch` and `now` are read at the moment the check runs; the check itself is keyed
+    // `offerStep` is read at the moment the check runs; the check itself is keyed
     // on the dispatch token so it runs once per decline.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, declineCheckToken]);
-
-  useEffect(() => {
-    if (undoCheckToken === 0 || undoCheckRef.current === undefined) return;
-    if (rejections.length > undoCheckRef.current) {
-      const newest = rejections[rejections.length - 1];
-      toast?.push({ tone: "warning", title: "Undo was refused", body: newest.reason });
-    } else {
-      toast?.push({ tone: "info", title: "Decline undone", body: "The referral is back in the inbox." });
-    }
-    undoCheckRef.current = undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rejections, undoCheckToken]);
 
   useEffect(() => {
     const before = raisePendingRef.current;

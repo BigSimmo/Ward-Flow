@@ -11,8 +11,9 @@
  * through the bed's existing panel, so every change uses the same events and checks as before.
  */
 
-import React, { useState, type Dispatch, type SetStateAction } from "react";
+import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
+import { announceToWardShell } from "../shell/ward-live-region";
 import styles from "./ward-walk-round.module.css";
 
 export type WalkRoundBed = {
@@ -94,6 +95,30 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   const index = walking === null ? -1 : ordered.findIndex((bed) => bed.bedNumber === walking);
   const current = index >= 0 ? ordered[index] : undefined;
   const firstUnreviewed = ordered.find((bed) => !reviewed.has(bed.bedNumber)) ?? ordered[0];
+
+  // Screen readers hear the bed the round is on (also when the card comes back mid round) and,
+  // when the round leaves the beds, whether it finished or went back to the list. Nothing is said
+  // for a round that has not started.
+  const currentNumber = current?.number;
+  const lastNumberRef = useRef<string | undefined>(undefined);
+  // "Finished" is said once per round; a bed reopened afterwards just goes back to the list.
+  const finishSaidRef = useRef(false);
+  useEffect(() => {
+    if (!allReviewed) finishSaidRef.current = false;
+    const was = lastNumberRef.current;
+    lastNumberRef.current = currentNumber;
+    if (currentNumber === was) return;
+    if (currentNumber !== undefined) {
+      announceToWardShell(`Now on bed ${currentNumber}.`);
+    } else if (allReviewed && !finishSaidRef.current) {
+      finishSaidRef.current = true;
+      announceToWardShell("Walk round finished. Every bed reviewed.");
+    } else {
+      announceToWardShell("Back to the bed list.");
+    }
+    // Only a change of bed speaks; `allReviewed` is read as it is at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNumber]);
 
   const reviewAndNext = () => {
     if (!current) return;
