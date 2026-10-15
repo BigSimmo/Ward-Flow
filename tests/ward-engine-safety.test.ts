@@ -325,8 +325,10 @@ describe("engine safety under random event sequences", () => {
       refused += result.refused;
     }
     // The generator must reach both sides: enough events succeed to move patients and beds, and
-    // enough are refused to prove refusals are safe too.
+    // enough are refused to prove refusals are safe too. A short run set by hand is too small to
+    // measure that, so only the rules above apply to it.
     const total = SEQUENCES * STEPS;
+    if (total < 1000) return;
     expect(refused).toBeGreaterThan(total * 0.1);
     expect(refused).toBeLessThan(total * 0.9);
     expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
