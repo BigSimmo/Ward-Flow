@@ -9,7 +9,8 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -190,6 +191,16 @@ try {
     compare(document.purpose + " blob", fields[2] ?? "", document.blob);
   }
 
+  const audit = state.priorProcessAudit;
+  const auditPath = path.isAbsolute(audit.path) ? audit.path : path.join(repositoryRoot, ...audit.path.split("/"));
+  if (!existsSync(auditPath)) {
+    drift.push("prior process audit: missing " + auditPath);
+  } else {
+    compare("prior process audit byte count", statSync(auditPath).size, audit.bytes);
+    const auditHash = createHash("sha256").update(readFileSync(auditPath)).digest("hex").toUpperCase();
+    compare("prior process audit SHA-256", auditHash, audit.sha256);
+    information.push("Prior process audit is durably available at " + auditPath + ".");
+  }
 } catch (error) {
   console.error("[ward-flow-state] ERROR: " + (error instanceof Error ? error.message : String(error)));
   process.exit(2);
