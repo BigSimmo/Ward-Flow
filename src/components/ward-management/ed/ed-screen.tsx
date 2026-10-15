@@ -1292,6 +1292,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const now = useWardFlowClock();
   // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
   const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const { inboxSnoozes } = useWardFlow();
   const nextWardOn = useWardFeatureFlag("top25-next-ward");
   const admissionChecklistOn = useWardFeatureFlag("top25-admission-checklist");
@@ -2830,7 +2831,17 @@ export function EdScreen({ edId }: EdScreenProps) {
     const listed = new Set(needsYouFlags.map((flag) => flag.recordId));
     const owned = inboxItemsForRole(
       activeTaskItems(
-        { movements, units, configuration, inboxSnoozes, admissions, patients: registryPatients, referrals },
+        {
+          movements,
+          units,
+          configuration,
+          inboxSnoozes,
+          admissions,
+          patients: registryPatients,
+          referrals,
+          // Top 25 item 12: the sending team sees its own stuck handover here too.
+          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
+        },
         now,
       ),
       "ed",
