@@ -218,6 +218,53 @@ describe("the scoped workspace", () => {
     expect(seen.movementId).toBeNull();
   });
 
+  it("matches a community desk to its catchment team however the team is spelt", () => {
+    const admission = state.admissions.find((item) => item.patientId !== null)!;
+    const workspace = {
+      ...state,
+      referrals: [],
+      patients: state.patients.map((item) =>
+        item.id === admission.patientId ? { ...item, catchmentCommunityTeam: "Synthetic Community Team" } : item,
+      ),
+    };
+    const scoped = scopeWorkspace(
+      workspace,
+      { role: "community", scope: { kind: "team", teamName: "Synthetic" } },
+      { now: NOW_ANCHOR, places },
+    );
+    expect(scoped.admissions.map((item) => item.id)).toContain(admission.id);
+  });
+
+  it("lets a ward's old referral lines lapse with the hand-off window, and keeps open ones", () => {
+    const source = state.referrals.find((referral) =>
+      referral.destinations.some((line) => line.destination.kind === "psychiatric_ward"),
+    )!;
+    const line = source.destinations.find((item) => item.destination.kind === "psychiatric_ward")!;
+    const atWard = { ...line, acceptedUnitId: undefined, destination: { ...line.destination, unitId } };
+    const old = {
+      ...source,
+      id: "synthetic-old",
+      destinations: [{ ...atWard, state: "declined" as const, decidedAt: NOW_ANCHOR - 30 * 24 * 60 }],
+    } as typeof source;
+    const open = {
+      ...source,
+      id: "synthetic-open",
+      destinations: [{ ...atWard, state: "queued" as const }],
+    } as typeof source;
+    const scoped = scopeWorkspace({ ...state, movements: [], admissions: [], referrals: [old, open] }, wardDesk, {
+      now: NOW_ANCHOR,
+      places,
+    });
+    expect(scoped.referrals.map((referral) => referral.id)).toEqual(["synthetic-open"]);
+  });
+
+  it("never tells a ward which other wards a movement was sent to", () => {
+    const other = state.units.find((unit) => unit.id !== unitId)!;
+    const movement = { ...state.movements[0], closure: undefined, referredUnitIds: [unitId, other.id] };
+    const scoped = scopeWorkspace({ ...state, movements: [movement] }, wardDesk, { now: NOW_ANCHOR, places });
+    expect(scoped.movements.find((item) => item.id === movement.id)?.referredUnitIds).toEqual([unitId]);
+  });
+
   it("names no patient to the executive", () => {
     const scoped = scope({ role: "executive", scope: { kind: "statewide" } });
     // Every patient with a movement, stay or referral is counted; none is named.
@@ -228,7 +275,13 @@ describe("the scoped workspace", () => {
       expect(patient.umrn).toBe("");
       expect(patient.dateOfBirth).toMatch(/^\d{4}-01-01$/u);
     }
-    for (const referral of scoped.referrals) expect("intake" in referral).toBe(false);
+    for (const referral of scoped.referrals) {
+      expect("intake" in referral).toBe(false);
+      expect("corrections" in referral).toBe(false);
+      expect("tentativeDiagnosis" in referral).toBe(false);
+      expect(referral.history).toBe("");
+    }
+    for (const movement of scoped.movements) expect("tentativeDiagnosis" in movement).toBe(false);
   });
 
   it("gives the access admin no patient data at all", () => {

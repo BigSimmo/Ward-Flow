@@ -69,6 +69,14 @@
   font: inherit;
 }
 
+/* Phone: full thumb targets for the reasons and the Other box (review on PR #330). */
+@media (max-width: 47.99rem) {
+  .reason,
+  .other {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
 .banner {
   display: flex;
   flex-wrap: wrap;

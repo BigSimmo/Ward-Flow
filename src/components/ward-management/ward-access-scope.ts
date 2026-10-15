@@ -77,13 +77,29 @@ function movementUnitIds(movement: Movement): string[] {
     : [...movement.referredUnitIds];
 }
 
+/**
+ * Only the desk's own wards in a movement's list of wards asked, so a ward never learns which other
+ * wards the person was sent to (review on PR #330). The accepted ward stays: it is where the person
+ * is going, and the stage reads from it.
+ */
+function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean): Movement {
+  const own = movement.referredUnitIds.filter(unitIn);
+  return own.length === movement.referredUnitIds.length ? movement : { ...movement, referredUnitIds: own };
+}
+
 /** Has this movement finished, and when. `undefined` while it is still open. */
 function movementEndedAt(movement: Movement): Instant | undefined {
   return movement.closure?.at;
 }
 
-function referralDestinationUnitIds(referral: Referral): string[] {
+type Addressing = Referral["destinations"][number];
+
+function referralDestinationUnitIds(
+  referral: Referral,
+  keepLine: (addressing: Addressing) => boolean = () => true,
+): string[] {
   return referral.destinations.flatMap((addressing) => {
+    if (!keepLine(addressing)) return [];
     const destination = addressing.destination;
     const ids: string[] = [];
     if (destination.kind === "psychiatric_ward" && destination.unitId) ids.push(destination.unitId);
@@ -100,6 +116,44 @@ function trimReferral(
   const destinations = referral.destinations.filter(keep);
   if (destinations.length === 0) return undefined;
   return destinations.length === referral.destinations.length ? referral : { ...referral, destinations };
+}
+
+/**
+ * Is a destination line still the desk's business: open, or decided inside the hand-off window. A
+ * line decided longer ago no longer brings its person to the desk (review on PR #330), the same
+ * window that ends a finished movement.
+ */
+function lineIsCurrent(referral: Referral, addressing: Addressing, now: Instant, window: number): boolean {
+  return addressing.state === "queued" || now - (addressing.decidedAt ?? referral.raisedAt) <= window;
+}
+
+/** A movement without the working diagnosis, for roles that never need it (review on PR #330). */
+function withoutDiagnosis(movement: Movement): Movement {
+  if (movement.tentativeDiagnosis === undefined) return movement;
+  const rest: Movement = { ...movement };
+  delete rest.tentativeDiagnosis;
+  return rest;
+}
+
+/** A referral with only what a count needs: no typed history, corrections, diagnosis or intake. */
+function countsOnlyReferral(referral: Referral): Referral {
+  const rest: Referral = { ...referral, history: "" };
+  delete rest.intake;
+  delete rest.corrections;
+  delete rest.tentativeDiagnosis;
+  return rest;
+}
+
+/**
+ * One key for a community team's spellings, so a desk named "Midland" finds patients whose
+ * catchment team is "Midland Community Team" (review on PR #330). An empty name matches nothing.
+ */
+export function communityTeamKey(name: string | undefined): string {
+  return (name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, " ")
+    .trim()
+    .replace(/ community team$/u, "");
 }
 
 /** A patient with only what a transport officer needs: who to collect and how to keep them safe. */
@@ -238,18 +292,16 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
           referrals = [...workspace.referrals];
         }
         anonymise = true;
-        referrals = referrals.map((referral) => {
-          const rest: Partial<Referral> = { ...referral };
-          delete rest.intake;
-          return rest as Referral;
-        });
+        // Counts only: no typed narrative or working diagnosis reaches an executive (review on PR #330).
+        referrals = referrals.map(countsOnlyReferral);
+        movements = movements.map(withoutDiagnosis);
       }
       break;
     }
     case "bed_manager": {
-      movements = workspace.movements.filter(
-        (movement) => edIn(movement.originEdId) || movementUnitIds(movement).some(unitIn),
-      );
+      movements = workspace.movements
+        .filter((movement) => edIn(movement.originEdId) || movementUnitIds(movement).some(unitIn))
+        .map((movement) => ownReferredUnits(movement, unitIn));
       admissions = workspace.admissions.filter((admission) => unitIn(admission.unitId));
       const referralIds = new Set(movements.map((movement) => movement.referralId).filter(Boolean));
       referrals = workspace.referrals.flatMap((referral) => {
@@ -273,6 +325,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         const ended = movementEndedAt(movement);
         return ended === undefined || now - ended <= wardWindow;
       });
+      movements = movements.map((movement) => ownReferredUnits(movement, unitIn));
       admissions = workspace.admissions.filter(
         (admission) => unitIn(admission.unitId) && (admission.leftAt === null || now - admission.leftAt <= wardWindow),
       );
@@ -283,7 +336,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         ].filter((id): id is string => typeof id === "string"),
       );
       referrals = workspace.referrals.flatMap((referral) => {
-        if (!referralIds.has(referral.id) && !referralDestinationUnitIds(referral).some(unitIn)) return [];
+        const current = (addressing: Addressing) => lineIsCurrent(referral, addressing, now, wardWindow);
+        if (!referralIds.has(referral.id) && !referralDestinationUnitIds(referral, current).some(unitIn)) return [];
         // Only this ward's own lines: a parallel referral never tells it which other wards were asked
         // or what they said (review on PR #330). A line naming no ward yet stays, as it is open to all.
         const trimmed = trimReferral(
@@ -310,18 +364,21 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         (referral) =>
           referralIds.has(referral.id) ||
           referral.destinations.some(
-            (addressing) => addressing.destination.kind === "emergency_department" && edIn(addressing.destination.edId),
+            (addressing) =>
+              addressing.destination.kind === "emergency_department" &&
+              edIn(addressing.destination.edId) &&
+              lineIsCurrent(referral, addressing, now, edWindow),
           ),
       );
       break;
     }
     case "community": {
-      const teamName = scope.kind === "team" ? scope.teamName : undefined;
+      const teamKey = communityTeamKey(scope.kind === "team" ? scope.teamName : undefined);
+      const ownTeam = (name: string | undefined) => teamKey !== "" && communityTeamKey(name) === teamKey;
       referrals = workspace.referrals.flatMap((referral) => {
         const trimmed = trimReferral(
           referral,
-          (addressing) =>
-            addressing.destination.kind === "community_team" && addressing.destination.teamName === teamName,
+          (addressing) => addressing.destination.kind === "community_team" && ownTeam(addressing.destination.teamName),
         );
         return trimmed ? [trimmed] : [];
       });
@@ -332,9 +389,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       // Own team's stays in full, and catchment clients' stays as ward and dates only (round 3,
       // decision 2) so the team can make the 7 day follow up.
       const catchment = new Set(
-        workspace.patients
-          .filter((patient) => patient.catchmentCommunityTeam === teamName)
-          .map((patient) => patient.id),
+        workspace.patients.filter((patient) => ownTeam(patient.catchmentCommunityTeam)).map((patient) => patient.id),
       );
       admissions = workspace.admissions.flatMap((admission) => {
         if (admission.referralId !== null && referralIds.has(admission.referralId)) return [admission];
@@ -352,12 +407,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       );
       // A collection needs who, where, legal status and safety, never the working diagnosis
       // (review on PR #330).
-      movements = movements.map((movement) => {
-        if (movement.tentativeDiagnosis === undefined) return movement;
-        const rest: Movement = { ...movement };
-        delete rest.tentativeDiagnosis;
-        return rest;
-      });
+      movements = movements.map(withoutDiagnosis);
       officer = true;
       break;
     }

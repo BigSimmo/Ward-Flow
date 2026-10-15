@@ -22,7 +22,9 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { scopeWorkspace } from "@/components/ward-management/ward-access-scope";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   WardFlowContext,
   useWardFlow,
@@ -129,6 +131,15 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     const glassMovementIds = glassIds(scoped.movements);
     const glassAdmissionIds = glassIds(scoped.admissions);
     const glassReferralIds = glassIds(scoped.referrals);
+    // An inbox row id is its category and then the movement or stay it is about, so an inbox
+    // action on a read only person is caught too (review on PR #330).
+    const inboxNamesGlass = (value: unknown) =>
+      typeof value === "string" &&
+      Object.values(INBOX_CATEGORIES).some(({ idPrefix }) => {
+        if (!value.startsWith(idPrefix)) return false;
+        const rest = value.slice(idPrefix.length);
+        return glassMovementIds.has(rest) || glassAdmissionIds.has(rest);
+      });
     // A coordinator's preview is read only: nothing it does lands in the shared workspace (review on
     // PR #330), so a previewed ward never appears to have acted.
     const dispatch: WardFlowContextValue["dispatch"] = previewing
@@ -141,13 +152,15 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
               movementId?: unknown;
               admissionId?: unknown;
               referralId?: unknown;
+              inboxItemId?: unknown;
             };
             const names = (value: unknown, ids: ReadonlySet<string>) => typeof value === "string" && ids.has(value);
             const touchesGlass =
               names(fields.patientId, breakGlassPatientIds) ||
               names(fields.movementId, glassMovementIds) ||
               names(fields.admissionId, glassAdmissionIds) ||
-              names(fields.referralId, glassReferralIds);
+              names(fields.referralId, glassReferralIds) ||
+              inboxNamesGlass(fields.inboxItemId);
             if (touchesGlass) {
               announceToWardShell("Read only. This record was opened outside your care.");
               return;
@@ -183,6 +196,16 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         bedReleases: byUnit(context.bedReleases),
         leaveBeds: byUnit(context.leaveBeds),
         refreshRequests: coordinator ? context.refreshRequests : [],
+        // Bed calls name the wards they ask, so a desk sees only calls to its own wards. A directive
+        // with no named wards is for everyone. Undo records hold whole before and after records, and
+        // a saved scenario is the whole workspace, so both stay the coordinator's (review on PR #330).
+        broadcastAlerts: coordinator
+          ? context.broadcastAlerts
+          : context.broadcastAlerts.filter(
+              (alert) => alert.targetUnitIds === undefined || alert.targetUnitIds.some(unitIn),
+            ),
+        undoRecords: coordinator ? context.undoRecords : [],
+        saveScenarioFile: coordinator ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
         supportNotifications: coordinator ? context.supportNotifications : [],
@@ -417,8 +440,12 @@ export function WardBreakGlassReview() {
   const { now } = useUnscopedWardFlow();
   if (!on || access.role !== "coordinator") return null;
   const perShift = CLINICAL_VALUES.breakGlassPerShift.value;
+  // One desk is its role at its place, and the pattern counts this shift only (review on PR #330).
+  const deskKey = (record: BreakGlassRecord) => `${record.role}|${record.placeLabel}`;
+  const shiftStart = currentShiftStartInstant(now);
   const counts = new Map<string, number>();
-  for (const record of records) counts.set(record.placeLabel, (counts.get(record.placeLabel) ?? 0) + 1);
+  for (const record of records)
+    if (record.openedAt >= shiftStart) counts.set(deskKey(record), (counts.get(deskKey(record)) ?? 0) + 1);
   return (
     <section aria-labelledby="ward-break-glass-review" data-testid="ward-break-glass-review">
       <h2 id="ward-break-glass-review">Records opened outside care</h2>
@@ -428,7 +455,7 @@ export function WardBreakGlassReview() {
         <ul className={styles.list}>
           {records.map((record: BreakGlassRecord) => {
             const reason = BREAK_GLASS_REASONS.find((option) => option.id === record.reason)?.label ?? "Other";
-            const pattern = (counts.get(record.placeLabel) ?? 0) > perShift;
+            const pattern = record.openedAt >= shiftStart && (counts.get(deskKey(record)) ?? 0) > perShift;
             return (
               <li key={record.id}>
                 {formatInstantWithDay(record.openedAt, now)}, {record.roleLabel}, {record.placeLabel}. {reason}

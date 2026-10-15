@@ -52,6 +52,7 @@ import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
@@ -626,7 +627,9 @@ function CreateSheet({
   onNewReferral: () => void;
 }) {
   // Role access plan: New referral only for a desk whose role may raise one (review on PR #330).
-  const canRefer = byId.has("referral-intake");
+  // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
+  const gate = useRoleGate();
+  const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
   const router = useRouter();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
