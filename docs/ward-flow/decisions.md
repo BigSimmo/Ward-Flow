@@ -624,6 +624,7 @@ is inferred.
 - **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh ("Go ahead with all your recommendations", `design/v9/design-system-v9.md` §§9–14).
 - **Decision:** The Elevate recommendations are adopted into Design System v9 and implemented in `src/app/ward-flow-v9-tokens.css` and `src/components/wf/v10-parts.tsx`: one action blue (`--wf-accent` `light-dark(#245a8c, #8cbcf0)`), a fixed top-right radial light on the hero, visible day glass, quiet slate (`--wf-data-closed`) with a dashed edge for closed beds (never gold), the Section 12 Elevate parts (`QuietUnits`, `MixedAnswer`, `FadeHairline`, `PressureArc`, `FigureRoll`, `AllClear`, `BedPlan`, `RowSpark`, `DeltaTwins`, `JourneyRibbon`, `SinceYouLooked`, `CommandPalette`, `UndoHairline`), and Glare mode (`data-mode="glare"` via `clinical-kb-glare` for ward PCs near windows).
 - **Why:** Unifies the v9 token layer, Elevate shared components, and bright-ward readability mode into one standard.
+- **Subsequent note (11 October 2026):** The Top 25 `CommandPalette` item was subsequently dropped, and its implementation and exports were removed. The original decision remains as historical context; the design-system inventory now treats the command palette as outline-only.
 
 ## D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026)
 
