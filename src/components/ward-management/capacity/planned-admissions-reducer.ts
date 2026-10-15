@@ -447,6 +447,7 @@ export function reducePlannedAdmissionEvent(
         followUp: null,
         careJourney: emptyCareJourney(),
         dischargeBarrier: null,
+        dischargeCriteria: null,
         stepDownCandidate: false,
       };
       const updatedUnit: Unit = {

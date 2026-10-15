@@ -139,6 +139,7 @@ import { openDecisionCount } from "./ward-decision-count";
 import { WardDischargeNotices } from "./ward-discharge-notices";
 import { type WardFlowTab, WardHomeTab, type WardShiftView, wardActNowCount } from "./ward-home-tab";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
+import { criteriaEligibility } from "@/components/ward-management/ward-discharge-criteria";
 
 const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
@@ -375,6 +376,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Top 25 item 5: the bed drawer asks for the discharge barrier of a stay due out soon.
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const barrierGate = useRoleGate()("SET_DISCHARGE_BARRIER");
+  const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
+  const criteriaGate = useRoleGate()("SET_DISCHARGE_CRITERIA");
   // Top 25 item 1: confirming a discharge offers its pharmacy, transport and cleaning notices.
   const dischargeNoticesOn = useWardFeatureFlag("top25-discharge-notices");
   const [noticesForRelease, setNoticesForRelease] = useState<string | null>(null);
@@ -3424,6 +3427,28 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           setToastMessage(
                             barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
                           );
+                        }
+                      : undefined
+                  }
+                  criteriaEligibility={
+                    criteriaLedOn
+                      ? criteriaEligibility(
+                          selectedBedItem?.patientInfo?.patient?.legalStatus,
+                          selectedBedItem?.legalStatus,
+                        )
+                      : undefined
+                  }
+                  onSetCriteria={
+                    criteriaLedOn && criteriaGate.allowed
+                      ? (admissionId, update) => {
+                          dispatch({
+                            type: "SET_DISCHARGE_CRITERIA",
+                            role: routeRole,
+                            now,
+                            actingUnitId: unitId,
+                            admissionId,
+                            ...update,
+                          });
                         }
                       : undefined
                   }
