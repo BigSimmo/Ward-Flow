@@ -11,8 +11,9 @@
  * through the bed's existing panel, so every change uses the same events and checks as before.
  */
 
-import React, { useState, type Dispatch, type SetStateAction } from "react";
+import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
+import { announceToWardShell } from "../shell/ward-live-region";
 import styles from "./ward-walk-round.module.css";
 
 export type WalkRoundBed = {
@@ -94,6 +95,19 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   const index = walking === null ? -1 : ordered.findIndex((bed) => bed.bedNumber === walking);
   const current = index >= 0 ? ordered[index] : undefined;
   const firstUnreviewed = ordered.find((bed) => !reviewed.has(bed.bedNumber)) ?? ordered[0];
+
+  // Screen readers hear the move to each bed and the end of the round, politely, by bed name only.
+  const spoken = current
+    ? `Now on bed ${current.number}.`
+    : allReviewed
+      ? "Walk round finished. Every bed reviewed."
+      : null;
+  const spokenRef = useRef(spoken);
+  useEffect(() => {
+    if (spoken === spokenRef.current) return;
+    spokenRef.current = spoken;
+    if (spoken) announceToWardShell(spoken);
+  }, [spoken]);
 
   const reviewAndNext = () => {
     if (!current) return;

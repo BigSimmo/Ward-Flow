@@ -7,6 +7,12 @@ import {
   WardWalkRound,
   type WalkRoundBed,
 } from "@/components/ward-management/ward/ward-walk-round";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+
+vi.mock("@/components/ward-management/shell/ward-live-region", async (importActual) => ({
+  ...(await importActual<typeof import("@/components/ward-management/shell/ward-live-region")>()),
+  announceToWardShell: vi.fn(),
+}));
 
 // Made-up beds, deliberately out of bed order so the walk has to sort them.
 const beds: WalkRoundBed[] = [
@@ -146,5 +152,18 @@ describe("phone walk round (item 23, option D)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Walk again from bed 01" }));
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 3 reviewed");
     expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
+  });
+  it("tells a screen reader which bed it is on and when the round is finished, not on first show", () => {
+    const announce = vi.mocked(announceToWardShell);
+    announce.mockClear();
+    render(<Harness />);
+    expect(announce).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    expect(announce).toHaveBeenLastCalledWith("Now on bed 01.");
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    expect(announce).toHaveBeenLastCalledWith("Now on bed 02.");
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
+    expect(announce).toHaveBeenLastCalledWith("Walk round finished. Every bed reviewed.");
   });
 });
