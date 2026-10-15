@@ -33,7 +33,7 @@ export type WardReconciliationCheck = {
 };
 
 /** One figure in the Activity drawer's live tally for the page currently mounting the shell. */
-export type WardActivityTile = {
+type WardActivityTile = {
   label: string;
   value: string;
   tone?: "danger" | "warning" | "good";
@@ -43,7 +43,7 @@ export type WardActivityTile = {
 export type WardActivityCategory = "escalation" | "decline" | "referral" | "transfer" | "other";
 
 /** One row in the Activity drawer's recent-changes feed. */
-export type WardActivityChange = {
+type WardActivityChange = {
   id: string;
   /** Already formatted by the caller's own clock formatter — this file names no time format. */
   time: string;

@@ -35,9 +35,6 @@ export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configurat
     leaveBeds?: WardFlowState["leaveBeds"];
   };
 
-/** @deprecated name kept for existing callers; the same shape as `TaskSource`. */
-export type ActNowSource = TaskSource;
-
 /** Every task row at `now`, snoozed ones included: the inbox rows plus the decision targets. */
 export function taskItems(source: TaskSource, now: Instant): InboxItem[] {
   const open = source.movements.filter(isOpen);

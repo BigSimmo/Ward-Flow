@@ -49,14 +49,13 @@ export const COORDINATOR_DESK_ACKNOWLEDGER_ID = "coordinator-desk";
  * - `pull_now`: one patient, raised by the coordinator, answered by the asked wards.
  */
 export type BroadcastKind = "directive" | "bed_call" | "pull_now";
-export const BROADCAST_KINDS: readonly BroadcastKind[] = ["directive", "bed_call", "pull_now"];
 /** The two kinds a coordinator sends from the compose form. Pull now is raised from a patient. */
 export const DISPATCHABLE_BROADCAST_KINDS: readonly BroadcastKind[] = ["directive", "bed_call"];
 
 export const BED_CALL_ANSWERS = ["can_take", "after_discharge", "cannot"] as const;
 export const PULL_NOW_ANSWERS = ["pulling_now", "bed_ready_at", "cannot"] as const;
-export type BedCallAnswer = (typeof BED_CALL_ANSWERS)[number];
-export type PullNowAnswer = (typeof PULL_NOW_ANSWERS)[number];
+type BedCallAnswer = (typeof BED_CALL_ANSWERS)[number];
+type PullNowAnswer = (typeof PULL_NOW_ANSWERS)[number];
 export type BroadcastAnswer = BedCallAnswer | PullNowAnswer;
 
 export const BROADCAST_ANSWER_LABELS: Record<BroadcastAnswer, string> = {

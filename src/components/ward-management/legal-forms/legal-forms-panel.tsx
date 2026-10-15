@@ -54,7 +54,7 @@ const RING_TONE: Record<RingState, "danger" | "warning" | "neutral" | "closed"> 
   unwritten: "closed",
 };
 
-export function ringStateOf(movement: Movement, standing: ClockStanding, dayZero: Date): RingState {
+function ringStateOf(movement: Movement, standing: ClockStanding, dayZero: Date): RingState {
   if (standing === "passed" || standing === "urgent") return "act";
   if (standing === "soon") return "soon";
   if (standing === "later") return "running";
@@ -65,7 +65,7 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
   return items.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
 }
 
-export const RING_LABEL: Record<RingState, string> = {
+const RING_LABEL: Record<RingState, string> = {
   act: "Act now",
   soon: "Within window",
   running: "Later",
@@ -78,7 +78,7 @@ export const RING_LABEL: Record<RingState, string> = {
  * next twelve hours on one line. D5: only an expiry a person typed (`legalForm.dueAt`) is a mark;
  * demo Act periods never reach the rail. Each mark opens the first form it holds.
  */
-export function ClockRail({
+function ClockRail({
   movements,
   now,
   onSelect,

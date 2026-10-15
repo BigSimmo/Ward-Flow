@@ -30,7 +30,7 @@ type AnchorProps = {
   testId?: string;
 };
 
-export function EdPopover({
+function EdPopover({
   open,
   onClose,
   onOutside,

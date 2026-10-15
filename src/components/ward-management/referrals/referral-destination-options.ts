@@ -66,7 +66,7 @@ import { referralDestinationKindLabel } from "@/components/ward-management/ward-
  * single state would have to answer all of them at once: what does the clinician read, is this
  * option placed here by the table, and is choosing it a step outside what the table can settle.
  */
-export type DestinationCatchment = {
+type DestinationCatchment = {
   /** The sentence a clinician reads. Never a code, never blank, and never a default. */
   readonly sentence: string;
   /** True only when the source table places this patient's suburb with this destination. */
@@ -117,7 +117,7 @@ export type DestinationOptionInputs = {
 };
 
 /** Said in full rather than left blank: a blank catchment reads as "none", which is a claim. */
-export const NO_SUBURB_SENTENCE = "No suburb chosen yet, so no catchment has been read.";
+const NO_SUBURB_SENTENCE = "No suburb chosen yet, so no catchment has been read.";
 
 /**
  * Why a ward and an emergency department carry no catchment here.
@@ -128,7 +128,7 @@ export const NO_SUBURB_SENTENCE = "No suburb chosen yet, so no catchment has bee
  * switched off**, which Part 5 refuses in as many words: "a decision hiding as dead code is still a
  * decision".
  */
-export const NO_HOSPITAL_CATCHMENT_SENTENCE =
+const NO_HOSPITAL_CATCHMENT_SENTENCE =
   "No catchment is recorded for this destination: the sources name a follow-up community clinic only, and the approved-hospital column is not seeded.";
 
 /**
