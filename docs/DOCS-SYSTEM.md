@@ -2,11 +2,11 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-10-14 - generated-files inventory, 7-gate documentation verification pipeline, and archival standard; Documentation owns._
+_Updated 2026-10-15 - generated facts, retired terms and the 8-gate documentation verification pipeline; Documentation owns._
 
 ## Principles
 
-1. **One live source per topic** - archive or stub duplicates.
+1. **One live source per topic** - archive or stub duplicates. Facts that change with the code live only in [`FACTS.md`](FACTS.md); see [Facts and retired terms](#facts-and-retired-terms).
 2. **Stamp what you touch** - `_Updated YYYY-MM-DD - <why>; Documentation owns._`
 3. **Names only for secrets** - never paste values, JWTs, or dashboard passwords.
 4. **One task identity** - follow `docs/task-receipts.md` and reuse existing ledger/checkpoint IDs. `docs/ward-flow/STATUS.md` preserves dated history; current task state needs current source and acceptance evidence. Do not create another status store.
@@ -47,7 +47,7 @@ Never hand-edit generated files. Run `npm run docs:maintain` (`node scripts/ward
 | [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                              | `node scripts/ward-flow/rules-index.mjs --write`                                                         | `node scripts/ward-flow/rules-index.mjs --check`         |
 | `<git-dir>/ward-organisation/ORGANISATION.md` ([`registry.json`](ward-flow/organisation/registry.json)) | `npm run ward:organise` (`node scripts/ward-flow/organisation.mjs --write-report --source working-tree`) | `npm run ward:organise:check`                            |
 
-## 7-Gate documentation verification pipeline
+## 8-Gate documentation verification pipeline
 
 1. **Maintained script references (`npm run docs:check-scripts`):** executes `node scripts/check-docs-script-refs.mjs` across `MAINTAINED_ROOT_DOCS`, `docs/`, and `.github/` outside paired historical markers to verify every `npm run <script>` exists in `package.json`.
 2. **Maintained local links & anchors (`npm run docs:check-links`):** executes `node scripts/check-maintained-doc-links.mjs` across all Git-tracked Markdown files (and `MAINTAINED_ROOT_DOCS`) outside historical markers.
@@ -56,6 +56,28 @@ Never hand-edit generated files. Run `npm run docs:maintain` (`node scripts/ward
 5. **Ward Flow relative doc links (`npm run check:ward-doc-links`):** executes `node scripts/ward-flow/check-doc-links.mjs` across `docs/ward-flow/` (including archived files).
 6. **Staged / stale generator drift (`node scripts/check-stale-docs.mjs` & `node scripts/check-staged-docs.mjs`):** verifies in `.githooks/pre-commit` and CI that generated Ward Flow indexes and manifests match their inputs without mutating the working tree.
 7. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
+8. **Facts and retired terms (`npm run docs:facts`):** executes `node scripts/doc-facts.mjs` to verify [`FACTS.md`](FACTS.md) and every fact marker match the source, and to warn on retired terms (failing only on lines a pull request adds). See [Facts and retired terms](#facts-and-retired-terms).
+
+## Facts and retired terms
+
+Docs go stale when they restate something the code decides. Two mechanisms stop that without
+anyone remembering to update docs:
+
+- **Generated facts.** `scripts/doc-facts.mjs` reads a few changeable facts from source (database
+  and sign-in provider, latest migration, route counts, latest and next decision number, Node range,
+  backend environment variables) and writes them to [`FACTS.md`](FACTS.md). Quote a fact in any
+  Markdown file as `<!-- fact:database-provider -->Supabase<!-- /fact -->`. `npm run docs:facts:write`
+  (also part of `npm run docs:maintain`) rewrites every marker; CI fails while a marker or
+  `FACTS.md` disagrees with the source, so a code change that moves a fact cannot merge with old
+  docs. To add a fact, add an extractor to `collectFacts` in `scripts/doc-facts.mjs` and a test.
+- **Retired terms.** [`retired-terms.json`](retired-terms.json) lists words for things Ward Flow no
+  longer uses, with why and what to say instead. Existing mentions in maintained docs show as CI
+  warnings (a to-do list, never a block). A pull request that adds a new mention fails, so the
+  backlog only shrinks. A line that itself says the thing is retired, removed or replaced passes.
+  Archives, dated records and append-only logs are never scanned; fence a
+  deliberate historical mention elsewhere with the paired markers below.
+
+When a decision retires something, add its term to `retired-terms.json` in the same pull request.
 
 ## Archival & historical fencing standard
 
