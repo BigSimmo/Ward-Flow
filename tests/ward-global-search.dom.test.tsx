@@ -162,6 +162,8 @@ describe("WardGlobalSearch", () => {
     expect(row.tagName).toBe("A");
     expect(row).toHaveAttribute("href", movementHref(targetMovement.id));
     expect(row).toHaveTextContent("Movement");
+    // D-39: the result names the person, never the journey number.
+    expect(row).not.toHaveTextContent(targetMovement.id);
   });
 
   it("groups only the kinds that actually matched — no empty People group under a movement-only query", () => {
