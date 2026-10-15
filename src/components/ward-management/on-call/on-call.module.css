@@ -2041,9 +2041,3 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
-
-@media (max-width: 48rem) {
-  .jumpButton {
-    min-height: 48px;
-  }
-}
