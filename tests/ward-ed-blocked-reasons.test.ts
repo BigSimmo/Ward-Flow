@@ -27,8 +27,8 @@ import {
 import {
   instantFromEstimatedTimeInputs,
   transportAnswersBlockedReason,
-  type TransportAnswersDraft,
-} from "@/components/ward-management/ward-transport-answers";
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
 import {
   COMMUNITY_DECLINE_REASONS,
   ED_DECLINE_REASONS,
@@ -268,7 +268,7 @@ describe("withdrawReferralBlockedReason", () => {
 });
 
 describe("transportAnswersBlockedReason (shared by ED and community)", () => {
-  const answered: TransportAnswersDraft = {
+  const answered: TransportBookingAnswers = {
     provider: "Ambulance service",
     escortRequired: false,
     cadNumber: "CAD-1",

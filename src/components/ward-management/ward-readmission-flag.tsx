@@ -13,7 +13,7 @@ import styles from "./ward-readmission-flag.module.css";
 const LABEL = `${READMISSION_WINDOW_DAYS}d readmission`;
 
 /** "Discharged 3 Oct from Moodjar · 6d before". */
-export function readmissionDetailText(flag: ReadmissionFlagValue, dayZero: Date): string {
+function readmissionDetailText(flag: ReadmissionFlagValue, dayZero: Date): string {
   const date = new Date(dayZero.getTime() + flag.dischargedAt * 60_000).toLocaleDateString("en-AU", {
     day: "numeric",
     month: "short",

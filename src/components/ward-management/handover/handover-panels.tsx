@@ -287,7 +287,7 @@ export function HandoverFlowPanel({
   );
 }
 
-export const HANDING_TO_ROLES = ["Evening flow coordinator", "After hours manager", "State bed desk"] as const;
+const HANDING_TO_ROLES = ["Evening flow coordinator", "After hours manager", "State bed desk"] as const;
 
 export type SignOffCheck = { id: string; done: boolean; text: string; action?: { label: string; onClick: () => void } };
 

@@ -7,7 +7,7 @@ import type { CommunityDeclineReason } from "@/components/ward-management/ward-m
  *
  * Moved out of `community-screen.tsx` unchanged (fix list 1.3, 15 Oct 2026) so the same rules can
  * run without React, and later on the server. The wording is the screen's own, word for word. The
- * transport-booking answers rule, shared with the ED screen, lives in `../ward-transport-answers.ts`.
+ * transport-booking answers rule, shared with the ED screen, lives in `../ward-transport-checks.ts`.
  * Pinned by `tests/ward-ed-blocked-reasons.test.ts`.
  */
 

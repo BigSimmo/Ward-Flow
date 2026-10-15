@@ -22,31 +22,6 @@ import styles from "./delays.module.css";
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
-export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
-
-export interface SystemicDelayHold {
-  id: string;
-  category: "ward" | "transport" | "staffing";
-  facility: string;
-  service: string;
-  categoryLabel: string;
-  reason: string;
-  impact: string;
-  severity: "danger" | "warn" | "info";
-  startedAgo: string;
-  bedsOffline?: number;
-  nextReview: string;
-  owner: string;
-}
-
-/**
- * Systemic holds (ward closures, fleet delays, staffing surges) have no record in Ward Flow's state:
- * nothing can create, change or clear one. The four invented holds that stood here (real facility
- * names, made-up outbreaks and bed counts) were removed on 2026-09-25 under the owner's rule that
- * every figure must come from a record. Until a hold can be recorded, the panel says so.
- */
-export const SYSTEMIC_HOLDS: SystemicDelayHold[] = [];
-
 export interface DelaysScreenProps {
   aliasFrom?: "queue" | "exceptions" | "escalation" | null;
   movements?: Movement[];

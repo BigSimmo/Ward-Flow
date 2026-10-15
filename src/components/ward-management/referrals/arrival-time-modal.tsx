@@ -18,8 +18,6 @@ import {
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import styles from "./arrival-time-modal.module.css";
 
-export { ARRIVAL_MODE_LABELS, LATE_ARRIVAL_GRACE_MINUTES };
-
 /**
  * Late when an arrival plan exists, now is more than the late-arrival grace period past that
  * time, and the person has not been marked arrived. Reads only fields already on the movement.

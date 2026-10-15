@@ -16,7 +16,7 @@ import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-opera
 /** Josh's one-hour warning default, the same one the legal clocks use. */
 export const BED_HOLD_AT_RISK_MINUTES = DUE_SOON_URGENT_MINUTES;
 
-export type BedHoldState = "held" | "at-risk" | "lapsed";
+type BedHoldState = "held" | "at-risk" | "lapsed";
 
 export type BedHold = {
   state: BedHoldState;

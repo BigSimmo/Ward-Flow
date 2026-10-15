@@ -38,14 +38,7 @@
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import type {
-  BedRelease,
-  HealthService,
-  LeaveBed,
-  Movement,
-  Referral,
-  Unit,
-} from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -65,9 +58,6 @@ import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
  * with no wrapper, so that the facade is one import for a lane without becoming a second definition
  * anybody could change independently.
  */
-export { candidateReason, eligibility } from "@/components/ward-management/ward-eligibility";
-export type { EligibilityGate, EligibilityVerdict, GateResult } from "@/components/ward-management/ward-eligibility";
-
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
  * SHELL FIGURES — the numbers the rail and the bar show.
  * ══════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -370,8 +360,6 @@ export function communityStatisticsHref(teamId: string): string {
  * anything this file can put in a link is something `Referral.source` can hold.
  */
 import type { ReferralSource } from "@/components/ward-management/ward-model";
-export type { ReferralSource };
-
 export type RaiseReferralTarget = {
   readonly patientId?: string;
   /** Where the referral comes from. Optional: the bar's "New referral" menu names only where it goes. */
@@ -415,40 +403,4 @@ export function raiseReferralHref(target: RaiseReferralTarget): string {
   if (target.teamId !== undefined) query.set("teamId", target.teamId);
   if (target.unitIds !== undefined && target.unitIds.length > 0) query.set("units", target.unitIds.join(","));
   return `/mockups/ward-flow/referrals/new?${query.toString()}`;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════════
- * SERVICE SCOPE — what the Service selector is showing.
- * ══════════════════════════════════════════════════════════════════════════════════════════════ */
-
-/**
- * THE SERVICE SELECTOR'S SCOPE: every health service, or one named one.
- *
- * 🔴 **THERE IS NO THIRD STATE, AND THAT IS WHAT "ESCAPE NEVER CLEARS IT" MEANS STRUCTURALLY.** A
- * nullable scope would make "showing everything" and "nothing selected" the same value, and a reader
- * looking at a network-wide board would have no way to tell a deliberate whole-network view from a
- * selector that had silently dropped their choice. All services is a CHOICE, not an absence, so it
- * has its own member and the type cannot express a cleared scope at all.
- *
- * ⚠️ **THE OTHER HALF OF THAT RULE IS THE SHELL'S, NOT THIS MODULE'S.** "Escape never clears it" also
- * means a keypress that closes the selector must leave a chosen service chosen, and that is
- * behaviour in the shell's own component — this module cannot hold state without becoming a client
- * module, which the file header explains would break every Server Component that builds an href.
- */
-export type ServiceScope =
-  { readonly kind: "all-services" } | { readonly kind: "one-service"; readonly service: HealthService };
-
-export const ALL_SERVICES_SCOPE: ServiceScope = { kind: "all-services" };
-
-/**
- * The scope for a stored selection. `null` means the reader has not chosen a service — which
- * resolves to all services, never to nothing.
- */
-export function serviceScope(service: HealthService | null): ServiceScope {
-  return service === null ? ALL_SERVICES_SCOPE : { kind: "one-service", service };
-}
-
-/** Whether a health service is inside the current scope. All services admits every one of them. */
-export function serviceScopeIncludes(scope: ServiceScope, service: HealthService): boolean {
-  return scope.kind === "all-services" || scope.service === service;
 }

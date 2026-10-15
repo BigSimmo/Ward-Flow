@@ -56,7 +56,7 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
 ];
 
 /** The allowance that lets `role` dispatch `eventType` outside `EVENT_ROLE`, if any. */
-export function crossRoleAllowance(role: WardFlowRole, eventType: WardFlowEventType): CrossRoleAllowance | undefined {
+function crossRoleAllowance(role: WardFlowRole, eventType: WardFlowEventType): CrossRoleAllowance | undefined {
   return CROSS_ROLE_ALLOWED.find((entry) => entry.routeRole === role && entry.event === eventType);
 }
 

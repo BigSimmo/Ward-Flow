@@ -74,10 +74,6 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
-  instantFromEstimatedTimeInputs,
-  transportAnswersBlockedReason,
-} from "@/components/ward-management/ward-transport-answers";
-import {
   cancelTransportBlockedReason,
   communityDeclineBlockedReason,
 } from "@/components/ward-management/community/community-blocked-reasons";
@@ -95,6 +91,11 @@ import {
   type TransportProvider,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import {
+  instantFromEstimatedTimeInputs,
+  transportAnswersBlockedReason,
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
 import { COMMUNITY_DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -222,14 +223,7 @@ const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
 
 const NO_TRANSPORT_PROVIDER_VALUE = "";
 
-type TransportDraftState = {
-  provider: TransportProvider | undefined;
-  escortRequired: boolean | undefined;
-  cadNumber: string;
-  transportLegalStatus: TransportLegalStatus | undefined;
-  estimatedTime: string;
-  estimatedDay: "today" | "tomorrow";
-};
+type TransportDraftState = TransportBookingAnswers;
 
 const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   provider: undefined,

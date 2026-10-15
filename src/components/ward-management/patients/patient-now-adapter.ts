@@ -72,7 +72,7 @@ function movementVerdict(
   return { tone: "warn", short: "Seeking Bed", title: "Placement request active across network wards.", gates: [] };
 }
 
-export function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
+function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
   if (departed)
     return [
       {

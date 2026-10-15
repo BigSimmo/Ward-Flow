@@ -91,10 +91,13 @@ const RETIRED_SUITE_PATTERNS = [
 const WARD_MANAGEMENT_IMPORT = /from\s*["'](@\/components\/ward-management\/[^"']+)["']/gu;
 const DECLARED_MODULE_ENTRY = /module:\s*"([^"]+)"/gu;
 
-// Four below the measured 12 (see the header comment): a floor with real headroom for a
-// legitimate suite or two leaving the population, never a floor set at today's exact count.
-const MIN_EXPECTED_RETIRED_FILES = 8;
-const MIN_EXPECTED_DECLARED_MODULES = 10;
+// 15 Oct 2026: the last nine retired suites were deleted together with the unreachable components
+// they rendered, so the retired population is now legitimately empty. The non-vacuity floor moved
+// from "at least 8 retired suites" to the walk itself: it must still see the ward test corpus
+// (about 990 files that day), so a broken walk cannot pass by finding nothing to police. The
+// declared-module floor sits two below the 8 entries left that day, for the same headroom reason.
+const MIN_EXPECTED_CANDIDATE_FILES = 500;
+const MIN_EXPECTED_DECLARED_MODULES = 6;
 
 // This guard's own file is excluded from the population walk: its header quotes
 // `describe.skip(` and `module: "..."` in prose, which would otherwise be misread as the very
@@ -160,11 +163,14 @@ export function hasDeclaredImport(imports: string[], declaredModules: Set<string
   return imports.some((module) => declaredModules.has(module));
 }
 
+function listCandidateFiles(): string[] {
+  return readdirSync(TESTS_DIR).filter(
+    (entry) => entry !== SELF && CANDIDATE_FILE_PATTERN.test(entry) && statSync(join(TESTS_DIR, entry)).isFile(),
+  );
+}
+
 function listRetiredSuiteFiles(): string[] {
-  return readdirSync(TESTS_DIR)
-    .filter(
-      (entry) => entry !== SELF && CANDIDATE_FILE_PATTERN.test(entry) && statSync(join(TESTS_DIR, entry)).isFile(),
-    )
+  return listCandidateFiles()
     .filter((entry) => isRetiredSuite(readFileSync(join(TESTS_DIR, entry), "utf8")))
     .sort();
 }
@@ -238,16 +244,17 @@ describe("built-in sentinels — the scan can actually fail, in both directions"
 });
 
 describe("a retired describe.skip suite is tied to its record and to the reachability list", () => {
+  const candidateFiles = listCandidateFiles();
   const retiredFiles = listRetiredSuiteFiles();
   const recordText = existsSync(RETIRED_RECORD) ? readFileSync(RETIRED_RECORD, "utf8") : "";
   const declaredModules = parseDeclaredModules(readFileSync(REACHABILITY_TEST, "utf8"));
 
   it(
-    `finds at least ${MIN_EXPECTED_RETIRED_FILES} retired suite(s) and at least ` +
+    `walks at least ${MIN_EXPECTED_CANDIDATE_FILES} ward test files and parses at least ` +
       `${MIN_EXPECTED_DECLARED_MODULES} declared-unreachable module(s), so this cannot pass by measuring nothing`,
     () => {
-      expect(retiredFiles.length, retiredFiles.join(", ") || "(none found)").toBeGreaterThanOrEqual(
-        MIN_EXPECTED_RETIRED_FILES,
+      expect(candidateFiles.length, "the ward test walk found too few files").toBeGreaterThanOrEqual(
+        MIN_EXPECTED_CANDIDATE_FILES,
       );
       expect(declaredModules.size, [...declaredModules].join(", ") || "(none parsed)").toBeGreaterThanOrEqual(
         MIN_EXPECTED_DECLARED_MODULES,

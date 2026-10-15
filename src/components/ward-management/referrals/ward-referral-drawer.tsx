@@ -37,7 +37,11 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
-import { useWardFlow, useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useOptionalWardFlow,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import {
   arrivalEtaLabel,
@@ -419,13 +423,9 @@ export type WardCapacityRecord = {
  * restriction notice gives it (`isMoreRestrictiveThanRequired`, `ward-derivations.ts`).
  */
 export function useWardCapacity(): WardCapacityRecord[] {
-  let flow: ReturnType<typeof useWardFlow> | null = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    flow = useWardFlow();
-  } catch {
-    flow = null;
-  }
+  // Outside the provider this returns null, so the drawer shows no capacity rows rather than
+  // throwing. Same result as the old try/catch around useWardFlow, without breaking hook rules.
+  const flow = useOptionalWardFlow();
   const units = flow?.units;
   const bedReleases = flow?.bedReleases;
   const admissions = flow?.admissions;

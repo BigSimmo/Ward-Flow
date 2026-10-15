@@ -40,7 +40,7 @@ function More({ count, noun }: { count: number; noun: string }) {
   );
 }
 
-export function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Instant }) {
+function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Instant }) {
   const stamp = asAtStamp(now);
   const { capacity, discharges, ed, delays } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;

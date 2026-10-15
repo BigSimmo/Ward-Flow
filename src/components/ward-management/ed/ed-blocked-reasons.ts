@@ -21,7 +21,7 @@ import type {
  * `tests/ward-ed-blocked-reasons.test.ts`.
  *
  * The transport-booking answers check, shared with the community screen, lives in
- * `ward-transport-answers.ts`.
+ * `ward-transport-checks.ts`.
  */
 
 /**

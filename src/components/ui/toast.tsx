@@ -5,7 +5,7 @@ import { OverlayPortal } from "@/components/ui/overlay-root";
 import overlayStyles from "@/components/wf/overlay.module.css";
 import { type ToastNextStep, type ToastUndo, ToastView } from "@/components/wf/toast";
 
-export type ToastTone = "success" | "info" | "warning" | "danger";
+type ToastTone = "success" | "info" | "warning" | "danger";
 
 export type Toast = {
   id: string;
@@ -282,7 +282,7 @@ function ToastCard({
  * so an outcome is announced without interrupting whatever the user is reading —
  * a failed upload is important, but it is not a reason to cut off a dose sentence.
  */
-export function ToastRegion() {
+function ToastRegion() {
   const context = useContext(ToastContext);
   if (!context) return null;
   const { toasts, dismiss, undoAndDismiss } = context;

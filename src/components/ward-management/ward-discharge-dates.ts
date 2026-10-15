@@ -82,7 +82,7 @@ const STATEWIDE_RELEASE_BY_DESTINATION: ReadonlyMap<LeavingDestination, boolean>
  * this rule, rather than re-stating "expectedDischargeAt gives expected, dischargeConfirmedAt also
  * gives confirmed" a second time — see that module's own comment on its `bedReleases` export.
  */
-export function deriveForwardRelease(admission: Admission): BedRelease | null {
+function deriveForwardRelease(admission: Admission): BedRelease | null {
   if (!bedIsOccupied(admission)) return null;
   const expectedAt = admission.expectedDischargeAt;
   if (expectedAt === null || !Number.isFinite(expectedAt)) return null;

@@ -1,6 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["**/*mockup*", "docs/**"],
   "workspaces": {
     ".": {
       "entry": [
@@ -19,5 +18,6 @@
       "entry": ["*.test.mjs"],
       "project": ["*.mjs", "*.ts"]
     }
-  }
+  },
+  "ignoreDependencies": ["@axe-core/playwright", "playwright-core", "tsx"]
 }
