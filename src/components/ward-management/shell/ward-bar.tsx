@@ -614,7 +614,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const toolsReturnTarget = useMemo<RefObject<HTMLElement | null>>(
     () => ({
       get current() {
-        return toolsReturnFocusRef.current ?? (isPhone ? phoneMenuRef.current : toolsTriggerRef.current);
+        // A pill that has left the page cannot take focus, so fall back to the Tools button.
+        const pill = toolsReturnFocusRef.current;
+        if (pill?.isConnected) return pill;
+        return isPhone ? phoneMenuRef.current : toolsTriggerRef.current;
       },
     }),
     [isPhone],
