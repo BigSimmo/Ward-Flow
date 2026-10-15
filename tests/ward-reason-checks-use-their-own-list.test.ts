@@ -38,6 +38,9 @@ const REDUCERS = [
   "src/components/ward-management/ward-inbox-reducer.ts",
   // Global alerts (10 Oct 2026): REPLY_BROADCAST_ALERT's check lives in the broadcast reducer.
   "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
+  // 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the main reducer unchanged.
+  "src/components/ward-management/ward-flow-record-events.ts",
+  "src/components/ward-management/ward-flow-undo-events.ts",
 ] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 
