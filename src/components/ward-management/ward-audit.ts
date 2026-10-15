@@ -843,10 +843,18 @@ export function readAuditEvents(state: WardFlowState, actor: WardRecordActor): R
 /**
  * Every governance entry a reviewer sees: the synthetic seeded ones first, then this session's.
  * Seeded entries belong to the current world (their `generation` is always the current one), so they
- * return after a reset and can be reviewed like any other entry.
+ * return after a reset and can be reviewed like any other entry. A scoped state may already carry
+ * an authoritative seeded entry derived from the whole workspace; retain it rather than deriving a
+ * replacement from the filtered records.
  */
 export function governanceAuditEvents(state: WardFlowState): readonly AuditEvent[] {
-  return [...syntheticGovernanceAuditEvents(state), ...state.auditEvents];
+  const seeded = syntheticGovernanceAuditEvents(state);
+  const seededIds = new Set(seeded.map((event) => event.id));
+  const supplied = new Map(state.auditEvents.map((event) => [event.id, event]));
+  return [
+    ...seeded.map((event) => supplied.get(event.id) ?? event),
+    ...state.auditEvents.filter((event) => !seededIds.has(event.id)),
+  ];
 }
 
 /** `readAuditEvents` plus the synthetic seeded entries: for the Governance page only. */
