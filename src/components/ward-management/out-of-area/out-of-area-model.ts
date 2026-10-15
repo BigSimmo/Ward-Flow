@@ -3,7 +3,6 @@ import {
   dayOf,
   formatInstantWithDay,
   minuteOfDay,
-  minuteOfDayFromClockText,
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
@@ -19,6 +18,7 @@ import { BED_MEETING_MINUTES, SHIFT_PATTERN } from "@/components/ward-management
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 
 /**
  * Out of area option A (9 Oct 2026): the small, pure reads the page shows beside the ledger.
@@ -116,22 +116,6 @@ export const BLANK_REPAT_DRAFT: RepatDraft = {
   estimatedTime: "",
   estimatedDay: "today",
 };
-
-/** Same HH:MM (or digits only, "0930") parser the ED booking popup uses: `minuteOfDayFromClockText`. */
-export function minutesFromTimeInput(value: string): number | undefined {
-  return minuteOfDayFromClockText(value);
-}
-
-export function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY;
-  return startOfToday + (day === "tomorrow" ? MINUTES_PER_DAY : 0) + minuteOfDay;
-}
 
 /** The three steps of the plan, and the answers each holds. */
 export const PLAN_STEPS = [

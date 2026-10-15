@@ -327,7 +327,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     ).toBeGreaterThan(80);
     expect(files.map((file) => basename(file))).toContain("ward-board.tsx");
     expect(files.map((file) => basename(file))).toContain("ward-screen.tsx");
-    expect(files.map((file) => basename(file))).toContain("community-team-hub.tsx");
+    expect(files.map((file) => basename(file))).toContain("community-screen.tsx");
   });
 
   it("proves the detector can actually fire, before trusting what it did not flag", () => {

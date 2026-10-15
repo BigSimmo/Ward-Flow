@@ -95,7 +95,7 @@ const PINNED: Record<string, string | readonly string[] | null> = {
    * instead of restoring the retired Unit-cell floor onto a different table. */
   "discharges/discharges-third-edition.module.css": null,
   "ed/ed.module.css": ["11rem", "9rem"],
-  "escalation/escalation.module.css": "44rem",
+  // escalation/escalation.module.css left on 15 Oct 2026, deleted with its unreachable board.
   "governance/governance.module.css": "37.5rem",
   "governance-third-edition.module.css": "37.5rem",
   "handover/handover.module.css": null,

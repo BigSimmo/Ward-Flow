@@ -39,7 +39,7 @@ import styles from "./bed-map.module.css";
 
 /** The four ruled states a bed is drawn in. A `ready` square additionally carries `preparing` — see
  *  `BedSquare` below — never a fifth state of its own. */
-export type BedSquareState = "ready" | "pulled" | "closed" | "occupied";
+type BedSquareState = "ready" | "pulled" | "closed" | "occupied";
 
 /**
  * Grid: ward cards wrapping. Rows: one carousel of ward cards per service. Table: one shared

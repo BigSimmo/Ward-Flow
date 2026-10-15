@@ -36,7 +36,7 @@ export const STRANDED_WAITING_BLOCKERS = [
   "Funding or plan decision pending",
 ] as const satisfies readonly BedReleaseBlocker[];
 
-export type StrandedReason = "long-stay-no-plan" | "ready-but-waiting";
+type StrandedReason = "long-stay-no-plan" | "ready-but-waiting";
 
 export type StrandedFlag = {
   admissionId: string;

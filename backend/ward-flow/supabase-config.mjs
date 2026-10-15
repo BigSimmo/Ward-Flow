@@ -1,3 +1,4 @@
+// @ts-check
 export const APPROVED_SUPABASE_PROJECT = "zakzoemeedfepxcstsou";
 export const APPROVED_SUPABASE_URL = `https://${APPROVED_SUPABASE_PROJECT}.supabase.co`;
 export const APPROVED_SUPABASE_POOLER = "aws-0-ap-southeast-2.pooler.supabase.com";

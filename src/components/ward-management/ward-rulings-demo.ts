@@ -28,7 +28,7 @@ const UNIT_FSH_ADULT_SECURE = "fsh-adult-secure";
 const UNIT_SJGS_ADULT_SECURE = "sjgs-adult-secure";
 const ED_ARM = "arm-ed";
 
-export type RulingsDemoSkipped = {
+type RulingsDemoSkipped = {
   example: string;
   field: string;
   reason: string;

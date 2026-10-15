@@ -152,40 +152,8 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     why: "its one route use was the ED page's 24 hour timeline, which left the page on 11 Oct 2026 (device audit, owner pick A2) as a link to Governance",
   },
   {
-    module: "src/components/ward-management/escalation/escalation-board.tsx",
-    why: "/escalation redirects to /delays",
-  },
-  {
     module: "src/components/ward-management/statistics/statistics-insight-chart.tsx",
     why: "v6 statistics pages (7 Oct 2026) chart with the wf primitives instead",
-  },
-  {
-    module: "src/components/ward-management/tracker/live-tracker.tsx",
-    why: "/transport redirects to /movements",
-  },
-  {
-    module: "src/components/ward-management/community/community-home.tsx",
-    why: "/community renders CommunityIndex instead",
-  },
-  {
-    module: "src/components/ward-management/community/community-team-hub.tsx",
-    why: "/community/[teamId] renders CommunityScreen instead",
-  },
-  {
-    module: "src/components/ward-management/community/community-figures.tsx",
-    why: "transitively dead — reached only from community-home",
-  },
-  {
-    module: "src/components/ward-management/community/community-teams-table.tsx",
-    why: "transitively dead — reached only from community-home",
-  },
-  {
-    module: "src/components/ward-management/ed/ed-home.tsx",
-    why: "/ed/[edId] renders EdScreen instead",
-  },
-  {
-    module: "src/components/ward-management/ed/ed-service-bands.tsx",
-    why: "reached only from ed-home",
   },
   /*
    * 🔴 **THE SECOND-EDITION CHROME — RETIRED, 2026-09-11, IN THE SAME CHANGE THAT MOUNTED THE

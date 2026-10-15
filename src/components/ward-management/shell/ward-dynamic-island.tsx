@@ -3,7 +3,7 @@
 import React, { type ReactNode } from "react";
 import styles from "./ward-dynamic-island.module.css";
 
-export type DynamicIslandTone = "normal" | "neutral" | "accent" | "good" | "warn" | "danger" | "critical" | "muted";
+type DynamicIslandTone = "normal" | "neutral" | "accent" | "good" | "warn" | "danger" | "critical" | "muted";
 
 export interface DynamicIslandMetric {
   id?: string;
@@ -172,5 +172,3 @@ export function WardDynamicIsland({
     </section>
   );
 }
-
-export default WardDynamicIsland;

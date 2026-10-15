@@ -68,7 +68,7 @@ export const AUDITABLE_FORM_CODES: readonly string[] = [
   ]),
 ];
 
-export type AuditReason =
+type AuditReason =
   | "none"
   | "role"
   | "scope"
@@ -92,7 +92,7 @@ export type AuditSubject =
   | { kind: "audit-event"; eventId: string }
   | { kind: "configuration" }
   | { kind: "unresolved" };
-export type AuditBase = {
+type AuditBase = {
   id: string;
   sequence: number;
   generation: number;
@@ -123,7 +123,7 @@ export type WardAuditState = {
   auditReviewSequence: number;
   auditCaptureStartedAt: Instant;
 };
-export type OverrideDetails = {
+type OverrideDetails = {
   reason: OverrideReason | null;
   overrideFactRecorded: boolean;
   targets: readonly { unitId: string | null; outcome: "accepted" | "denied"; reasonCode: AuditReason }[];
@@ -151,7 +151,7 @@ export type BedReleaseAuditRequest =
   | { action: "BLOCK_BED_RELEASE"; blocker: BedReleaseBlocker | null }
   | { action: "SET_BED_PREPARATION"; preparing: boolean | null; note: BedPreparationNote | null }
   | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" };
-export type DischargeDetails =
+type DischargeDetails =
   | { kind: "care"; operation: CareChange["kind"] | null; recorded: CareChange | null }
   | { kind: "follow-up"; before: FollowUpState | null; requested: FollowUpState | null; after: FollowUpState | null }
   | {
@@ -340,7 +340,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
   }
 }
 
-export function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
+function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
   const role = enumValue(
     Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[],
     "stoodDownByRole" in event && event.stoodDownByRole !== undefined ? event.stoodDownByRole : event.role,

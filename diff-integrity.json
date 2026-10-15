@@ -416,6 +416,90 @@
       "after": 22,
       "reason": "Josh approved deleting the hidden Sovereign showcase (/mockups/ward-flow/sovereign, sovereign-showcase-screen, top25/ward-top25-cockpit and ward-top25-features.ts) once the Top 25 items moved into the real screens behind their top25-* flags, 15 Oct 2026. The two removed Playwright cases drove the design system showcase page at the deleted route. Every other journey in the file is unchanged.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-community-figures.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (community/community-figures.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-community-scope.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (community/community-home.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-community-team-hub.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (community/community-team-hub.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-community-teams-table.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (community/community-teams-table.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-device-claim-reason.dom.test.tsx",
+      "before": 8,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (escalation/escalation-board.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-ed-home.dom.test.tsx",
+      "before": 12,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (ed/ed-home.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-ed-service-bands.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (ed/ed-service-bands.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-escalation.dom.test.tsx",
+      "before": 6,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (escalation/escalation-board.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-tracker-leg-badge.dom.test.tsx",
+      "before": 2,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 15 Oct 2026 together with the component it rendered (tracker/live-tracker.tsx), which no route has reached since its redirect landed. Josh approved dead-code deletion on 15 Oct 2026 (repo scorecard, fix list 5.10). The suite was already skipped, so no running coverage is lost. What it covered stays in docs/ward-flow/archive/dated-notes/retired-coverage-record-2026-09-06.md.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-transport-page-name.test.ts",
+      "before": 7,
+      "after": 4,
+      "reason": "The three removed cases read tracker/live-tracker.tsx, deleted on 15 Oct 2026 as dead code (no route has rendered it since MERGE 03 made /transport a redirect). The live checks stay: the redirect target, the Movements heading and no Live tracker text in the transport page.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-management-print-coverage.test.ts",
+      "before": 12,
+      "after": 11,
+      "reason": "FIXTURE 2 used ed/ed-home.module.css as its real input, and that stylesheet was deleted on 15 Oct 2026 with its unreachable component. FIXTURE 1 and the TASK 2 negative control still prove a covered non-root edge and an uncovered edge.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-community-viewer-assumption.test.ts",
+      "before": 4,
+      "after": 3,
+      "reason": "The removed case asserted that the FD-23 screen-boundary guard lists community/community-team-hub.tsx. That screen was deleted on 15 Oct 2026 as unreachable dead code (Josh approved dead-code deletion that day). The live team page, community/community-screen.tsx, reads the full referral record, so it cannot replace the entry until that is fixed; the gap was routed to the Engine safety workstream rather than hidden by a weaker assertion.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }

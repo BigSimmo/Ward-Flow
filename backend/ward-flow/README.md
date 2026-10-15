@@ -32,7 +32,10 @@ to `005`. These source files do not establish a current hosted connection or dep
   sends Web Push act-now alerts.
 - Store: `postgres.mjs` (workspace store, revisions, receipts, audit and push state),
   `postgres-preflight.mjs` (catalogue preflight before migrations), `migrate.mjs` (migrations in
-  order).
+  order) and `migrations.mjs` (the one migration list, latest version and file checksums; a new
+  migration is one entry there plus its SQL file).
+- Checks: `npm test` (set `WARD_TEST_DATABASE_URL` to a loopback PostgreSQL for the real-database
+  cases) and `npm run typecheck` (`// @ts-check` on every backend module, using the root install).
 - Supabase adapter: `supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`,
   `migrate-supabase.mjs`, `infra/supabase-settings.template.env`, `infra/supabase-runtime-role.sql`
   and the optional `infra/supabase-security-hardening.sql`.
