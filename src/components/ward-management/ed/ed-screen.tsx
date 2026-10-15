@@ -6,6 +6,7 @@ import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
+import { EdAdmissionChecklist } from "./ed-admission-checklist";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
@@ -1288,6 +1289,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   } = useWardFlow();
   const now = useWardFlowClock();
   const nextWardOn = useWardFeatureFlag("top25-next-ward");
+  const admissionChecklistOn = useWardFeatureFlag("top25-admission-checklist");
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
@@ -4302,6 +4304,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                 const expandedCards = (
                   <>
                     <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
+                    {admissionChecklistOn && movement.acceptedUnitId !== undefined ? (
+                      <EdAdmissionChecklist movement={movement} referrals={referrals} />
+                    ) : null}
                     <section className={styles.expandedCard} aria-label={`Where ${patientInfo.displayName} is up to`}>
                       <h3 className={styles.expandedHeading}>Where they are up to</h3>
                       <ol className={styles.upTo}>
