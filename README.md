@@ -17,10 +17,11 @@ npm run ensure    # starts or reuses the dev server and prints its URL
 
 Open the printed URL plus `/mockups/ward-flow`. No credentials are needed: by default the app runs on synthetic, browser-local state. See [local first run](docs/ward-flow/LOCAL-FIRST-RUN.md) for the details.
 
-Before running the shared backend tests, install their dependencies separately:
+The shared backend has its own packages and a generated engine. Before `npm run test:backend`, run these once:
 
 ```sh
 npm ci --prefix backend/ward-flow
+node backend/ward-flow/build-engine.mjs
 ```
 
 ## Everyday commands
