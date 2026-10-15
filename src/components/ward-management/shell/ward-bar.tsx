@@ -3,26 +3,16 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  BarChart3,
-  BookOpen,
-  CalendarClock,
   Check,
   ChevronDown,
-  ChevronRight,
   ClipboardCheck,
-  FileText,
-  FlaskConical,
   Hospital,
   ListChecks,
-  MapIcon,
   Menu as MenuIcon,
   Plus,
   RotateCcwClock,
-  Settings,
-  Tv,
   Search,
   Siren,
-  Sun,
   Users,
   Wrench,
 } from "lucide-react";
@@ -37,8 +27,6 @@ import {
   useState,
   type RefObject,
 } from "react";
-
-import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
@@ -69,7 +57,6 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
-  WARD_BED_MEETING_TV_HREF,
   WARD_ED_HREF,
   WARD_HOME_HREF,
   WARD_NAV,
@@ -90,9 +77,8 @@ import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_OVERVIEW_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { WardDemoClockPopover, WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 export { WardDemoClockPopover };
-import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import {
   referralSheetRequestFromHref,
@@ -101,37 +87,23 @@ import {
   type ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { noticeIsForWardChrome, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
-const NetworkFigures = dynamic(() => import("../tools/ward-tools-workspace").then((m) => m.NetworkFigures));
-const ToolsContactDirectory = dynamic(() =>
-  import("../tools/ward-tools-workspace").then((m) => m.ToolsContactDirectory),
+import {
+  CHROME_ROLE_LABELS,
+  noticeIsForWardChrome,
+  wardTasksAreActionableForRole,
+} from "@/components/ward-management/ward-chrome-role";
+// The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
+const WardToolsSheet = dynamic(() =>
+  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
 );
-const OperationalLinks = dynamic(() => import("../tools/ward-tools-workspace").then((m) => m.OperationalLinks));
-const WardCatchmentResolver = dynamic(
-  () => import("@/components/ward-management/tools/ward-catchment-resolver").then((m) => m.WardCatchmentResolver),
-  { ssr: false },
-);
-const WardMhaCalculator = dynamic(
-  () => import("@/components/ward-management/tools/ward-mha-calculator").then((m) => m.WardMhaCalculator),
-  { ssr: false },
-);
+import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { useWardFeatureFlag } from "./ward-feature-flag-store";
-import { WardDemoReset } from "../demo-reset/ward-demo-reset";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import {
-  digestHref,
-  dischargeHref,
-  edHref,
-  handoverHref,
-  movementHref,
-  officerHref,
-  onCallHref,
-  settingsHref,
-} from "./ward-facade";
+import { dischargeHref, edHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -165,8 +137,8 @@ import styles from "./ward-bar.module.css";
  *   `buildActionInbox` — the same acknowledge/complete/reopen list the second-edition chrome
  *   already showed. It draws its own header (`<h2>Tasks</h2>`, a count, a close button), so the
  *   `<Sheet>` wrapping it renders with `headerHidden` to avoid a second header.
- * - **Tools** reuses the shared clinical calculations and contact mappings. Shift desk links
- *   to existing operational workflows; the owner requested removal of the Demo section.
+ * - **Tools** is the one sheet in `../tools/ward-tools-sheet.tsx` (Tools review, 15 Oct 2026). It
+ *   reuses the shared figures, catchment and contact mappings, with the demo controls in one panel.
  * - **"Place"** reuses `wardPlaceFor(pathname, units)` (`../ward-place.ts`), the one function a
  *   pathname resolves to a place name through — same call `WardShellHeader` (the component this
  *   bar supersedes) already makes, rendering nothing when the route names no place.
@@ -559,7 +531,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
   const isPhone = useIsPhone();
-  const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -614,9 +585,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // with any other reader (`WardRail`, a future scoped screen) in the same tab. See that file's own
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
-  const appearance = useAppearanceStore();
-  const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "operations">(
-    "overview",
+  const [toolsOpenRequest, setToolsOpenRequest] = useState<{ tool: ToolsSheetToolId; seq: number } | undefined>();
+  const toolsReturnFocusRef = useRef<HTMLElement | null>(null);
+  const clearToolsOpenRequest = useCallback(() => setToolsOpenRequest(undefined), []);
+  useEffect(
+    () =>
+      subscribeToolsTool((tool, returnFocus) => {
+        // A Board time pill opens Tools at Demo; closing Tools goes back to that pill.
+        toolsReturnFocusRef.current = returnFocus ?? null;
+        setToolsOpenRequest((current) => ({ tool, seq: (current?.seq ?? 0) + 1 }));
+      }),
+    [],
   );
   const [activityQuery, setActivityQuery] = useState("");
   const deferredActivityQuery = useDeferredValue(activityQuery);
@@ -631,26 +610,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
   // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
   const phoneMenuRef = useRef<HTMLButtonElement>(null);
+  // Read when Tools closes: the Board time pill that opened it, else the button that opens Tools.
+  const toolsReturnTarget = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        // A pill that has left the page cannot take focus, so fall back to the Tools button.
+        const pill = toolsReturnFocusRef.current;
+        if (pill?.isConnected) return pill;
+        return isPhone ? phoneMenuRef.current : toolsTriggerRef.current;
+      },
+    }),
+    [isPhone],
+  );
   const referralReturnFocusRef = useRef<HTMLElement>(null);
-  const figuresTabRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
-
-  const figures = useMemo(
-    () =>
-      standingFigures({
-        movements,
-        units,
-        admissions,
-        bedReleases,
-        leaveBeds,
-        now,
-        chromeRole: role,
-        placeId,
-      }),
-    [movements, units, admissions, bedReleases, leaveBeds, now, role, placeId],
-  );
-  const flaggedFigures = useMemo(() => figures.filter((f) => f.flagged), [figures]);
 
   // `WardTasksDrawer` draws its own header and its own close button — the Tasks `<Sheet>` below
   // is `headerHidden` with no `title`, so Sheet's own header (and the `closeRef` button it would
@@ -928,6 +902,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
+      // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
+      if (id === "tools") toolsReturnFocusRef.current = null;
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
@@ -946,7 +922,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       } else if (id === "tasks") {
         announceToWardShell(`Tasks opened. ${tasksActiveCount} invented tasks outstanding.`);
       } else if (id === "tools") {
-        announceToWardShell("Tools opened. Figures, utilities, contacts and shift desk are here.");
+        announceToWardShell(
+          "Tools opened. Service now, quick actions, look ups, print and share, and demo controls are here.",
+        );
       } else if (id === "referral") {
         announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
       }
@@ -2091,7 +2069,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
-        returnFocusRef={isPhone ? phoneMenuRef : toolsTriggerRef}
+        returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
         headerClassName={styles.drawerHeader}
@@ -2110,220 +2088,19 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         footerClassName={styles.drawerFooter}
       >
-        <div className={styles.toolsNav} role="group" aria-label="Tools sections">
-          {(
-            [
-              ["overview", "Overview"],
-              ["figures", "Figures"],
-              ["utilities", "Utilities"],
-              ["directory", "Directory"],
-              ["operations", "Shift desk"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              ref={id === "figures" ? figuresTabRef : undefined}
-              type="button"
-              aria-pressed={toolsPart === id}
-              aria-controls={`ward-tools-${id}`}
-              onClick={() => setToolsPart(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div
-          id="ward-tools-overview"
-          className={`${styles.toolsPanel} ${styles.toolsOverview}`}
-          hidden={toolsPart !== "overview"}
-        >
-          <button
-            type="button"
-            className={styles.figuresLaunch}
-            data-testid="ward-bar-figures-trigger"
-            onClick={() => {
-              setToolsPart("figures");
-              figuresTabRef.current?.focus();
-            }}
-            aria-controls="ward-tools-figures"
-          >
-            <span className={styles.toolIconSolid} aria-hidden="true">
-              <BarChart3 aria-hidden="true" strokeWidth={1.75} />
-            </span>
-            <span className={styles.launchText}>
-              <span className={styles.launchEyebrow}>Network overview</span>
-              <strong>Figures at a glance</strong>
-              <small>
-                {flaggedFigures.length > 0
-                  ? flaggedFigures.map((figure, index) => (
-                      <span key={figure.key}>
-                        {index > 0 ? " · " : null}
-                        <StatusGlyph tone={figure.key === "passed" ? "danger" : "warning"} size={8} />
-                        <b>{figure.value}</b> {figure.label.toLowerCase()}
-                      </span>
-                    ))
-                  : "Nothing flagged"}
-              </small>
-            </span>
-            <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-          </button>
-          <section className={`${styles.toolsSection} ${styles.appearanceRow}`}>
-            <h3 className={styles.toolsHeading}>
-              <Sun aria-hidden="true" strokeWidth={1.75} />
-              Appearance
-            </h3>
-            <div className={styles.appearanceTrack} role="group" aria-label="Appearance theme">
-              <button
-                type="button"
-                className={styles.segBtn}
-                aria-pressed={appearance === "dark"}
-                onClick={() => applyAppearance("dark")}
-              >
-                Dark
-              </button>
-              <button
-                type="button"
-                className={styles.segBtn}
-                aria-pressed={appearance === "light"}
-                onClick={() => applyAppearance("light")}
-              >
-                Light
-              </button>
-              <button
-                type="button"
-                className={styles.segBtn}
-                aria-pressed={appearance === "auto"}
-                onClick={() => applyAppearance("auto")}
-              >
-                System
-              </button>
-            </div>
-          </section>
-
-          <WardDemoReset className={styles.toolsSection} headingClassName={styles.toolsHeading} />
-
-          <section className={styles.toolsSection}>
-            <h3 className={styles.toolsHeading}>Quick actions</h3>
-            <Link href={handoverHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
-              <span className={styles.toolIcon} aria-hidden="true">
-                <FileText aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span>
-                Handover sheet<em>Review and print the current handover</em>
-              </span>
-              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-            </Link>
-            <button
-              type="button"
-              className={styles.toolItem}
-              onClick={() => {
-                openReferral(
-                  { category: roleCategory, destination: "ward" },
-                  isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
-                );
-              }}
-            >
-              <span className={styles.toolIcon} aria-hidden="true">
-                <Plus aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span>
-                New referral<em>Review details and choose a destination</em>
-              </span>
-              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-            </button>
-            {bedMeetingTvOn && !isPhone ? (
-              <Link
-                href={WARD_BED_MEETING_TV_HREF}
-                className={styles.toolItem}
-                data-testid="ward-bar-bed-meeting-tv"
-                onClick={() => closePopover("tools", false)}
-              >
-                <span className={styles.toolIcon} aria-hidden="true">
-                  <Tv aria-hidden="true" strokeWidth={1.75} />
-                </span>
-                <span>
-                  Bed meeting TV<em>Read only view for the meeting room screen</em>
-                </span>
-                <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-              </Link>
-            ) : null}
-            <Link href={settingsHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
-              <span className={styles.toolIcon} aria-hidden="true">
-                <Settings aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span>
-                Settings<em>Configuration and preferences</em>
-              </span>
-              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-            </Link>
-          </section>
-
-          <section className={styles.toolsSection}>
-            <h3 className={styles.toolsHeading}>Operational shortcuts</h3>
-            <OperationalLinks onNavigate={() => closePopover("tools", false)} />
-          </section>
-          <section className={`${styles.toolsSection} ${styles.referenceSection}`} aria-label="Reference page">
-            <a
-              href={digestHref()}
-              className={styles.toolItem}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                setOpenPanel((current) => (current === "tools" ? null : current));
-                closePopover("tools", false);
-              }}
-            >
-              <span className={styles.toolIcon} aria-hidden="true">
-                <BookOpen aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span>
-                Ward Flow Digest<em>Product design reference</em>
-              </span>
-              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-            </a>
-          </section>
-        </div>
-        <div id="ward-tools-figures" className={styles.toolsPanel} hidden={toolsPart !== "figures"}>
-          <NetworkFigures />
-        </div>
-        <div id="ward-tools-utilities" className={styles.toolsPanel} hidden={toolsPart !== "utilities"}>
-          <section className={styles.toolsSection}>
-            <h3 className={styles.toolsHeading}>Shortcuts</h3>
-            <OperationalLinks onNavigate={() => closePopover("tools", false)} />
-          </section>
-          <section className={`${styles.toolsSection} ${styles.toolsWidget}`}>
-            <h3 className={styles.toolsHeading}>
-              <MapIcon aria-hidden="true" strokeWidth={1.75} />
-              Catchment resolver <span>WA Health</span>
-            </h3>
-            <WardCatchmentResolver />
-          </section>
-
-          <section className={`${styles.toolsSection} ${styles.toolsWidget}`}>
-            <h3 className={styles.toolsHeading}>
-              <CalendarClock aria-hidden="true" strokeWidth={1.75} />
-              Form date review <span>Recorded times only</span>
-            </h3>
-            <WardMhaCalculator />
-          </section>
-        </div>
-        <div id="ward-tools-operations" className={styles.toolsPanel} hidden={toolsPart !== "operations"}>
-          <section className={styles.toolsSection}>
-            <h3 className={styles.toolsHeading}>Shift desk</h3>
-            <OperationalLinks onNavigate={() => closePopover("tools", false)} />
-          </section>
-          <section className={`${styles.toolsSection} ${styles.toolsWidget}`} aria-label="Scenario controls">
-            <h3 className={styles.toolsHeading}>
-              <FlaskConical aria-hidden="true" strokeWidth={1.75} />
-              Scenario controls
-            </h3>
-            <WardDemoControls />
-            <WardRoleSwitcher />
-          </section>
-        </div>
-        <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPart !== "directory"}>
-          <ToolsContactDirectory onNavigate={() => closePopover("tools", false)} />
-        </div>
+        <WardToolsSheet
+          isPhone={isPhone}
+          roleLabel={CHROME_ROLE_LABELS[role]}
+          onNavigate={() => closePopover("tools", false)}
+          onNewReferral={(destination = "ward") =>
+            openReferral(
+              { category: roleCategory, destination },
+              isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
+            )
+          }
+          openRequest={toolsOpenRequest}
+          onRequestHandled={clearToolsOpenRequest}
+        />
       </Sheet>
 
       <Sheet

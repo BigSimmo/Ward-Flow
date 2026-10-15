@@ -1664,8 +1664,6 @@
 
 /* A card: surface with a fine edge, light shadow, rows divided by hairlines. */
 .card,
-.toolsSection,
-.figuresLaunch,
 .drawerSummary {
   min-width: 0;
   border: 1px solid var(--wf-line);
@@ -1713,8 +1711,7 @@
 
 /* Segmented control: a sunk track, the chosen segment a raised surface. */
 .segTrack,
-.filterChipsTrack,
-.appearanceTrack {
+.filterChipsTrack {
   display: flex;
   gap: 2px;
   padding: 3px;
@@ -1777,10 +1774,7 @@
 .filterChip:focus-visible,
 .switchBtn:focus-visible,
 .noticeMarkRead:focus-visible,
-.quietBtn:focus-visible,
-.toolItem:focus-visible,
-.figuresLaunch:focus-visible,
-.toolsNav button:focus-visible {
+.quietBtn:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
@@ -2301,276 +2295,6 @@
   text-decoration: underline;
 }
 
-/* ── Tools ─────────────────────────────────────────────────────────────────────────────────── */
-
-/* Section tabs: plain words, the chosen one underlined. */
-.toolsNav {
-  display: flex;
-  gap: 16px;
-  margin-top: -2px;
-  border-bottom: 1px solid var(--wf-line);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.toolsNav::-webkit-scrollbar {
-  display: none;
-}
-
-.toolsNav button {
-  position: relative;
-  min-height: 36px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--wf-ink-2);
-  font-family: var(--wf-font);
-  font-size: var(--t-1);
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.toolsNav button:hover {
-  color: var(--wf-ink-1);
-}
-
-.toolsNav button[aria-pressed="true"] {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-.toolsNav button[aria-pressed="true"]::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-ink-1);
-}
-
-.toolsPanel {
-  display: grid;
-  gap: 12px;
-}
-
-.toolsPanel[hidden] {
-  display: none;
-}
-
-.toolsOverview {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.toolsSection {
-  display: grid;
-  overflow: hidden;
-}
-
-.toolsHeading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 46px;
-  margin: 0;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--wf-line);
-  font-size: var(--t-3);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-  white-space: nowrap;
-}
-
-.toolsHeading > svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  color: var(--wf-ink-2);
-}
-
-.toolsHeading > span {
-  margin-left: auto;
-  font-size: var(--t-0);
-  font-weight: 400;
-  color: var(--wf-ink-3);
-}
-
-/* Widgets bring their own layout; the card gives them an inner margin. */
-.toolsWidget > :not(.toolsHeading) {
-  margin: 12px;
-}
-
-/* Figures at a glance: the one launch card. */
-.figuresLaunch {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px;
-  text-align: left;
-  color: var(--wf-ink-1);
-  font-family: var(--wf-font);
-  cursor: pointer;
-}
-
-.figuresLaunch:hover {
-  background: var(--wf-hover);
-}
-
-.toolIconSolid {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  flex: none;
-  border-radius: var(--wf-r-md);
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
-    0 0 0 1px var(--wf-pri-edge);
-  color: var(--wf-on-accent);
-}
-
-.toolIconSolid svg {
-  width: 16px;
-  height: 16px;
-}
-
-.launchText {
-  display: grid;
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-}
-
-.launchEyebrow {
-  font-size: var(--t-0);
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
-.launchText strong {
-  font-size: var(--t-3);
-  font-weight: 600;
-}
-
-.launchText small {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 6px;
-  font-size: var(--t-0);
-  color: var(--wf-ink-2);
-}
-
-.launchText small > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.launchText small b {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.rowChevron {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  margin-left: auto;
-  color: var(--wf-ink-3);
-}
-
-/* Appearance: one row, label then the segmented choice. */
-.appearanceRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 6px 6px 0;
-}
-
-.appearanceRow > .toolsHeading {
-  min-height: 0;
-  border-bottom: 0;
-}
-
-.appearanceTrack .segBtn {
-  min-width: 4rem;
-}
-
-/* Quick actions and the digest: rows with a small framed icon. */
-.toolItem {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  padding: 6px 12px;
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font-family: var(--wf-font);
-  font-size: var(--t-1);
-  font-weight: 600;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.toolsHeading + .toolItem,
-.referenceSection > .toolItem {
-  border-top: 0;
-}
-
-.toolItem:hover {
-  background: var(--wf-hover);
-}
-
-.toolItem > span:not(.toolIcon) {
-  display: grid;
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-}
-
-.toolItem em {
-  font-style: normal;
-  font-size: var(--t-0);
-  font-weight: 400;
-  color: var(--wf-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.toolIcon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex: none;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  color: var(--wf-ink-2);
-}
-
-.toolIcon svg {
-  width: 16px;
-  height: 16px;
-}
-
-.referenceSection {
-  overflow: hidden;
-}
-
 @media (max-width: 640px) {
   .drawerSheetWide,
   .drawerSheetTasks,
@@ -2582,26 +2306,11 @@
   .drawerSummary > div {
     padding: 6px 8px;
   }
-
-  .appearanceRow {
-    flex-wrap: wrap;
-    padding: 0 6px 6px 0;
-  }
-
-  .appearanceTrack {
-    flex: 1;
-  }
-
-  .appearanceTrack .segBtn {
-    flex: 1;
-    min-width: 0;
-  }
 }
 
 @media (forced-colors: active) {
   .segBtn[aria-pressed="true"],
-  .filterChip[aria-pressed="true"],
-  .toolsNav button[aria-pressed="true"] {
+  .filterChip[aria-pressed="true"] {
     background: Highlight;
     color: HighlightText;
   }
@@ -2654,8 +2363,6 @@
   .drawerSheet *,
   .activitySection,
   .activitySection *,
-  .toolsSection,
-  .toolsSection *,
   .tasksBody,
   .tasksBody * {
     color: CanvasText !important;
