@@ -31,7 +31,7 @@ These identifiers are resource references, not credentials. Check the exact targ
 
 ## Configuration
 
-[`railway.json`](../railway.json) holds the builder, build command, start command and health check path, and overrides the matching Railway service settings. Variables and watch paths stay in the service settings. Railpack installs the locked dependencies using its default installer; a custom install command caused a missing `/opt/corepack` packaging error and was removed.
+[`railway.json`](../railway.json) records the intended builder, build command, start command and health check path. Railway's Config as Code eligibility must be confirmed for the `ward-flow` service before relying on these values: until that confirmation is recorded, the matching Railway dashboard settings remain the operational source of truth and must be kept in sync. Variables and watch paths stay in the service settings. Railpack installs the locked dependencies using its default installer; a custom install command caused a missing `/opt/corepack` packaging error and was removed.
 
 - Builder: Railpack, Node `24.19.0`; npm version comes from `packageManager`.
 - Build command: `node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack` (includes Next.js type checking).
