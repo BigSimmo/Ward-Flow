@@ -31,7 +31,7 @@
     height: 20px;
     padding: 0 6px;
     border: 1px solid var(--wf-line-3);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
     background: var(--wf-surface);
     color: var(--wf-ink-2);
     font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -184,7 +184,7 @@
     justify-content: center;
     height: 48px;
     padding: 0 var(--wf-s-4);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     font: 600 var(--wf-fs-14) / 1 var(--wf-font);
     cursor: pointer;
   }
