@@ -41,7 +41,7 @@
   height: 18px;
   padding: 0 5px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-line);
   color: var(--wf-ink-2);
   display: inline-flex;
