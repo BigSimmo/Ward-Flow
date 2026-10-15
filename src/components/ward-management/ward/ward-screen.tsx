@@ -826,7 +826,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     };
   }, [notificationCenterOpen]);
 
-  // Initial focus and focus trapping for Telemetry Drawer
+  // Focus moves to the first control whenever the drawer shows a bed, including a step to another bed.
   useEffect(() => {
     if (selectedBed !== null && bedDrawerRef.current) {
       const focusable = Array.from(
@@ -838,64 +838,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
   }, [selectedBed]);
 
-  // Initial focus and focus trapping for Capacity Confirmation Modal
-  useEffect(() => {
-    if (confirmNumbersOpen && capacityModalRef.current) {
-      const focusable = Array.from(
-        capacityModalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled"));
-      focusable[0]?.focus();
-    }
-  }, [confirmNumbersOpen]);
-
+  // The bed drawer joins the shared modal contract itself (`useWardModalFocus` in the dossier),
+  // which owns Tab and Escape; this only keeps a stray Escape on the drawer closing it.
   function handleBedDrawerKeyDown(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
       closeBedDrawer();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const drawer = bedDrawerRef.current;
-    if (!drawer) return;
-    const focusable = Array.from(
-      drawer.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-    ).filter((el) => !el.hasAttribute("disabled"));
-    const first = focusable.at(0);
-    const last = focusable.at(-1);
-    if (!first || !last) return;
-    if (event.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  function handleCapacityModalKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeCapacityModal();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const modal = capacityModalRef.current;
-    if (!modal) return;
-    const focusable = Array.from(
-      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-    ).filter((el) => !el.hasAttribute("disabled"));
-    const first = focusable.at(0);
-    const last = focusable.at(-1);
-    if (!first || !last) return;
-    if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
     }
   }
 
@@ -3546,14 +3494,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             aria-labelledby="modal-capacity-title"
             aria-describedby="modal-capacity-desc"
           >
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={capacityModalRef}
               className={styles.modalBox}
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              onKeyDown={handleCapacityModalKeyDown}
             >
               <div className={styles.modalHead}>
                 <h2 id="modal-capacity-title" className={styles.modalTitle}>

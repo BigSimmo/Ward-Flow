@@ -99,7 +99,10 @@ describe("the Delays screen", () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
 
     inspectDelayPerson(wardMovements.find(isOpen)!.id);
-    expect(frame).toHaveBeenCalledTimes(1);
+    // One frame scrolls the details into view. The shared modal focus contract takes its own
+    // frame to settle focus inside the sheet, so the count is not pinned to one.
+    expect(frame).toHaveBeenCalled();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
     // The sheet joins the shared modal stack, which puts focus on its first control.
     const sheet = screen.getByRole("region", { name: "Why this person is waiting" });
