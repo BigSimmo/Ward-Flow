@@ -342,7 +342,7 @@
   gap: var(--ward-space-6);
   padding: var(--ward-space-2) var(--ward-space-8);
   border: 0.0625rem solid var(--line);
-  border-radius: var(--pill);
+  border-radius: var(--wf-r-tag);
   background: var(--surface-2);
   color: var(--ink);
   font-size: var(--t-0);

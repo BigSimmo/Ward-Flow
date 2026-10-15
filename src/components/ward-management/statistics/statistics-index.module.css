@@ -265,7 +265,7 @@
   height: 26px;
   padding: 0 6px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   border: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);

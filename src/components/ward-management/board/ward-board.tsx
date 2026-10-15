@@ -3293,7 +3293,7 @@ export function WardBoard({
                               fontVariantNumeric: "tabular-nums",
                               fontSize: "0.8rem",
                               padding: "0.125rem 0.5rem",
-                              borderRadius: "999px",
+                              borderRadius: "var(--wf-r-tag)",
                               border: "1px solid var(--line-strong)",
                               background: "var(--surface)",
                               color: "var(--ink)",

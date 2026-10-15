@@ -115,7 +115,7 @@
   min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px 0 24px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   color: inherit;
   background: color-mix(in srgb, currentColor 7%, transparent);
   font: 600 12px / 1 var(--wf-font, inherit);
@@ -275,7 +275,7 @@
   inset: 9px 0;
   z-index: -1;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   box-shadow:
     inset 0 1px 0 var(--wf-hl),
@@ -587,7 +587,7 @@
   z-index: -1;
   pointer-events: none;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   box-shadow:
     inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent),
@@ -698,7 +698,7 @@
   inset: 6px 0;
   z-index: -1;
   border: 1px solid transparent;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   pointer-events: none;
   transition:
@@ -1573,7 +1573,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   transition: background-color var(--wf-m-fast) var(--wf-ease);
 }
@@ -2691,7 +2691,7 @@
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before {
     inset: 8px 80px 8px 12px;
     border: 1px solid var(--wf-focus-ring);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
   }
@@ -2765,7 +2765,7 @@
     > div:first-of-type::before {
     inset: 8px 80px 8px 12px;
     border: 1px solid var(--wf-focus-ring);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
   }
@@ -3689,7 +3689,7 @@
       > div:first-of-type::before {
       inset: calc(var(--wgs-sheet-top) + 6px) 80px 6px 12px;
       border: 1px solid var(--wf-line-2);
-      border-radius: var(--wf-r-pill);
+      border-radius: var(--wf-r-ctl);
       background: var(--wf-surface-2);
       box-shadow: none;
       transition: border-color var(--wf-m-fast) var(--wf-ease);

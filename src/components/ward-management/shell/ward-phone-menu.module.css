@@ -283,7 +283,7 @@
   height: 20px;
   padding: 0 6px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);

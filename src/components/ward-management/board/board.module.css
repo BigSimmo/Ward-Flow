@@ -2871,7 +2871,7 @@
   align-items: center;
   align-self: flex-start;
   padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in oklab, var(--accent) 15%, var(--surface));
   color: var(--accent-ink);
   font-size: 0.75rem;

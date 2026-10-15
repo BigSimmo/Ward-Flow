@@ -335,7 +335,7 @@
   display: inline-flex;
   align-items: center;
   border: 0.0625rem solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   padding: 0.0625rem 0.4375rem;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);

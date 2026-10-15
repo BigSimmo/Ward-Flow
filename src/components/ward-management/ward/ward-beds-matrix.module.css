@@ -375,7 +375,7 @@
   font-size: var(--wf-fs-12);
   font-variant-numeric: tabular-nums;
   padding: 0 6px;
-  border-radius: var(--pill, 999px);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in oklab, var(--ink) 8%, transparent);
   color: var(--ink);
 }

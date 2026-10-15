@@ -56,7 +56,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
 }
@@ -71,7 +71,7 @@
   padding: 0 4px;
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
   box-shadow: 0 0 0 2px var(--wf-count-ring, var(--wf-surface-2));
   color: var(--wf-ink-2);

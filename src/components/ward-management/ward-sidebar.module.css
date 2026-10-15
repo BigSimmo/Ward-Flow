@@ -264,7 +264,7 @@
 .countUrgent {
   flex-shrink: 0;
   margin-left: auto;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   padding: 0 var(--ward-space-6);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
@@ -299,7 +299,7 @@
  */
 .groupCount {
   margin-left: var(--ward-space-6);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--ward-warning-soft);
   padding: 0 var(--ward-space-6);
   color: var(--ward-warning);
