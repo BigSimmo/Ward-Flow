@@ -37,6 +37,7 @@ import {
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
 import { calendarDateOf, minuteOfDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -700,7 +701,7 @@ function PersonEntry({
             </span>
           </p>
         )}
-        {occupant.days !== null && occupant.days >= 7 && (
+        {occupant.days !== null && occupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
           <p style={{ margin: "4px 0" }}>
             <span
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
@@ -799,7 +800,7 @@ function PersonEntry({
             </span>
           </div>
         )}
-        {occupant.days !== null && occupant.days >= 7 && (
+        {occupant.days !== null && occupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
           <div style={{ marginTop: 8 }}>
             <span
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
@@ -3012,44 +3013,45 @@ export function WardBoard({
                                 : "Mark as Step-Down Candidate (Subacute Transfer)"}
                             </button>
                           </div>
-                          {selectedOccupant.days !== null && selectedOccupant.days >= 7 && (
-                            <div
-                              className={styles.barrierSelectGroup}
-                              data-testid="ward-board-barrier-container"
-                              style={{ flex: "1 1 100%", marginTop: 8 }}
-                            >
-                              <label htmlFor="ward-board-barrier-select" className={styles.leavingLabel}>
-                                Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
-                              </label>
-                              <select
-                                id="ward-board-barrier-select"
-                                className={styles.leavingSelect}
-                                data-testid="ward-board-barrier-select"
-                                value={selectedOccupant.dischargeBarrier ?? "None"}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  dispatch({
-                                    type: "SET_DISCHARGE_BARRIER",
-                                    role: "ward",
-                                    now,
-                                    actingUnitId: unit.id,
-                                    admissionId: selectedOccupant.key,
-                                    barrier: val === "None" ? null : (val as DischargeBarrier),
-                                  });
-                                  const msg = `Discharge barrier for ${nameFor(selectedOccupant.key)}: ${val}`;
-                                  setToastMessage(msg);
-                                  announceToWardShell(`Discharge barrier for this patient: ${val}`);
-                                }}
+                          {selectedOccupant.days !== null &&
+                            selectedOccupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
+                              <div
+                                className={styles.barrierSelectGroup}
+                                data-testid="ward-board-barrier-container"
+                                style={{ flex: "1 1 100%", marginTop: 8 }}
                               >
-                                <option value="None">None / Clear barrier</option>
-                                {DISCHARGE_BARRIERS.map((barrier) => (
-                                  <option key={barrier} value={barrier}>
-                                    {barrier}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                                <label htmlFor="ward-board-barrier-select" className={styles.leavingLabel}>
+                                  Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
+                                </label>
+                                <select
+                                  id="ward-board-barrier-select"
+                                  className={styles.leavingSelect}
+                                  data-testid="ward-board-barrier-select"
+                                  value={selectedOccupant.dischargeBarrier ?? "None"}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    dispatch({
+                                      type: "SET_DISCHARGE_BARRIER",
+                                      role: "ward",
+                                      now,
+                                      actingUnitId: unit.id,
+                                      admissionId: selectedOccupant.key,
+                                      barrier: val === "None" ? null : (val as DischargeBarrier),
+                                    });
+                                    const msg = `Discharge barrier for ${nameFor(selectedOccupant.key)}: ${val}`;
+                                    setToastMessage(msg);
+                                    announceToWardShell(`Discharge barrier for this patient: ${val}`);
+                                  }}
+                                >
+                                  <option value="None">None / Clear barrier</option>
+                                  {DISCHARGE_BARRIERS.map((barrier) => (
+                                    <option key={barrier} value={barrier}>
+                                      {barrier}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>

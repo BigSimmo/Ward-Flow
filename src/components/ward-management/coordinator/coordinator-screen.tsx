@@ -10,6 +10,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
@@ -118,7 +119,7 @@ const DELAYS_HREF = "/mockups/ward-flow/delays";
 const PHONE_QUEUE_ROWS = 20;
 
 /** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
-const BED_COUNT_FRESH_MINUTES = 60;
+const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
 
 /** Focus target when a selection goes away: the selected queue row, else the active queue choice. */
 const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-checked="true"]';

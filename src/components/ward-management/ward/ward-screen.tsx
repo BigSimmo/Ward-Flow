@@ -54,6 +54,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import {
   calendarDateOf,
+  currentDueSoonThresholds,
   dayOf,
   formatInstant,
   formatInstantWithDay,
@@ -1243,7 +1244,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         const remaining = minutesUntil(dueAt, now);
         alerts.push({
           key: `form-${movement.id}`,
-          tone: remaining <= 60 ? "critical" : "warning",
+          tone: remaining <= currentDueSoonThresholds().urgentMinutes ? "critical" : "warning",
           title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
           countdown: remaining < 0 ? "Due time has passed" : formatRemaining(remaining),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.

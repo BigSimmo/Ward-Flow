@@ -36,6 +36,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -633,7 +634,7 @@ function AlertsWorkspace() {
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const untriaged = (referrals ?? []).filter((referral) => referral.triagedAt === undefined);
   const prolongedEdCount = openMovements.filter(
-    (movement: Movement) => movement.originEdId !== undefined && now - movement.openedAt >= 1440,
+    (movement: Movement) => movement.originEdId !== undefined && now - movement.openedAt >= LONG_WAIT_MINUTES,
   ).length;
   const overrideCount = movements.reduce((total, movement: Movement) => total + movement.overrides.length, 0);
   const checks: { key: string; kind?: AlertKind; label: string; n: number; href?: string; scope: string }[] = [

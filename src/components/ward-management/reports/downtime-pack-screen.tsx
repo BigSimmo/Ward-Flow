@@ -1,6 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
@@ -47,7 +48,7 @@ const NOT_RECORDED = "Not recorded";
 /** F-08 (phone review, Oct 2026): printed at the top of the pack, so paper is never mistaken for records. */
 const PRINT_NOTICE = "Prototype data, invented records. Not real patients and not for clinical use.";
 /** A pack older than this reads as stale, in words and with a glyph. Nothing turns red. */
-const STALE_AFTER_MINUTES = 60;
+const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
