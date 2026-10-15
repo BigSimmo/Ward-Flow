@@ -9,7 +9,7 @@ const UNIT = "unit-under-test";
 function bareMovement(): Movement {
   const movement = seedWardFlowStateAt(0).movements[0];
   if (!movement) throw new Error("expected a seeded movement");
-  return { ...movement, referredUnitIds: [], waitlistedUnitIds: [], declines: [], withdrawnReferrals: [] };
+  return { ...movement, waitlistedUnitIds: [], declines: [], withdrawnReferrals: [] };
 }
 
 describe("waitlistStands", () => {
@@ -49,26 +49,36 @@ describe("waitlistStands", () => {
     expect(waitlistStands(movement, UNIT)).toBe(true);
   });
 
-  it("ends when the withdrawal lands in the same minute as the waitlist answer", () => {
+  it("does not count a same-minute ordinary decline after waitlisting", () => {
     const movement: Movement = {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
-      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
-      withdrawnReferrals: [{ unitId: UNIT, at: 1_000, reason: "coordinator_withdrew" }],
+      declines: [
+        { unitId: UNIT, at: 1_000, reason: "no_bed" },
+        { unitId: UNIT, at: 2_000, reason: "out_of_catchment" },
+      ],
+      referralAnswerHistory: [
+        { unitId: UNIT, at: 1_000, answer: "waitlisted" },
+        { unitId: UNIT, at: 2_000, answer: "declined" },
+      ],
     };
     expect(waitlistStands(movement, UNIT)).toBe(false);
   });
 
-  it("holds when a same minute waitlist answer leaves the referral live", () => {
+  it("counts a same-minute re-waitlist after an ending answer", () => {
     const movement: Movement = {
       ...bareMovement(),
-      referredUnitIds: [UNIT],
       waitlistedUnitIds: [UNIT],
       declines: [
         { unitId: UNIT, at: 1_000, reason: "no_bed" },
-        { unitId: UNIT, at: 2_000, reason: "no_bed" },
+        { unitId: UNIT, at: 2_000, reason: "out_of_catchment" },
       ],
       withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
+      referralAnswerHistory: [
+        { unitId: UNIT, at: 1_000, answer: "waitlisted" },
+        { unitId: UNIT, at: 2_000, answer: "withdrawn" },
+        { unitId: UNIT, at: 2_000, answer: "waitlisted" },
+      ],
     };
     expect(waitlistStands(movement, UNIT)).toBe(true);
   });

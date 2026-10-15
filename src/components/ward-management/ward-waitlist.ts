@@ -10,6 +10,15 @@ const WAITLIST_REASONS: readonly string[] = WAITLIST_INSTEAD_OF_DECLINE_REASONS;
  */
 export function waitlistStands(movement: Movement, unitId: string): boolean {
   if (!(movement.waitlistedUnitIds ?? []).includes(unitId)) return false;
+
+  // Reducer-written answers retain append order because provider timestamps are minute-granular.
+  // In particular, a decline and a waitlist answer can have the same `at` value.
+  const answers = movement.referralAnswerHistory?.filter((answer) => answer.unitId === unitId);
+  const latestAnswer = answers?.at(-1);
+  if (latestAnswer) return latestAnswer.answer === "waitlisted";
+
+  // Legacy/hand-authored movements predate answer ordering; retain the timestamp fallback for
+  // those records.
   let waitlistedAt = Number.NEGATIVE_INFINITY;
   let endedAt = Number.NEGATIVE_INFINITY;
   for (const decline of movement.declines) {
@@ -20,9 +29,5 @@ export function waitlistStands(movement: Movement, unitId: string): boolean {
   for (const withdrawal of movement.withdrawnReferrals) {
     if (withdrawal.unitId === unitId) endedAt = Math.max(endedAt, withdrawal.at);
   }
-  if (endedAt === Number.NEGATIVE_INFINITY) return true;
-  if (endedAt !== waitlistedAt) return endedAt < waitlistedAt;
-  // Same minute on the clock. A waitlist answer keeps the ward's live referral and a withdrawal or
-  // ordinary decline removes it, so the referral still being live means the waitlist came last.
-  return movement.referredUnitIds.includes(unitId);
+  return endedAt <= waitlistedAt || endedAt === Number.NEGATIVE_INFINITY;
 }
