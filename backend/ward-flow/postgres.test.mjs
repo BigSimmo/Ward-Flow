@@ -1061,8 +1061,12 @@ test("a ward desk may send the events its screen sends under another role, and n
   const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [world.state.units[0].id] });
   const notYours = "This change is not part of your role.";
   const refusal = (event) => engine.commandRefusal(world, ward, event, at);
-  // The ward's Raise referral is sent as community, a pair in CROSS_ROLE_ALLOWED.
+  // The ward's Raise referral is sent in the ward's own name (role access plan item 8). Its New
+  // referral sheet sends as the source chosen in the form and adds the patient as ED, both pairs in
+  // CROSS_ROLE_ALLOWED.
+  assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ward" }), notYours);
   assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
+  assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ed" }), notYours);
   assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
   // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
   // still refused.

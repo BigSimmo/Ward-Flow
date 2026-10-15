@@ -1,10 +1,11 @@
 "use client";
 
-import { type ChangeEvent, useRef, useState } from "react";
+import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { WardDemoReset } from "../demo-reset/ward-demo-reset";
 import { formatInstant } from "../ward-clock";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../ward-flow-raise";
 import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels } from "../ward-scenarios";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import styles from "./ward-tools-sheet.module.css";
@@ -16,8 +17,12 @@ import styles from "./ward-tools-sheet.module.css";
  * raised with `role: "demo"` exactly as before, and every string says demo, never clinical.
  */
 export function WardDemoPanel() {
-  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
+  const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
   const now = useWardFlowClock();
+  const raise = useWardRaise("demo");
+  const demoOn = useDemoControlsAvailable();
+  const offId = useId();
+  const lock = demoOn ? {} : { disabled: true, "aria-describedby": offId };
   const [message, setMessage] = useState<string | null>(null);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
   // picker above does not offer them a second time.
@@ -67,6 +72,11 @@ export function WardDemoPanel() {
   return (
     <div className={styles.toolBody} data-testid="ward-tools-demo-panel">
       <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
+      {demoOn ? null : (
+        <p id={offId} className={styles.note} data-testid="ward-tools-demo-off">
+          {DEMO_CONTROLS_OFF}
+        </p>
+      )}
       <div className={styles.scenarioGrid} role="radiogroup" aria-label="Demo scenario">
         {pickable.map((candidate) => (
           <button
@@ -75,8 +85,9 @@ export function WardDemoPanel() {
             role="radio"
             aria-checked={scenario === candidate}
             className={styles.scenarioCard}
+            {...lock}
             onClick={() => {
-              dispatch({ type: "SET_SCENARIO", role: "demo", now, scenario: candidate });
+              raise("SET_SCENARIO", { scenario: candidate });
               setMessage(`${scenarioLabels[candidate]} loaded.`);
             }}
           >
@@ -92,14 +103,16 @@ export function WardDemoPanel() {
         <button
           type="button"
           className={styles.secondaryButton}
-          onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 15 })}
+          {...lock}
+          onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
         >
           +15 min
         </button>
         <button
           type="button"
           className={styles.secondaryButton}
-          onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 60 })}
+          {...lock}
+          onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
         >
           +1 hour
         </button>
@@ -109,7 +122,12 @@ export function WardDemoPanel() {
           <button type="button" className={styles.secondaryButton} onClick={saveToFile}>
             Save to file
           </button>
-          <button type="button" className={styles.secondaryButton} onClick={() => fileInputRef.current?.click()}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            {...lock}
+            onClick={() => fileInputRef.current?.click()}
+          >
             Load from file
           </button>
           <input
@@ -127,8 +145,9 @@ export function WardDemoPanel() {
       <button
         type="button"
         className={styles.resetButton}
+        {...lock}
         onClick={() => {
-          dispatch({ type: "RESET_SCENARIO", role: "demo", now });
+          raise("RESET_SCENARIO");
           setMessage("Demo reset to the start of the scenario.");
         }}
       >

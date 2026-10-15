@@ -42,7 +42,7 @@ describe("recording that nobody raised a referral", () => {
   it("the ED board carries the control that dispatches it", () => {
     const source = readFileSync("src/components/ward-management/ed/ed-screen.tsx", "utf8");
     expect(source).toContain("ward-ed-no-referral-raised-");
-    expect(source).toContain('type: "RECORD_NO_REFERRAL"');
+    expect(source).toContain('raise("RECORD_NO_REFERRAL"');
     expect(source).toContain("No referral raised");
   });
 });

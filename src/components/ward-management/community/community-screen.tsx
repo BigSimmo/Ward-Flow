@@ -80,6 +80,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
   cancelTransportBlockedReason,
   communityDeclineBlockedReason,
@@ -517,6 +518,7 @@ export function CommunityScreen({
   );
   const liveReferrals = useCommunityScopedReferrals();
   const now = useWardFlowClock();
+  const raise = useWardRaise("community");
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
   const umrnLookup = useMemo(
     () => ({ patients, referrals: referrals ?? liveReferrals, movements }),
@@ -807,15 +809,12 @@ export function CommunityScreen({
       }
       setAcceptanceError(null);
       setPendingAcceptance({ id: referralId, rejectionCount: rejections.length });
-      dispatch({
-        type: "ACCEPT_REFERRAL",
-        role: "community",
-        now,
+      raise("ACCEPT_REFERRAL", {
         referralId,
         destinationKind: "community_team",
       });
     },
-    [dispatch, liveReferrals, now, rejections.length, team],
+    [raise, liveReferrals, rejections.length, team],
   );
 
   useEffect(() => {
@@ -948,10 +947,7 @@ export function CommunityScreen({
     ) {
       return;
     }
-    dispatch({
-      type: "BOOK_TRANSPORT",
-      role: "community",
-      now,
+    raise("BOOK_TRANSPORT", {
       movementId,
       actingPlaceId: teamId,
       provider,
@@ -970,10 +966,7 @@ export function CommunityScreen({
 
   function submitCancelTransport(movementId: string) {
     if (cancelTransportReason === undefined) return;
-    dispatch({
-      type: "CANCEL_TRANSPORT",
-      role: "community",
-      now,
+    raise("CANCEL_TRANSPORT", {
       movementId,
       actingPlaceId: teamId,
       reason: cancelTransportReason,
@@ -1167,7 +1160,7 @@ export function CommunityScreen({
     .sort((a, b) => b.raisedAt - a.raisedAt);
   const unreadTeamNoticeCount = teamNotices.filter((notice) => notice.readAt === undefined).length;
   function markTeamNoticeRead(noticeId: string) {
-    dispatch({ type: "MARK_NOTICE_READ", role: "community", now, noticeId, actingPlaceId: teamId });
+    raise("MARK_NOTICE_READ", { noticeId, actingPlaceId: teamId });
   }
   const inBedCount = lists.currentlyAdmitted.filter((admission) => admission.state === "occupied").length;
   const bedPulledCount = lists.currentlyAdmitted.filter((admission) => admission.state === "pulled").length;
