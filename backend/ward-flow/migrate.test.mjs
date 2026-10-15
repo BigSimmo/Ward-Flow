@@ -101,3 +101,29 @@ test("a migration file that no longer matches its checksum is refused before any
   const { MIGRATIONS, readMigration } = await import("./migrations.mjs");
   await assert.rejects(readMigration({ ...MIGRATIONS[0], sha256: "0".repeat(64) }), /checksum mismatch/);
 });
+
+for (const rollbackFails of [false, true]) {
+  test(`migration failure keeps its original cause when rollback ${rollbackFails ? "fails" : "succeeds"}`, async () => {
+    const original = Object.assign(new Error("synthetic migration failure"), { code: "42P01" });
+    const rollback = Object.assign(new Error("synthetic connection failure"), { code: "ECONNRESET" });
+    const queries = [];
+    const releases = [];
+    const client = {
+      async query(sql) {
+        queries.push(sql);
+        if (sql === "ROLLBACK") {
+          if (rollbackFails) throw rollback;
+          return { rows: [] };
+        }
+        if (sql === "BEGIN") return { rows: [] };
+        throw original;
+      },
+      release(error) {
+        releases.push(error);
+      },
+    };
+    await assert.rejects(migrate({ connect: async () => client }), (error) => error === original);
+    assert.deepEqual(queries, ["BEGIN", "SELECT pg_advisory_xact_lock(782322)", "ROLLBACK"]);
+    assert.deepEqual(releases, [rollbackFails ? rollback : undefined]);
+  });
+}

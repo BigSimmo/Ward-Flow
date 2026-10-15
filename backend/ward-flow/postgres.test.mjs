@@ -534,7 +534,6 @@ test(
             event: "ward_backend_push_evaluation_failure",
             errorName: "TypeError",
             errorCode: "ENGINE",
-            message: "unexpected state",
           },
         ]);
       });

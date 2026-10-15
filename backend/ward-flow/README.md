@@ -68,7 +68,12 @@ to `005`. These source files do not establish a current hosted connection or dep
   service as approved clinical storage.
 - Request logs carry only event, generated request ID, route category, method category, status,
   outcome category and duration. They never carry tokens, user IDs, URLs, payloads or exception
-  text. Logger failures cannot change the API result.
+  text. HTTP, push and store failures share bounded error-name and protocol-code fields; unknown
+  values fall back to `Error` without copying exception text. Logger failures cannot change the
+  API result.
+- Configured PostgreSQL lock/query deadline failures return `503 storage_unavailable`; other
+  query/code faults remain `500`. A failed migration rollback preserves the original exception
+  and removes the failed connection from the pool.
 
 ## Local checks
 

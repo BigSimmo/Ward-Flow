@@ -348,16 +348,23 @@ test("configuration turns phone push on only with the shared workspace and all t
   assert.equal(readConfig({ ...shared, ...env }).push.publicKey, keys.publicKey);
 });
 
-test("error diagnostics carry name, code and a URL-free message only", () => {
+test("error diagnostics retain protocol codes but never arbitrary exception text", () => {
   const error = Object.assign(new Error("permission denied for table push_subscriptions at https://x.example/k"), {
     code: "42501",
   });
   assert.deepEqual(errorFields(error), {
     errorName: "Error",
     errorCode: "42501",
-    message: "permission denied for table push_subscriptions at [url]",
   });
-  assert.deepEqual(errorFields(undefined), { errorName: "Error", message: "" });
+  assert.deepEqual(errorFields(undefined), { errorName: "Error" });
+  assert.deepEqual(
+    errorFields({ name: "synthetic-private-name", code: "synthetic-private-code", message: "synthetic-private-text" }),
+    { errorName: "Error" },
+  );
+  for (const code of ["SECRT", 12345, "42501 synthetic-private-text"])
+    assert.deepEqual(errorFields({ name: "synthetic-private-name", code }), { errorName: "Error" });
+  for (const code of ["ECONNRESET", "ERR_INVALID_ARG_TYPE", "ENGINE", "55P03", "57014"])
+    assert.deepEqual(errorFields({ name: "TypeError", code }), { errorName: "TypeError", errorCode: code });
 });
 
 test("a failed sweep is logged with its cause, never silently", async () => {
@@ -376,7 +383,90 @@ test("a failed sweep is logged with its cause, never silently", async () => {
       event: "ward_backend_push_sweep_failure",
       errorName: "Error",
       errorCode: "42P01",
-      message: "relation does not exist",
     },
   ]);
+});
+
+test("failed sweep diagnostics exclude non-URL private text while retaining the event category", async () => {
+  const events = [];
+  await sweepPush(
+    {
+      sweepPush: async () => {
+        throw {
+          name: "synthetic-private-name",
+          code: "SECRT",
+          message: "synthetic-private-marker without a URL",
+          detail: "synthetic-private-detail",
+          stack: "synthetic-private-stack",
+        };
+      },
+    },
+    (event) => events.push(event),
+  );
+  assert.deepEqual(events, [{ event: "ward_backend_push_sweep_failure", errorName: "Error" }]);
+});
+
+test("diagnostic accessors are read once and only validated snapshots are emitted", () => {
+  let names = 0;
+  let codes = 0;
+  const error = {
+    get name() {
+      return ++names === 1 ? "Error" : "synthetic-private-name";
+    },
+    get code() {
+      return ++codes === 1 ? "ECONNRESET" : "synthetic-private-code";
+    },
+  };
+  assert.deepEqual(errorFields(error), { errorName: "Error", errorCode: "ECONNRESET" });
+  assert.equal(names, 1);
+  assert.equal(codes, 1);
+});
+
+test("throwing diagnostic accessors use the closed fallback without throwing", () => {
+  const error = {};
+  for (const key of ["name", "code", "message", "stack", "detail"])
+    Object.defineProperty(error, key, {
+      get() {
+        throw new Error("synthetic-private-accessor");
+      },
+    });
+  assert.deepEqual(errorFields(error), { errorName: "Error" });
+});
+
+test("push failure status is read once and retained only as a valid HTTP code", async () => {
+  let reads = 0;
+  const error = {
+    get statusCode() {
+      return ++reads === 1 ? 429 : "synthetic-private-status";
+    },
+  };
+  const send = createPushSender(readPushConfig(env), {
+    sendNotification: async () => {
+      throw error;
+    },
+  });
+  assert.deepEqual(await send({}, {}), { outcome: "failed", category: "status 429", retry: true });
+  assert.equal(reads, 1);
+  const unknown = createPushSender(readPushConfig(env), {
+    sendNotification: async () => {
+      throw { statusCode: 123456789 };
+    },
+  });
+  assert.deepEqual(await unknown({}, {}), { outcome: "failed", category: "Error", retry: true });
+});
+
+test("throwing push status and diagnostic accessors never reject delivery reporting", async () => {
+  const error = {};
+  for (const key of ["statusCode", "name", "code"])
+    Object.defineProperty(error, key, {
+      get() {
+        throw new Error("synthetic-private-accessor");
+      },
+    });
+  const send = createPushSender(readPushConfig(env), {
+    sendNotification: async () => {
+      throw error;
+    },
+  });
+  assert.deepEqual(await send({}, {}), { outcome: "failed", category: "Error", retry: true });
 });
