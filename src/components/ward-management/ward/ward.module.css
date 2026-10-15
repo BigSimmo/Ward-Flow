@@ -2230,7 +2230,7 @@
   font-size: var(--t-0, 12px);
   font-variant-numeric: tabular-nums;
   padding: 1px 6px;
-  border-radius: var(--pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--sunk);
   color: var(--muted);
   border: 1px solid var(--line);
@@ -2338,7 +2338,7 @@
   font-size: var(--t-0);
   font-weight: 600;
   padding: 1px 6px;
-  border-radius: var(--pill);
+  border-radius: var(--wf-r-tag);
   letter-spacing: 0.02em;
 }
 
@@ -3787,7 +3787,7 @@
     height: 28px;
     padding: 0;
     border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-    border-radius: 50%;
+    border-radius: var(--wf-r-ctl);
     background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
     color: var(--wf-hero-ink);
     cursor: pointer;
@@ -3842,7 +3842,7 @@
     gap: 2px;
     padding: 3px;
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
     background: var(--wf-surface-2);
   }
 
@@ -3851,7 +3851,7 @@
     min-height: 32px;
     padding: 0 var(--wf-s-3);
     border: 1px solid transparent;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: transparent;
     box-shadow: none;
     font-size: var(--wf-fs-13);
@@ -3864,7 +3864,7 @@
 
   .tabBtn[aria-selected="true"] {
     border: 1px solid var(--wf-line-ctl);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     box-shadow: var(--wf-e1);
     color: var(--wf-ink-1);
@@ -3881,7 +3881,7 @@
     min-width: 18px;
     padding: 1px 6px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
     background: var(--wf-line);
     color: var(--wf-ink-2);
     font: 600 var(--wf-fs-11) / 16px var(--wf-mono);
@@ -3907,7 +3907,7 @@
     flex: 0 1 15rem;
     min-width: 9rem;
     height: 32px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     margin-right: var(--wf-s-1);
   }
 
@@ -4035,7 +4035,7 @@
   min-height: var(--wf-touch);
   padding: 0 var(--wf-s-4);
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
@@ -4058,7 +4058,7 @@
   min-width: 20px;
   padding: 2px 6px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   text-align: center;
   color: var(--wf-ink-2);
@@ -4088,7 +4088,7 @@
 .phoneFindBox {
   width: 100%;
   height: var(--wf-touch);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 @media (max-width: 48rem) {
@@ -4181,7 +4181,7 @@
     box-sizing: border-box;
     padding: 0 14px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
     box-shadow:
       0 0 0 1px var(--toast-ring),

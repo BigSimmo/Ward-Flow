@@ -80,7 +80,7 @@
   min-height: var(--spacing-tap, 3rem);
   padding: 0 var(--wf-s-4);
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);

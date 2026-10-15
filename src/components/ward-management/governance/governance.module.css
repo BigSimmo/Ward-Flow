@@ -729,7 +729,7 @@
   color: var(--good);
   box-shadow: var(--lift);
   padding: var(--ward-space-10) 1.125rem;
-  border-radius: var(--pill, 9999px);
+  border-radius: var(--wf-r-lg);
   font-weight: 600;
   font-size: var(--t-1);
   display: flex;

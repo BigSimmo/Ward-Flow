@@ -299,7 +299,7 @@
 .scopeBadgeBtn:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .scopeDot {
@@ -636,7 +636,7 @@
   height: 20px;
   padding: 0 7px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
@@ -719,7 +719,7 @@
 .drawerTrigger:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .triggerIcon {
@@ -757,7 +757,7 @@
   height: 20px;
   margin-left: 1px;
   padding: 0 5px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-accent-tint);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent-strong) 20%, transparent);
   color: var(--wf-accent-ink);
@@ -1167,7 +1167,7 @@
     width: var(--spacing-tap, 3rem);
     height: var(--spacing-tap, 3rem);
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: transparent;
     color: var(--wf-ink-1);
     cursor: pointer;
@@ -1586,7 +1586,7 @@
 .drawerClose:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
 }
 
 .drawerBody {
@@ -1836,7 +1836,7 @@
   min-height: var(--wf-h-md);
   padding: 0 12px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
 }
@@ -2722,7 +2722,7 @@
     height: 40px;
     padding: 0;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: transparent;
     color: var(--wf-accent-ink);
     font: 600 var(--wf-fs-14) / 1 var(--wf-font);
@@ -2811,7 +2811,7 @@
     min-height: var(--ward-tap, 48px);
     padding: 0;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: transparent;
     color: var(--wf-accent-ink);
     font: 600 var(--wf-fs-14) / 1 var(--wf-font);
@@ -3289,13 +3289,13 @@
   .activitySegments .segTrack {
     flex: 1 1 auto;
     padding: 2px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
   }
 
   .activitySegments .segBtn {
     flex: 1 1 0;
     min-height: 44px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-fs-13);
   }
 
@@ -3339,7 +3339,7 @@
     min-height: 44px;
     padding: 0 12px;
     border-color: var(--wf-line-2);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
   }
 

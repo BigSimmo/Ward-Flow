@@ -645,7 +645,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   padding: 0.125rem 0.5rem;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   color: var(--ink-soft);
   font-weight: 500;
 }

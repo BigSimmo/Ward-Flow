@@ -324,7 +324,7 @@
   padding: 4px;
   background: color-mix(in oklab, var(--surface-2) 70%, transparent);
   border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: var(--pill, 999px);
+  border-radius: var(--wf-r-track);
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 65%, transparent);
 }
 
@@ -346,7 +346,7 @@
   gap: 6px;
   padding: 6px 12px;
   border: none;
-  border-radius: var(--pill, 999px);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--ink-soft);
   font-size: 12px;

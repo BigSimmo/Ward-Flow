@@ -3425,7 +3425,7 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   color: inherit;
 }
 
@@ -3563,7 +3563,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 2.5px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   letter-spacing: 0.01em;
   line-height: 1;
   background: var(--surface);
@@ -5410,7 +5410,7 @@
   min-height: var(--wf-h-md, 2.25rem);
   padding: 0 var(--wf-s-4);
   border: 1px solid var(--wf-pri-edge);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   color: var(--wf-on-accent);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
@@ -5424,7 +5424,7 @@
 
 .v10AskActions .cancelBtn {
   border-color: var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   color: var(--wf-ink-1);
 }
 
@@ -5482,7 +5482,7 @@
 .v10AskActions .declineButton {
   grid-column: 1;
   width: 100%;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .v10AskActions > .matchRowTop {

@@ -3046,7 +3046,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   font-family: var(--body);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-ctl);
   border: 1px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
@@ -3232,7 +3232,7 @@
 
 .filterCount {
   border: 1px solid var(--line);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   padding: 0.05rem 0.45rem;
   font-family: var(--mono);
   font-size: 0.75rem;
@@ -5749,7 +5749,7 @@
     box-sizing: border-box;
     padding: 0 14px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
     box-shadow:
       0 0 0 1px var(--toast-ring),

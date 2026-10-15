@@ -519,7 +519,7 @@
   width: 18px;
   height: 18px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: color-mix(in srgb, var(--muted) 18%, transparent);
   color: var(--muted);
   cursor: pointer;
