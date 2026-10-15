@@ -57,7 +57,8 @@ export type WardToolsSheetProps = {
   roleLabel: string;
   /** Close the sheet; every link calls it as it navigates. */
   onNavigate: () => void;
-  onNewReferral: () => void;
+  /** Opens the referral slide-out; the catchment result asks for the community destination. */
+  onNewReferral: (destination?: "ward" | "community") => void;
   /** A tool to open on arrival, and a counter so the same request can be made again. */
   openRequest?: { tool: ToolsSheetToolId; seq: number };
   /** Called once the request is used, so the parent can clear it and a later open starts at the top. */
@@ -267,7 +268,7 @@ export function WardToolsSheet({
       </Group>
 
       <Group title="Do now">
-        <button type="button" className={styles.row} onClick={onNewReferral}>
+        <button type="button" className={styles.row} onClick={() => onNewReferral()}>
           <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
           <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
         </button>
@@ -319,8 +320,10 @@ export function WardToolsSheet({
                       ? `${result.communityClinic} clinic ${clinic.publishedPhone}, published number, not call-tested`
                       : `${result.communityClinic} clinic number not recorded`}
                   </span>
-                  <button type="button" className={styles.primaryButton} onClick={onNewReferral}>
-                    Refer to this service
+                  {/* Opens a community referral. The slide-out has no clinic field to prefill, so the
+                      label promises only what it does. */}
+                  <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
+                    Start a community referral
                   </button>
                 </>
               );

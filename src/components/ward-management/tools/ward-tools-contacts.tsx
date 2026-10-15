@@ -11,28 +11,18 @@ import {
   KEY_LINE_IDS,
   availability,
   buildOnCallDirectory,
+  entrySearchFields,
   hhmm,
   isAnswering,
   keyLineLabel,
   numberAt,
   type DirectoryEntry,
 } from "../on-call/on-call-directory";
+import { readFavourites, saveFavourites, subscribeFavourites } from "../on-call/on-call-favourites";
 import { onCallHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
 
-/** The On-call page's own My list, so a star set in either place shows in both. Ids only. */
-const FAVOURITES_KEY = "ward-flow:on-call:favourites";
-
 type ContactsView = "key" | "mine" | "now" | "recent" | "all";
-
-function readFavourites(): string[] {
-  try {
-    const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
-    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [];
-  } catch {
-    return [];
-  }
-}
 
 function availabilityLine(
   entry: DirectoryEntry,
@@ -61,27 +51,35 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
   const [recent, setRecent] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
 
+  const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
+
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setFavourites(readFavourites()));
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+    const frame = window.requestAnimationFrame(() => setFavourites(readFavourites(ids)));
+    // Shared with the On-call page, so a star set there while Tools is open shows here too.
+    const unsubscribe = subscribeFavourites((next) => setFavourites(next.filter((id) => ids.has(id))));
+    return () => {
+      window.cancelAnimationFrame(frame);
+      unsubscribe();
+    };
+  }, [ids]);
 
   function toggleFavourite(id: string) {
     const next = favourites.includes(id) ? favourites.filter((value) => value !== id) : [...favourites, id];
     setFavourites(next);
-    try {
-      window.localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next));
-      setNotice(next.includes(id) ? "Added to My list" : "Removed from My list");
-    } catch {
-      setNotice("My list is kept for this visit only.");
-    }
+    setNotice(
+      saveFavourites(next)
+        ? next.includes(id)
+          ? "Added to My list"
+          : "Removed from My list"
+        : "My list is kept for this visit only.",
+    );
   }
 
-  async function copyNumber(entry: DirectoryEntry, number: string) {
+  async function copyDetail(entry: DirectoryEntry, detail: string) {
     try {
-      await navigator.clipboard.writeText(number);
+      await navigator.clipboard.writeText(detail);
       setRecent((current) => [entry.id, ...current.filter((id) => id !== entry.id)].slice(0, 8));
-      setNotice(`Copied ${number}`);
+      setNotice(`Copied ${detail}`);
     } catch {
       setNotice("Copy is unavailable in this browser.");
     }
@@ -94,12 +92,12 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
       : which === "mine"
         ? favourites.includes(entry.id)
         : which === "now"
-          ? isAnswering(entry, minute) && entry.lines.length > 0
+          ? isAnswering(entry, minute)
           : which === "recent"
             ? recent.includes(entry.id)
             : true;
   const matchesQuery = (entry: DirectoryEntry) =>
-    terms.every((term) => `${entry.name} ${entry.place} ${entry.purpose}`.toLowerCase().includes(term));
+    terms.every((term) => entrySearchFields(entry).some((field) => field.toLowerCase().includes(term)));
   // A search looks across everything, so a name typed from the Key lines view is still found.
   const rows = entries
     .filter((entry) => (terms.length > 0 ? matchesQuery(entry) : inView(entry, view)))
@@ -145,7 +143,9 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
       </div>
       <ul className={styles.contactList} aria-label="Contacts">
         {rows.slice(0, 12).map((entry) => {
+          // An email-only inbox shows its address, so every row has something to use.
           const number = numberAt(entry, minute);
+          const detail = number ?? entry.email;
           const status = availabilityLine(entry, minute);
           const starred = favourites.includes(entry.id);
           return (
@@ -161,16 +161,16 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
                 </small>
               </span>
               <span className={styles.contactNumber}>
-                {number ?? "No number"}
-                {number ? <b className={styles.mockBadge}>Mock</b> : null}
+                {detail ?? "No number"}
+                {detail ? <b className={styles.mockBadge}>Mock</b> : null}
               </span>
               <span className={styles.contactActions}>
-                {number ? (
+                {detail ? (
                   <button
                     type="button"
                     className={styles.iconButton}
-                    aria-label={`Copy number for ${entry.name}`}
-                    onClick={() => void copyNumber(entry, number)}
+                    aria-label={`Copy ${number ? "number" : "email"} for ${entry.name}`}
+                    onClick={() => void copyDetail(entry, detail)}
                   >
                     <Copy aria-hidden="true" strokeWidth={1.75} />
                   </button>

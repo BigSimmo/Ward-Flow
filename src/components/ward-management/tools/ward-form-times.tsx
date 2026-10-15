@@ -4,13 +4,9 @@ import { useId, useMemo, useState } from "react";
 
 import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlowClock } from "../ward-flow-provider";
-import { LEGAL_CLOCK_FORM_CODES, LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "../ward-legal-clock";
-import {
-  formatStatutoryDateTime,
-  parseDateTimeInput,
-  toDateInputValue,
-  toTimeInputValue,
-} from "./ward-form-time-input";
+import { AUDITABLE_FORM_CODES } from "../ward-audit";
+import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "../ward-legal-clock";
+import { formatStatutoryDateTime, parseDateTimeInput, toDateInputValue } from "./ward-form-time-input";
 import styles from "./ward-tools-sheet.module.css";
 
 function formLabel(code: string) {
@@ -40,7 +36,8 @@ export function WardFormTimes() {
   const now = useMemo(() => new Date(dayZero.getTime() + demoNow * 60_000), [dayZero, demoNow]);
   const [code, setCode] = useState<string>("1A");
   const [date, setDate] = useState(() => toDateInputValue(now));
-  const [time, setTime] = useState(() => toTimeInputValue(now));
+  // The time starts empty: the result shows only a time the person typed (rule D5).
+  const [time, setTime] = useState("");
   const dateId = useId();
   const timeId = useId();
   // An empty time field is not a typed time, so it never reads as midnight (rule D5).
@@ -58,7 +55,8 @@ export function WardFormTimes() {
           value={code}
           onChange={(event) => setCode(event.target.value)}
         >
-          {LEGAL_CLOCK_FORM_CODES.map((candidate) => (
+          {/* Every form a Legal forms record can carry, so any form open there can be picked here. */}
+          {AUDITABLE_FORM_CODES.map((candidate) => (
             <option key={candidate} value={candidate}>
               {formLabel(candidate)}
             </option>

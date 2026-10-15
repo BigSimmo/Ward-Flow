@@ -199,9 +199,9 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
 /**
  * The longest wait reads as a duration with the ED it started from. The shared strip's version carries
  * the movement's internal reference and the word "waiting", which cut the label off in this grid
- * (Tools polish, Josh approved 15 Oct 2026).
+ * (Tools polish, Josh approved 15 Oct 2026). Service now shows the same figure.
  */
-function longestWait(open: readonly Movement[], now: Instant) {
+export function longestWait(open: readonly Movement[], now: Instant) {
   const worst = open.reduce<Movement | undefined>(
     (found, movement) => (found === undefined || movement.openedAt < found.openedAt ? movement : found),
     undefined,

@@ -2070,9 +2070,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           isPhone={isPhone}
           roleLabel={CHROME_ROLE_LABELS[role]}
           onNavigate={() => closePopover("tools", false)}
-          onNewReferral={() =>
+          onNewReferral={(destination = "ward") =>
             openReferral(
-              { category: roleCategory, destination: "ward" },
+              { category: roleCategory, destination },
               isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
             )
           }

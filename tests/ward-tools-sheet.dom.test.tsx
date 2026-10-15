@@ -54,6 +54,14 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(onNewReferral).toHaveBeenCalledTimes(1);
   });
 
+  it("starts a community referral from a catchment result", () => {
+    const { onNewReferral } = renderSheet();
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-catchment"));
+    fireEvent.change(screen.getByLabelText("Search by Suburb or Postcode"), { target: { value: "Morley" } });
+    fireEvent.click(screen.getByRole("button", { name: "Start a community referral" }));
+    expect(onNewReferral).toHaveBeenCalledWith("community");
+  });
+
   it("opens a tool in place and closes it again", () => {
     renderSheet();
     const toggle = screen.getByTestId("ward-tools-toggle-bed-finder");
@@ -147,7 +155,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 describe("Form times on the Perth clock", () => {
   afterEach(() => vi.useRealTimers());
 
-  it("starts from the demo clock, read from Perth midnight", () => {
+  it("starts on the demo clock's Perth date with no time until one is typed", () => {
     // Carried over from the retired MHA form calculator: 16:30 UTC is 00:30 on Saturday in Perth.
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-25T16:30:00.000Z"));
@@ -157,8 +165,13 @@ describe("Form times on the Perth clock", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByLabelText("Date written on form")).toHaveValue("2026-09-26");
-    expect(screen.getByLabelText("Time written on form")).toHaveValue("10:42");
+    // Rule D5: the result shows only a time the person typed.
+    expect(screen.getByLabelText("Time written on form")).toHaveValue("");
+    expect(screen.getByRole("status").textContent).toBe("Not recorded");
+    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
     expect(screen.getByRole("status").textContent).toContain("on the demo clock");
+    // Any form a Legal forms record can carry, not only the ones with a clock.
+    expect(screen.getByRole("option", { name: /^Form 4A/u })).toBeTruthy();
   });
 
   it("shows nothing for a cleared time rather than reading it as midnight", () => {
@@ -167,6 +180,7 @@ describe("Form times on the Perth clock", () => {
         <WardFormTimes />
       </WardFlowProvider>,
     );
+    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "" } });
     expect(screen.getByRole("status").textContent).toBe("Not recorded");
   });

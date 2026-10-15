@@ -73,6 +73,8 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     expect(form).toHaveValue("3A");
     expect(screen.getByLabelText("Date written on form")).toHaveAttribute("type", "date");
     expect(screen.getByLabelText("Time written on form")).toHaveAttribute("type", "time");
+    // The result shows only a typed time (rule D5), so type one before reading it back.
+    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
     expect(screen.getByRole("status")).toHaveTextContent(/^Form 3A/u);
   });
 });
