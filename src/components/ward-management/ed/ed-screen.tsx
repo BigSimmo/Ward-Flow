@@ -31,7 +31,9 @@ import {
   examinationRevokedWhileBedHeld,
   stageCopy,
   transportLeg,
+  deriveNextWardsAfterRefusal,
 } from "@/components/ward-management/ward-derivations";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   clockState,
   formatElapsed,
@@ -1285,6 +1287,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     admissions,
   } = useWardFlow();
   const now = useWardFlowClock();
+  const nextWardOn = useWardFeatureFlag("top25-next-ward");
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
@@ -1935,6 +1938,12 @@ export function EdScreen({ edId }: EdScreenProps) {
   };
 
   const priorityFlags: PriorityFlag[] = [];
+  // Top 25 item 3 (flag `top25-next-ward`): names the eligible wards nobody has asked yet. The
+  // coordinator refers from the shortlist, so this only tells the department who is next.
+  const nextWardsSentence = (m: Movement) => {
+    const names = deriveNextWardsAfterRefusal(m, units, now)?.candidates.map((c) => c.unit.name) ?? [];
+    return names.length === 0 ? " No other eligible ward is left to ask." : ` Next eligible: ${names.join(", ")}.`;
+  };
   for (const m of patients) {
     const flagPatientInfo = resolveSubjectPatient(m, {
       patients: registryPatients,
@@ -1981,7 +1990,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.`,
+        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.${nextWardOn ? nextWardsSentence(m) : ""}`,
         when: "declined",
         actionLabel: "Ask another ward",
         onAction: () => setSelectedPatientId(m.id),

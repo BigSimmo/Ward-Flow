@@ -2306,6 +2306,32 @@ export function deriveTopCompatibleWards(
   return scored.slice(0, cap);
 }
 
+export interface NextWardsAfterRefusal {
+  /** The most recent decline, so the screen can say why the last ward said no. */
+  latestDecline: Decline;
+  /** Eligible wards not yet asked, best first, from the same rules as `deriveTopCompatibleWards`. */
+  candidates: CompatibleWardCandidate[];
+}
+
+/**
+ * Next best ward after a refusal (Top 25 item 3, flag `top25-next-ward`). Once a ward has declined
+ * and none has accepted, this suggests the wards nobody has asked yet that pass every eligibility
+ * gate, ranked by `deriveTopCompatibleWards`. A ward that declined or still holds a live request
+ * is never suggested. It only suggests: the coordinator still chooses and refers with
+ * `REFER_TO_UNITS`.
+ */
+export function deriveNextWardsAfterRefusal(
+  movement: Movement,
+  units: readonly Unit[],
+  now: Instant,
+): NextWardsAfterRefusal | undefined {
+  if (movement.declines.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
+  const latestDecline = movement.declines.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
+  const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
+  const notAsked = units.filter((unit) => !asked.has(unit.id));
+  return { latestDecline, candidates: deriveTopCompatibleWards(movement, notAsked, PARALLEL_REFERRAL_CAP, now) };
+}
+
 export interface RefusalRecoveryAction {
   code: string;
   title: string;
