@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { describe, test } from "vitest";
 
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { stageSummaries, unitCapacity } from "@/components/ward-management/ward-derivations";
@@ -19,49 +19,65 @@ const referable = {
 };
 
 describe("ward flow state", () => {
-  bench("seed the standard scenario", () => {
-    seedWardFlowState();
+  test("seed the standard scenario", async ({ bench }) => {
+    await bench("seed the standard scenario", () => {
+      seedWardFlowState();
+    }).run();
   });
 
-  bench("reduce a referral to two units", () => {
-    wardFlowReducer(referable, {
-      type: "REFER_TO_UNITS",
-      role: "coordinator",
-      now: NOW_ANCHOR,
-      movementId: "WF-009",
-      unitIds: ["rph-adult-secure", "fsh-adult-secure"],
-    });
+  test("reduce a referral to two units", async ({ bench }) => {
+    await bench("reduce a referral to two units", () => {
+      wardFlowReducer(referable, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        movementId: "WF-009",
+        unitIds: ["rph-adult-secure", "fsh-adult-secure"],
+      });
+    }).run();
   });
 
-  bench("reduce a referral refused above the parallel cap", () => {
-    wardFlowReducer(referable, {
-      type: "REFER_TO_UNITS",
-      role: "coordinator",
-      now: NOW_ANCHOR,
-      movementId: "WF-009",
-      unitIds: ["rph-adult-secure", "fsh-adult-secure", "rgh-adult-secure", "gry-adult-secure"],
-    });
+  test("reduce a referral refused above the parallel cap", async ({ bench }) => {
+    await bench("reduce a referral refused above the parallel cap", () => {
+      wardFlowReducer(referable, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        movementId: "WF-009",
+        unitIds: ["rph-adult-secure", "fsh-adult-secure", "rgh-adult-secure", "gry-adult-secure"],
+      });
+    }).run();
   });
 
-  bench("validate stored state", () => {
-    isValidStoredWardFlowState(stored);
+  test("validate stored state", async ({ bench }) => {
+    await bench("validate stored state", () => {
+      isValidStoredWardFlowState(stored);
+    }).run();
   });
 
-  bench("restore stored state from JSON", () => {
-    isValidStoredWardFlowState(JSON.parse(serialised));
+  test("restore stored state from JSON", async ({ bench }) => {
+    await bench("restore stored state from JSON", () => {
+      isValidStoredWardFlowState(JSON.parse(serialised));
+    }).run();
   });
 });
 
 describe("ward flow derivations", () => {
-  bench("stage summaries", () => {
-    stageSummaries(seeded.movements);
+  test("stage summaries", async ({ bench }) => {
+    await bench("stage summaries", () => {
+      stageSummaries(seeded.movements);
+    }).run();
   });
 
-  bench("unit capacity for every unit", () => {
-    for (const unit of seeded.units) unitCapacity(unit, seeded.bedReleases);
+  test("unit capacity for every unit", async ({ bench }) => {
+    await bench("unit capacity for every unit", () => {
+      for (const unit of seeded.units) unitCapacity(unit, seeded.bedReleases);
+    }).run();
   });
 
-  bench("network ward rows", () => {
-    networkWardRows(seeded.units, NOW_ANCHOR, seeded.bedReleases, seeded.admissions, seeded.leaveBeds);
+  test("network ward rows", async ({ bench }) => {
+    await bench("network ward rows", () => {
+      networkWardRows(seeded.units, NOW_ANCHOR, seeded.bedReleases, seeded.admissions, seeded.leaveBeds);
+    }).run();
   });
 });
