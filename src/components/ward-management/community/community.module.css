@@ -2812,6 +2812,12 @@ button.searchBox:hover {
   cursor: pointer;
 }
 
+@media (max-width: 48rem) {
+  .refOpen {
+    min-height: 48px;
+  }
+}
+
 .patientIdWrap {
   white-space: nowrap !important;
   font-family: var(--mono);
