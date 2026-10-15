@@ -207,16 +207,15 @@ export function endAccessPreview(): void {
   emit({ ...snapshot, access: snapshot.previewOf, previewOf: null });
 }
 
-/** The idle lock: back to no desk, every grant gone, personal keys cleared (feature 10). */
+/**
+ * The idle lock: every grant ends and the personal keys are cleared, but the desk keeps its own
+ * restricted access. Locking never widens access (review on PR #330): falling back to the
+ * statewide view would hand the next person at a shared computer every patient.
+ */
 export function lockWardDesk(): void {
   load();
   clearPersonalKeys();
-  try {
-    window.sessionStorage.removeItem(WARD_ACCESS_STORAGE_KEY);
-  } catch {
-    // Nothing stored.
-  }
-  emit({ access: STATEWIDE_COORDINATOR, records: expireGrants(snapshot.records), previewOf: null });
+  emit({ ...snapshot, records: expireGrants(snapshot.records) });
 }
 
 /** Open one patient record outside the desk's care, read only, for a set time (plan section 7). */

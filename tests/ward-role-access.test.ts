@@ -225,8 +225,18 @@ describe("the desk store", () => {
     // A preview is the coordinator's only.
     startAccessPreview(wardDesk);
     expect(readWardAccessSnapshot().previewOf).toBeNull();
+  });
+
+  it("locks without ever widening the desk's access, and closes every grant", () => {
+    setWardAccess(wardDesk);
+    breakGlass({ patientId: "P-2", now: NOW_ANCHOR, windowMinutes: 60, reason: "handover", placeLabel: "Ward" });
     lockWardDesk();
-    expect(readWardAccessSnapshot().access).toEqual(STATEWIDE_COORDINATOR);
+    const locked = readWardAccessSnapshot();
+    expect(locked.access).toEqual(wardDesk);
+    expect(locked.records[0].until).toBeLessThanOrEqual(NOW_ANCHOR);
+  });
+
+  it("lets only the coordinator preview, and remembers the way back", () => {
     startAccessPreview(wardDesk);
     expect(readWardAccessSnapshot().access).toEqual(wardDesk);
     expect(readWardAccessSnapshot().previewOf).toEqual(STATEWIDE_COORDINATOR);

@@ -12,7 +12,7 @@
  * The table is `ward-role-access.ts`, the scoping is `ward-access-scope.ts`, and the desk is
  * `ward-access-store.ts`. This file only connects them to React.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -96,7 +96,8 @@ export function useBreakGlassPatientIds(): ReadonlySet<string> {
 export function WardAccessScope({ children }: { children: ReactNode }) {
   const context = useWardFlow();
   const access = useEffectiveWardAccess();
-  const { records } = useWardAccessSnapshot();
+  const { records, previewOf } = useWardAccessSnapshot();
+  const previewing = previewOf !== null;
   const now = context.now;
   const activeGrants = useMemo(
     () => records.filter((record) => record.role === access.role && record.until > now),
@@ -125,8 +126,11 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         .filter((movement) => movement.patientId && breakGlassPatientIds.has(movement.patientId))
         .map((movement) => movement.id),
     );
-    const dispatch: WardFlowContextValue["dispatch"] =
-      breakGlassPatientIds.size === 0
+    // A coordinator's preview is read only: nothing it does lands in the shared workspace (review on
+    // PR #330), so a previewed ward never appears to have acted.
+    const dispatch: WardFlowContextValue["dispatch"] = previewing
+      ? () => announceToWardShell("Preview only. Nothing was changed.")
+      : breakGlassPatientIds.size === 0
         ? context.dispatch
         : (event) => {
             const fields = event as { patientId?: unknown; movementId?: unknown };
@@ -156,7 +160,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         resolvePatientIdentity: (subject) => resolveSubjectPatient(subject, resolveIndex),
       },
     };
-  }, [context, access, activeGrants, now]);
+  }, [context, access, activeGrants, now, previewing]);
 
   return (
     <UnscopedWardFlowContext.Provider value={context}>
@@ -263,12 +267,18 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const [switching, setSwitching] = useState(false);
+  // Focus the heading once on arrival, never again on a re-render (review on PR #330), so a reason
+  // being chosen or typed below keeps its place.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
   const { units } = useUnscopedWardFlow();
   const home = homeHrefFor(access, communityTeamSlug);
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-closed">
-        <h1 tabIndex={-1} ref={(heading) => heading?.focus()}>
+        <h1 tabIndex={-1} ref={headingRef}>
           Not part of your role
         </h1>
         <p>
@@ -402,7 +412,10 @@ export function WardBreakGlassReview() {
 
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
 
-/** Shared computer lock (feature 10): no use for the set time, and the desk is put down. */
+/**
+ * Shared computer lock (feature 10): after the set time with no use, the screen is covered and every
+ * break glass grant ends at once. The desk keeps its own access, so unlocking never widens it.
+ */
 export function WardIdleLock() {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
@@ -410,10 +423,14 @@ export function WardIdleLock() {
   const minutes = CLINICAL_VALUES.idleLock.value;
   useEffect(() => {
     if (!on || accessIsWholeNetwork(access)) return;
-    let timer = window.setTimeout(() => setLocked(true), minutes * 60_000);
+    const lock = () => {
+      lockWardDesk();
+      setLocked(true);
+    };
+    let timer = window.setTimeout(lock, minutes * 60_000);
     const reset = () => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => setLocked(true), minutes * 60_000);
+      timer = window.setTimeout(lock, minutes * 60_000);
     };
     for (const name of ACTIVITY_EVENTS) window.addEventListener(name, reset, { passive: true });
     return () => {
@@ -427,18 +444,11 @@ export function WardIdleLock() {
       <div className={styles.lockCard}>
         <h1 id="ward-idle-lock-title">Locked after {minutes} minutes</h1>
         <p>
-          This desk was put down so the next person cannot see the last person&apos;s patients. Choose a desk to carry
-          on.
+          The screen was covered so the next person cannot see this desk&apos;s patients, and any record opened outside
+          your care is closed again.
         </p>
-        <Button
-          variant="pri"
-          data-testid="ward-idle-unlock"
-          onClick={() => {
-            lockWardDesk();
-            setLocked(false);
-          }}
-        >
-          Start again
+        <Button variant="pri" data-testid="ward-idle-unlock" onClick={() => setLocked(false)}>
+          Carry on
         </Button>
       </div>
     </div>
