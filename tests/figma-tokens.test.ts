@@ -67,15 +67,16 @@ describe("figma token sync", () => {
     expect(diffTokens(result.css, pulled).changes).toEqual([]);
   });
 
-  it("changes a size's literal value and leaves the aliases that point at another token", () => {
-    const aliases = css.match(/--wf-row: var\(--wf-row-[a-z]+\);/g) ?? [];
-    expect(aliases.length).toBeGreaterThan(0);
+  it("refuses a size edit whose literal a later alias overrides, and never rewrites the alias", () => {
+    expect(css.match(/--wf-row: var\(--wf-row-[a-z]+\);/g)?.length).toBeGreaterThan(0);
     const pulled = exportTokens(css) as Tokens;
     pulled.Size["--wf-row"] = 48;
     const result = applyTokens(css, pulled);
-    expect(result.skipped).toEqual([]);
-    expect(result.css).toContain("--wf-row: 48px;");
-    expect(result.css.match(/--wf-row: var\(--wf-row-[a-z]+\);/g)).toEqual(aliases);
+    expect(result.applied).toBe(0);
+    expect(result.skipped).toEqual([
+      "--wf-row: a later alias in the CSS sets the live value, so this edit would not take effect",
+    ]);
+    expect(result.css).toBe(css);
   });
 
   it("refuses a Day edit that would also change Night when the CSS holds one value for both", () => {

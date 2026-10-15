@@ -223,9 +223,17 @@ export function applyTokens(css, incoming) {
     const base = decls.filter((d) => d.name === c.name && d.where !== "night");
     // An alias such as `--wf-row: var(--wf-row-default)` is code-owned wiring, not a value Figma
     // holds, so an import changes only the literal declarations and leaves every alias pointing on.
-    const targets = (c.mode === "Night" ? night : base).filter((d) => !d.value.includes("var("));
+    const pool = c.mode === "Night" ? night : base;
+    const targets = pool.filter((d) => !d.value.includes("var("));
     if (!targets.length) {
       skipped.push(`${c.name} (${c.mode}): the CSS has no separate ${c.mode} value to change`);
+      continue;
+    }
+    // A later alias wins the cascade on the root, so editing the literal would report a change that
+    // mostly does not show. Say so instead, and leave the token for a code change.
+    const lastLiteral = targets[targets.length - 1];
+    if (pool.some((d) => d.valueStart > lastLiteral.valueStart && d.value.includes("var("))) {
+      skipped.push(`${c.name}: a later alias in the CSS sets the live value, so this edit would not take effect`);
       continue;
     }
     // A colour with no night declaration serves both modes, so a Day edit would also change Night.
