@@ -28,12 +28,12 @@ Back to [the code map index](README.md).
 packages (below), that resolves to eleven distinct project files. Ordered by number of importing Ward
 files.
 
-- **`src/components/ui-primitives.tsx`** (5 lines) — a barrel: `export * from` four files under
-  `src/components/primitive-recipes/` (`recipes.ts` 137, `composer.ts` 42, `clinical.tsx` 171,
+- **`src/components/ui-primitives.tsx`** (5 lines) — a barrel: `export * from` three files under
+  `src/components/primitive-recipes/` (`recipes.ts` 137, `clinical.tsx` 171,
   `feedback.tsx` 410) plus `MetroPulseCircle` from `src/components/ui/metro-pulse-circle.tsx` (82).
   Imported by 14 Ward files for shared control recipes (`cn`, `toolbarButton`, buttons, badges) —
   e.g. `ward-management/ward/ward-screen.tsx`, `ward-management/ed/ed-screen.tsx`,
-  `ward-management/ward-role-switcher.tsx`. One of the four re-exported files, `clinical.tsx`,
+  `ward-management/ward-role-switcher.tsx`. One of the three re-exported files, `clinical.tsx`,
   itself imports `@/lib/source-authority-registry` (497 lines) and `@/lib/types` (1,187 lines) —
   PsychSift's clinical-citation classification code. Because the barrel is `export *`, every Ward
   file that imports anything from `ui-primitives` pulls that module graph into its dependency tree,
@@ -153,9 +153,8 @@ files.
   Flow page gets the whole sheet: the v2 design tokens Ward's own `ward-tokens.module.css` aliases
   (overview map §3.4), plus one token defined directly here rather than in any Ward file —
   `--spacing-ward-phone-bar: 3.5rem` (line 134, "Ward Flow's fixed phone navigation bar and the
-  matching content reserve") — used by 5 Ward CSS modules (`escalation.module.css`,
-  `tracker/live-tracker.module.css`, `ward-chrome-header.module.css`,
-  `ward-management-modes.module.css`, `ward-sidebar.module.css`; two of the five belong to chrome
+  matching content reserve") — used by 3 Ward CSS modules (`ward-chrome-header.module.css`,
+  `ward-management-modes.module.css`, `ward-sidebar.module.css`; two of the three belong to chrome
   the overview map records as retired or unreachable). Also carries `@source not "./mockups"` and
   `@source not "../components/**/*mockup*"` (lines 5-6), which exclude `src/app/mockups/**` and
   mockup-named component folders from Tailwind's utility scan for this sheet;
@@ -197,8 +196,8 @@ these:
   `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`. Ward Flow has no request path independent
   of these; none of its 41 `page.tsx` routes (`git ls-files
 'src/app/mockups/ward-flow/**/page.tsx' | wc -l`, this tip) render without them.
-- **`src/components/ui-primitives.tsx`** and its five underlying files
-  (`primitive-recipes/{recipes,composer,clinical,feedback}.ts(x)`, `ui/metro-pulse-circle.tsx`) — 14
+- **`src/components/ui-primitives.tsx`** and its four underlying files
+  (`primitive-recipes/{recipes,clinical,feedback}.ts(x)`, `ui/metro-pulse-circle.tsx`) — 14
   Ward files import from the barrel; deleting it breaks compilation across most of the screen
   folders.
 - **`src/lib/client-store-factory.ts`** — the rail, service selector and sidebar-collapsed state all
