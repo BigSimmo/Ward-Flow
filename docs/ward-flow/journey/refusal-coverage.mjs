@@ -68,7 +68,8 @@ const hitKey = (sourceId, line) => `${sourceId}:${line}`;
  *
  * An in-repo report is measured against this very file, so nothing needs to vouch for it. An
  * outside one is only usable with the source it was measured against, and that is checked, not
- * asserted.
+ * asserted. WARD_COVERAGE_SOURCE names the reducer only, so that check does not cover the RECORD_*
+ * and UNDO_* slice files. Measure an outside report against the same commit as this worktree.
  */
 let report = null;
 let vouched = "this worktree's own report";
