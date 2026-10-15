@@ -22,7 +22,7 @@ const CATALOG = `WITH namespace AS (
 ) SELECT (SELECT owner FROM namespace) AS owner,
   coalesce((SELECT jsonb_agg(to_jsonb(o)) FROM objects o), '[]'::jsonb) AS objects,
   coalesce((SELECT jsonb_agg(to_jsonb(k)) FROM (
-    SELECT c.relname AS table_name, k.contype AS type,
+    SELECT c.relname AS table_name, k.conname AS name, k.contype AS type,
       ARRAY(SELECT a.attname FROM unnest(k.conkey) WITH ORDINALITY x(num, ord)
         JOIN pg_catalog.pg_attribute a ON a.attrelid=k.conrelid AND a.attnum=x.num ORDER BY x.ord) AS keys,
       rn.nspname AS foreign_schema, rc.relname AS foreign_table,
@@ -209,6 +209,7 @@ function expectedConstraints(version, tables) {
       table: "workspaces",
       type: "c",
       // Migration 7 removed the never-used live label (D-55: synthetic data only).
+      ...(version >= 7 ? { name: "workspaces_data_mode_check" } : {}),
       check: expression(
         version >= 7 ? "CHECK (data_mode = 'prototype')" : "CHECK (data_mode = ANY (ARRAY['prototype','live']))",
       ),
@@ -306,6 +307,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
       (e) =>
         e.table === actual.table_name &&
         e.type === actual.type &&
+        (!e.name || e.name === actual.name) &&
         (e.type === "c" ? e.check === expression(actual.definition) : sameKeys(e.keys, actual.keys)) &&
         (e.type !== "f" ||
           (actual.foreign_schema === "ward_flow" &&
