@@ -172,12 +172,17 @@ const ROLE_SCREENS: Record<string, WardChromeRole> = {
   "capacity/planned-admissions-panel.tsx": "coordinator",
   "delays/delays-screen.tsx": "coordinator",
   "discharges/discharge-board.tsx": "coordinator",
+  // Split from discharge-board.tsx (15 Oct 2026): the record dossier dispatches its own date change.
+  "discharges/discharge-detail-panes.tsx": "coordinator",
   "out-of-area/out-of-area-board.tsx": "coordinator",
   "hub/hub-screen.tsx": "coordinator",
   "settings/settings-screen.tsx": "coordinator",
   "governance-registers.tsx": "coordinator",
   "patients/add-patient.tsx": "coordinator",
   "referrals/referral-match.tsx": "coordinator",
+  // Split from referral-match.tsx (15 Oct 2026): the whole-referral withdrawal and the history correction.
+  "referrals/use-referral-match-state.tsx": "coordinator",
+  "referrals/referral-history-corrections.tsx": "coordinator",
   "patients/patient-now-screen.tsx": "coordinator",
   "patients/patient-transit-operations.tsx": "coordinator",
   "legal-forms/legal-forms-screen.tsx": "coordinator",
