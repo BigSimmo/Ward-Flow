@@ -6,6 +6,7 @@
  * as well as dynamic fallback structures for any patient or movement in the system.
  */
 
+import { dayOf, formatInstant } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 
@@ -587,6 +588,15 @@ export function clock(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${h < 10 ? "0" : ""}${h}:${m < 10 ? "0" : ""}${m}`;
+}
+
+/**
+ * The text an ETA preset puts in the field. A preset that crosses midnight is written "00:10 tomorrow"
+ * so it parses back to the right moment; "24:10" is not a time the field accepts.
+ */
+export function etaPresetText(now: number, offset: number): string {
+  const target = now + offset;
+  return `${formatInstant(target)}${dayOf(target) > dayOf(now) ? " tomorrow" : ""}`;
 }
 
 export function fillTemplate(

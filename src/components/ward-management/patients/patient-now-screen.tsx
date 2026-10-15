@@ -91,7 +91,7 @@ import {
   type ContactRow,
 } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
-import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
+import { type PatientNowRecord, STAGES, clock, dur, etaPresetText, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
@@ -1115,7 +1115,7 @@ export function PatientNowScreen({
                       { label: "+1h", offset: 60 },
                     ] as const
                   ).map((preset) => {
-                    const value = clock(now + preset.offset);
+                    const value = etaPresetText(now, preset.offset);
                     const active = transportEtaDraft.trim() === value;
                     return (
                       <Button
