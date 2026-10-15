@@ -29,7 +29,6 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 | [codebase-index.md](codebase-index.md)                                                                    | Maintained Ward orientation followed by preserved historical architecture                            |
 | [README.md](README.md)                                                                                    | Maintained entry pointers and inherited discovery catalogue                                          |
 | [site-map.md](site-map.md)                                                                                | **Generated** route map — regenerate with `npm run docs:update`, verify with `npm run sitemap:check` |
-| [agents-guide.md](agents-guide.md)                                                                        | Ward agent entry points; historical foreign configuration is not current authority                   |
 | [ward-flow/README.md](ward-flow/README.md) · [ward-flow/LOCAL-FIRST-RUN.md](ward-flow/LOCAL-FIRST-RUN.md) | **Ward Flow** local bed-flow prototype — product entry + UI boot on this machine                     |
 | [DOCS-SYSTEM.md](DOCS-SYSTEM.md)                                                                          | **Documentation system** - pipeline, registry, Ward Flow tip lock, recheck triggers                  |
 | [scripts-index.md](scripts-index.md)                                                                      | Curated map of `scripts/` and the `package.json` command surface by purpose                          |
@@ -120,30 +119,17 @@ Every remaining tracked document in this category (architecture and design, plus
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
-- [codex-review-protocol.md](codex-review-protocol.md) — historical inherited review protocol; current handling is in [agents/codex-github-review.md](agents/codex-github-review.md)
+- [codex-review-protocol.md](codex-review-protocol.md) — historical inherited review protocol; current handling is in `docs/agents/codex-github-review.md` (removed in the 15 Oct 2026 agent rules merge)
 - [branch-cleanup-guide.md](archive/branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)
 
 Every remaining tracked document in this category (process, plus the `agents/` rule files `AGENTS.md` delegates to), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [agents/bug-hunter-shortcut.md](agents/bug-hunter-shortcut.md) — Bug-Hunter Shortcut — When the user types exactly bug-hunter as the entire task message, after trimming surrounding whitespace, treat it as a shortcut for targete…
-- [agents/claude-hook-scripts.md](agents/claude-hook-scripts.md) — Claude Code Hook Scripts — .claude/hooks/*.sh runs on Linux web containers as well as on the Windows workstation, and the workstation cannot see the thing that breaks…
-- [agents/codex-cloud-environment.md](agents/codex-cloud-environment.md) — Codex Cloud Environment — Codex Cloud uses an isolated Linux container and does not inherit desktop files, credentials, OAuth sessions, MCP authentication, local serv…
 - [agents/codex-dependency-shortcut.md](agents/codex-dependency-shortcut.md) — Codex Dependency Shortcut — When the user types exactly dependency as the entire task message, after trimming surrounding whitespace, treat it as a shortcut for safe de…
 - [agents/codex-desktop-worktree-setup.md](agents/codex-desktop-worktree-setup.md) — Codex Desktop Worktree Setup — It must work before node_modules exists, validate Node 24/npm 11, reuse only a complete byte-identical local installation, and otherwise run…
-- [agents/codex-github-review.md](agents/codex-github-review.md) — Codex GitHub Review Behavior & Auto-Fixer — These instructions apply to Codex GitHub pull request reviews and Codex tasks started from PR comments.
-- [agents/codex-productivity-defaults.md](agents/codex-productivity-defaults.md) — Codex Productivity Defaults
-- [agents/codex-reasoning-effort.md](agents/codex-reasoning-effort.md) — Codex Reasoning Effort Calibration
-- [agents/codex-review-throttling.md](agents/codex-review-throttling.md) — Codex Review Throttling & Thread Resolution — Do not review branches opportunistically.
-- [agents/cursor-cloud.md](agents/cursor-cloud.md) — Cursor Cloud Specific Instructions — Durable notes for Cloud Agents.
 - [agents/dead-code-deletion.md](agents/dead-code-deletion.md) — Deleting Code You Believe Is Dead — "Nothing imports it" is necessary and nowhere near sufficient.
-- [agents/external-skill-precedence.md](agents/external-skill-precedence.md) — External Skill Precedence and Evidence — User-global skills and output-style plugins are installed outside this repo and know nothing about its contracts.
-- [agents/pull-request-workflow.md](agents/pull-request-workflow.md) — Pull Request Workflow — Open PR heads go stale whenever main advances.
-- [agents/repository-skills-and-issues.md](agents/repository-skills-and-issues.md) — Repository Skills and Outstanding-Work Memory — Automatically apply repo-local skills under .agents/skills/ when their descriptions match the user's request.
 - [agents/test-deletion-guard.md](agents/test-deletion-guard.md) — Deleting tests, or letting a tool delete them for you — On 2026-08-31 a commit on PR #2481 titled "test(ui):
-- [agents/upload-shortcut.md](agents/upload-shortcut.md) — Upload Shortcut — When the user types exactly:
-- [agents/verification-gates.md](agents/verification-gates.md) — Verification Gates and the Gate Arbiter — check:gate-manifest enforces a one-way invariant:
 - [agents/wiring-and-bundle-budget.md](agents/wiring-and-bundle-budget.md) — Page Wiring and Bundle Budget — Interactive controls and routes follow conventions the codebase already holds to.
 
 ## Plans and workstreams (living)
