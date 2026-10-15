@@ -140,10 +140,13 @@ ownership before stopping a process that might belong to another chat.
   application's production branch. Review the actual workflows and deployment triggers before an
   authorised push or merge. Direct main pushes, merges, deployment, provider calls and access
   changes require their own applicable user authority.
-- The Azure Function, Storage and planned PostgreSQL backend are separate from PsychSift's
-  Supabase and Railway resources. Verify Azure resource identity before any live mutation. Never
-  use PsychSift credentials, deployments or database migrations for Ward Flow.
-- Keep browser, server, local PostgreSQL, hosted Azure and deployed behaviour as separate evidence.
+- Ward Flow's database and sign-in provider is recorded in one place,
+  [`docs/ward-flow/DATABASE.md`](docs/ward-flow/DATABASE.md) (Supabase, D-55; Azure is retired).
+  Read it before database work. When the provider changes, update that page and the decision log,
+  not other docs. Ward Flow's resources are separate from PsychSift's Supabase and Railway
+  resources. Verify the resource identity before any live mutation. Never use PsychSift
+  credentials, deployments or database migrations for Ward Flow.
+- Keep browser, server, local PostgreSQL, hosted provider and deployed behaviour as separate evidence.
   Do not call a backend ready until its authenticated shared save/reload and conflict path pass.
 
 **Writing to Josh:** plain Australian English, answer first, short sentences, and state what is
@@ -243,7 +246,8 @@ For the rules on pasting the decisive gate line, stating verified versus assumed
 
 # Ward Flow provider safety
 
-Ward Flow does not use PsychSift's Supabase or Railway resources. A separate Ward Flow Railway
+Ward Flow does not use PsychSift's Supabase or Railway resources. Its own database provider is
+recorded in [`docs/ward-flow/DATABASE.md`](docs/ward-flow/DATABASE.md). A separate Ward Flow Railway
 target was documented on 27 September 2026 in `docs/hosting.md`; those dated records do not prove
 its current deployment state. Do not apply PsychSift migration, RAG or clinical database instructions
 to Ward Flow. For any provider action, verify the named Ward Flow resource, data boundary and user
@@ -255,10 +259,10 @@ authority before acting.
 
 # API and provider confirmation boundary
 
-- Never run, modify, test, or otherwise interact with Azure, GitHub/GitLab, hosted CI, production-like services, or provider-backed workflows without explicit user confirmation.
+- Never run, modify, test, or otherwise interact with Supabase, Railway, GitHub/GitLab, hosted CI, production-like services, or provider-backed workflows without explicit user confirmation.
 - Treat indirect API usage inside scripts, tests, release checks, PR tooling, and review automation as confirmation-required too.
 - Prefer local, static, mocked, or offline checks. If a recommended verification would touch a provider, report the command and ask before running it.
-- Live PR/CI tooling, Azure resource checks, and release gates that call providers are not automatic.
+- Live PR/CI tooling, provider resource checks, and release gates that call providers are not automatic.
 - The inherited `Run PR` shortcut is disabled in this repository; it targets PsychSift's PR queue.
 
 <!-- END:api-confirmation-boundary -->

@@ -13,8 +13,8 @@ and extensive unit/browser checks. It runs standalone in-browser by default and
 includes an opt-in shared workspace integration (`NEXT_PUBLIC_WARD_API_BASE_URL` and
 `/v1/workspace*`, via `use-ward-supabase-shared.ts` and `ward-shared-client.ts`, with Web Push
 notifications in `WardFlowProvider`) backed by Ward Flow's dedicated
-synthetic Supabase project (`zakzoemeedfepxcstsou`) or the separate Azure Functions /
-PostgreSQL demonstration backend (`backend/ward-flow/`). Neither backend is approved
+synthetic Supabase project through `backend/ward-flow/` (provider recorded in
+[DATABASE.md](DATABASE.md), decision D-55; Azure retired 15 October 2026). It is not approved
 for real patient data or clinical deployment.
 
 The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
@@ -27,7 +27,7 @@ with `/` and `/ward-flow` entry points redirecting to `/mockups/ward-flow`). Not
 of [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
 
 The 8 October audit verified the named Ward Railway frontend deployment against that
-baseline SHA. It did not verify Azure's current host configuration, storage recovery,
+baseline SHA. It did not verify the shared backend's host configuration, storage recovery,
 Sentry setup or approved patient-data processing. Provider health is separate
 from end-to-end application verification.
 
@@ -61,7 +61,7 @@ from end-to-end application verification.
 - **Safety, persistence and scenarios (#2, #20, #22, #32, #34, #35, #41, #50):** Patient safety and statutory capacity fixes (#2); legal wording and simulation fixes (#20); WA ward disposition and care-journey wiring (#22); unsaved clinical text guard (#32, #34); session adoption action replay and day restart synchronization (#41); demo scenario save and load to local files from the demo menu (#50); spreadsheet formula neutralizing in CSV exports (#35).
 - **Accessibility (#8, #27, #34, #66, #68, #70):** Keyboard, tablet and phone ergonomics (#8), keyboard navigation in alerts (#27), dialog and drawer focus trapping (#34, #70), 48px touch targets on mobile viewports (#66).
 - **Checks, CI & operations (#1, #3, #9–#11, #13, #14, #23, #30, #31, #36, #37, #40, #44, #51, #59, #60, #63, #75–#78):** Automated GitHub CI on push to `main` with Gitleaks secret scanning and production build verification (#37); whole-tree ESLint fixes and PR enforcement (#40, #77); unit test shard balancing by measured CI runtime (#44, #78); coverage recording across shards with identical PR verdict reuse on `main` (#75); Playwright Chromium caching and Next.js build cache from `main` (#76, #77); Railway healthcheck diagnostics, cloud agent Node 24 setup, and recovery documentation (#7, #59, #60, #63); archival of 53 historical docs to `docs/archive/` (#51); removal of PsychSift leftovers (#36, #40).
-- **Shared workspace & backend integration:** opt-in shared workspace sync via the configured `NEXT_PUBLIC_WARD_API_BASE_URL` and `/v1/workspace*` routes (`use-ward-supabase-shared.ts`, `ward-shared-client.ts`, and Web Push notifications in `WardFlowProvider`) backed by Ward Flow's dedicated synthetic Supabase project (`zakzoemeedfepxcstsou`), alongside the synthetic Azure session service (#5) and cloud scenario vault with a synthetic-data guard (#32) in `backend/ward-flow/`. See [the backend guide](../../backend/ward-flow/README.md).
+- **Shared workspace & backend integration:** opt-in shared workspace sync via the configured `NEXT_PUBLIC_WARD_API_BASE_URL` and `/v1/workspace*` routes (`use-ward-supabase-shared.ts`, `ward-shared-client.ts`, and Web Push notifications in `WardFlowProvider`) backed by Ward Flow's dedicated synthetic Supabase project (`zakzoemeedfepxcstsou`), in `backend/ward-flow/` (provider in [DATABASE.md](DATABASE.md); the earlier Azure session service and cloud scenario vault were removed by D-55). See [the backend guide](../../backend/ward-flow/README.md).
 - **Rules:** owner-approved prototype operating mode recorded in `AGENTS.md` on 3 October (#32).
 
 ## Remaining work and local remediation

@@ -34,7 +34,7 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 | [DOCS-SYSTEM.md](DOCS-SYSTEM.md)                                                                          | **Documentation system** - pipeline, registry, Ward Flow tip lock, recheck triggers                  |
 | [scripts-index.md](scripts-index.md)                                                                      | Curated map of `scripts/` and the `package.json` command surface by purpose                          |
 | [Context7](agents/context7.md)                                                                            | Maintained connector use, source identity and version verification                                   |
-| [Backend](../backend/ward-flow/README.md)                                                                 | Separate synthetic Azure package and local API checks                                                |
+| [Backend](../backend/ward-flow/README.md)                                                                 | Separate synthetic shared-workspace backend and local API checks                                     |
 | [Public CI](ward-flow/PUBLIC-CI.md)                                                                       | Ward workflow scope and acceptance evidence                                                          |
 | [Railway operations](ward-flow/RAILWAY-OPERATIONS.md)                                                     | Diagnosis of separately authorised Ward hosting tasks                                                |
 
@@ -59,7 +59,7 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 - [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) — generated screen, route, and mockup inventory
 - [`../design/v9/design-system-v9.md`](../design/v9/design-system-v9.md) — Ward Flow v9/v10 `--wf-*` design tokens and `src/components/wf/` primitive specification
 - [`wiring-conventions.md`](wiring-conventions.md) — page/button wiring conventions, pre-commit checks, and dead-button / orphan-route gates
-- [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) — synthetic-only Azure Function and shared-state backend contract
+- [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) — synthetic-only shared-workspace backend contract; provider in [`ward-flow/DATABASE.md`](ward-flow/DATABASE.md)
 
 ## Governance, safety, privacy
 

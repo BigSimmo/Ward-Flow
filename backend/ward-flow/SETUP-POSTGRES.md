@@ -1,17 +1,17 @@
 # Portable PostgreSQL backend
 
-Ward Flow supports Azure PostgreSQL, the approved Supabase preset and a generic PostgreSQL host. Database and identity selectors are independent. All presets reuse the same engine, shared HTTP paths, synthetic snapshot format, revisions, audit and command receipts. Other database engines require a separately implemented and tested store adapter.
+Ward Flow uses Supabase (decision D-55) and keeps this generic PostgreSQL adapter behind the same seam as a fallback. [DATABASE.md](../../docs/ward-flow/DATABASE.md) is the single source of truth for which provider is current and how to change it. Both presets reuse the same engine, shared HTTP paths, synthetic snapshot format, revisions, audit and command receipts. Other database engines require a separately implemented and tested store adapter.
 
 ## Administrator prerequisites
 
-Runtime startup never applies migrations. Shared readiness requires migrations **1 through 5**, including the fixed search paths on the audit and workspace-mode trigger functions and the composite push/command indexes. An existing Azure installation at an earlier migration must receive migrations through 5 via its separately authorised administrator workflow before using this runtime. Keep a new runtime stopped until the schema and runtime grants are ready. Existing Azure resources and their deployed runtime remain unchanged while Azure work is paused; any future Azure upgrade requires its own approval.
+Runtime startup never applies migrations. Shared readiness requires migrations **1 through 5**, including the fixed search paths on the audit and workspace-mode trigger functions and the composite push/command indexes. Keep a new runtime stopped until the schema and runtime grants are ready.
 
 Inspect the exact database target, ownership and contents first. Preserve a recoverable backup before a migration. A matching migration number alone is insufficient. The generic PostgreSQL CLI checks the existing `ward_flow` catalogue and refuses unfamiliar tables, functions, constraints, triggers, sequences, ownership or migration histories. Do not delete an unexpected namespace to make setup pass.
 
 Use a supported PostgreSQL database reserved for synthetic data, with verified TLS and a restricted application login separate from its administrator. Set these values privately:
 
 - `WARD_DATABASE_PROVIDER=postgres`, `WARD_SHARED_ENABLED=true`, `WARD_DATA_MODE=prototype`.
-- `WARD_AUTH_PROVIDER=entra` or `supabase`, with that identity preset's existing allowlist settings.
+- `WARD_AUTH_PROVIDER=supabase` (the only sign-in provider), with its coordinator allowlist settings.
 - `WARD_POSTGRES_DATABASE_URL` for the fixed `wardflow_backend` login and `WARD_POSTGRES_MIGRATION_DATABASE_URL` for a different administrator on the same hostname, port and database.
 - `WARD_WORKSPACE_ID` for a synthetic workspace and `WARD_ALLOWED_ORIGIN` for the verified frontend origin.
 - `WARD_POSTGRES_CA_CERT_FILE` when the server uses a CA not already trusted by Node.
@@ -36,11 +36,11 @@ Build the shared engine with `npm --prefix backend/ward-flow run build:engine`, 
 node --env-file=C:/private/ward-runtime.env backend/ward-flow/server.mjs
 ```
 
-The portable and Supabase presets verify the actual login, flags, memberships, ownership, effective permissions, migration set and guard triggers. They refuse unsafe or unprepared runtimes. Pools use verified TLS, four connections and bounded connection/query timeouts. They do not initialise Azure Blob Storage or Azure credentials for the database connection. Node and Azure Functions use the same backend factory.
+The portable and Supabase presets verify the actual login, flags, memberships, ownership, effective permissions, migration set and guard triggers. They refuse unsafe or unprepared runtimes. Pools use verified TLS, four connections and bounded connection/query timeouts.
 
 After `npm run ensure`, verify `/api/local-project-id` before opening the frontend. Confirm authenticated readiness, shared read/save/reload, stale-revision refusal and retry behaviour for the selected target before relying on it. Offline mocked checks do not establish a hosted connection, local real-database correctness or deployment. Push stays off unless separately configured; this setup does not enable a scheduler.
 
-Changing selectors does not transfer data. Finish or abandon pending work, sign out, stop owned processes, change matching database/auth/browser settings, rebuild public frontend configuration and restart. A previously accepted transaction can still commit. Keep private presets separately. See [Supabase setup](SETUP-SUPABASE.md) and the retained [Azure administrator guide](SETUP-SHARED-AZURE.md).
+Changing selectors does not transfer data. Finish or abandon pending work, sign out, stop owned processes, change matching database/auth/browser settings, rebuild public frontend configuration and restart. A previously accepted transaction can still commit. Keep private presets separately. See [Supabase setup](SETUP-SUPABASE.md) and [DATABASE.md](../../docs/ward-flow/DATABASE.md).
 
 ## Another database engine
 

@@ -5,7 +5,7 @@
  * is open: no service worker, no server, no push. A notification carries the alert's title and
  * never a patient name, record number or typed text, because the operating system may show it on
  * a lock screen. When the browser has denied permission, nothing is sent and Settings says so.
- * Phone alerts with the tab closed are separate: `ward-phone-push.ts` and the Azure backend.
+ * Phone alerts with the tab closed are separate: `ward-phone-push.ts` and the shared backend.
  */
 import { useCallback } from "react";
 
