@@ -262,6 +262,9 @@ export function PatientNowScreen({
   const [clearanceAttested, setClearanceAttested] = useState(false);
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
+  // The saved ETA the form was refilled with. While the box still holds that exact text, the saved
+  // instant is kept as it is, so reopening and saving never moves an ETA from another day.
+  const [transportEtaRefill, setTransportEtaRefill] = useState<{ text: string; at: number } | undefined>();
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
   // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
   // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
@@ -481,7 +484,11 @@ export function PatientNowScreen({
   const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
   const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
   const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
-  const draftEtaAt = instantFromEtaText(transportEtaDraft.trim(), now);
+  const etaFromDraft = (text: string) =>
+    transportEtaRefill !== undefined && text === transportEtaRefill.text
+      ? transportEtaRefill.at
+      : instantFromEtaText(text, now);
+  const draftEtaAt = etaFromDraft(transportEtaDraft.trim());
   // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
   const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
 
@@ -492,9 +499,9 @@ export function PatientNowScreen({
     // back gives the same instant and the bed hold warning still fires.
     const savedEtaTomorrow =
       savedEta !== undefined && Math.floor(savedEta / MINUTES_PER_DAY) > Math.floor(now / MINUTES_PER_DAY);
-    setTransportEtaDraft(
-      savedEta === undefined ? "" : `${formatInstant(savedEta)}${savedEtaTomorrow ? " tomorrow" : ""}`,
-    );
+    const refillText = savedEta === undefined ? "" : `${formatInstant(savedEta)}${savedEtaTomorrow ? " tomorrow" : ""}`;
+    setTransportEtaDraft(refillText);
+    setTransportEtaRefill(savedEta === undefined ? undefined : { text: refillText, at: savedEta });
     setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
     setTransportLegalChanging(false);
     setTransportLegalReason("");
@@ -506,7 +513,7 @@ export function PatientNowScreen({
     e.preventDefault();
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
-    const estimatedAt = instantFromEtaText(cleanEta, now);
+    const estimatedAt = etaFromDraft(cleanEta);
     const errors: { cad?: string; eta?: string; legal?: string } = {};
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
