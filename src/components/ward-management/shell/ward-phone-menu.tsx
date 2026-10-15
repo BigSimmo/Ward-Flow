@@ -52,6 +52,7 @@ import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
 import styles from "./ward-phone-menu.module.css";
@@ -173,9 +174,11 @@ function phoneMenuModel(
   counts: CountMap,
   dockRole: WardChromeRole = role,
   flagOn?: Parameters<typeof railEntries>[0],
+  accessNav: (entries: readonly RailEntry[]) => RailEntry[] = (entries) => [...entries],
 ) {
   // A page that needs a larger screen (the bed meeting TV view) is not offered on a phone at all.
-  const entries = railEntries(flagOn).filter((entry) => !isPhoneDesktopOnlyPath(entry.href));
+  // Role access plan: only the screens the desk's role may open.
+  const entries = accessNav(railEntries(flagOn)).filter((entry) => !isPhoneDesktopOnlyPath(entry.href));
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const dock = DOCK_PLACES[dockRole].flatMap(([id, label]) => {
     const entry = byId.get(id);
@@ -934,7 +937,14 @@ export function WardPhoneMenu({
   // holds Transport and Movements, not the coordinator's Home and Referrals.
   const dockRole = routeRole === "officer" ? routeRole : shellRole;
   const flagOn = useWardFeatureFlagCheck();
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole, flagOn);
+  const accessNav = useAccessNavFilter();
+  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(
+    shellRole,
+    counts,
+    dockRole,
+    flagOn,
+    accessNav,
+  );
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const flow = useWardFlow();
   const actNowCount = useMemo(

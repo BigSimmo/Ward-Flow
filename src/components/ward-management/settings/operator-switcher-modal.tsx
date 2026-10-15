@@ -36,7 +36,16 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
+import {
+  setWardAccess,
+  startAccessPreview,
+  useWardAccessSnapshot,
+} from "@/components/ward-management/shell/ward-access-store";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
+import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -102,8 +111,13 @@ function useSafePathname(): string {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+  // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
   const { movements, units, bedReleases, admissions, leaveBeds, patients, referrals, focusMovementId, configuration } =
-    useWardFlow();
+    useUnscopedWardFlow();
+  // Role access plan PR 1: with the flag on, opening a desk takes that desk's access.
+  const accessOn = useWardFeatureFlag("role-access");
+  const { access: currentAccess } = useWardAccessSnapshot();
+  const [previewOnly, setPreviewOnly] = useState(false);
   const now = useWardFlowClock();
   const router = useRouter();
   const pathname = useSafePathname();
@@ -134,7 +148,37 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   const isPhone = useIsPhone();
   const searching = query.trim().length > 0;
 
+  /** The access a desk gives. A ward's bed manager desk is the whole hospital. */
+  function accessFor(desk: Desk): WardAccess {
+    switch (desk.role) {
+      case "coordinator":
+        return STATEWIDE_COORDINATOR;
+      case "ward":
+        return { role: "ward", scope: { kind: "ward", unitIds: [desk.id] } };
+      case "ed":
+        return { role: "ed", scope: { kind: "ed", edId: desk.id } };
+      case "community":
+        return { role: "community", scope: { kind: "team", teamName: desk.name } };
+      case "officer":
+        return { role: "officer", scope: { kind: "jobs" } };
+    }
+  }
+
+  function takeAccess(access: WardAccess) {
+    if (!accessOn) return;
+    if (previewOnly && currentAccess.role === "coordinator") startAccessPreview(access);
+    else setWardAccess(access);
+  }
+
+  /** Desks the old drawer only previewed: bed manager per hospital, executive, service coordinator, admin. */
+  function openAccessDesk(access: WardAccess, href: string) {
+    takeAccess(access);
+    onClose();
+    router.push(href);
+  }
+
   function open(desk: Desk) {
+    takeAccess(accessFor(desk));
     rememberDesk(desk.id);
     onSelectRole?.(desk.role);
     dispatchPersonaSyncForRole(desk.role);
@@ -339,11 +383,40 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
               {desk.pastTarget ? <StatusGlyph tone="danger" /> : null}
             </Link>
           ))}
-          {(
-            [
-              ["Bed manager", Users],
-              ["Executive", Eye],
-            ] as const
+          {accessOn ? (
+            <>
+              <button
+                type="button"
+                className={styles.stateTile}
+                data-testid="workstation-open-executive"
+                onClick={() => openAccessDesk({ role: "executive", scope: { kind: "statewide" } }, STATISTICS_HREF)}
+              >
+                <Icon icon={Eye} size={16} />
+                <span className={styles.who}>
+                  <b>Executive</b>
+                  <span>Statewide figures only</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={styles.stateTile}
+                data-testid="workstation-open-admin"
+                onClick={() => openAccessDesk({ role: "admin", scope: { kind: "statewide" } }, SETTINGS_HREF)}
+              >
+                <Icon icon={Users} size={16} />
+                <span className={styles.who}>
+                  <b>Access admin</b>
+                  <span>Who works where, no patients</span>
+                </span>
+              </button>
+            </>
+          ) : null}
+          {(accessOn
+            ? []
+            : ([
+                ["Bed manager", Users],
+                ["Executive", Eye],
+              ] as const)
           ).map(([name, glyph]) => (
             <button
               key={name}
@@ -362,6 +435,17 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
           ))}
         </div>
       ) : null}
+      {accessOn && currentAccess.role === "coordinator" && !searching ? (
+        <label className={styles.empty}>
+          <input
+            type="checkbox"
+            checked={previewOnly}
+            onChange={(event) => setPreviewOnly(event.target.checked)}
+            data-testid="workstation-preview-only"
+          />{" "}
+          Preview only, then come back to the coordinator desk in one tap
+        </label>
+      ) : null}
       {previewNote && !searching ? (
         <p className={styles.empty} role="status">
           {previewNote}
@@ -377,6 +461,16 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
         ) : null}
         {groupByService(visibleSites).map(([service, group]) => (
           <DeskGroup key={service} label={service} service={SERVICE_SWATCH[service] ?? "statewide"}>
+            {accessOn && !searching && isHealthService(service) ? (
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                data-testid={`workstation-open-service-${SERVICE_SWATCH[service] ?? "other"}`}
+                onClick={() => openAccessDesk({ role: "coordinator", scope: { kind: "service", service } }, COORDINATOR_HOME_HREF)}
+              >
+                {service} coordinator desk
+              </button>
+            ) : null}
             {group.map((site) => {
               const isSiteOpen = searching || openSites.has(site.site);
               const ed = site.desks.find((desk) => desk.role === "ed");
@@ -410,6 +504,13 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
                     <div className={styles.siteBody}>
                       {/* The hospital is already named above, so its ED row says what it is. */}
                       {site.desks.map((desk) => row(desk, desk.role === "ed" ? "Emergency department" : undefined))}
+                      {accessOn ? (
+                        <BedManagerDesk
+                          siteCode={siteCodeOf(site.desks, units)}
+                          siteName={site.site}
+                          onOpen={(access) => openAccessDesk(access, CAPACITY_HREF)}
+                        />
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -427,6 +528,46 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
         ) : null}
       </div>
     </Drawer>
+  );
+}
+
+const COORDINATOR_HOME_HREF = "/mockups/ward-flow";
+const CAPACITY_HREF = "/mockups/ward-flow/capacity";
+const STATISTICS_HREF = "/mockups/ward-flow/statistics";
+const SETTINGS_HREF = "/mockups/ward-flow/settings";
+
+function isHealthService(value: string): value is HealthService {
+  return (HEALTH_SERVICES as readonly string[]).includes(value);
+}
+
+/** The hospital's code, read from its ED or one of its wards. */
+function siteCodeOf(desks: readonly Desk[], units: readonly { id: string; siteCode: string }[]): string | undefined {
+  for (const desk of desks) {
+    const code = desk.role === "ed" ? edById(desk.id)?.siteCode : units.find((unit) => unit.id === desk.id)?.siteCode;
+    if (code) return code;
+  }
+  return undefined;
+}
+
+function BedManagerDesk({
+  siteCode,
+  siteName,
+  onOpen,
+}: {
+  siteCode: string | undefined;
+  siteName: string;
+  onOpen: (access: WardAccess) => void;
+}) {
+  if (!siteCode) return null;
+  return (
+    <button
+      type="button"
+      className={buttonClass({ variant: "ghost", size: "sm" })}
+      data-testid={`workstation-open-bed-manager-${siteCode}`}
+      onClick={() => onOpen({ role: "bed_manager", scope: { kind: "site", siteCode } })}
+    >
+      Bed manager desk, {siteName}
+    </button>
   );
 }
 
