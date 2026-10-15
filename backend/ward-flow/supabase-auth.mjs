@@ -1,21 +1,79 @@
 // @ts-check
-import { VerifierUnavailableError } from "./auth.mjs";
+import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
+import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISSUER = `${APPROVED_SUPABASE_URL}/auth/v1`;
+/** Asymmetric algorithms Supabase signs access tokens with, and how Node verifies each. */
+const ALGORITHMS = Object.freeze({
+  ES256: { kty: "EC", hash: "sha256", dsaEncoding: "ieee-p1363" },
+  RS256: { kty: "RSA", hash: "sha256" },
+});
+/** The published keys are kept this long, and re-read at most this often when a key is missing. */
+const JWKS_TTL_MS = 10 * 60_000;
+const JWKS_RETRY_MS = 60_000;
+/** A token Supabase confirmed is reused for this long (never past its own expiry). */
+const CONFIRMED_TTL_MS = 60_000;
+const CONFIRMED_MAX = 1_000;
+/**
+ * Calls to Supabase's /auth/v1/user per minute, per client address and in total. A token checked
+ * against the published keys never counts, so ordinary polling is not limited.
+ */
+export const REMOTE_CHECKS_PER_ADDRESS = 30;
+export const REMOTE_CHECKS_TOTAL = 300;
+const LIMIT_WINDOW_MS = 60_000;
+const LIMIT_ADDRESSES_MAX = 10_000;
+
 class InvalidCredentialError extends Error {}
 
+function decodePart(part) {
+  try {
+    const value = JSON.parse(Buffer.from(part, "base64url").toString("utf8"));
+    return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The token's header, claims and signed parts, or null when it is not a three-part JWT. */
+function decodeJwt(token) {
+  const parts = token.split(".");
+  if (parts.length !== 3 || parts.some((part) => !/^[A-Za-z0-9_-]+$/.test(part))) return null;
+  const header = decodePart(parts[0]);
+  const claims = decodePart(parts[1]);
+  if (!header || !claims) return null;
+  return {
+    header,
+    claims,
+    signed: Buffer.from(`${parts[0]}.${parts[1]}`),
+    signature: Buffer.from(parts[2], "base64url"),
+  };
+}
+
+/**
+ * Maps an Authorization header to a coordinator user ID, or throws: InvalidCredentialError (401)
+ * for a bad or unlisted token, VerifierUnavailableError (503) when Supabase cannot be reached and
+ * VerifierRateLimitedError (429) when a client address has made too many remote checks.
+ *
+ * A token is first checked here: shape, expiry, issuer and a listed coordinator, then its
+ * signature against Supabase's published keys (cached). Only a token signed with a key that is not
+ * published, such as a legacy shared-secret token, is sent to /auth/v1/user, behind a per-address
+ * limit. Junk tokens never reach Supabase. A token verified locally stays valid until it expires
+ * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
+ */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
   if (config.supabase?.projectRef !== APPROVED_SUPABASE_PROJECT || config.supabase?.url !== APPROVED_SUPABASE_URL)
     throw new Error("Unapproved Supabase verifier configuration");
   const fetch = dependencies.fetch ?? globalThis.fetch;
+  const now = dependencies.now ?? Date.now;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
-  return async (authorization) => {
-    if (!/^Bearer [^\s]+$/.test(authorization ?? "") || authorization.length > 16_384) throw new Error("Unauthorised");
+
+  /** One bounded GET to the approved project. Covers the body read too, not just the headers. */
+  async function supabaseGet(path, headers, read) {
     const controller = new AbortController();
     let timer;
-    // Covers response-body reads too; fetch resolving headers does not end the deadline.
     const deadline = new Promise((_resolve, reject) => {
       timer = setTimeout(() => {
         reject(new VerifierUnavailableError("Token verifier unavailable"));
@@ -23,32 +81,139 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       }, timeoutMs);
     });
     try {
-      const result = await Promise.race([
-        (async () => {
-          const response = await fetch(`${APPROVED_SUPABASE_URL}/auth/v1/user`, {
-            method: "GET",
-            redirect: "error",
-            signal: controller.signal,
-            headers: { apikey: config.supabase.publishableKey, Authorization: authorization },
-          });
-          if (response.status === 401 || response.status === 403) return null;
-          if (!response.ok) throw new VerifierUnavailableError("Token verifier unavailable");
-          const user = await response.json();
-          if (!UUID.test(user?.id ?? "")) throw new VerifierUnavailableError("Token verifier unavailable");
-          const userId = user.id.toLowerCase();
-          if (!config.coordinatorIds.includes(userId)) throw new InvalidCredentialError("Unauthorised");
-          return userId;
-        })(),
+      return await Promise.race([
+        (async () =>
+          read(
+            await fetch(`${APPROVED_SUPABASE_URL}${path}`, {
+              method: "GET",
+              redirect: "error",
+              signal: controller.signal,
+              headers: { apikey: config.supabase.publishableKey, ...headers },
+            }),
+          ))(),
         deadline,
       ]);
-      if (!result) throw new InvalidCredentialError("Unauthorised");
-      return result;
-    } catch (error) {
-      if (error instanceof InvalidCredentialError) throw error;
-      throw new VerifierUnavailableError("Token verifier unavailable");
     } finally {
       clearTimeout(timer);
       controller.abort();
     }
+  }
+
+  const jwks = { keys: new Map(), fetchedAt: -Infinity, attemptedAt: -Infinity };
+  async function publishedKey(kid) {
+    const at = now();
+    const fresh = at - jwks.fetchedAt < JWKS_TTL_MS;
+    if ((fresh && jwks.keys.has(kid)) || at - jwks.attemptedAt < JWKS_RETRY_MS) return jwks.keys.get(kid) ?? null;
+    jwks.attemptedAt = at;
+    try {
+      const keys = await supabaseGet("/auth/v1/.well-known/jwks.json", {}, async (response) => {
+        if (!response.ok) throw new Error("JWKS unavailable");
+        const body = await response.json();
+        if (!Array.isArray(body?.keys)) throw new Error("JWKS unavailable");
+        const next = new Map();
+        for (const jwk of body.keys.slice(0, 20)) {
+          const alg = jwk?.alg ?? Object.keys(ALGORITHMS).find((name) => ALGORITHMS[name].kty === jwk?.kty);
+          if (typeof jwk?.kid !== "string" || !Object.hasOwn(ALGORITHMS, alg) || ALGORITHMS[alg].kty !== jwk.kty)
+            continue;
+          try {
+            next.set(jwk.kid, { alg, key: createPublicKey({ key: jwk, format: "jwk" }) });
+          } catch {
+            // A key Node cannot read is skipped; tokens signed with it fall back to Supabase.
+          }
+        }
+        return next;
+      });
+      jwks.keys = keys;
+      jwks.fetchedAt = at;
+    } catch {
+      // Keep the last good keys. Tokens they cannot verify fall back to Supabase.
+    }
+    return jwks.keys.get(kid) ?? null;
+  }
+
+  const confirmed = new Map();
+  const limits = { windowStart: -Infinity, total: 0, addresses: new Map() };
+  function allowRemoteCheck(address) {
+    const at = now();
+    if (at - limits.windowStart >= LIMIT_WINDOW_MS) {
+      limits.windowStart = at;
+      limits.total = 0;
+      limits.addresses.clear();
+    }
+    const key = limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+    const used = limits.addresses.get(key) ?? 0;
+    if (used >= REMOTE_CHECKS_PER_ADDRESS || limits.total >= REMOTE_CHECKS_TOTAL) return false;
+    limits.addresses.set(key, used + 1);
+    limits.total += 1;
+    return true;
+  }
+
+  async function remoteCheck(authorization) {
+    return supabaseGet("/auth/v1/user", { Authorization: authorization }, async (response) => {
+      if (response.status === 401 || response.status === 403) return null;
+      if (!response.ok) throw new VerifierUnavailableError("Token verifier unavailable");
+      const user = await response.json();
+      if (!UUID.test(user?.id ?? "")) throw new VerifierUnavailableError("Token verifier unavailable");
+      return user.id.toLowerCase();
+    });
+  }
+
+  return async (authorization, { clientAddress = "unknown" } = {}) => {
+    if (!/^Bearer [^\s]+$/.test(authorization ?? "") || authorization.length > 16_384)
+      throw new InvalidCredentialError("Unauthorised");
+    const jwt = decodeJwt(authorization.slice(7));
+    const claims = jwt?.claims;
+    const subject = typeof claims?.sub === "string" ? claims.sub.toLowerCase() : "";
+    // Free checks first: nothing below runs, and nothing leaves this server, for a token that is
+    // malformed, expired, from another project or for an account that is not a coordinator.
+    if (
+      !jwt ||
+      typeof claims.exp !== "number" ||
+      claims.exp * 1000 <= now() ||
+      claims.iss !== ISSUER ||
+      !UUID.test(subject) ||
+      !config.coordinatorIds.includes(subject)
+    )
+      throw new InvalidCredentialError("Unauthorised");
+    const algorithm = ALGORITHMS[jwt.header.alg];
+    if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {
+      const published = await publishedKey(jwt.header.kid);
+      if (published) {
+        const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+        let valid = false;
+        try {
+          valid =
+            published.alg === jwt.header.alg &&
+            verifySignature(
+              algorithm.hash,
+              jwt.signed,
+              algorithm.dsaEncoding ? { key: published.key, dsaEncoding: algorithm.dsaEncoding } : published.key,
+              jwt.signature,
+            );
+        } catch {
+          valid = false;
+        }
+        if (!valid || !audience.includes("authenticated") || claims.role !== "authenticated")
+          throw new InvalidCredentialError("Unauthorised");
+        return subject;
+      }
+    }
+    const tokenKey = createHash("sha256").update(authorization).digest("hex");
+    const known = confirmed.get(tokenKey);
+    if (known && known.until > now()) return known.userId;
+    confirmed.delete(tokenKey);
+    if (!allowRemoteCheck(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    let userId;
+    try {
+      userId = await remoteCheck(authorization);
+    } catch {
+      throw new VerifierUnavailableError("Token verifier unavailable");
+    }
+    // The server-returned account must be the token's own subject and a listed coordinator.
+    if (!userId || userId !== subject || !config.coordinatorIds.includes(userId))
+      throw new InvalidCredentialError("Unauthorised");
+    if (confirmed.size >= CONFIRMED_MAX) confirmed.delete(confirmed.keys().next().value);
+    confirmed.set(tokenKey, { userId, until: Math.min(now() + CONFIRMED_TTL_MS, claims.exp * 1000) });
+    return userId;
   };
 }

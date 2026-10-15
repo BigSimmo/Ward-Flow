@@ -42,7 +42,13 @@ to `005`. These source files do not establish a current hosted connection or dep
 - Plain PostgreSQL adapter: `postgres-config.mjs`, `portable-postgres.mjs` (TLS pool and the
   runtime-role checks that Supabase also uses), `migrate-postgres.mjs`,
   `infra/postgres-settings.example.env` and `infra/postgres-runtime-role.sql`.
-- `auth.mjs`: the shared `VerifierUnavailableError` (a sign-in outage returns 503, a bad token 401).
+- `auth.mjs`: the shared `VerifierUnavailableError` (a sign-in outage returns 503, a bad token 401)
+  and `VerifierRateLimitedError` (too many sign-in checks from one address returns 429).
+- Sign-in checks (`supabase-auth.mjs`): a token's expiry, issuer and coordinator are checked here,
+  then its signature against Supabase's published keys (cached 10 minutes). Only a token signed
+  with an unpublished key goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per
+  client address and 300 in total, and a confirmed token is reused for a minute. A locally
+  verified token stays valid until it expires, even after sign-out.
 - Browser settings template: `infra/frontend.env.example`.
 - Migrations (all five required for `/readyz`):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
