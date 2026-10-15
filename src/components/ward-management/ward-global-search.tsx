@@ -1205,6 +1205,7 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-advance-clock"
                     onClick={() => {
                       if (wardFlow) {
@@ -1224,6 +1225,7 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-coordinator"
                     onClick={() => {
                       setDeskRole("coordinator", "/mockups/ward-flow");
@@ -1237,9 +1239,10 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-ward"
                     onClick={() => {
-                      setDeskRole("ward", typeof window !== "undefined" ? window.location.pathname : "");
+                      setDeskRole("ward", "/mockups/ward-flow/wards");
                       dispatchPersonaSyncForRole("ward");
                       select("/mockups/ward-flow/wards");
                     }}
@@ -1250,9 +1253,10 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-ed"
                     onClick={() => {
-                      setDeskRole("ed", typeof window !== "undefined" ? window.location.pathname : "");
+                      setDeskRole("ed", "/mockups/ward-flow/ed");
                       dispatchPersonaSyncForRole("ed");
                       select("/mockups/ward-flow/ed");
                     }}
@@ -1263,6 +1267,7 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-officer"
                     onClick={() => {
                       setDeskRole("officer", "/mockups/ward-flow/transport/officer");
@@ -1276,6 +1281,7 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-handover"
                     onClick={() => select("/mockups/ward-flow/handover")}
                   >
@@ -1285,6 +1291,7 @@ export function WardGlobalSearch({
                   <button
                     type="button"
                     className={styles.commandBtn}
+                    disabled={!resultsCurrent}
                     aria-expanded={shortcutsExpanded}
                     data-testid="ward-global-search-cmd-shortcuts"
                     onClick={() => setShowShortcuts((prev) => !prev)}

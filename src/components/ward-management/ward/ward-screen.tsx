@@ -456,7 +456,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </button>
       </span>
     ) : null;
-  const [lastRaisedReferralHref, setLastRaisedReferralHref] = useState<string | null>(null);
+  // The raised referral's form link belongs to that toast message and that bed only, so it cannot linger
+  // on later toasts or on another patient's bed.
+  const [raisedReferral, setRaisedReferral] = useState<{ href: string; message: string; bed: number | null } | null>(
+    null,
+  );
   // An Undo pressed seconds later sends the clock as it is then, not as it was at the placement.
   const nowRef = useRef(now);
   const rejectionCountRef = useRef(rejections.length);
@@ -1641,12 +1645,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       history: "",
     });
     const referralFormHref = fullWardReferralHref(verifiedPatientId);
-    setLastRaisedReferralHref(referralFormHref);
-    setToastMessage(
-      targetBed?.patientAlias
-        ? `Ward referral raised for ${targetBed.patientAlias} (${unit.cohort}, ${derivedSex}).`
-        : `Ward referral raised from ${unit.name}.`,
-    );
+    const raisedMessage = targetBed?.patientAlias
+      ? `Ward referral raised for ${targetBed.patientAlias} (${unit.cohort}, ${derivedSex}).`
+      : `Ward referral raised from ${unit.name}.`;
+    setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: selectedBed });
+    setToastMessage(raisedMessage);
   }
 
   // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
@@ -2847,7 +2850,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   <Link
                     className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
                     href={
-                      lastRaisedReferralHref ??
+                      (raisedReferral && raisedReferral.bed === selectedBed ? raisedReferral.href : null) ??
                       fullWardReferralHref(
                         selectedBed !== null
                           ? bedsList.find((b) => b.bedNumber === selectedBed)?.patientInfo?.patient?.id
@@ -3387,7 +3390,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                               blocker: validBlocker,
                             });
                           }
-                          setToastMessage(`Discharge blocker recorded: ${blocker}`);
+                          // Without a pending release nothing reaches the engine, so say it is for this view only.
+                          setToastMessage(
+                            pendingRelease
+                              ? `Discharge blocker recorded: ${blocker}`
+                              : `Discharge blocker noted for this view only: ${blocker}`,
+                          );
                         }
                       : undefined
                   }
@@ -3676,9 +3684,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <polyline points="20 6 9 17 4 12" />
           </svg>
           <span>{toastMessage}</span>
-          {lastRaisedReferralHref ? (
+          {raisedReferral && raisedReferral.message === toastMessage ? (
             <Link
-              href={lastRaisedReferralHref}
+              href={raisedReferral.href}
               className={buttonClass({ variant: "ghost", size: "sm" })}
               data-testid="ward-toast-full-referral-link"
             >

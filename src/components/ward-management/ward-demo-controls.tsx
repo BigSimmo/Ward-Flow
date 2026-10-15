@@ -320,8 +320,9 @@ export function WardDemoClockPopover({
 
   const clockText = formatInstant(now);
 
+  // `styles.demo` carries the --dc-* tokens the menu and buttons read; display stays block as before.
   return (
-    <div ref={containerRef} style={{ position: "relative" }}>
+    <div ref={containerRef} className={styles.demo} style={{ display: "block" }}>
       <button
         type="button"
         className={className}

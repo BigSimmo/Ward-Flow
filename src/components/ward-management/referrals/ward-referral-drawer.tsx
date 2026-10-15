@@ -301,7 +301,8 @@ function sampleProfile(
   };
   if (!movement && registered) {
     const years = patientAgeYears(registered, calendarDateOf(now, record.dayZero));
-    const sexOrGender = registered.sex ?? registered.gender;
+    // "Not recorded" is a placeholder, never a marker: fall through to the recorded gender.
+    const sexOrGender = registered.sex && registered.sex !== "Not recorded" ? registered.sex : registered.gender;
     return {
       ...blank,
       name: `${registered.familyName}, ${registered.givenName}`,
@@ -815,8 +816,9 @@ function WardReferralDrawerContent({
     const ats = ATS_CATEGORIES.find((value) => value === atsRaw);
     const legal = params.get("legal")?.trim() || undefined;
     const complaint = params.get("complaint")?.trim() || undefined;
+    const source = params.get("source")?.trim() === "ed" ? ("ed" as const) : undefined;
     if (!personId && !site && !service && !ats && !legal && !complaint) return null;
-    return { personId, site, service, ats, legal, complaint };
+    return { personId, site, service, ats, legal, complaint, source };
   }, [initialOriginSiteCode, initialPatientId, initialSendingTeam, initialUnitIds]);
   const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.personId;
   const effectiveInitialOriginSiteCode = initialOriginSiteCode ?? urlPrefill?.site;
@@ -950,6 +952,7 @@ function WardReferralDrawerContent({
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
     (initialSendingTeam ? "community" : undefined) ??
+      (urlPrefill?.source === "ed" && effectiveInitialOriginSiteCode ? "ed" : undefined) ??
       (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
         ? "ed"
         : kept?.sourceKind) ??
@@ -960,10 +963,7 @@ function WardReferralDrawerContent({
   );
   const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? "");
   const [referralSex, setReferralSex] = useState<RecordedSex>(
-    kept?.referralSex ??
-      RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ??
-      RECORDED_SEXES.find((sex) => sex === patientRecord?.gender) ??
-      "Not recorded",
+    kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
   );
   const [referralGender, setReferralGender] = useState<ReferralGender | "">(
     kept?.referralGender ?? patientRecord?.gender ?? "",
@@ -1198,11 +1198,7 @@ function WardReferralDrawerContent({
       : key.startsWith(PATIENT_KEY_PREFIX)
         ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
         : undefined;
-    setReferralSex(
-      RECORDED_SEXES.find((sex) => sex === record?.sex) ??
-        RECORDED_SEXES.find((sex) => sex === record?.gender) ??
-        "Not recorded",
-    );
+    setReferralSex(RECORDED_SEXES.find((sex) => sex === record?.sex) ?? "Not recorded");
     setReferralGender(record?.gender ?? "");
     setHighAcuity(false);
     setArrivalEta("");

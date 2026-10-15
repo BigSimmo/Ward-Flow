@@ -17,6 +17,26 @@ export interface DirtyStateGuardOptions {
   skipAnchor?: (anchor: HTMLAnchorElement) => boolean;
 }
 
+const DEFAULT_LEAVE_MESSAGE = "You have unsaved changes. Are you sure you want to leave?";
+
+type NavigationGuardEntry = { isDirty: boolean; message: string };
+const navigationGuards = new Set<NavigationGuardEntry>();
+
+/** One confirmation for the shell's task navigation: it asks once if ANY mounted guard is dirty. */
+function confirmNavigationAcrossGuards(): boolean {
+  for (const entry of navigationGuards) {
+    if (entry.isDirty) return window.confirm(entry.message);
+  }
+  return true;
+}
+
+function syncNavigationConfirm(): void {
+  if (typeof window === "undefined") return;
+  const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
+  if (navigationGuards.size > 0) globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
+  else delete globalWindow.__wardFlowConfirmNavigation;
+}
+
 /** Removes legacy typed drafts without reading their contents. */
 export function clearWardFlowDraftCaches(): void {
   if (typeof window === "undefined") return;
@@ -50,13 +70,14 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   }, [key]);
 
   useEffect(() => {
-    const navigationConfirm = () =>
-      !isDirty || window.confirm(confirmMessage ?? "You have unsaved changes. Are you sure you want to leave?");
-    const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
-    globalWindow.__wardFlowConfirmNavigation = navigationConfirm;
+    // Every mounted guard registers itself, so a clean guard (the referral drawer over a half-filled page)
+    // cannot replace a dirty one, and removing one leaves the others in place.
+    const entry: NavigationGuardEntry = { isDirty, message: confirmMessage ?? DEFAULT_LEAVE_MESSAGE };
+    navigationGuards.add(entry);
+    syncNavigationConfirm();
     return () => {
-      if (globalWindow.__wardFlowConfirmNavigation === navigationConfirm)
-        delete globalWindow.__wardFlowConfirmNavigation;
+      navigationGuards.delete(entry);
+      syncNavigationConfirm();
     };
   }, [isDirty, confirmMessage]);
 
@@ -72,7 +93,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
 
   useEffect(() => {
     if (!isDirty || typeof document === "undefined") return;
-    const message = confirmMessage ?? "You have unsaved changes. Are you sure you want to leave?";
+    const message = confirmMessage ?? DEFAULT_LEAVE_MESSAGE;
 
     const handleClick = (event: MouseEvent) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

@@ -136,11 +136,13 @@ const CREATE_LINKS: readonly {
     href: WARD_ADD_PERSON_HREF,
   },
   {
-    id: "book-transport",
-    label: "Book transport",
-    meta: "Ready-to-book queue on Transport",
+    // The officer page lists existing transport jobs; booking one starts from the placement panel or the
+    // community desk, so this row is a way to see the jobs, not to book.
+    id: "transport-jobs",
+    label: "Transport jobs",
+    meta: "See booked transport and its status",
     icon: Truck,
-    href: `${officerHref()}#ready-to-book`,
+    href: officerHref(),
     asButton: true,
   },
 ];

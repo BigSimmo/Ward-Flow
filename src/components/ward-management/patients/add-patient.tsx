@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
-import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
+import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
@@ -219,13 +219,11 @@ const FACILITY_TO_SITE_CODE: Record<string, string> = {
   "peel-ed": "PEEL",
 };
 
-const COMPLAINT_TO_DIAGNOSIS_BLOCK: Record<string, string> = {
-  psychosis: TENTATIVE_DIAGNOSIS_BLOCKS[0].code,
-  mood: TENTATIVE_DIAGNOSIS_BLOCKS[1].code,
-  safety: TENTATIVE_DIAGNOSIS_BLOCKS[2].code,
-  behavioral: TENTATIVE_DIAGNOSIS_BLOCKS[3].code,
-  assessment: TENTATIVE_DIAGNOSIS_BLOCKS[8].code,
-  other: TENTATIVE_DIAGNOSIS_BLOCKS[8].code,
+// Only complaints that name a diagnosis block get one. A safety risk, behavioural disturbance, an
+// assessment or "other" is not a diagnosis, so the referral's provisional diagnosis is left unset.
+const COMPLAINT_TO_DIAGNOSIS_BLOCK: Partial<Record<string, TentativeDiagnosisBlock>> = {
+  psychosis: "F20–F29",
+  mood: "F30–F39",
 };
 
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
@@ -427,7 +425,11 @@ export function AddPatientForm() {
       params.set("new", "1");
       params.set("patientId", added[0].id);
       const siteCode = FACILITY_TO_SITE_CODE[facility];
-      if (siteCode) params.set("site", siteCode);
+      if (siteCode) {
+        params.set("site", siteCode);
+        // The site is an emergency department, so the referral comes from that ED, not a community service.
+        params.set("source", "ed");
+      }
       if (healthService.trim()) params.set("service", healthService.trim());
       params.set("ats", triageUrgency);
       params.set("legal", legalStatus);

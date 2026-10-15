@@ -594,6 +594,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const checksPublication = useWardChecks();
 
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
+  // The latest open panel for event callbacks that must announce a close once, outside a state updater.
+  const openPanelRef = useRef<WardBarPopoverId | null>(null);
+  useEffect(() => {
+    openPanelRef.current = openPanel;
+  }, [openPanel]);
   // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
   // ignored and a delayed popstate cannot close a drawer opened in the meantime.
   const closingViaHistoryRef = useRef<{ id: WardBarPopoverId; announce: boolean } | null>(null);
@@ -1055,10 +1060,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // drawer ("activity", "tasks", "tools", "referral") leaves Escape to that handler so
       // history.back() and closingViaHistoryRef stay in sync (and an unsent referral draft asks).
       if (referralCloseRef.current || hasOpenSheet()) return;
-      setOpenPanel((current) => {
-        if (current !== null) queueMicrotask(() => announceToWardShell("Closed."));
-        return null;
-      });
+      // Announced once, from the event: a state updater may run more than once.
+      const wasOpen = openPanelRef.current !== null;
+      setOpenPanel(null);
+      if (wasOpen) announceToWardShell("Closed.");
     });
     return () => {
       unsubOpen();

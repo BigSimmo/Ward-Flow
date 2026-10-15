@@ -179,11 +179,13 @@ function MovementPreview({
   const needs = [movement.cohort, movement.security, movement.specialling ? "specialling" : null]
     .filter(Boolean)
     .join(" · ");
-  const linkedReferral = (lookup.referrals ?? []).find(
-    (ref) =>
-      ref.id === movement.referralId ||
-      (patient !== undefined && resolveSubjectPatient(ref, lookup).patient?.id === patient.id),
-  );
+  // The movement's own referral first; the same patient's referral is only a fallback when that link is missing.
+  const referrals = lookup.referrals ?? [];
+  const linkedReferral =
+    referrals.find((ref) => ref.id === movement.referralId) ??
+    (patient !== undefined
+      ? referrals.find((ref) => resolveSubjectPatient(ref, lookup).patient?.id === patient.id)
+      : undefined);
 
   return (
     <>
@@ -293,11 +295,10 @@ function PersonPreview({
   const origin = openMovement ? edById(openMovement.originEdId) : undefined;
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
   const wait = openMovement ? waited(openMovement, now) : null;
-  const linkedReferral = (lookup.referrals ?? []).find(
-    (ref) =>
-      resolveSubjectPatient(ref, lookup).patient?.id === patient.id ||
-      (openMovement !== undefined && ref.id === openMovement.referralId),
-  );
+  const personReferrals = lookup.referrals ?? [];
+  const linkedReferral =
+    (openMovement !== undefined ? personReferrals.find((ref) => ref.id === openMovement.referralId) : undefined) ??
+    personReferrals.find((ref) => resolveSubjectPatient(ref, lookup).patient?.id === patient.id);
 
   return (
     <>
@@ -365,7 +366,7 @@ function PersonPreview({
         ) : null}
         {linkedReferral ? (
           <Action
-            href={`/mockups/ward-flow/referrals?referralId=${encodeURIComponent(linkedReferral.id)}`}
+            href={`/mockups/ward-flow/referrals?referral=${encodeURIComponent(linkedReferral.id)}`}
             onOpen={onOpen}
             testId="ward-global-search-preview-open-referral"
           >

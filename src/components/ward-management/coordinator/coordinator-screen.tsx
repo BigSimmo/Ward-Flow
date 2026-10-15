@@ -2,7 +2,7 @@
 
 import { Copy } from "lucide-react";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
@@ -607,7 +607,9 @@ export function CoordinatorScreen() {
     );
   }
 
-  const deferredPanelMovement = useDeferredValue(panelMovement) ?? panelMovement;
+  // Not deferred: the placement panel's Offer and Refer act on this movement, so it must always be the one
+  // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.
+  const deferredPanelMovement = panelMovement;
 
   const bedflowNode = (
     <HomeBedflow
