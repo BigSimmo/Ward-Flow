@@ -36,10 +36,42 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
     await page.waitForTimeout(1_000);
     ({ results, blocking } = await scan());
   }
+  // For a contrast failure, record what the browser itself reports for each flagged element and its
+  // ancestors, so a red run on a slower CI runner can be diagnosed without reproducing it.
+  const contrastTargets = blocking
+    .filter((violation) => violation.id === "color-contrast")
+    .flatMap((violation) => violation.nodes.map((node) => String(node.target[0])));
+  const computed =
+    contrastTargets.length > 0
+      ? await page.evaluate((selectors) => {
+          const read = (element: Element) => {
+            const style = getComputedStyle(element);
+            return {
+              tag: element.tagName.toLowerCase(),
+              className: String(element.getAttribute("class") ?? ""),
+              attributes: Object.fromEntries(
+                Array.from(element.attributes)
+                  .filter((attribute) => attribute.name.startsWith("data-"))
+                  .map((attribute) => [attribute.name, attribute.value]),
+              ),
+              color: style.color,
+              background: style.backgroundColor,
+              opacity: style.opacity,
+            };
+          };
+          return selectors.map((selector) => {
+            const element = document.querySelector(selector);
+            const chain: ReturnType<typeof read>[] = [];
+            for (let node = element; node && chain.length < 8; node = node.parentElement) chain.push(read(node));
+            return { selector, chain, rootClass: document.documentElement.className };
+          });
+        }, contrastTargets)
+      : [];
   await testInfo.attach(`axe: ${step}`, {
-    body: JSON.stringify({ url: page.url(), violations: results.violations }, null, 2),
+    body: JSON.stringify({ url: page.url(), violations: results.violations, computed }, null, 2),
     contentType: "application/json",
   });
+  if (computed.length > 0) console.log(`[release-gate] computed styles at "${step}": ${JSON.stringify(computed)}`);
   const summary = blocking
     .map(
       (violation) =>

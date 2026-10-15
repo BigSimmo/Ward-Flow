@@ -1341,9 +1341,8 @@
     gap: 5px;
     font-size: var(--t-0);
     font-weight: 500;
-    /* Inherited from the bar's ink rule below. WebKit can leave this button on the light face when
-       the bar takes the ink band, because it misses the descendant restyle; a custom property set on
-       the bar itself always reaches it (release gate, 15 Oct 2026). */
+    /* Set by the bar's ink rules below, so the service line follows the bar's band (release gate,
+       15 Oct 2026). */
     color: var(--wf-bar-scope-ink, var(--wf-ink-2));
   }
 
@@ -3053,6 +3052,13 @@
     background: var(--wf-hero-1);
     border-bottom-color: var(--wf-hero-1);
     color: var(--wf-hero-ink);
+  }
+
+  /* The same service-line ink on a plain attribute selector. WebKit can skip restyling rules whose
+     selector holds :has() when the bar's data-band changes, so the release gate saw the service line
+     stay dark on the band; this rule always follows the attribute. */
+  .bar[data-band="ink"] {
+    --wf-bar-scope-ink: var(--wf-hero-ink-2);
   }
 
   .bar:is(
