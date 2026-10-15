@@ -189,7 +189,7 @@ export function toHandoverRow(
   return {
     movement,
     id: movement.id,
-    name: identity.displayName,
+    name: identity.formalName,
     umrn: identity.umrn,
     patientId: identity.patient?.id,
     tier: movement.urgency,
@@ -696,7 +696,7 @@ export function heldDischarges(
       const identity = resolveSubjectPatient(admission, { patients, referrals });
       return {
         admission,
-        name: identity.displayName,
+        name: identity.formalName,
         umrn: identity.umrn,
         ward: byId.get(admission.unitId)!.name,
         days: daysInBed(admission, now),

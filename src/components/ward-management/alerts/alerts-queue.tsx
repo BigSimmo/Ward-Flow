@@ -159,7 +159,7 @@ function OpenButton({ entry, handlers }: { entry: QueueEntry; handlers: QueueHan
       data-testid="ward-alerts-open"
       onClick={() => handlers.onSelect(entry)}
     >
-      {entry.item.title}
+      <span className={styles.rowOpenText}>{entry.item.title}</span>
     </button>
   );
 }

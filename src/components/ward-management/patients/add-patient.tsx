@@ -43,6 +43,7 @@ import {
   Frac,
   Hero,
   Icon,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -628,6 +629,8 @@ export function AddPatientForm() {
           <PhoneHero
             level={1}
             eyebrow="Patients"
+            // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
+            chip={<LiveChip state="live" onHero />}
             title="Add a patient"
             sub="Identity only · same duplicate check"
             data-testid="ward-add-patient-phone-hero"

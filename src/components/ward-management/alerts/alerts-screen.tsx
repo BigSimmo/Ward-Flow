@@ -113,6 +113,7 @@ import {
   PhoneSheet,
   PillTabs,
   Kbd,
+  LiveChip,
   Segmented,
   Select,
   SrOnly,
@@ -996,9 +997,11 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
+  // F-09 (phone review, Oct 2026): the title counts act now alerts assigned to you and not yet
+  // seen, a part of the Act now figure, so it says so rather than reading as a different total.
   const heroTitle =
     needYouCount > 0
-      ? `${needYouCount} need${needYouCount === 1 ? "s" : ""} you now`
+      ? `${needYouCount} act now, new to you`
       : actEntries.length > 0
         ? `${actEntries.length} to act on now`
         : "No alert needs you";
@@ -1249,6 +1252,8 @@ function AlertsWorkspace() {
                   : "Checking every condition below"
               }
               eyebrow="Alerts"
+              // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
+              chip={<LiveChip state={live.paused ? "paused" : "live"} onHero />}
               figures={[
                 {
                   id: "act",
@@ -1269,7 +1274,8 @@ function AlertsWorkspace() {
                 {
                   id: "mine",
                   value: yoursCount,
-                  label: "Yours",
+                  // F-09: says what it counts, so it reads beside the title's smaller number.
+                  label: "Assigned to you",
                   pressed: pill === "mine",
                   onPress: () => togglePill("mine"),
                 },

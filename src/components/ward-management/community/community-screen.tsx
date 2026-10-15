@@ -2013,7 +2013,23 @@ export function CommunityScreen({
                   id: admission.id,
                   testId: `ward-community-phone-in-bed-${admission.id}`,
                   name: phoneName(person, "No person on file"),
-                  meta: `${unitName(admission.unitId, units)} · ${person?.legalStatus ?? "Legal status not recorded"}`,
+                  // F-16 (phone review, Oct 2026): legal status is its own chip, amber when it is not
+                  // recorded, so it never reads as part of the grey place line.
+                  meta: (
+                    <span className={phoneCss.legalMeta}>
+                      <span>{unitName(admission.unitId, units)}</span>
+                      {person?.legalStatus ? (
+                        <Badge size="sm" className={phoneCss.legalChip}>
+                          <SrOnly>Legal status: </SrOnly>
+                          {person.legalStatus}
+                        </Badge>
+                      ) : (
+                        <Badge size="sm" tone="warning" className={phoneCss.legalChip}>
+                          Legal status not recorded
+                        </Badge>
+                      )}
+                    </span>
+                  ),
                   value: stayDays === null ? "Not arrived" : `${stayDays}d`,
                   time: bedStateLabel(admission),
                   onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
@@ -2098,6 +2114,8 @@ export function CommunityScreen({
           groups: [
             {
               id: "ctos",
+              // F-16: the tab says CTOs to fit, so the list spells the term out.
+              before: <p className={phoneCss.quiet}>CTOs are community treatment orders.</p>,
               rows: phoneCaseloadShown.map((row) => {
                 const person = phonePerson(row.patientId);
                 const formCode = caseloadStatutoryFormCode(row);
@@ -2127,7 +2145,7 @@ export function CommunityScreen({
                       onClick={() => setPhoneShowWholeCaseload((all) => !all)}
                       aria-pressed={phoneShowWholeCaseload}
                     >
-                      {phoneShowWholeCaseload ? "Show CTOs only" : "Show the whole caseload"}
+                      {phoneShowWholeCaseload ? "Show community treatment orders only" : "Show the whole caseload"}
                     </Button>
                   )}
                 </>

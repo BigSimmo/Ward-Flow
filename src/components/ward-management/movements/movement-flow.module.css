@@ -708,6 +708,13 @@
     overflow: visible;
   }
 
+  /* F-08 (phone review, Oct 2026): on phone the aside holds only the Demo pill. It must not be the
+     pill's containing block, or the scroller clips it; the shared hero then puts it on the eyebrow
+     line as on every other page. */
+  .heroAside:not(:has(> :not([data-wf-live]))) {
+    position: static;
+  }
+
   .jump {
     flex: none;
     max-width: 15rem;

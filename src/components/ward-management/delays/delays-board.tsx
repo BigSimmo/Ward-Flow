@@ -287,7 +287,8 @@ function phonePrefix(row: BoardRow): ReactNode {
 
 /** v10 phone: the right column's second line is how long nothing has been recorded. */
 function phoneUpdate(row: BoardRow): string {
-  return row.activity === undefined ? "no update" : `quiet ${splitDuration(row.quiet)}`;
+  // F-24 (phone review, Oct 2026): plain words, "no update 4m" rather than "quiet 4m".
+  return row.activity === undefined ? "no update" : `no update ${splitDuration(row.quiet)}`;
 }
 
 /** Active time solid, quiet time hatched (amber once quiet 2h or more), on a 24 hour scale. */
@@ -1743,7 +1744,7 @@ export function DelaysBoard({
               { id: "over24", label: `Over ${H24}`, value: over24, tone: over24 > 0 ? "danger" : "neutral" },
               {
                 id: "silent",
-                label: `Silent ${SILENT_MINUTES / 60}h and over`,
+                label: `No update for ${SILENT_MINUTES / 60}h and over`,
                 value: silentCount,
                 tone: silentCount > 0 ? "warning" : "neutral",
               },
@@ -1896,6 +1897,8 @@ export function DelaysBoard({
                   type="button"
                   className={styles.chip}
                   aria-pressed={filters.locked}
+                  // F-24: "locked" is the app's word for a secure bed, so the chip keeps it and hints.
+                  title="People who need a secure (locked) bed"
                   onClick={() => {
                     set({ locked: !filters.locked });
                   }}
@@ -1911,7 +1914,7 @@ export function DelaysBoard({
                   }}
                 >
                   <Glyph tone="warning" />
-                  {`Silent ${SILENT_MINUTES / 60}h+`}{" "}
+                  {`No update ${SILENT_MINUTES / 60}h+`}{" "}
                   <span className={styles.k}>{rows.filter((row) => row.silent).length}</span>
                 </button>
                 {chips.map((chip) => (

@@ -19,6 +19,7 @@ import {
   Icon,
   GroupHead,
   Kbd,
+  LiveChip,
   ScrollRow,
   Segmented,
   Select,
@@ -517,37 +518,41 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
             )
           }
           aside={
-            <div className={styles.heroActions}>
-              <Button
-                ref={drawerTriggerRef}
-                variant="onHero"
-                icon={BookOpen}
-                onClick={() => setDrawerOpen(true)}
-                data-testid="community-action-catchment-guide"
-                aria-haspopup="dialog"
-                aria-expanded={drawerOpen}
-              >
-                {isPhone ? "Guide" : "Catchment guide"}
-              </Button>
-              {isPhone ? null : (
-                <Link
-                  href="/mockups/ward-flow/referrals"
-                  className={buttonClass({ variant: "onHero" })}
-                  data-testid="community-action-referral-board"
+            <>
+              {/* F-08 (phone review, Oct 2026): the standard Demo pill on the phone hero. */}
+              {isPhone ? <LiveChip state="live" onHero /> : null}
+              <div className={styles.heroActions}>
+                <Button
+                  ref={drawerTriggerRef}
+                  variant="onHero"
+                  icon={BookOpen}
+                  onClick={() => setDrawerOpen(true)}
+                  data-testid="community-action-catchment-guide"
+                  aria-haspopup="dialog"
+                  aria-expanded={drawerOpen}
                 >
-                  <Icon icon={ArrowRight} size={16} />
-                  Referrals
+                  {isPhone ? "Guide" : "Catchment guide"}
+                </Button>
+                {isPhone ? null : (
+                  <Link
+                    href="/mockups/ward-flow/referrals"
+                    className={buttonClass({ variant: "onHero" })}
+                    data-testid="community-action-referral-board"
+                  >
+                    <Icon icon={ArrowRight} size={16} />
+                    Referrals
+                  </Link>
+                )}
+                <Link
+                  href="/mockups/ward-flow/referrals/new"
+                  className={buttonClass({ variant: "light" })}
+                  data-testid="community-action-raise-referral"
+                >
+                  <Icon icon={Plus} size={16} />
+                  Raise referral
                 </Link>
-              )}
-              <Link
-                href="/mockups/ward-flow/referrals/new"
-                className={buttonClass({ variant: "light" })}
-                data-testid="community-action-raise-referral"
-              >
-                <Icon icon={Plus} size={16} />
-                Raise referral
-              </Link>
-            </div>
+              </div>
+            </>
           }
           bar={
             recentNames.length > 0 ? (

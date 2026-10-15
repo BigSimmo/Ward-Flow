@@ -506,7 +506,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       const record = recordOf(entry.admission.id);
       return {
         entry,
-        name: info.displayName,
+        // F-06 (phone review, Oct 2026): family name first, as on the census.
+        name: info.formalName,
         umrn: info.umrn,
         profileHref: getPatientProfileHref(info),
         legal: legalOf(entry),

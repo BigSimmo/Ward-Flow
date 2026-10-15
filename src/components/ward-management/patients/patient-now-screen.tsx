@@ -1793,8 +1793,13 @@ export function PatientNowScreen({
             }
             phoneEyebrow={
               phoneMovement ? (
-                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling on one line.
-                `Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
+                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling. F-05 (phone
+                // review, Oct 2026): the observation level is its own chip, and the line may wrap to a
+                // second line rather than cut it off.
+                <span className={styles.phMoveEyebrow}>
+                  {`Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}`}
+                  {liveMovement?.specialling ? <span className={styles.phObsChip}>1:1 specialling</span> : null}
+                </span>
               ) : (
                 <span className={styles.phEyebrow}>
                   <StatusGlyph tone={modeMeta.tone} size={10} />

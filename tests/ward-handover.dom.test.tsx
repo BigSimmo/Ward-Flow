@@ -98,7 +98,7 @@ describe("Handover page", () => {
       seed.movements.find((movement) => movement.id === "WF-016")!,
       seed,
     );
-    expect(page).toContain(identity.displayName);
+    expect(page).toContain(identity.formalName);
   });
 
   it("shows the sign-off sheet until a patient is picked, then that patient's flow", async () => {
