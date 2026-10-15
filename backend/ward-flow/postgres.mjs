@@ -46,6 +46,8 @@ export function createWorkspaceStore(
 ) {
   const snapshot = (row, at) => ({
     dataMode: row.data_mode,
+    // Whether the demonstration controls work here, so the screens can say when they do not.
+    demoControls: demoEvents,
     revision: Number(row.revision),
     payload: row.payload,
     now: engine.worldNow(row.payload, at),
@@ -390,11 +392,7 @@ export function createWorkspaceStore(
      */
     async command(actorId, commandId, expectedRevision, event, { revisionOnly = false } = {}) {
       if (!engine.validCommand(event)) throw new Error("invalid-command");
-      if (!demoEvents && engine.demoOnlyCommand(event))
-        return {
-          status: 422,
-          body: { outcome: "denied", error: "Demo controls are switched off on the shared workspace." },
-        };
+      const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprint = createHash("sha256")
         .update(JSON.stringify(canonical({ expectedRevision, event })))
         .digest("hex");
@@ -427,7 +425,12 @@ export function createWorkspaceStore(
         let changes = {};
         let reason = "The workspace changed. Review the latest board before trying again.";
         const priorRevision = Number(row.revision);
-        if (priorRevision === expectedRevision) {
+        if (demoRefused) {
+          // Refused like any other denial, so the attempt is audited and a retry replays it.
+          outcome = "denied";
+          status = 422;
+          reason = "Demo controls are switched off on the shared workspace.";
+        } else if (priorRevision === expectedRevision) {
           const applied = engine.applyCommand(row.payload, event, at);
           ({ outcome, changes, reason } = applied);
           status = outcome === "accepted" ? 200 : 422;

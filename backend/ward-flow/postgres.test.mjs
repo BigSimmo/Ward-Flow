@@ -633,12 +633,17 @@ test(
         const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
         const off = store();
         await off.read(actor);
-        const refused = await off.command(actor, randomUUID(), 1, jump);
+        const commandId = randomUUID();
+        const refused = await off.command(actor, commandId, 1, jump);
         assert.equal(refused.status, 422);
         assert.equal(refused.body.outcome, "denied");
+        assert.equal(refused.body.snapshot.demoControls, false, "the screens can tell the controls are off");
         assert.equal((await off.read(actor)).revision, 1, "nothing was saved");
+        const audited = await pool.query("SELECT outcome FROM ward_flow.audit WHERE command_id=$1", [commandId]);
+        assert.deepEqual(audited.rows, [{ outcome: "denied" }], "the refused attempt is audited");
+        assert.equal((await off.command(actor, commandId, 1, jump)).body.replayed, true, "a retry replays it");
         const on = store({ demoEvents: true });
-        await on.read(actor);
+        assert.equal((await on.read(actor)).demoControls, true);
         assert.equal((await on.command(actor, randomUUID(), 1, jump)).status, 200);
       });
       await t.test("receipts older than the retention window are pruned; newer ones stay", async () => {

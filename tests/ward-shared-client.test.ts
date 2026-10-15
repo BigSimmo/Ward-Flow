@@ -56,6 +56,26 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot?.revision).toBe(status === 400 ? 1 : 2);
     client.dispose();
   });
+  it("says so when the server has the demo controls switched off", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json({ outcome: "denied", snapshot: { ...snapshot(1), demoControls: false } }, { status: 422 })
+          : Response.json({ snapshot: { ...snapshot(1), demoControls: false } }),
+    });
+    await client.refresh();
+    expect(view?.snapshot?.demoControls).toBe(false);
+    client.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: 642, minutes: 15 } as WardFlowEvent);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
+    expect(view?.error).toBe("Demo controls are switched off on the shared workspace. Nothing was changed.");
+    client.dispose();
+  });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
     for (const dataMode of [undefined, "live"]) {
       let view: SharedView | undefined;

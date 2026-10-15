@@ -20,6 +20,27 @@ test("the saved audit copy is bounded, and reviewed entries are kept", async () 
   assert.equal(engine.boundAudit(world.state), world.state, "a short list is left alone");
 });
 
+test("the saved audit copy keeps this scenario's record-access receipts", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const world = engine.seedWorld(new Date("2026-10-07T10:00:00Z"));
+  const template = world.state.auditEvents[0] ?? {};
+  const generation = world.state.worldGeneration;
+  const entry = (index) => ({ ...template, id: `audit-test-${index}`, sequence: index + 1 });
+  const access = (id, entryGeneration) => ({ ...template, id, category: "record-access", generation: entryGeneration });
+  const state = {
+    ...world.state,
+    auditEvents: [
+      access("access-old-scenario", generation - 1),
+      access("access-open-record", generation),
+      ...Array.from({ length: engine.PERSISTED_AUDIT_EVENTS }, (_, index) => entry(index)),
+    ],
+    auditReviews: [],
+  };
+  const ids = engine.boundAudit(state).auditEvents.map((kept) => kept.id);
+  assert.ok(ids.includes("access-open-record"), "an open record can still be read after trimming");
+  assert.ok(!ids.includes("access-old-scenario"), "a receipt from an earlier scenario is trimmed");
+});
+
 test("demo controls are recognised by their demo-only role", async () => {
   const engine = await import("./dist/engine.mjs");
   for (const type of ["ADVANCE_CLOCK", "RESET_SCENARIO", "SET_SCENARIO"])

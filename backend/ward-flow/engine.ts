@@ -32,16 +32,22 @@ export function demoOnlyCommand(value: unknown): boolean {
 /**
  * The newest audit entries kept in the saved workspace. The database audit table is the full
  * record; the workspace copy only feeds the on-screen views, and an unbounded copy eventually
- * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept.
+ * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept,
+ * and so are this scenario's newest record-access receipts, because an open record is read
+ * against its receipt.
  */
 export const PERSISTED_AUDIT_EVENTS = 1000;
 export function boundAudit(state: WardFlowState): WardFlowState {
   const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
   if (excess <= 0) return state;
-  const reviewed = new Set(state.auditReviews.map((review) => review.eventId));
+  const kept = new Set(state.auditReviews.map((review) => review.eventId));
+  state.auditEvents
+    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
+    .slice(-PERSISTED_AUDIT_EVENTS)
+    .forEach((entry) => kept.add(entry.id));
   return {
     ...state,
-    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || reviewed.has(entry.id)),
+    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
   };
 }
 

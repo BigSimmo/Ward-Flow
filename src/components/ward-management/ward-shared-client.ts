@@ -9,6 +9,8 @@ export type SharedSnapshot = {
   revision: number;
   now: number;
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
+  /** False when the server refuses the demonstration controls (clock, reset and scenario). */
+  demoControls?: boolean;
 };
 type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
 export type SharedView = {
@@ -178,7 +180,9 @@ export class SharedWorkspaceClient {
             error:
               response.status === 409
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
-                : "The action was not applied. Review the workflow requirements.",
+                : command.event.role === "demo" && value.snapshot?.demoControls === false
+                  ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                  : "The action was not applied. Review the workflow requirements.",
           });
           break;
         }
