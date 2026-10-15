@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -1562,12 +1563,13 @@ export function HandoverScopeControl({
   const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const sortedEds = useMemo(() => [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name)), []);
   const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
+  const scopeId = useId();
 
   return (
-    <label htmlFor="ward-handover-scope" className={styles.barSelect} data-print-hide>
+    <label htmlFor={scopeId} className={styles.barSelect} data-print-hide>
       <SrOnly>Filter the sheet</SrOnly>
       <Select
-        id="ward-handover-scope"
+        id={scopeId}
         aria-label="Filter the sheet"
         data-testid="ward-handover-scope-select"
         boxClassName={styles.barSelect}
