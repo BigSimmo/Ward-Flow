@@ -3854,12 +3854,13 @@ export function EdScreen({ edId }: EdScreenProps) {
                         role="status"
                         data-testid={`ward-ed-arrival-late-${movement.id}`}
                       >
-                        Arrival late — more than 60 minutes past the estimated ward time. Not marked arrived.
+                        Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
+                        marked arrived.
                       </span>
                     ) : null}
                     {movement.arrivalDetails ? (
                       movement.arrivalDetails.estimatedArrivalAt !== undefined ? (
-                        now > movement.arrivalDetails.estimatedArrivalAt + 60 ? (
+                        now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
                           <span
                             className={styles.transitBadgeOverdue}
                             data-testid={`ward-ed-transit-badge-${movement.id}`}
@@ -6419,7 +6420,8 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 role="status"
                                 data-testid={`ward-ed-outbox-arrival-late-${movement.id}`}
                               >
-                                Arrival late — more than 60 minutes past the estimated ward time. Not marked arrived.
+                                Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward
+                                time. Not marked arrived.
                               </div>
                             ) : null}
                             {canSetArrivalPlan(movement) ? (
@@ -6705,7 +6707,8 @@ export function EdScreen({ edId }: EdScreenProps) {
                       role="status"
                       data-testid={`ward-ed-drawer-arrival-late-${selectedPatient.id}`}
                     >
-                      Arrival late — more than 60 minutes past the estimated ward time. Not marked arrived.
+                      Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
+                      marked arrived.
                     </p>
                   ) : null}
                   {canSetArrivalPlan(selectedPatient) ? (

@@ -40,6 +40,7 @@ import { withSendingTeam } from "@/components/ward-management/referrals/referral
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
+import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./home.module.css";
 
@@ -66,15 +67,20 @@ const MS_PER_MINUTE = 60_000;
  * Settings ("Tier 1 overdue after 1h") and the Referrals board used 1h/4h/24h, so one patient was
  * overdue on one page and not on another. Every marker now reads the one rule,
  * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
- * in" within the hour (or half the window, if shorter) before it. Pending clinical sign-off.
+ * in" within the hour (or half the window, if shorter) before it. Signed for the prototype (D-56).
  */
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
   const overdue = tierOverdueAfterMinutes(urgency);
   return { dueSoon: overdue - Math.min(60, overdue / 2), overdue };
 }
 
-/** Shown wherever the tier targets drive a figure. */
-export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, pending clinical sign-off`;
+/** Shown wherever the tier targets drive a figure. The status is read from
+ *  `ward-clinical-values.ts`, so the note changes by itself once the tier values are signed. */
+export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
+  allClinicalValuesSigned(["tierOneOverdue", "tierTwoOverdue", "tierThreeOverdue", "anyTierOverdue"])
+    ? "signed for the prototype"
+    : "pending clinical sign-off"
+}`;
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant) {

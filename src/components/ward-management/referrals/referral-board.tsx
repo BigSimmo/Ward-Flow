@@ -90,6 +90,7 @@ import {
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
@@ -128,6 +129,16 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+
+/** The tier due times' status, read from the clinical values file so it changes when they are signed. */
+const DUE_TIMES_NOTE = allClinicalValuesSigned([
+  "tierOneOverdue",
+  "tierTwoOverdue",
+  "tierThreeOverdue",
+  "anyTierOverdue",
+])
+  ? "Due times are prototype defaults, signed for the prototype."
+  : "Due times are prototype defaults, pending clinical sign-off.";
 
 /**
  * Bed board decision 9A (Josh, 26 September 2026): the waiting list flags a queued referral whose
@@ -863,7 +874,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               open={phoneSheet !== null}
               onClose={() => setPhoneSheet(null)}
               title={phoneSheet === "beds" ? "Beds ready statewide" : "Waiting time against due times"}
-              description="Due times are prototype defaults, pending clinical sign-off."
+              description={DUE_TIMES_NOTE}
             >
               <div className={p.sheetHero}>
                 {phoneSheet === "axis" ? (

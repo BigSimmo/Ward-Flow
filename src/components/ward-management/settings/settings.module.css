@@ -791,6 +791,35 @@
   font-weight: 600;
 }
 
+/* Phone Reference switch and clinical values (phone mockup B, 15 Oct 2026) */
+
+.phoneReferenceSwitch {
+  margin: 0 var(--wf-s-4) var(--wf-s-3);
+}
+
+.phoneClinicalGroup {
+  display: grid;
+}
+
+.phoneClinicalGroupHead {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.defaultsGrid dd.phoneClinicalMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-2);
+}
+
 /* Save bar and toast ------------------------------------------------------------------------ */
 
 .saveBar {
