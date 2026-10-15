@@ -2,6 +2,7 @@
 import { Pool } from "pg";
 import { readFileSync } from "node:fs";
 import { X509Certificate } from "node:crypto";
+import { LATEST_MIGRATION } from "./migrations.mjs";
 import { validatePortablePostgresUrl, validatePostgresConnectionString } from "./postgres-config.mjs";
 
 export function createPortablePostgresPool(config, dependencies = {}) {
@@ -228,7 +229,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "sequence_restricted",
     ].every((field) => row[field] === true) ||
     !Array.isArray(row.versions) ||
-    row.versions.length !== 5 ||
+    row.versions.length !== LATEST_MIGRATION ||
     !row.versions.every((version, index) => version === index + 1)
   )
     throw new Error(unsafeMessage);

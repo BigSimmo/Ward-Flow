@@ -204,3 +204,18 @@ test("storage failures are told apart from code faults", () => {
   assert.equal(storageFailure(new RangeError("Invalid time value")), false);
   assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ERR_INVALID_ARG_TYPE" })), false);
 });
+test("shared routes are logged with a request ID even when the shared workspace is off", async () => {
+  const logs = [];
+  const handler = createHandler({
+    config: { coordinatorIds: [coordinator], origin: null },
+    sharedStore: null,
+    authenticate: async () => coordinator,
+    log: (event) => logs.push(event),
+  });
+  const response = await handler(request());
+  assert.equal(response.status, 503);
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0].requestId, response.headers.get("x-request-id"));
+  assert.equal(logs[0].route, "workspace");
+  assert.equal(logs[0].outcome, "not_configured");
+});

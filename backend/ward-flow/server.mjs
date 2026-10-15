@@ -52,16 +52,16 @@ export function createHandler({
     : null;
   return async (request) => {
     const path = new URL(request.url).pathname;
-    if (path.startsWith("/v1/workspace"))
-      return sharedHandler
-        ? sharedHandler(request)
-        : Response.json(
-            { error: "Shared workspace is not configured" },
-            { status: 503, headers: { "cache-control": "no-store" } },
-          );
+    if (path.startsWith("/v1/workspace") && sharedHandler) return sharedHandler(request);
     const requestId = randomUUID();
     const startedAt = performance.now();
-    const route = path === "/readyz" ? "readiness" : path === "/healthz" ? "liveness" : "unknown";
+    const route = path.startsWith("/v1/workspace")
+      ? "workspace"
+      : path === "/readyz"
+        ? "readiness"
+        : path === "/healthz"
+          ? "liveness"
+          : "unknown";
     const origin = request.headers.get("origin");
     const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff", "x-request-id": requestId };
     const respond = (status, value, outcome = "completed", extraHeaders = {}) => {
@@ -72,7 +72,7 @@ export function createHandler({
           event: "ward_backend_request",
           requestId,
           route,
-          method: ["GET", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
+          method: ["GET", "POST", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
           status,
           outcome,
           durationMs: Math.round(performance.now() - startedAt),
@@ -90,6 +90,8 @@ export function createHandler({
       headers["access-control-expose-headers"] = "X-Request-ID";
       headers.vary = "Origin";
     }
+    // Shared routes with the shared workspace switched off: still logged, with a request ID.
+    if (route === "workspace") return respond(503, { error: "Shared workspace is not configured" }, "not_configured");
     if (path === "/healthz" && request.method === "GET") return respond(200, { service: "ward-flow-backend" });
     if (path !== "/readyz") return respond(404, { error: "Not found" });
     if (request.method === "OPTIONS" && origin)
