@@ -1,3 +1,4 @@
+// @ts-check
 import { Pool } from "pg";
 import { validateSupabaseDatabaseUrl } from "./supabase-config.mjs";
 import { readDatabaseCA, verifyRuntimeRole } from "./portable-postgres.mjs";

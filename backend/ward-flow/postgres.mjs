@@ -1,4 +1,6 @@
+// @ts-check
 import { createHash } from "node:crypto";
+import { LATEST_MIGRATION } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
@@ -240,8 +242,9 @@ export function createWorkspaceStore(
   return {
     pushEnabled: !!push,
     async ready() {
-      const version = 5;
-      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [version]);
+      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [
+        LATEST_MIGRATION,
+      ]);
       if (!rows.length) throw new Error("Shared schema unavailable");
     },
     async subscribe(actorId, subscription) {

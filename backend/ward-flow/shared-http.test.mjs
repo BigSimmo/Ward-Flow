@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHandler } from "./server.mjs";
+import { storageFailure } from "./shared-http.mjs";
 import { readConfig } from "./config.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
@@ -26,8 +27,9 @@ const body = {
   expectedRevision: 1,
   event: { type: "PULL_PATIENT", role: "coordinator" },
 };
-function setup(actor = coordinator, dataMode = "prototype") {
+function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
   const calls = [];
+  const logs = [];
   const sharedStore = {
     read: async (...args) => {
       calls.push(args);
@@ -41,6 +43,7 @@ function setup(actor = coordinator, dataMode = "prototype") {
       calls.push(["audit", ...args]);
       return [auditEvent];
     },
+    ...overrides,
   };
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
@@ -50,8 +53,9 @@ function setup(actor = coordinator, dataMode = "prototype") {
       if (!token) throw new Error("Unauthorized");
       return actor;
     },
+    log: (event) => logs.push(event),
   });
-  return { calls, handler };
+  return { calls, logs, handler };
 }
 const request = (path = "", data, token = "Bearer test") =>
   new Request(`http://localhost/v1/workspace${path}`, {
@@ -144,4 +148,59 @@ test("shared configuration reads only the approved Supabase target and refuses l
       /Unapproved/,
     );
   assert.throws(() => readConfig({ ...env, WARD_WORKSPACE_ID: "00000000-0000-4000-8000-000000000000" }), /workspace/);
+});
+
+test("every shared request is logged with its request ID and closed fields only", async () => {
+  const { logs, handler } = setup();
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 409);
+  const requestId = response.headers.get("x-request-id");
+  assert.match(requestId, /^[0-9a-f-]{36}$/);
+  assert.equal(logs.length, 1);
+  const { durationMs, ...entry } = logs[0];
+  assert.ok(Number.isInteger(durationMs));
+  assert.deepEqual(entry, {
+    event: "ward_backend_request",
+    requestId,
+    route: "workspace_commands",
+    method: "POST",
+    status: 409,
+    outcome: "refused",
+  });
+  assert.doesNotMatch(JSON.stringify(logs), new RegExp(coordinator));
+});
+test("a database outage is a 503 and a code fault is a 500, and both are logged", async () => {
+  const outage = Object.assign(new Error('relation "x" does not exist: secret value'), { code: "57P01" });
+  const fault = new TypeError("Cannot read properties of undefined (reading 'state')");
+  for (const [error, status, outcome, fields] of [
+    [outage, 503, "storage_unavailable", { errorName: "Error", errorCode: "57P01" }],
+    [new Error("Connection terminated unexpectedly"), 503, "storage_unavailable", { errorName: "Error" }],
+    [fault, 500, "server_error", { errorName: "TypeError", message: fault.message }],
+  ]) {
+    const { logs, handler } = setup(coordinator, "prototype", {
+      command: async () => {
+        throw error;
+      },
+    });
+    const response = await handler(request("/commands", body));
+    assert.equal(response.status, status);
+    const { durationMs, requestId, ...entry } = logs[0];
+    assert.ok(Number.isInteger(durationMs));
+    assert.equal(requestId, response.headers.get("x-request-id"));
+    assert.deepEqual(entry, {
+      event: "ward_backend_request",
+      route: "workspace_commands",
+      method: "POST",
+      status,
+      outcome,
+      ...fields,
+    });
+  }
+});
+test("storage failures are told apart from code faults", () => {
+  assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ECONNREFUSED" })), true);
+  assert.equal(storageFailure(Object.assign(new Error("x"), { code: "23514" })), true);
+  assert.equal(storageFailure(new Error("timeout exceeded when trying to connect")), true);
+  assert.equal(storageFailure(new RangeError("Invalid time value")), false);
+  assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ERR_INVALID_ARG_TYPE" })), false);
 });

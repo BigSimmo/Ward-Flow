@@ -1,3 +1,4 @@
+// @ts-check
 import { Pool } from "pg";
 import { readFileSync } from "node:fs";
 import { X509Certificate } from "node:crypto";

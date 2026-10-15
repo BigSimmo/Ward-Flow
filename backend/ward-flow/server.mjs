@@ -1,3 +1,4 @@
+// @ts-check
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
@@ -46,6 +47,7 @@ export function createHandler({
         authenticate,
         readBody,
         verifierUnavailable: VerifierUnavailableError,
+        log,
       })
     : null;
   return async (request) => {
@@ -113,26 +115,36 @@ export function createHandler({
   };
 }
 
+/**
+ * Up to 256 open connections. A client must finish its headers within 5 seconds and its whole
+ * request within 15, so a handful of slow or idle connections cannot hold every slot.
+ */
+export const MAX_CONNECTIONS = 256;
+export const HEADERS_TIMEOUT_MS = 5_000;
+
 export function listen(handler, config) {
   const server = createServer(
-    { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: 10_000 },
+    { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: HEADERS_TIMEOUT_MS },
     async (incoming, outgoing) => {
       try {
         const request = new Request(`http://backend${incoming.url}`, {
           method: incoming.method,
-          headers: incoming.headers,
-          ...(["GET", "HEAD"].includes(incoming.method) ? {} : { body: Readable.toWeb(incoming), duplex: "half" }),
+          headers: /** @type {HeadersInit} */ (/** @type {unknown} */ (incoming.headers)),
+          ...(["GET", "HEAD"].includes(incoming.method)
+            ? {}
+            : { body: /** @type {BodyInit} */ (/** @type {unknown} */ (Readable.toWeb(incoming))), duplex: "half" }),
         });
         const response = await handler(request);
         outgoing.writeHead(response.status, Object.fromEntries(response.headers));
         outgoing.end(Buffer.from(await response.arrayBuffer()));
-      } catch {
-        outgoing.writeHead(500, { "cache-control": "no-store" });
+      } catch (error) {
+        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", ...errorFields(error) }));
+        if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
         outgoing.end();
       }
     },
   );
-  server.maxConnections = 16;
+  server.maxConnections = MAX_CONNECTIONS;
   server.setTimeout(15_000, (socket) => socket.destroy());
   return server.listen(config.port, config.host);
 }

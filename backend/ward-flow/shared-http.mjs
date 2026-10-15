@@ -1,29 +1,108 @@
+// @ts-check
+import { randomUUID } from "node:crypto";
 import { parseSubscription } from "./push.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PATHS = [
-  "/v1/workspace",
-  "/v1/workspace/commands",
-  "/v1/workspace/audit",
-  "/v1/workspace/push-key",
-  "/v1/workspace/push-subscribe",
-  "/v1/workspace/push-unsubscribe",
-  "/v1/workspace/push-status",
-];
+/** Each shared path and the closed route name it is logged under. */
+const ROUTES = new Map([
+  ["/v1/workspace", "workspace"],
+  ["/v1/workspace/commands", "workspace_commands"],
+  ["/v1/workspace/audit", "workspace_audit"],
+  ["/v1/workspace/push-key", "push_key"],
+  ["/v1/workspace/push-subscribe", "push_subscribe"],
+  ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
+  ["/v1/workspace/push-status", "push_status"],
+]);
+/** Messages the pg pool and the workspace store use when the database, not the code, failed. */
+const STORAGE_MESSAGES =
+  /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
 
-export function createSharedHandler({ config, store, authenticate, readBody, verifierUnavailable }) {
+/**
+ * True when the database could not do the work: a PostgreSQL SQLSTATE (five characters), a Node
+ * network error code (ECONNRESET and similar, not ERR_ codes) or a known pool or store message. Anything else is a
+ * code fault, which the API reports as 500 rather than blaming the database.
+ */
+export function storageFailure(error) {
+  const code = error?.code;
+  return (
+    (typeof code === "string" && /^(?:[0-9A-Z]{5}|E(?!RR_)[A-Z_]+)$/.test(code)) ||
+    STORAGE_MESSAGES.test(String(error?.message ?? ""))
+  );
+}
+
+/**
+ * Closed diagnostic fields for an unexpected error. A database error keeps only its name and code,
+ * since PostgreSQL messages can quote values. A code fault keeps a short URL-free message too,
+ * because without it the log cannot say what broke.
+ */
+function failureFields(error, storage) {
+  const code = error?.code;
+  return {
+    errorName: typeof error?.name === "string" ? error.name.slice(0, 60) : "Error",
+    ...(typeof code === "string" || typeof code === "number" ? { errorCode: String(code).slice(0, 40) } : {}),
+    ...(storage
+      ? {}
+      : {
+          message: String(error?.message ?? "")
+            .replace(/https?:\/\/\S+/g, "[url]")
+            .slice(0, 160),
+        }),
+  };
+}
+
+export function createSharedHandler({
+  config,
+  store,
+  authenticate,
+  readBody,
+  verifierUnavailable,
+  log = (event) => console.info(JSON.stringify(event)),
+}) {
   return async (request) => {
-    const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff" };
-    const reply = (status, body) => Response.json(body, { status, headers });
+    const requestId = randomUUID();
+    const startedAt = performance.now();
+    const path = new URL(request.url).pathname;
+    /** @type {{ outcome?: string, failure?: Record<string, unknown> }} */
+    const note = {};
+    const response = await handle(request, path, requestId, note);
+    try {
+      // Closed metadata vocabulary only: never log tokens, actor IDs, query strings or payloads.
+      log({
+        event: "ward_backend_request",
+        requestId,
+        route: ROUTES.get(path) ?? "unknown",
+        method: ["GET", "POST", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
+        status: response.status,
+        outcome: note.outcome ?? (response.status < 400 ? "completed" : "refused"),
+        durationMs: Math.round(performance.now() - startedAt),
+        ...note.failure,
+      });
+    } catch {
+      // Optional diagnostics must not alter the API result.
+    }
+    return response;
+  };
+
+  async function handle(request, path, requestId, note) {
+    const headers = {
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "x-request-id": requestId,
+    };
+    const reply = (status, body, outcome) => {
+      if (outcome) note.outcome = outcome;
+      return Response.json(body, { status, headers });
+    };
     const origin = request.headers.get("origin");
-    if (origin && origin !== config.origin) return reply(403, { error: "Origin not allowed" });
+    if (origin && origin !== config.origin) return reply(403, { error: "Origin not allowed" }, "origin_denied");
     if (origin) {
       headers["access-control-allow-origin"] = origin;
+      headers["access-control-expose-headers"] = "X-Request-ID";
       headers.vary = "Origin";
     }
-    const path = new URL(request.url).pathname;
-    if (!PATHS.includes(path)) return reply(404, { error: "Not found" });
-    if (request.method === "OPTIONS" && origin)
+    if (!ROUTES.has(path)) return reply(404, { error: "Not found" });
+    if (request.method === "OPTIONS" && origin) {
+      note.outcome = "preflight";
       return new Response(null, {
         status: 204,
         headers: {
@@ -33,21 +112,19 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
           "access-control-max-age": "600",
         },
       });
+    }
     let actorId;
     try {
       actorId = await authenticate(request.headers.get("authorization"));
     } catch (error) {
-      return reply(error instanceof verifierUnavailable ? 503 : 401, {
-        error:
-          error instanceof verifierUnavailable
-            ? "Sign-in verification unavailable; try again shortly"
-            : "Sign in with the authorised account",
-      });
+      return error instanceof verifierUnavailable
+        ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
+        : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
     }
     // One application role, explicit named accounts. Tenant membership and client role fields
     // never grant coordinator access. These accounts can read the complete synthetic workspace.
     if (!config.coordinatorIds.includes(actorId))
-      return reply(403, { error: "Coordinator access is not assigned to this account" });
+      return reply(403, { error: "Coordinator access is not assigned to this account" }, "auth_denied");
     try {
       if (config.dataMode && config.dataMode !== "prototype")
         return reply(503, { error: "Live data mode is not commissioned" });
@@ -140,11 +217,21 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
       const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event);
       return reply(result.status, result.body);
     } catch (error) {
-      if (error.message === "invalid-command")
+      if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
-      return reply(503, {
-        error: "Database unavailable; this change is not confirmed saved. Retry the same command ID.",
-      });
+      const storage = storageFailure(error);
+      note.failure = failureFields(error, storage);
+      return storage
+        ? reply(
+            503,
+            { error: "Database unavailable; this change is not confirmed saved. Retry the same command ID." },
+            "storage_unavailable",
+          )
+        : reply(
+            500,
+            { error: "The server could not complete this request; it is not confirmed saved.", requestId },
+            "server_error",
+          );
     }
-  };
+  }
 }
