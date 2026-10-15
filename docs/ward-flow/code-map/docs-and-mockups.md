@@ -208,8 +208,9 @@ in them as belonging to the tree named, never as current.
 
 ## Big history folders and small tooling folders
 
-- **`archive/dated-notes/`** — 36 files (34 `owner-*.md` rulings and questions, the clinician check
-  rulings and its own `README.md`). The 15 October 2026 docs trim removed the other dated notes
+- **`archive/dated-notes/`** — 37 files (34 `owner-*.md` rulings and questions, the clinician check
+  rulings, the retired coverage record that `tests/ward-retired-suite-integrity.test.ts` reads, and
+  its own `README.md`). The 15 October 2026 docs trim removed the other dated notes
   (handovers, prompts, censuses); they are kept in commit `26d0987`, the last `main` commit before the trim
   (see `ARCHIVE-NOTE.md`). `OWNER-RULINGS.md`'s generator scans `archive/dated-notes/owner-*.md` by
   pattern, and `README.md` cites `archive/dated-notes/owner-answers-2026-09-17.md`.

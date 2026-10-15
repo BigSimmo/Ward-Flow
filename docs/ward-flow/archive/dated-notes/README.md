@@ -4,9 +4,9 @@ Moved here during docs hardening. **Not live guidance.**
 
 Live entry: [`../../README.md`](../../README.md) · Boot: [`../../LOCAL-FIRST-RUN.md`](../../LOCAL-FIRST-RUN.md) · Status: [`../../STATUS.md`](../../STATUS.md) · [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md)
 
-Count: 35
+Count: 36
 
-On 15 October 2026 the docs trim removed the other dated notes (handovers, prompts, censuses and session records). Owner rulings, owner questions and the clinician check rulings stay here because the owner-rulings index reads them. See [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md) to restore a removed note.
+On 15 October 2026 the docs trim removed the other dated notes (handovers, prompts, censuses and session records). Owner rulings, owner questions and the clinician check rulings stay here because the owner-rulings index reads them. The retired coverage record stays because `tests/ward-retired-suite-integrity.test.ts` reads it. See [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md) to restore a removed note.
 
 ## Files
 
@@ -45,3 +45,4 @@ On 15 October 2026 the docs trim removed the other dated notes (handovers, promp
 - [owner-rulings-2026-09-05.md](owner-rulings-2026-09-05.md)
 - [owner-wording-page-2026-09-02.md](owner-wording-page-2026-09-02.md)
 - [owner-working-instructions-2026-09-04.md](owner-working-instructions-2026-09-04.md)
+- [retired-coverage-record-2026-09-06.md](retired-coverage-record-2026-09-06.md)
