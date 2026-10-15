@@ -329,9 +329,7 @@ export function deriveEddDriftBadge(input: {
   const revisionCount = Number.isFinite(rawCount) && rawCount > 0 ? Math.floor(rawCount) : 0;
 
   let driftDays =
-    input.driftDays !== undefined && Number.isFinite(input.driftDays)
-      ? Math.max(0, Math.floor(input.driftDays))
-      : null;
+    input.driftDays !== undefined && Number.isFinite(input.driftDays) ? Math.max(0, Math.floor(input.driftDays)) : null;
   if (input.driftDays === undefined && Array.isArray(input.eddRevisions) && input.eddRevisions.length >= 2) {
     const firstMs = Date.parse(input.eddRevisions[0]!);
     const lastMs = Date.parse(input.eddRevisions[input.eddRevisions.length - 1]!);
