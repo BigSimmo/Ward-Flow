@@ -263,6 +263,12 @@ test("the client address trusts forwarded headers only from configured proxies",
   assert.equal(clientAddress(incoming), "proxy");
   assert.equal(clientAddress(incoming, ["proxy"]), "203.0.113.9");
   assert.equal(clientAddress(incoming, ["*"]), "203.0.113.9", "* trusts the proxy a host is only reachable through");
+  const railway = {
+    headers: { "x-real-ip": "203.0.113.9", "x-forwarded-for": "203.0.113.9, 100.64.0.7" },
+    socket: { remoteAddress: "100.64.0.8" },
+  };
+  assert.equal(clientAddress(railway, ["*"]), "203.0.113.9", "X-Real-IP wins over an internal hop");
+  assert.equal(clientAddress(railway), "100.64.0.8", "untrusted peers never choose their address");
   const mapped = { headers: { "x-forwarded-for": "203.0.113.9" }, socket: { remoteAddress: "::ffff:10.0.0.2" } };
   assert.equal(clientAddress(mapped, ["10.0.0.2"]), "203.0.113.9");
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "::ffff:10.0.0.2" } }), "10.0.0.2");

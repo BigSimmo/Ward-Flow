@@ -124,18 +124,20 @@ export function createHandler({
 }
 
 /**
- * The address sign-in checks are limited by. The last X-Forwarded-For entry (the one the proxy
- * appends) is used only when the socket peer is a listed trusted proxy, or "*" is listed for a host
- * such as Railway that is reachable only through its proxy. Otherwise the socket's own address, so a
- * direct client cannot choose its limit address.
+ * The address sign-in checks are limited by. Proxy headers are read only when the socket peer is a
+ * listed trusted proxy, or "*" is listed for a host such as Railway that is reachable only through
+ * its proxy. Then X-Real-IP (the single client address Railway sets) is used, else the last
+ * X-Forwarded-For entry (the one a proxy appends). Otherwise the socket's own address, so a direct
+ * client cannot choose its limit address.
  */
 export function clientAddress(incoming, trustedProxyAddresses = []) {
   const socketAddress = (incoming.socket?.remoteAddress || "unknown").replace(/^::ffff:/i, "");
   if (!trustedProxyAddresses.includes("*") && !trustedProxyAddresses.includes(socketAddress))
     return socketAddress.slice(0, 64);
+  const realIp = incoming.headers["x-real-ip"];
   const forwarded = incoming.headers["x-forwarded-for"];
   const last = typeof forwarded === "string" ? (forwarded.split(",").at(-1)?.trim() ?? "") : "";
-  return (last || socketAddress).slice(0, 64);
+  return ((typeof realIp === "string" && realIp.trim()) || last || socketAddress).slice(0, 64);
 }
 
 /**
