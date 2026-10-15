@@ -68,16 +68,19 @@ import {
   changeReasonLabels,
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  daysBetween,
-  formatInstantWithDay,
-  minuteOfDayFromClockText,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  instantFromEstimatedTimeInputs,
+  transportAnswersBlockedReason,
+} from "@/components/ward-management/ward-transport-answers";
+import {
+  cancelTransportBlockedReason,
+  communityDeclineBlockedReason,
+} from "@/components/ward-management/community/community-blocked-reasons";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import {
   COMMUNITY_DECLINE_REASONS,
@@ -205,8 +208,7 @@ const TEAM_TABS = [
  * screen reader (the repo's D4 wording) — for exactly as long as no reason is chosen; the same
  * "state a reason before declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
  */
-const COMMUNITY_DECLINE_REASON_UNCHOSEN = "Choose the reason this team cannot take this referral before declining it.";
-const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first. The provider is told.";
+// Its blocked-reason sentence, and the cancel-transport one, live in `community-blocked-reasons.ts`.
 
 const ESCORT_ANSWERS = [
   { value: true, label: "Escort required" },
@@ -237,35 +239,6 @@ const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   estimatedTime: "",
   estimatedDay: "today",
 };
-
-/** Same HH:MM (or digits only, "0930") parser the ED booking popup uses: `minuteOfDayFromClockText`. */
-function minutesFromTimeInput(value: string): number | undefined {
-  return minuteOfDayFromClockText(value);
-}
-
-function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function transportAnswersBlockedReason(draft: TransportDraftState, now: Instant): string | undefined {
-  const missing: string[] = [];
-  if (draft.provider === undefined) missing.push("choose who is collecting the patient");
-  if (draft.escortRequired === undefined) missing.push("answer the escort question");
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
-  if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("enter the estimated time");
-  }
-  if (missing.length === 0) return undefined;
-  return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
-}
 
 type ActiveTabType = "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload";
 
@@ -559,6 +532,7 @@ export function CommunityScreen({
   const [transportDraft, setTransportDraft] = useState<TransportDraftState>(BLANK_TRANSPORT_DRAFT);
   const [transportCancelFor, setTransportCancelFor] = useState<string | undefined>(undefined);
   const [cancelTransportReason, setCancelTransportReason] = useState<CancelTransportReason | undefined>(undefined);
+  const cancelTransportBlocked = cancelTransportBlockedReason(cancelTransportReason);
   const [activeModal, setActiveModal] = useState<{
     type: "review" | "assign";
     referral: Referral;
@@ -2181,7 +2155,7 @@ export function CommunityScreen({
             : phoneDeclining
               ? {
                   label: "Decline referral",
-                  disabledReason: declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined,
+                  disabledReason: communityDeclineBlockedReason(declineDraft),
                   onAction: () => {
                     handleConfirmDecline(phoneReferral.id);
                     closePhoneReferral();
@@ -3005,8 +2979,7 @@ export function CommunityScreen({
                             const declineOpen = declineOpenFor === referral.id;
                             // Blocked only until a reason is chosen — the same "state a reason before
                             // declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
-                            const declineBlocked =
-                              declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined;
+                            const declineBlocked = communityDeclineBlockedReason(declineDraft);
                             return (
                               <li
                                 key={referral.id}
@@ -4611,26 +4584,26 @@ export function CommunityScreen({
                     type="button"
                     className={styles.transportConfirmButton}
                     data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
-                    aria-disabled={cancelTransportReason === undefined ? "true" : undefined}
+                    aria-disabled={cancelTransportBlocked === undefined ? undefined : "true"}
                     aria-describedby={
-                      cancelTransportReason === undefined
-                        ? `ward-community-cancel-transport-blocked-${transportCancelFor}`
-                        : undefined
+                      cancelTransportBlocked === undefined
+                        ? undefined
+                        : `ward-community-cancel-transport-blocked-${transportCancelFor}`
                     }
-                    title={cancelTransportReason === undefined ? CANCEL_TRANSPORT_UNCHOSEN : undefined}
+                    title={cancelTransportBlocked}
                     onClick={
-                      cancelTransportReason === undefined
-                        ? ignoreUnavailableActivation
-                        : () => submitCancelTransport(transportCancelFor)
+                      cancelTransportBlocked === undefined
+                        ? () => submitCancelTransport(transportCancelFor)
+                        : ignoreUnavailableActivation
                     }
                   >
                     Confirm cancel
                   </button>
-                  {cancelTransportReason === undefined ? (
+                  {cancelTransportBlocked === undefined ? null : (
                     <span id={`ward-community-cancel-transport-blocked-${transportCancelFor}`} className="sr-only">
-                      {CANCEL_TRANSPORT_UNCHOSEN}
+                      {cancelTransportBlocked}
                     </span>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
