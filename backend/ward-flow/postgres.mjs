@@ -257,15 +257,9 @@ export function createWorkspaceStore(
   return {
     pushEnabled: !!push,
     async ready() {
-      const { rows } = await pool.query(
-        `SELECT version FROM ward_flow.migrations ORDER BY version LIMIT ${LATEST_MIGRATION + 1}`,
-      );
-      const versions = rows.map((row) => row.version);
-      if (
-        versions.length < MINIMUM_RUNTIME_MIGRATION ||
-        versions.length > LATEST_MIGRATION ||
-        !versions.every((version, index) => version === index + 1)
-      )
+      const { rows } = await pool.query("SELECT max(version) AS version FROM ward_flow.migrations");
+      const version = rows[0]?.version;
+      if (!Number.isInteger(version) || version < MINIMUM_RUNTIME_MIGRATION || version > LATEST_MIGRATION)
         throw new Error("Shared schema unavailable");
     },
     async subscribe(actorId, subscription) {
