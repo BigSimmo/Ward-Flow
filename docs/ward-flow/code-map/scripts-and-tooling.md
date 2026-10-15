@@ -1,8 +1,8 @@
 # Scripts, generators, hooks and tooling
 
-Current doc-link checks: default `npm run docs:check-links` checks relative paths in the
-Ward tree including history. Use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
-(repeat selections) for maintained root/other Markdown; paired historical sections are excluded.
+Current doc-link checks: `npm run docs:check-links` checks every tracked Markdown file with
+`--file`, so paired historical sections are excluded. Run `node scripts/ward-flow/check-doc-links.mjs`
+with no `--file` to check the Ward tree including history.
 `--anchors` checks supported ATX/setext headings and explicit HTML IDs. Web URLs,
 reference-style links and renderer extensions are not validated; forensic file URLs are
 advisory. Missing/unreadable selected files fail. A pass does not establish semantic freshness.
