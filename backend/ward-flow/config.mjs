@@ -1,3 +1,4 @@
+// @ts-check
 import { readPushConfig } from "./push.mjs";
 import { readSupabaseIdentityConfig, readSupabaseDatabaseConfig } from "./supabase-config.mjs";
 import { readPortablePostgresConfig } from "./postgres-config.mjs";
