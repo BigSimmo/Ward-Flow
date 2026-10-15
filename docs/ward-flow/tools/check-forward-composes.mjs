@@ -1,69 +1,61 @@
 #!/usr/bin/env node
+
 /**
- * Every LOCAL `composes:` in a CSS Module, checked against where the class it names is declared.
- *
- * WHY THIS EXISTS RATHER THAN A GREP. A forward `composes` — a rule composing a class declared
- * BELOW it — returned 500 on every ward page once, and the reason it survived is that a presence
- * grep cannot see it. `grep composes` finds the line whether or not the ordering is legal, so a
- * green grep and a broken stylesheet look identical. The defect is not the PRESENCE of `composes`,
- * it is the ORDER of two lines, and only something that parses both can tell you.
- *
- * WHAT IT REPORTS
- *   FORWARD  — `composes: x` where `.x` is declared later in the same file (the 500 shape).
- *   MISSING  — `composes: x` where `.x` is not declared in the file at all.
- *
- * Cross-file `composes: x from "./y.module.css"` is deliberately NOT checked: it is a different
- * rule with different failure behaviour, and pretending one instrument covers both is how a guard
- * ends up reporting on a population it never walked.
- *
- * Run from the repository root:  node docs/ward-flow/tools/check-forward-composes.mjs
- * Exits 1 on any problem, 0 on none, and always prints the size of the population it walked —
- * "0 problems" over 0 files is not a pass, and the count is what tells the two apart.
- *
- * Verified 2026-09-08 at 05792e7a3f: 64 css modules, 20 local composes declarations, 0 problems.
+ * Find local CSS-module composes declarations that refer to a class declared
+ * later in the same module, or to a class that is not declared there.
  */
-import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
 
-const files = execSync('git ls-files "src/**/*.module.css"', { encoding: "utf8" }).split("\n").filter(Boolean);
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-let problems = 0;
-let localComposes = 0;
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const sourceRoot = path.join(repositoryRoot, "src");
+const cssModules = [];
 
-for (const file of files) {
-  const lines = readFileSync(file, "utf8").split("\n");
-
-  // First line on which each class name appears as a selector.
-  const declaredOn = new Map();
-  lines.forEach((line, index) => {
-    for (const match of line.matchAll(/(^|[\s,>+~])\.([A-Za-z_][\w-]*)/g)) {
-      if (!declaredOn.has(match[2])) declaredOn.set(match[2], index + 1);
-    }
-  });
-
-  lines.forEach((line, index) => {
-    const composes = line.match(/^\s*composes\s*:\s*([^;]+);/);
-    if (!composes) return;
-    const value = composes[1];
-    if (/\bfrom\b/.test(value)) return; // cross-file: a different rule, see the doc comment
-    localComposes += 1;
-
-    for (const name of value.trim().split(/\s+/)) {
-      const declaration = declaredOn.get(name);
-      if (declaration === undefined) {
-        console.log(`MISSING  ${file}:${index + 1}  composes: ${name}  -> no local .${name} declared`);
-        problems += 1;
-      } else if (declaration > index + 1) {
-        console.log(
-          `FORWARD  ${file}:${index + 1}  composes: ${name}  -> .${name} declared later at line ${declaration}`,
-        );
-        problems += 1;
-      }
-    }
-  });
+function walk(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) walk(entryPath);
+    else if (entry.isFile() && entry.name.endsWith(".module.css")) cssModules.push(entryPath);
+  }
 }
 
-console.log(
-  `\nscanned ${files.length} css modules, ${localComposes} local composes declarations, ${problems} problems`,
-);
-process.exit(problems ? 1 : 0);
+function lineNumber(text, offset) {
+  return text.slice(0, offset).split("\n").length;
+}
+
+walk(sourceRoot);
+cssModules.sort();
+const problems = [];
+let compositionCount = 0;
+
+for (const file of cssModules) {
+  const text = readFileSync(file, "utf8");
+  const classes = [...text.matchAll(/\.([A-Za-z_][\w-]*)\s*\{/g)].map((match) => ({
+    name: match[1],
+    offset: match.index,
+  }));
+  const classOffsets = new Map(classes.map((entry) => [entry.name, entry.offset]));
+
+  for (const match of text.matchAll(/\bcomposes:\s*([^;]+);/g)) {
+    const value = match[1].trim();
+    if (/\bfrom\s+/.test(value)) continue;
+    const owner = classes.filter((entry) => entry.offset < match.index).at(-1);
+    if (!owner) continue;
+    for (const composed of value.split(/\s+/)) {
+      compositionCount += 1;
+      const targetOffset = classOffsets.get(composed);
+      const location = `${path.relative(repositoryRoot, file)}:${lineNumber(text, match.index)}`;
+      if (targetOffset === undefined) {
+        problems.push(`MISSING ${location}: ${owner.name} composes ${composed}`);
+      } else if (targetOffset > owner.offset) {
+        problems.push(`FORWARD ${location}: ${owner.name} composes ${composed}`);
+      }
+    }
+  }
+}
+
+console.log(`Walked ${cssModules.length} CSS modules and ${compositionCount} local composes declarations.`);
+for (const problem of problems) console.error(problem);
+process.exitCode = problems.length === 0 ? 0 : 1;

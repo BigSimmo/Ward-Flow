@@ -218,11 +218,5 @@
     "originWorkingBranchRef": "1888ad197a6b86924333fb96a763ece56bde493e",
     "workingLineAheadOfLocalOriginRef": 1,
     "note": "These are local tracking refs only. They do not prove current GitHub visibility, pull-request state, or hosted CI."
-  },
-  "priorProcessAudit": {
-    "path": "docs/ward-flow/evidence/ward-flow-process-audit-ai-handover.txt",
-    "bytes": 37727,
-    "sha256": "765E35439C15E89EF797B3E55E46E58949B08E9B879739367011428125E176C0",
-    "note": "Recovered byte-for-byte from the prior local audit session after the untracked shared-checkout copy disappeared; now tracked inside Ward Flow."
   }
 }
