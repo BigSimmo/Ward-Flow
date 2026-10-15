@@ -7,6 +7,7 @@ import {
   type WardFlowState,
 } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 
@@ -195,5 +196,30 @@ describe("waitlistStands", () => {
     const withdrawn = state.movements.find((movement) => movement.id === movementId)!;
     expect(withdrawn.waitlistedUnitIds).toEqual([unit.id]);
     expect(waitlistStands(withdrawn, unit.id)).toBe(false);
+  });
+});
+
+describe("restoring a saved answer history", () => {
+  function savedWithHistory(history: unknown): unknown {
+    const state = JSON.parse(JSON.stringify(seedWardFlowState())) as { movements: Record<string, unknown>[] };
+    const [first] = state.movements;
+    if (!first) throw new Error("expected a seeded movement");
+    first.referralAnswerHistory = history;
+    return state;
+  }
+
+  it("accepts a well formed history", () => {
+    expect(isValidStoredWardFlowState(savedWithHistory([{ unitId: UNIT, at: NOW_ANCHOR, answer: "waitlisted" }]))).toBe(
+      true,
+    );
+  });
+
+  it("refuses a history that is not a list of answers", () => {
+    expect(isValidStoredWardFlowState(savedWithHistory("waitlisted"))).toBe(false);
+    expect(isValidStoredWardFlowState(savedWithHistory({ unitId: UNIT }))).toBe(false);
+    expect(isValidStoredWardFlowState(savedWithHistory([{ unitId: UNIT, at: NOW_ANCHOR }]))).toBe(false);
+    expect(isValidStoredWardFlowState(savedWithHistory([{ unitId: UNIT, at: NOW_ANCHOR, answer: "maybe" }]))).toBe(
+      false,
+    );
   });
 });
