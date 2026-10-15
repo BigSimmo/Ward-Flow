@@ -737,6 +737,57 @@ function useFullscreen(target: RefObject<HTMLElement | null>) {
   return { supported, active, toggle };
 }
 
+/** Whether the screen is actually on view. On a phone the larger screen card hides the mounted page
+ * until Show anyway, and a hidden page should not hold the screen awake. Browsers without an
+ * observer count it as on view. `mounted` says when the element is rendered. */
+function useOnView(target: RefObject<HTMLElement | null>, mounted: boolean) {
+  const [onView, setOnView] = useState(() => typeof IntersectionObserver === "undefined");
+  useEffect(() => {
+    const element = target.current;
+    if (!mounted || !element || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (entry) setOnView(entry.isIntersecting);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [target, mounted]);
+  return onView;
+}
+
+/** Keeps a wall TV from dimming while the screen is shown. Browsers drop the lock when the tab is
+ * hidden, so it is asked for again on return. Unsupported or refused requests do nothing. */
+function useScreenWakeLock(active: boolean) {
+  useEffect(() => {
+    if (!active || typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+    let sentinel: WakeLockSentinel | null = null;
+    let pending = false;
+    let stopped = false;
+    const request = () => {
+      // One lock at a time: skip while a request is in flight or a lock is still held.
+      if (document.visibilityState !== "visible" || pending || (sentinel && !sentinel.released)) return;
+      pending = true;
+      navigator.wakeLock
+        .request("screen")
+        .then((lock) => {
+          if (stopped) lock.release().catch(() => undefined);
+          else sentinel = lock;
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          pending = false;
+        });
+    };
+    request();
+    document.addEventListener("visibilitychange", request);
+    return () => {
+      stopped = true;
+      document.removeEventListener("visibilitychange", request);
+      sentinel?.release().catch(() => undefined);
+    };
+  }, [active]);
+}
+
 /** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
 function ScreenPicker({ current }: { current: string }) {
   const { units } = useWardFlow();
@@ -815,6 +866,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   const deviceCanChange = useWardFeatureFlags()[0]?.deviceCanChange ?? false;
   const root = useRef<HTMLElement>(null);
   const fullscreen = useFullscreen(root);
+  // The screen element only exists while the flag is on, so watch it again once it appears.
+  const onView = useOnView(root, enabled);
+  useScreenWakeLock(enabled && onView);
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
