@@ -46,7 +46,7 @@ function replaceMovement(state: WardFlowState, id: string, next: Movement): Ward
  * (release gate, 15 Oct 2026). Marking the stay as pulled by WF-004 itself, as a live pull is,
  * makes the arrival count the person, which is what these gender cases measure.
  */
-function asLivePull(state: WardFlowState, movementId: string): WardFlowState {
+function asLivePull(state: WardFlowState, movementId: `WF-${string}`): WardFlowState {
   const admissionId = movement(state, movementId).admissionId;
   return {
     ...state,
