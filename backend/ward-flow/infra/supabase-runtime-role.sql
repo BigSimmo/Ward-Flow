@@ -56,6 +56,10 @@ GRANT USAGE, SELECT ON SEQUENCE ward_flow.audit_sequence_seq TO wardflow_backend
 GRANT SELECT, INSERT, UPDATE ON ward_flow.push_baselines TO wardflow_backend;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_subscriptions, ward_flow.push_deliveries TO wardflow_backend;
 GRANT USAGE, SELECT ON SEQUENCE ward_flow.push_subscriptions_id_seq TO wardflow_backend;
+-- Role access (migration 8): memberships are read, granted and ended; break glass rows only added.
+GRANT SELECT, INSERT, UPDATE ON ward_flow.memberships TO wardflow_backend;
+GRANT SELECT, INSERT ON ward_flow.break_glass TO wardflow_backend;
+GRANT USAGE, SELECT ON SEQUENCE ward_flow.break_glass_id_seq TO wardflow_backend;
 -- Remove explicit per-schema browser defaults for future tables/sequences.
 -- After each migration repeat the explicit REVOKE ALL ON ALL FUNCTIONS above and
 -- verify browser schema USAGE stays denied. A per-schema function default REVOKE

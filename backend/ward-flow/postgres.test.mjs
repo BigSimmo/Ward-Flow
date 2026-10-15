@@ -676,7 +676,7 @@ test(
 );
 
 test(
-  "real PostgreSQL: row-level security lets only the runtime role through, and 007 then 006 roll back to 5",
+  "real PostgreSQL: row-level security lets only the runtime role through, and 008, 007 then 006 roll back to 5",
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
@@ -704,7 +704,7 @@ test(
       const { rows: tables } = await owner.query(
         "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
       );
-      assert.equal(tables.length, 7);
+      assert.equal(tables.length, 9);
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
@@ -748,10 +748,15 @@ test(
         }
       };
       // Out of order, each rollback refuses and changes nothing, so the ledger never has a gap.
-      await assert.rejects(rollBack("./infra/rollback-006-row-level-security.sql"), /Roll back 007 first/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 7);
+      await assert.rejects(
+        rollBack("./infra/rollback-006-row-level-security.sql"),
+        /Roll back the newer migrations first/,
+      );
+      await assert.rejects(rollBack("./infra/rollback-007-prototype-only.sql"), /roll back 008 first/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 8);
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-008-role-access.sql", 7],
         ["./infra/rollback-007-prototype-only.sql", 6],
         ["./infra/rollback-006-row-level-security.sql", 5],
       ]) {
@@ -777,8 +782,10 @@ test(
       assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 5);
       await owner.query("DELETE FROM ward_flow.workspaces WHERE id=$1", [liveId]);
 
-      // Re-applying 6 and 7 works; a policy removed afterwards is refused by both checks.
+      // Re-applying 6 to 8 works once the runtime grants are run again, as setup does; a policy
+      // removed afterwards is refused by both checks.
       await migrate(owner);
+      await owner.query(await sql("./infra/postgres-runtime-role.sql"));
       await verifyPostgresNamespace(owner);
       await runtimeOk(runtime);
       await owner.query("DROP POLICY runtime_only ON ward_flow.audit");

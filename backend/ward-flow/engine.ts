@@ -1,4 +1,18 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
+import { wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
+import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
+import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
+import {
+  BREAK_GLASS_REASONS,
+  WARD_ACCESS_ROLES,
+  accessIsValid,
+  accessIsWholeNetwork,
+  canBreakGlass,
+  type WardAccess,
+  type WardAccessScope,
+} from "../../src/components/ward-management/ward-role-access";
+import { CROSS_ROLE_ALLOWED } from "../../src/components/ward-management/ward-role-permissions";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { validSharedCommand } from "./command-schemas";
 import { scenarioNetwork } from "../../src/components/ward-management/ward-scenarios";
@@ -97,6 +111,140 @@ export function validWorld(value: unknown): value is SharedWorld {
     Number.isFinite(Date.parse(world.startedAt)) &&
     isValidSharedWardFlowState(world.state)
   );
+}
+
+/** A break glass grant as the server holds it: one patient, read only, until a wall-clock time. */
+export type StoredGrant = { patientId: string; until: Date };
+
+/** Grants in the workspace's own minutes, as the scoping rule reads them. */
+function worldGrants(world: SharedWorld, grants: readonly StoredGrant[], at: Date) {
+  const now = worldNow(world, at);
+  return grants.map((grant) => ({
+    patientId: grant.patientId,
+    until: now + Math.max(0, Math.ceil((grant.until.getTime() - at.getTime()) / 60_000)),
+  }));
+}
+
+const text = (value: unknown, max: number): value is string =>
+  typeof value === "string" && value.length > 0 && value.length <= max;
+
+/**
+ * A role and place read from a membership row or a request, or `null` when it is not one the
+ * access table allows. Every field is checked, so a hand-edited row can never widen a scope.
+ */
+export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
+  if (typeof role !== "string" || !(WARD_ACCESS_ROLES as readonly string[]).includes(role)) return null;
+  if (!scope || typeof scope !== "object" || Array.isArray(scope)) return null;
+  const fields = scope as Record<string, unknown>;
+  const only = (...keys: string[]) => Object.keys(fields).every((key) => key === "kind" || keys.includes(key));
+  let parsed: WardAccessScope | null = null;
+  switch (fields.kind) {
+    case "statewide":
+    case "jobs":
+      parsed = only() ? { kind: fields.kind } : null;
+      break;
+    case "service":
+      parsed =
+        only("service") && (HEALTH_SERVICES as readonly unknown[]).includes(fields.service)
+          ? { kind: "service", service: fields.service as HealthService }
+          : null;
+      break;
+    case "site":
+      parsed = only("siteCode") && text(fields.siteCode, 40) ? { kind: "site", siteCode: fields.siteCode } : null;
+      break;
+    case "ward":
+      parsed =
+        only("unitIds") &&
+        Array.isArray(fields.unitIds) &&
+        fields.unitIds.length <= 20 &&
+        fields.unitIds.every((id) => text(id, 100)) &&
+        new Set(fields.unitIds).size === fields.unitIds.length
+          ? { kind: "ward", unitIds: [...(fields.unitIds as string[])] }
+          : null;
+      break;
+    case "ed":
+      parsed = only("edId") && text(fields.edId, 100) ? { kind: "ed", edId: fields.edId } : null;
+      break;
+    case "team":
+      parsed = only("teamName") && text(fields.teamName, 200) ? { kind: "team", teamName: fields.teamName } : null;
+      break;
+  }
+  if (!parsed) return null;
+  const access = { role: role as WardAccess["role"], scope: parsed };
+  return accessIsValid(access) ? access : null;
+}
+
+/** True for the statewide coordinator: the whole network, every record. */
+export function wholeNetwork(access: WardAccess): boolean {
+  return accessIsWholeNetwork(access);
+}
+
+/**
+ * The workspace this desk may be sent. A statewide coordinator gets the world itself. Every other
+ * desk gets `scopeWardFlowState`, the same rule the screens use, plus any break glass grants.
+ */
+export function scopeWorld(world: SharedWorld, access: WardAccess, at: Date, grants: readonly StoredGrant[] = []) {
+  if (accessIsWholeNetwork(access)) return world;
+  const { state } = scopeWardFlowState(world.state, access, {
+    now: worldNow(world, at),
+    places: wardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
+  return { ...world, state };
+}
+
+/**
+ * Why this desk may not send this command, or `null`. The sender's role comes from its membership,
+ * never from the browser: a desk sends only commands its own role may take (`EVENT_ROLE`, or a pair
+ * in `CROSS_ROLE_ALLOWED`), and only about records inside its own place. A statewide coordinator may
+ * send any command the workflow allows; the demonstration controls are the statewide coordinator's
+ * alone. The access admin and the executive change nothing.
+ */
+export function commandRefusal(
+  world: SharedWorld,
+  access: WardAccess,
+  supplied: Record<string, unknown>,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+): string | null {
+  const type = supplied.type as WardFlowEvent["type"];
+  const role = supplied.role;
+  if (!Object.hasOwn(EVENT_ROLE, type)) return "This change is not one the workflow knows.";
+  if (accessIsWholeNetwork(access)) return null;
+  const notYours = "This change is not part of your role.";
+  if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
+  if (access.role !== "coordinator") {
+    const allowed =
+      role === access.role &&
+      (EVENT_ROLE[type].includes(role as WardFlowEvent["role"]) ||
+        CROSS_ROLE_ALLOWED.some((entry) => entry.routeRole === access.role && entry.event === type));
+    if (!allowed) return notYours;
+  }
+  return commandScopeRefusal(world.state, access, supplied, {
+    now: worldNow(world, at),
+    places: wardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
+}
+
+export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
+export const BREAK_GLASS_MINUTES = CLINICAL_VALUES.breakGlassWindow.value;
+export const BREAK_GLASS_PER_SHIFT = CLINICAL_VALUES.breakGlassPerShift.value;
+
+/**
+ * Whether this desk may open this patient's record outside its care, or why not. Only clinical
+ * roles break glass, only for a patient who exists, and never for one already in its own care.
+ */
+export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patientId: unknown, at: Date): string | null {
+  if (!canBreakGlass(access.role)) return "Opening a record outside your care is not part of your role.";
+  if (typeof patientId !== "string" || !world.state.patients.some((patient) => patient.id === patientId))
+    return "That patient is not in the workspace.";
+  const { state } = scopeWardFlowState(world.state, access, {
+    now: worldNow(world, at),
+    places: wardPlaceLookup(world.state.units),
+  });
+  if (state.patients.some((patient) => patient.id === patientId)) return "That patient is already in your care.";
+  return null;
 }
 
 export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {

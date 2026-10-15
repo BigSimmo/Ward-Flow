@@ -161,6 +161,7 @@ const roleFields = [
   "guards_valid",
   "sequence_restricted",
   "rls_valid",
+  "access_grants",
 ];
 function safeSummary() {
   return {
@@ -179,7 +180,7 @@ function summaryPool(row = safeSummary()) {
   };
 }
 
-test("runtime role verification requires every safeguard and a complete ledger at migration 5, 6 or 7", async () => {
+test("runtime role verification requires every safeguard and a complete ledger at migration 5 to 8", async () => {
   const config = { connectionString: databaseUrl(), pushEnabled: false };
   await verifyPortableRuntimeRole(summaryPool(), config);
   await verifySupabaseRuntimeRole(summaryPool(), { pushEnabled: false });
@@ -187,6 +188,7 @@ test("runtime role verification requires every safeguard and a complete ledger a
   for (const versions of [
     [1, 2, 3, 4, 5, 6],
     [1, 2, 3, 4, 5, 6, 7],
+    [1, 2, 3, 4, 5, 6, 7, 8],
   ])
     await verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions }), { pushEnabled: false });
   for (const field of roleFields) {
@@ -195,7 +197,14 @@ test("runtime role verification requires every safeguard and a complete ledger a
       await assert.rejects(verifyPortableRuntimeRole(summaryPool(row), config), /Unsafe or unprepared/);
     }
   }
-  for (const versions of [[], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 6], [1, 2, 3, 4, 5, 6, 7, 8]])
+  for (const versions of [
+    [],
+    [1, 2, 3, 4],
+    [1, 2, 3, 5],
+    [1, 2, 3, 4, "5"],
+    [1, 2, 3, 4, 6],
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  ])
     await assert.rejects(
       verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions })),
       /Unsafe or unprepared/,
@@ -247,7 +256,7 @@ test("enabled push requires its grants while optional push remains off by config
   );
 });
 
-test("shared readiness needs migration 5 to 7 and applies no SQL", async () => {
+test("shared readiness needs migration 5 to 8 and applies no SQL", async () => {
   const calls = [];
   let version = null;
   const pool = {
@@ -257,9 +266,9 @@ test("shared readiness needs migration 5 to 7 and applies no SQL", async () => {
     },
   };
   const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine: {} });
-  for (version of [null, 4, 8, "5"]) await assert.rejects(store.ready(), /Shared schema unavailable/);
-  for (version of [5, 6, 7]) await store.ready();
-  assert.equal(calls.length, 7);
+  for (version of [null, 4, 9, "5"]) await assert.rejects(store.ready(), /Shared schema unavailable/);
+  for (version of [5, 6, 7, 8]) await store.ready();
+  assert.equal(calls.length, 8);
   assert.ok(calls.every(([sql]) => sql === "SELECT max(version) AS version FROM ward_flow.migrations"));
 });
 

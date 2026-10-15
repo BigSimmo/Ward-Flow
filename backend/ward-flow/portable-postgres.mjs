@@ -163,6 +163,20 @@ SELECT current_user AS role,
     AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.push_deliveries', 'DELETE')
     AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.push_subscriptions_id_seq', 'USAGE')
   )) AS push_grants,
+  -- Migration 8: memberships are read, granted and ended by the backend; break glass rows are only
+  -- ever added. Before it, neither table exists.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 8) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'INSERT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'UPDATE')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'INSERT')
+    AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.break_glass_id_seq', 'USAGE')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.memberships', 'DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.break_glass', 'UPDATE,REFERENCES')
+    AND NOT pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.break_glass_id_seq', 'UPDATE')
+  ELSE true END AS access_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')
     OR pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'CREATE')
@@ -240,6 +254,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "required_grants",
       "restricted_grants",
       "push_grants",
+      "access_grants",
       "audit_append_only",
       "browser_denied",
       "guards_valid",
