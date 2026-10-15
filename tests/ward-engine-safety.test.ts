@@ -116,7 +116,8 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
   const holds = new Map<string, string>();
   const hold = (bed: string, holder: string, owns: (admissionId: string) => boolean): Violation | null => {
     const other = holds.get(bed);
-    if (other && other !== holder) return { rule: "no bed holds two people", detail: `${bed} is held for ${other} and ${holder}` };
+    if (other && other !== holder)
+      return { rule: "no bed holds two people", detail: `${bed} is held for ${other} and ${holder}` };
     holds.set(bed, holder);
     const occupant = beds.get(bed);
     if (occupant && !owns(occupant))
@@ -222,7 +223,7 @@ function replay(scenario: WardScenario, events: readonly WardFlowEvent[]): StepF
 function shrink(scenario: WardScenario, events: WardFlowEvent[], rule: string): WardFlowEvent[] {
   let current = events;
   for (let size = Math.ceil(current.length / 2); size >= 1; size = Math.floor(size / 2)) {
-    for (let start = 0; start < current.length; ) {
+    for (let start = 0; start < current.length;) {
       const candidate = [...current.slice(0, start), ...current.slice(start + size)];
       const failure = replay(scenario, candidate);
       if (failure?.rule === rule) current = candidate.slice(0, failure.step + 1);
