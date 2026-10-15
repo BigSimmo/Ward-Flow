@@ -452,5 +452,3 @@ export function WardNotificationCenter({
     </section>
   );
 }
-
-export default WardNotificationCenter;
