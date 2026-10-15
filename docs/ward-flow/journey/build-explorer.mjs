@@ -500,16 +500,18 @@ if (problems.length) {
  * somebody's intended route stops — and the curated list holds a subset of them. Saying so on the
  * page's face is the difference between a map that is incomplete and a map that pretends not to
  * be. Both numbers are counted here rather than typed, so neither can go stale: one from the
- * reducer's own `return reject(` sites, one from the curated list.
+ * engine slices' own `return reject(` sites, one from the curated list.
  */
-const reducerSrc = fs.readFileSync(
-  path.resolve(here, "../../../src/components/ward-management/ward-flow-reducer.ts"),
-  "utf8",
+const engineSources = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map((file) =>
+  fs.readFileSync(path.resolve(here, `../../../src/components/ward-management/${file}`), "utf8"),
 );
-const refusalsInEngine = (reducerSrc.match(/return reject\(/g) || []).length;
+const refusalsInEngine = engineSources.reduce(
+  (total, source) => total + (source.match(/return reject\(/g) || []).length,
+  0,
+);
 const refusalsNamed = actions.reduce((n, a) => n + (a.refuses || []).length, 0);
 if (!refusalsInEngine) {
-  console.error("REFUSING TO BUILD — found no refusals in the reducer, so the coverage line would be a lie.");
+  console.error("REFUSING TO BUILD — found no refusals in the engine slices, so the coverage line would be a lie.");
   process.exit(1);
 }
 
@@ -524,7 +526,7 @@ const coverage = {
 /* A saved coverage result belongs to a specific reducer. A later build must not silently show
    its historical count as though it measured this version. */
 const savedCoverage = fs.existsSync(path.join(here, "refusal-coverage.json")) ? read("refusal-coverage.json") : null;
-const reducerHash = crypto.createHash("sha256").update(reducerSrc.replace(/\r\n/g, "\n")).digest("hex");
+const reducerHash = crypto.createHash("sha256").update(engineSources.join("\n").replace(/\r\n/g, "\n")).digest("hex");
 const refusalCoverage = savedCoverage?.input?.reducerSha256 === reducerHash ? savedCoverage : null;
 const DATA = JSON.stringify({ vocab, actions, stages, machines, coverage, made: provenance(), refusalCoverage });
 const template = fs.readFileSync(path.join(here, "explorer-template.html"), "utf8");
