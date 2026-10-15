@@ -5,7 +5,7 @@
       "id": "azure",
       "pattern": "\\bazure|\\bentra\\b",
       "flags": "i",
-      "allowWhen": "\\b(retired|removed|replaced|superseded|no longer|formerly)\\b",
+      "allowWhen": "\\b(retired|removed|replaced|superseded|no longer|formerly|historical)\\b",
       "since": "2026-10-15",
       "why": "Supabase is Ward Flow's database and sign-in service. Azure (Functions, Blob Storage, PostgreSQL) and Microsoft Entra ID are retired.",
       "instead": "Name Supabase, or quote the current value with <!-- fact:database-provider --> from docs/FACTS.md. Delete the mention, or fence it as history."
