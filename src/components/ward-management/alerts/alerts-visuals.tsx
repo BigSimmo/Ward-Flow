@@ -30,7 +30,7 @@ function useFrameWidth(fallback: number) {
   return [ref, width] as const;
 }
 
-export type MarkShape = "act" | "wait" | "done" | "closed";
+type MarkShape = "act" | "wait" | "done" | "closed";
 
 const SHAPES: Record<MarkShape, ReactNode> = {
   act: <path d="M0 -6 6 5H-6Z" className={styles.mAct} />,

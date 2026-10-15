@@ -18,7 +18,7 @@ import type { ReactNode } from "react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { cn, eyebrowText, iconTilePremium, textMuted } from "@/components/ui-primitives";
 
-export type Crumb = {
+type Crumb = {
   label: string;
   /** Omit on the final crumb — the current page is not a link to itself. */
   href?: string;
@@ -32,7 +32,7 @@ export type Crumb = {
   icon?: LucideIcon;
 };
 
-export type BreadcrumbProps = {
+type BreadcrumbProps = {
   items: Crumb[];
   className?: string;
 };
@@ -50,7 +50,7 @@ export type BreadcrumbProps = {
  * Crumb links are `min-h-tap` because on a phone this row is the way back out of
  * a record, and a text-height hit area is not a target.
  */
-export function Breadcrumb({ items, className }: BreadcrumbProps) {
+function Breadcrumb({ items, className }: BreadcrumbProps) {
   if (!items.length) return null;
 
   return (

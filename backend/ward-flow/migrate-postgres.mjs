@@ -1,3 +1,4 @@
+// @ts-check
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { readPortablePostgresConfig, validatePostgresConnectionString } from "./postgres-config.mjs";

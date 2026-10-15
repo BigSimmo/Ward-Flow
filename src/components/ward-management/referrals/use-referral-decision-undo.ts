@@ -9,8 +9,6 @@ import type { WardFlowRole } from "../ward-flow-roles";
 import { UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { roleLimitReason } from "../ward-role-permissions";
 
-export type ReferralDecisionAction = "ACCEPT_REFERRAL" | "DECLINE_REFERRAL";
-
 type Watch =
   | { kind: "decision"; referralId: string; title: string; priorRejections: number }
   | { kind: "undo"; referralId: string; priorRejections: number };

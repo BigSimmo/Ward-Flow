@@ -158,7 +158,7 @@ export function Checkbox({
   );
 }
 
-export type RadioOption = {
+type RadioOption = {
   value: string;
   label: ReactNode;
   description?: ReactNode;

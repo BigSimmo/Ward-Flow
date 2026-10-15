@@ -22,7 +22,7 @@ import { UNDO_WINDOW_MINUTES } from "./ward-operational-defaults";
 export { UNDO_WINDOW_MINUTES };
 
 /** The most undo records kept; the oldest go first. One per subject, so this is plenty. */
-export const UNDO_RECORD_LIMIT = 50;
+const UNDO_RECORD_LIMIT = 50;
 
 export type ReferralDecisionUndo = {
   kind: "referral-decision";

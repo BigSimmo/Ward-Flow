@@ -684,7 +684,7 @@ export interface CatchmentAnswer {
  * Why an alias variant exists, in the data document's own terms. `recorded` means section 4.5
  * states the two spellings are the same name; `probable` means it hedges, and the hedge is kept.
  */
-export type SuburbAliasCertainty = "recorded" | "probable";
+type SuburbAliasCertainty = "recorded" | "probable";
 
 export interface SuburbAlias {
   /** The variant spelling, exactly as the naming document writes it. */
@@ -887,7 +887,7 @@ export const UNDETERMINED_SUBURB_NAMES: readonly UndeterminedSuburbName[] = [
  * even though the name is recognised. Kept explicit so the answer can say which documents DO
  * name the place, rather than implying nobody has heard of it.
  */
-export const SUBURBS_NAMED_ONLY_BY_NEWER_DOCUMENTS: Readonly<Record<string, readonly CatchmentDocumentId[]>> = {
+const SUBURBS_NAMED_ONLY_BY_NEWER_DOCUMENTS: Readonly<Record<string, readonly CatchmentDocumentId[]>> = {
   Inglehope: ["S2023", "SMETRO"],
   "Cockburn Central": ["S2023", "SMETRO"],
 } as const;
@@ -902,7 +902,7 @@ const NAMED_ONLY_BY_KEY: ReadonlyMap<string, { suburb: string; documents: readon
 );
 
 /** Which of the three internal 2015 inconsistencies a row belongs to. */
-export type InternalInconsistencyId = "bentley-vs-mills-street" | "kwinana-on-two-rows" | "swan-valley-on-two-rows";
+type InternalInconsistencyId = "bentley-vs-mills-street" | "kwinana-on-two-rows" | "swan-valley-on-two-rows";
 
 export interface InternalInconsistency {
   readonly suburb: string;
@@ -1054,7 +1054,7 @@ export const CONTESTED_SUBURBS: readonly ContestedSuburb[] = [
 ] as const;
 
 /** Why a lookup could not answer. Both refuse to route; they are not interchangeable on screen. */
-export type CatchmentUnknownReason =
+type CatchmentUnknownReason =
   /** The suburb is not in the table at all — spec Part 4 outcome 3. */
   | "suburb-not-in-source-table"
   /**
@@ -1064,8 +1064,7 @@ export type CatchmentUnknownReason =
   | "suburb-in-source-table-but-no-follow-up-clinic-recorded";
 
 /** How the queried spelling reached the table. */
-export type CatchmentSuburbMatch =
-  { readonly kind: "canonical" } | { readonly kind: "alias"; readonly alias: SuburbAlias };
+type CatchmentSuburbMatch = { readonly kind: "canonical" } | { readonly kind: "alias"; readonly alias: SuburbAlias };
 
 export type CatchmentLookup =
   | {
