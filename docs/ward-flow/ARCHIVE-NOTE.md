@@ -57,9 +57,9 @@ git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- docs/ward-flow/mockups/
 
 ### Third pass: dated plans, reports, handovers and audit output
 
-A third trim removed 507 more files. Nothing that runs reads them, and no live doc, data file, lesson or ruling depends on them. Historical inventories and old plans may still mention them by name.
+A third trim removed 500 more files. Nothing that runs reads them, and no live doc, data file, lesson or ruling depends on them. Historical inventories and old plans may still mention them by name.
 
-- 346 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README and every plan something still cites stay)
+- 340 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README and every plan that a check, live doc, ruling or lesson relies on stay; the plans index and old plans may still name removed plans for history)
 - `docs/ward-flow/sdd-rescued/`, `register/`, `handovers/`, `reviews/`, `triage/`, `outstanding/`, `rescued/`, `merge/` and `evidence/`, apart from any file something still cites
 - the September reports in `docs/ward-flow/reports/`
 - dated chat prompts, pre-registrations, finding registers and test sweeps at the top of `docs/ward-flow/`

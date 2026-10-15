@@ -52,7 +52,7 @@ Round 2 folded into the canonical ward line (`codex/task-ward-flow-live-state-20
 
 Older research, lane and census files (`2026-09-11-*`, `2026-09-12-*`, `2026-09-1x-lane-*`, `2026-09-1x-communication-addendum.md`, the
 `research-2026-09-10/` and records folders, and `REQUEST-QUEUE.md`) are historical inputs, not
-task-status sources.
+task-status sources. Many of the plans named in this section were removed in the 15 Oct 2026 docs trim. `../ARCHIVE-NOTE.md` lists what went and how to restore it.
 
 ## Adding a plan
 
