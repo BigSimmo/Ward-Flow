@@ -259,7 +259,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 2px var(--space-2, 0.5rem);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--ward-blue-soft, var(--surface-subtle));
   color: var(--ward-blue, var(--clinical-accent));
 }
@@ -465,7 +465,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 1px var(--space-2, 0.5rem);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--surface, var(--surface-raised));
   border: 1px solid var(--ward-border, var(--border));
   color: var(--ward-text, var(--text));

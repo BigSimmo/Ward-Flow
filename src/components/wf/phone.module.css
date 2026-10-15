@@ -191,11 +191,11 @@
   justify-content: center;
 }
 
-/* v10 phone mockup: the secondary is an outlined pill beside the primary, not ghost text. */
+/* v10 phone mockup: the secondary is an outlined button beside the primary, not ghost text. */
 .sheetSecondary {
   flex: none;
   justify-content: center;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 @keyframes wfPhoneScrimIn {

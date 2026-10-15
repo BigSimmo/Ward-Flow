@@ -99,7 +99,7 @@
   height: var(--ward-tap, 3rem);
   padding: 0;
   border: 1px solid var(--wf-line-2);
-  border-radius: 50%;
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-accent-ink);
   cursor: pointer;
