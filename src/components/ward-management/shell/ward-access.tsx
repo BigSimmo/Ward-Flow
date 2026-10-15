@@ -111,6 +111,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     const places = wardPlaceLookup(context.units);
     const scoped = scopeWorkspace(context, access, { now, places, grants: activeGrants });
     const coordinator = access.role === "coordinator";
+    const wholeNetwork = accessIsWholeNetwork(access);
     const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
     const byUnit = <T extends { unitId: string }>(items: readonly T[]): T[] =>
       items.filter((item) => unitIn(item.unitId));
@@ -198,12 +199,13 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         refreshRequests: coordinator ? context.refreshRequests : [],
         // Bed calls name the wards they ask, so a desk sees only calls to its own wards. A directive
         // with no named wards is for everyone. Undo records hold whole before and after records, and
-        // a saved scenario is the whole workspace, so both stay the coordinator's (review on PR #330).
-        broadcastAlerts: coordinator
+        // a saved scenario is the whole workspace, so both stay the statewide desk's. A service
+        // coordinator's alerts are scoped like any other desk's (review on PR #330).
+        broadcastAlerts: wholeNetwork
           ? context.broadcastAlerts
           : scopeBroadcastAlerts(context.broadcastAlerts, access, context.units, places),
-        undoRecords: coordinator ? context.undoRecords : [],
-        saveScenarioFile: coordinator ? context.saveScenarioFile : undefined,
+        undoRecords: wholeNetwork ? context.undoRecords : [],
+        saveScenarioFile: wholeNetwork ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
         supportNotifications: coordinator ? context.supportNotifications : [],

@@ -358,6 +358,14 @@ describe("broadcast alerts for a desk", () => {
     const everyone = { ...base, acknowledgedUnits: [] };
     expect(scopeBroadcastAlerts([everyone], wardDesk, state.units, places)).toHaveLength(1);
   });
+
+  it("trims a bed call to a service coordinator's own service", () => {
+    const service = places.unitService(unitId)!;
+    const elsewhere = state.units.find((unit) => places.unitService(unit.id) !== service)!;
+    const desk: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+    const call = { ...base, kind: "bed_call" as const, targetUnitIds: [elsewhere.id] };
+    expect(scopeBroadcastAlerts([call], desk, state.units, places)).toEqual([]);
+  });
 });
 
 describe("the desk store", () => {
