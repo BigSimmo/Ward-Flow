@@ -5,7 +5,7 @@
 
 # Ward Flow scripts inventory
 
-Curated map of `scripts/` (166 files) and the `package.json` script surface (98 entries),
+Curated map of `scripts/` (157 files) and the `package.json` script surface (98 entries),
 with a maintained generated count header and a historical catalogue below. The current
 command surface is `package.json`. `npm run docs:check-inventory` checks the declared counts
 with the existing tolerance; `npm run docs:check-scripts` checks maintained command references,
@@ -113,7 +113,6 @@ Also catalogued (2026-09-02), gate and CI helpers:
 - `lighthouse-measurement-outcome.mjs`, `lighthouse-time-budget.mjs`, `live-web-vitals-inputs.mjs` — Lighthouse budget runner helpers: whether a cell produced gradeable evidence, bounded-stage timing, and validation of the dispatch-only live Web Vitals matrix.
 - `check-image-content-contract.mjs`, `trivy-image-scan.mjs`, `resolve-oci-image-digest.mjs`, `app-container-smoke.mjs` (`smoke:app-container`) — container CI: final-image hardening assertions, pinned Trivy scan + SBOM, multi-platform digest lookup for pinning base images, and a provider-free boot smoke of the built app image.
 - `check-worker-python-lock.mjs` (`check:worker-python-lock`, `check:worker-python-cloud-lock`, `check:worker-python-locks:static`), `generate-worker-python-lock.mjs` (`generate:worker-python-lock`, `generate:worker-python-cloud-lock`), `worker-python-lock-config.mjs` — the hashed `worker/python/requirements.txt` lock targets.
-- `check-dev-drive-cache.mjs` (`check:dev-drive-cache`) — Windows Dev Drive npm cache registration and Defender trust (`#6SMMB4`).
 
 Also catalogued (2026-09-04):
 
