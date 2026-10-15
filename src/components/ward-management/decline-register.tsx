@@ -24,7 +24,7 @@ import styles from "./decline-register.module.css";
 
 /** The empty state, in one place for the same reason `NO_OVERRIDE_RECORDED_NOTICE` is: "no rows"
  *  and "this surface is not wired up" look identical on screen, and only one of them is true. */
-export const NO_DECLINE_RECORDED_NOTICE = "No decline has been recorded.";
+const NO_DECLINE_RECORDED_NOTICE = "No decline has been recorded.";
 
 type DeclineRegisterProps = {
   /** Already scoped by the caller — today always `allDeclines(movements)`, the coordinator's

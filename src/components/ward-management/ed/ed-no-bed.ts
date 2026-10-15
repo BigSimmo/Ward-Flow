@@ -1,7 +1,7 @@
 import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
 
 /** The stages where an ED patient's bed search has not reached an accepting ward. */
-export const ED_NO_BED_STAGES: readonly MovementStage[] = ["placement_requested", "destination_review"];
+const ED_NO_BED_STAGES: readonly MovementStage[] = ["placement_requested", "destination_review"];
 
 /**
  * S-19 (audit 13 Oct 2026): the ONE rule for "No bed yet". The ED board's hero figure, its board

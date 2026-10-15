@@ -32,8 +32,8 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 
 /** How many places each list remembers. Small on purpose: the glance pane is one third of the
  *  screen, and a "recent" list long enough to scroll is a second search box wearing a worse name. */
-export const HUB_PIN_LIMIT = 8;
-export const HUB_RECENT_LIMIT = 5;
+const HUB_PIN_LIMIT = 8;
+const HUB_RECENT_LIMIT = 5;
 
 /** Namespaced to this screen rather than shared with the community gateway's own recent list —
  *  they hold different vocabularies (place ids here, team names there) and a collision would

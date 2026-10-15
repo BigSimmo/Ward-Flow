@@ -44,7 +44,7 @@ const LEAVE_PRESETS = [
 const KIND_LABELS: Record<LeaveKind, string> = { off_ward: "Off-ward leave", medical_trip: "Medical trip" };
 
 /** A typed "HH:MM" on a chosen day, as an instant. Undefined when the time is not a real clock time. */
-export function typedTimeToInstant(time: string, dayOffset: number, now: Instant): Instant | undefined {
+function typedTimeToInstant(time: string, dayOffset: number, now: Instant): Instant | undefined {
   const match = /^(\d{1,2}):(\d{2})$/u.exec(time.trim());
   if (!match) return undefined;
   const hours = Number(match[1]);
