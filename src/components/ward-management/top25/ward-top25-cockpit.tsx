@@ -2,17 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import {
-  Badge,
-  Button,
-  CommandPalette,
-  GroupHead,
-  NeedsYou,
-  PhoneSheet,
-  UndoHairline,
-  type CommandPaletteItem,
-  type WfTone,
-} from "@/components/wf";
+import { Badge, Button, GroupHead, NeedsYou, PhoneSheet, UndoHairline, type WfTone } from "@/components/wf";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { seedWardFlowState, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
@@ -45,12 +35,10 @@ import {
   deriveAfternoonDischarges,
   deriveAwolTrackerSummary,
   deriveCtoFollowUpHandshake,
-  deriveDischargeLoungeEligible,
   deriveEdBreachLadder,
   deriveEddDriftBadge,
   deriveGhostPreparingBeds,
   deriveInterWardStepDownSwaps,
-  deriveLeaveFastTrack,
   deriveMaroonedPatientDossier,
   derivePaperLegalExpiryRadar,
   derivePreFlightAdmissionsPacket,
@@ -65,7 +53,6 @@ import {
   dischargeDelayReasonLabels,
   evaluateCriteriaLedDischarge,
   initialWardBroadcastState,
-  releaseBedToDischargeLounge,
   wardBroadcastReducer,
   type DischargeDelayReason,
   type SupportServiceDispatch,
@@ -283,7 +270,8 @@ export interface WardTop25CockpitProps {
 /**
  * Interactive cockpit surfacing all 25 items of the Perfected Top 25 Master List for Ward Flow.
  * Built with existing Next.js / v10 design system components (`NeedsYou`, `UndoHairline`,
- * `CommandPalette`, `PhoneSheet`, `WardBroadcastBanner`) and pure derivations.
+ * `PhoneSheet`, `WardBroadcastBanner`) and pure derivations. Items #10, #18 and #22 were dropped
+ * after review (15 Oct 2026), so their cards are intentionally absent.
  */
 export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
   const state = useMemo(() => initialState ?? seedWardFlowState(), [initialState]);
@@ -340,22 +328,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
     }),
   );
   const clearUndoWindow = useCallback(() => setUndoWindow(null), []);
-
-  // #18 Discharge Lounge State
-  const [loungeUnit, setLoungeUnit] = useState<{
-    id: string;
-    availableBeds: number;
-    loungeOccupied: number;
-    releasedCandidateIds?: string[];
-  }>({
-    id: "scgh-adult-open",
-    availableBeds: 1,
-    loungeOccupied: 0,
-    releasedCandidateIds: [],
-  });
-
-  // #22 Global Command Palette State
-  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // #25 Broadcast Alert Auto-Expiry & Stand-Down State
 
@@ -425,14 +397,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       }),
     [cldConditions],
   );
-  const leaveFastTrack = useMemo(
-    () =>
-      deriveLeaveFastTrack(
-        { id: "lv-1", unitId: "rph-adult-open", leaveStartedAt: "2026-10-14T08:00:00.000Z" },
-        "2026-10-15T10:00:00.000Z",
-      ),
-    [],
-  );
   const ctoHandshake = useMemo(
     () =>
       deriveCtoFollowUpHandshake({
@@ -470,21 +434,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       deriveInterWardStepDownSwaps([
         { id: "sw-1", fromUnitId: "fsh-hdu", toUnitId: "fsh-open", reason: "step_down" },
         { id: "sw-2", fromUnitId: "fsh-open", toUnitId: "fsh-hdu", reason: "step_up_acuity" },
-      ]),
-    [],
-  );
-  const loungeEligible = useMemo(
-    () =>
-      deriveDischargeLoungeEligible([
-        {
-          id: "dl-1",
-          clinicallyCleared: true,
-          scriptsReady: true,
-          awaitingAfternoonTransport: true,
-          highRisk: false,
-          seclusion: false,
-          legalStatus: "voluntary",
-        },
       ]),
     [],
   );
@@ -530,36 +479,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
     [],
   );
 
-  const commandItems: CommandPaletteItem[] = useMemo(
-    () => [
-      {
-        id: "cmd-fanout",
-        label: "Fan Out Parallel Referrals (Top 3 Compatible Wards)",
-        category: "Flow Action",
-        keywords: ["refer", "parallel", "shortlist"],
-        onSelect: () => setFannedOutUnitIds(topCompatibleWards.map((w) => w.unit.id)),
-      },
-      {
-        id: "cmd-discharge-support",
-        label: "Dispatch Parallel Pharmacy + Transport + Cleaning",
-        category: "Discharge Unblocker",
-        keywords: ["tto", "pharmacy", "cleaning", "morning"],
-        onSelect: () =>
-          setDispatchedServices(
-            dispatchParallelDischargeSupport({
-              admissionId: afternoonDischarges[0]?.id ?? "ADM-DEMO-1",
-              unitId: afternoonDischarges[0]?.unitId ?? "rph-adult-open",
-              now: "2026-10-15T08:30:00.000Z",
-            }),
-          ),
-      },
-    ],
-    [topCompatibleWards, afternoonDischarges],
-  );
-
-  const loungeCandidateId = loungeEligible[0]?.id ?? "dl-1";
-  const isLoungeCandidateReleased = Boolean(loungeUnit.releasedCandidateIds?.includes(loungeCandidateId));
-
   return (
     <div className={styles.cockpit} data-testid="ward-top25-cockpit">
       <div className={styles.header}>
@@ -576,9 +495,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
           </Button>
           <Button size="sm" onClick={() => setActiveRole("ed")}>
             ED Bed Desk
-          </Button>
-          <Button size="sm" variant="pri" onClick={() => setPaletteOpen(true)}>
-            Command Palette (Ctrl+K)
           </Button>
         </div>
       </div>
@@ -788,7 +704,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       {/* Tier 2: High-Impact Clinical & Step-Down Accelerators (#8–#15) */}
       <SectionHead
         title="Tier 2 · High-Impact Clinical & Step-Down Accelerators (#8–#15)"
-        subtitle="HDU step-down pull board, Criteria-Led Discharge, leave fast-track, CTO handshake, and ED escalation ladder"
+        subtitle="HDU step-down pull board, Criteria-Led Discharge, CTO handshake, and ED escalation ladder"
       />
       <div className={styles.tierGrid}>
         {/* #8 HDU / Secure-to-Acute Step-Down Pull Board */}
@@ -833,20 +749,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
               Mark All CLD Criteria Met
             </Button>
           </div>
-        </article>
-
-        {/* #10 Leave-to-Discharge Fast-Track & 1-Tap Return */}
-        <article className={styles.card} data-testid="top25-item-10">
-          <div className={styles.cardHeader}>
-            <span className={styles.cardRank}>#10</span>
-            <h3 className={styles.cardTitle}>Leave-to-Discharge Fast-Track & 1-Tap Return</h3>
-            <Chip tone="warning">{leaveFastTrack.elapsedHours}h on Leave</Chip>
-          </div>
-          <p className={styles.cardBody}>
-            {leaveFastTrack.promptsDischargeConversion
-              ? "Extended overnight leave — prompt to convert to formal discharge or restore in 1 tap."
-              : "Active trial leave."}
-          </p>
         </article>
 
         {/* #11 CTO & 7-Day Follow-Up Handshake */}
@@ -918,7 +820,7 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
       {/* Tier 3: Network Optimization, Safety & Ergonomic Multipliers (#16–#22) */}
       <SectionHead
         title="Tier 3 · Network Optimization, Safety & Ergonomic Multipliers (#16–#22)"
-        subtitle="1-for-1 inter-ward swaps, virtual discharge lounge, paper-form expiry radar, marooned dossier, and EDD drift"
+        subtitle="1-for-1 inter-ward swaps, paper-form expiry radar, marooned dossier, and EDD drift"
       />
       <div className={styles.tierGrid}>
         {/* #16 Inter-Ward Step-Down Swap Matcher */}
@@ -932,31 +834,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
             Matched 1-for-1 exchange between {swapPairs[0]?.unitA} and {swapPairs[0]?.unitB} when both wards are at full
             occupancy.
           </p>
-        </article>
-
-        {/* #18 Virtual Discharge Lounge / Transit Chair Early Bed Release */}
-        <article className={styles.card} data-testid="top25-item-18">
-          <div className={styles.cardHeader}>
-            <span className={styles.cardRank}>#18</span>
-            <h3 className={styles.cardTitle}>Virtual Discharge Lounge Early Bed Release</h3>
-            <Chip tone="ok">
-              {loungeUnit.availableBeds} Bed Free · {loungeUnit.loungeOccupied} in Lounge
-            </Chip>
-          </div>
-          <p className={styles.cardBody}>
-            {loungeEligible.length} low-risk cleared patient eligible to move to transit lounge, releasing the acute bed
-            immediately.
-          </p>
-          <div className={styles.cardActions}>
-            <Button
-              size="sm"
-              variant="pri"
-              disabledReason={isLoungeCandidateReleased ? "Patient already moved to transit lounge" : undefined}
-              onClick={() => setLoungeUnit((prev) => releaseBedToDischargeLounge(prev, loungeCandidateId))}
-            >
-              Move to Discharge Lounge & Release Bed
-            </Button>
-          </div>
         </article>
 
         {/* #19 Paper-Form Statutory Expiry Radar */}
@@ -1031,15 +908,6 @@ export function WardTop25Cockpit({ initialState }: WardTop25CockpitProps) {
         {/* #25 Broadcast Alert Auto-Expiry & Stand-Down Lifecycle */}
         {isClient ? <BroadcastLifecycleCard /> : <article className={styles.card} data-testid="top25-item-25" />}
       </div>
-
-      {/* #22 Global Command Palette Modal */}
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        enableGlobalShortcut={false}
-        items={commandItems}
-        placeholder="Jump to ward, patient, or flow action (Ctrl+K)..."
-      />
     </div>
   );
 }
