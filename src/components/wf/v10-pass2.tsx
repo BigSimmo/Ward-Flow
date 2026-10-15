@@ -101,7 +101,7 @@ export function FactGrid({ facts, className }: { facts: Fact[]; className?: stri
 /* ── StatusPill ───────────────────────────────────────────────────────────────────────────── */
 
 /**
- * A status as a round pill (v10 review and state pills): the words stay neutral ink, the glyph
+ * A status as a small label (v10 review and state pills): the words stay neutral ink, the glyph
  * carries the tone. Never a tinted fill and never red or amber words.
  */
 export function StatusPill({

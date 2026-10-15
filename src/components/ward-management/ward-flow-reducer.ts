@@ -4100,6 +4100,11 @@ export function reduceClinicalEvent(
        * event.
        */
       if (event.role === "officer") {
+        // Master plan 5.2 random run: with no transport needed there is no leg to deliver, and
+        // Delivered used to be accepted as a silent no-op. The officer screen already refuses it.
+        if (noTransportNeeded) {
+          return reject(state, event, "No transport leg to deliver; the receiving ward confirms arrival");
+        }
         if (movement.transport?.arrivedAt !== undefined) {
           return reject(
             state,
