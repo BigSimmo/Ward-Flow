@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
+import { CHART_MAX_BYTES } from "../../src/components/ward-management/referrals/referral-submission";
 
 /**
  * Shape checks for commands sent to the shared workspace, before the reducer sees them.
@@ -14,12 +15,14 @@ const MAX_DEPTH = 8;
 const MAX_KEYS = 100;
 const MAX_ITEMS = 500;
 const MAX_TEXT = 4_000;
+/** A referral chart's file content: the reducer checks its exact length against its byte size. */
+const MAX_BASE64 = 4 * Math.ceil(CHART_MAX_BYTES / 3);
 const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
-function boundedJson(value: unknown, depth: number): boolean {
+function boundedJson(value: unknown, depth: number, maxText = MAX_TEXT): boolean {
   if (value === null || typeof value === "boolean") return true;
   if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "string") return value.length <= MAX_TEXT;
+  if (typeof value === "string") return value.length <= maxText;
   if (depth >= MAX_DEPTH || typeof value !== "object") return false;
   if (Array.isArray(value)) return value.length <= MAX_ITEMS && value.every((item) => boundedJson(item, depth + 1));
   const prototype = Object.getPrototypeOf(value);
@@ -27,7 +30,12 @@ function boundedJson(value: unknown, depth: number): boolean {
   const entries = Object.entries(value);
   return (
     entries.length <= MAX_KEYS &&
-    entries.every(([key, item]) => !FORBIDDEN_KEYS.has(key) && key.length <= 100 && boundedJson(item, depth + 1))
+    entries.every(
+      ([key, item]) =>
+        !FORBIDDEN_KEYS.has(key) &&
+        key.length <= 100 &&
+        boundedJson(item, depth + 1, key === "base64" ? MAX_BASE64 : MAX_TEXT),
+    )
   );
 }
 

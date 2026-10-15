@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SCHEMA_TYPES, validSharedCommand } from "../backend/ward-flow/command-schemas";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { CHART_MAX_BYTES } from "@/components/ward-management/referrals/referral-submission";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
 
@@ -79,5 +80,18 @@ describe("shared command schemas", () => {
     ])
       expect(validSharedCommand(event)).toBe(false);
     expect(validSharedCommand({ ...base, note: "x".repeat(4_000) })).toBe(true);
+  });
+
+  it("let a referral chart's file content through up to the 2 MB chart limit", () => {
+    const role = EVENT_ROLE.RECEIVE_REFERRAL[0];
+    const chart = (base64: string) => ({
+      type: "RECEIVE_REFERRAL",
+      role,
+      intake: { charts: [{ kind: "medication", name: "chart.pdf", mimeType: "application/pdf", base64 }] },
+    });
+    expect(validSharedCommand(chart("A".repeat(12_000)))).toBe(true);
+    expect(validSharedCommand(chart("A".repeat(4 * Math.ceil(CHART_MAX_BYTES / 3))))).toBe(true);
+    expect(validSharedCommand(chart("A".repeat(4 * Math.ceil(CHART_MAX_BYTES / 3) + 4)))).toBe(false);
+    expect(validSharedCommand({ ...chart("AAAA"), note: "x".repeat(12_000) })).toBe(false);
   });
 });
