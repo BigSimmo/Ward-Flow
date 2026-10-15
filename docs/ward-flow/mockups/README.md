@@ -250,6 +250,6 @@ and approved back in, and nothing anywhere goes red. That has happened here.
 | What every chat is working on       | gone — `docs/ward-flow/control/work-claims.md` was deleted with WLQ-33; use [`../STATUS.md`](../STATUS.md) and the ledger |
 | How a branch is folded, and by whom | `../archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)                                 |
 | The kit's own status and open items | [`third-edition-kit/HANDOVER.md`](third-edition-kit/HANDOVER.md)                                                          |
-| The handover written for this chat  | [`third-edition-kit/HANDOVER-MOCKUPS-CHAT-2026-09-10.md`](third-edition-kit/HANDOVER-MOCKUPS-CHAT-2026-09-10.md)          |
+| The handover written for this chat  | `docs/ward-flow/mockups/third-edition-kit/HANDOVER-MOCKUPS-CHAT-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)     |
 
 **Ward Lead is the only chat that folds.** Commit on your own branch and hand it the SHAs.
