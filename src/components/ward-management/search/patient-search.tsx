@@ -106,6 +106,7 @@ import {
 import styles from "./search.module.css";
 import cs from "./census.module.css";
 import { isCommunityReferral } from "./community-referral";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -1749,7 +1750,7 @@ function ResultRow({
             Preview
           </button>
         ) : null}
-        <Link className={styles.resultLink} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.resultLink} href={movementHref(movement.id)}>
           Open
         </Link>
       </td>

@@ -24,6 +24,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 
 function wrap(child: ReactNode) {
   return render(<WardFlowProvider initialNow={NOW_ANCHOR}>{child}</WardFlowProvider>);
@@ -198,7 +199,7 @@ describe("bed dossier patient page link", () => {
     const view = render(drawer(admission!.id));
     expect(screen.getByRole("link", { name: /Patient page/ })).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/people/${encodeURIComponent(String(admission!.patientId))}`,
+      patientHref(encodeURIComponent(String(admission!.patientId))),
     );
     view.unmount();
     render(drawer(undefined));

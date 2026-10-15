@@ -49,6 +49,7 @@ import type {
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * THE MOVEMENT VERDICT, RE-EXPORTED RATHER THAN WRAPPED.
@@ -211,7 +212,8 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
  * wrong.
  */
 export function patientHref(patientId: string): string {
-  return `/mockups/ward-flow/people/${encodeURIComponent(patientId)}`;
+  // D-39: the address carries a code, never the person's record number.
+  return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
 }
 
 /**
@@ -265,12 +267,12 @@ export function edHref(edId: string): string {
 
 /** One movement's record. See `patientHref` — same two reasons. */
 export function movementHref(movementId: string): string {
-  return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;
+  return `/mockups/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
 }
 
 /** One discharged stay, opened in the discharges board detail. The id is a synthetic admission id. */
 export function dischargeHref(admissionId: string): string {
-  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;
+  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;
 }
 
 /** Fixed shell destinations live beside the parameterised builders so chrome never retypes them. */
@@ -408,7 +410,7 @@ export type RaiseReferralTarget = {
  */
 export function raiseReferralHref(target: RaiseReferralTarget): string {
   const query = new URLSearchParams();
-  if (target.patientId !== undefined) query.set("patientId", target.patientId);
+  if (target.patientId !== undefined) query.set("patientId", encodeRecordAddress(target.patientId));
   if (target.source !== undefined) query.set("source", target.source);
   if (target.refer !== undefined) query.set("refer", target.refer);
   if (target.originEdId !== undefined) query.set("originEdId", target.originEdId);

@@ -7,8 +7,14 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENDER_PLACEMENT_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { STEP_BACK_REASONS } from "@/components/ward-management/ward-model";
 import { ToastProvider } from "@/components/wf";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 vi.mock("next/navigation", () => ({
+  // D-39: an old raw-id link is redirected; the stand-in throws so a test can read where it went.
+  redirect: (url: string) => {
+    throw new Error(`NEXT_REDIRECT ${url}`);
+  },
   usePathname: () => "/mockups/ward-flow/people/WF-012",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
@@ -164,9 +170,18 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");
     expect(screen.getByText("Referral closed · no active transfer")).toBeInTheDocument();
   });
+  it("sends an old raw-id movement link on to its coded address, keeping the query", async () => {
+    const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
+    await expect(
+      Page({
+        params: Promise.resolve({ movementId: "WF-012" }),
+        searchParams: Promise.resolve({ taskAction: "refer" }),
+      }),
+    ).rejects.toThrow(`NEXT_REDIRECT ${movementHref("WF-012")}?taskAction=refer`);
+  });
   it("legacy movement route renders the same dossier", async () => {
     const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
-    const page = await Page({ params: Promise.resolve({ movementId: "WF-012" }) });
+    const page = await Page({ params: Promise.resolve({ movementId: encodeRecordAddress("WF-012") }) });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
     // The bed gate's action opens the placement work as the Destination sheet (device audit 11 Oct 2026).
@@ -175,7 +190,7 @@ describe("unified Patient Now clinical flight deck", () => {
   it("opens the ward shortlist directly from a task referral action", async () => {
     const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
     const page = await Page({
-      params: Promise.resolve({ movementId: "WF-012" }),
+      params: Promise.resolve({ movementId: encodeRecordAddress("WF-012") }),
       searchParams: Promise.resolve({ taskAction: "refer" }),
     });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
@@ -184,7 +199,7 @@ describe("unified Patient Now clinical flight deck", () => {
   it("opens coordination contacts directly from a task contact action", async () => {
     const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
     const page = await Page({
-      params: Promise.resolve({ movementId: "WF-012" }),
+      params: Promise.resolve({ movementId: encodeRecordAddress("WF-012") }),
       searchParams: Promise.resolve({ taskAction: "contact" }),
     });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);

@@ -137,6 +137,7 @@ import {
   clearanceChecklistWords,
   referralNeedsWords,
 } from "./referral-submission";
+import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * The legal-status choices, as bare register codes. Their visible text is built from the Chief
@@ -805,7 +806,7 @@ function WardReferralDrawerContent({
   const urlPrefill = useMemo(() => {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
-    const personId = params.get("patientId")?.trim() || undefined;
+    const personId = recordIdFromParam(params.get("patientId")?.trim()) ?? undefined;
     if (initialPatientId && personId && initialPatientId !== personId) return null;
     if (!personId && (initialPatientId || initialOriginSiteCode || initialSendingTeam || initialUnitIds?.length)) {
       return null;

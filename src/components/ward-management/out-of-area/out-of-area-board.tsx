@@ -72,6 +72,7 @@ import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-ar
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -103,7 +104,7 @@ import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-ma
  * search page reads no query anyway), so a row with no person id shows its UMRN unlinked.
  */
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
-  return info.patient?.id ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : null;
+  return info.patient?.id ? patientHref(info.patient.id) : null;
 }
 
 type SortOrder = "ledger" | "days" | "patient";

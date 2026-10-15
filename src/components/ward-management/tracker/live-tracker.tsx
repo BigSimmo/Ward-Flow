@@ -29,6 +29,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { stampAgeText, trackerRowState, type TrackerLeg } from "./tracker-derivations";
 import styles from "./live-tracker.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Which visual treatment each leg's badge carries. A `Record` over the full `TrackerLeg` union,
@@ -156,7 +157,7 @@ export function LiveTracker() {
                       <dd>{stampAgeText(stampAt, now)}</dd>
                     </div>
                   </dl>
-                  <Link className={styles.reviewLink} href={`/mockups/ward-flow/movements/${movement.id}`}>
+                  <Link className={styles.reviewLink} href={movementHref(movement.id)}>
                     Review patient
                   </Link>
                 </li>

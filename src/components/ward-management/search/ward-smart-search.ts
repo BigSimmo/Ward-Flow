@@ -35,7 +35,7 @@ import { createPatientResolver } from "@/components/ward-management/ward-patient
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
-import { teamHref, unitHref } from "../shell/ward-facade";
+import { movementHref, teamHref, unitHref } from "../shell/ward-facade";
 
 export type CoreSearchView = {
   key: string;
@@ -354,7 +354,7 @@ export function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSea
     })
     .map((task) => ({
       task,
-      href: task.href ?? `/mockups/ward-flow/movements/${task.movementId}`,
+      href: task.href ?? movementHref(task.movementId),
     }));
 }
 

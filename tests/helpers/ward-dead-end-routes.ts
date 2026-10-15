@@ -97,7 +97,10 @@ export function scanWardFlowRoutes(): WardFlowRouteInfo[] {
     const dynamic = segments.some((segment) => /^\[.+\]$/.test(segment));
     const source = readFileSync(file, "utf8");
     const body = source.slice(source.indexOf("export default"));
-    const redirectOnly = /\bredirect\(\s*["'`]/u.test(body);
+    // D-39 (15 Oct 2026): a record page redirects an OLD raw-id link to its coded address and
+    // otherwise renders a screen. Only a page that redirects and renders nothing is redirect-only.
+    const rendersAScreen = /\breturn\s*\(?\s*</u.test(body);
+    const redirectOnly = /\bredirect\(\s*["'`]/u.test(body) && !rendersAScreen;
     return { route, dynamic, redirectOnly };
   });
 }

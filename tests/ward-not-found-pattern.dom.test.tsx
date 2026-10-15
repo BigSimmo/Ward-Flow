@@ -11,6 +11,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 
 describe("the one not-found pattern", () => {
   it.each([
@@ -31,7 +32,7 @@ describe("the one not-found pattern", () => {
     expect(main).not.toHaveTextContent("PT-004");
     expect(screen.getByRole("link", { name: "Open their patient record" })).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/people/PT-004",
+      patientHref("PT-004"),
     );
   });
 });

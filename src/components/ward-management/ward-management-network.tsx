@@ -95,6 +95,7 @@ import {
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 type BedStateKey = "available" | "pulled" | "closed" | "confirmed" | "expected";
 
@@ -1591,7 +1592,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                 <span>Next action: {patient.blocker}</span>
               </div>
 
-              <Link className={styles.primaryLink} href={`/mockups/ward-flow/movements/${patient.id}`}>
+              <Link className={styles.primaryLink} href={movementHref(patient.id)}>
                 Open movement workspace
               </Link>
             </>

@@ -36,6 +36,7 @@ import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import { declineReasonLabels } from "./movement-workspace-derivations";
 import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
 import d from "./movement-drawer.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Review fix-forward item 10 (2026-09-17): an `aria-disabled` button with no further explanation
@@ -199,7 +200,7 @@ export function MovementDrawer({
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. D-39: the UMRN.
   const subject = resolveSubjectPatient(movement, { patients, referrals });
   const titleId = `ward-movement-drawer-title-${movement.id}`;
-  const recordHref = `/mockups/ward-flow/movements/${movement.id}`;
+  const recordHref = movementHref(movement.id);
 
   const step = movementNextStep(movement);
   const blocker = movement.blocker.trim();

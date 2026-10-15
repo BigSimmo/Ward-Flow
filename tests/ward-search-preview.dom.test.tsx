@@ -28,6 +28,7 @@ import {
   buildMovementSummary,
   type PreviewSelection,
 } from "@/components/ward-management/search/record-preview";
+import { movementHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 function renderSearch() {
   return render(
@@ -168,7 +169,7 @@ describe("the preview pane ties a person, their referral and their open movement
     const movementSection = screen.getByTestId("ward-patient-search-preview-movement");
     expect(within(movementSection).getByRole("link", { name: "Open this movement" })).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/movements/${linkedMovement.id}`,
+      movementHref(linkedMovement.id),
     );
   });
 
@@ -386,11 +387,11 @@ describe("every tie link carries the record it names", () => {
 
     expect(screen.getByRole("link", { name: /Open full record/ })).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/movements/${linkedMovement.id}`,
+      movementHref(linkedMovement.id),
     );
 
     const personSection = screen.getByTestId("ward-patient-search-preview-person");
-    expect(within(personSection).getByRole("link")).toHaveAttribute("href", `/mockups/ward-flow/people/${patient.id}`);
+    expect(within(personSection).getByRole("link")).toHaveAttribute("href", patientHref(patient.id));
   });
 
   /*
@@ -405,11 +406,11 @@ describe("every tie link carries the record it names", () => {
     expect(
       within(movementSection).getByRole("link"),
       "the movement leg is not a link — a coordinator must read the id and search again",
-    ).toHaveAttribute("href", `/mockups/ward-flow/movements/${linkedMovement.id}`);
+    ).toHaveAttribute("href", movementHref(linkedMovement.id));
 
     expect(screen.getByTestId("ward-patient-preview-raise-referral")).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/referrals/new?patientId=${patient.id}`,
+      raiseReferralHref({ patientId: patient.id }),
     );
   });
 });
@@ -459,7 +460,7 @@ describe("the selected person panel's stage stepper and its one primary action",
     const { movement } = renderPreviewForPersonWithMovement();
     expect(screen.getByRole("link", { name: /open this movement/i })).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/movements/${movement.id}`,
+      movementHref(movement.id),
     );
     // One primary action per panel — standard §6.13, "one primary per panel at most".
     expect(screen.getAllByRole("link", { name: /open this movement/i })).toHaveLength(1);
