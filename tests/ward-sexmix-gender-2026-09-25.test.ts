@@ -41,6 +41,19 @@ function replaceMovement(state: WardFlowState, id: string, next: Movement): Ward
   return { ...state, movements: state.movements.map((m) => (m.id === id ? next : m)) };
 }
 
+/**
+ * WF-004's stay is a seeded pull, already inside the ward's counts, so its arrival adds nobody
+ * (release gate, 15 Oct 2026). Marking the stay as pulled by WF-004 itself, as a live pull is,
+ * makes the arrival count the person, which is what these gender cases measure.
+ */
+function asLivePull(state: WardFlowState, movementId: string): WardFlowState {
+  const admissionId = movement(state, movementId).admissionId;
+  return {
+    ...state,
+    admissions: state.admissions.map((a) => (a.id === admissionId ? { ...a, movementId } : a)),
+  };
+}
+
 describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () => {
   it("PATIENT_ARRIVED counts a Male-sex, Female-gender movement as female", () => {
     const state = seeded();
@@ -54,7 +67,7 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
       gender: "Female",
       transportNeed: { needed: false, at: NOW - 10 },
     };
-    const before = replaceMovement(state, "WF-004", withGender);
+    const before = asLivePull(replaceMovement(state, "WF-004", withGender), "WF-004");
     const beforeUnit = unit(before, "bty-adult-secure");
 
     const after = wardFlowReducer(before, {
@@ -80,7 +93,7 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
       gender: "Non-binary",
       transportNeed: { needed: false, at: NOW - 10 },
     };
-    const before = replaceMovement(state, "WF-004", withGender);
+    const before = asLivePull(replaceMovement(state, "WF-004", withGender), "WF-004");
     const beforeUnit = unit(before, "bty-adult-secure");
 
     const after = wardFlowReducer(before, {

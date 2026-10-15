@@ -26,7 +26,8 @@ import { escapeForRegExp } from "./helpers/ward-place-names";
  * 1. ED referral to bed offer: the ED raises a referral into a movement, the coordinator offers a
  *    ward, and the ward accepts and pulls the patient.
  * 2. Morning bed meeting: a ward confirms its numbers and the coordinator's capacity board moves.
- * 3. Transfer with transport: the officer runs a booked job to delivery and the ward confirms arrival.
+ * 3. Transfer with transport: the ED books transport for a pulled patient, the officer delivers them,
+ *    and the ward confirms arrival into the patient's own stay.
  * 4. Discharge with bed release: a ward confirms a release, the person leaves, and the bed is ready.
  *
  * Each runs on desktop Chrome (1440px) and phone WebKit (390x844) through the release-gate projects
@@ -261,9 +262,12 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await wardScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
+  // One patient, one bed: Occupied rises by exactly one.
+  await expect.poll(() => wardFigure(page, "occupied")).toBe(occupiedBefore + 1);
   await expectAccessible(page, testInfo, "ward Home after the arrival");
   await expectNoReloadSince(page, "confirming arrival");
-  console.log(`[probe] occupied before ${occupiedBefore} after ${await wardFigure(page, "occupied")}`);
+
+  // The bed board shows this patient's own stay as an occupied bed.
   await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
   if (isPhoneLayout(page)) {
     await page
@@ -278,9 +282,10 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   }
   await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
-  const tile = page.locator(`li:has(> #ward-board-tile-${admissionId})`);
-  console.log(`[probe] tiles ${await tile.count()} kind ${await tile.first().getAttribute("data-bed-kind").catch(() => "none")} visible ${await tile.first().isVisible().catch(() => false)}`);
-  console.log(`[probe] board text ${(await page.getByTestId("ward-board").innerText()).slice(0, 1500).replace(/\n/g, " | ")}`);
+  // The phone board leads with its work list and keeps the bed grid in the page, so read the tile's
+  // state rather than its visibility.
+  await expect(page.locator(`li:has(> #ward-board-tile-${admissionId})`)).toHaveAttribute("data-bed-kind", "occupied");
+  await expectNoReloadSince(page, "opening the bed board");
 });
 
 test("Discharge with bed release: a ward confirms a release, the person leaves, and the bed is ready on the board", async ({
