@@ -410,14 +410,14 @@ export function WeeklyReportScreen() {
                   <div className={styles.figure}>
                     <dt>Average in week</dt>
                     <dd data-testid="ward-weekly-occupancy">{occupancyText}</dd>
-                    <small>{report.occupancy.occupiedBedDays} occupied bed days</small>
+                    <dd className={styles.figureNote}>{report.occupancy.occupiedBedDays} occupied bed days</dd>
                   </div>
                   <div className={styles.figure}>
                     <dt>In use now</dt>
                     <dd>
                       {report.occupancy.now.inUse} of {report.occupancy.now.beds}
                     </dd>
-                    <small>{report.occupancy.now.pulled} held for arrival</small>
+                    <dd className={styles.figureNote}>{report.occupancy.now.pulled} held for arrival</dd>
                   </div>
                 </dl>
               </StatCard>

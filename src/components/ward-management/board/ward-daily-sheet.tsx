@@ -1,8 +1,16 @@
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { Copy, FileText, Printer, X } from "lucide-react";
-import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
+import {
+  buttonClass,
+  Card,
+  CardHead,
+  CountBubble,
+  Icon,
+  StatusGlyph,
+  useModalFocus,
+  type WfTone,
+} from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
@@ -788,9 +796,6 @@ const subscribeNever = () => () => {};
 const clipboardAvailable = () =>
   typeof navigator !== "undefined" && "clipboard" in navigator && typeof navigator.clipboard.writeText === "function";
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 /**
  * THE SHIFT BRIEF AS A DIALOG — the ward page's "Shift brief" button.
  *
@@ -824,61 +829,10 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
       ? null
       : [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · ");
 
-  // Shares the app's overlay stack: the page behind stops scrolling and is inert while the brief
-  // is open, and both come back when it closes.
-  const sheetId = useId();
-  useEffect(() => {
-    pushSheet(sheetId, panelRef.current);
-    return () => {
-      popSheet(sheetId);
-    };
-  }, [sheetId]);
-
-  // Focus moves into the dialog on open and returns to whatever opened it on close.
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panelRef.current?.focus();
-    return () => {
-      if (opener && opener.isConnected) opener.focus();
-    };
-  }, []);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      // Another overlay opened over the brief owns the keyboard; one Escape closes only that one.
-      if (!isTopmostSheet(sheetId)) return;
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (event.key !== "Tab" || panelRef.current === null) return;
-      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-        (element) => element.offsetParent !== null || element === document.activeElement,
-      );
-      if (focusable.length === 0) {
-        event.preventDefault();
-        panelRef.current.focus();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-      if (!panelRef.current.contains(active)) {
-        event.preventDefault();
-        first.focus();
-      } else if (event.shiftKey && (active === first || active === panelRef.current)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [onClose, sheetId]);
+  // The shared modal contract (`useModalFocus`): the page behind stops scrolling and is inert while
+  // the brief is open, focus moves to the dialog itself, Tab stays inside it, Escape closes only the
+  // top-most overlay, and focus returns to whatever opened it on close.
+  useModalFocus({ open: true, onClose, panelRef, initialFocusRef: panelRef, focusOnOpen: "immediate" });
 
   useEffect(() => {
     if (copyState === "idle") return;

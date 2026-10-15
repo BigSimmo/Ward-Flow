@@ -890,8 +890,24 @@ export function activateWardNetwork(sites: Site[]): void {
   wardSites = sites;
 }
 
+/*
+ * The flattened unit and department lists are rebuilt only when the network is re-pointed. Screens
+ * call these (and `edById`) many times per render, and rebuilding them every time was
+ * a visible part of the phone's first load (fix list 7.6, October 2026). Callers must not change
+ * the returned lists in place.
+ */
+let flattenedFor: Site[] | undefined;
+let unitList: Unit[] = [];
+
+function flattened(): void {
+  if (flattenedFor === wardSites) return;
+  unitList = wardSites.flatMap((site) => site.units);
+  flattenedFor = wardSites;
+}
+
 export function allUnits(): Unit[] {
-  return wardSites.flatMap((site) => site.units);
+  flattened();
+  return unitList;
 }
 
 /** Returns `undefined` for an unknown id. Never falls back to a different unit. */
@@ -911,9 +927,16 @@ function identityOf(site: Site): SiteIdentity {
 /** Every site, without its wards. The same in every network. */
 export const siteDirectory: readonly SiteIdentity[] = STANDARD_WARD_SITES.map(identityOf);
 
-/** The same emergency departments in every network (each network keeps the standard site's own). */
+const standardEmergencyDepartments: EmergencyDepartment[] = STANDARD_WARD_SITES.flatMap((site) =>
+  site.emergencyDepartment ? [site.emergencyDepartment] : [],
+);
+
+/**
+ * The same emergency departments in every network (each network keeps the standard site's own).
+ * Built once, since screens call this many times per render. Callers must not change it in place.
+ */
 export function allEmergencyDepartments(): EmergencyDepartment[] {
-  return STANDARD_WARD_SITES.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
+  return standardEmergencyDepartments;
 }
 
 /**

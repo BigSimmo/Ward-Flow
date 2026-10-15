@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -54,6 +54,15 @@ describe("document metadata and modal lifecycle", () => {
     expect(records[0]).not.toHaveProperty("content");
   });
   it("contains keyboard focus, isolates the background and returns to its trigger", () => {
+    // jsdom has no layout; the shared modal trap only cycles through controls that have client rects.
+    const rects = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
+      length: 1,
+      item: () => null,
+      [Symbol.iterator]: function* () {
+        yield {} as DOMRect;
+      },
+    } as DOMRectList);
+    onTestFinished(() => rects.mockRestore());
     const trigger = setup();
     const dialog = screen.getByRole("dialog");
     const first = within(dialog).getByRole("button", { name: "Close dialog" });

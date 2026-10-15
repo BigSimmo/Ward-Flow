@@ -2,8 +2,8 @@ import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-mana
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
+import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 import type { BedRelease, LeaveBed, Movement, Referral, Site, Unit } from "@/components/ward-management/ward-model";
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
 
@@ -59,7 +59,23 @@ export type WardNavCountInput = {
   thresholds: DueSoonThresholds;
 };
 
-export function wardNavCounts(input: WardNavCountInput): WardNavCounts {
+/**
+ * The rail, the phone dock and menu and the sidebar all ask for these counts on every render, and
+ * the delay groups behind them are costly, so the answer is shared until a record or the clock
+ * minute changes (`ward-last-call.ts`).
+ */
+export const wardNavCounts = rememberLastCall(deriveWardNavCounts, (input: WardNavCountInput) => [
+  input.movements,
+  input.units,
+  input.sites,
+  input.referrals,
+  input.bedReleases,
+  input.leaveBeds,
+  input.now,
+  input.thresholds,
+]);
+
+function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
   const { movements, units, sites, referrals, bedReleases, leaveBeds, now, thresholds } = input;
 
   const open = movements.filter(isOpen);

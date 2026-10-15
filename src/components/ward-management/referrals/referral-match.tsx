@@ -2,7 +2,7 @@
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 
-import { useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode } from "react";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -251,6 +251,7 @@ export function ReferralHistoryAndCorrections({
   dispatch: Dispatch<WardFlowEvent>;
 }) {
   const [note, setNote] = useState("");
+  const noteId = useId();
   const trimmedNote = note.trim();
 
   /**
@@ -309,11 +310,11 @@ export function ReferralHistoryAndCorrections({
           </ul>
         )}
         <div className={styles.correctionControlsWrap} data-testid="ward-referral-correction-controls">
-          <label className={styles.fieldLegend} htmlFor="ward-referral-correction-note">
+          <label className={styles.fieldLegend} htmlFor={noteId}>
             Add a correction note
           </label>
           <textarea
-            id="ward-referral-correction-note"
+            id={noteId}
             data-testid="ward-referral-correction-note"
             className={styles.correctionNote}
             value={note}

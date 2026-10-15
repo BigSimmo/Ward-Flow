@@ -3,7 +3,7 @@
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import { Field, Select, TextInput } from "@/components/wf";
+import { Field, Select, TextInput, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -71,7 +71,6 @@ import { parseReleaseDayInstant } from "@/components/ward-management/ward/releas
 import { asAtStamp, WardDailySheet } from "./ward-daily-sheet";
 import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./board.module.css";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -1000,8 +999,6 @@ export function WardBoard({
     item?: ShiftTileItem;
     admissionId?: string;
   } | null>(null);
-  // Neither dialog joins the sheet stack, so each holds the page still itself (phone, 12 Oct 2026).
-  useWardPageScrollLock(blockerDialogItem !== null || pendingConfirm !== null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
   const blockerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -1010,72 +1007,33 @@ export function WardBoard({
 
   const closeConfirmDialog = useCallback(() => {
     setPendingConfirm(null);
-    setTimeout(() => {
-      dialogTriggerRef.current?.focus();
-    }, 0);
   }, []);
-
-  useEffect(() => {
-    if (pendingConfirm) {
-      confirmCloseBtnRef.current?.focus();
-    }
-  }, [pendingConfirm]);
-
-  useEffect(() => {
-    if (!pendingConfirm) return;
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        closeConfirmDialog();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pendingConfirm, closeConfirmDialog]);
 
   const closeBlockerDialog = useCallback(() => {
     setBlockerDialogItem(null);
-    setTimeout(() => {
-      dialogTriggerRef.current?.focus();
-    }, 0);
   }, []);
 
-  useEffect(() => {
-    if (blockerDialogItem) {
-      blockerCloseBtnRef.current?.focus();
-    }
-  }, [blockerDialogItem]);
-
-  const trapDialogFocus = (e: React.KeyboardEvent<HTMLElement>, container: HTMLElement | null) => {
-    if (e.key !== "Tab" || !container) return;
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
-  useEffect(() => {
-    if (!blockerDialogItem) return;
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        if (blockerDialogItem) closeBlockerDialog();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [blockerDialogItem, closeBlockerDialog]);
+  // Both dialogs follow the shared modal contract: the page behind is inert and held still, focus
+  // starts on the close button, Tab wraps inside, Escape closes only the dialog (handled first, so
+  // the board's own Escape for the slide-out never also fires), and focus returns to the trigger.
+  useModalFocus({
+    open: pendingConfirm !== null,
+    onClose: closeConfirmDialog,
+    panelRef: confirmDialogRef,
+    initialFocusRef: confirmCloseBtnRef,
+    returnFocusRef: dialogTriggerRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  useModalFocus({
+    open: blockerDialogItem !== null,
+    onClose: closeBlockerDialog,
+    panelRef: blockerDialogRef,
+    initialFocusRef: blockerCloseBtnRef,
+    returnFocusRef: dialogTriggerRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   // Item 44, build plan task G2 (§2 "Bed board, ward page and all seven statistics screens: a
   // sentence only."). A hook, so it is read unconditionally, before the "unknown unit" early
   // return further down.
@@ -3197,7 +3155,7 @@ export function WardBoard({
                 </button>
               ) : null}
               {blockerDialogItem ? (
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
                 <div
                   ref={blockerDialogRef}
                   role="dialog"
@@ -3208,14 +3166,6 @@ export function WardBoard({
                   tabIndex={-1}
                   onClick={(e) => {
                     if (e.target === e.currentTarget) closeBlockerDialog();
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      e.stopPropagation();
-                      closeBlockerDialog();
-                    } else {
-                      trapDialogFocus(e, blockerDialogRef.current);
-                    }
                   }}
                   style={{
                     position: "fixed",
@@ -3624,7 +3574,7 @@ export function WardBoard({
         </p>
 
         {pendingConfirm ? (
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
           <div
             ref={confirmDialogRef}
             role="dialog"
@@ -3635,14 +3585,6 @@ export function WardBoard({
             tabIndex={-1}
             onClick={(e) => {
               if (e.target === e.currentTarget) closeConfirmDialog();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                e.stopPropagation();
-                closeConfirmDialog();
-              } else {
-                trapDialogFocus(e, confirmDialogRef.current);
-              }
             }}
             style={{
               position: "fixed",

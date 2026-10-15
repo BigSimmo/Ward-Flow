@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 
 import { StatusGlyph, cx } from "@/components/wf";
 
@@ -38,15 +38,16 @@ export function EdNeedsYou({
   "data-pane"?: string;
   "data-rail"?: string;
 }) {
+  const headingId = useId();
   return (
     <section
       className={cx(styles.card, framed && styles.framed, className)}
-      aria-labelledby="ed-needs-you-heading"
+      aria-labelledby={headingId}
       data-testid="ward-ed-needs-you"
       {...data}
     >
       <div className={styles.head}>
-        <h2 id="ed-needs-you-heading">{heading}</h2>
+        <h2 id={headingId}>{heading}</h2>
         <span className={styles.count}>{items.length === 0 ? "None" : items.length}</span>
       </div>
       {items.length === 0 ? (

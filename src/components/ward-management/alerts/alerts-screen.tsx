@@ -34,7 +34,6 @@ import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reduce
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -128,6 +127,7 @@ import {
   Textarea,
   type WfTone,
   useIsTabletPortrait,
+  useModalFocus,
 } from "@/components/wf";
 
 /**
@@ -402,55 +402,18 @@ function AlertsWorkspace() {
 
   const handleCloseBroadcastModal = useCallback(() => {
     setBroadcastModalOpen(false);
-    setTimeout(() => {
-      broadcastTriggerRef.current?.focus();
-    }, 0);
   }, [setBroadcastModalOpen]);
 
-  const trapFocus = (e: React.KeyboardEvent<HTMLElement>, container: HTMLElement | null) => {
-    if (e.key !== "Tab" || !container) return;
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
-  const handleModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      handleCloseBroadcastModal();
-      return;
-    }
-    trapFocus(e, modalRef.current);
-  };
-
-  useWardPageScrollLock(isBroadcastModalOpen);
-
-  useEffect(() => {
-    if (!isBroadcastModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleCloseBroadcastModal();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBroadcastModalOpen, handleCloseBroadcastModal]);
-
-  useEffect(() => {
-    if (isBroadcastModalOpen) {
-      modalCloseRef.current?.focus();
-    }
-  }, [isBroadcastModalOpen]);
+  // The shared modal contract: the page behind is inert and held still, focus starts on the close
+  // button, Tab wraps inside, Escape closes only this top layer, and focus returns to the trigger.
+  useModalFocus({
+    open: isBroadcastModalOpen,
+    onClose: handleCloseBroadcastModal,
+    panelRef: modalRef,
+    initialFocusRef: modalCloseRef,
+    returnFocusRef: broadcastTriggerRef,
+    focusOnOpen: "immediate",
+  });
 
   useEffect(() => {
     if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
@@ -1925,7 +1888,7 @@ function AlertsWorkspace() {
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
           <div
             ref={modalRef}
             className={styles.modalOverlay}
@@ -1934,7 +1897,6 @@ function AlertsWorkspace() {
             aria-labelledby="broadcast-title"
             aria-describedby="broadcast-desc"
             tabIndex={-1}
-            onKeyDown={handleModalKeyDown}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 handleCloseBroadcastModal();

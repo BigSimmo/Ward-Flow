@@ -2,7 +2,7 @@
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -32,6 +32,7 @@ import {
   TextInput,
   useIsPhone,
   useOptionalToast,
+  useModalFocus,
   type SinceItem,
   type WfTone,
 } from "@/components/wf";
@@ -548,8 +549,6 @@ export function CommunityScreen({
     type: "review" | "assign";
     referral: CommunityScopedReferral;
   } | null>(null);
-  // These dialogs do not join the sheet stack, so they hold the page still themselves (phone).
-  useWardPageScrollLock(transportBookFor !== undefined || transportCancelFor !== undefined || activeModal !== null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
@@ -904,6 +903,34 @@ export function CommunityScreen({
     setCancelTransportReason(undefined);
   }
 
+  // Every overlay here follows the shared modal contract (`useModalFocus`): the page behind is inert
+  // and held still, focus moves inside, Tab wraps, Escape closes only the top layer (handled first,
+  // before this screen's own Escape, which would otherwise clear every overlay at once), and focus
+  // returns to the opener. Hook order is stacking order when two open together: drawer, then dialogs.
+  const drawerPanelRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: drawerScrimRef } = useModalFocus({
+    open: activeDrawer !== null,
+    onClose: () => setActiveDrawer(null),
+    panelRef: drawerPanelRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  const noteModalRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: noteModalOverlayRef } = useModalFocus({
+    open: activeModalType !== null,
+    onClose: () => setActiveModalType(null),
+    panelRef: noteModalRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  const referralModalRef = useRef<HTMLDivElement | null>(null);
+  const { rootRef: referralModalBackdropRef } = useModalFocus({
+    open: activeModal !== null,
+    onClose: () => setActiveModal(null),
+    panelRef: referralModalRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
   const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
   useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
@@ -3755,7 +3782,16 @@ export function CommunityScreen({
                                 key={egr.id}
                                 data-status={isContacted ? "completed" : egr.status}
                                 data-pt-id={egr.patientId}
+                                tabIndex={0}
                                 onClick={() => {
+                                  setSelectedPatientId(egr.patientId);
+                                  setActiveDrawer("pxDrawer");
+                                }}
+                                onKeyDown={(event) => {
+                                  // Keys from the contact button inside the row stay with that button.
+                                  if (event.target !== event.currentTarget) return;
+                                  if (event.key !== "Enter" && event.key !== " ") return;
+                                  event.preventDefault();
                                   setSelectedPatientId(egr.patientId);
                                   setActiveDrawer("pxDrawer");
                                 }}
@@ -4630,9 +4666,15 @@ export function CommunityScreen({
         ) : null}
 
         {activeModal !== null && (
-          <div className={styles.modalBackdrop} role="presentation" onClick={() => setActiveModal(null)}>
+          <div
+            ref={referralModalBackdropRef}
+            className={styles.modalBackdrop}
+            role="presentation"
+            onClick={() => setActiveModal(null)}
+          >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={referralModalRef}
               className={styles.modalDialog}
               role="dialog"
               aria-modal="true"
@@ -4684,6 +4726,7 @@ export function CommunityScreen({
         {/* ── Drawers (mounted only when activeDrawer !== null) ── */}
         {activeDrawer !== null && (
           <div
+            ref={drawerScrimRef}
             className={styles.drawerScrim}
             id="drawerScrim"
             role="presentation"
@@ -4691,6 +4734,7 @@ export function CommunityScreen({
           >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={drawerPanelRef}
               className={styles.drawerPanel}
               id={
                 activeDrawer === "referral" || activeDrawer === "referralDrawer"
@@ -5335,9 +5379,15 @@ export function CommunityScreen({
 
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         {activeModalType !== null && (
-          <div className={styles.modalOverlay} role="presentation" onClick={() => setActiveModalType(null)}>
+          <div
+            ref={noteModalOverlayRef}
+            className={styles.modalOverlay}
+            role="presentation"
+            onClick={() => setActiveModalType(null)}
+          >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
+              ref={noteModalRef}
               className={styles.modalBox}
               id={
                 activeModalType === "contact"
@@ -5349,6 +5399,7 @@ export function CommunityScreen({
                       : undefined
               }
               role="dialog"
+              aria-modal="true"
               aria-labelledby={
                 activeModalType === "contact"
                   ? "contactModalTitle"

@@ -727,6 +727,9 @@ function TeamComparison({
       {view === "chart" ? (
         <CardBody
           className={`${styles.bodyStack} ${detail.scrolls}`}
+          tabIndex={0}
+          role="region"
+          aria-label="Team comparison chart"
           data-testid="statistics-community-comparison-chart"
         >
           {shown.length === 0 ? (
@@ -771,7 +774,12 @@ function TeamComparison({
           ) : null}
         </CardBody>
       ) : (
-        <div className={`${styles.tableWrap} ${detail.scrolls}`}>
+        <div
+          className={`${styles.tableWrap} ${detail.scrolls}`}
+          tabIndex={0}
+          role="region"
+          aria-label="Team comparison table"
+        >
           <table
             className={`${tableClasses.table} ${styles.table}`}
             data-testid="ward-statistics-community-comparison-table"

@@ -370,7 +370,12 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 aside="Synthetic travel bands"
                 data-testid="ward-statistics-service-out-of-area"
               >
-                <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
+                <CardBody
+                  className={`${styles.bodyStack} ${detail.scrolls}`}
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Out of area figures"
+                >
                   <dl className={styles.figures}>
                     <div className={styles.figure}>
                       <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
@@ -819,7 +824,12 @@ function Placement({
       }
       data-testid="ward-statistics-service-placement"
     >
-      <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
+      <CardBody
+        className={`${styles.bodyStack} ${detail.scrolls}`}
+        tabIndex={0}
+        role="region"
+        aria-label="Placement figures"
+      >
         <dl className={styles.figures}>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-raised">
