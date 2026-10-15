@@ -59,6 +59,15 @@ describe("Top 25 item 20: long stay and delayed discharge summary", () => {
     expect(summary!.escalationReached).toBe(false);
   });
 
+  it("includes a stay past its expected date with no waiting hold, and skips one not yet due", () => {
+    const planned: Admission = { ...waiting, id: "ADM-PLANNED", blockReason: null };
+    const onTrack: Admission = { ...planned, id: "ADM-ONTRACK", expectedDischargeAt: now + day };
+    const summaries = longStaySummaries([planned, onTrack], now, []);
+    expect(summaries.map((summary) => summary.flag.admissionId)).toEqual(["ADM-PLANNED"]);
+    expect(summaries[0]!.flag.reasons).toEqual([]);
+    expect(summaries[0]!.escalationReached).toBe(true);
+  });
+
   it("renders one row per flagged person on the handover", () => {
     render(
       <LongStaySummary

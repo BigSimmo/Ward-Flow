@@ -60,7 +60,7 @@ export function LongStaySummary({
                   </Badge>
                 ) : null}
               </div>
-              <p className={styles.detail}>{strandedPromptText(flag)}</p>
+              <p className={styles.detail}>{strandedPromptText(flag) || "Past the expected discharge date"}</p>
               <p className={styles.detail}>
                 Barrier: {flag.barrier ?? "Not recorded"}. Hold: {summary.blockReason ?? "Not recorded"}.
               </p>

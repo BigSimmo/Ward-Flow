@@ -20,6 +20,8 @@ export type WalkRoundBed = {
   number: string;
   name: string;
   note: string;
+  /** What the bed's state is, without any time in it, so a ticking countdown is not a change. */
+  changeKey: string;
   glyph: WfTone | null;
   days: string;
   accessibleName: string;
@@ -37,14 +39,14 @@ type Props = {
 
 export function WardWalkRound({ beds, onOpenBed, renderList }: Props) {
   const ordered = [...beds].sort((left, right) => left.bedNumber - right.bedNumber);
-  // The round starts when the screen opens: a bed whose note moves after that is changed this round.
-  const [startNotes] = useState(() => new Map(beds.map((bed) => [bed.bedNumber, bed.note])));
+  // The round starts when the screen opens: a bed whose state moves after that is changed this round.
+  const [startKeys] = useState(() => new Map(beds.map((bed) => [bed.bedNumber, bed.changeKey])));
   const [reviewed, setReviewed] = useState<ReadonlySet<number>>(() => new Set());
   const [walking, setWalking] = useState<number | null>(null);
 
   const changed = (bed: WalkRoundBed) => {
-    const start = startNotes.get(bed.bedNumber);
-    return start !== undefined && start !== bed.note;
+    const start = startKeys.get(bed.bedNumber);
+    return start !== undefined && start !== bed.changeKey;
   };
   const mark = (bedNumber: number): WalkRoundMark => {
     const bed = ordered.find((item) => item.bedNumber === bedNumber);

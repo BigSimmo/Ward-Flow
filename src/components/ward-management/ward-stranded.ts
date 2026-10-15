@@ -122,7 +122,28 @@ export function longStaySummaries(
 ): LongStaySummary[] {
   const byId = new Map(admissions.map((admission) => [admission.id, admission]));
   const escalateAfterHours = CLINICAL_VALUES.delayedDischargeEscalation.value;
-  return strandedFlags(admissions, now, bedReleases).map((flag) => {
+  const flags = strandedFlags(admissions, now, bedReleases);
+  // A stay past its own expected discharge date belongs here too, even with no waiting hold, or
+  // its escalation point could never show.
+  const flagged = new Set(flags.map((flag) => flag.admissionId));
+  for (const admission of admissions) {
+    const expected = admission.expectedDischargeAt;
+    if (admission.state !== "occupied" || flagged.has(admission.id)) continue;
+    if (expected === null || !Number.isFinite(expected) || now <= expected) continue;
+    const days = daysInBed(admission, now);
+    if (days === null) continue;
+    flags.push({
+      admissionId: admission.id,
+      reasons: [],
+      days,
+      waitingOn: null,
+      barrier: admission.dischargeBarrier ?? null,
+    });
+  }
+  flags.sort((a, b) =>
+    a.days !== b.days ? b.days - a.days : a.admissionId < b.admissionId ? -1 : a.admissionId > b.admissionId ? 1 : 0,
+  );
+  return flags.map((flag) => {
     const admission = byId.get(flag.admissionId);
     const expected = admission?.expectedDischargeAt ?? null;
     const hasDate = expected !== null && Number.isFinite(expected);

@@ -16,7 +16,7 @@ function declinedMovement(): { movement: Movement; declinedUnitId: string } {
   )!;
   const first = deriveTopCompatibleWards(base, seeded.units, 3, now)[0]!;
   return {
-    movement: { ...base, declines: [{ unitId: first.unit.id, at: now, reason: "no_bed" }] },
+    movement: { ...base, declines: [{ unitId: first.unit.id, at: now, reason: "acuity_mix" }] },
     declinedUnitId: first.unit.id,
   };
 }
@@ -36,6 +36,12 @@ describe("Top 25 item 3: next ward after a refusal", () => {
     expect(deriveNextWardsAfterRefusal({ ...movement, acceptedUnitId: "x" }, seeded.units, now)).toBeUndefined();
   });
 
+  it("does not treat a ward that waitlisted as a refusal", () => {
+    const { movement, declinedUnitId } = declinedMovement();
+    const waitlisted = { ...movement, declines: [{ unitId: declinedUnitId, at: now, reason: "no_bed" as const }] };
+    expect(deriveNextWardsAfterRefusal(waitlisted, seeded.units, now)).toBeUndefined();
+  });
+
   it("adds a suggested ward to the referral selection, never referring by itself", () => {
     const { movement } = declinedMovement();
     const onChoose = vi.fn();
@@ -49,7 +55,7 @@ describe("Top 25 item 3: next ward after a refusal", () => {
         onChoose={onChoose}
       />,
     );
-    expect(screen.getByText(/Last refusal: .*no bed available\./)).toBeTruthy();
+    expect(screen.getByText(/Last refusal: .*acuity mix\./)).toBeTruthy();
     const rows = screen.getAllByTestId("ward-next-ward-row");
     expect(rows.length).toBeGreaterThan(0);
     fireEvent.click(screen.getAllByRole("button", { name: "Add to referral" })[0]!);

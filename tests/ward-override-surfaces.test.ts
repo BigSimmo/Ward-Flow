@@ -276,6 +276,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // nothing new to justify. A gate that has since failed is refused as usual, and this panel's own
   // Override control records the reason.
   "src/components/ward-management/coordinator/shortlist-panel.tsx": "ACCEPT_IN_PRINCIPLE",
+  // Top 25 item 8 (15 Oct 2026): the Capacity step down board's Refer is offered only for a ward
+  // that already passes the main eligibility rules with a Ready bed, and is greyed at the referral
+  // limit. Anything needing a reason is chosen in Placement, where shortlist-panel.tsx's Override
+  // records one. So there is no override to record here.
+  "src/components/ward-management/capacity/step-down-board.tsx": "REFER_TO_UNITS",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -584,8 +589,9 @@ describe("ward override-surface guard", () => {
     // compliance guard below actually passing against real, non-empty groups.
     // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
     // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(5);
-    expect(stillInViolation.size).toBe(5);
+    // Top 25 item 8: the step down board's plain Refer (6).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(6);
+    expect(stillInViolation.size).toBe(6);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -674,6 +680,8 @@ describe("ward override-surface guard", () => {
     // one construction site each) left with the file itself, deleted outright by item 41
     // (owner-approved 2026-09-17). Re-derived by running this file, not by arithmetic.
     expect(counts).toEqual({
+      // Top 25 item 8: the step down board's plain Refer (allowlisted above).
+      "src/components/ward-management/capacity/step-down-board.tsx::REFER_TO_UNITS": 1,
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,

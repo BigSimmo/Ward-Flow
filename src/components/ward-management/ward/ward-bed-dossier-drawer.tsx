@@ -288,7 +288,10 @@ export function WardBedDossierDrawer({
     ) : null;
   const prepNote = dueForPrep ? (
     <p className={styles.meta} data-testid="ward-drawer-discharge-prep">
-      Due out within {prepHours} hours. Record any discharge barrier now so it can be sorted before the day.
+      Due out within {prepHours} hours.
+      {stayDays !== null && stayDays < longStayDays
+        ? " Sort anything that could hold up the discharge before the day."
+        : " Record any discharge barrier now so it can be sorted before the day."}
     </p>
   ) : null;
   const admittedAt = admission?.arrivedAt ?? admission?.pulledAt ?? null;

@@ -17,7 +17,7 @@ import styles from "./step-down-board.module.css";
  * already has an open transfer movement; otherwise the control is not wired (D4).
  */
 export function StepDownBoard({ now }: { now: Instant }) {
-  const { admissions, units, movements, patients, referrals, dispatch } = useWardFlow();
+  const { admissions, units, movements, patients, referrals, dispatch, configuration } = useWardFlow();
   const patientOf = usePatientOf();
   const rows = useMemo(
     () => deriveStepDownBoard({ admissions, units, movements, patients, referrals, now }),
@@ -48,6 +48,14 @@ export function StepDownBoard({ now }: { now: Instant }) {
                             size="sm"
                             variant="sec"
                             disabled={row.transferMovement.referredUnitIds.includes(ward.unit.id)}
+                            // A plain refer has no reason to give, so a stay already at the cap is
+                            // greyed with why. Over the cap with a reason is done from Placement.
+                            disabledReason={
+                              !row.transferMovement.referredUnitIds.includes(ward.unit.id) &&
+                              row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap
+                                ? "The referral limit is reached. Ask more wards from Placement."
+                                : undefined
+                            }
                             onClick={() => {
                               const movement = row.transferMovement;
                               if (!movement) return;

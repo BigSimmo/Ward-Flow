@@ -9,6 +9,7 @@
  * own `HANDOVER_READY` rules are unchanged.
  */
 import { transportNeedState } from "@/components/ward-management/ward-derivations";
+import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
@@ -27,6 +28,8 @@ export function admissionChecklist(movement: Movement, referrals: readonly Refer
   const clearance = recordedMovementMedicalClearance(movement, referrals);
   const transportNeed = transportNeedState(movement);
   const transportBooked = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+  // No form on the record is settled only when the legal status needs none.
+  const formNeeded = movement.legalForm === undefined && requiresAuthorisedDestination(movement.legalStatus);
   return [
     {
       key: "medical_clearance",
@@ -38,10 +41,14 @@ export function admissionChecklist(movement: Movement, referrals: readonly Refer
     {
       key: "legal_form",
       label: "Legal form received",
-      state: movement.legalForm === undefined || movement.legalFormReceivedAt !== undefined ? "done" : "outstanding",
-      detail:
-        movement.legalForm === undefined
-          ? "No legal form on this record"
+      state:
+        !formNeeded && (movement.legalForm === undefined || movement.legalFormReceivedAt !== undefined)
+          ? "done"
+          : "outstanding",
+      detail: formNeeded
+        ? "Legal form not on this record"
+        : movement.legalForm === undefined
+          ? "No legal form needed on this record"
           : movement.legalFormReceivedAt !== undefined
             ? `Form ${movement.legalForm.code} received`
             : `Form ${movement.legalForm.code} not marked received`,

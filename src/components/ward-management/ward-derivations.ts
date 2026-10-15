@@ -2339,8 +2339,12 @@ export function deriveNextWardsAfterRefusal(
   units: readonly Unit[],
   now: Instant,
 ): NextWardsAfterRefusal | undefined {
-  if (movement.declines.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
-  const latestDecline = movement.declines.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
+  // A ward that waitlisted (no bed yet) still holds a live request, so it is not a refusal.
+  const refusals = movement.declines.filter(
+    (decline) => !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
+  );
+  if (refusals.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
+  const latestDecline = refusals.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
   const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
   const notAsked = units.filter((unit) => !asked.has(unit.id));
   return { latestDecline, candidates: deriveTopCompatibleWards(movement, notAsked, PARALLEL_REFERRAL_CAP, now) };

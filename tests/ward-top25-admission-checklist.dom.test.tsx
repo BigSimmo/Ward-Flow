@@ -27,7 +27,7 @@ const states = (m: Movement) =>
 
 describe("Top 25 item 14: admission arrival checklist", () => {
   it("ticks only recorded facts and never ticks the unwired checks", () => {
-    expect(states(movement({}))).toEqual({
+    expect(states(movement({ legalStatus: "Voluntary" }))).toEqual({
       medical_clearance: "outstanding",
       legal_form: "done",
       transport: "outstanding",
@@ -48,8 +48,16 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     expect(states(movement({ legalForm: form, legalFormReceivedAt: 5 })).legal_form).toBe("done");
   });
 
+  it("flags a missing form when the legal status needs one", () => {
+    const missing = admissionChecklist(movement({ legalStatus: "Involuntary inpatient" }), []).find(
+      (item) => item.key === "legal_form",
+    );
+    expect(missing?.state).toBe("outstanding");
+    expect(missing?.detail).toBe("Legal form not on this record");
+  });
+
   it("renders the two unwired checks with the agreed wording", () => {
-    render(<EdAdmissionChecklist movement={movement({})} referrals={[]} />);
+    render(<EdAdmissionChecklist movement={movement({ legalStatus: "Voluntary" })} referrals={[]} />);
     const card = screen.getByTestId("ward-ed-admission-checklist");
     expect(within(card).getByText("Arrival checklist, 1 of 3 recorded")).toBeTruthy();
     expect(within(card).getAllByText(NOT_WIRED)).toHaveLength(2);

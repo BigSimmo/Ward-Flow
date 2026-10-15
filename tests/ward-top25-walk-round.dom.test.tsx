@@ -10,6 +10,7 @@ const beds: WalkRoundBed[] = [
     number: "02",
     name: "Tom R.",
     note: "Accommodation",
+    changeKey: "occupied|barrier",
     glyph: "warning",
     days: "23d",
     accessibleName: "Bed 2",
@@ -19,6 +20,7 @@ const beds: WalkRoundBed[] = [
     number: "01",
     name: "Mia K.",
     note: "Expected out today",
+    changeKey: "occupied|due",
     glyph: "info",
     days: "12d",
     accessibleName: "Bed 1",
@@ -28,6 +30,7 @@ const beds: WalkRoundBed[] = [
     number: "03",
     name: "Free to offer",
     note: "Free to offer",
+    changeKey: "ready",
     glyph: null,
     days: "",
     accessibleName: "Bed 3",
@@ -86,10 +89,15 @@ describe("phone walk round (item 23, option D)", () => {
     expect(onOpenBed).toHaveBeenCalledWith(2);
   });
 
-  it("marks a bed changed this round when its note moves after the round starts", () => {
+  it("marks a bed changed this round when its state moves, not when only its text ticks", () => {
     const { rerender } = render(<WardWalkRound beds={beds} onOpenBed={vi.fn()} renderList={list} />);
     expect(screen.queryByText("Changed")).toBeNull();
-    const moved = beds.map((bed) => (bed.bedNumber === 1 ? { ...bed, note: "Discharge confirmed" } : bed));
+    const ticked = beds.map((bed) => (bed.bedNumber === 2 ? { ...bed, note: "Pull 26m left" } : bed));
+    rerender(<WardWalkRound beds={ticked} onOpenBed={vi.fn()} renderList={list} />);
+    expect(screen.queryByText("Changed")).toBeNull();
+    const moved = beds.map((bed) =>
+      bed.bedNumber === 1 ? { ...bed, note: "Discharge confirmed", changeKey: "occupied|confirmed" } : bed,
+    );
     rerender(<WardWalkRound beds={moved} onOpenBed={vi.fn()} renderList={list} />);
     expect(screen.getAllByText("Changed")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Walk from bed 01" }));
