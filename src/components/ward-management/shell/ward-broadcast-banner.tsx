@@ -296,7 +296,9 @@ function BannerBody({
   const subject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
   const myReply = desk.id ? latestReplies(alert).get(desk.id) : undefined;
   const board = kind === "directive" ? undefined : replyBoard(alert, units);
-  const acks = kind === "directive" ? directiveAcknowledgements(alert, units, deskInScope) : undefined;
+  const directiveAcks = kind === "directive" ? directiveAcknowledgements(alert, units, deskInScope) : undefined;
+  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
+  const acks = directiveAcks && (directiveAcks.of > 0 || !deskInScope) ? directiveAcks : undefined;
   const showAnswers = (needsAnswer || changing) && kind !== "directive";
   const headline = subject ? subject.displayName : alert.title;
   const countText = board
