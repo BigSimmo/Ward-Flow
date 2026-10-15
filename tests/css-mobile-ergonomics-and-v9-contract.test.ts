@@ -28,7 +28,7 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
       "src/components/ward-management/community/community-team-phone.module.css",
       "src/components/ward-management/ed/ed-board-controls.module.css",
       "src/components/ward-management/ed/ed.module.css",
-      "src/components/ward-management/tools/ward-mha-calculator.module.css",
+      "src/components/ward-management/tools/ward-tools-sheet.module.css",
       "src/components/ward-management/referrals/arrival-time-modal.module.css",
     ];
     for (const modPath of mobileInputModules) {

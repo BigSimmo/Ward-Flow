@@ -675,16 +675,18 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   }
 });
 
-test("@mockup drawer workspace keeps Figures focus and every task reachable on a short phone", async ({ page }) => {
+test("@mockup drawer workspace keeps All figures focus and every task reachable on a short phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
   await gotoWardChrome(page);
   const bar = page.getByTestId("ward-bar");
-  await expect(bar.getByTestId("ward-bar-figures-trigger")).toHaveCount(0);
+  await expect(bar.getByTestId("ward-tools-service-now")).toHaveCount(0);
   await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools" });
-  await tools.getByTestId("ward-bar-figures-trigger").click();
-  const figures = tools.getByRole("button", { name: "Figures", exact: true });
-  await expect(figures).toHaveAttribute("aria-pressed", "true");
+  // Tools review (15 Oct 2026): Service now sits at the top of the one sheet, All figures below it.
+  await expect(tools.getByTestId("ward-tools-service-now")).toBeVisible();
+  const figures = tools.getByTestId("ward-tools-toggle-figures");
+  await figures.click();
+  await expect(figures).toHaveAttribute("aria-expanded", "true");
   await expect(figures).toBeFocused();
   await expect(tools.getByTestId("ward-stats-drawer-content")).toBeVisible();
   await page.keyboard.press("Escape");

@@ -25,7 +25,7 @@ import { DowntimePackScreen } from "@/components/ward-management/reports/downtim
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { ToastProvider } from "@/components/wf";
-import { OperationalLinks } from "@/components/ward-management/tools/ward-tools-workspace";
+import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -389,8 +389,10 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-chronology-table")).toBeTruthy();
   });
 
-  it("is reachable from the Tools drawer's shortcuts", () => {
-    render(<OperationalLinks onNavigate={() => {}} />);
+  it("is reachable from the Tools sheet's Print and share group", () => {
+    inProvider(
+      <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={() => {}} onNewReferral={() => {}} />,
+    );
     expect(screen.getByRole("link", { name: /Downtime pack/u })).toHaveAttribute(
       "href",
       "/mockups/ward-flow/reports/downtime",
