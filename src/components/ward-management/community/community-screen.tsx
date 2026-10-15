@@ -142,6 +142,7 @@ import {
   DEMO_COMMUNITY_INPATIENTS,
   DEMO_COMMUNITY_EGRESS,
   DEMO_COMMUNITY_CASELOAD,
+  DEMO_COMMUNITY_UMRNS,
   DEMO_COMMUNITY_STAFF,
   resolveCommunityTeamConfig,
 } from "./community-demo-cohort";
@@ -511,7 +512,9 @@ export function CommunityScreen({
   const identityOf = (subject: PatientResolutionSubject) =>
     patientIdentityLine(resolveSubjectPatient(subject, umrnLookup));
   const demoUmrnOf = (patientId: string) =>
-    DEMO_COMMUNITY_CASELOAD.find((row) => row.patientId === patientId)?.umrn ?? UMRN_NOT_RECORDED;
+    DEMO_COMMUNITY_CASELOAD.find((row) => row.patientId === patientId)?.umrn ??
+    DEMO_COMMUNITY_UMRNS[patientId] ??
+    UMRN_NOT_RECORDED;
   const team =
     communityTeamById(teamId) ??
     (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);

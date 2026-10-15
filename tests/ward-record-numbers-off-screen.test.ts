@@ -2,6 +2,13 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import {
+  DEMO_COMMUNITY_CASELOAD,
+  DEMO_COMMUNITY_EGRESS,
+  DEMO_COMMUNITY_INPATIENTS,
+  DEMO_COMMUNITY_REFERRALS,
+  DEMO_COMMUNITY_UMRNS,
+} from "@/components/ward-management/community/community-demo-cohort";
 
 /**
  * D-39 (Josh, 15 October 2026: "you should have purged all these numberings from the site").
@@ -42,5 +49,17 @@ describe("record numbers stay off Ward Flow screens (D-39)", () => {
         .map(({ at, line }) => `${at} ${line.trim()}`);
     });
     expect(offending).toEqual([]);
+  });
+});
+
+describe("the community demonstration names every person by UMRN (D-39)", () => {
+  it("gives each demonstration person a distinct UMRN", () => {
+    const caseloadUmrn = new Map(DEMO_COMMUNITY_CASELOAD.map((row) => [row.patientId, row.umrn]));
+    const people = new Set(
+      [...DEMO_COMMUNITY_REFERRALS, ...DEMO_COMMUNITY_INPATIENTS, ...DEMO_COMMUNITY_EGRESS].map((row) => row.patientId),
+    );
+    const umrns = [...people].map((patientId) => caseloadUmrn.get(patientId) ?? DEMO_COMMUNITY_UMRNS[patientId]);
+    expect(umrns.every((umrn) => umrn !== undefined)).toBe(true);
+    expect(new Set(umrns).size).toBe(people.size);
   });
 });
