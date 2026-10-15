@@ -9,6 +9,8 @@ export type SharedSnapshot = {
   revision: number;
   now: number;
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
+  /** False when the server refuses the demonstration controls (clock, reset and scenario). */
+  demoControls?: boolean;
 };
 type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
 export type SharedView = {
@@ -24,6 +26,8 @@ type PendingCommand = {
   commandId: string;
   expectedRevision: number;
   event: WardFlowEvent;
+  /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
+  reply?: "revision";
 };
 
 export class SharedWorkspaceClient {
@@ -32,6 +36,8 @@ export class SharedWorkspaceClient {
   private queue: WardFlowEvent[] = [];
   private disposed = false;
   private busy = false;
+  /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
+  private headRevision = 0;
   private readonly lifetime = new AbortController();
   private accessDenied() {
     return this.view.status === "not-authorised";
@@ -105,9 +111,18 @@ export class SharedWorkspaceClient {
     if (this.busy || this.pending || this.disposed || this.view.status === "not-authorised") return;
     this.busy = true;
     try {
-      const { response, value } = await this.request("/v1/workspace");
+      const current = this.view.snapshot;
+      // The poll names the revision it holds; an unchanged workspace answers with its clock only.
+      const { response, value } = await this.request(
+        current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
+      );
       if (!response.ok) throw new Error("Workspace unavailable");
-      this.adopt(value.snapshot);
+      if (value?.notModified === true) {
+        if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
+          throw new Error("Incompatible workspace data");
+        if (this.view.snapshot === current)
+          this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
+      } else this.adopt(value.snapshot);
       this.publish({ status: "ready", error: this.view.status === "unavailable" ? null : this.view.error });
     } catch {
       if (!this.accessDenied())
@@ -144,8 +159,9 @@ export class SharedWorkspaceClient {
             classification: "synthetic",
             dataMode: "prototype",
             commandId: (this.options.commandId ?? (() => crypto.randomUUID()))(),
-            expectedRevision: snapshot.revision,
+            expectedRevision: Math.max(snapshot.revision, this.headRevision),
             event,
+            ...(this.queue.length ? { reply: "revision" as const } : {}),
           };
         }
         this.publish({ status: "saving", error: null });
@@ -153,6 +169,8 @@ export class SharedWorkspaceClient {
         const { response, value } = await this.request("/v1/workspace/commands", command);
         if (response.status >= 500) throw new Error("Save not confirmed");
         if (value.snapshot) this.adopt(value.snapshot);
+        else if (response.ok && Number.isSafeInteger(value.commandRevision))
+          this.headRevision = Math.max(this.headRevision, value.commandRevision);
         this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });
         this.pending = null;
         if (!response.ok) {
@@ -162,7 +180,9 @@ export class SharedWorkspaceClient {
             error:
               response.status === 409
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
-                : "The action was not applied. Review the workflow requirements.",
+                : command.event.role === "demo" && value.snapshot?.demoControls === false
+                  ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                  : "The action was not applied. Review the workflow requirements.",
           });
           break;
         }
@@ -176,6 +196,9 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
+      // A run that ended on a revision-only reply reads the board once to catch up.
+      if (!this.disposed && this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready")
+        void this.refresh();
     }
   }
   /**

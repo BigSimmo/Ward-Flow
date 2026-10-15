@@ -49,6 +49,7 @@ export async function createBackend(config, dependencies = {}) {
         workspaceId: config.workspaceId,
         engine,
         push: await createPush(config),
+        demoEvents: config.sharedDemoEvents === true,
       });
     }
     return { config, authenticate, sharedStore, pool };

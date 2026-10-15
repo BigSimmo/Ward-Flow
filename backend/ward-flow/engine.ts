@@ -22,6 +22,35 @@ export function validCommand(value: unknown): value is Record<string, unknown> &
   );
 }
 
+/** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */
+export function demoOnlyCommand(value: unknown): boolean {
+  if (!validCommand(value)) return false;
+  const roles: readonly string[] = EVENT_ROLE[value.type];
+  return roles.length === 1 && roles[0] === "demo";
+}
+
+/**
+ * The newest audit entries kept in the saved workspace. The database audit table is the full
+ * record; the workspace copy only feeds the on-screen views, and an unbounded copy eventually
+ * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept,
+ * and so are this scenario's newest record-access receipts, because an open record is read
+ * against its receipt.
+ */
+export const PERSISTED_AUDIT_EVENTS = 1000;
+export function boundAudit(state: WardFlowState): WardFlowState {
+  const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
+  if (excess <= 0) return state;
+  const kept = new Set(state.auditReviews.map((review) => review.eventId));
+  state.auditEvents
+    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
+    .slice(-PERSISTED_AUDIT_EVENTS)
+    .forEach((entry) => kept.add(entry.id));
+  return {
+    ...state,
+    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
+  };
+}
+
 function changedFacts(before: WardFlowState, after: WardFlowState) {
   const changes: Record<string, unknown> = {};
   const skip = new Set(["auditEvents", "auditReviews", "rejections"]);
@@ -97,8 +126,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
   const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);
+  const saved = boundAudit(next);
+  if (saved !== next && !isValidSharedWardFlowState(saved)) throw new Error("invalid-command");
   return {
-    world: { ...world, state: next },
+    world: { ...world, state: saved },
     outcome: "accepted" as const,
     changes: { domainAudit, reset, facts: changedFacts(world.state, next) },
     reason: null,
