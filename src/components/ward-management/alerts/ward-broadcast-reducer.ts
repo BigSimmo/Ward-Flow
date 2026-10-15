@@ -15,6 +15,8 @@ import {
   BED_CALL_ANSWERS,
   BED_CALL_MAX_BEDS,
   BROADCAST_CATEGORIES,
+  DEFAULT_BROADCAST_DURATION_MINUTES,
+  DEFAULT_BROADCAST_EXTENSION_MINUTES,
   DISPATCHABLE_BROADCAST_KINDS,
   PULL_NOW_ANSWERS,
   broadcastKind,
@@ -28,6 +30,8 @@ import {
   pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
+  type BroadcastSeverity,
+  type WardBroadcastAlert,
 } from "./ward-broadcast-model";
 import { wardsInBroadcastScope } from "./global-alert-view";
 
@@ -365,4 +369,123 @@ export function reduceBroadcastEvent(state: WardFlowState, event: WardFlowEvent)
     return undefined;
   }
   return next;
+}
+
+/**
+ * Extends an active broadcast alert's expiry by `extensionMinutes` (defaults to +2 hours / 120 minutes) (#25).
+ */
+export function extendBroadcastAlert(
+  state: WardFlowState,
+  alertId: string,
+  now: Instant,
+  extensionMinutes: number = DEFAULT_BROADCAST_EXTENSION_MINUTES,
+): WardFlowState {
+  if (finiteInstant(extensionMinutes) === null || extensionMinutes <= 0) {
+    return state;
+  }
+  const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
+  const target = existingAlerts.find((a) => a.id === alertId);
+  if (!target || target.status !== "active" || target.expiresAt <= now) {
+    return state;
+  }
+  const baseExpiry = target.expiresAt;
+  return {
+    ...state,
+    broadcastAlerts: existingAlerts.map((a) =>
+      a.id === alertId
+        ? {
+            ...a,
+            durationMinutes: a.durationMinutes + extensionMinutes,
+            expiresAt: (baseExpiry + extensionMinutes) as Instant,
+          }
+        : a,
+    ),
+  };
+}
+
+export interface WardBroadcastStandaloneState {
+  activeAlert: WardBroadcastAlert | null;
+}
+
+export const initialWardBroadcastState: WardBroadcastStandaloneState = {
+  activeAlert: null,
+};
+
+export type WardBroadcastStandaloneAction =
+  | {
+      type: "CREATE_BROADCAST_ALERT";
+      id: string;
+      title?: string;
+      message: string;
+      severity: BroadcastSeverity;
+      author: string;
+      now: string | Instant;
+      durationMinutes?: number;
+    }
+  | {
+      type: "EXTEND_BROADCAST_ALERT";
+      /** The clock the banner reads, so an elapsed alert cannot be revived by extending it. */
+      now: string | Instant;
+      extensionMinutes?: number;
+    }
+  | {
+      type: "CLEAR_BROADCAST_ALERT";
+    };
+
+export function wardBroadcastReducer(
+  state: WardBroadcastStandaloneState,
+  action: WardBroadcastStandaloneAction,
+): WardBroadcastStandaloneState {
+  switch (action.type) {
+    case "CREATE_BROADCAST_ALERT": {
+      if (!action.message.trim()) return state;
+      const durationMinutes =
+        action.durationMinutes && action.durationMinutes > 0
+          ? action.durationMinutes
+          : DEFAULT_BROADCAST_DURATION_MINUTES;
+      const expiresAt =
+        typeof action.now === "number"
+          ? ((action.now + durationMinutes) as Instant)
+          : new Date(Date.parse(action.now) + durationMinutes * 60_000).toISOString();
+      return {
+        activeAlert: {
+          id: action.id,
+          title: action.title ?? action.message.trim(),
+          message: action.message.trim(),
+          severity: action.severity,
+          author: action.author,
+          createdAt: action.now,
+          expiresAt,
+          status: "active",
+        },
+      };
+    }
+    case "EXTEND_BROADCAST_ALERT": {
+      if (!state.activeAlert) return state;
+      if (state.activeAlert.status !== "active") return state;
+      const toMs = (value: string | Instant) => (typeof value === "number" ? value * 60_000 : Date.parse(value));
+      const expiresMs = toMs(state.activeAlert.expiresAt);
+      const nowMs = toMs(action.now);
+      if (!Number.isFinite(expiresMs) || !Number.isFinite(nowMs) || expiresMs <= nowMs) return state;
+      const ext =
+        action.extensionMinutes && action.extensionMinutes > 0
+          ? action.extensionMinutes
+          : DEFAULT_BROADCAST_EXTENSION_MINUTES;
+      const nextExpiresAt =
+        typeof state.activeAlert.expiresAt === "number"
+          ? ((state.activeAlert.expiresAt + ext) as Instant)
+          : new Date(Date.parse(state.activeAlert.expiresAt) + ext * 60_000).toISOString();
+      return {
+        activeAlert: {
+          ...state.activeAlert,
+          expiresAt: nextExpiresAt,
+        },
+      };
+    }
+    case "CLEAR_BROADCAST_ALERT": {
+      return { activeAlert: null };
+    }
+    default:
+      return state;
+  }
 }

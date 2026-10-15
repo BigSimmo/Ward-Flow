@@ -18,6 +18,7 @@ import {
   type BroadcastAlert,
   type BroadcastAnswer,
   type BroadcastReply,
+  type WardBroadcastAlert,
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import {
   bannerEntriesForDesk,
@@ -41,9 +42,17 @@ import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referra
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import styles from "./ward-broadcast-banner.module.css";
 
-interface WardBroadcastBannerProps {
+export interface WardBroadcastBannerProps {
   /** Overrides the desk read from the route. Tests and previews only. */
   currentUnitId?: string;
+  /** Optional controlled alert (#25). When omitted, reads from WardFlowProvider context. */
+  activeAlert?: WardBroadcastAlert | null;
+  /** Optional reference clock for controlled mode (#25). */
+  now?: string | Instant;
+  /** Optional quick +2h extension callback (#25). */
+  onExtend?: () => void;
+  /** Optional stand-down / resolved callback (#25). */
+  onClear?: () => void;
 }
 
 const TONE_GLYPH: Record<BannerTone, WfTone> = {
@@ -73,12 +82,108 @@ function answerText(reply: BroadcastReply, now: Instant): string {
   return label;
 }
 
+function toControlledMinutes(val: string | Instant): number {
+  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+  const parsed = Date.parse(val);
+  if (Number.isNaN(parsed)) return 0;
+  return Math.floor(parsed / 60_000);
+}
+
+function computeControlledRemainingMinutes(expiresAt: string | Instant, now?: string | Instant): number {
+  const expMin = toControlledMinutes(expiresAt);
+  const nowMin = now !== undefined ? toControlledMinutes(now) : Math.floor(Date.now() / 60_000);
+  return expMin - nowMin;
+}
+
 /**
  * THE ONE GLOBAL ALERT SLOT (option A, 10 Oct 2026). Sits under the top bar on every page and
  * shows the most urgent live alert for the desk this route is. Red (a thin edge, never a fill) only
  * when this desk must act now. No full screen flash: one pulse on arrival, then a steady edge.
  */
-export function WardBroadcastBanner({ currentUnitId }: WardBroadcastBannerProps) {
+export function WardBroadcastBanner(props: WardBroadcastBannerProps) {
+  if (props.activeAlert !== undefined) {
+    return (
+      <ControlledBroadcastBanner
+        activeAlert={props.activeAlert}
+        now={props.now}
+        onExtend={props.onExtend}
+        onClear={props.onClear}
+      />
+    );
+  }
+  return <ContextBroadcastBanner currentUnitId={props.currentUnitId} />;
+}
+
+function ControlledBroadcastBanner({
+  activeAlert,
+  now,
+  onExtend,
+  onClear,
+}: {
+  activeAlert: WardBroadcastAlert | null;
+  now?: string | Instant;
+  onExtend?: () => void;
+  onClear?: () => void;
+}) {
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    if (now !== undefined || !activeAlert) return;
+    const timer = window.setInterval(() => setClockTick((t) => t + 1), 30_000);
+    return () => window.clearInterval(timer);
+  }, [activeAlert, now]);
+
+  if (!activeAlert || activeAlert.status === "stood_down" || activeAlert.status === "expired") {
+    return null;
+  }
+  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now);
+  if (remainingMinutes <= 0) {
+    return null;
+  }
+  const timeLabel = formatTimeRemaining(remainingMinutes as Instant, 0 as Instant);
+  const isCritical = activeAlert.severity === "critical";
+
+  return (
+    <section
+      className={styles.banner}
+      data-tone={isCritical ? "critical" : "warning"}
+      data-severity={activeAlert.severity}
+      data-testid="ward-broadcast-banner"
+      role={isCritical ? "alert" : "status"}
+      aria-live={isCritical ? "assertive" : "polite"}
+      aria-atomic="true"
+      aria-label={activeAlert.title ?? activeAlert.message}
+    >
+      <span className="sr-only">These counts are invented figures.</span>
+      <div className={styles.row}>
+        <div className={styles.lead}>
+          <StatusGlyph tone={isCritical ? "danger" : "warning"} size={12} />
+          <strong className={styles.headline}>{activeAlert.title ?? activeAlert.message}</strong>
+          {activeAlert.author ? <span className={styles.meta}>{activeAlert.author}</span> : null}
+        </div>
+        <div className={styles.actions}>
+          <span className={styles.meta} title="Time until this alert ends">
+            <span className={styles.mono}>{timeLabel}</span>
+          </span>
+          {onExtend ? (
+            <Button size="sm" onClick={onExtend}>
+              Extend <span>+2h</span>
+            </Button>
+          ) : null}
+          {onClear ? (
+            <Button size="sm" variant="ghost" onClick={onClear}>
+              Stand Down — Resolved
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      {activeAlert.title && activeAlert.title !== activeAlert.message ? (
+        <p className={styles.message}>{activeAlert.message}</p>
+      ) : null}
+    </section>
+  );
+}
+
+function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
   const { broadcastAlerts, dispatch, units, movements, patients, referrals } = useWardFlow();
   const now = useWardFlowClock();
   const pathname = usePathname() ?? "";

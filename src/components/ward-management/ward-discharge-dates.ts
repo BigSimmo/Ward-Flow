@@ -259,3 +259,115 @@ export function dischargeDateAccuracy(admissions: Admission[]): { met: number; m
   const total = met + moved;
   return total === 0 ? null : { met, moved, total };
 }
+
+/**
+ * Default conditions for Criteria-Led Discharge (CLD) (#9).
+ * Enables weekend or morning nurse-led discharge execution once a consultant authorises CLD
+ * and all three operational criteria are met.
+ */
+export const CLD_DEFAULT_CONDITIONS = [
+  "Overnight leave completed without incident",
+  "Discharge scripts (TTO) dispensed by pharmacy",
+  "Carer / community follow-up confirmed",
+] as const;
+
+export type CldDefaultCondition = (typeof CLD_DEFAULT_CONDITIONS)[number];
+
+export interface CriteriaLedDischargeEvaluation {
+  canNurseExecuteDischarge: boolean;
+  consultantAuthorised: boolean;
+  metCount: number;
+  totalCount: number;
+  unmetConditions: string[];
+}
+
+export function evaluateCriteriaLedDischarge(input: {
+  consultantAuthorised: boolean;
+  conditionsMet: Readonly<Record<string, boolean>>;
+}): CriteriaLedDischargeEvaluation {
+  // The three standard conditions are always required; a consultant's own extra conditions are added.
+  // A standard condition missing from the record counts as unmet, so a partial record cannot unlock discharge.
+  const conditionList = Array.from(new Set<string>([...CLD_DEFAULT_CONDITIONS, ...Object.keys(input.conditionsMet)]));
+  const unmetConditions = conditionList.filter((cond) => !input.conditionsMet[cond]);
+  const totalCount = conditionList.length;
+  const metCount = totalCount - unmetConditions.length;
+  return {
+    canNurseExecuteDischarge: Boolean(input.consultantAuthorised && totalCount > 0 && unmetConditions.length === 0),
+    consultantAuthorised: input.consultantAuthorised,
+    metCount,
+    totalCount,
+    unmetConditions,
+  };
+}
+
+export interface EddDriftBadge {
+  revisionCount: number;
+  driftDays: number;
+  confidence: "high" | "medium" | "low";
+  requiresConsultantReview: boolean;
+  rememberedReason?: string;
+  label: string;
+}
+
+/**
+ * EDD Drift & Confidence Indicator (#21).
+ * Tracks how many times a patient's Expected Discharge Date has been pushed back (`dischargeDateMoves`
+ * or `eddRevisions`), computing cumulative drift in days (`EDD +Nd`) and remembering `dischargeDelayReason`
+ * for 1-tap extension.
+ */
+export function deriveEddDriftBadge(input: {
+  dischargeDateMoves?: number;
+  eddRevisions?: readonly string[];
+  driftDays?: number;
+  dischargeDelayReason?: string;
+}): EddDriftBadge {
+  const rawCount =
+    input.dischargeDateMoves !== undefined
+      ? input.dischargeDateMoves
+      : Array.isArray(input.eddRevisions)
+        ? Math.max(0, input.eddRevisions.length - 1)
+        : 0;
+  const revisionCount = Number.isFinite(rawCount) && rawCount > 0 ? Math.floor(rawCount) : 0;
+
+  let driftDays =
+    input.driftDays !== undefined && Number.isFinite(input.driftDays) ? Math.max(0, Math.floor(input.driftDays)) : null;
+  if (input.driftDays === undefined && Array.isArray(input.eddRevisions) && input.eddRevisions.length >= 2) {
+    const firstMs = Date.parse(input.eddRevisions[0]!);
+    const lastMs = Date.parse(input.eddRevisions[input.eddRevisions.length - 1]!);
+    if (!Number.isNaN(firstMs) && !Number.isNaN(lastMs) && lastMs >= firstMs) {
+      driftDays = Math.round((lastMs - firstMs) / 86_400_000);
+    }
+  }
+
+  const driftPrefix = driftDays !== null && driftDays > 0 ? `EDD +${driftDays}d · ` : "";
+  const rememberedReason = input.dischargeDelayReason;
+
+  if (revisionCount >= 3) {
+    return {
+      revisionCount,
+      driftDays: driftDays ?? 0,
+      confidence: "low",
+      requiresConsultantReview: true,
+      ...(rememberedReason !== undefined ? { rememberedReason } : {}),
+      label: `${driftPrefix}Moved ×${revisionCount} · Consultant review`,
+    };
+  }
+  if (revisionCount >= 1) {
+    return {
+      revisionCount,
+      driftDays: driftDays ?? 0,
+      confidence: "medium",
+      requiresConsultantReview: false,
+      ...(rememberedReason !== undefined ? { rememberedReason } : {}),
+      label: `${driftPrefix}Moved ×${revisionCount}`,
+    };
+  }
+  return {
+    revisionCount: 0,
+    driftDays: 0,
+    confidence: "high",
+    requiresConsultantReview: false,
+    ...(rememberedReason !== undefined ? { rememberedReason } : {}),
+    label: "On track",
+  };
+}
