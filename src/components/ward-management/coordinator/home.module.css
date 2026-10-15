@@ -1401,6 +1401,26 @@ button.registerRow:hover {
   text-overflow: ellipsis;
 }
 
+/* Phone review F-31: a quiet text link, not a full-width filled pill that read as the page's main
+ * button. The transparent box keeps its 44px tap height. */
+.phoneSince.phoneSince {
+  flex: 0 1 auto;
+  justify-content: flex-start;
+  padding: 0 2px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.phoneSince.phoneSince:hover {
+  background: transparent;
+  text-decoration-color: currentColor;
+}
+
 .phoneSinceMono {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;

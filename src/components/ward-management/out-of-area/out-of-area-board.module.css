@@ -1393,11 +1393,14 @@ fieldset.formRow {
   white-space: nowrap;
 }
 
+/* F-05 (phone review, Oct 2026): the bed and hospital, or the reason, wrap to a second line rather
+   than losing the destination's end ("Bunbury Acute Psychiatri…"). Phone cards only. */
 .pcLine3 {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .pcLine4 {
@@ -1436,6 +1439,14 @@ fieldset.formRow {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+/* F-05: the destination hospital and provider wrap rather than cut. */
+.phoneLeave .two > span {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .phoneLeaveTime {
@@ -1573,6 +1584,13 @@ fieldset.formRow {
   padding: 0 var(--wf-s-1);
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.peekLine .truncate {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .peekLine b {

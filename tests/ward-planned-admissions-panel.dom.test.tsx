@@ -172,7 +172,7 @@ describe("planned admissions panel", () => {
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getAllByRole("button", { name: /, Initials RK$/ })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: / for Initials RK$/ })[0]!);
     const drawer = screen.getByRole("complementary", { name: "Selected alert" });
     expect(drawer).toHaveTextContent("Initials RK");
     const booking = within(drawer).getByTestId("alerts-drawer-booking");

@@ -155,5 +155,15 @@ export const config = {
   // app ships (src/app/favicon.ico, src/app/icon.svg). There is no blanket image
   // extension skip any more (A4-6): a page route whose last segment merely ends
   // in .png or .svg must still get the CSP and the trust-header stripping.
-  matcher: ["/api/:path*", "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$).*)"],
+  // PWA plan item 7 (Oct 2026) also skips the generated app images and the
+  // manifest by whole path, never by extension: /icons/* and /apple-icon are
+  // image route handlers, /screenshots/* are static images and
+  // /manifest.webmanifest is JSON. None is a page, reads a trust header or
+  // runs script, so the per-request nonce does nothing for them. The service
+  // worker script and the offline page stay in: the worker runs under the CSP
+  // its own script was sent with, which keeps its fetches same-origin.
+  matcher: [
+    "/api/:path*",
+    "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$|icons/|apple-icon$|screenshots/|manifest\\.webmanifest$).*)",
+  ],
 };

@@ -93,7 +93,8 @@ export function AlertDetail({
   const seen = acknowledgements?.at(-1);
   const action = alertActionFor(item, subject);
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
-  const subjectLine = `${item.title}, ${subject.displayName}`;
+  // "for", not a comma: the family-first name has its own comma ("Smith, Alice").
+  const subjectLine = `${item.title} for ${subject.displayName}`;
 
   const booking = item.plannedAdmission;
   const facts: [string, string][] = [];
@@ -223,7 +224,7 @@ export function AlertDetail({
         {snoozedUntil ? (
           <Button
             size="sm"
-            aria-label={`Return ${item.title} now, ${subject.displayName}`}
+            aria-label={`Return ${item.title} now for ${subject.displayName}`}
             onClick={() => handlers.onReturn(item)}
           >
             Return now

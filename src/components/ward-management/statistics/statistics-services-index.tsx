@@ -30,7 +30,7 @@ import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
-import { PhoneBody, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
+import { PhoneBody, PhoneDotKey, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -209,7 +209,7 @@ export function StatisticsServicesIndexScreen() {
                 value={
                   <span className={phone.flagged}>
                     {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {entry.departments === 0 ? "No ED" : entry.waiting}
+                    {entry.departments === 0 ? <span className={phone.word}>No ED</span> : entry.waiting}
                   </span>
                 }
                 time={entry.departments === 0 ? undefined : "in ED"}
@@ -217,6 +217,9 @@ export function StatisticsServicesIndexScreen() {
               />
             ))}
           </PhoneList>
+          <PhoneDotKey testId="ward-statistics-services-dot-key">
+            {`Amber dot: someone has waited in ED past ${LONG_WAIT_HOURS} hours`}
+          </PhoneDotKey>
           <PhoneSheetRow
             icon={Send}
             title="Where referrals were accepted"

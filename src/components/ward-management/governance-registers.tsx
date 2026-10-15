@@ -63,6 +63,7 @@ import {
   Hero,
   HeroStat,
   HeroTrack,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -1279,8 +1280,11 @@ function GovernanceSession({
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
       <PhoneHero
         eyebrow="Governance · This session"
+        // F-08 (phone review, Oct 2026): real-looking names sit beside "Change legal status" here, so
+        // the hero carries the Demo pill and says the records are invented.
+        chip={<LiveChip state="live" onHero />}
         title={reviewTitle}
-        sub={`${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
+        sub={`Invented records · ${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
         figures={[
           {
             id: "override",

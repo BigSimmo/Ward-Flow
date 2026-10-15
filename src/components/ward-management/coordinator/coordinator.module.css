@@ -1705,6 +1705,13 @@
   font-size: var(--t-1);
 }
 
+/* Phone: 16px so iOS Safari does not zoom the page on focus (the sign-off name and its selects). */
+@media (max-width: 48rem) {
+  .shortlistOverrideSelect {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .shortlistOverrideSubmit {
   display: inline-flex;
   min-height: var(--ward-tap);

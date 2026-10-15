@@ -1092,6 +1092,15 @@
   resize: vertical;
 }
 
+/* Phone: fields read at 16px so iOS Safari does not zoom the page on focus. Desktop keeps 13px. */
+@media (max-width: 48rem) {
+  .fieldInput,
+  .fieldSelect,
+  .clinicalTextarea {
+    font-size: max(1rem, 16px);
+  }
+}
+
 .formField[data-invalid="true"] .fieldInput,
 .formField[data-invalid="true"] .fieldSelect {
   border-color: var(--wf-danger);
@@ -2343,6 +2352,21 @@ details.refCard > summary {
   background: var(--wf-surface-2);
 }
 
+/* Phone: the new-patient box keeps to the card's width (F-03). Without a zero minimum, the card
+   body's grid track grew to the fields' own width and ran them off the right edge. */
+@media (max-width: 48rem) {
+  .newPatient {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .newPatient .fieldInput,
+  .newPatient .fieldSelect {
+    max-width: 100%;
+  }
+}
+
 .letterText {
   overflow-x: auto;
   margin: 0;
@@ -3108,7 +3132,8 @@ details.refCard > summary {
   .drawerWide[data-ph-mode] .sendReferralFoot {
     position: sticky;
     z-index: 6;
-    bottom: 0;
+    /* F-07: rests on the iOS keyboard while it is up (0px otherwise). */
+    bottom: var(--keyboard-height, 0px);
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;

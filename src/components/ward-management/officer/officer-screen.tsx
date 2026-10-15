@@ -1496,7 +1496,15 @@ export function OfficerScreen() {
       {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
       {pillStat("collected", inCustody, "On board", "On board", "info")}
       {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
-      {pillStat("forms", formsOutstanding, "Jobs need forms", "Need forms", "neutral")}
+      {/* F-23 (phone review, Oct 2026): outstanding forms take the warning glyph on phone, not the
+          grey circle "0 Late" shows. A warning only: En route is never blocked. */}
+      {pillStat(
+        "forms",
+        formsOutstanding,
+        "Jobs need forms",
+        "Need forms",
+        isPhone && formsOutstanding > 0 ? "warning" : "neutral",
+      )}
     </>
   );
 
@@ -1638,8 +1646,8 @@ export function OfficerScreen() {
                 {formatInstantWithDay(topJob.arrivalDetails.estimatedArrivalAt, now)}
               </span>
             ) : packOutstanding(topJob) ? (
-              <span className={styles.nextCardLine}>
-                <StatusGlyph tone="neutral" size={9} /> {PACK_SLOTS.length - packCount(topJob)} of {PACK_SLOTS.length}{" "}
+              <span className={cx(styles.nextCardLine, styles.warnText)}>
+                <StatusGlyph tone="warning" size={9} /> {PACK_SLOTS.length - packCount(topJob)} of {PACK_SLOTS.length}{" "}
                 forms still to upload
               </span>
             ) : null}

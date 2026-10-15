@@ -22,6 +22,7 @@ import { useWardFlowClock } from "@/components/ward-management/ward-flow-provide
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
+import { PhoneDotKey } from "./statistics-phone-parts";
 import { STATISTICS_OVERVIEW_HREF, STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
 
@@ -144,7 +145,8 @@ export function StatisticsSummaryPhone({
           title={`${ready} ${ready === 1 ? "bed" : "beds"} ready now`}
           sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
           figures={[
-            { id: "occupied", value: occupied, label: `${occupiedPct.toFixed(1)}% in use` },
+            // Phone review F-26: the big figure says what it counts, with its share beside it.
+            { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
             { id: "ed", value: waitingInEd, label: "Waiting in ED" },
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}
@@ -210,6 +212,9 @@ export function StatisticsSummaryPhone({
               </li>
             ) : null}
           </ul>
+          <PhoneDotKey testId="ward-statistics-summary-dot-key">
+            {`Amber dot: ${BED_ALERT_THRESHOLD_PERCENT}% or more of beds in use`}
+          </PhoneDotKey>
         </div>
 
         <section className={styles.group} aria-label="Referrals today">
@@ -306,7 +311,7 @@ export function StatisticsSummaryPhone({
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </Link>
-          {/* The phone chips stop at Weekly, so this row is a phone's way to each health service. */}
+          {/* Each health service's figures, also the Services chip above (phone review F-12). */}
           <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
             <IconTile icon={Building2} />
             <span className={styles.navText}>
