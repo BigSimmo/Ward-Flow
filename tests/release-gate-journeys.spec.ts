@@ -208,7 +208,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
   await page.getByTestId(`ward-ed-transport-escort-no-${movementId}`).click();
   await page.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-GATE-0001");
-  await page.getByTestId(`ward-ed-transport-legal-status-voluntary-${movementId}`).click();
+  await page.getByTestId(`ward-ed-transport-legal-status-involuntary-${movementId}`).click();
   await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
   await expectAccessible(page, testInfo, "ED transport booking, filled");
   await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
@@ -229,6 +229,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   }).toPass({ timeout: 15_000 });
   const detail = page.getByTestId("ward-officer-detail");
   await expectAccessible(page, testInfo, "officer job detail");
+  await expect(detail.getByTestId(`ward-officer-transport-legal-status-${movementId}`)).not.toContainText("Legal now");
 
   for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
     const button = detail.getByTestId(`ward-officer-${stage}-${movementId}`);
