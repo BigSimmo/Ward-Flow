@@ -71,7 +71,7 @@ These files are kept in commit `cac245b` (`cac245bccbbc30115fe4ef9a38b8cfee0f149
 
 ```sh
 git fetch origin cac245bccbbc30115fe4ef9a38b8cfee0f149e92
-git checkout cac245bccbbc30115fe4ef9a38b8cfee0f149e92 -- docs/ward-flow/plans/2026-09-11-design-review-chat-handover.md
+git checkout cac245bccbbc30115fe4ef9a38b8cfee0f149e92 -- docs/ward-flow/plans/2026-09-11-lane-d-statistics.md
 ```
 
 ## Documentation system

@@ -642,13 +642,14 @@ One line each: which component(s) compose/import it, and whether anything does.
   alongside the third-edition module above — both are live in the same file at once).
 - **`ward-management.module.css`** (1,413) — `ward-management-console.tsx` and
   `ward-management-navigation.tsx` (the latter unmounted, §4.1).
-- **`ward-modes-second-edition.module.css`** (586) — `governance-registers.tsx`,
-  `ward-management-modes.tsx` (same two files as
-  `governance-third-edition.module.css`; both second- and third-edition classes are live in each).
+- **`ward-modes-second-edition.module.css`** (586) — not imported by any `.tsx`/`.ts` file. Only
+  comments in three other stylesheets name it. `governance-registers.tsx` and
+  `ward-management-modes.tsx` import `governance-third-edition.module.css` instead.
 - **`ward-panel.module.css`** (175) — `ward-panel.tsx` only.
 - **`ward-record-row.module.css`** (191) — `ward-record-row.tsx` only.
 - **`ward-reduced-motion.module.css`** (32) — not imported from any `.tsx`/`.ts` file; **composed
-  from** by nine other CSS modules' own classes (`coordinator.module.css`, `officer.module.css`,
+  from** by ten other CSS modules' own classes (`coordinator/coordinator.module.css`,
+  `coordinator/home.module.css`, `referrals/ward-referral-drawer.module.css`,
   `ward-demo-controls.module.css`,
   `ward-management-modes.module.css`, `ward-management-network.module.css`,
   `ward-management.module.css`, `ward-role-switcher.module.css`, `ward-sidebar.module.css`,
