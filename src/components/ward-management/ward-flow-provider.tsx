@@ -91,20 +91,9 @@ import {
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 
 /**
- * The screens never see the raw reducer state or the clock's internal offsets — they see the
- * three collections plus a single resolved `now`, and the one way to raise an event.
- *
- * Task 12: `focusMovementId` is the one piece of UI-only state this context carries alongside
- * the reducer's own — "which patient is currently in view", set only by the coordinator
- * screen's own movement selection (`coordinator-screen.tsx`'s `selectMovement`). It exists here,
- * shared, rather than as `CoordinatorScreen`'s own local state, because `WardRoleSwitcher`
- * renders on every ward-management route (inside `ClinicalRail`) and needs to answer "where
- * does this patient's Ward/ED role live" regardless of which screen it is currently rendered
- * on — a route change swaps out the page under this shared layout, which would otherwise reset
- * a screen-local selection back to nothing on every hop. It is never read by the reducer and
- * never dispatched as an event: it is display/navigation state only, the same category as
- * `selectedUnitId`/`selectedEdId` already are on the coordinator screen, just lifted one level
- * because it now has more than one reader.
+ * The provider owns reducer state, session recovery and the shared connection. Public hooks
+ * expose state fields or recipient projections. Focus is shared UI navigation state;
+ * it never enters the reducer or an event.
  */
 type WardFlowContextValue = {
   worldGeneration: number;
