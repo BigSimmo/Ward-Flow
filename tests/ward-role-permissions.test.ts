@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { communityScreenSource } from "./helpers/community-screen-sources";
+
 import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "../src/components/ward-management/ward-flow-roles";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
@@ -179,7 +181,12 @@ describe("role screens dispatch only what their route's role may take", () => {
   const root = join(__dirname, "../src/components/ward-management");
   for (const [file, role] of Object.entries(ROLE_SCREENS)) {
     it(`${file} (${role} route)`, () => {
-      const source = readFileSync(join(root, file), "utf8");
+      // The community screen was split into sections and hooks on 15 Oct 2026 (fix list 2.5 and
+      // 9.6), and two of its dispatches moved with the transport hook. Its entry reads every file.
+      const source =
+        file === "community/community-screen.tsx"
+          ? communityScreenSource(join(__dirname, ".."))
+          : readFileSync(join(root, file), "utf8");
       const types = [...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g)].map((match) => match[1] as EventType);
       expect(types.length, "no dispatch found; update this list if the screen moved").toBeGreaterThan(0);
       for (const type of new Set(types)) {
