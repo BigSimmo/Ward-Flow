@@ -1,3 +1,4 @@
+// @ts-check
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
@@ -46,20 +47,21 @@ export function createHandler({
         authenticate,
         readBody,
         verifierUnavailable: VerifierUnavailableError,
+        log,
       })
     : null;
   return async (request) => {
     const path = new URL(request.url).pathname;
-    if (path.startsWith("/v1/workspace"))
-      return sharedHandler
-        ? sharedHandler(request)
-        : Response.json(
-            { error: "Shared workspace is not configured" },
-            { status: 503, headers: { "cache-control": "no-store" } },
-          );
+    if (path.startsWith("/v1/workspace") && sharedHandler) return sharedHandler(request);
     const requestId = randomUUID();
     const startedAt = performance.now();
-    const route = path === "/readyz" ? "readiness" : path === "/healthz" ? "liveness" : "unknown";
+    const route = path.startsWith("/v1/workspace")
+      ? "workspace"
+      : path === "/readyz"
+        ? "readiness"
+        : path === "/healthz"
+          ? "liveness"
+          : "unknown";
     const origin = request.headers.get("origin");
     const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff", "x-request-id": requestId };
     const respond = (status, value, outcome = "completed", extraHeaders = {}) => {
@@ -70,7 +72,7 @@ export function createHandler({
           event: "ward_backend_request",
           requestId,
           route,
-          method: ["GET", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
+          method: ["GET", "POST", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
           status,
           outcome,
           durationMs: Math.round(performance.now() - startedAt),
@@ -88,6 +90,8 @@ export function createHandler({
       headers["access-control-expose-headers"] = "X-Request-ID";
       headers.vary = "Origin";
     }
+    // Shared routes with the shared workspace switched off: still logged, with a request ID.
+    if (route === "workspace") return respond(503, { error: "Shared workspace is not configured" }, "not_configured");
     if (path === "/healthz" && request.method === "GET") return respond(200, { service: "ward-flow-backend" });
     if (path !== "/readyz") return respond(404, { error: "Not found" });
     if (request.method === "OPTIONS" && origin)
@@ -113,26 +117,36 @@ export function createHandler({
   };
 }
 
+/**
+ * Up to 256 open connections. A client must finish its headers within 5 seconds and its whole
+ * request within 15, so a handful of slow or idle connections cannot hold every slot.
+ */
+export const MAX_CONNECTIONS = 256;
+export const HEADERS_TIMEOUT_MS = 5_000;
+
 export function listen(handler, config) {
   const server = createServer(
-    { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: 10_000 },
+    { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: HEADERS_TIMEOUT_MS },
     async (incoming, outgoing) => {
       try {
         const request = new Request(`http://backend${incoming.url}`, {
           method: incoming.method,
-          headers: incoming.headers,
-          ...(["GET", "HEAD"].includes(incoming.method) ? {} : { body: Readable.toWeb(incoming), duplex: "half" }),
+          headers: /** @type {HeadersInit} */ (/** @type {unknown} */ (incoming.headers)),
+          ...(["GET", "HEAD"].includes(incoming.method)
+            ? {}
+            : { body: /** @type {BodyInit} */ (/** @type {unknown} */ (Readable.toWeb(incoming))), duplex: "half" }),
         });
         const response = await handler(request);
         outgoing.writeHead(response.status, Object.fromEntries(response.headers));
         outgoing.end(Buffer.from(await response.arrayBuffer()));
-      } catch {
-        outgoing.writeHead(500, { "cache-control": "no-store" });
+      } catch (error) {
+        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", ...errorFields(error) }));
+        if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
         outgoing.end();
       }
     },
   );
-  server.maxConnections = 16;
+  server.maxConnections = MAX_CONNECTIONS;
   server.setTimeout(15_000, (socket) => socket.destroy());
   return server.listen(config.port, config.host);
 }

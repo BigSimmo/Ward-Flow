@@ -19,7 +19,7 @@ export type MovementNextStep = {
   kind: "refer" | "escalate" | "pull" | "wait";
 };
 
-export const COORDINATOR_OWNER = "Coordinator";
+const COORDINATOR_OWNER = "Coordinator";
 
 export function movementNextStep(movement: Movement): MovementNextStep | null {
   if (movement.closure !== undefined) return null;

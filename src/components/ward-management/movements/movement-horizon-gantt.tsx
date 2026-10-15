@@ -57,7 +57,7 @@ const TICK_COUNT = 6;
  */
 export type HorizonDensity = "compact" | "expanded";
 
-export interface DensitySettings {
+interface DensitySettings {
   barHeight: number;
   barGap: number;
   barTop: number;
@@ -65,7 +65,7 @@ export interface DensitySettings {
   labelPadding: string;
 }
 
-export const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
+const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
   compact: {
     barHeight: 22,
     barGap: 2,

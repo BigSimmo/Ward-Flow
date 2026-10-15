@@ -514,7 +514,7 @@ export function byLongestWait(movements: Movement[], now: Instant): Movement[] {
  */
 
 /** The six states an event on this chart can honestly be in across the 48-hour bed horizon */
-export type MovementHorizonEventType = "admit" | "transit" | "leave" | "disch" | "pred" | "delay";
+type MovementHorizonEventType = "admit" | "transit" | "leave" | "disch" | "pred" | "delay";
 
 export type MovementHorizonEvent = {
   id: MovementId;
@@ -607,7 +607,7 @@ function horizonEventTitle(movement: Movement, type: MovementHorizonEventType, n
 }
 
 /** What `deriveMovementHorizonLanes` needs to put a patient's name on each bar. */
-export interface HorizonPeople {
+interface HorizonPeople {
   patients: readonly Patient[];
   referrals: readonly Referral[];
   movements: readonly Movement[];

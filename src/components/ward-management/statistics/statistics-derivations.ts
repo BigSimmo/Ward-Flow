@@ -510,7 +510,7 @@ export function refusedAndNothingPending(movements: Movement[], units: Unit[], n
  * time; the seed is data and `tsc` is not what most people run, so a record carrying an unknown
  * reason must fail loudly rather than quietly shrink a total that still looks plausible.
  */
-export type DeclineReasonTally = {
+type DeclineReasonTally = {
   reason: DeclineReason;
   /**
    * How many declines on record give this reason. A COUNT, and typed `number` rather than

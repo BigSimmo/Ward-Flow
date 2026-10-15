@@ -79,3 +79,25 @@ test("migration 5 adds composite active push subscription and chronological comm
   );
   assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(5\);/);
 });
+
+test("one migration list: every SQL file is listed once, in order, and matches its checksum", async () => {
+  const { readdir } = await import("node:fs/promises");
+  const { LATEST_MIGRATION, MIGRATIONS, readMigration } = await import("./migrations.mjs");
+  const files = (await readdir(new URL("./migrations/", import.meta.url))).filter((name) => name.endsWith(".sql"));
+  assert.deepEqual(
+    MIGRATIONS.map((migration) => migration.file),
+    files.sort(),
+  );
+  assert.deepEqual(
+    MIGRATIONS.map((migration) => migration.version),
+    MIGRATIONS.map((_, index) => index + 1),
+  );
+  assert.equal(LATEST_MIGRATION, MIGRATIONS.length);
+  for (const migration of MIGRATIONS)
+    assert.match(await readMigration(migration), new RegExp(`VALUES\\(${migration.version}\\);`));
+});
+
+test("a migration file that no longer matches its checksum is refused before any SQL runs", async () => {
+  const { MIGRATIONS, readMigration } = await import("./migrations.mjs");
+  await assert.rejects(readMigration({ ...MIGRATIONS[0], sha256: "0".repeat(64) }), /checksum mismatch/);
+});

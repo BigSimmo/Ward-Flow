@@ -18,7 +18,7 @@ import { cn, fieldLabel, textMuted } from "@/components/ui-primitives";
  * right looks like.
  */
 
-export type FormFieldRenderProps = {
+type FormFieldRenderProps = {
   id: string;
   /** Merged: caller ids, then hint, then error. Never overwritten. */
   describedBy: string | undefined;

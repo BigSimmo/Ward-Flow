@@ -36,7 +36,6 @@ import {
   clockState,
   formatElapsed,
   formatInstantWithDay,
-  minuteOfDayFromClockText,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
@@ -92,6 +91,12 @@ import {
   type TransportLegalStatus,
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
+import {
+  instantFromEstimatedTimeInputs,
+  minutesFromTimeInput,
+  transportAnswersBlockedReason,
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
   DECLINE_REASON_LABELS,
@@ -300,10 +305,9 @@ const NO_DECLINE_REASON_VALUE = "";
  * Why the decline confirm is unavailable, or `undefined` once a reason has been chosen. Pure and
  * module-level so the wording lives in one place rather than being spelled twice inside JSX.
  *
- * It is NOT exported, so no test can assert its two states directly and none does — the states are
- * reached through the rendered control instead. Said explicitly because the sibling comment on
- * `transportAnswersBlockedReason` below claims its states "can be asserted without rendering",
- * which has never been true of an unexported function; this one does not repeat the claim.
+ * It is NOT exported, so no test can assert its two states directly and none does. The states are
+ * reached through the rendered control instead. Its sibling `transportAnswersBlockedReason` now lives,
+ * exported, in `ward-transport-checks.ts`, shared with the community booking popup.
  */
 function declineReasonBlockedReason(reason: ReferralDeclineReason | undefined): string | undefined {
   if (reason !== undefined) return undefined;
@@ -547,25 +551,6 @@ const DEFAULT_DRAFT: ReferralDraftState = {
 };
 
 /**
- * `HH:MM` from an `<input type="time">`, or a typed "09:30" or "0930" (F-01: the iPhone number pad
- * has no ":"), to minutes since midnight, or `undefined` for anything this cannot read with
- * certainty. The reading itself is `minuteOfDayFromClockText` (`ward-clock.ts`).
- *
- * ⚠️ **IT REFUSES RATHER THAN GUESSES, AND THAT IS THE WHOLE POINT OF IT.** A half-typed or
- * malformed time returns `undefined`, so the referral is raised carrying NO deadline — a state
- * every ward surface already renders explicitly as absent. The alternative, coercing "14:3" or
- * "" into a number, puts a time the clinician never typed onto a legal form, which is the exact
- * fabrication `ward-model.ts` spends fifteen lines forbidding. **An absent deadline is a true
- * statement; a guessed one is a false statement that looks identical on screen.**
- *
- * Parsed by hand rather than with `Date`, which accepts a startling range of inputs and silently
- * invents a timezone for them.
- */
-function minutesFromTimeInput(value: string): number | undefined {
-  return minuteOfDayFromClockText(value);
-}
-
-/**
  * `YYYY-MM-DD` from an `<input type="date">` plus `HH:MM` from an `<input type="time">`, resolved
  * into an `Instant` — minutes from the provider's `dayZero` (`useWardFlow().dayZero`), the same
  * offset `legalForm.dueAt` and every other `Instant` on this screen are already counted in.
@@ -575,7 +560,7 @@ function minutesFromTimeInput(value: string): number | undefined {
  * `Instant` back to a real moment; this is their inverse, and the only place in this file that
  * turns two typed strings into the one number every other surface reads.
  *
- * ⚠️ **REFUSES RATHER THAN GUESSES, the same discipline `minutesFromTimeInput` above documents.**
+ * ⚠️ **REFUSES RATHER THAN GUESSES, the same discipline `minutesFromTimeInput` (`ward-transport-checks.ts`) documents.**
  * Both fields blank is a real, permitted answer — no expiry typed yet — and returns `undefined`
  * exactly like a malformed value does; telling "blank" apart from "unusable" is the CALLER's job
  * (the intake form's own blocked-reason check, and the two action panels' disabled submit, each do
@@ -600,35 +585,12 @@ function instantFromDateAndTimeInputs(dateValue: string, timeValue: string, dayZ
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
   // L7: the typed day is a Perth calendar day, whatever the browser's zone. An invalid day (e.g.
   // 31 Feb) rolls into the next month, so anything that does not read back exactly is refused, the
-  // same defensive check `minutesFromTimeInput` above makes for an out-of-range hour or minute.
+  // same defensive check `minutesFromTimeInput` makes for an out-of-range hour or minute.
   const typedDate = perthMidnight(year, month - 1, day);
   const read = perthCalendarDay(typedDate);
   if (read.year !== year || read.monthIndex !== month - 1 || read.day !== day) return undefined;
   const dayOffsetMinutes = Math.round((typedDate.getTime() - dayZero.getTime()) / 60_000);
   return dayOffsetMinutes + minuteOfDayValue;
-}
-
-/**
- * Owner's third ruling, 2026-09-17: the estimated time in the transport-booking popup is a typed
- * `HH:MM` plus "today" or "tomorrow" — never a calendar date picker, because the person is reading
- * a time off a phone call, not choosing a date. Reuses `minutesFromTimeInput` above (the same
- * parsing `instantFromDateAndTimeInputs` uses for its own time field) rather than inventing a
- * second HH:MM parser, and finds "today" by rounding `now` down to its own day — the same
- * minute-offset unit every other `Instant` on this screen is already counted in, so no `Date`
- * arithmetic or timezone reasoning is needed at all.
- *
- * Refuses rather than guesses, the same discipline `minutesFromTimeInput` documents: a blank or
- * malformed time returns `undefined`, never a fabricated value.
- */
-function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
 }
 
 /**
@@ -961,27 +923,7 @@ const ESCORT_ANSWERS = [
   { value: false, label: "No escort required" },
 ] as const;
 
-type TransportDraftState = {
-  /** `undefined` until somebody picks. Never `TRANSPORT_PROVIDERS[0]`: a provider nobody chose,
-   *  rendered as "Ambulance service is collecting", is the same unmade-claim defect as a pre-filled
-   *  escort answer, and the reducer's membership check refuses the blank rather than this alone. */
-  provider: TransportProvider | undefined;
-  /** `undefined` until answered — see `ESCORT_ANSWERS`. Never `false`: `false` is an ANSWER. */
-  escortRequired: boolean | undefined;
-  /** Owner's third ruling, 2026-09-17: the CAD transport number read off the phone call. `""` is
-   *  "not yet typed", never a placeholder value — the reducer refuses a blank one. */
-  cadNumber: string;
-  /** `undefined` until chosen — see `TRANSPORT_LEGAL_STATUS_ANSWERS`. Same "never a default"
-   *  discipline as `escortRequired` above. */
-  transportLegalStatus: TransportLegalStatus | undefined;
-  /** `HH:MM`, typed. `""` is "not yet typed" — see `instantFromEstimatedTimeInputs`. */
-  estimatedTime: string;
-  /** Defaults to "today" only as the popup's OPENING SELECTION, never as an answer supplied for
-   *  somebody — the person must still type a time before the booking is answerable at all
-   *  (`transportAnswersBlockedReason`), so this default picks which radio is pre-selected, not
-   *  what gets recorded. */
-  estimatedDay: "today" | "tomorrow";
-};
+type TransportDraftState = TransportBookingAnswers;
 
 /** Re-applied every time the panel is opened as well as when it closes, so a previous booking's
  *  answers can never be inherited by the next patient. A remembered last value is the same ruling
@@ -1027,25 +969,6 @@ type LegalFormExpiryDraftState = { date: string; time: string };
 // real `WardFlowEvent["type"]`; this constant is not, so it is renamed instead of exempted, per
 // this task's own instruction not to touch the guard.
 const BLANK_TYPED_EXPIRY_DRAFT: LegalFormExpiryDraftState = { date: "", time: "" };
-
-/**
- * Why the confirm control is unavailable, or `undefined` when the booking is answerable. Pure and
- * module-level so all four states can be asserted without rendering, and so the wording lives in
- * one place rather than being spelled twice inside JSX.
- */
-function transportAnswersBlockedReason(draft: TransportDraftState, now: Instant): string | undefined {
-  const missing: string[] = [];
-  if (draft.provider === undefined) missing.push("choose who is collecting the patient");
-  if (draft.escortRequired === undefined) missing.push("answer the escort question");
-  // Owner's third ruling, 2026-09-17: the three facts read off the phone call, none filled in.
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
-  if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("enter the estimated time");
-  }
-  if (missing.length === 0) return undefined;
-  return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
-}
 
 type OutstandingItem = { kind: "handover" | "transport" | "examination" | "form"; label: string; detail: string };
 

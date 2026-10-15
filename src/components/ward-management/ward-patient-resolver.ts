@@ -31,7 +31,7 @@ interface ResolvedIndex {
 
 const stateIndexCache = new WeakMap<object, ResolvedIndex>();
 
-export function buildPatientResolverIndex(state: {
+function buildPatientResolverIndex(state: {
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
   movements?: readonly Movement[];

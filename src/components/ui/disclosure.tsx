@@ -26,7 +26,7 @@ const TRIGGER_GRID_PLAIN = "grid-cols-[minmax(0,1fr)_auto] gap-x-3";
 /** No trailing column: body copy runs to the edge rather than stopping under the chevron. */
 const PANEL_GRID_WITH_ICON = "grid grid-cols-[var(--spacing-disclosure-icon)_minmax(0,1fr)] gap-x-3";
 
-export type DisclosureSurface = "card" | "flush";
+type DisclosureSurface = "card" | "flush";
 
 export type DisclosureProps = {
   title: ReactNode;
@@ -246,7 +246,7 @@ export function Disclosure({
   );
 }
 
-export type DisclosureGroupVariant = "stack" | "list";
+type DisclosureGroupVariant = "stack" | "list";
 
 export type DisclosureGroupProps = {
   items: Array<{

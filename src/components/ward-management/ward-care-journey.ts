@@ -41,7 +41,7 @@ export const RECEIVING_CLASSES = [
 ] as const;
 export const EPISODE_TYPES = ["mental_health", "general_care", "rehabilitation", "palliative_care"] as const;
 export const SEPARATION_CODES = ["10", "21", "22", "30", "40", "50", "60", "70", "80", "90"] as const;
-export type CareStatus = (typeof CARE_STATUSES)[number];
+type CareStatus = (typeof CARE_STATUSES)[number];
 type Stamp = { recordedAt: Instant; recordedBy: string };
 export type CareChange =
   | {
@@ -248,7 +248,7 @@ export function validCareJourney(value: unknown): value is CareJourney {
         contact.contactedAt >= care.followUp!.appointmentAt),
   );
 }
-export function codingCode(
+function codingCode(
   admission: Pick<Admission, "state" | "leavingDestination">,
   receivingClass: (typeof RECEIVING_CLASSES)[number],
   dischargedFromLeave = false,

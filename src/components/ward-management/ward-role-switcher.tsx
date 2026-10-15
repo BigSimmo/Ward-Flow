@@ -6,11 +6,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
-import { officerHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import type { Movement, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./ward-role-switcher.module.css";
 
@@ -19,34 +17,6 @@ export type WardRoleNextStep = {
   href: string;
   onSelect?: () => void;
 };
-
-/**
- * Derives a 1-click "Next step: Open [Desk] →" destination for confirmation toasts or workflow
- * transitions (referral sent, bed pulled, transport booked), pointing only to a role's own home
- * route (FD-23).
- */
-export function deriveNextStepDesk(
-  movement: Movement | undefined,
-  units: readonly Unit[],
-  isCoordinatorRoute: boolean,
-): WardRoleNextStep | null {
-  if (!movement || !isOpenMovement(movement)) return null;
-  if (movement.transport && movement.stage !== "arrived") {
-    return {
-      label: "Next step: Open Transport →",
-      href: officerHref(),
-    };
-  }
-  if (!isCoordinatorRoute) return null;
-  const targetUnitId = movement.acceptedUnitId ?? movement.referredUnitIds[0];
-  if (!targetUnitId) return null;
-  const unit = units.find((candidate) => candidate.id === targetUnitId);
-  if (!unit) return null;
-  return {
-    label: `Next step: Open ${unit.name} →`,
-    href: unitHref(unit.id),
-  };
-}
 
 /**
  * "Change view": the rail's and Tools drawer's trigger for the Switch workstation drawer

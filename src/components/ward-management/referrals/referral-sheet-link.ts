@@ -15,7 +15,7 @@ import { recordIdFromParam } from "@/components/ward-management/shell/ward-recor
 export const REFERRAL_SHEET_PATH = "/mockups/ward-flow/referrals/new";
 
 /** Where the referral goes. The slide-out's first choice. */
-export type ReferralSheetDestination = "ward" | "community" | "ed";
+type ReferralSheetDestination = "ward" | "community" | "ed";
 
 /** Where the referral comes from, as the slide-out groups it. */
 export type ReferralSheetCategory = "community" | "ed" | "ward";

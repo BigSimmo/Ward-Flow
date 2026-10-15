@@ -68,12 +68,7 @@ import {
   changeReasonLabels,
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  daysBetween,
-  formatInstantWithDay,
-  minuteOfDayFromClockText,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
@@ -98,6 +93,11 @@ import {
   type TransportProvider,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import {
+  instantFromEstimatedTimeInputs,
+  transportAnswersBlockedReason,
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
 import { COMMUNITY_DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -226,14 +226,7 @@ const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
 
 const NO_TRANSPORT_PROVIDER_VALUE = "";
 
-type TransportDraftState = {
-  provider: TransportProvider | undefined;
-  escortRequired: boolean | undefined;
-  cadNumber: string;
-  transportLegalStatus: TransportLegalStatus | undefined;
-  estimatedTime: string;
-  estimatedDay: "today" | "tomorrow";
-};
+type TransportDraftState = TransportBookingAnswers;
 
 const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   provider: undefined,
@@ -243,35 +236,6 @@ const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   estimatedTime: "",
   estimatedDay: "today",
 };
-
-/** Same HH:MM (or digits only, "0930") parser the ED booking popup uses: `minuteOfDayFromClockText`. */
-function minutesFromTimeInput(value: string): number | undefined {
-  return minuteOfDayFromClockText(value);
-}
-
-function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function transportAnswersBlockedReason(draft: TransportDraftState, now: Instant): string | undefined {
-  const missing: string[] = [];
-  if (draft.provider === undefined) missing.push("choose who is collecting the patient");
-  if (draft.escortRequired === undefined) missing.push("answer the escort question");
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
-  if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("enter the estimated time");
-  }
-  if (missing.length === 0) return undefined;
-  return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
-}
 
 type ActiveTabType = "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload";
 

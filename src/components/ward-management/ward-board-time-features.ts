@@ -71,7 +71,7 @@ export function transportEtaRemainingLabel(estimatedAt: Instant, now: Instant): 
   return formatRemaining(minutesUntil(estimatedAt, now));
 }
 
-export type OpenWorkBeforeShiftEndKind = "pull_hold" | "typed_form";
+type OpenWorkBeforeShiftEndKind = "pull_hold" | "typed_form";
 
 export type OpenWorkBeforeShiftEndItem = {
   movement: Movement;

@@ -185,7 +185,7 @@ function recordedAge(patient: Patient | undefined, today: Date): number | null {
   return Number.isFinite(years) && years >= 0 ? years : null;
 }
 
-export interface UnifiedCaseloadPatient {
+interface UnifiedCaseloadPatient {
   id: string;
   urm: string;
   name: string;
@@ -1409,7 +1409,7 @@ function getPatientPresence(
   return { key: "past", label: "Past / Discharged" };
 }
 
-export function PeopleSection({
+function PeopleSection({
   people,
   query,
   otherMatches,

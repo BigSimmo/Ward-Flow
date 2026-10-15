@@ -12,11 +12,11 @@ import {
   toneWarning,
 } from "@/components/ui-primitives";
 
-export type ChipSize = "compact" | "standard";
-export type ChipStatusTone = "neutral" | "info" | "success" | "warning" | "danger";
-export type ChipCategoryTone =
+type ChipSize = "compact" | "standard";
+type ChipStatusTone = "neutral" | "info" | "success" | "warning" | "danger";
+type ChipCategoryTone =
   "document" | "table" | "search" | "source" | "service" | "form" | "purple" | "indigo" | "rose" | "slate";
-export type ChipInformationTone = "neutral" | "quiet" | "inset" | "accent" | "info";
+type ChipInformationTone = "neutral" | "quiet" | "inset" | "accent" | "info";
 
 export type ChipAppearance =
   | { kind: "status"; tone: ChipStatusTone }

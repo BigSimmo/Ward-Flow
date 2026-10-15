@@ -54,7 +54,6 @@ import {
   dischargeText,
   homeRegionBeds,
   inDaysAwayGroup,
-  instantFromEstimatedTimeInputs,
   departureDayLabel,
   leavesToday,
   missingAnswers,
@@ -73,6 +72,7 @@ import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow 
 import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
