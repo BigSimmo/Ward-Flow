@@ -205,6 +205,12 @@ describe("no file under tests/ is invisible to every runner", () => {
         expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
         expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(false);
+      } else if (["release-gate-desktop", "release-gate-phone"].includes(project.name)) {
+        // The release gate runs its own four journeys and nothing else.
+        expect(project.patternName, project.name).toBe("releaseGateSpecPattern");
+        expect(project.pattern.test("tests/release-gate-journeys.spec.ts"), project.name).toBe(true);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
+        expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(false);
       } else if (["chromium-mockups", "chromium-mockups-known"].includes(project.name)) {
         expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(true);
