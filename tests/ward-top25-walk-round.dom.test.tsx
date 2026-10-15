@@ -79,7 +79,7 @@ describe("phone walk round (item 23, option D)", () => {
   it("walks beds in bed order, marks them reviewed and returns to the list", () => {
     render(<Harness />);
     expect(screen.getByText("List bed 01")).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toBe("0 of 3 reviewed");
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 3 reviewed");
 
     fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
     expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
@@ -87,7 +87,7 @@ describe("phone walk round (item 23, option D)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     expect(screen.getByRole("region", { name: "Bed 02, 2 of 3" })).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toBe("1 of 3 reviewed");
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
     expect(screen.getByRole("button", { name: "Walk from bed 01, reviewed" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Back to list" }));
@@ -101,7 +101,7 @@ describe("phone walk round (item 23, option D)", () => {
     fireEvent.click(screen.getByText("List bed 03"));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
     expect(screen.getByText("List bed 03")).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toBe("1 of 3 reviewed");
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
   });
 
   it("opens the bed's existing panel to update it", () => {
@@ -133,7 +133,7 @@ describe("phone walk round (item 23, option D)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     rerender(<Harness phone={false} />);
     rerender(<Harness />);
-    expect(screen.getByRole("status").textContent).toBe("1 of 3 reviewed");
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
   });
 
   it("starts a finished round again from nothing", () => {
@@ -142,9 +142,9 @@ describe("phone walk round (item 23, option D)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
-    expect(screen.getByRole("status").textContent).toBe("3 of 3 reviewed");
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("3 of 3 reviewed");
     fireEvent.click(screen.getByRole("button", { name: "Walk again from bed 01" }));
-    expect(screen.getByRole("status").textContent).toBe("0 of 3 reviewed");
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 3 reviewed");
     expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
   });
 });

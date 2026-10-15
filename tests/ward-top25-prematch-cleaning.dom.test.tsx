@@ -10,8 +10,22 @@ const seeded = seedWardFlowState();
 const unit = seeded.units[0]!;
 const movement = seeded.movements[0]!;
 
-const preparing = { unitId: unit.id, state: "discharged", preparing: true } as unknown as BedRelease;
-const ready = { unitId: unit.id, state: "discharged", preparing: false } as unknown as BedRelease;
+const release: BedRelease = {
+  id: "release-test",
+  unitId: unit.id,
+  admissionId: "admission-test",
+  state: "discharged",
+  expectedAt: 0,
+  waitingOn: null,
+  blocker: null,
+  blockedBy: null,
+  preparing: true,
+  preparationNote: null,
+  confirmedAt: 0,
+  confirmedBy: "Test ward",
+};
+const preparing: BedRelease = release;
+const ready: BedRelease = { ...release, preparing: false };
 const paused: Movement = { ...movement, medicalDeterioration: { at: 10, by: "ed" } };
 const resumed: Movement = { ...movement, medicalDeterioration: { at: 10, by: "ed", resumedAt: 20 } };
 

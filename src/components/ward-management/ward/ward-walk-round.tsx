@@ -120,7 +120,7 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
           <span className={styles.track} aria-hidden="true">
             <i style={{ width: `${ordered.length ? Math.round((reviewedCount / ordered.length) * 100) : 0}%` }} />
           </span>
-          <span role="status">
+          <span data-testid="walk-round-progress">
             {reviewedCount} of {ordered.length} reviewed
           </span>
         </div>
