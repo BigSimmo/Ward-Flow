@@ -40,8 +40,9 @@ to `005`. These source files do not establish a current hosted connection or dep
   any an audit review names); the `audit` table keeps every one.
 - Demo controls (advance clock, reset or set scenario) are refused on the shared workspace unless
   `WARD_SHARED_DEMO_EVENTS=true`.
-- `prune-receipts.mjs` (`npm run prune:receipts:supabase`): removes command receipts older than 7
-  days. It runs with the migration identity, because the runtime role cannot delete receipts.
+- `prune-receipts.mjs` (`npm run prune:receipts:supabase` or `npm run prune:receipts:postgres`): removes
+  command receipts older than 7 days by the database clock. It runs with the migration identity,
+  because the runtime role cannot delete receipts.
 - Checks: `npm test` (set `WARD_TEST_DATABASE_URL` to a loopback PostgreSQL for the real-database
   cases) and `npm run typecheck` (`// @ts-check` on every backend module, using the root install).
 - Supabase adapter: `supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`,
