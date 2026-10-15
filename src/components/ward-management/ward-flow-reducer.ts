@@ -73,6 +73,7 @@ import {
   GENDER_NO_LONGER_SUITS_REFUSAL,
   GENDER_NO_LONGER_SUITS_NON_BINARY_REFUSAL,
   OVERRIDE_REASONS,
+  REFERRAL_CAP_REASONS,
   WARD_REQUEST_WITHDRAWAL_REASONS,
   wardRequestWithdrawalReasonLabels,
 } from "@/components/ward-management/ward-change-reasons";
@@ -2834,7 +2835,12 @@ export function reduceClinicalEvent(
       const newUnitIds = uniqueUnitIds.filter((unitId) => !liveUnitIds.includes(unitId));
       // The cap counts live plus new, whether or not the caller re-sent the live ids.
       const combinedCount = liveUnitIds.length + newUnitIds.length;
-      if (combinedCount > state.configuration.parallelReferralCap) {
+      // Top 25 item 2 (owner ruling, 15 Oct 2026): the cap is a safety check, so a chosen reason
+      // lets the extra ward be asked (kept in the audit trail). Without one it refuses, as before.
+      if (event.overCapReason !== undefined && !REFERRAL_CAP_REASONS.includes(event.overCapReason)) {
+        return reject(state, event, `REFER_TO_UNITS overCapReason must be chosen from REFERRAL_CAP_REASONS`);
+      }
+      if (combinedCount > state.configuration.parallelReferralCap && event.overCapReason === undefined) {
         return reject(
           state,
           event,
@@ -3012,6 +3018,7 @@ export function reduceClinicalEvent(
       decision.outcome = heldBack.length ? "partial" : "accepted";
       decision.reasonCode = heldBack.length ? "transition" : "none";
       decision.overrideFactRecorded = event.overrideReason !== undefined;
+      decision.overCapRecorded = updated.referredUnitIds.length > state.configuration.parallelReferralCap;
       return replaceMovement(withHeldBack, movement.id, updated);
     }
 

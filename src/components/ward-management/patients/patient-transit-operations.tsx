@@ -23,9 +23,12 @@ import {
   type GenderPlacementReason,
   OVERRIDE_REASONS,
   type OverrideReason,
+  REFERRAL_CAP_REASONS,
+  type ReferralCapReason,
   RELEASE_PULL_REASONS,
   type ReleasePullReason,
 } from "../ward-change-reasons";
+import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -50,7 +53,10 @@ export function PatientTransitOperations({
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
-  const { units, admissions, referrals, dispatch, rejections, readAuditEvents } = useWardFlow();
+  const { units, admissions, referrals, dispatch, rejections, readAuditEvents, configuration } = useWardFlow();
+  // Top 25 item 2: asking more wards than the cap warns and asks for a reason instead of refusing.
+  const referralCapOn = useWardFeatureFlag("top25-referral-cap");
+  const [capReason, setCapReason] = useState<ReferralCapReason | "">("");
   const now = useWardFlowClock();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
@@ -146,6 +152,8 @@ export function PatientTransitOperations({
   const selectedTargets = selected.filter(
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
   );
+  const wardsAskedAfterSend = movement.referredUnitIds.length + selectedTargets.length;
+  const overReferralCap = referralCapOn && wardsAskedAfterSend > configuration.parallelReferralCap;
   const needsGenderPlacement =
     genderReviewNeeded(movement.gender, movement.sex) &&
     selectedTargets.some((id) => !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(id)));
@@ -391,6 +399,25 @@ export function PatientTransitOperations({
           </label>
         </div>
       )}
+      {canRefer && overReferralCap && (
+        <div className={styles.cardBody} data-testid="referral-cap-warning">
+          <p className={styles.deckHint} role="status">
+            This asks {wardsAskedAfterSend} wards at once, more than the usual {configuration.parallelReferralCap}.
+            Choose a reason to go ahead.
+          </p>
+          <label>
+            Reason for asking more wards
+            <select value={capReason} onChange={(e) => setCapReason(e.target.value as ReferralCapReason | "")}>
+              <option value="">Choose reason</option>
+              {REFERRAL_CAP_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       <div className={styles.cardFooter}>
         <span>{selectedTargets.length} wards selected</span>
         {selectedTargets.length === 0 ? (
@@ -402,13 +429,19 @@ export function PatientTransitOperations({
           type="button"
           className={styles.primary}
           aria-disabled={
-            !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+            !canRefer ||
+            selectedTargets.length === 0 ||
+            (needsGenderPlacement && (!genderReason || !wardChecked)) ||
+            (overReferralCap && !capReason)
               ? "true"
               : undefined
           }
           aria-describedby={selectedTargets.length === 0 ? "refer-wards-disabled-guidance" : undefined}
           onClick={
-            !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+            !canRefer ||
+            selectedTargets.length === 0 ||
+            (needsGenderPlacement && (!genderReason || !wardChecked)) ||
+            (overReferralCap && !capReason)
               ? ignoreUnavailableActivation
               : () => {
                   setOverrideUnitIds(selectedTargets);
@@ -422,8 +455,10 @@ export function PatientTransitOperations({
                     ...(needsGenderPlacement && genderReason && wardChecked
                       ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
                       : {}),
+                    ...(overReferralCap && capReason ? { overCapReason: capReason } : {}),
                   });
                   setSelected([]);
+                  setCapReason("");
                 }
           }
         >

@@ -24,6 +24,7 @@ import type {
   BedPreparationNote,
   BedReleaseBlocker,
   OverrideReason,
+  ReferralCapReason,
   CancelTransportReason,
   GenderPlacementReason,
   LegalFormReceiptCorrectionReason,
@@ -418,6 +419,13 @@ export type WardFlowEvent =
        * high-acuity override. `true` when the coordinator ticked it; never `false`.
        */
       genderPlacementChecked?: true;
+      /**
+       * Top 25 item 2 (`top25-referral-cap`, owner ruling 15 Oct 2026): the reason for asking more
+       * wards at once than `WardConfiguration.parallelReferralCap`. Without it the cap still refuses,
+       * exactly as before; with a reason from `REFERRAL_CAP_REASONS` the extra ward is asked and the
+       * reason is kept in the audit trail. Only a screen with the flag on sends it.
+       */
+      overCapReason?: ReferralCapReason;
     }
   /**
    * ⚠️ `overrideReason` is on all three placement events, not just `REFER_TO_UNITS`, because of the
