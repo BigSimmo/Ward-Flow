@@ -58,8 +58,8 @@ files.
   `ward-management-console.tsx`. Imports only `next/link`, `next/navigation` and `react` types — no
   PsychSift-specific dependency.
 - **`src/components/clinical-dashboard/brand.tsx`** (87 lines) — the PsychSift brand-mark SVG.
-  Imported by 2 files, and both are the retired chrome the overview map already names as unmounted:
-  `ward-management-navigation.tsx` and `ward-sidebar-content.tsx`. Imports
+  No production file imports it since the old sidebar was removed on 15 Oct 2026; only
+  tests (`brand-mark-optics.test.ts`, `ward-flow-seam.test.ts`) read it. Imports
   `@/components/ui-primitives` and `@/lib/brand-mark` (189 lines). No currently-mounted Ward screen
   reaches this file.
 - **`src/components/ui/tooltip.tsx`** (198 lines) — the shared tooltip primitive. Imported once, by

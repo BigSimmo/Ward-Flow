@@ -26,7 +26,7 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-management/movements/movements-screen.tsx": 2700,
   "src/components/ward-management/patients/patient-now-screen.tsx": 2700,
   "src/components/ward-management/ward-derivations.ts": 2600,
-  "src/components/ward-management/shell/ward-bar.tsx": 2550,
+  "src/components/ward-management/shell/ward-bar.tsx": 2450,
   "src/components/ward-management/statistics/statistics-claims-register.ts": 2550,
   "src/components/ward-management/officer/officer-screen.tsx": 2500,
   "src/components/ward-management/capacity/capacity-screen.tsx": 2400,
