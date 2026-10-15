@@ -888,6 +888,14 @@
   font-size: var(--wf-fs-12);
 }
 
+/* F-05 (phone review, Oct 2026): a phone row's detail wraps to a second line ("1 being m…"). */
+.phoneMetaWrap {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 /* v10 phone downtime pack (11 Oct 2026): each service head reads as a plain caps label with its
    ready count at the right, and a ward with a ready bed shows the green tick. Phone tree only. */
 .phoneGroupHead :global(*)::after {

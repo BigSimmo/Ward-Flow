@@ -101,6 +101,10 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // Phone (v10): the chip reads "Live HH:MM" from the shared clock; desktop keeps its own age.
   const phoneClock = isPhone && age !== null && clock ? clock : undefined;
   const shownAge = phoneClock ?? age;
+  // The pill's own words for the toggle's name: the state, the clock or age when it is text.
+  const spokenAge =
+    state === "live" && (typeof shownAge === "string" || typeof shownAge === "number") ? shownAge : null;
+  const toggleWords = [word, spokenAge, asAtText].filter((part) => part != null).join(" ");
   const chip = (
     <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
       {state === "live" ? <span className={styles.pulse} /> : null}
@@ -110,6 +114,7 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
       {/* A1-18: offline is not an act-now state, so its dot is neutral grey, not red. */}
       {state === "offline" ? <StatusGlyph tone="neutral" size={9} /> : null}
       {word}
+      {/* Collapsed in the flex pill, but keeps "Demo 10:42" two words for label-in-name (F-19). */}{" "}
       {state === "live" && shownAge != null ? (
         <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
       ) : null}
@@ -129,8 +134,9 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
         <button
           type="button"
           className={styles.toggle}
-          // One name with aria-pressed: swapping the name too reads as "Resume, pressed".
-          aria-label="Pause demo updates"
+          // One name with aria-pressed: swapping the name too reads as "Resume, pressed". F-19 (WCAG
+          // 2.5.3): it starts with the words on the pill, so a voice command can say what it sees.
+          aria-label={`${toggleWords}, pause demo updates`}
           aria-pressed={paused}
           onClick={onTogglePause}
         >

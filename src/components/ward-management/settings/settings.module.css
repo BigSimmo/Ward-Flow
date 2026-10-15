@@ -906,7 +906,9 @@
   border-color: var(--wf-line-3);
 }
 
+/* F-18: the field fills the 44px box, so the tap target is the box and not a 22px line of text. */
 .phoneFind .findBox input {
+  align-self: stretch;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-16);
 }

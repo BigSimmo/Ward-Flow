@@ -21,7 +21,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
-import { Dot } from "@/components/wf";
+import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
+import { Dot, SrOnly } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import {
   CHROME_ROLE_LABELS,
@@ -384,14 +385,35 @@ function PageRow({
   );
 }
 
-function DockFace({ icon: Icon, label, count }: { icon: typeof Plus; label: string; count: number | undefined }) {
+/**
+ * F-19 (WCAG 2.5.3): the name comes from the visible label plus a screen-reader-only tail, so it
+ * starts with the word on screen ("Referrals, 7 awaiting a decision") and voice control can say it.
+ * No aria-label: the visible count chip is hidden from the name and repeated in the tail.
+ */
+function dockTail(label: string, value: number | undefined, detail: string, plain: string): string {
+  if (value) return `, ${value > 99 ? "99+" : value} ${detail}`;
+  return plain.startsWith(label) ? plain.slice(label.length) : "";
+}
+
+function DockFace({
+  icon: Icon,
+  label,
+  count,
+  tail,
+}: {
+  icon: typeof Plus;
+  label: string;
+  count: number | undefined;
+  tail: string;
+}) {
   return (
     <>
-      <span className={styles.dockIcon}>
+      <span className={styles.dockIcon} aria-hidden="true">
         <Icon aria-hidden="true" strokeWidth={1.75} />
         <CountChip value={count} className={styles.dockCount} />
       </span>
       <span className={styles.dockLabel}>{label}</span>
+      {tail ? <SrOnly>{tail}</SrOnly> : null}
     </>
   );
 }
@@ -423,7 +445,6 @@ function PhoneDock({
           href={entry.href}
           className={styles.dockItem}
           aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
-          aria-label={wardNavCountLabel(label, countIn(counts, entry.id))}
           data-testid="ward-phone-dock-link"
           onClick={() => onGo(entry)}
         >
@@ -432,6 +453,12 @@ function PhoneDock({
             icon={entry.id === "command" ? House : entry.icon}
             label={label}
             count={countIn(counts, entry.id)?.value}
+            tail={dockTail(
+              label,
+              countIn(counts, entry.id)?.value,
+              countIn(counts, entry.id)?.noun ?? "",
+              wardNavCountLabel(label, countIn(counts, entry.id)),
+            )}
           />
         </Link>
       ))}
@@ -450,22 +477,30 @@ function PhoneDock({
       <button
         type="button"
         className={styles.dockItem}
-        aria-label={`Tasks, ${tasksCount} outstanding`}
         aria-haspopup="dialog"
         data-testid="ward-phone-menu-tasks"
         onClick={() => onDrawer("tasks")}
       >
-        <DockFace icon={ListChecks} label="Tasks" count={tasksCount} />
+        <DockFace
+          icon={ListChecks}
+          label="Tasks"
+          count={tasksCount}
+          tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+        />
       </button>
       <button
         type="button"
         className={styles.dockItem}
-        aria-label={activityUnread > 0 ? `Activity, ${activityUnread} unread` : "Activity"}
         aria-haspopup="dialog"
         data-testid="ward-phone-menu-activity"
         onClick={() => onDrawer("activity")}
       >
-        <DockFace icon={Activity} label="Activity" count={activityUnread} />
+        <DockFace
+          icon={Activity}
+          label="Activity"
+          count={activityUnread}
+          tail={dockTail("Activity", activityUnread, "unread", "Activity")}
+        />
       </button>
     </nav>
   );
@@ -674,6 +709,9 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
         value={query}
         placeholder="Go to a page or patient"
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        enterKeyHint="search"
         onChange={(event) => onQuery(event.target.value)}
         data-testid="ward-phone-menu-search"
       />
@@ -876,6 +914,8 @@ export function WardPhoneMenu({
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // F-07: marks <html data-wf-keyboard> so the dock hides and pinned footers lift over the keyboard.
+  useMobileKeyboard({ trackState: false });
 
   useEffect(
     () =>

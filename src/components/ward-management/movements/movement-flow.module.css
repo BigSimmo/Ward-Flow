@@ -701,6 +701,20 @@
     scrollbar-width: none;
   }
 
+  /* F-20: on the phone the hero aside holds only the Live chip (the jump buttons are desk only), so
+     it does not scroll. As a scroller its chip's screen-reader line made it a region a keyboard
+     could not reach (axe scrollable-region-focusable). */
+  .heroAside {
+    overflow: visible;
+  }
+
+  /* F-08 (phone review, Oct 2026): on phone the aside holds only the Demo pill. It must not be the
+     pill's containing block, or the scroller clips it; the shared hero then puts it on the eyebrow
+     line as on every other page. */
+  .heroAside:not(:has(> :not([data-wf-live]))) {
+    position: static;
+  }
+
   .jump {
     flex: none;
     max-width: 15rem;
@@ -1199,11 +1213,13 @@
 }
 
 .phGroupTitleText {
+  display: -webkit-box;
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .phGroupChevron {

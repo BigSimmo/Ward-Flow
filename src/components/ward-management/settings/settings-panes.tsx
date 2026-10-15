@@ -54,6 +54,7 @@ import {
 
 import type { RowDensity } from "./row-density";
 import { FeatureFlagsCard } from "./feature-flags-card";
+import { SettingsInstallHint } from "./settings-install-hint";
 import { PreviewTag, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import type { PublishedThreshold, ThresholdState } from "./settings-thresholds";
@@ -201,6 +202,7 @@ export function AlertsPane({
               />
             </SettingRow>
             <PhonePushRow state={phonePush} onChange={onPhonePushChange} />
+            <SettingsInstallHint />
             <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
               <button
                 type="button"

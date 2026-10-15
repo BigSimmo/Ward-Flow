@@ -78,6 +78,12 @@
   min-width: 0;
 }
 
+/* Phone review F-32: the band tucks 12px under its lip (margin-bottom above), so the first card
+ * (the "No changes" line) was clipped at its top. The body steps down by the same 12px. */
+.band[data-band="on"] + .body {
+  padding-top: var(--wf-s-3);
+}
+
 /* Tool chips: one sideways row of 48px chips that never wrap. */
 .chipsFrame {
   margin: 0 calc(-1 * var(--wf-s-3));
@@ -153,6 +159,15 @@
   border-top: 1px solid var(--wf-line);
 }
 
+/* F-05 (phone review, Oct 2026): a row's ward, form or follow-up line wraps to a second line rather
+   than losing its end. */
+.rowItem [class*="rowMeta"] {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .rowNote {
   margin: 0;
   padding: 0 var(--wf-s-3) var(--wf-s-2);
@@ -208,6 +223,19 @@
   padding: var(--wf-s-2) var(--wf-s-1);
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* F-16 (phone review, Oct 2026): the place, then legal status as its own chip, wrapping as needed. */
+.legalMeta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  white-space: normal;
+}
+
+.legalChip {
+  flex: none;
 }
 
 .quiet {

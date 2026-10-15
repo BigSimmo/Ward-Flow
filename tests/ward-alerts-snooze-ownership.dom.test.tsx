@@ -78,7 +78,7 @@ describe("alerts: ownership and snooze", () => {
     const row = within(snoozed).getAllByRole("listitem")[0]!;
     expect(row).toHaveTextContent(/Back .* · Awaiting call back · Flow coordinator/);
     expect(row.textContent).not.toMatch(/WF-\d/);
-    // The same patient the live row named: display name and UMRN, never the journey id.
+    // The same patient the live row named: family name first (F-06) and UMRN, never the journey id.
     const seed = seedWardFlowState();
     const first = buildActionInbox(seed.movements.filter(isOpen), NOW, seed.units)[0]!;
     expect(row).toHaveAttribute("data-movement-id", first.movementId);
@@ -86,15 +86,15 @@ describe("alerts: ownership and snooze", () => {
       seed.movements.find((movement) => movement.id === first.movementId),
       seed,
     );
-    expect(within(row).getByText(expected.displayName)).toBeInTheDocument();
+    expect(within(row).getByText(expected.formalName)).toBeInTheDocument();
     expect(within(row).getByText(expected.umrn)).toBeInTheDocument();
     // The row keeps its real severity glyph: a red row shows the triangle, not a neutral mark.
     expect(first.tone).toBe("danger");
     expect(row.querySelector('svg path[d="M5 0.8 9.6 9.2H0.4Z"]')).not.toBeNull();
-    expect(within(row).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: /^Return .* now for / })).toBeInTheDocument();
 
     fireEvent.click(within(row).getByTestId("ward-alerts-open"));
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
-    expect(within(panel).getByRole("heading", { level: 2 })).toHaveTextContent(expected.displayName);
+    expect(within(panel).getByRole("heading", { level: 2 })).toHaveTextContent(expected.formalName);
   });
 });

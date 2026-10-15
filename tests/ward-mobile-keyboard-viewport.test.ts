@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveMobileKeyboardBaselines, resolveMobileKeyboardViewport } from "@/components/use-mobile-keyboard";
+import {
+  resolveMobileKeyboardBaselines,
+  resolveMobileKeyboardViewport,
+} from "@/components/ward-management/shell/use-mobile-keyboard";
 
 describe("resolveMobileKeyboardViewport", () => {
   it("does not double-lift chrome when both layout and visual viewports resize", () => {

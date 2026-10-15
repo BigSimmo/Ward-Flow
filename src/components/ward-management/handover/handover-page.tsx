@@ -251,7 +251,7 @@ export function resolveMovementPatient(
 ): { name: string; umrn: string; patientId?: string } {
   const info = resolveSubjectPatient(movement, { patients, referrals });
   return {
-    name: info.displayName,
+    name: info.formalName,
     umrn: info.umrn,
     patientId: info.patient?.id,
   };
@@ -271,7 +271,7 @@ export function resolveAdmissionPatient(
 ): { name: string; umrn: string } {
   const info = resolveSubjectPatient(admission, { patients, referrals });
   return {
-    name: info.displayName,
+    name: info.formalName,
     umrn: info.umrn,
   };
 }

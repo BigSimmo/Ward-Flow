@@ -641,7 +641,9 @@ export function WardNetworkWorkspace() {
         className={thirdEdition.networkHero}
         eyebrow="Network · Statewide"
         title={
-          shortfall === undefined ? "Ready beds cover the wait" : `${shortfall.service} short ${-readyGap(shortfall)}`
+          shortfall === undefined
+            ? "Ready beds cover the wait"
+            : `${shortfall.service} is ${-readyGap(shortfall)} ${-readyGap(shortfall) === 1 ? "bed" : "beds"} short`
         }
         titleMeta={
           isPhone

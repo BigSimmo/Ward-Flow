@@ -170,7 +170,7 @@ export function resolveAlertSubject(
   if (admission) {
     const info = resolveSubjectPatient(admission, lookup);
     return {
-      displayName: info.displayName,
+      displayName: info.formalName,
       umrn: info.umrn,
       from: unitName(admission.unitId) ?? "Ward not recorded",
       patientHref: info.patient ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : undefined,
@@ -179,7 +179,7 @@ export function resolveAlertSubject(
   if (booking) {
     const info = resolveSubjectPatient(booking.planned, lookup);
     return {
-      displayName: booking.personLabel ?? info.displayName,
+      displayName: booking.personLabel ?? info.formalName,
       umrn: info.umrn,
       from: unitName(booking.planned.unitId) ?? "Ward not recorded",
       legalStatus: booking.planned.legalStatus,
@@ -190,7 +190,7 @@ export function resolveAlertSubject(
   const origin = movement?.originEdId ? (edById(movement.originEdId)?.name ?? movement.originEdId) : undefined;
   const to = unitName(movement?.acceptedUnitId);
   return {
-    displayName: info.displayName,
+    displayName: info.formalName,
     umrn: info.umrn,
     from: origin ?? to ?? "Location not recorded",
     to: origin ? to : undefined,

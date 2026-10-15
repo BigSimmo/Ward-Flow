@@ -1314,7 +1314,7 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
     const title = screen.getByText("Waiting over 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();
-    expect(row).toHaveTextContent(seedPatientName("WF-019"));
+    expect(row).toHaveTextContent(seedPatientName("WF-019", "formalName"));
     expect(row).not.toHaveTextContent("WF-019");
     expect(row!.textContent?.toLowerCase()).not.toContain("breach");
     expect(row!.textContent?.toLowerCase()).not.toContain("standard");
@@ -1322,12 +1322,13 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
 });
 
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
-function seedPatientName(movementId: string): string {
+// F-06 (phone review, Oct 2026): list rows such as Needs you name the patient family name first.
+function seedPatientName(movementId: string, form: "displayName" | "formalName" = "displayName"): string {
   const seed = seedWardFlowState();
   return resolveSubjectPatient(
     seed.movements.find((movement) => movement.id === movementId),
     seed,
-  ).displayName;
+  )[form];
 }
 
 describe("S-19 (audit 13 Oct 2026): one 'No bed yet' rule for the hero and the board chip", () => {
