@@ -41,6 +41,10 @@ export function readConfig(env = process.env) {
   }
   const port = Number(env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
+  const trustedProxyAddresses = (env.WARD_TRUSTED_PROXY_ADDRESSES || "")
+    .split(",")
+    .map((address) => address.trim().replace(/^::ffff:/i, ""))
+    .filter(Boolean);
   const shared = env.WARD_SHARED_ENABLED === "true";
   const dataMode = env.WARD_DATA_MODE || "prototype";
   if (dataMode !== "prototype") throw new Error("Live data mode is not commissioned in this release");
@@ -66,6 +70,7 @@ export function readConfig(env = process.env) {
     // Phone push needs the shared workspace (subscriptions and act-now state live in PostgreSQL).
     push: shared ? readPushConfig(env) : null,
     origin,
+    trustedProxyAddresses,
     host: env.HOST || "127.0.0.1",
     port,
   };
