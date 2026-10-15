@@ -522,7 +522,7 @@
   gap: var(--wf-s-2);
   width: 100%;
   min-height: var(--spacing-tap, 3rem);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 @media print {

@@ -259,7 +259,7 @@
     box-sizing: border-box;
     padding: 0 var(--wf-phone-pill-px);
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     white-space: nowrap;
   }

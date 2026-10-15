@@ -292,7 +292,7 @@
     max-width: 100%;
     padding: 0 6px 0 14px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -336,7 +336,7 @@
     min-height: 28px;
     padding: 0 12px;
     border-color: transparent;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-sm);
     box-shadow: none;
     color: var(--toast-ink);
     background: color-mix(in srgb, var(--toast-ink) 14%, transparent);

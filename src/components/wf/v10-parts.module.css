@@ -687,7 +687,7 @@ button.groupHead:focus-visible {
     padding: 0 6px;
     box-sizing: border-box;
     border: 1px solid var(--wf-line-3);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     white-space: nowrap;
