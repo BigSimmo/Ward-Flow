@@ -631,9 +631,16 @@ is inferred.
 - **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §14).
 - **Decision:** Urgency tier (`T1`–`T3`) time thresholds and target lines in the demonstration prototype remain synthetic placeholder values and require formal clinical governance sign-off before any real-patient or live operational use (consistent with D-4, D-22 and D-36).
 - **Why:** Prevents synthetic demonstration wait thresholds from being mistaken for ratified WA Health clinical policy.
+- **Subsequent note (15 October 2026):** Josh signed the tier targets for the prototype (D-56). This decision still stands: real-patient or live use needs formal clinical governance sign-off.
 
 ## D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026)
 
 - **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Big picture repo review").
 - **Decision:** The dedicated Ward Flow Supabase project (`zakzoemeedfepxcstsou`) is the current database and sign-in provider for the shared synthetic workspace. The Azure Functions host, Azure Blob session vault, Azure PostgreSQL and Entra sign-in code are removed. Plain PostgreSQL stays behind the same provider seam as a fallback. [`DATABASE.md`](DATABASE.md) is the single source of truth for the provider and how to change it.
 - **Why:** Supabase was already the default (PR #289), and keeping three providers left stale code and docs. One seam keeps a future switch to one adapter and one setting. Real patient data still needs separate hosting approval, a privacy impact assessment and clinical sign-off.
+
+## D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Clinical values file", decision card "Sign the 31 sourced"; the card miscounted, and 30 values have a recorded source).
+- **Decision:** In [`ward-clinical-values.ts`](../../src/components/ward-management/ward-clinical-values.ts), every value with a recorded source (a decision id or an owner answer), 30 of the 44, is marked signed by Josh on 15 October 2026, at the figure the app ran on that day. The 14 values with "No decision recorded" as their source stay synthetic until a decision is made. Where two figures conflicted (for example the 85% bed alert against the 90% amber occupancy band), the figure the app runs on is the one signed. The other figure stays listed under "Other figures seen".
+- **Why:** One file now holds every clinical threshold, so a sign-off can be recorded against each value instead of being implied. Signing is for the prototype. Real-patient or live use still needs formal clinical governance sign-off (D-54), and no value is a legal limit (D-22).
