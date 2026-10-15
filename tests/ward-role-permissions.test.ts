@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { communityScreenSource } from "./helpers/community-screen-sources";
+
 import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "../src/components/ward-management/ward-flow-roles";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
@@ -180,10 +182,15 @@ describe("role screens dispatch only what their route's role may take", () => {
   const root = join(__dirname, "../src/components/ward-management");
   for (const [file, role] of Object.entries(ROLE_SCREENS)) {
     it(`${file} (${role} route)`, () => {
-      // `ed/ed-screen.tsx` stands for the whole ED screen: fix list 2.5 and 9.6 (15 Oct 2026) split
-      // it into sibling files, and `edScreenSource()` reads every one of them, so a dispatch added
-      // to any part of the screen is still checked against the ED role.
-      const source = file === "ed/ed-screen.tsx" ? edScreenSource() : readFileSync(join(root, file), "utf8");
+      // The ED and community screens were split into sibling files on 15 Oct 2026 (fix list 2.5 and
+      // 9.6). Each entry reads every file of its screen, so a dispatch added to any part of the
+      // screen is still checked against that screen's role.
+      const source =
+        file === "ed/ed-screen.tsx"
+          ? edScreenSource()
+          : file === "community/community-screen.tsx"
+            ? communityScreenSource(join(__dirname, ".."))
+            : readFileSync(join(root, file), "utf8");
       const types = [...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g)].map((match) => match[1] as EventType);
       expect(types.length, "no dispatch found; update this list if the screen moved").toBeGreaterThan(0);
       for (const type of new Set(types)) {
