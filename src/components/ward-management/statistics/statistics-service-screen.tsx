@@ -327,7 +327,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             name: shortDepartmentName(department.name),
             figures: edWaitFigures(movements, department.id, now),
           }))}
-          edWaiting={edWaiting}
+          edWaiting={small(edWaiting)}
           outOfArea={outOfAreaEntries}
         />
       ) : (
@@ -427,7 +427,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             className={detail.anchor}
             icon={Clock}
             title="ED waits"
-            aside={`${edWaiting} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            aside={`${small(edWaiting)} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>
@@ -536,7 +536,8 @@ function ServicePhone({
   states: { unit: Unit; states: ReturnType<typeof bedStates> }[];
   pendingPreparation: number;
   eds: { id: string; name: string; figures: ReturnType<typeof edWaitFigures> }[];
-  edWaiting: number;
+  /** Worded as "fewer than 5" for an executive, like the hero. */
+  edWaiting: number | string;
   outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
 }) {
   const sum = (pick: (entry: (typeof states)[number]) => number) =>

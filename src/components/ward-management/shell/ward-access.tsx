@@ -151,7 +151,15 @@ export function useSmallNumber(): (count: number) => number | string {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const hide = on && access.role === "executive";
-  return useCallback((count: number) => (hide ? smallNumberText(count) : count), [hide]);
+  // A worded count is a string and an exact one stays a number, so a caller can tell them apart.
+  return useCallback(
+    (count: number) => {
+      if (!hide) return count;
+      const text = smallNumberText(count);
+      return text === String(count) ? count : text;
+    },
+    [hide],
+  );
 }
 
 /**
@@ -238,18 +246,18 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     // Audit, governance, refusals and the event log are the coordinator's. A service coordinator
     // keeps only the records about its own service's wards, journeys and referrals (Josh's yes,
     // 15 Oct 2026), so a whole network record or another service's never reaches it.
-    const scope = coordinatorRecordScope(scoped, context.bedReleases, unitIn);
+    const scope = coordinatorRecordScope(scoped, context.bedReleases, unitIn, (edId) =>
+      edInScope(access.scope, edId, places),
+    );
     const reviewInScope = (actor: WardRecordActor) => {
       // A review can be of a seeded governance entry, so the governance read is the fuller list.
       const read = context.readGovernanceAuditEvents?.(actor) ?? context.readAuditEvents(actor);
       const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
       return (review: AuditReview) => kept.has(review.eventId);
     };
-    // A refusal that names no journey (a refused record command records "none") is the desk's own
-    // and stays, so the screen that sent it hears the refusal (review on PR #345).
-    const allMovementIds = new Set<string>(context.movements.map((movement) => movement.id));
-    const rejectionInScope = (rejection: Rejection) =>
-      !allMovementIds.has(rejection.movementId) || scope.movementIds.has(rejection.movementId);
+    // A refusal names its subject: a journey, ward, stay, release or ED, or "none" for a refused
+    // record command, which is the desk's own and stays so its screen hears it (review on PR #345).
+    const rejectionInScope = (rejection: Rejection) => scope.rejectionSubject(rejection.movementId);
     const auditRead = <T,>(
       read: RecordRead<readonly T[]>,
       keep: (items: readonly T[]) => T[],

@@ -318,6 +318,7 @@ describe("the scoped workspace", () => {
       transport: { ...job.transport!, arrivedAt: undefined },
       closure: undefined,
       owner: "Synthetic owner",
+      blocker: "Synthetic typed note",
       referredUnitIds: [unitId],
       declines: [{ unitId, at: NOW_ANCHOR, reason: "no_bed" }],
       unwinds: [
@@ -337,6 +338,7 @@ describe("the scoped workspace", () => {
     expect(trimmed.legalStatus).toBe(open.legalStatus);
     expect(trimmed.originEdId).toBe(open.originEdId);
     expect(trimmed.owner).toBe("");
+    expect(trimmed.blocker).toBe("");
     expect(trimmed.referredUnitIds).toEqual([]);
     expect(trimmed.declines).toEqual([]);
     expect(trimmed.statusChanges).toEqual([]);
@@ -385,7 +387,17 @@ describe("the scoped workspace", () => {
         { id: "review-of-config", subject: { kind: "audit-event", eventId: "config" } as const },
       ];
       expect(records.auditEvents(events).map((event) => event.id)).toEqual(["kept", "review"]);
+      // An event acted by, or naming, another service's ward is left out whole.
+      const foreign = [
+        { id: "acted", subject: about, actor: { actingUnitId: otherUnit.id } },
+        { id: "target", subject: about, details: { targets: [{ unitId }, { unitId: otherUnit.id }] } },
+        { id: "own", subject: about, actor: { actingUnitId: unitId }, details: { targets: [{ unitId }] } },
+      ];
+      expect(records.auditEvents(foreign).map((event) => event.id)).toEqual(["own"]);
     }
+    expect(records.rejectionSubject("none")).toBe(true);
+    expect(records.rejectionSubject(unitId)).toBe(true);
+    expect(records.rejectionSubject(otherUnit.id)).toBe(false);
   });
 
   it("hides counts below the small-number threshold", () => {

@@ -27,6 +27,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditSubject } from "@/components/ward-management/ward-audit";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
+import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -141,6 +142,8 @@ function withoutDiagnosis(movement: Movement): Movement {
   return rest;
 }
 
+const ENGINE_BLOCKERS: ReadonlySet<string> = new Set(Object.values(STAGE_TRANSITION_BLOCKERS));
+
 /** What a collection reads beyond the always present fields, copied only when recorded. */
 const COLLECTION_FIELDS = [
   "patientId",
@@ -195,7 +198,9 @@ function collectionMovement(movement: Movement): Movement {
     withdrawnReferrals: [],
     stageChanges: [],
     unwinds: movement.unwinds.filter((unwind) => unwind.kind === "transport_cancelled"),
-    blocker: movement.blocker,
+    // The officer reads the blocker only to spot the engine's own sentences. A person's typed
+    // blocker note is not a collection field (review on PR #345).
+    blocker: ENGINE_BLOCKERS.has(movement.blocker) ? movement.blocker : "",
   };
   for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
   return trimmed as Movement;
@@ -588,6 +593,13 @@ export function smallNumberText(count: number): string {
   return String(count);
 }
 
+type ScopedAuditEvent = {
+  id: string;
+  subject: AuditSubject;
+  actor?: { actingUnitId: string | null };
+  details?: unknown;
+};
+
 /**
  * Which coordinator records a service coordinator keeps (Josh's yes, 15 Oct 2026): those about its
  * own service's wards, journeys, referrals, stays and bed releases. A record naming anything outside
@@ -601,11 +613,18 @@ export function coordinatorRecordScope(
   },
   bedReleases: readonly { id: string; unitId: string }[],
   unitIn: (unitId: string) => boolean,
+  edIn: (edId: string) => boolean = () => false,
 ): {
   movementIds: ReadonlySet<string>;
   subject(subject: AuditSubject): boolean;
-  /** The events in scope. One about another audit event (a review) follows the event it is about. */
-  auditEvents<E extends { id: string; subject: AuditSubject }>(events: readonly E[]): E[];
+  /**
+   * The events in scope. An event acted by, or naming a ward target, outside the scope is left out
+   * whole, so no other service's ward or outcome is shown. One about another audit event (a review)
+   * follows the event it is about.
+   */
+  auditEvents<E extends ScopedAuditEvent>(events: readonly E[]): E[];
+  /** A refusal's subject id: a journey, referral, stay, release, ward or ED in scope, or "none". */
+  rejectionSubject(id: string): boolean;
   logEntry(entry: EventLogEntry): boolean;
 } {
   const movementIds = new Set(scoped.movements.map((movement) => movement.id));
@@ -639,20 +658,41 @@ export function coordinatorRecordScope(
     ].filter((answer): answer is boolean => answer !== undefined);
     return named.length > 0 && named.every(Boolean);
   };
-  const auditEvents = <E extends { id: string; subject: AuditSubject }>(events: readonly E[]): E[] => {
-    const kept = new Set(events.filter((event) => subject(event.subject)).map((event) => event.id));
+  const wardsInScope = (event: ScopedAuditEvent): boolean => {
+    const acting = event.actor?.actingUnitId;
+    if (acting !== undefined && acting !== null && !unitIn(acting)) return false;
+    const targets = (event.details as { targets?: readonly { unitId: string | null }[] } | undefined)?.targets;
+    return (targets ?? []).every((target) => target.unitId === null || unitIn(target.unitId));
+  };
+  const auditEvents = <E extends ScopedAuditEvent>(events: readonly E[]): E[] => {
+    const kept = new Set(
+      events.filter((event) => subject(event.subject) && wardsInScope(event)).map((event) => event.id),
+    );
     // A review of a review follows its chain, so repeat until nothing more joins.
     for (let grew = true; grew;) {
       grew = false;
       for (const event of events)
-        if (event.subject.kind === "audit-event" && !kept.has(event.id) && kept.has(event.subject.eventId)) {
+        if (
+          event.subject.kind === "audit-event" &&
+          !kept.has(event.id) &&
+          kept.has(event.subject.eventId) &&
+          wardsInScope(event)
+        ) {
           kept.add(event.id);
           grew = true;
         }
     }
     return events.filter((event) => kept.has(event.id));
   };
-  return { movementIds, subject, auditEvents, logEntry };
+  const rejectionSubject = (id: string): boolean =>
+    id === "none" ||
+    movementIds.has(id) ||
+    referralIds.has(id) ||
+    admissionIds.has(id) ||
+    releaseIds.has(id) ||
+    unitIn(id) ||
+    edIn(id);
+  return { movementIds, subject, auditEvents, rejectionSubject, logEntry };
 }
 
 /**
