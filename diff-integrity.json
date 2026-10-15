@@ -381,13 +381,6 @@
       "after": 10,
       "reason": "The 15 removed cases drove the retired full-page New referral form (referral-intake.tsx), deleted with Josh's approval on 8 Oct 2026 when the referral slide-out (option B) became the only place a referral is written. Destination rules the slide-out still has are kept here and in tests/ward-referral-drawer-sheet.dom.test.tsx.",
       "approvedOn": "2026-10-08"
-    },
-    {
-      "path": "docs/ward-flow/handover/templates/template-visual.dom.test.tsx",
-      "before": 5,
-      "after": 0,
-      "reason": "Removed with the rest of docs/ward-flow/handover/ in the third docs trim (15 Oct 2026). This was a copy-and-adapt template for handover authors, not a test of the app: it imports a sample HorizonGantt from the template folder beside it, and the Vitest projects only collect tests/**/*.dom.test.tsx, so it never ran in any suite. No app behaviour loses coverage. The file is kept in commit cac245b and docs/ward-flow/ARCHIVE-NOTE.md says how to restore it. Recorded so the removal is visible to a reviewer rather than looking like an unnoticed deletion.",
-      "approvedOn": "2026-10-15"
     }
   ]
 }

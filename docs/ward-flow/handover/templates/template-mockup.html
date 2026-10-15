@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sovereign Clinical Screen Mockup Template</title>
+    <style>
+      /* ==========================================================================
+       SOVEREIGN DESIGN SYSTEM TOKENS
+       ========================================================================== */
+      :root {
+        --bg: #090d12;
+        --surface: #0f1620;
+        --surface-raised: #151f2d;
+        --surface-sunken: #06090d;
+        --surface-overlay: rgba(21, 31, 45, 0.88);
+
+        --border-subtle: rgba(255, 255, 255, 0.07);
+        --border-medium: rgba(255, 255, 255, 0.14);
+        --border-prominent: rgba(255, 255, 255, 0.24);
+
+        --text-primary: #f0f4f8;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.16);
+        --on-accent: #ffffff;
+
+        /* Clinical Event Tokens (Dark Theme >= 4.5:1 WCAG AA) */
+        --admit-bg: #7ea3bf;
+        --admit-text: #08131a;
+        --transit-bg: #9381b0;
+        --transit-text: #120d1e;
+        --leave-bg: #282319;
+        --leave-border: #7c6833;
+        --leave-text: #ffd885;
+        --discharge-bg: #4e9b7a;
+        --discharge-text: #0b1510;
+        --delay-bg: #b54938;
+        --delay-text: #ffffff;
+        --predicted-bg: #282319;
+        --predicted-border: #6d5b2c;
+        --predicted-text: #fedb88;
+
+        --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --font-mono: "Geist Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+
+      [data-theme="light"] {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface-raised: #f1f5f9;
+        --surface-sunken: #e2e8f0;
+        --surface-overlay: rgba(255, 255, 255, 0.92);
+
+        --border-subtle: rgba(0, 0, 0, 0.06);
+        --border-medium: rgba(0, 0, 0, 0.12);
+        --border-prominent: rgba(0, 0, 0, 0.22);
+
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+
+        --accent: #1d4ed8;
+        --accent-soft: rgba(29, 78, 216, 0.12);
+        --on-accent: #ffffff;
+
+        /* Light Theme Tuned Swatches (>= 4.5:1 WCAG AA) */
+        --admit-bg: #e0f2fe;
+        --admit-text: #03456b;
+        --transit-bg: #f3e8ff;
+        --transit-text: #581c87;
+        --leave-bg: #fef9c3;
+        --leave-border: #eab308;
+        --leave-text: #713f12;
+        --discharge-bg: #dcfce7;
+        --discharge-text: #14532d;
+        --delay-bg: #fee2e2;
+        --delay-text: #991b1b;
+        --predicted-bg: #fef3c7;
+        --predicted-border: #f59e0b;
+        --predicted-text: #78350f;
+      }
+
+      /* Reset & Base Styles */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 24px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* App Shell Header */
+      .appHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-medium);
+      }
+
+      .appTitle {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+
+      .themeToggleBtn {
+        background: var(--surface-raised);
+        color: var(--text-primary);
+        border: 1px solid var(--border-medium);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      /* Horizon / Timeline Component */
+      .horizonPanel {
+        background: var(--surface);
+        border: 1px solid var(--border-medium);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .horizonToolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: var(--surface-raised);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .toolbarTitle {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .toolbarControls {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .zoomGroup {
+        display: flex;
+        border: 1px solid var(--border-medium);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .zoomBtn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 4px 10px;
+        font-size: 12px;
+        font-family: var(--font-mono);
+        cursor: pointer;
+      }
+
+      .zoomBtn.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        font-weight: 600;
+      }
+
+      /* Scrubber Slider */
+      .scrubberContainer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      .scrubberRange {
+        cursor: pointer;
+        accent-color: var(--accent);
+      }
+
+      /* 34px Lane Standard & Tracks */
+      .laneContainer {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .laneRow {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        height: 34px; /* The 34px Lane Standard */
+        border-bottom: 1px solid var(--border-subtle);
+        align-items: center;
+      }
+
+      .laneLabel {
+        padding: 0 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .laneTrack {
+        position: relative;
+        height: 100%;
+        background: var(--surface-sunken);
+      }
+
+      /* 20px Event Bar Standard */
+      .eventBar {
+        position: absolute;
+        top: 7px; /* Centering: (34 - 20) / 2 = 7px */
+        height: 20px; /* The 20px Event Bar Standard */
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        padding: 0 6px;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 11px;
+        cursor: pointer;
+        overflow: hidden;
+        white-space: nowrap;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        transition: transform 0.1s ease;
+      }
+
+      .eventBar:hover {
+        transform: translateY(-1px);
+        z-index: 10;
+      }
+
+      /* Event Swatches */
+      .barAdmit {
+        background: var(--admit-bg);
+        color: var(--admit-text);
+      }
+      .barDischarge {
+        background: var(--discharge-bg);
+        color: var(--discharge-text);
+      }
+      .barLeave {
+        background: var(--leave-bg);
+        border: 1px solid var(--leave-border);
+        color: var(--leave-text);
+      }
+      .barDelay {
+        background: var(--delay-bg);
+        color: var(--delay-text);
+      }
+
+      /* Adaptive Typography Modes */
+      .mode-id .eventFull {
+        display: none;
+      }
+      .mode-compact .eventFull {
+        display: none;
+      }
+      .mode-compact .eventStatus {
+        display: inline;
+      }
+      .mode-full .eventFull {
+        display: inline;
+      }
+
+      /* Detail Drawer & Overlay */
+      .drawerBackdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        display: none;
+        justify-content: flex-end;
+        z-index: 100;
+      }
+
+      .drawerBackdrop.open {
+        display: flex;
+      }
+
+      .detailDrawer {
+        width: 400px;
+        max-width: 90vw;
+        background: var(--surface);
+        border-left: 1px solid var(--border-medium);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-drawer);
+      }
+
+      .drawerHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .drawerCloseBtn {
+        background: transparent;
+        border: 1px solid var(--border-medium);
+        color: var(--text-secondary);
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .drawerBody {
+        padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      /* Disclosure Footer */
+      .disclosureFooter {
+        margin-top: 32px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border-subtle);
+        background: var(--surface-sunken);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .disclosureBadge {
+        background: var(--border-medium);
+        color: var(--text-secondary);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="appHeader">
+      <div class="appTitle">Movement Horizon · Synthetic Demonstration</div>
+      <button type="button" class="themeToggleBtn" id="themeToggle">Theme: Dark</button>
+    </header>
+
+    <main>
+      <section class="horizonPanel" role="region" aria-label="Today's traffic">
+        <div class="horizonToolbar">
+          <div class="toolbarTitle">48-Hour Movement Horizon</div>
+          <div class="toolbarControls">
+            <div class="zoomGroup" role="group" aria-label="Timeline zoom range">
+              <button type="button" class="zoomBtn" data-zoom="12">12h</button>
+              <button type="button" class="zoomBtn" data-zoom="24">24h</button>
+              <button type="button" class="zoomBtn active" data-zoom="48">48h</button>
+            </div>
+            <div class="scrubberContainer">
+              <label for="scrubber">Time Scrub:</label>
+              <input
+                type="range"
+                id="scrubber"
+                class="scrubberRange"
+                min="0"
+                max="48"
+                value="0"
+                aria-label="Timeline scrubber"
+              />
+              <span id="scrubberVal">T+0h</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="laneContainer">
+          <!-- Lane 1 -->
+          <div class="laneRow">
+            <div class="laneLabel" title="FSH · Ward 4A">FSH · Ward 4A</div>
+            <div class="laneTrack">
+              <div
+                class="eventBar barAdmit mode-full"
+                style="left: 10%; width: 35%"
+                role="button"
+                tabindex="0"
+                data-patient="MRN-4012"
+                data-name="C. Higgins"
+                data-type="Admit"
+              >
+                <span class="eventId">MRN-4012</span>
+                <span class="eventFull"> · C. Higgins (Direct Admit)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lane 2 -->
+          <div class="laneRow">
+            <div class="laneLabel" title="RPH · Ward 2K">RPH · Ward 2K</div>
+            <div class="laneTrack">
+              <div
+                class="eventBar barLeave mode-compact"
+                style="left: 45%; width: 22%"
+                role="button"
+                tabindex="0"
+                data-patient="MRN-8821"
+                data-name="S. Vance"
+                data-type="Leave Return"
+              >
+                <span class="eventId">MRN-8821</span>
+                <span class="eventStatus"> · Leave Return</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lane 3 -->
+          <div class="laneRow">
+            <div class="laneLabel" title="Graylands · W3">Graylands · W3</div>
+            <div class="laneTrack">
+              <div
+                class="eventBar barDischarge mode-id"
+                style="left: 70%; width: 12%"
+                role="button"
+                tabindex="0"
+                data-patient="MRN-1094"
+                data-name="A. Kumar"
+                data-type="Discharge"
+              >
+                <span class="eventId">MRN-1094</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lane 4 -->
+          <div class="laneRow">
+            <div class="laneLabel" title="Rockingham · W1">Rockingham · W1</div>
+            <div class="laneTrack">
+              <div
+                class="eventBar barDelay mode-full"
+                style="left: 15%; width: 40%"
+                role="button"
+                tabindex="0"
+                data-patient="MRN-3319"
+                data-name="E. Thorne"
+                data-type="Delayed Discharge"
+              >
+                <span class="eventId">MRN-3319</span>
+                <span class="eventFull"> · E. Thorne (NDIS Placement Delay)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Detail Drawer -->
+    <div class="drawerBackdrop" id="drawerBackdrop" role="presentation">
+      <div class="detailDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+        <div class="drawerHeader">
+          <h3 id="drawerTitle">Movement Details</h3>
+          <button type="button" class="drawerCloseBtn" id="drawerCloseBtn" aria-label="Close details">✕</button>
+        </div>
+        <div class="drawerBody" id="drawerBody">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <footer class="disclosureFooter" role="contentinfo">
+      <span class="disclosureBadge">PROTOTYPE</span>
+      <span>Synthetic Clinical Demonstration — WA Mental Health Act 2014 Topology</span>
+      <span>•</span>
+      <span>All Patient Names & Identifiers are Procedurally Generated</span>
+    </footer>
+
+    <script>
+      // Theme Toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        themeBtn.textContent = "Theme: " + next.charAt(0).toUpperCase() + next.slice(1);
+      });
+
+      // Drawer Logic with Focus Trap & Escape Key
+      const backdrop = document.getElementById("drawerBackdrop");
+      const closeBtn = document.getElementById("drawerCloseBtn");
+      const drawerBody = document.getElementById("drawerBody");
+      let lastActiveTrigger = null;
+
+      function openDrawer(eventBar) {
+        lastActiveTrigger = eventBar;
+        const patient = eventBar.dataset.patient;
+        const name = eventBar.dataset.name;
+        const type = eventBar.dataset.type;
+
+        drawerBody.innerHTML = `
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 18px; font-weight: 700;">${name}</div>
+          <div style="font-family: var(--font-mono); color: var(--text-secondary);">${patient}</div>
+        </div>
+        <div style="padding: 12px; background: var(--surface-sunken); border-radius: 6px; font-size: 13px;">
+          <strong>Status:</strong> ${type}<br>
+          <strong>Statutory Authority:</strong> Form 4A Transport Order<br>
+          <strong>Escort:</strong> Mental Health Transport Service
+        </div>
+      `;
+
+        backdrop.classList.add("open");
+        closeBtn.focus();
+      }
+
+      function closeDrawer() {
+        backdrop.classList.remove("open");
+        if (lastActiveTrigger) lastActiveTrigger.focus();
+      }
+
+      document.querySelectorAll(".eventBar").forEach((bar) => {
+        bar.addEventListener("click", () => openDrawer(bar));
+        bar.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openDrawer(bar);
+          }
+        });
+      });
+
+      closeBtn.addEventListener("click", closeDrawer);
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) closeDrawer();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && backdrop.classList.contains("open")) {
+          closeDrawer();
+        }
+      });
+
+      // Scrubber Display
+      const scrubber = document.getElementById("scrubber");
+      const scrubberVal = document.getElementById("scrubberVal");
+      scrubber.addEventListener("input", (e) => {
+        scrubberVal.textContent = "T+" + e.target.value + "h";
+      });
+    </script>
+  </body>
+</html>

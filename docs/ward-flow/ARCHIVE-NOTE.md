@@ -57,15 +57,15 @@ git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- docs/ward-flow/mockups/
 
 ### Third pass: dated plans, reports, handovers and audit output
 
-A third trim removed 539 more files that no code, test, script or agent instruction reads:
+A third trim removed 507 more files. Nothing that runs reads them, and no live doc, data file, lesson or ruling depends on them. Historical inventories and old plans may still mention them by name.
 
-- 356 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README, `product-refinement/VISUAL-REVIEW.md`, the type floor record a lesson cites and every plan the code cites stay)
-- `docs/ward-flow/sdd-rescued/`, `register/`, `handover/`, `handovers/`, `reviews/`, `triage/`, `outstanding/`, `rescued/`, `merge/` and `evidence/`, apart from any file the code or a live doc cites
+- 346 dated build plans and briefs in `docs/ward-flow/plans/` (plans dated October 2026, the folder README and every plan something still cites stay)
+- `docs/ward-flow/sdd-rescued/`, `register/`, `handovers/`, `reviews/`, `triage/`, `outstanding/`, `rescued/`, `merge/` and `evidence/`, apart from any file something still cites
 - the September reports in `docs/ward-flow/reports/`
 - dated chat prompts, pre-registrations, finding registers and test sweeps at the top of `docs/ward-flow/`
 - `docs/ward-flow/audit-artefacts/stabilisation-suite-report.json` (4 MB of test output, which `scripts/ward-flow/audit/measure-ward-suite.mjs` writes again when run)
 
-Kept on purpose: both ledgers (they hold owner rulings), the owner rulings and decision records, the lessons (the rules index reads them), `reference-data/` (the reference build scripts read it), and the drawings the screen verification check reads.
+Kept on purpose: both ledgers (they hold owner rulings), the owner rulings and decision records and the evidence they cite, the lessons (the rules index reads them) and the files they cite, `handover/` (a lesson cites it), the acceptance evidence `screen-verification.json` cites, the process audit `live-state.json` checks, `reference-data/` (the reference build scripts read it), and the drawings the screen verification check reads.
 
 These files are kept in commit `cac245b` (`cac245bccbbc30115fe4ef9a38b8cfee0f149e92`), the last `main` commit before this pass. For example:
 

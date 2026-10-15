@@ -1,0 +1,447 @@
+{
+  "_howToUse": "Open the mockup file and the running screen side by side in a real browser, at 390px, 820px and 1440px wide, in both light and dark. Then find this screen's entry below and replace its 'verified': null with an object recording what you saw — the date, your name, the widths and themes you checked, a verdict of 'matches', 'deviates' or 'blocked', the mockupSha256 hash for this file from docs/ward-flow/mockups/MANIFEST.json, and notes describing any deviation and why.",
+  "screens": [
+    {
+      "mockup": "command-third-edition.html",
+      "route": "/",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "062502625315466ad4f14d6baa43284953db0da3e4333c9f405f75f42660bee4",
+        "notes": "Six served command-r4 app/drawing pairs independently inspected. task-4-review-r2.md closes queue-header shrink, unwanted phone pressure and offscreen hub. Real engine populations, candidate ordering, eligibility and refusal text retained. Selected WF-014 then RGH: candidate checks update, Override enabled, Refer remains disabled for Moving with reason. No override submitted. Shared shell, source fingerprints, exact test status and full deviation references: plans/visual-rebuild-wave-one/tasks/integrated-acceptance-r1.md. Full suite executed451/451files with15failures. Focused screen corrections and final seam5/5 passed; mutation harness remains blocked by Windows UNKNOWN/open. Typecheck reports only two unchanged HEAD errors. Exact outcomes and final fingerprints: plans/visual-rebuild-wave-one/tasks/final-gate-checkpoint-r1.md. Human acceptance pending; screen is not finished. Latest r34 addendum: Command r28 actual SCGH diagram/candidate selection mismatch corrected with a focused passing regression and browser reproduction of consistent heading/showing/pressed selection. A real synthetic override was recorded to inspect Governance. The latest full run is 454/454 files, 4987 passed,77 failed,75 pending; subsequent focused correction passes do not rewrite it. See plans/visual-rebuild-full-estate/tasks/F14-integration-checkpoint-r31.md for superseding evidence. No full DOD claim. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "delays-third-edition.html",
+      "route": "/delays",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ae45af1c7b0b7c84c7f937698751356e3da5100f3c9ffa0f6f45a31492720344",
+        "notes": "Six served delays-r4 app/drawing pairs independently inspected. task-5-review-r1.md closes owner-strip wrapping, instruction order and invalid desktop-dark capture. Real 43-person open population, full blocker/clearance/legal/provenance content and separate resolved population retained. Wards marked13 and Other1 without hiding rows; phone strip reaches Other. WF-009 navigation and selected WF-014 lower detail checked. Shared shell, source fingerprints, exact test status and full deviation references: plans/visual-rebuild-wave-one/tasks/integrated-acceptance-r1.md. Full suite executed451/451files with15failures. Focused screen corrections and final seam5/5 passed; mutation harness remains blocked by Windows UNKNOWN/open. Typecheck reports only two unchanged HEAD errors. Exact outcomes and final fingerprints: plans/visual-rebuild-wave-one/tasks/final-gate-checkpoint-r1.md. Human acceptance pending; screen is not finished. Latest r37 addendum: Actual last open WF329 selected; its Voluntary/locked/Tier3/ED mental-health owner facts remain. Resolved today7 shows6placed/1did-not-proceed while Waiting43 remains unchanged. Six r36 lower captures reviewed clean (F01-delays-lower-review-r36.md). Current UI provides a resolved summary, not invented individual resolved rows. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "movement-third-edition.html",
+      "route": "/movements",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "c526e7712c7bf74901f7b117f1aac39b8b384c219d797f7abed61d8a84a229ff",
+        "notes": "Six fresh served r26 app/drawing pairs independently reviewed in plans/visual-rebuild-full-estate/tasks/F01-F02-visual-closure-r26.md. The primary action is present and fits all widths; its actual click announces that Record a decision is not wired, preserving the explicit D-16 ruling rather than inventing a destination. Actual WF-315 attention selection opened its existing detail sheet with recorded person/absence, journey, addressing, legal and transport facts; Escape closed it. Engine-derived corridor populations remain unchanged. Lower complete list/diagram and scroll ends remain pending; partial evidence, not full DOD. Latest r37 addendum: Resolved outcomes now show six Arrived and one Did not proceed from actual closure records, retaining frozen clocks and reasons. Fresh reload and six r37 captures independently reviewed (F01-movements-resolved-review-r37.md). Fixture-derived outcome regression and semantic stage-heading regression pass. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "capacity-third-edition.html",
+      "route": "/capacity",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent image reviewer (Luna); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "1366008c7909b6389340a970d35a2ee357e068b6dbe0e51f4fe02de80baf66dc",
+        "notes": "Six served r7 app/drawing viewport-top pairs inspected at native DPR1.25. Independent reviewer inspected all12 images: plans/visual-rebuild-full-estate/tasks/F00-F01b-visual-review-r7.md. No P1/P2 in those regions; tablet legend wraps readably. Current engine retains23wards303beds, fullbedgroup wording, preparing/held patterns and extra clinical table columns. Lower content and final drawer/closedrail/print proof remain pending: this is a record of partial looking, not screen completion. Earlier lowerphone r2 pairs were viewed and led to darkfilter/spacing fixes; their screenshots predate those fixes. Functionalfilter Needsconfirming2 and NorthMetroexpandedstate were observed. Relevant finalscreen/fullsuite gates are not complete; oldgate evidence doesnotvouch fornewsharedshell. Human acceptance pending. Latest r34 addendum: r31: Phone Wards panel and all four filters now contained; actual Needs confirming and North Metro group buttons work. Six changed cells independently reviewed in F01-capacity-phone-overflow-visual-closure-r31.md. Bed-map end six r29 cells reviewed in F01b-capacity-bedmap-visual-review-r29.md. r30 filter images were stale and are excluded. Local table scrolling remains; complete phone scrollbar-end interaction remains a separate check. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "ward-third-edition.html",
+      "route": "/ward/[unitId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "faf965e8fde959fe77ad15d8019e1585feabe7a50eb68ce8af93c23c431b1d9a",
+        "notes": "All six r16 app/drawing first-viewport cells were inspected at 390, 820 and 1440 in light and dark; evidence-list digest and observations are in tasks/F01-F02-F13-visual-review-r16.md. No page-local P1/P2 was found in the visible regions, and the extra ready-bed summary was retained as working behavior. This remains partial looking: lower update workflows, interactions, focus, print and forced colours were not proved, and the report notes post-capture shared-bar changes. Fresh current-source capture is required before any match or full-DOD claim. Latest r34 addendum: r31/r32: Ordinary SJGS Adult Secure update disclosure opened. Select widths, release-action height and prose spacing corrected and inspected across six cells plus two lower phone captures; see F02-ward-form-visual-closure-r31.md. Existing daily-count confirmation and separate Answer capacity confirmation were exercised earlier without exposing Answer-only facts on the ordinary ward. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "wards-third-edition.html",
+      "route": "/wards",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "bbe943321f3811e3f8e6b0973572524299e3e796d10b74a71b5a3e6b674bf28f",
+        "notes": "Six fresh served r26 app/drawing pairs independently reviewed in plans/visual-rebuild-full-estate/tasks/F01-F02-visual-closure-r26.md. New referral is present at all sizes. Directory now has three columns at 820 and four at 1440 with the long EMyU label contained. Actual New referral opened the two existing source choices; From an emergency department reached /referrals/new?source=ed_medical with ED medical staff selected and incomplete Send disabled. All 23 wards remain in the directory. Phone cards below the first viewport and final service group still need inspection; partial evidence, not full DOD. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "bed-board-third-edition.html",
+      "route": "/board/[unitId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "cd0bfe4491f1fac4b37d274a188633a47ffd3e26eed557552b925fcff3fef77e",
+        "notes": "Six served board-r4 app/drawing pairs independently inspected; desktop selected cells superseded by board-r5-app-1440 light/dark, plus narrow r5 dark closure. task-7-review-r1.md closes selected-column cascade and records print restoration. Engine does not assign identifiable locked/open bays; no fake quiet-shift scenario. Ten real facts retain On leave. Twenty tiles preserved; exclusion clears selection/focus safely, all three tabs reachable, confirmed/expected populations separate, Change ward uses real routes. Quiet-filter predicate corrected after captures (five to two); no layout change. Print media shows20beds/3flowpanels/dailySheet; actual PDF unverified. Shared shell, source fingerprints, exact test status and full deviation references: plans/visual-rebuild-wave-one/tasks/integrated-acceptance-r1.md. Full suite executed451/451files with15failures. Focused screen corrections and final seam5/5 passed; mutation harness remains blocked by Windows UNKNOWN/open. Typecheck reports only two unchanged HEAD errors. Exact outcomes and final fingerprints: plans/visual-rebuild-wave-one/tasks/final-gate-checkpoint-r1.md. Human acceptance pending; screen is not finished. Latest r37 addendum: All three real order choices now update their explanation to the actual comparator; no sorting change. Quiet count2 and selected two-day Male/Peel record opened the daily sheet. Canonical sheet surface fixes unreadable Light mode; six r37 cells independently close the finding (F07-board-visual-closure-r37.md). Board selection16/16 passed; print rules unchanged, print output not newly exercised. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "emergency-department-third-edition.html",
+      "route": "/ed/[edId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "85a6be83781cd9e51ca18a50cdeba18c4501e91c88366cee998651fd6c90f647",
+        "notes": "Partial r19 evidence only. All six app/drawing top-viewport pairs were independently inspected at .superpowers/sdd/2026-09-13-visual-rebuild-full-estate/emergency-department-{app,mock}-{1440,820,390}-{light,dark}-r19.png. No visible P1/P2 was found in the department strip, selected-department context, Needs attention panel, Department lists, or tab strip. A separate observed interaction selected Still to be moved and ArrowLeft returned Recently answered. RPH/JHC and title differences were accepted as engine-authoritative context. Lower content, full journeys, scroll ends, remaining keyboard/focus behavior, print, forced colors, screen-reader semantics, physical devices, and hosted behavior remain unverified; no DOD or human-match claim. Source-to-capture hashes were not recorded, so this object does not claim current-source byte identity. Evidence: tasks/F08-F14-network-governance-ed-visual-review-r19.md. Latest r37 addendum: Actual PEEL8 to ARM4 department switch; Recently answered0 preserves empty branch, Still to be moved1 shows WF011 with missing acceptance time explicit. Last patient WF323 urgency form opens with Tier3 and no reason preselected; Record remains disabled. No mutation submitted. Twelve r37 lower/capacity-end captures reviewed without P1/P2 (F02-ed-lower-closure-r37.md); crops show only the form tail. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "community-team-third-edition.html",
+      "route": "/community/[teamId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ba23074d78bb7f705c4ade4b00c59af4139dd7168f047dea625ca187929ecc74",
+        "notes": "Six served app/drawing pairs independently inspected; community-r4 app/mockup captures and geometry, plus lower-phone table screenshot. No remaining assigned visual findings: plans/visual-rebuild-wave-one/tasks/task-6-review-r1.md. Retained engine populations, six real figures, admission identity, app-only registers, full provenance and truthful absence text; deviations and source fingerprints in task-6-report-r1.md. Change team to Albany verified measured empty state; phone table retains all columns; beforeprint/afterprint disclosure events checked. Actual Community screen tests passed in the six-file focused batch. Actual PDF, full integrated suite/typecheck and human acceptance pending; screen is not finished. Latest r37 addendum: Actual link from Midland statistics opens9accepted admissions and7expected-back records, with final bed/accepted rows inspected. Eighteen combined community/statistics lower r36 captures reviewed (F05-community-lower-review-r36.md). Missing source-team, follow-up and episode-end information remains stated as unavailable. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "patient-search-third-edition.html",
+      "route": "/search",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "4cd96fd0ff6555fbad9f84579e29ce64e6d682cad0dd1f896a12a67505451ee0",
+        "notes": "All six r17 app/drawing first-viewport cells were inspected at 390, 820 and 1440 in light and dark in tasks/F00-service-tasks-search-visual-review-r17.md; the earlier six-cell r16 review and contrast/order correction are in tasks/F03-search-visual-review-r16.md and tasks/F03-search-correction-r16.md. Results correctly remain above Search in the left column. The r17 review found the idle desktop preview panel still collapsed; the captured dark active Everything state also predates the controller-owned contrast correction. Fresh six-cell capture is required after those corrections. Internal scroll ends, selection, keyboard, lower content, print and forced colours remain unverified. Current-source update: all six r19 served app/drawing pairs independently viewed in plans/visual-rebuild-full-estate/tasks/F03-F07-patient-surfaces-visual-review-r19.md; no new P1/P2 in these visible regions. Search selected-facet contrast and idle-preview minimum height/padding, and Patient Now identity insets and flat referral action are corrected. The earlier visual findings are closed for these regions. Lower content, remaining journeys, print and final gates still prevent a full-DOD claim. Latest r34 addendum: r32/r34: Actual hallow search, patient preview, empty search, WF004 stage/department filters, arrow-key facet selection and person link exercised. Accepted referral preview contradicted itself and falsely implied a bed for community acceptance; shared summary corrected, focused preview tests passed in joVzU9. Fresh accepted-preview rendering remains pending. See F14-patient-settings-journeys-r34.md. Partial acceptance. Latest r37 addendum: Accepted RF010 preview now consistently says a destination agreed and none declined before acceptance. Four fresh r35 cells close the copy correction (F14-copy-correction-visual-closure-r35.md); existing real search/empty/keyboard/person-link journeys retained. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "patient-now-third-edition.html",
+      "route": "/people/[patientId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer/correction author; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ed139727d3b633300584938937cb04e510898b5f321730213cd81a56086a39c4",
+        "notes": "All six r16 app/drawing first-viewport cells were inspected at 390, 820 and 1440 in light and dark in tasks/F03-now-visual-review-r16.md. That review found light-theme unreadable identity/action text and a staggered desktop grid, then applied a bounded source correction. A later 1440-light-only polish used a newer pair in tasks/F03-patient-now-polish-r17.md. The six-cell r16 matrix therefore does not represent current source. Fresh six-cell capture, lower record sections, tab/referral journeys, keyboard, print and forced-colour checks are required; no independent post-correction match or full-DOD claim. Current-source update: all six r19 served app/drawing pairs independently viewed in plans/visual-rebuild-full-estate/tasks/F03-F07-patient-surfaces-visual-review-r19.md; no new P1/P2 in these visible regions. Search selected-facet contrast and idle-preview minimum height/padding, and Patient Now identity insets and flat referral action are corrected. The earlier visual findings are closed for these regions. Lower content, remaining journeys, print and final gates still prevent a full-DOD claim. Latest r34 addendum: r32/r34: PT001 Now/Details/Documents exercised with arrow keys; Refer Patient reached new referral with patientId link. Details and Documents six-cell review found a missing Documents inset, now corrected and captured at390/1440 both themes. New synthetic PT-A01 opened after Add Patient. Movement/eligibility/history absence preserved. See F03-patient-details-documents-visual-review-r32.md and F14-patient-settings-journeys-r34.md. Partial acceptance. Latest r37 addendum: Details six r32 cells and Documents corrected inset four r34 cells independently reviewed. Existing Now/Details/Documents keyboard navigation and patient-linked referral journey retained; no unsupported history or eligibility facts introduced. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "search-hub-third-edition.html",
+      "route": "/hub",
+      "verified": {
+        "date": "2026-09-12",
+        "who": "Codex controller (Astra), independent Hub visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ac45fa414e5f38e0eb62121054179bc635d4fb476e29710d59e05aa024aca2a6",
+        "notes": "All six served app/drawing pairs inspected; evidence hashes and frozen app fingerprints in plans/visual-rebuild-wave-one/tasks/task-2-visual-review-r1.md. Independent six-cell revision-2 closure confirms the table-header, inset-card and search-glyph corrections; no remaining assigned visual implementation finding. Exact current source/capture hashes are in the linked review closure. Engine-required differences retained: service-grouped directory, global search, absent Hub primary action, extra routes via More pages, truthful prototype/absence text and 48px targets. Root also checked ED no-bed detail, search/Escape, More pages focus/Escape, appearance controls/reload, lower-phone disclosure, forced-colour focus and print CSS/disclosure-event emulation. Actual PDF output unavailable. Focused pilot accepted after targeted corrections and reruns; exact accounting in plans/visual-rebuild-wave-one/tasks/pilot-gate-report-r1.md. Full suite/typecheck unrun. Screen is not finished. Latest r37 addendum: Final Kimberley placeholder preview preserves absence and links to Community index; four390/820 r37 cells reviewed. SJGS search gives2, ArrowDown twice/Enter reaches SJGS Adult Secure ward; browser Back and a settled Escape clear search, restore41results and focus the search field. Canonical Hub paint guard now verifies named palette scopes and rgba alias resolution; pairwise segment collision checks retained. F14-hub-governance-closure-r37.md and F14-hub-palette-guard-r37.md. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "raise-a-referral-third-edition.html",
+      "route": "/referrals/new",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-6); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "1e7e5a084bb5113b6b2c548045cfaef87c68d9710384771ab0bb8f643a97f94c",
+        "notes": "Fresh r27 summary six cells show human labels and truthful unanswered state. Actual incomplete/complete validation, synthetic community submission/reset and phone final-checkbox to Send focus are recorded. Independent r28 changed-cell review closes stretched summary cards and History legend overlap. See F04-intake-summary-visual-review-r27.md and F14-integration-checkpoint-r28.md. Partial acceptance; full lower-content range remains scoped to the recorded captures. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-overview-third-edition.html",
+      "route": "/statistics/overview",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "56832909a63c4b79b9f01554d4e16b5873b25ed4a90cb9f785f2508060ded55c",
+        "notes": "Six served app/drawing pairs independently inspected for this route at all required widths/themes; stats-overview-r4 or stats-compare-r4 app/mockup captures and geometry. No remaining assigned visual findings: plans/visual-rebuild-wave-one/tasks/task-3-visual-review-r1.md. Engine-derived populations and unsupported-measure explanations replace drawing sample content. Capacity descriptions, full provenance and printable disclosures retained; deviations and source fingerprints in task-3-report-r2.md. All five selected Statistics test files passed in the eleven-file focused batch. Legacy ward frame sampled at390/1440 both themes; overview three disclosures open/restore on print events. See integrated-acceptance-r1.md. Full integrated suite/typecheck and human acceptance pending; screen is not finished. Latest r37 addendum: Actual lower disclosure expansion and twelve r36 captures reviewed. Independent columns of unequal depth follow the authoritative drawing; the initial whitespace preference was withdrawn rather than changing the design (F05-statistics-overview-lower-r36.md). No unavailable measure replaced by zero. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-compare-third-edition.html",
+      "route": "/statistics/compare",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent visual reviewer (gpt-5.6-sol); agent inspection, human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "39f2d5eb347dc49de1aaa907fec8da1e0e3b97b846195d4dbf10f57310d08d85",
+        "notes": "Six served app/drawing pairs independently inspected for this route at all required widths/themes; stats-overview-r4 or stats-compare-r4 app/mockup captures and geometry. No remaining assigned visual findings: plans/visual-rebuild-wave-one/tasks/task-3-visual-review-r1.md. Engine-derived populations and unsupported-measure explanations replace drawing sample content. Capacity descriptions, full provenance and printable disclosures retained; deviations and source fingerprints in task-3-report-r2.md. All five selected Statistics test files passed in the eleven-file focused batch. Legacy ward frame sampled at390/1440 both themes; overview three disclosures open/restore on print events. See integrated-acceptance-r1.md. Full integrated suite/typecheck and human acceptance pending; screen is not finished. Latest r37 addendum: Twelve r36 table/chooser-end captures reviewed clean (F05-comparison-ward-lower-r36.md). Earlier absent-file claim was an ignored-artifact search mistake and is superseded. Ward and ED choices are real links, not an unimplemented selection control; SCGH/RPH and ARM ED links exercised. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-ward-third-edition.html",
+      "route": "/statistics/ward/[unitId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (Luna); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "a6377d7cb6e4273c5434dae443bbfe7c66472c88dc491a0e665304d47c7efb6e",
+        "notes": "Partial post-correction r20 evidence. All six app/drawing top-viewport pairs were independently inspected at .superpowers/sdd/2026-09-13-visual-rebuild-full-estate/statistics-ward-{app,mock}-{1440,820,390}-{light,dark}-r20.png. No visible P1/P2 remained in the identity band, KPI/table structure, discharge panel, clinically-ready panel, or light/dark contrast. The r20 phone cells show only the upper identity/KPI region; lower tables/charts, complete scroll range, interactions, focus/keyboard, print, forced colors, physical devices, and hosted behavior remain unverified. The reviewed capture followed the r19 label/KPI correction; current TSX/CSS bytes still match that correction report, but the visual report did not record a per-capture source fingerprint. Evidence: tasks/network-statistics-ward-tasks-visual-review-r20.md and tasks/F05-ward-statistics-correction-r19.md. Latest r37 addendum: Actual comparison chooser SCGH24beds/19occupied/2ready/2open to RPH20/18/1/1 updates the ward and denominator together. Twelve lower discharge/register/provenance r36 captures reviewed clean (F05-comparison-ward-lower-r36.md). Existing unavailable measures remain explicit. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-community-third-edition.html",
+      "route": "/statistics/community/[teamId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "0c3433eb02fb59b3637e53bc76f6ae08b9c0eb1b512b115ec61257f6df048747",
+        "notes": "All six r16 app/drawing first-viewport cells were inspected at 390, 820 and 1440 in light and dark in tasks/F05-F11-statistics-visual-review-r16.md. The review retained engine-authoritative Bentley/absence values but found Caseload and Time-to-first-contact subregions split into extra raised cards. The report requests regrouping and fresh capture; tasks/F05-F11-community-kpi-implementation-r1.md is source/static evidence only and does not close runtime appearance. Lower tables, entity switching, disclosures, keyboard, print and forced colours remain unverified; no current-match or full-DOD claim. Latest r37 addendum: Actual landing chooser Midland9/7/0/0 to Albany0/0/0/0 and back updates all headline counts with the selected team. Final comparison team rows and provenance inspected at all six cells (F05-community-lower-review-r36.md). Open Midland own page reaches the operational team view. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-emergency-department-third-edition.html",
+      "route": "/statistics/ed/[edId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "5f4d75db0c57a65038291972c5f6c35edc4cb26bdd3e5f926c754159f7dcac30",
+        "notes": "Fresh r27 six served pairs plus ten lower band/about/absence captures independently reviewed; no P1/P2 in inspected scope. Full title/Export at820/1440 now confirmed. Actual RPH-to-Peel navigation updates identity and five figures. Export remains the explicit D16 announcement-only action. See F11-statistics-ed-visual-review-r27.md and F14-integration-checkpoint-r28.md. Complete lower scroll ends remain outside this partial acceptance. Latest r37 addendum: Actual ARM4 to RGH8 department-statistics navigation updates heading/population; four390/820 lower r36 captures reviewed clean (F05-ed-switched-end-r36.md), reusing the earlier six-cell comparison. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "network-third-edition.html",
+      "route": "/network",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "d775086794d2ad9e104c43191012cb9db9a4f851fbedf2b8912519f0cba14be7",
+        "notes": "Six served r21 app/mock cells independently reviewed in tasks/F06-network-visual-review-r21.md. Desktop/tablet name and capability collisions are resolved by compact service-group cards. Phone pressure strip and equal tabs were restored; fresh light/dark r23 phone pairs independently close the remaining count clipping in tasks/F06-network-phone-closure-r23.md. All 23 unit counts and names remain engine-derived; no selected movement means no invented eligibility routes. Lower scroll contents and placement workspace interactions are not fully reviewed. Partial agent visual evidence, not full DOD. Latest r34 addendum: r29: Placement workspace shortlist containment, canvas height and Light palette corrected and independently closed in F06-network-workspace-visual-review-r28.md. Actual SCGH selection, all11 gates, ArrowLeft/Right tabs and movement link exercised. No automatic allocation or new destination confirmation introduced. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "governance-third-edition.html",
+      "route": "/governance",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ff7ba6bf1fb8a5b8983d245dad42686a6ba52478dfdad50d334d641976cbb651",
+        "notes": "Partial r19 evidence only. All six app/drawing top-viewport pairs were independently inspected at .superpowers/sdd/2026-09-13-visual-rebuild-full-estate/governance-{app,mock}-{1440,820,390}-{light,dark}-r19.png. No visible P1/P2 was found: the empty override/detail state and absence wording truthfully reflected the current model instead of inventing the drawing's populated review counters or decisions; mobile controls wrapped, the explanatory section continued below the viewport without visible clipping, and light/dark contrast was legible. Lower content, populated governance states, full journeys, focus/keyboard, print, forced colors, screen-reader semantics, physical devices, and hosted behavior remain unverified; no DOD or human-match claim. Source-to-capture hashes were not recorded, so this object does not claim current-source byte identity. Evidence: tasks/F08-F14-network-governance-ed-visual-review-r19.md. Latest r34 addendum: r31: A real synthetic WF001/SCGH override reached this register. Six populated cells plus four detail cells close unreadable Light row and false prior-gate-failure claim (F08-governance-visual-closure-r31.md). Later stale all-deadlines-removed prose corrected with retained-deadline/non-publication regression; current browser closure for that final sentence pending. Both Governance tests passed in dLV6AS, later updated Governance test passed in joVzU9. No review outcome invented; partial acceptance. Latest r37 addendum: Deadline limitation and populated override correction already closed in r35. Final subtitle now says Two measures reported, avoiding a false claim that both are computed. Four fresh390/1440 r37 captures independently close this sentence (F14-hub-governance-closure-r37.md). No governance measures or denominators changed. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "handover-third-edition.html",
+      "route": "/handover",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex visual reviewer/correction author (gpt-6); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "0389907aa51840b6df22b954ccba0c00254fee7fb3d3fc16a92f170417b187ed",
+        "notes": "Fresh six-cell served r21 app/mock comparison independently reviewed in tasks/F08-overflow-visual-review-r21.md. Canonical Print colours and bounded table scrolling close the prior findings. Actual ward filter selected RPH Adult Secure: 2 of 43 longest-wait rows (WF-014, WF-003) and in-transit WF-014; restored Whole network with 43 of 43. No sign-off submitted. Table ends and print output remain unverified; partial visual evidence only. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "discharges-third-edition.html",
+      "route": "/discharges",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-6); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "d6c67d2bd307b0bda97502b4992dbca70597d7ea372ed73cd404d5f723ee9e07",
+        "notes": "Fresh six-cell served r21 app/mock comparison independently reviewed in tasks/F08-overflow-visual-review-r21.md. The phone Unit-word fragmentation is closed; wide tables use contained horizontal scroll with visible native bars. Four engine-derived groups remain. No current P1/P2 in inspected portions. Lower rows, scroll ends and print output remain unverified; partial visual evidence only. Latest r37 addendum: Fresh-load r36 tablet and phone table-end evidence closes the Stage wrapping defect. Confirmed, Expected and Discharged labels remain intact; horizontal scrolling preserves all columns. F05-discharges-stage-correction-r34.md contains superseding r36 evidence; stale r35 and initial drawer-open r36 captures are excluded. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "out-of-area-third-edition.html",
+      "route": "/out-of-area",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex visual reviewer/correction author (gpt-6); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "9de29b5a4166442080ad1c138093fed691ea5bedec6ef7810ed45a32c6ccc055",
+        "notes": "Fresh r27 six served pairs plus selected Broome/Kimberley detail in six cells and two valid r28 lower-group captures reviewed. Full notice before entries and all five groups remain;217 combined unknown not fabricated into separate counts. Review found phone status column squeezing group labels; balanced tracks now written, fresh closure pending. group-end-r27 images excluded for absent selector. See F08-out-of-area-visual-review-r27.md and F14-integration-checkpoint-r28.md. Partial acceptance. Latest r34 addendum: r29: Balanced phone label/status columns independently close the long-status word-squeezing finding in both themes. F08-out-of-area-visual-review-r27.md contains closure; earlier r27 invalid group-target images excluded. All five groups and combined unknown population retained. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "on-call-third-edition.html",
+      "route": "/on-call",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "2ecf1ea87bd9cdc73f6a6b0f4bd0cca8eb1c4c34a8f1de40c86c36aee9a6f2a5",
+        "notes": "Six valid served app/drawing viewport-top pairs inspected: prior r9 light 1440/390 plus r10 light 820 and r10 dark 1440/820/390. Dark surfaces, contrast, card/table spacing and phone wrapping remain readable with no material overflow observed. App warning/provenance content and live population differ from the drawing by design. Lower content, journeys, focus/keyboard, print and final human acceptance remain pending; partial looking only, screen is not finished. Latest r37 addendum: Six r35 directory-end captures independently reviewed clean (F10-on-call-end-review-r35.md). Retains explicit absent contact/rota facts. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "alerts-third-edition.html",
+      "route": "/alerts",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "e1da59257bf1d82161298f64578df716960b701de99e2fd948bf1c6613e58ed5",
+        "notes": "Six valid served app/drawing viewport-top pairs inspected: prior r9 light 1440/390 plus r10 light 820 and r10 dark 1440/820/390. Dark cards, controls, row padding and phone wrapping remain readable with no material overflow observed. App alert populations and shell/control counts differ from the drawing by current engine state and shared chrome. Lower content, journeys, focus/keyboard, print and final human acceptance remain pending; partial looking only, screen is not finished. Latest r34 addendum: r32/r33: All three group/provenance disclosures opened. Six expanded and six limitation captures reviewed in F09-alerts-settings-visual-review-r33.md; no new layout P1/P2. Actual page has no acknowledgement action; handover alert absence remains explicit. Unsupported override failure wording corrected in source; fresh wording render and updated focused assertion pending. Partial acceptance. Latest r37 addendum: Four r35 cells close neutral override explanation: prior gate verdict is not held, rather than falsely asserting a failure. Existing expanded three groups and deadline limitations retained; six focused Alert tests pass in MGOTxd. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "transport-officer-third-edition.html",
+      "route": "/transport/officer",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "797a29aa00cc0734a731a749008c634bc07a862f817d0b3579f5c31b333686ad",
+        "notes": "Six valid served app/drawing viewport-top pairs inspected: prior r9 light 1440/390 plus r10 light 820 and r10 dark 1440/820/390. Dark panel/card spacing, action rows and phone wrapping remain readable with no material overflow observed. App live jobs and absent refused actions differ from the drawing fixture without evidence of a rendering defect. Lower content, journeys, focus/keyboard, print and final human acceptance remain pending; partial looking only, screen is not finished. Latest r37 addendum: Officer lower/end captures independently reviewed (F09-F10-officer-legal-end-state-review-r34.md). Earlier actual synthetic WF005 collection/arrival changed8to7jobs and43to42open; later provider reload reset the local demonstration, not the recorded historical evidence. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "legal-forms-third-edition.html",
+      "route": "/legal-forms",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "5b5fb6ec50ca581e19f305503ca3bde9404473d3b87390a88dcdeeae15af2ff1",
+        "notes": "Six valid served app/drawing viewport-top pairs inspected: prior r9 light 1440/390 plus r10 light 820 and r10 dark 1440/820/390. Dark/phone card spacing, deadline badges and text wrapping remain readable with no material overflow observed. App legal-form population and shell controls differ from the drawing fixture by current engine state/shared chrome. Lower content, journeys, focus/keyboard, print and final human acceptance remain pending; partial looking only, screen is not finished. Latest r37 addendum: Four deadline and fifteen no-deadline record ends independently reviewed in r34 (F09-F10-officer-legal-end-state-review-r34.md). Legal deadlines remain operationally recorded and monitored; no unsupported form action invented. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "add-a-patient-third-edition.html",
+      "route": "/people/new",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-6); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "2af4db0a8531ef10cc24884c31f4f50492574f1010cd5deb101ec76cd0562ff0",
+        "notes": "Six-cell r18/r19 served comparison plus changed 390/1440 light/dark r21 cells independently reviewed in tasks/F03-F07-patient-surfaces-visual-review-r19.md and tasks/F03-F07-closure-r21.md. Four Required markers are visible beside the existing mandatory identity labels; Gender remains optional and no Sex field was added. Compact form/duplicate-check headers and submit sizing close the observed findings. No current P1/P2 in inspected portions. Final validation/submission journey remains unverified; partial visual evidence only. Latest r34 addendum: r33/r34: Empty search Add this person link prefilled Given name only. Missing required answers kept Add unavailable. Exact existing record/name/date warning appeared in six captures; no duplicate submitted. A distinct synthetic Example Review/SYN-R33 was added and opened PT-A01; movements43,referrals6,capacity27 stayed unchanged. Native date keyboard interaction committed the date. See F14-patient-settings-journeys-r34.md. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "referrals-third-edition.html",
+      "route": "/referrals",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-6); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "60540121681203115c2e05f04a84ead49f00cc2d0124dc75840326ba2c4cb1c6",
+        "notes": "Retains r21 unselected matrix. Six r27 expanded RF011 travel-band cells independently reviewed with no P1/P2. Reason validation and actual local synthetic acceptance/cancel-other-destination/queue-update journey recorded; no movement or bed was created. Closed details were opened before inspection. See F07-referrals-selected-visual-review-r27.md and F14-integration-checkpoint-r28.md. Exact reference uses a different selected record; partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "settings-third-edition.html",
+      "route": "/settings",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "b2c41c410df39a310e89f3263792da8de05b8bddff8f5a136053e7828f6f3f80",
+        "notes": "All six valid served app/drawing viewport portions inspected in the r11 review: 1440/820/390 light and dark. Appearance, rail, default-service and handover-print sections retain readable spacing, role labels, controls and light/dark surface treatment; no material clipping or contrast defect was observed. App/drawing shell controls and copy differ by live prototype state and shared chrome. Some captures show the page at a nested/lower visible portion after prior UI scrolling, so this is partial visual evidence rather than proof of every page region. Lower content, settings interactions, keyboard focus, print output, forced colours and final human acceptance remain pending; screen is not finished. Latest r34 addendum: r33: Light appearance and closed rail survived actual reload after hydration; Open rail/Dark restored. Service default, print description and thresholds are explicitly read-only. Six lower captures found missing Demonstration-controls body inset; local CSS correction returned, fresh closure pending. See F12-settings-sign-in-boundary-report-r33.md. Partial acceptance. Latest r37 addendum: Demonstration-controls inset correction independently closed in four fresh r35 cells (F12-settings-sign-in-boundary-report-r33.md). Appearance and rail settings survived the actual reload; read-only settings remain explicit. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-third-edition.html",
+      "route": "/statistics",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "656aaf90665a33d5bc96ee1bd06f28ba01845a93d82aa4d55fb392f80ec08bc0",
+        "notes": "Retains the six-cell r19 served comparison and subsequent lower-panel colour corrections. Valid r24 Community/Service chooser and r25 open-index chooser app captures at 390/1440 light/dark were independently inspected; no current card colour or spacing finding remains. The four r24 index images are explicitly excluded for card proof because their disclosure was closed. Withheld-decline and referral-duration notices remain truthful and readable in both themes. Shared role mapping is now canonical. Complete lower-panel/tablet traversal and chooser journeys remain pending; partial evidence only. Latest r37 addendum: Actual Explore disclosure links reached Overview, Compare and the ward chooser; Community chooser reached Midland and its changing counts. Existing lower panels and served six-cell comparisons retained; no new network-wide community measure invented. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "statistics-service-third-edition.html",
+      "route": "/statistics/service/[serviceId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex visual reviewer (self-review for this authored screen); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "80cd8c1c8b8b8e96714f4ef2b2d4ed1c1eca3e4e1d441c12a4b6160e3ea5576d",
+        "notes": "Fresh r27 six served pairs plus ten lower placement/out-of-area/flow captures independently reviewed. Title/Export present, real North-to-South selection updates identity. Review found equal wide columns and overly stacked phone facts; scoped CSS now follows55/45 and compact facts, awaiting fresh visual closure. See F05-statistics-service-visual-review-r27.md, F05-statistics-service-correction-r27.md and F14-integration-checkpoint-r28.md. Partial acceptance. Latest r34 addendum: r28: Four corrected phone/desktop Light/Dark cells independently close55/45 proportions and compact facts. Container-safe min track correction passed focused grid gate4/4. F02-F05-wards-service-visual-review-r28.md supersedes the earlier fresh-closure-pending note. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "sign-in-third-edition.html",
+      "route": "/mockups/ward-flow-sign-in",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex Luna visual reviewer; human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "3c9b73905cfe2b1faab6d9f3dafc01356fbf163c0ae0d86da7176e79e2b7a839",
+        "notes": "All six served app/drawing viewport-top pairs inspected in the r10 review: 1440/820/390 light and dark. The seven real roles, prototype/permission explanation, centered card, role list, responsive wrapping and dark/light surfaces remain readable with no material overflow observed. App/drawing selected or focused role state can differ between captures. Role/action journeys, keyboard focus traversal, lower content, print, forced colours and final human acceptance remain pending; partial looking only, screen is not finished. Latest r34 addendum: r33: Keyboard focus reached the next role; Ward selection changed lists to4permitted/9notpermitted. Sign in as the ward truthfully announced not wired and opened nothing. Six lower refusal/continuation/theme cells independently reviewed with no P1/P2 in F12-settings-sign-in-boundary-report-r33.md. This remains a credential-free demonstration, not real sign-on. Partial acceptance. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    },
+    {
+      "mockup": "ward-answer-third-edition.html",
+      "route": "/ward/[unitId]/answer",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex independent visual reviewer (gpt-5.6-sol); human acceptance pending",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "a81fbd1e1e40a224feaac7cd5a1a34e514965ea5cb291fc4f0614b4507e00826",
+        "notes": "Populated FSH Older Adult/WF-002 r25 app/drawing pairs were inspected at all six width/theme cells. Eight actual movement facts and eleven real eligibility gates remain, without invented identity or another department disclosure. The ordinary-Ward leakage was caught by FD-23 and fixed; focused privacy tests pass. Confirm your beds uses one existing scoped capacity form; Recent answers uses ward-owned accepted/declined history and explicit absent timestamps/actor/shift information. Independent r26 six-cell lower-panel review plus two targeted 390 history images close the card, phone form and rail-gap findings. Desktop confirmation width follows the drawing. Reports: plans/visual-rebuild-full-estate/tasks/F13-ward-answer-visual-review-r25.md and F13-ward-answer-panel-correction-r26.md. Existing decline selection/disabled-to-enabled confirmation journey and new capacity/history DOM tests recorded. Partial acceptance; remaining estate gates are not rounded up. Latest r37 addendum: Prior visual and behavior evidence retained unchanged. Assembled gate update r37: full run dwY35L reached454/454files,5153collected,5077passed,1failed,75not passed or failed. The sole Hub hex-floor failure was corrected; subsequent affected-only cKs8Ph reached2/2files,35/35passed. Board selection16/16passed within N0seHa (overall49passed/2then-corrected other-file failures). Latest typecheck run-typecheck-r26.mjs session38099 passed without diagnostics. Mutation harness passed2/2 focused and in the assembled population. No full rerun or hosted proof claimed. These are bounded correction and review records; final DOD status remains separately assessed."
+      }
+    }
+  ]
+}
