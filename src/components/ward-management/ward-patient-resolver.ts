@@ -343,7 +343,7 @@ const NAMED_RECORD = new RegExp(
   String.raw`(\b[A-Za-z]+\s+)?\b(referral|admission|stay|patient|person|bed release|release|leave bed)\s+(?:[A-Za-z0-9]+-)*?${RECORD_TOKEN}\b`,
   "giu",
 );
-const ID_RECORD = new RegExp(String.raw`\bids?\s+${RECORD_TOKEN}\b`, "gu");
+const ID_RECORD = new RegExp(String.raw`\bids?\s+(?:[A-Za-z0-9]+-)*?${RECORD_TOKEN}\b`, "gu");
 const BARE_RECORD = new RegExp(String.raw`(?<![A-Za-z0-9-])${RECORD_TOKEN}(?![A-Za-z0-9-])`, "gu");
 
 /**
