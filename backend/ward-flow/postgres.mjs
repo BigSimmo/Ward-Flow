@@ -396,8 +396,16 @@ export function createWorkspaceStore(
    * Inside one locked transaction: approve or remove a membership the access admin's own place
    * covers. `change` returns a refusal, or the columns to set.
    */
-  async function changeMembership(view, membershipId, action, change) {
+  // Roles live in the tables migration 8 adds; before it, the access routes say so instead of failing.
+  function accessRefusal(view) {
     if (!engine.managesAccess(view.access)) return refused(403, notAdmin);
+    if (!(view.version >= ROLE_ACCESS_MIGRATION))
+      return refused(409, "Roles are not set up on this database yet. Apply migration 8 first.");
+    return null;
+  }
+  async function changeMembership(view, membershipId, action, change) {
+    const blocked = accessRefusal(view);
+    if (blocked) return blocked;
     return transaction(async (client, at) => {
       const row = await lock(client, view.actorId, at, view);
       const { rows } = await client.query(
@@ -584,7 +592,8 @@ export function createWorkspaceStore(
     },
     /** Every active or waiting role inside the access admin's own place. */
     async listAccess(view) {
-      if (!engine.managesAccess(view.access)) return refused(403, notAdmin);
+      const blocked = accessRefusal(view);
+      if (blocked) return blocked;
       const at = clock();
       const world = await read(view.actorId);
       const { rows } = await pool.query(
@@ -608,7 +617,8 @@ export function createWorkspaceStore(
      * wider than their own, and a coordinator or access admin role waits for a second approver.
      */
     async grantAccess(view, request) {
-      if (!engine.managesAccess(view.access)) return refused(403, notAdmin);
+      const blocked = accessRefusal(view);
+      if (blocked) return blocked;
       const access = engine.parseAccess(request.role, request.scope);
       if (!access) return refused(400, "A role and a place that go together are required.");
       if (request.actorId === view.actorId) return refused(422, "Nobody grants themselves a role.");

@@ -96,6 +96,50 @@ describe("the saved workspace scoped to a desk", () => {
   });
 });
 
+describe("a coordinator's own bookings", () => {
+  it("keep the person they name, even when nothing else links that person to its service", () => {
+    const service = unitHealthService(state.units.find((unit) => unit.id === ownUnit)!)!;
+    const coordinator: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+    const before = scopeWardFlowState(state, coordinator, options).state;
+    const outsider = state.patients.find((patient) => !before.patients.some((shown) => shown.id === patient.id))!;
+    expect(outsider).toBeDefined();
+    const booking = { ...state.plannedAdmissions[0], id: "PA-SCOPE-TEST", unitId: ownUnit, patientId: outsider.id };
+    const world = { ...state, plannedAdmissions: [...state.plannedAdmissions, booking] };
+    const scoped = scopeWardFlowState(world, coordinator, options).state;
+    expect(scoped.plannedAdmissions.map((kept) => kept.id)).toContain("PA-SCOPE-TEST");
+    expect(scoped.patients.map((patient) => patient.id)).toContain(outsider.id);
+    // A ward desk is sent no bookings, so it learns nobody from them.
+    expect(scopeWardFlowState(world, ward, options).state.patients.map((patient) => patient.id)).not.toContain(
+      outsider.id,
+    );
+  });
+});
+
+describe("a community team's catchment clients", () => {
+  it("are sent as ward and dates only, with no leave, bed release or discharge history", () => {
+    const client = state.admissions.find((admission) => {
+      const patient = state.patients.find((candidate) => candidate.id === admission.patientId);
+      return admission.leftAt === null && patient?.catchmentCommunityTeam;
+    })!;
+    expect(client).toBeDefined();
+    const teamName = state.patients.find((patient) => patient.id === client.patientId)!.catchmentCommunityTeam!;
+    const team: WardAccess = { role: "community", scope: { kind: "team", teamName } };
+    const leave = { ...(state.leaveBeds[0] ?? { id: "LB-SCOPE-TEST" }), id: "LB-SCOPE-TEST", unitId: client.unitId };
+    const release = { ...state.bedReleases[0], id: "BR-SCOPE-TEST", unitId: client.unitId, admissionId: client.id };
+    const world = {
+      ...state,
+      leaveBeds: [...state.leaveBeds, { ...leave, admissionId: client.id }] as WardFlowState["leaveBeds"],
+      bedReleases: [...state.bedReleases, release],
+      dischargeRevisions: { ...state.dischargeRevisions, [client.id]: state.dischargeRevisions[client.id] ?? [] },
+    };
+    const scoped = scopeWardFlowState(world, team, options).state;
+    expect(scoped.admissions.map((admission) => admission.id)).toContain(client.id);
+    expect(scoped.leaveBeds.map((bed) => bed.id)).not.toContain("LB-SCOPE-TEST");
+    expect(scoped.bedReleases.map((bed) => bed.id)).not.toContain("BR-SCOPE-TEST");
+    expect(Object.keys(scoped.dischargeRevisions)).not.toContain(client.id);
+  });
+});
+
 describe("a command from a desk", () => {
   it("may name its own patient and stay", () => {
     expect(

@@ -255,8 +255,15 @@ export function createSharedHandler({
         if (request.method !== "POST" || path === "/v1/workspace/push-key")
           return reply(405, { error: "Method not allowed" });
         if (!config.push || !store.subscribe) return reply(503, { error: "Phone alerts are not set up on the server" });
-        // Alerts go to the statewide coordinator only in this prototype.
+        // Alerts go to the bootstrap statewide coordinators only in this prototype: delivery reads
+        // WARD_COORDINATOR_USER_IDS, so a coordinator by membership would subscribe and never hear.
         if (!whole) return reply(422, { code: "role", error: "Phone alerts are not part of your role" }, "role_denied");
+        if (view.membershipId)
+          return reply(
+            422,
+            { code: "role", error: "Phone alerts for this account are not wired in this prototype." },
+            "role_denied",
+          );
         if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
           return reply(415, { error: "JSON required" });
         let body;

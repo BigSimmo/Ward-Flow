@@ -348,6 +348,21 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
   assert.equal(notYours.status, 422);
   assert.equal((await notYours.json()).code, "role");
   assert.equal(ward.calls.length, 0);
+  // A statewide coordinator by membership is not on the delivery list, so it is not subscribed either.
+  const member = routes({
+    actor: other,
+    viewer: async () => ({
+      status: "ok",
+      actorId: other,
+      membershipId: "55555555-5555-4555-8555-555555555555",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    }),
+  });
+  const unwired = await member.handler(call("push-subscribe", { subscription }));
+  assert.equal(unwired.status, 422);
+  assert.match((await unwired.json()).error, /not wired in this prototype/);
+  assert.equal(member.calls.length, 0);
 });
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {

@@ -18,8 +18,11 @@ import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
+  bookingPersonShown,
   scopeBroadcastAlerts,
   scopeWorkspace,
+  seenThroughBreakGlass,
+  withBookedPatients,
   type BreakGlassGrant,
 } from "@/components/ward-management/ward-access-scope";
 import {
@@ -77,6 +80,11 @@ function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
   }
 }
 
+/** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
+function wholeStay(context: Context, admissionId: string): boolean {
+  return context.admissionIds.has(admissionId) && !context.scoped.datesOnlyAdmissionIds.has(admissionId);
+}
+
 /**
  * Who may see each field of the saved workspace. Every field is listed, so the typecheck fails when
  * a new one arrives unclassified. "keep" fields describe places, settings or counters, never people.
@@ -105,17 +113,22 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // People, through the one scoping rule.
   movements: (context) => context.scoped.movements,
   referrals: (context) => context.scoped.referrals,
-  patients: (context) => context.scoped.patients,
+  patients: (context) =>
+    withBookedPatients(
+      context.scoped.patients,
+      context.state.patients,
+      context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
+    ),
   admissions: (context) => context.scoped.admissions,
   notices: (context) => context.scoped.notices,
   dischargeRevisions: (context) =>
     Object.fromEntries(
-      Object.entries(context.state.dischargeRevisions).filter(([admissionId]) => context.admissionIds.has(admissionId)),
+      Object.entries(context.state.dischargeRevisions).filter(([admissionId]) => wholeStay(context, admissionId)),
     ),
-  // A bed release or leave bed is one person's stay, so it goes where the stay goes.
-  bedReleases: (context) =>
-    context.state.bedReleases.filter((release) => context.admissionIds.has(release.admissionId)),
-  leaveBeds: (context) => context.state.leaveBeds.filter((bed) => context.admissionIds.has(bed.admissionId)),
+  // A bed release or leave bed is one person's stay, so it goes where the stay goes, and never with
+  // a stay sent as ward and dates only.
+  bedReleases: (context) => context.state.bedReleases.filter((release) => wholeStay(context, release.admissionId)),
+  leaveBeds: (context) => context.state.leaveBeds.filter((bed) => wholeStay(context, bed.admissionId)),
   inboxAcknowledgements: inboxRows("inboxAcknowledgements"),
   inboxCompletions: inboxRows("inboxCompletions"),
   inboxOwnership: inboxRows("inboxOwnership"),
@@ -259,7 +272,7 @@ function closeReferences(scoped: WardFlowState): WardFlowState {
     }),
     plannedAdmissions: scoped.plannedAdmissions.filter(
       (booking) =>
-        (booking.patientId === null || patients.has(booking.patientId)) &&
+        bookingPersonShown(booking, patients) &&
         (booking.state !== "arrived" ||
           (typeof booking.admissionId === "string" && admissions.has(booking.admissionId))),
     ),
@@ -310,8 +323,7 @@ export function commandScopeRefusal(
   const outside = "This change names a record outside your role's place.";
   const { places } = options;
   const { state: scoped, breakGlassPatientIds } = scopeWardFlowState(state, access, options);
-  const glass = (item: { patientId?: string | null }) =>
-    typeof item.patientId === "string" && breakGlassPatientIds.has(item.patientId);
+  const glass = (item: { patientId?: string | null }) => seenThroughBreakGlass(item, breakGlassPatientIds);
   const writable = recordIds({
     ...scoped,
     patients: scoped.patients.filter((patient) => !breakGlassPatientIds.has(patient.id)),

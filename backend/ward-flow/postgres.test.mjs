@@ -779,6 +779,8 @@ test(
           // The cached version still says 8 for one request, which fails; the next reads it again.
           await assert.rejects(store.viewer(actor), /does not exist/);
           assert.deepEqual(await store.viewer(actor), { status: "none" });
+          // The access routes say roles need 008 rather than failing on the missing table.
+          assert.equal((await store.listAccess(await store.viewer(actor, { bootstrap: true }))).status, 409);
         }
         await verifyPostgresNamespace(owner);
         await runtimeOk(runtime);
