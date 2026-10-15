@@ -466,7 +466,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
                 type="button"
                 className={buttonClass({ variant: "ghost", size: "sm" })}
                 data-testid={`workstation-open-service-${SERVICE_SWATCH[service] ?? "other"}`}
-                onClick={() => openAccessDesk({ role: "coordinator", scope: { kind: "service", service } }, COORDINATOR_HOME_HREF)}
+                onClick={() =>
+                  openAccessDesk({ role: "coordinator", scope: { kind: "service", service } }, COORDINATOR_HOME_HREF)
+                }
               >
                 {service} coordinator desk
               </button>

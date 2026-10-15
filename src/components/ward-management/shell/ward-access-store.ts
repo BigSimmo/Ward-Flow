@@ -93,7 +93,8 @@ export function parseStoredAccess(raw: string | null): WardAccess | null {
           : null;
       break;
     case "site":
-      parsed = typeof s.siteCode === "string" && s.siteCode.length <= 40 ? { kind: "site", siteCode: s.siteCode } : null;
+      parsed =
+        typeof s.siteCode === "string" && s.siteCode.length <= 40 ? { kind: "site", siteCode: s.siteCode } : null;
       break;
     case "ward":
       parsed =
@@ -105,7 +106,8 @@ export function parseStoredAccess(raw: string | null): WardAccess | null {
       parsed = typeof s.edId === "string" && s.edId.length <= 80 ? { kind: "ed", edId: s.edId } : null;
       break;
     case "team":
-      parsed = typeof s.teamName === "string" && s.teamName.length <= 120 ? { kind: "team", teamName: s.teamName } : null;
+      parsed =
+        typeof s.teamName === "string" && s.teamName.length <= 120 ? { kind: "team", teamName: s.teamName } : null;
       break;
   }
   if (!parsed) return null;
@@ -240,6 +242,11 @@ export function breakGlass(input: {
   };
   emit({ ...snapshot, records: [...snapshot.records, record] });
   return record;
+}
+
+/** The desk as it stands, outside React (tests and one-off reads). */
+export function readWardAccessSnapshot(): Snapshot {
+  return getSnapshot();
 }
 
 /** Test seam: forget everything. */

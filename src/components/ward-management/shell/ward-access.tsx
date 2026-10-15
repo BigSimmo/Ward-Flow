@@ -23,7 +23,11 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { scopeWorkspace } from "@/components/ward-management/ward-access-scope";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { WardFlowContext, useWardFlow, type WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
+import {
+  WardFlowContext,
+  useWardFlow,
+  type WardFlowContextValue,
+} from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -51,6 +55,7 @@ import {
 
 export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from "./ward-access-store";
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
+import { announceToWardShell } from "./ward-live-region";
 import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
@@ -103,7 +108,8 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     const scoped = scopeWorkspace(context, access, { now, places, grants: activeGrants });
     const coordinator = access.role === "coordinator";
     const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
-    const byUnit = <T extends { unitId: string }>(items: readonly T[]): T[] => items.filter((item) => unitIn(item.unitId));
+    const byUnit = <T extends { unitId: string }>(items: readonly T[]): T[] =>
+      items.filter((item) => unitIn(item.unitId));
     const resolveIndex = {
       patients: scoped.patients,
       referrals: scoped.referrals,
@@ -111,10 +117,32 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       plannedAdmissions: coordinator ? context.plannedAdmissions : [],
     };
     const { breakGlassPatientIds, ...rest } = scoped;
+    // Break glass is read only: an event about a person seen only through it is refused here, before
+    // the reducer, and said aloud. Movement ids are traced to their person.
+    const glassMovementIds = new Set<string>(
+      scoped.movements
+        .filter((movement) => movement.patientId && breakGlassPatientIds.has(movement.patientId))
+        .map((movement) => movement.id),
+    );
+    const dispatch: WardFlowContextValue["dispatch"] =
+      breakGlassPatientIds.size === 0
+        ? context.dispatch
+        : (event) => {
+            const fields = event as { patientId?: unknown; movementId?: unknown };
+            const touchesGlass =
+              (typeof fields.patientId === "string" && breakGlassPatientIds.has(fields.patientId)) ||
+              (typeof fields.movementId === "string" && glassMovementIds.has(fields.movementId));
+            if (touchesGlass) {
+              announceToWardShell("Read only. This record was opened outside your care.");
+              return;
+            }
+            context.dispatch(event);
+          };
     return {
       glass: breakGlassPatientIds,
       scoped: {
         ...rest,
+        dispatch,
         rejections: coordinator ? context.rejections : [],
         eventLog: coordinator ? context.eventLog : [],
         bedReleases: byUnit(context.bedReleases),
@@ -149,7 +177,9 @@ const OWN_PLACE_ENTRY: Partial<Record<WardAccess["scope"]["kind"], { id: string;
  * Nav entries the desk may open. The index entry for the desk's own kind of place (All wards for a
  * ward desk, All EDs for an ED desk, Community for a team) becomes a link to its own place.
  */
-export function useAccessNavFilter(): <T extends { href: string; id: string; label: string }>(entries: readonly T[]) => T[] {
+export function useAccessNavFilter(): <T extends { href: string; id: string; label: string }>(
+  entries: readonly T[],
+) => T[] {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const { units } = useUnscopedWardFlow();
@@ -159,7 +189,10 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
       const places = wardPlaceLookup(units);
       const own = OWN_PLACE_ENTRY[access.scope.kind];
       return entries.flatMap((entry) => {
-        const shown = own && entry.id === own.id ? { ...entry, href: homeHrefFor(access, communityTeamSlug), label: own.label } : entry;
+        const shown =
+          own && entry.id === own.id
+            ? { ...entry, href: homeHrefFor(access, communityTeamSlug), label: own.label }
+            : entry;
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
@@ -198,18 +231,33 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
   const scoped = useWardFlow();
-  const { units } = useUnscopedWardFlow();
+  const unscoped = useUnscopedWardFlow();
+  const glass = useBreakGlassPatientIds();
   if (!on || accessIsWholeNetwork(access)) return <>{children}</>;
-  const places = wardPlaceLookup(units);
+  const places = wardPlaceLookup(unscoped.units);
   const address = screenForPath(pathname);
   const decision = screenDecision(access, address, places);
-  let patientOutside = false;
-  if (decision.open && address?.patientId !== undefined)
-    patientOutside = !scoped.patients.some((patient) => patient.id === address.patientId);
-  if (decision.open && address?.movementId !== undefined && !scoped.movements.some((m) => m.id === address.movementId))
+  if (!decision.open) return <ClosedScreen access={access} />;
+  if (address?.movementId !== undefined && !scoped.movements.some((movement) => movement.id === address.movementId))
     return <ClosedScreen access={access} />;
-  if (decision.open && !patientOutside) return <>{children}</>;
-  return <ClosedScreen access={access} patientId={patientOutside ? address?.patientId : undefined} />;
+  const subject = address?.patientId;
+  if (subject === undefined) return <>{children}</>;
+  // The patient page takes a person id or a movement id (`people/[patientId]/page.tsx`).
+  const seen =
+    scoped.patients.some((patient) => patient.id === subject) ||
+    scoped.movements.some((movement) => movement.id === subject);
+  // Break glass opens the person, so a movement address is traced to its patient first. An address
+  // that names nobody gets the same closed page, so the page never confirms who exists.
+  const person = subject.startsWith("PT-")
+    ? subject
+    : unscoped.movements.find((movement) => movement.id === subject)?.patientId;
+  if (!seen) return <ClosedScreen access={access} patientId={person ?? subject} />;
+  return (
+    <>
+      {person && glass.has(person) ? <WardBreakGlassNote patientId={person} /> : null}
+      {children}
+    </>
+  );
 }
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
@@ -374,7 +422,10 @@ export function WardIdleLock() {
     <div className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
       <div className={styles.lockCard}>
         <h1 id="ward-idle-lock-title">Locked after {minutes} minutes</h1>
-        <p>This desk was put down so the next person cannot see the last person&apos;s patients. Choose a desk to carry on.</p>
+        <p>
+          This desk was put down so the next person cannot see the last person&apos;s patients. Choose a desk to carry
+          on.
+        </p>
         <Button
           variant="pri"
           data-testid="ward-idle-unlock"

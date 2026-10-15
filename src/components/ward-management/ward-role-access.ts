@@ -355,7 +355,8 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
       return undefined;
     case "statistics": {
       if (second === undefined) return { screen: "statistics" };
-      if (second === "ward" && third !== undefined) return { screen: "statistics", statisticsSection: "ward", unitId: third };
+      if (second === "ward" && third !== undefined)
+        return { screen: "statistics", statisticsSection: "ward", unitId: third };
       if (second === "ed" && third !== undefined) return { screen: "statistics", statisticsSection: "ed", edId: third };
       if (second === "community" && third !== undefined)
         return { screen: "statistics", statisticsSection: "community", teamSlug: third };
@@ -410,16 +411,20 @@ export function edInScope(scope: WardAccessScope, edId: string, places: PlaceLoo
 }
 
 export type ScreenDecision =
-  | { readonly open: true; readonly grant: ScreenGrant }
-  | { readonly open: false; readonly why: "role" | "place" };
+  { readonly open: true; readonly grant: ScreenGrant } | { readonly open: false; readonly why: "role" | "place" };
 
 /**
  * May this role open this address? The screen must be in the role's table, and a place page must
  * be one of the role's own places. A patient or movement page is checked against the scoped
  * workspace by the guard, because only the workspace knows who is in whose care.
  */
-export function screenDecision(access: WardAccess, address: ScreenAddress | undefined, places: PlaceLookup): ScreenDecision {
-  if (address === undefined) return accessIsWholeNetwork(access) ? { open: true, grant: "all" } : { open: false, why: "role" };
+export function screenDecision(
+  access: WardAccess,
+  address: ScreenAddress | undefined,
+  places: PlaceLookup,
+): ScreenDecision {
+  if (address === undefined)
+    return accessIsWholeNetwork(access) ? { open: true, grant: "all" } : { open: false, why: "role" };
   const grant = ROLE_SCREENS[access.role][address.screen];
   if (grant === undefined) return { open: false, why: "role" };
   const scope = access.scope;
@@ -430,7 +435,10 @@ export function screenDecision(access: WardAccess, address: ScreenAddress | unde
   if (address.unitId !== undefined && !unitInScope(scope, address.unitId, places)) return { open: false, why: "place" };
   if (address.edId !== undefined && !edInScope(scope, address.edId, places)) return { open: false, why: "place" };
   if (address.teamSlug !== undefined) {
-    const own = scope.kind === "team" ? places.teamSlug(scope.teamName) === address.teamSlug : scope.kind === "statewide" || scope.kind === "service";
+    const own =
+      scope.kind === "team"
+        ? places.teamSlug(scope.teamName) === address.teamSlug
+        : scope.kind === "statewide" || scope.kind === "service";
     if (!own) return { open: false, why: "place" };
   }
   return { open: true, grant };

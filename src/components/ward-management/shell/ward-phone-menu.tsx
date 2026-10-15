@@ -938,13 +938,13 @@ export function WardPhoneMenu({
   const dockRole = routeRole === "officer" ? routeRole : shellRole;
   const flagOn = useWardFeatureFlagCheck();
   const accessNav = useAccessNavFilter();
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(
-    shellRole,
-    counts,
-    dockRole,
-    flagOn,
-    accessNav,
-  );
+  const {
+    entries,
+    byId,
+    dock,
+    needs: overdueNeeds,
+    groups,
+  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const flow = useWardFlow();
   const actNowCount = useMemo(

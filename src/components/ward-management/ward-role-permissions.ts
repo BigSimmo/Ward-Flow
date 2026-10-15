@@ -50,9 +50,9 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
     reason: "Ward screen Raise referral and the New referral sheet dispatch as community",
   },
   // New referral sheet (`ward-referral-drawer.tsx`), on routes whose role `EVENT_ROLE` omits.
-  { routeRole: "officer", event: "RECEIVE_REFERRAL", reason: REFERRAL_SHEET },
+  // Role access plan decision 6 (Josh, 15 Oct 2026): the transport officer does not raise referrals
+  // or add patients, so the officer's two pairs are gone and its sheet shows "… only".
   { routeRole: "ward", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
-  { routeRole: "officer", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
 ];
 
 /** The allowance that lets `role` dispatch `eventType` outside `EVENT_ROLE`, if any. */

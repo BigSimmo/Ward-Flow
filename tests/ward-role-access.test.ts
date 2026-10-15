@@ -1,0 +1,234 @@
+import { readdirSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
+import { scopeWorkspace, smallNumberText } from "../src/components/ward-management/ward-access-scope";
+import {
+  ROLE_SCREENS,
+  STATEWIDE_COORDINATOR,
+  WARD_ACCESS_ROLES,
+  WARD_SCREEN_IDS,
+  accessIsValid,
+  canBreakGlass,
+  homeHrefFor,
+  screenDecision,
+  screenForPath,
+  type WardAccess,
+} from "../src/components/ward-management/ward-role-access";
+import {
+  breakGlass,
+  lockWardDesk,
+  parseStoredAccess,
+  readWardAccessSnapshot,
+  resetWardAccessStoreForTests,
+  setWardAccess,
+  startAccessPreview,
+} from "../src/components/ward-management/shell/ward-access-store";
+
+/**
+ * Role access plan PR 1 (Josh, 15 Oct 2026). The table is pinned to the plan's section 4, every
+ * route answers to it, and the scoped workspace never hands a desk a patient outside its care.
+ */
+const BASE = "/mockups/ward-flow";
+const state = seedWardFlowState();
+const places = wardPlaceLookup(state.units);
+const unitId = state.units[0].id;
+const wardDesk: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [unitId] } };
+
+describe("the access table", () => {
+  it("gives the coordinator every screen, whole", () => {
+    for (const screen of WARD_SCREEN_IDS) expect(ROLE_SCREENS.coordinator[screen], screen).toBe("all");
+  });
+
+  it("gives the transport officer only transport, alerts, on-call and settings", () => {
+    expect(Object.keys(ROLE_SCREENS.officer).sort()).toEqual(["alerts", "officer", "on-call", "settings"]);
+  });
+
+  it("lets the bed manager open patient pages at their own site (Josh, 15 Oct 2026)", () => {
+    expect(ROLE_SCREENS.bed_manager.patient).toBe("own");
+    expect(ROLE_SCREENS.bed_manager.search).toBe("own");
+  });
+
+  it("never gives the executive or access admin a patient page", () => {
+    expect(ROLE_SCREENS.executive.patient).toBeUndefined();
+    expect(ROLE_SCREENS.admin.patient).toBeUndefined();
+    expect(ROLE_SCREENS.admin.search).toBeUndefined();
+  });
+
+  it("lets only clinical roles break glass", () => {
+    expect(WARD_ACCESS_ROLES.filter(canBreakGlass).sort()).toEqual(["bed_manager", "community", "ed", "ward"]);
+  });
+
+  it("refuses a scope a role may not hold", () => {
+    expect(accessIsValid({ role: "ward", scope: { kind: "statewide" } })).toBe(false);
+    expect(accessIsValid(wardDesk)).toBe(true);
+  });
+});
+
+/** Every page the app has, with a sample id in each dynamic segment. */
+function appRoutes(): string[] {
+  const root = join(process.cwd(), "src/app/mockups/ward-flow");
+  const found: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (name === "page.tsx") found.push(relative(root, dir));
+    }
+  };
+  walk(root);
+  return found.map((route) => `${BASE}${route ? `/${route.replace(/\[[^\]]+\]/g, "sample")}` : ""}`);
+}
+
+describe("every route answers to the table", () => {
+  it("maps each page to a screen, so a new page is closed to every role but the coordinator until listed", () => {
+    // The design showcase is a developer page (shell-20): coordinator only, by default deny.
+    const developerOnly = new Set([`${BASE}/sovereign`]);
+    const unmapped = appRoutes().filter((route) => !developerOnly.has(route) && screenForPath(route) === undefined);
+    expect(unmapped).toEqual([]);
+  });
+
+  it("closes another ward's page to a ward desk, and opens its own", () => {
+    const other = state.units.find((unit) => unit.id !== unitId)!;
+    expect(screenDecision(wardDesk, screenForPath(`${BASE}/ward/${unitId}`), places)).toEqual({
+      open: true,
+      grant: "own",
+    });
+    expect(screenDecision(wardDesk, screenForPath(`${BASE}/ward/${other.id}`), places)).toEqual({
+      open: false,
+      why: "place",
+    });
+    expect(screenDecision(wardDesk, screenForPath(`${BASE}/governance`), places)).toEqual({ open: false, why: "role" });
+  });
+
+  it("closes an unknown address to everyone but the coordinator", () => {
+    expect(screenDecision(wardDesk, screenForPath(`${BASE}/not-a-page`), places).open).toBe(false);
+    expect(screenDecision(STATEWIDE_COORDINATOR, screenForPath(`${BASE}/governance`), places).open).toBe(true);
+  });
+
+  it("sends each desk home to its own place", () => {
+    expect(homeHrefFor(wardDesk, (name) => name)).toBe(`${BASE}/ward/${unitId}`);
+    expect(homeHrefFor({ role: "officer", scope: { kind: "jobs" } }, (name) => name)).toBe(`${BASE}/transport/officer`);
+  });
+});
+
+describe("the scoped workspace", () => {
+  const scope = (access: WardAccess, grants?: { patientId: string; until: number }[]) =>
+    scopeWorkspace(state, access, { now: NOW_ANCHOR, places, grants });
+
+  it("returns the whole workspace to the statewide coordinator", () => {
+    const whole = scope(STATEWIDE_COORDINATOR);
+    expect(whole.patients).toBe(state.patients);
+    expect(whole.movements).toBe(state.movements);
+  });
+
+  it("gives a ward desk only its own ward's movements and stays, and only their patients", () => {
+    const scoped = scope(wardDesk);
+    for (const movement of scoped.movements)
+      expect([movement.acceptedUnitId, ...movement.referredUnitIds]).toContain(unitId);
+    for (const admission of scoped.admissions) expect(admission.unitId).toBe(unitId);
+    const linked = new Set(
+      [...scoped.movements, ...scoped.admissions, ...scoped.referrals].map((item) => item.patientId).filter(Boolean),
+    );
+    for (const patient of scoped.patients) expect(linked.has(patient.id), patient.id).toBe(true);
+    for (const referral of scoped.referrals)
+      for (const line of referral.destinations) expect(line.destination.kind).toBe("psychiatric_ward");
+  });
+
+  it("canary: a patient with nothing at the desk's ward never reaches it, until glass is broken", () => {
+    const scoped = scope(wardDesk);
+    const outside = state.patients.find((patient) => !scoped.patients.some((seen) => seen.id === patient.id));
+    expect(outside, "the seed needs a patient outside the ward").toBeDefined();
+    expect(scoped.patients.map((patient) => patient.id)).not.toContain(outside!.id);
+    const glass = scope(wardDesk, [{ patientId: outside!.id, until: NOW_ANCHOR + 60 }]);
+    expect(glass.patients.map((patient) => patient.id)).toContain(outside!.id);
+    expect(glass.breakGlassPatientIds.has(outside!.id)).toBe(true);
+    const expired = scope(wardDesk, [{ patientId: outside!.id, until: NOW_ANCHOR }]);
+    expect(expired.patients.map((patient) => patient.id)).not.toContain(outside!.id);
+  });
+
+  it("marks as read only only a patient seen through a grant, not one already in care", () => {
+    const own = scope(wardDesk).patients[0];
+    expect(own, "the seed needs a patient at the ward").toBeDefined();
+    const glass = scope(wardDesk, [{ patientId: own.id, until: NOW_ANCHOR + 60 }]);
+    expect(glass.breakGlassPatientIds.size).toBe(0);
+  });
+
+  it("names no patient to the executive", () => {
+    const scoped = scope({ role: "executive", scope: { kind: "statewide" } });
+    // Every patient with a movement, stay or referral is counted; none is named.
+    expect(scoped.patients.length).toBeGreaterThan(0);
+    for (const patient of scoped.patients) {
+      expect(patient.givenName).toBe("Hidden");
+      expect(patient.familyName).toBe("");
+      expect(patient.umrn).toBe("");
+    }
+    for (const referral of scoped.referrals) expect("intake" in referral).toBe(false);
+  });
+
+  it("gives the access admin no patient data at all", () => {
+    const scoped = scope({ role: "admin", scope: { kind: "statewide" } });
+    expect(scoped.patients).toEqual([]);
+    expect(scoped.movements).toEqual([]);
+    expect(scoped.referrals).toEqual([]);
+    expect(scoped.admissions).toEqual([]);
+  });
+
+  it("gives the transport officer open jobs only, and no record number", () => {
+    const scoped = scope({ role: "officer", scope: { kind: "jobs" } });
+    for (const movement of scoped.movements) {
+      expect(movement.transport).toBeDefined();
+      expect(movement.closure).toBeUndefined();
+    }
+    for (const patient of scoped.patients) expect(patient.umrn).toBe("");
+    expect(scoped.referrals).toEqual([]);
+  });
+
+  it("hides counts below the small-number threshold", () => {
+    expect(smallNumberText(0)).toBe("0");
+    expect(smallNumberText(3)).toMatch(/fewer than/i);
+    expect(smallNumberText(40)).toBe("40");
+  });
+});
+
+describe("the desk store", () => {
+  beforeEach(() => resetWardAccessStoreForTests());
+
+  it("reads back only a known role with a scope that role may hold", () => {
+    expect(parseStoredAccess(JSON.stringify(wardDesk))).toEqual(wardDesk);
+    expect(parseStoredAccess(JSON.stringify({ role: "root", scope: { kind: "statewide" } }))).toBeNull();
+    expect(parseStoredAccess(JSON.stringify({ role: "ward", scope: { kind: "statewide" } }))).toBeNull();
+    expect(parseStoredAccess("{not json")).toBeNull();
+    expect(parseStoredAccess(null)).toBeNull();
+  });
+
+  it("ends every open grant when the desk changes or locks, and keeps the record", () => {
+    setWardAccess(wardDesk);
+    const record = breakGlass({
+      patientId: "P-1",
+      now: NOW_ANCHOR,
+      windowMinutes: 60,
+      reason: "other",
+      otherText: "Typed words",
+      placeLabel: "Ward",
+    });
+    expect(record.until).toBe(NOW_ANCHOR + 60);
+    expect(record.otherText).toBe("Typed words");
+    setWardAccess({ role: "ed", scope: { kind: "ed", edId: "x" } });
+    const changed = readWardAccessSnapshot();
+    expect(changed.access.role).toBe("ed");
+    expect(changed.records).toHaveLength(1);
+    expect(changed.records[0].until).toBeLessThanOrEqual(NOW_ANCHOR);
+    // A preview is the coordinator's only.
+    startAccessPreview(wardDesk);
+    expect(readWardAccessSnapshot().previewOf).toBeNull();
+    lockWardDesk();
+    expect(readWardAccessSnapshot().access).toEqual(STATEWIDE_COORDINATOR);
+    startAccessPreview(wardDesk);
+    expect(readWardAccessSnapshot().access).toEqual(wardDesk);
+    expect(readWardAccessSnapshot().previewOf).toEqual(STATEWIDE_COORDINATOR);
+  });
+});

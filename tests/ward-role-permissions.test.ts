@@ -103,10 +103,13 @@ describe("CROSS_ROLE_ALLOWED", () => {
     // Legal forms Mark received (coordinator route), ward Raise referral, New referral sheet.
     expect(canDispatch("coordinator", "RECORD_LEGAL_FORM_RECEIVED")).toBe(true);
     expect(canDispatch("ward", "RECEIVE_REFERRAL")).toBe(true);
-    for (const role of ["coordinator", "ward", "ed", "officer", "community"] as const) {
+    for (const role of ["coordinator", "ward", "ed", "community"] as const) {
       expect(canDispatch(role, "RECEIVE_REFERRAL"), role).toBe(true);
       expect(canDispatch(role, "ADD_PATIENT"), role).toBe(true);
     }
+    // Role access plan decision 6 (Josh, 15 Oct 2026): the transport officer raises no referrals.
+    expect(canDispatch("officer", "RECEIVE_REFERRAL")).toBe(false);
+    expect(canDispatch("officer", "ADD_PATIENT")).toBe(false);
   });
 });
 

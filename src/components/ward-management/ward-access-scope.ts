@@ -72,7 +72,9 @@ function activeGrantIds(grants: readonly BreakGlassGrant[] | undefined, now: Ins
 
 /** The units a movement touches: where it was accepted and every ward it was sent to. */
 function movementUnitIds(movement: Movement): string[] {
-  return movement.acceptedUnitId ? [movement.acceptedUnitId, ...movement.referredUnitIds] : [...movement.referredUnitIds];
+  return movement.acceptedUnitId
+    ? [movement.acceptedUnitId, ...movement.referredUnitIds]
+    : [...movement.referredUnitIds];
 }
 
 /** Has this movement finished, and when. `undefined` while it is still open. */
@@ -91,7 +93,10 @@ function referralDestinationUnitIds(referral: Referral): string[] {
 }
 
 /** Keep only the destination lines a predicate allows. A referral left with none is not this role's. */
-function trimReferral(referral: Referral, keep: (addressing: Referral["destinations"][number]) => boolean): Referral | undefined {
+function trimReferral(
+  referral: Referral,
+  keep: (addressing: Referral["destinations"][number]) => boolean,
+): Referral | undefined {
   const destinations = referral.destinations.filter(keep);
   if (destinations.length === 0) return undefined;
   return destinations.length === referral.destinations.length ? referral : { ...referral, destinations };
@@ -204,7 +209,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         }
         anonymise = true;
         referrals = referrals.map((referral) => {
-          const { intake: _intake, ...rest } = referral;
+          const rest: Partial<Referral> = { ...referral };
+          delete rest.intake;
           return rest as Referral;
         });
       }
@@ -241,9 +247,10 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         (admission) => unitIn(admission.unitId) && (admission.leftAt === null || now - admission.leftAt <= wardWindow),
       );
       const referralIds = new Set(
-        [...movements.map((movement) => movement.referralId), ...admissions.map((admission) => admission.referralId)].filter(
-          (id): id is string => typeof id === "string",
-        ),
+        [
+          ...movements.map((movement) => movement.referralId),
+          ...admissions.map((admission) => admission.referralId),
+        ].filter((id): id is string => typeof id === "string"),
       );
       referrals = workspace.referrals.flatMap((referral) => {
         if (!referralIds.has(referral.id) && !referralDestinationUnitIds(referral).some(unitIn)) return [];
@@ -274,7 +281,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       referrals = workspace.referrals.flatMap((referral) => {
         const trimmed = trimReferral(
           referral,
-          (addressing) => addressing.destination.kind === "community_team" && addressing.destination.teamName === teamName,
+          (addressing) =>
+            addressing.destination.kind === "community_team" && addressing.destination.teamName === teamName,
         );
         return trimmed ? [trimmed] : [];
       });
@@ -285,7 +293,9 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       // Own team's stays in full, and catchment clients' stays as ward and dates only (round 3,
       // decision 2) so the team can make the 7 day follow up.
       const catchment = new Set(
-        workspace.patients.filter((patient) => patient.catchmentCommunityTeam === teamName).map((patient) => patient.id),
+        workspace.patients
+          .filter((patient) => patient.catchmentCommunityTeam === teamName)
+          .map((patient) => patient.id),
       );
       admissions = workspace.admissions.flatMap((admission) => {
         if (admission.referralId !== null && referralIds.has(admission.referralId)) return [admission];
@@ -296,7 +306,10 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     }
     case "officer": {
       movements = workspace.movements.filter(
-        (movement) => movement.transport !== undefined && movement.transport.arrivedAt === undefined && movement.closure === undefined,
+        (movement) =>
+          movement.transport !== undefined &&
+          movement.transport.arrivedAt === undefined &&
+          movement.closure === undefined,
       );
       officer = true;
       break;
@@ -304,6 +317,10 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     case "admin":
       break;
   }
+
+  // Patients the desk sees in its own right, before any grant.
+  const ownPatientIds = new Set<string>();
+  for (const item of [...movements, ...admissions, ...referrals]) if (item.patientId) ownPatientIds.add(item.patientId);
 
   // Break glass: one patient's own records, read only, for the granted time.
   if (grantIds.size > 0) {
@@ -313,12 +330,14 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       referrals: new Set(referrals.map((referral) => referral.id)),
     };
     for (const movement of workspace.movements)
-      if (movement.patientId && grantIds.has(movement.patientId) && !have.movements.has(movement.id)) movements.push(movement);
+      if (movement.patientId && grantIds.has(movement.patientId) && !have.movements.has(movement.id))
+        movements.push(movement);
     for (const admission of workspace.admissions)
       if (admission.patientId && grantIds.has(admission.patientId) && !have.admissions.has(admission.id))
         admissions.push(admission);
     for (const referral of workspace.referrals)
-      if (referral.patientId && grantIds.has(referral.patientId) && !have.referrals.has(referral.id)) referrals.push(referral);
+      if (referral.patientId && grantIds.has(referral.patientId) && !have.referrals.has(referral.id))
+        referrals.push(referral);
   }
 
   const patientIds = new Set<string>(grantIds);
@@ -333,9 +352,17 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   const notices = workspace.notices.filter((notice) => noticeInScope(notice, access, places));
 
   const visibleOnlyByGrant = new Set<string>();
-  for (const id of grantIds) visibleOnlyByGrant.add(id);
+  for (const id of grantIds) if (!ownPatientIds.has(id)) visibleOnlyByGrant.add(id);
 
-  return { ...workspace, movements, referrals, admissions, patients, notices, breakGlassPatientIds: visibleOnlyByGrant };
+  return {
+    ...workspace,
+    movements,
+    referrals,
+    admissions,
+    patients,
+    notices,
+    breakGlassPatientIds: visibleOnlyByGrant,
+  };
 }
 
 /**
