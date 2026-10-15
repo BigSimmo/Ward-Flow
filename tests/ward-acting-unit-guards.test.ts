@@ -195,7 +195,7 @@ describe("a ward cannot record another ward's patient back from an emergency dep
     const added = addedRejections(seeded, after);
 
     expect(added.map((rejection) => rejection.reason)).toEqual([
-      `${TYPE} was raised acting as unit ${intruder} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+      `${TYPE} was raised acting as unit ${intruder} but this stay belongs to unit ${admission.unitId}`,
     ]);
     expect(added[0]?.attempted).toBe(TYPE);
     expect(after.admissions).toEqual(seeded.admissions);
