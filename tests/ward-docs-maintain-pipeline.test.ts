@@ -141,9 +141,10 @@ describe("ward-docs-maintain-pipeline", () => {
         "organisation",
         "update-docs-inventory",
         "generate-site-map",
+        "doc-facts",
       ]);
       expect(CHECK_INDEX_STEPS.length).toBe(7);
-      expect(CHECK_INTEGRITY_GATE_STEPS.length).toBe(7);
+      expect(CHECK_INTEGRITY_GATE_STEPS.length).toBe(8);
     });
 
     it("executes main(['--classify', ..., '--json']) with exit code 0", () => {
