@@ -5,7 +5,6 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { Copy, Search, Star } from "lucide-react";
 
 import { StatusGlyph } from "@/components/wf";
-import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
 import { WardFlowContext, useWardFlowClock } from "../ward-flow-provider";
 import { minuteOfDay } from "../ward-clock";
 import {
@@ -80,7 +79,7 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
 
   async function copyNumber(entry: DirectoryEntry, number: string) {
     try {
-      await copyTextToClipboard(number);
+      await navigator.clipboard.writeText(number);
       setRecent((current) => [entry.id, ...current.filter((id) => id !== entry.id)].slice(0, 8));
       setNotice(`Copied ${number}`);
     } catch {

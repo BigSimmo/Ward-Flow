@@ -26,8 +26,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
-import { ignoreUnavailableActivation } from "@/components/primitive-recipes/recipes";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { WardRoleSwitcher } from "../ward-role-switcher";
 import { contactForTeam } from "../community/community-team-contact-mapping";
@@ -115,7 +113,10 @@ function UnwiredRow({ icon: Icon, name, reason }: { icon: LucideIcon; name: stri
       aria-disabled="true"
       aria-describedby={id}
       data-unwired="true"
-      onClick={ignoreUnavailableActivation}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
     >
       <span className={styles.rowIcon} aria-hidden="true">
         <Icon aria-hidden="true" strokeWidth={1.75} />
@@ -186,7 +187,7 @@ function BedSummary() {
           className={styles.primaryButton}
           onClick={async () => {
             try {
-              await copyTextToClipboard(text);
+              await navigator.clipboard.writeText(text);
               setStatus("Bed summary copied. Paste it into the email or Teams message.");
             } catch {
               setStatus("Copy is unavailable in this browser. Select the text instead.");

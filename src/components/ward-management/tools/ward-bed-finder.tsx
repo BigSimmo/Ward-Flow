@@ -160,7 +160,7 @@ export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
         onChange={set("home")}
       />
       <p className={styles.result} role="status">
-        <strong>{matches.reduce((sum, match) => sum + match.free, 0)}</strong> free beds on{" "}
+        <strong>{matches.reduce((sum, match) => sum + match.free, 0)}</strong> synthetic beds free on{" "}
         <strong>{matches.length}</strong> {matches.length === 1 ? "ward" : "wards"}
       </p>
       {matches.length > 0 ? (

@@ -52,7 +52,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     fireEvent.click(toggle);
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
     expect(within(screen.getByTestId("ward-tools-bed-finder")).getByRole("status").textContent).toMatch(
-      /free beds on/u,
+      /synthetic beds free on/u,
     );
     fireEvent.click(toggle);
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
