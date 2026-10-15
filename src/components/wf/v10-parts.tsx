@@ -606,12 +606,4 @@ export function NeedsYou({
   );
 }
 
-import {
-  CommandPalette,
-  filterCommandPaletteItems,
-  type CommandPaletteItem,
-  type CommandPaletteProps,
-} from "./v10-command-palette";
-
-export { CommandPalette, filterCommandPaletteItems, type CommandPaletteItem, type CommandPaletteProps };
 export { UndoHairline, type UndoHairlineProps } from "./v10-undo-hairline";

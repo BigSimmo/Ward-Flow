@@ -141,8 +141,8 @@ describe("security headers", () => {
     }
   });
 
-  // The shared Azure workspace is the only browser-side cross-origin caller:
-  // its Function and Microsoft sign-in, and only when that Function is configured.
+  // The shared Supabase workspace is the only browser-side cross-origin caller:
+  // its API and the one approved Supabase project, and only when both are configured.
   describe("shared workspace origins", () => {
     afterEach(() => vi.unstubAllEnvs());
 
@@ -152,13 +152,10 @@ describe("security headers", () => {
         .map((part) => part.trim())
         .find((part) => part.startsWith(`${name} `));
 
-    it("adds only the configured Function origin and Microsoft sign-in when entra is selected", () => {
-      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "entra");
-      const sharedOrigins = resolveSharedWorkspaceOrigins("https://wardflow-dev-api-aue.azurewebsites.net/api/");
-      expect(sharedOrigins).toEqual([
-        "https://wardflow-dev-api-aue.azurewebsites.net",
-        "https://login.microsoftonline.com",
-      ]);
+    it("adds only the configured API and Supabase origins, with no frames or Microsoft sign-in", () => {
+      vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
+      vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+      const sharedOrigins = resolveSharedWorkspaceOrigins("https://wardflow-api.example.test/api/");
       const csp = buildContentSecurityPolicy({
         isDevelopment: false,
         isLocalHttpRuntime: false,
@@ -166,11 +163,20 @@ describe("security headers", () => {
         sharedOrigins,
       });
       expect(directive(csp, "connect-src")).toBe(
-        "connect-src 'self' https://wardflow-dev-api-aue.azurewebsites.net https://login.microsoftonline.com",
+        "connect-src 'self' https://wardflow-api.example.test https://zakzoemeedfepxcstsou.supabase.co",
       );
+      expect(csp).not.toContain("login.microsoftonline.com");
       expect(directive(csp, "frame-src")).toBeUndefined();
       expect(directive(csp, "frame-ancestors")).toBe("frame-ancestors 'none'");
       expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob:");
+    });
+
+    it("refuses the retired entra provider and any unknown provider", () => {
+      vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://zakzoemeedfepxcstsou.supabase.co");
+      for (const provider of ["entra", "unknown-provider"]) {
+        vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", provider);
+        expect(resolveSharedWorkspaceOrigins("https://wardflow-api.example.test/api/")).toEqual([]);
+      }
     });
 
     it("treats a blank auth provider as the Supabase default", () => {

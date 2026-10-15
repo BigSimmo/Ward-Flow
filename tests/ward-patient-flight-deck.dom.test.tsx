@@ -7,14 +7,6 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENDER_PLACEMENT_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { STEP_BACK_REASONS } from "@/components/ward-management/ward-model";
 import { ToastProvider } from "@/components/wf";
-vi.mock("@azure/msal-browser", () => ({
-  PublicClientApplication: class {
-    initialize = async () => {};
-    handleRedirectPromise = async () => null;
-    getActiveAccount = () => null;
-    getAllAccounts = () => [];
-  },
-}));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/mockups/ward-flow/people/WF-012",

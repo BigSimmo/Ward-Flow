@@ -9,10 +9,10 @@ drafts remain browser-owned. `ward-shared-state-validation.ts` adds an explicit 
 schema without changing the browser persistence fence. Existing reducer workflow roles describe
 the action's operational perspective; the authenticated shared role is coordinator.
 
-`backend/ward-flow/engine.ts` bundles the domain engine for the Azure Function. `postgres.mjs`
-executes versioned shared commands, receipts and audit in one transaction. The new migration runner,
-Entra managed-identity grants, Azure resource discovery and private PostgreSQL template are described
-in [the shared setup guide](../../../backend/ward-flow/SETUP-SHARED-AZURE.md). Shared mode defaults off.
+`backend/ward-flow/engine.ts` bundles the domain engine for the shared backend. `postgres.mjs`
+executes versioned shared commands, receipts and audit in one transaction. The provider, its
+adapters and how to change it are recorded in [DATABASE.md](../DATABASE.md), and set-up is in
+[the Supabase guide](../../../backend/ward-flow/SETUP-SUPABASE.md). Shared mode defaults off.
 Source and local tests do not establish hosted identity, database or deployment readiness.
 
 ## Phone alerts (Web Push) — 10 October 2026
@@ -71,9 +71,7 @@ preview and board consumers. The identity comparison stays inside the existing
 D-14-authorised resolver as a bounded boolean; privacy reader allowlists are unchanged.
 Reservation release returns at most the capacity actually consumed and marks any
 remaining conservation conflict; it does not invent a ready bed. Re-anchoring also
-shifts the recorded D-34 `resumedAt` instant. The separate Azure snapshot API's
-conditional writes, last-save receipt and deletion do not supply shared command
-history or staff/service authorisation.
+shifts the recorded D-34 `resumedAt` instant.
 
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 

@@ -1,44 +1,9 @@
 import { createHash } from "node:crypto";
-import { Pool } from "pg";
 import { errorFields, freshAlerts } from "./push.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** A device whose sends keep failing for a reason that may pass is tried this many times. */
 export const MAX_DELIVERY_ATTEMPTS = 5;
-
-export function createPostgresPool(config, credential) {
-  let resolvedCredential = credential;
-  const pool = new Pool({
-    host: config.host,
-    database: config.database,
-    user: config.user,
-    port: 5432,
-    password: async () => {
-      if (!resolvedCredential) {
-        const { DefaultAzureCredential } = await import("@azure/identity");
-        resolvedCredential = new DefaultAzureCredential();
-      }
-      const token = await resolvedCredential.getToken("https://ossrdbms-aad.database.windows.net/.default");
-      if (!token) throw new Error("Database identity unavailable");
-      return token.token;
-    },
-    ssl: { rejectUnauthorized: true },
-    max: 4,
-    connectionTimeoutMillis: 6000,
-    idleTimeoutMillis: 30000,
-    statement_timeout: 10000,
-    query_timeout: 12000,
-    idle_in_transaction_session_timeout: 10000,
-    lock_timeout: 5000,
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
-    application_name: "wardflow_backend",
-  });
-  pool.on("error", () => {
-    console.error("Ward Flow database connection unavailable");
-  });
-  return pool;
-}
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -466,19 +431,4 @@ export function createWorkspaceStore(
       return response;
     },
   };
-}
-
-/** Azure startup gate: shared traffic needs the complete migration 1-5 ledger, including the trigger hardening and retention indexes. */
-export async function verifyAzureMigrations(pool) {
-  let versions;
-  try {
-    const { rows } = await pool.query(
-      "SELECT array_agg(version ORDER BY version) AS versions FROM ward_flow.migrations",
-    );
-    versions = rows[0]?.versions;
-  } catch {
-    throw new Error("Azure database runtime verification unavailable");
-  }
-  if (!Array.isArray(versions) || versions.length !== 5 || !versions.every((version, index) => version === index + 1))
-    throw new Error("Unsafe or unprepared Azure database runtime");
 }
