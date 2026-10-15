@@ -15,7 +15,11 @@ const MAX_DEPTH = 8;
 const MAX_KEYS = 100;
 const MAX_ITEMS = 500;
 const MAX_TEXT = 4_000;
-/** A referral chart's file content: the reducer checks its exact length against its byte size. */
+/**
+ * A referral chart's file content, which the reducer checks against the chart's byte size. This
+ * bound only stops this check refusing a chart; the server's 1 MiB request limit (server.mjs) is
+ * the tighter cap on the shared board, because the whole saved workspace is capped at 8 MiB.
+ */
 const MAX_BASE64 = 4 * Math.ceil(CHART_MAX_BYTES / 3);
 const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 

@@ -82,7 +82,7 @@ describe("shared command schemas", () => {
     expect(validSharedCommand({ ...base, note: "x".repeat(4_000) })).toBe(true);
   });
 
-  it("let a referral chart's file content through up to the 2 MB chart limit", () => {
+  it("let a referral chart's file content past the text bound (the request size limit still applies)", () => {
     const role = EVENT_ROLE.RECEIVE_REFERRAL[0];
     const chart = (base64: string) => ({
       type: "RECEIVE_REFERRAL",
