@@ -40,7 +40,11 @@ const WARD = "src/components/ward-management";
  * derivation (capacity-screen gets `pendingPreparation` from `networkWardRows`). Matching only the
  * helper name would report `capacity-screen` — which states the qualifier — as a defect.
  */
-const QUALIFIER_MARK = /bedsPendingPreparation\(|\.pendingPreparation\b/u;
+const QUALIFIER_MARK = /bedsPendingPreparation\(|\.pendingPreparation\b|\.beingMadeReady\b/u;
+// `.beingMadeReady` is the third route: `bedStates()` (ward-bed-states.ts) fills it from
+// `bedsPendingPreparation`, and the phone ward sheet in coordinator/home-phone-sheets.tsx prints it
+// beside Ready. That file used to pass only because a dead card in it also called the helper; the
+// card was deleted on 15 Oct 2026 and the sheet's own qualifier was then unrecognised.
 // 🔴 THE CALL OR THE PROPERTY ACCESS — NEVER THE BARE IDENTIFIER, AND THE CONTROL IS WHAT FOUND
 // THAT. This first read `pendingPreparation` as a token. Reverting a repaired screen to
 // `const pendingPreparation = 0;` then left the identifier in the file, so all four mutants
