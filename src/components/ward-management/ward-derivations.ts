@@ -30,6 +30,7 @@ import {
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import {
@@ -1231,6 +1232,14 @@ export type InboxItem = {
  */
 export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">> & {
   plannedAdmissions?: readonly PlannedAdmission[];
+  /**
+   * Top 25 item 12 (flag `top25-stuck-handover`): when set, a "Transport awaiting departure" row
+   * whose transport was accepted at least this many minutes ago is named a stuck handover for the
+   * sending team. Callers pass the configured transport booked target
+   * (`configuration.transportBookedTargetMinutes`), never a separate figure. Left out, the row is
+   * exactly as before.
+   */
+  stuckHandoverMinutes?: number;
 };
 
 export function buildActionInbox(
@@ -1347,14 +1356,22 @@ export function buildActionInbox(
   );
   for (const movement of stalledTransport) {
     if (!movement.transport) continue;
+    const acceptedAt = movement.transport.acceptedAt as Instant;
+    const stuckAfter = records?.stuckHandoverMinutes;
+    const waited = now - acceptedAt;
+    // Same id, kind and tone either way, so counts, snoozes and act-now figures never move with
+    // the flag: only the wording and the owner say the handover is stuck.
+    const stuck = stuckAfter !== undefined && waited >= stuckAfter;
     items.push({
       id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,
       tone: "warning",
       icon: Truck,
-      title: "Transport awaiting departure",
-      detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
-      owner: movement.owner,
+      title: stuck ? "Handover waiting too long" : "Transport awaiting departure",
+      detail: stuck
+        ? `${movement.id} · transport accepted ${formatInstant(acceptedAt)}, not left after ${splitDuration(waited)}. Target ${splitDuration(stuckAfter)}`
+        : `${movement.id} · accepted ${formatInstant(acceptedAt)}`,
+      owner: stuck ? "Sending team" : movement.owner,
       movementId: movement.id,
       since: movement.transport.acceptedAt,
     });

@@ -14,6 +14,7 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
@@ -163,6 +164,8 @@ export function CoordinatorScreen() {
     supportNotifications,
     inboxSnoozes,
   } = useWardFlow();
+  // Top 25 item 12: name a stuck handover once the transport booked target has passed.
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
 
@@ -465,6 +468,7 @@ export function CoordinatorScreen() {
           supportNotifications,
           plannedAdmissions,
           leaveBeds,
+          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
         },
         now,
       ).map((item) => {
@@ -486,6 +490,7 @@ export function CoordinatorScreen() {
       supportNotifications,
       plannedAdmissions,
       leaveBeds,
+      stuckHandoverOn,
       now,
     ],
   );
