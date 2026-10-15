@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import type { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
+import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import type { EdStepEvent } from "./ed-screen-model";
 import type { edScreenActions } from "./ed-screen-actions";
@@ -19,6 +20,7 @@ type EdScreenRecords = {
   referrals: WardFlowContextValue["referrals"];
   dayZero: WardFlowContextValue["dayZero"];
   dispatch: WardFlowContextValue["dispatch"];
+  raise: WardRaise;
   registryPatients: WardFlowContextValue["patients"];
   now: Instant;
   readmissionIndex: ReturnType<typeof createReadmissionIndex>;

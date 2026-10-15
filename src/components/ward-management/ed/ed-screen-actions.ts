@@ -4,19 +4,20 @@
 import type { FormEvent } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
+import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs, type EdStepEvent } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
 
 export function edScreenActions({
-  dispatch,
+  raise,
   now,
   dayZero,
   thisEdId,
   recordEdStep,
   panels,
 }: {
-  dispatch: WardFlowContextValue["dispatch"];
+  raise: WardRaise;
   now: Instant;
   dayZero: WardFlowContextValue["dayZero"];
   thisEdId: string;
@@ -54,10 +55,7 @@ export function edScreenActions({
     event.preventDefault();
     // A real <form>: Enter inside a field submits it whatever the button advertises.
     if (urgencyDraft.reason === undefined) return;
-    dispatch({
-      type: "CHANGE_URGENCY",
-      role: "ed",
-      now,
+    raise("CHANGE_URGENCY", {
       movementId,
       urgency: urgencyDraft.urgency,
       reason: urgencyDraft.reason,
@@ -71,10 +69,7 @@ export function edScreenActions({
     // the same bypass the raise-referral form guards. An `aria-disabled` control alone would not
     // catch it, and the reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
     if (legalStatusDraft.reason === undefined) return;
-    dispatch({
-      type: "CHANGE_LEGAL_STATUS",
-      role: "ed",
-      now,
+    raise("CHANGE_LEGAL_STATUS", {
       movementId,
       legalStatus: legalStatusDraft.legalStatus,
       reason: legalStatusDraft.reason,
@@ -83,7 +78,7 @@ export function edScreenActions({
   }
 
   function confirmWithdrawReferral(movementId: string) {
-    dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now, movementId, actingPlaceId: thisEdId });
+    raise("WITHDRAW_REFERRAL", { movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
   }
 
@@ -102,7 +97,7 @@ export function edScreenActions({
     // control never advertises a save it already knows the reducer would refuse.
     if (dueAt === undefined) return;
     if (currentDueAt !== undefined && dueAt <= currentDueAt) return;
-    dispatch({ type: "RECORD_LEGAL_FORM_EXPIRY", role: "ed", now, movementId, dueAt });
+    raise("RECORD_LEGAL_FORM_EXPIRY", { movementId, dueAt });
     setLegalFormExpiryOpenFor(undefined);
     setLegalFormExpiryDraft(BLANK_TYPED_EXPIRY_DRAFT);
   }
@@ -113,10 +108,7 @@ export function edScreenActions({
     // bypass every other panel on this screen guards against — the reducer requires a reason, so
     // an unguarded Enter would dispatch `undefined`.
     if (receiptCorrectionReasonDraft === undefined) return;
-    dispatch({
-      type: "CORRECT_LEGAL_FORM_RECEIPT",
-      role: "ed",
-      now,
+    raise("CORRECT_LEGAL_FORM_RECEIPT", {
       movementId,
       reason: receiptCorrectionReasonDraft,
     });
@@ -139,10 +131,7 @@ export function edScreenActions({
     ) {
       return;
     }
-    dispatch({
-      type: "BOOK_TRANSPORT",
-      role: "ed",
-      now,
+    raise("BOOK_TRANSPORT", {
       movementId,
       provider,
       escortRequired,

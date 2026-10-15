@@ -46,7 +46,7 @@ describe("recording that nobody raised a referral", () => {
     // ED screen as a whole.
     const source = edScreenSource();
     expect(source).toContain("ward-ed-no-referral-raised-");
-    expect(source).toContain('type: "RECORD_NO_REFERRAL"');
+    expect(source).toContain('raise("RECORD_NO_REFERRAL"');
     expect(source).toContain("No referral raised");
   });
 });

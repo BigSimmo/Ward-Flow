@@ -36,7 +36,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
   const {
     now,
     referrals,
-    dispatch,
+    raise,
     recordEdStep,
     toggleExamination,
     setEdOutcomeOpenFor,
@@ -172,10 +172,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
           data-testid={`ward-ed-no-referral-raised-${movement.id}`}
           className={styles.acceptButton}
           onClick={() =>
-            dispatch({
-              type: "RECORD_NO_REFERRAL",
-              role: "ed",
-              now,
+            raise("RECORD_NO_REFERRAL", {
               movementId: movement.id,
             })
           }
@@ -220,10 +217,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
           data-action={`ed-mark-form-received-${movement.id}`}
           className={styles.acceptButton}
           onClick={() =>
-            dispatch({
-              type: "RECORD_LEGAL_FORM_RECEIVED",
-              role: "ed",
-              now,
+            raise("RECORD_LEGAL_FORM_RECEIVED", {
               movementId: movement.id,
             })
           }
@@ -282,7 +276,7 @@ export function renderEdRowNextGroup(
   facts: EdRowFacts,
 ): ReactNode {
   const { movement, patientInfo } = row;
-  const { now, dispatch, boardTable, phoneSheetReason, setPhoneSheetReason } = ctx;
+  const { raise, boardTable, phoneSheetReason, setPhoneSheetReason } = ctx;
   const { unavailableFacts, transportNoticeFact, extensionHistoryFacts, withdrawUnavailableFact, cmhtNoticeFact } =
     facts;
   return (
@@ -295,10 +289,7 @@ export function renderEdRowNextGroup(
             data-action={`ward-ed-mark-left-${movement.id}`}
             className={`${styles.acceptButton} ${styles.primaryActionButton}`}
             onClick={() =>
-              dispatch({
-                type: "RECORD_LEFT_DEPARTMENT",
-                role: "ed",
-                now,
+              raise("RECORD_LEFT_DEPARTMENT", {
                 movementId: movement.id,
               })
             }

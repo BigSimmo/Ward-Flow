@@ -8,11 +8,11 @@
  */
 
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { useRef, useState, type Dispatch } from "react";
+import { useRef, useState } from "react";
 import { useModalFocus } from "@/components/wf";
 import type { CancelTransportReason } from "@/components/ward-management/ward-change-reasons";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { cancelTransportBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -79,11 +79,11 @@ export function useCommunityScreenOverlayFocus({
 /** Transport booking and cancelling, for a bed this team's person holds. Called straight after the
  *  overlay focus hook above, so the two transport dialogs stack above the drawer and dialogs. */
 export function useCommunityScreenTransport({
-  dispatch,
+  raise,
   now,
   teamId,
 }: {
-  dispatch: Dispatch<WardFlowEvent>;
+  raise: WardRaise;
   now: Instant;
   teamId: string;
 }) {
@@ -134,10 +134,7 @@ export function useCommunityScreenTransport({
     ) {
       return;
     }
-    dispatch({
-      type: "BOOK_TRANSPORT",
-      role: "community",
-      now,
+    raise("BOOK_TRANSPORT", {
       movementId,
       actingPlaceId: teamId,
       provider,
@@ -156,10 +153,7 @@ export function useCommunityScreenTransport({
 
   function submitCancelTransport(movementId: string) {
     if (cancelTransportReason === undefined) return;
-    dispatch({
-      type: "CANCEL_TRANSPORT",
-      role: "community",
-      now,
+    raise("CANCEL_TRANSPORT", {
       movementId,
       actingPlaceId: teamId,
       reason: cancelTransportReason,

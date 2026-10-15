@@ -954,11 +954,14 @@ const networks = new WeakMap<readonly Site[], WardNetwork>();
 export function wardNetworkOf(sites: readonly Site[]): WardNetwork {
   let network = networks.get(sites);
   if (!network) {
-    const allUnitsOf = () => sites.flatMap((site) => site.units);
+    // Built once per network, so `allUnits()` keeps one identity for memo keys. Like `flattened()`,
+    // this relies on a site's wards never being changed in place.
+    const units = sites.flatMap((site) => site.units);
+    const byId = new Map(units.map((unit) => [unit.id, unit]));
     network = {
       sites,
-      allUnits: allUnitsOf,
-      unitById: (id) => allUnitsOf().find((unit) => unit.id === id),
+      allUnits: () => units,
+      unitById: (id) => byId.get(id),
     };
     networks.set(sites, network);
   }

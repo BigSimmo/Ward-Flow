@@ -11,6 +11,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -56,14 +57,10 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
-  const {
-    movements: liveMovements,
-    units,
-    configuration,
-    dispatch,
-  } = useWardFlowSelect("movements", "units", "configuration", "dispatch");
+  const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
 
   const allMovements = movementsOverride ?? liveMovements;
   const movements =
@@ -123,10 +120,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     service !== null && !movementBelongsToService(movement, service, units);
 
   const escalate = (movement: Movement) => {
-    dispatch({
-      type: "RECORD_ESCALATION",
-      role: "coordinator",
-      now,
+    raise("RECORD_ESCALATION", {
       movementId: movement.id,
       triedUnitIds: movement.declines.map((decline) => decline.unitId),
       // The fixed escalation vocabulary's entry (ward-change-reasons.ts), as the coordinator picker records it.

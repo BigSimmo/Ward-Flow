@@ -10,6 +10,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { referralDraftBlockedReason } from "./ed-blocked-reasons";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -109,6 +110,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     "admissions",
   );
   const now = useWardFlowClock();
+  const raise = useWardRaise("ed");
   // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
   const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
   const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
@@ -193,7 +195,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     fullscreenBoard,
     setFullscreenBoard,
   });
-  const inboxDecline = useEdInboxDecline({ rejections, dispatch, now, offerStep });
+  const inboxDecline = useEdInboxDecline({ rejections, raise, offerStep });
   useEdRaiseAnnouncement({
     raisePendingRef,
     movements,
@@ -265,7 +267,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     activeHeroChip,
     arrivalPlanMovement,
   } = derived;
-  const actions = edScreenActions({ dispatch, now, dayZero, thisEdId, recordEdStep, panels: rowPanels });
+  const actions = edScreenActions({ raise, now, dayZero, thisEdId, recordEdStep, panels: rowPanels });
 
   function submitReferral(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -295,10 +297,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     ) {
       return;
     }
-    dispatch({
-      type: "RAISE_REFERRAL",
-      role: "ed",
-      now,
+    raise("RAISE_REFERRAL", {
       edId: thisEdId,
       // Opus review round 2, 17 September 2026 (P2), item 6: `undefined` in the ordinary,
       // unlinked case (this form's existing behaviour) — set only when this form was opened via
@@ -340,6 +339,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     referrals,
     dayZero,
     dispatch,
+    raise,
     registryPatients,
     now,
     readmissionIndex,

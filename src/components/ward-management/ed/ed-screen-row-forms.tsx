@@ -52,8 +52,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     receiptCorrectionOpen,
   } = row;
   const {
-    now,
-    dispatch,
+    raise,
     setWithdrawOpenFor,
     communityReferralOpenFor,
     setCommunityReferralOpenFor,
@@ -162,10 +161,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               className={styles.declineButton}
               onClick={() => {
                 if (!communityTeamChoice) return;
-                dispatch({
-                  type: "REFER_TO_COMMUNITY_TEAM",
-                  role: "ed",
-                  now,
+                raise("REFER_TO_COMMUNITY_TEAM", {
                   movementId: movement.id,
                   team: communityTeamChoice,
                 });
@@ -265,10 +261,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                   dischargeBlocked
                     ? ignoreUnavailableActivation
                     : () => {
-                        dispatch({
-                          type: "RECORD_ED_OUTCOME",
-                          role: "ed",
-                          now,
+                        raise("RECORD_ED_OUTCOME", {
                           movementId: movement.id,
                           outcome: "for_discharge",
                         });
@@ -283,10 +276,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                 data-testid={`ward-ed-outcome-community-${movement.id}`}
                 className={styles.acceptButton}
                 onClick={() => {
-                  dispatch({
-                    type: "RECORD_ED_OUTCOME",
-                    role: "ed",
-                    now,
+                  raise("RECORD_ED_OUTCOME", {
                     movementId: movement.id,
                     outcome: "for_community_follow_up",
                   });

@@ -23,7 +23,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
   const {
     now,
     department,
-    dispatch,
+    raise,
     movements,
     units,
     referrals,
@@ -137,10 +137,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                         data-testid={`ward-ed-release-diverted-bed-${movement.id}`}
                         className={styles.declineButton}
                         onClick={() =>
-                          dispatch({
-                            type: "RELEASE_DIVERTED_BED",
-                            role: "ed",
-                            now,
+                          raise("RELEASE_DIVERTED_BED", {
                             movementId: movement.id,
                           })
                         }
@@ -242,10 +239,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                         onClick={() => {
                           const gender = genderRecordDraft[movement.id];
                           if (!gender) return;
-                          dispatch({
-                            type: "RECORD_MOVEMENT_GENDER",
-                            role: "ed",
-                            now,
+                          raise("RECORD_MOVEMENT_GENDER", {
                             movementId: movement.id,
                             gender,
                           });

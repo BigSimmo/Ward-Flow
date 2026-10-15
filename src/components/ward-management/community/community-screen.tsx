@@ -36,6 +36,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { CommunityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
 import {
   patientIdentityLine,
@@ -307,6 +308,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   );
   const liveReferrals = useCommunityScopedReferrals();
   const now = useWardFlowClock();
+  const raise = useWardRaise("community");
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
   const umrnLookup = useMemo(
     () => ({ patients, referrals: referrals ?? liveReferrals, movements }),
@@ -552,15 +554,12 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       }
       setAcceptanceError(null);
       setPendingAcceptance({ id: referralId, rejectionCount: rejections.length });
-      dispatch({
-        type: "ACCEPT_REFERRAL",
-        role: "community",
-        now,
+      raise("ACCEPT_REFERRAL", {
         referralId,
         destinationKind: "community_team",
       });
     },
-    [dispatch, liveReferrals, now, rejections.length, team],
+    [raise, liveReferrals, rejections.length, team],
   );
 
   useCommunityScreenWindowBridge({
@@ -622,7 +621,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     transportCancelDialogRef,
     submitBookTransport,
     submitCancelTransport,
-  } = useCommunityScreenTransport({ dispatch, now, teamId });
+  } = useCommunityScreenTransport({ raise, now, teamId });
 
   const source = admissions ?? liveAdmissions;
   // Membership is read off the referral now, so the referrals are as much an input to this screen
@@ -792,7 +791,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     .sort((a, b) => b.raisedAt - a.raisedAt);
   const unreadTeamNoticeCount = teamNotices.filter((notice) => notice.readAt === undefined).length;
   function markTeamNoticeRead(noticeId: string) {
-    dispatch({ type: "MARK_NOTICE_READ", role: "community", now, noticeId, actingPlaceId: teamId });
+    raise("MARK_NOTICE_READ", { noticeId, actingPlaceId: teamId });
   }
   const inBedCount = lists.currentlyAdmitted.filter((admission) => admission.state === "occupied").length;
   const bedPulledCount = lists.currentlyAdmitted.filter((admission) => admission.state === "pulled").length;

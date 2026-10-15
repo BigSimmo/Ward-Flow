@@ -631,6 +631,12 @@
   border-top: 1px solid var(--wf-line);
 }
 
+.commandNote {
+  margin: 4px 8px 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
 .commandList {
   display: flex;
   flex-wrap: wrap;

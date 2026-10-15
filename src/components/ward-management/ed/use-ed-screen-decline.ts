@@ -3,20 +3,18 @@
 // The inbox decline: its panel, its draft, and the check that tells a refused decline from a
 // recorded one. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useEffect, useRef, useState } from "react";
-import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
+import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { ReferralDeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import type { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
 export function useEdInboxDecline({
   rejections,
-  dispatch,
-  now,
+  raise,
   offerStep,
 }: {
   rejections: WardFlowContextValue["rejections"];
-  dispatch: WardFlowContextValue["dispatch"];
-  now: Instant;
+  raise: WardRaise;
   offerStep: ReturnType<typeof useUndoableStep>["offer"];
 }) {
   /*
@@ -122,10 +120,7 @@ export function useEdInboxDecline({
     if (declineDraft === undefined) return;
     priorRejectionCountRef.current = rejections.length;
     pendingDeclineRef.current = referralId;
-    dispatch({
-      type: "DECLINE_REFERRAL",
-      role: "ed",
-      now,
+    raise("DECLINE_REFERRAL", {
       referralId,
       // Named, never defaulted: this screen is the emergency department's own inbox, so the
       // destination answering here is the emergency department. The reducer must not have to guess

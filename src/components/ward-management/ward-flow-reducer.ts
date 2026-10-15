@@ -5019,6 +5019,15 @@ export function reduceClinicalEvent(
           `RECEIVE_REFERRAL raised as role ed must carry source ed_medical, not ${event.source}`,
         );
       }
+      // Role access plan (15 Oct 2026): a ward raises a referral in its own name only as the
+      // sending ward. Any other source would file it under someone else.
+      if (event.role === "ward" && event.source !== "psychiatric_ward") {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must carry source psychiatric_ward, not ${event.source}`,
+        );
+      }
       if (event.source === "psychiatric_ward") {
         if (!event.originUnitId || !findUnit(state, event.originUnitId)) {
           return reject(
@@ -5027,6 +5036,15 @@ export function reduceClinicalEvent(
             `RECEIVE_REFERRAL source psychiatric_ward must name a real originUnitId (the sending ward)`,
           );
         }
+      }
+      // A ward names itself with `actingUnitId`, and may only send from that ward, as it answers
+      // only its own movements (`wardActingUnitError`). Otherwise ward A could file a referral as B.
+      if (event.role === "ward" && event.actingUnitId !== event.originUnitId) {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must send from its own ward: acting as ${event.actingUnitId ?? "no named ward"}, origin ${event.originUnitId}`,
+        );
       }
       // `homeRegion` is a region from a fixed list, never an address or free text; see
       // `HOME_REGIONS`.

@@ -1288,6 +1288,9 @@ export type WardFlowEvent =
        * occupied until arrival.
        */
       originUnitId?: string;
+      /** The ward raising it, when the role is `ward`. The reducer refuses a ward caller unless this
+       *  matches `originUnitId`, so a ward sends only in its own name. */
+      actingUnitId?: string;
       /**
        * WHICH TEAM OR SERVICE SENT IT, by name. Owner, 2026-09-12: **"Yes it should."**
        *
@@ -2842,7 +2845,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // including GP, stays `community`." `ed` widens the table here; the reducer's own
   // `case "RECEIVE_REFERRAL"` couples it back to `source` — this list alone cannot express "only
   // when the source is ed_medical".
-  RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
+  //
+  // Role access plan (Josh, 15 Oct 2026): a ward raises a ward-to-ward referral in its own name.
+  // The reducer couples `ward` to source `psychiatric_ward` with a real sending ward, as it couples
+  // `ed` to `ed_medical`, so a ward cannot file a referral under another source.
+  RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
   ADD_PATIENT: ["ed", "community", "coordinator"],
   /**
