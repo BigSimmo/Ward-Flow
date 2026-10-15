@@ -43,7 +43,8 @@ legal or service standard until a named clinician signs it.
 | Bed occupancy | Service occupancy colour band, surge from | 95% | Synthetic value | D-22 (26 Sep 2026), labelled default | None recorded | `occupancySurge` |
 | Bed occupancy | Service occupancy colour band, red from | 98% | Synthetic value | D-22 (26 Sep 2026), labelled default | None recorded | `occupancyCritical` |
 | Legal form warnings | Typed legal due time, urgent warning before it | 1 hour, default, changeable in Settings | Synthetic value | D-24 (26 Sep 2026), Josh's default | None recorded | `dueSoonUrgent` |
-| Legal form warnings | Typed legal due time, first warning before it | 3 hours, default, changeable in Settings | Synthetic value | D-24 (26 Sep 2026), Josh's default | 4 hours (Top 25 paper form radar before 15 Oct 2026) | `dueSoon` |
+| Legal form warnings | Typed legal due time, first warning before it | 3 hours, default, changeable in Settings | Synthetic value | D-24 (26 Sep 2026), Josh's default | 4 hours (Top 25 paper form radar amber) | `dueSoon` |
+| Legal form warnings | Paper form radar turns amber within (or the first warning, if Settings sets it longer) | 4 hours | Synthetic value | No decision recorded (Top 25 paper form radar, 15 Oct 2026) | 3 hours (Settings first warning default (D-24)) | `paperFormRadarAmber` |
 | Legal form warnings | Paper form radar shows the act now edge within | 6 hours | Synthetic value | No decision recorded (Top 25 paper form radar, 15 Oct 2026) | None recorded | `paperFormRadarEdge` |
 | Alerts and holds | Unanswered Pull now returns to the coordinator after | 15 minutes | Synthetic value | Josh accepted, global alerts option A, 10 Oct 2026 | None recorded | `pullNowAnswer` |
 | Alerts and holds | Pull now stays live, if nobody pulls or stands it down, for | 4 hours | Synthetic value | Global alerts option A, 10 Oct 2026 | None recorded | `pullNowLive` |

@@ -85,6 +85,7 @@ describe("clinical values file", () => {
       occupancyCritical: 98,
       dueSoonUrgent: 60,
       dueSoon: 180,
+      paperFormRadarAmber: 240,
       paperFormRadarEdge: 360,
       pullNowAnswer: 15,
       pullNowLive: 240,
@@ -133,31 +134,44 @@ describe("clinical values file", () => {
     expect(ED_ACCESS_TARGET_MINUTES).toBe(CLINICAL_VALUES.edAccessTarget.value);
   });
 
-  it("replaces the Top 25 radar's own four-hour amber with the Settings warning", () => {
+  it("keeps the radar's four-hour amber, so no form loses the warning it had", () => {
     const now = "2026-10-15T00:00:00.000Z";
     const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
+    const amber = CLINICAL_VALUES.paperFormRadarAmber.value;
     const radar = derivePaperLegalExpiryRadar(
       [
-        { id: "inside", formType: "Form 3B", expiresAt: at(CLINICAL_VALUES.dueSoon.value) },
-        { id: "outside", formType: "Form 3B", expiresAt: at(CLINICAL_VALUES.dueSoon.value + 30) },
+        { id: "red", formType: "Form 3B", expiresAt: at(CLINICAL_VALUES.dueSoonUrgent.value) },
+        { id: "inside", formType: "Form 3B", expiresAt: at(amber) },
+        { id: "outside", formType: "Form 3B", expiresAt: at(amber + 30) },
       ],
       now,
     );
+    expect(radar.find((item) => item.id === "red")?.urgency).toBe("critical_1h");
     expect(radar.find((item) => item.id === "inside")?.urgency).toBe("warning_4h");
     expect(radar.find((item) => item.id === "outside")?.urgency).toBe("normal");
   });
 
-  it("moves the radar with the due-soon warnings Settings applies", () => {
+  it("follows the Settings warnings when they are longer, never shorter, than the radar's amber", () => {
     const now = "2026-10-15T00:00:00.000Z";
     const at = (minutes: number) => new Date(Date.parse(now) + minutes * 60_000).toISOString();
-    const forms = [{ id: "two-hours", formType: "Form 3B", expiresAt: at(120) }];
+    const forms = [
+      { id: "ninety-minutes", formType: "Form 3B", expiresAt: at(90) },
+      { id: "four-and-a-half-hours", formType: "Form 3B", expiresAt: at(270) },
+      { id: "three-hours", formType: "Form 3B", expiresAt: at(180) },
+    ];
+    const urgencyOf = (id: string) => derivePaperLegalExpiryRadar(forms, now).find((item) => item.id === id)?.urgency;
     try {
+      applyDueSoonThresholds(120, 300);
+      expect(urgencyOf("ninety-minutes")).toBe("critical_1h");
+      expect(urgencyOf("four-and-a-half-hours")).toBe("warning_4h");
       applyDueSoonThresholds(30, 90);
-      expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("normal");
+      expect(urgencyOf("three-hours")).toBe("warning_4h");
+      expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
     } finally {
       applyDueSoonThresholds(CLINICAL_VALUES.dueSoonUrgent.value, CLINICAL_VALUES.dueSoon.value);
     }
-    expect(derivePaperLegalExpiryRadar(forms, now)[0]?.urgency).toBe("warning_4h");
+    expect(urgencyOf("four-and-a-half-hours")).toBe("normal");
+    expect(urgencyOf("ninety-minutes")).toBe("warning_4h");
   });
 
   it("keeps the ED ladder's rungs on the shared ED wait values", () => {

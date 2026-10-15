@@ -232,7 +232,16 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-24 (26 Sep 2026), Josh's default",
     adjustable: true,
-    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "Top 25 paper form radar before 15 Oct 2026" }],
+    alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "Top 25 paper form radar amber" }],
+  },
+  paperFormRadarAmber: {
+    ...SYNTHETIC,
+    name: "Paper form radar turns amber within (or the first warning, if Settings sets it longer)",
+    group: "Legal form warnings",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (Top 25 paper form radar, 15 Oct 2026)`,
+    alternatives: [{ value: 3 * MINUTES_PER_HOUR, where: "Settings first warning default (D-24)" }],
   },
   paperFormRadarEdge: {
     ...SYNTHETIC,

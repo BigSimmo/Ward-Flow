@@ -719,9 +719,9 @@ export function releaseBedToDischargeLounge<
 // ============================================================================
 // #19 — Paper-Form Statutory Expiry Radar (4h Amber / 1h Red & 48h/24h/<6h)
 // ============================================================================
-// The warning marks are the Settings due-soon warnings as configured now (`currentDueSoonThresholds`,
-// defaults in `ward-clinical-values.ts`, 15 Oct 2026), so the radar moves with every other legal clock:
-// the radar's own four-hour amber was one of the conflicting sets and is listed there for sign-off.
+// Red follows the Settings urgent warning (`currentDueSoonThresholds`). Amber keeps the radar's own
+// four-hour mark (`paperFormRadarAmber`) unless Settings sets a longer first warning, so a form never
+// loses its warning while the conflicting figures wait for sign-off in `ward-clinical-values.ts`.
 // `warning_4h` and `critical_1h` stay as internal names.
 
 export interface PaperLegalFormInput {
@@ -745,6 +745,7 @@ export function derivePaperLegalExpiryRadar(
 ): PaperLegalExpiryRadarItem[] {
   const nowMin = toMinutes(now);
   const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  const amberMinutes = Math.max(CLINICAL_VALUES.paperFormRadarAmber.value, soonMinutes);
   return forms
     .map((form) => {
       const rawExpiry = form.expiresAt ?? form.dueAt;
@@ -765,7 +766,7 @@ export function derivePaperLegalExpiryRadar(
         urgency = "expired";
       } else if (remainingMinutes <= urgentMinutes) {
         urgency = "critical_1h";
-      } else if (remainingMinutes <= soonMinutes) {
+      } else if (remainingMinutes <= amberMinutes) {
         urgency = "warning_4h";
       }
       return {
