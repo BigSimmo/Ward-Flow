@@ -50,6 +50,15 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Never in a demonstration build. Keep off in production, where there is no demo data to reset.",
   },
+  "role-access": {
+    label: "Role access",
+    description:
+      "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
+    owner: "Josh",
+    added: "2026-10-15",
+    defaults: { development: true, demo: false, production: false },
+    removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;
