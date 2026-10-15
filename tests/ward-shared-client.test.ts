@@ -76,6 +76,50 @@ describe("shared workspace connection", () => {
     expect(view?.error).toBe("Demo controls are switched off on the shared workspace. Nothing was changed.");
     client.dispose();
   });
+  it("says why when a command names a record outside the desk's place", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json(
+              {
+                outcome: "denied",
+                code: "scope",
+                error: "This change names a record outside your role's place.",
+                snapshot: snapshot(1),
+              },
+              { status: 422 },
+            )
+          : Response.json({ snapshot: snapshot(1) }),
+    });
+    await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
+    expect(view?.error).toBe("This change names a record outside your role's place. Nothing was changed.");
+    expect(view?.status).toBe("ready");
+    client.dispose();
+  });
+  it("stops and says so when the account holds more than one role", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => Response.json({ code: "choose-role", choices: [] }, { status: 409 }),
+    });
+    await client.refresh();
+    expect(view?.status).toBe("not-authorised");
+    expect(view?.snapshot).toBeNull();
+    expect(view?.error).toMatch(/more than one role/);
+    client.dispose();
+  });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
     for (const dataMode of [undefined, "live"]) {
       let view: SharedView | undefined;
