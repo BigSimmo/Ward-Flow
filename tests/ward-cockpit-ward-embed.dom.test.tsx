@@ -18,9 +18,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 describe("the movement cockpit embedded on a ward page", () => {
   it("shows the coordinator-only urgent flag as off, with the reason", () => {
+    const movement = movementById("WF-001");
+    if (!movement) throw new Error("fixture movement missing");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <MovementWorkspaceCockpit movementId={movementById("WF-001").id} embedded role="ward" />
+        <MovementWorkspaceCockpit movementId={movement.id} embedded role="ward" />
       </WardFlowProvider>,
     );
     const toggle = screen.getByTestId("ward-console-urgent-flag-toggle");
