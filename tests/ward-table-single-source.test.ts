@@ -238,6 +238,10 @@ describe("the Ward Flow `.table` rule set is declared in exactly one file", () =
     "src/components/ward-management/statistics/statistics-ward-third-edition.module.css",
     // Recorded 2026-09-30 (test fixer). Patient Trajectory in-place refinement module.
     "src/components/ward-management/patients/patient-now.module.css",
+    // Recorded 2026-10-15. The bed meeting TV view is read from across a meeting room: its cells
+    // are sized from the viewport on the `--wf-*` layer, not the canonical small `--ward-*` table.
+    // A separate, deliberate design, like `ed` and `statistics` above, not copy-paste drift.
+    "src/components/ward-management/bed-meeting/bed-meeting-tv.module.css",
   ];
 
   it("declares the canonical `.table th`/`.table td` cell rule (padding + border-bottom) in exactly the canonical file plus the known, documented backlog", () => {

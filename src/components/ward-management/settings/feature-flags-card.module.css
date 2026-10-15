@@ -1,0 +1,19 @@
+/* What each feature flag does and what retires it (`feature-flags-card.tsx`). Tokens only. */
+.details {
+  display: grid;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.details dt {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.details dd {
+  margin: 0;
+}

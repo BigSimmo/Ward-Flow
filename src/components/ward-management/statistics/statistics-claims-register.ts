@@ -223,6 +223,7 @@ export type ModelClaim = {
 const WARD_MODEL = "src/components/ward-management/ward-model.ts";
 const WARD_ADMISSIONS = "src/components/ward-management/ward-admissions.ts";
 const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
+const WARD_RECORD_EVENTS = "src/components/ward-management/ward-flow-record-events.ts";
 const WARD_STATISTICS = "src/components/ward-management/ward-statistics.ts";
 const WARD_DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
 const WARD_BED_AVAILABILITY = "src/components/ward-management/ward-ready-beds.ts";
@@ -1071,7 +1072,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     claim:
       "`RECORD_ESCALATION` stores the caller's own account — the instant, the units they say they tried, and " +
       "the contact — verifying none of it against the movement's referral history.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_RECORD_EVENTS,
     evidence: "escalation: { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact },",
     falsifiedBy: {
       change:

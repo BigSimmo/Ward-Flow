@@ -69,6 +69,7 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
+import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
@@ -129,6 +130,10 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     { concrete: `/mockups/ward-flow/board/${unit.id}`, render: () => <WardBoard unitId={unit.id} /> },
   ],
   ["/mockups/ward-flow/capacity", { concrete: "/mockups/ward-flow/capacity", render: () => <CapacityScreen /> }],
+  [
+    "/mockups/ward-flow/bed-meeting",
+    { concrete: "/mockups/ward-flow/bed-meeting", render: () => <BedMeetingTvScreen /> },
+  ],
   ["/mockups/ward-flow/community", { concrete: "/mockups/ward-flow/community", render: () => <CommunityIndex /> }],
   [
     "/mockups/ward-flow/community/[teamId]",

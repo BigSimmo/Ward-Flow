@@ -33,6 +33,10 @@ const reducer = fs.readFileSync(REDUCER, "utf8");
 const srcLines = reducer.split("\n");
 const refusalLines = [];
 for (let i = 0; i < srcLines.length; i++) if (/return reject\(/.test(srcLines[i])) refusalLines.push(i + 1);
+// The measure also counts the RECORD_* and UNDO_* slice files the reducer hands those actions to.
+const engineRefusals = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"]
+  .map((f) => fs.readFileSync(path.join(repoRoot, "src/components/ward-management", f), "utf8"))
+  .reduce((n, text) => n + (text.match(/return reject\(/g) || []).length, 0);
 
 const lcov = (records) =>
   ["TN:", "SF:src/components/ward-management/ward-flow-reducer.ts", ...records, "end_of_record", ""].join("\n");
@@ -102,9 +106,10 @@ const check = (name, ok, detail) => {
     r.code === 0 &&
     json &&
     json.spokenFor === 3 &&
-    json.refusals === refusalLines.length &&
+    json.refusals === engineRefusals &&
     json.neverReached.length === 1 &&
-    json.neverReached[0] === b;
+    json.neverReached[0]?.file === "reducer" &&
+    json.neverReached[0]?.line === b;
   check(
     "a line the report never mentions is unknown, not untested",
     honest,

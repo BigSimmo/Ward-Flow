@@ -16,6 +16,7 @@ import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "./ward-nav-icons";
 import { WARD_DEVELOPER_HUB_HREF, WARD_NAV, WARD_VIEWS, type WardMode, type WardNavItem } from "./ward-nav";
 import { useWardSidebarCollapsed } from "./use-ward-sidebar-collapsed";
 import { useWardNavCounts } from "./use-ward-nav-counts";
+import { useWardFeatureFlagCheck } from "./shell/ward-feature-flag-store";
 import { orderBoardsForRole, orderRoleScreensForRole, orderViewsForRole } from "./ward-nav-role-order";
 
 export type { WardMode } from "./ward-nav";
@@ -163,6 +164,7 @@ function WardIconRail({
   onExpand: () => void;
 }) {
   const { shellRole: role } = useWardNavCounts();
+  const flagOn = useWardFeatureFlagCheck();
   return (
     <aside
       className={`${shellStyles.clinicalRail}${hiddenOnDesktop ? ` ${shellStyles.railHiddenOnDesktop}` : ""}`}
@@ -225,7 +227,7 @@ function WardIconRail({
         <div className={shellStyles.railRule} aria-hidden="true" />
         <div className={shellStyles.railGroup} role="group" aria-label="Ward Flow specialist boards">
           {orderBoardsForRole(
-            WARD_NAV.filter((item) => item.group === "board"),
+            WARD_NAV.filter((item) => item.group === "board" && flagOn(item.flag)),
             role,
           ).map((item) => (
             <WardNavLink key={item.id} item={item} />

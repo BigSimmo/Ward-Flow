@@ -96,6 +96,7 @@ const PINNED: Record<string, string | null> = {
   escalation: "redirect:/mockups/ward-flow/delays?from=escalation",
   exceptions: "redirect:/mockups/ward-flow/delays?from=exceptions",
   governance: "WardModeWorkspace",
+  "bed-meeting": "BedMeetingTvScreen",
   handover: "HandoverPage",
   hub: "HubScreen",
   // Added 2026-09-12 with the third-edition Legal forms build. ⚠️ A reconciliation is in flight

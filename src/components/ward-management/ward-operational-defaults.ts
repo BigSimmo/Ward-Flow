@@ -209,11 +209,8 @@ const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [
 /** The list the settings screen shows, read-only, in the order a coordinator meets them. */
 export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   { name: "Arrival counted as late after", display: `${LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimate` },
-  {
-    name: "ED pressure shown as elevated from",
-    display: `a ${hoursText(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} wait`,
-  },
-  { name: "ED pressure shown as severe from", display: `an ${hoursText(ED_SEVERE_PRESSURE_WAIT_MINUTES)} wait` },
+  { name: "ED pressure shown as elevated from", display: `a wait of ${hoursText(ED_ELEVATED_PRESSURE_WAIT_MINUTES)}` },
+  { name: "ED pressure shown as severe from", display: `a wait of ${hoursText(ED_SEVERE_PRESSURE_WAIT_MINUTES)}` },
   { name: "Wait shown as long from", display: hoursText(LONG_WAIT_MINUTES) },
   {
     name: "Occupancy colour bands",
