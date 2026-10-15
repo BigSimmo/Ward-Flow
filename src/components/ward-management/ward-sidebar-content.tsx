@@ -17,6 +17,7 @@ import { useWardFlow, useWardFlowClock } from "./ward-flow-provider";
 import { useWardFeatureFlagCheck } from "./shell/ward-feature-flag-store";
 
 import styles from "./ward-sidebar.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Ward Flow's labelled sidebar body, mounted by both the expanded desktop panel and the phone
@@ -259,7 +260,7 @@ function WardSidebarAttention({
       {shown.map((item) => (
         <Link
           key={item.id}
-          href={item.href ?? `/mockups/ward-flow/movements/${item.movementId}`}
+          href={item.href ?? movementHref(item.movementId)}
           onClick={onNavigate}
           className={styles.attentionLink}
         >

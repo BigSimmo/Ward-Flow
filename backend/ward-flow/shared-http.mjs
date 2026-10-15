@@ -69,15 +69,16 @@ export function createSharedHandler({
   authenticate,
   readBody,
   verifierUnavailable,
+  verifierRateLimited = null,
   log = (event) => console.info(JSON.stringify(event)),
 }) {
-  return async (request) => {
+  return async (request, meta = {}) => {
     const requestId = randomUUID();
     const startedAt = performance.now();
     const path = new URL(request.url).pathname;
     /** @type {{ outcome?: string, failure?: Record<string, unknown> }} */
     const note = {};
-    const response = await handle(request, path, requestId, note);
+    const response = await handle(request, path, requestId, note, meta);
     try {
       // Closed metadata vocabulary only: never log tokens, actor IDs, query strings or payloads.
       log({
@@ -96,7 +97,7 @@ export function createSharedHandler({
     return response;
   };
 
-  async function handle(request, path, requestId, note) {
+  async function handle(request, path, requestId, note, meta) {
     const headers = {
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
@@ -128,8 +129,12 @@ export function createSharedHandler({
     }
     let actorId;
     try {
-      actorId = await authenticate(request.headers.get("authorization"));
+      actorId = await authenticate(request.headers.get("authorization"), { clientAddress: meta.clientAddress });
     } catch (error) {
+      if (verifierRateLimited && error instanceof verifierRateLimited) {
+        headers["retry-after"] = "60";
+        return reply(429, { error: "Too many sign-in checks; try again shortly" }, "rate_limited");
+      }
       return error instanceof verifierUnavailable
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
         : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");

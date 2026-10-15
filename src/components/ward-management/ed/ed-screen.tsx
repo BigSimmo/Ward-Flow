@@ -161,7 +161,11 @@ import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./e
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  NAME_NOT_RECORDED,
+  patientIdentityLine,
+  resolveSubjectPatient,
+} from "@/components/ward-management/ward-patient-resolver";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 
 const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
@@ -2330,7 +2334,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         by: null,
         what: (
           <>
-            <b>{r.id}</b> referral raised, {r.ageBand.toLowerCase()}
+            <b>{rPatientInfo.umrn}</b> referral raised, {r.ageBand.toLowerCase()}
           </>
         ),
       });
@@ -2350,7 +2354,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         by: null,
         what: (
           <>
-            <b>{r.id}</b> triaged in department
+            <b>{rPatientInfo.umrn}</b> triaged in department
           </>
         ),
       });
@@ -5752,7 +5756,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             data-minutes-in-department={clocks.inDepartment}
                           >
                             <header className={styles.inboxItemHeader}>
-                              <strong>{referral.id}</strong>
+                              <strong>{referralPatient.umrn}</strong>
                               <span style={{ fontSize: "0.85rem", color: "var(--ink)", fontWeight: 600 }}>
                                 {referralPatient.displayName}
                               </span>
@@ -5885,7 +5889,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                         className={styles.referralField}
                                         htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}
                                       >
-                                        Why is {referral.id} being declined?
+                                        Why is this referral being declined?
                                         <select
                                           id={`ward-ed-inbox-decline-reason-${referral.id}`}
                                           data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
@@ -6114,7 +6118,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                           data-reconsider={reconsider ? "true" : "false"}
                         >
                           <header className={styles.cardHeader}>
-                            <strong>{referral.id}</strong>
+                            <strong>
+                              {patientIdentityLine(
+                                resolveSubjectPatient(referral, { patients: registryPatients, referrals, movements }),
+                              )}
+                            </strong>
                             <span className={styles.cardMeta}>{referralPurposeLabel(destination.purpose)}</span>
                           </header>
                           <p className={styles.cardMeta}>{referralPersonFacts(referral).join(" · ")}</p>
@@ -6515,7 +6523,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                           data-state={addressing.state}
                         >
                           <header className={styles.cardHeader}>
-                            <strong>{referral.id}</strong>
+                            <strong>
+                              {patientIdentityLine(
+                                resolveSubjectPatient(referral, { patients: registryPatients, referrals, movements }),
+                              )}
+                            </strong>
                             <span className={styles.cardMeta} data-testid={`ward-ed-answered-purpose-${referral.id}`}>
                               {referralPurposeLabel(destination.purpose)}
                             </span>
@@ -6560,7 +6572,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               <div className={styles.popHead}>
                 {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                <h2 id="pxTitle">{selectedPatientInfo?.displayName ?? "Unknown Patient"}</h2>
+                <h2 id="pxTitle">{selectedPatientInfo?.displayName ?? NAME_NOT_RECORDED}</h2>
                 <span className={styles.count}>
                   UMRN: <strong>{selectedPatientInfo?.umrn}</strong> &middot; {selectedPatient.cohort} &middot;{" "}
                   {selectedPatient.sex}

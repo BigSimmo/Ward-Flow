@@ -3,7 +3,7 @@
 // Owner, 26 Sept 2026: screens name the patient, never the WF journey number. This hook resolves a
 // movement (or any clinical subject) to its linked patient through `resolveSubjectPatient`, reading
 // whatever the provider holds. Outside a provider, or with a partial test context, nothing is
-// linked, so it answers the resolver's own "Unknown Patient": conservative, never an id.
+// linked, so it answers the resolver's own "Name not recorded": conservative, never an id.
 //
 // Not for ward-facing (`ward/`) screens: they must not read referral data (the referral-screen
 // boundary guard), so they use the provider's `resolvePatientIdentity` instead. Neither applies any

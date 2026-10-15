@@ -1869,7 +1869,7 @@ describe("the patient link is a pointer, and the guard still refuses everything 
     const rejection = after.rejections[after.rejections.length - 1];
     expect(rejection?.attempted, "the rejection recorded is not the RECEIVE_REFERRAL attempt").toBe("RECEIVE_REFERRAL");
     expect(rejection?.reason).toBe(
-      `RECEIVE_REFERRAL patientId must name a patient this system already holds, and ${fabricatedId} names none`,
+      "RECEIVE_REFERRAL patientId must name a patient this system already holds, and this patient names none",
     );
   });
 });

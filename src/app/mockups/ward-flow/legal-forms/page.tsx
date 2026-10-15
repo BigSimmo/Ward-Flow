@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
+import { recordIdFromAddress } from "@/components/ward-management/shell/ward-record-address";
 
 export const metadata: Metadata = {
   title: "Forms — Ward Flow",
@@ -15,5 +16,7 @@ export default async function WardLegalFormsPage({
   searchParams?: Promise<{ movement?: string | string[] }>;
 }) {
   const { movement } = (await searchParams) ?? {};
-  return <LegalFormsScreen initialMovementId={typeof movement === "string" ? movement : undefined} />;
+  return (
+    <LegalFormsScreen initialMovementId={typeof movement === "string" ? recordIdFromAddress(movement) : undefined} />
+  );
 }

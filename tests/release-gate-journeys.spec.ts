@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 
 import { unitById } from "@/components/ward-management/ward-sites";
 import { bedReleases, wardMovements } from "@/components/ward-management/ward-movements";
@@ -38,6 +38,24 @@ import { escapeForRegExp } from "./helpers/ward-place-names";
  */
 
 test.describe.configure({ timeout: 120_000 });
+
+/** Open a ward's bed board from the Wards index: the ward's profile on desktop, its sheet on a phone. */
+async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
+  await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
+  if (isPhoneLayout(page)) {
+    await page
+      .getByRole("region", { name: "Wards", exact: true })
+      .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
+      .first()
+      .click();
+    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
+  } else {
+    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
+    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+  }
+  await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
+  await waitForScreen(page, "ward-board");
+}
 
 test("ED referral to bed offer: the ED raises a referral, the coordinator offers a ward, the ward accepts and pulls", async ({
   page,
@@ -269,20 +287,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await expectNoReloadSince(page, "confirming arrival");
 
   // The bed board shows this patient's own stay as an occupied bed.
-  await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
-  if (isPhoneLayout(page)) {
-    await page
-      .getByRole("region", { name: "Wards", exact: true })
-      .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
-      .first()
-      .click();
-    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
-  } else {
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
-  }
-  await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
-  await waitForScreen(page, "ward-board");
+  await openBedBoardFromWards(page, unitName, unitId);
   await expectAccessible(page, testInfo, "ward bed board after the arrival");
   // The phone board leads with its work list and keeps the bed grid in the page, so read the tile's
   // state rather than its visibility.
@@ -318,20 +323,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
 
   // The person leaves, recorded on the ward's bed board, opened from the Wards index: the ward's
   // profile on desktop, the ward's sheet on a phone.
-  await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
-  if (isPhoneLayout(page)) {
-    await page
-      .getByRole("region", { name: "Wards", exact: true })
-      .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
-      .first()
-      .click();
-    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
-  } else {
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
-  }
-  await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
-  await waitForScreen(page, "ward-board");
+  await openBedBoardFromWards(page, unitName, unitId);
   await expectAccessible(page, testInfo, "ward bed board");
   // The board's Needs you this shift list carries every discharge due or overdue, on desktop and
   // on the phone (where it replaces the bed grid). They have left records the departure.

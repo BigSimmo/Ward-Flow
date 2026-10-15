@@ -15,6 +15,7 @@ import {
   Tv,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import Link from "next/link";
@@ -1579,7 +1580,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   function fullWardReferralHref(patientId?: string): string {
-    return `/mockups/ward-flow/referrals/new?category=ward${patientId ? `&patientId=${encodeURIComponent(patientId)}` : ""}&site=${encodeURIComponent(unit?.siteCode ?? "")}`;
+    return `/mockups/ward-flow/referrals/new?category=ward${patientId ? `&patientId=${encodeRecordAddress(patientId)}` : ""}&site=${encodeURIComponent(unit?.siteCode ?? "")}`;
   }
 
   function handleRaiseWardReferral(bedOverride?: unknown) {

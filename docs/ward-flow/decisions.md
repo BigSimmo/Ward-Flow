@@ -523,9 +523,23 @@ is inferred.
     the synthetic-data guard (`src/lib/synthetic-data-guard.ts`) does not flag them. Ranges: hand
     authored patients `UM1nnnnn`, generated patients `UM5nnnnn`, the rulings demo `UM60nnnn`, the
     demo network `UM7nnnnn`, the community demo cohort its own six digits.
-  - Referral (`RF-...`) and admission (`AD-...`) ids are record numbers, not patient numbers, and
-    are out of scope. Statistics screens keep admission ids because they deliberately show no
-    patient identity.
+  - **Update, 15 October 2026.** Decided by Josh ("you should have purged all these numberings
+    from the site"). Referral (`RF-...`), patient (`PT-...`), admission (`AD-...`) and bed release
+    (`WR-...`) numbers are now also kept off screens, toasts and accessible names. A screen names
+    the person by name and UMRN, or says the record kind, such as "this referral". The ids stay in
+    routes, keys, test ids, engine events and fixtures. Statistics screens keep admission ids
+    because they deliberately show no patient identity.
+  - **Addresses, 15 October 2026.** Decided by Josh ("Screens and addresses"). A link to a
+    journey, person, referral or stay carries an address code that carries no record number. The
+    same goes for query values that name a record. The code is made from the id itself, so a record
+    added while the app runs gets a working link at once. Old links that still hold a raw id keep
+    working: the movement and person pages send them on to the coded address with the query kept,
+    and query readers accept either form. Refusals and notices say "this referral" or "this stay"
+    in place of a record number, and the ids stay in their data fields. The code only keeps the
+    number out of the address bar. It is not a privacy control.
+  - Names and UMRNs come only from the resolver. When it has none, a screen shows "Name not
+    recorded" and "UMRN not recorded". `patientIdentityLine` writes the shared "Family, Given ·
+    UMRN" line.
 - **Why:** Staff on shift search and hand over by UMRN. A journey number nobody else uses reads as
   a second patient number and invites mistakes.
 

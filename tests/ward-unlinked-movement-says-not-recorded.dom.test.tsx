@@ -57,8 +57,8 @@ describe("a movement linked to nobody says so", () => {
   it("really is linked to nobody, and was linked to a record before", () => {
     const state = { patients: seeded.patients, referrals: seeded.referrals, movements };
     const unlinked = movements.find((movement) => movement.id === UNLINKED.id);
-    expect(resolveSubjectPatient(unlinked, state).displayName).toBe("Unknown Patient");
-    expect(resolveSubjectPatient(UNLINKED, state).displayName).not.toBe("Unknown Patient");
+    expect(resolveSubjectPatient(unlinked, state).displayName).toBe("Name not recorded");
+    expect(resolveSubjectPatient(UNLINKED, state).displayName).not.toBe("Name not recorded");
   });
 
   it("patient search says an unrecorded age or sex is not recorded instead of guessing one", () => {
@@ -72,7 +72,7 @@ describe("a movement linked to nobody says so", () => {
   it("the handover row for that movement says the patient is unknown and the record number is not recorded", () => {
     const { container } = render(<HandoverPage />);
     const card = container.querySelector<HTMLElement>(`tr[data-row-id="${UNLINKED.id}"]`)!;
-    expect(card.textContent).toContain("Unknown Patient");
+    expect(card.textContent).toContain("Name not recorded");
     expect(card.textContent).toContain("UMRN not recorded");
   });
 });
