@@ -51,14 +51,14 @@ export function findBeds(units: readonly Unit[], releases: BedRelease[], filters
     .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
     .map((unit) => {
       // Capped at the board's Ready figure, min(allocatable, empty) under R-B-09, so this never
-      // shows more beds than the board or the bed summary.
+      // shows more beds than the board or the bed summary. The data does not say which beds are
+      // empty, so each kind is capped on its own rather than giving the cap to locked beds first.
       const ready = boundedBedAvailability(unit).available;
-      const locked = Math.min(lockedBedsFree(unit), ready);
       const free =
         filters.bed === "locked"
-          ? locked
+          ? Math.min(lockedBedsFree(unit), ready)
           : filters.bed === "open"
-            ? Math.min(openBedsFree(unit), ready - locked)
+            ? Math.min(openBedsFree(unit), ready)
             : ready;
       const service = unitHealthService(unit);
       return {

@@ -63,6 +63,13 @@ describe("Tools sheet, Find a bed", () => {
     const crowded = { ...ward, empty: { ...ward.empty, value: 1 } };
     const [match] = findBeds([crowded], bedReleases, DEFAULT_BED_FINDER_FILTERS);
     expect(match?.free).toBe(1);
+    const mixed = {
+      ...ward,
+      allocatable: { ...ward.allocatable, value: 4 },
+      allocatableLocked: 2,
+      empty: { ...ward.empty, value: 2 },
+    };
+    expect(findBeds([mixed], bedReleases, { ...DEFAULT_BED_FINDER_FILTERS, bed: "open" })[0]?.free).toBe(2);
     const none = { ...ward, empty: { ...ward.empty, value: 0 } };
     expect(findBeds([none], bedReleases, DEFAULT_BED_FINDER_FILTERS)).toEqual([]);
   });
