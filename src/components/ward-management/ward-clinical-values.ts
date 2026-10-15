@@ -35,7 +35,7 @@ import {
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 
-export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent";
+export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent" | "count";
 
 /** A value is synthetic until a named person signs it for the prototype on a date (D-56). */
 export type ClinicalValueSignature =
@@ -49,7 +49,8 @@ type ClinicalValueGroup =
   | "Legal form warnings"
   | "Alerts and holds"
   | "Arrivals and answers"
-  | "Discharge, leave and absence";
+  | "Discharge, leave and absence"
+  | "Access and privacy";
 
 /** Another figure some screen used, or a document named, for the same rule. */
 interface ClinicalValueAlternative {
@@ -421,6 +422,55 @@ export const CLINICAL_VALUES = {
     unit: "days",
     source: `${NO_DECISION}; a prompt to look, not a reporting standard`,
   },
+  // ---- Access and privacy (role access plan, Josh's go, 15 Oct 2026) ------------------------
+  breakGlassWindow: {
+    ...SYNTHETIC,
+    name: "Patient record opened outside your care (break glass) stays open for",
+    group: "Access and privacy",
+    value: 60,
+    unit: "minutes",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  breakGlassPerShift: {
+    ...SYNTHETIC,
+    name: "Break glass openings in one shift before the coordinator is told it is a pattern",
+    group: "Access and privacy",
+    value: 3,
+    unit: "count",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  edHandoffWindow: {
+    ...SYNTHETIC,
+    name: "Emergency department keeps sight of a patient after they reach the ward for",
+    group: "Access and privacy",
+    value: 24,
+    unit: "hours",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  wardHandoffWindow: {
+    ...SYNTHETIC,
+    name: "Ward keeps sight of a patient after they leave, for the follow up, for",
+    group: "Access and privacy",
+    value: 7,
+    unit: "days",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026); the same figure as the 7 day follow up`,
+  },
+  idleLock: {
+    ...SYNTHETIC,
+    name: "A shared computer locks after no use for",
+    group: "Access and privacy",
+    value: 15,
+    unit: "minutes",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
+  smallNumberHidden: {
+    ...SYNTHETIC,
+    name: "Planned, not applied yet: executive figures below this to show as fewer than this",
+    group: "Access and privacy",
+    value: 5,
+    unit: "count",
+    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+  },
 } satisfies Record<string, ClinicalValueEntry>;
 
 export type ClinicalValueId = keyof typeof CLINICAL_VALUES;
@@ -437,6 +487,7 @@ function plural(count: number, word: string): string {
 /** A figure in its own unit as people read it: "15 minutes", "4 hours", "7 days", "85%". */
 export function formatClinicalFigure(value: number, unit: ClinicalValueUnit): string {
   if (unit === "percent") return `${value}%`;
+  if (unit === "count") return String(value);
   if (unit === "days") return plural(value, "day");
   if (unit === "hours") return plural(value, "hour");
   if (value % (HOURS_PER_DAY * MINUTES_PER_HOUR) === 0 && value >= 7 * HOURS_PER_DAY * MINUTES_PER_HOUR)

@@ -48,6 +48,7 @@ import { announceToWardShell } from "./ward-live-region";
 import styles from "./ward-rail.module.css";
 import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
 import { isActiveRailEntry, RAIL_GROUPS, type RailEntry, railEntries } from "./ward-rail-entries";
+import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -380,7 +381,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const hydrated = useSyncExternalStore(subscribeNever, hydratedSnapshot, notHydratedSnapshot);
   const earlyShape = hydrated ? null : readWardRailEarlyShape();
   const flagOn = useWardFeatureFlagCheck();
-  const entries = railEntries(flagOn);
+  // Role access plan: only the screens the desk's role may open, own place first.
+  const accessNav = useAccessNavFilter();
+  const entries = accessNav(railEntries(flagOn));
   const currentPersona = CLINICAL_PERSONAS.find((p) => p.id === activePersona) ?? CLINICAL_PERSONAS[0];
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);

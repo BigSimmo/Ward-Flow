@@ -9,6 +9,7 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 
@@ -56,9 +57,12 @@ export function useWardNavCounts(): {
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
+  const routeRole = wardChromeRole(pathname);
+  // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
+  const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
   return {
-    role: wardChromeRole(pathname),
-    shellRole: WARD_SHELL_ROLE,
+    role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
+    shellRole: deskRole,
     counts: wardNavCounts({
       movements,
       units,

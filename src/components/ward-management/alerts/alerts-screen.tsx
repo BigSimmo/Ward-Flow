@@ -59,6 +59,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
+import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { broadcastScopeCount, directiveAcknowledgements, isAlertLive, replyBoard } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
@@ -379,15 +380,18 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
+  const deskInScope = useDeskInScope();
   // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
   // A bed call is answered by the wards it asked, never ED desks, so it counts replies as the banner does.
   const broadcastBoard =
     activeBroadcast && broadcastKind(activeBroadcast) !== "directive" ? replyBoard(activeBroadcast, units) : undefined;
-  const broadcastAcks = !activeBroadcast
+  const allAcks = !activeBroadcast
     ? undefined
     : broadcastBoard
       ? { acknowledged: broadcastBoard.answered, of: broadcastBoard.rows.length }
-      : directiveAcknowledgements(activeBroadcast, units);
+      : directiveAcknowledgements(activeBroadcast, units, deskInScope);
+  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
+  const broadcastAcks = allAcks && (allAcks.of > 0 || !deskInScope) ? allAcks : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );
@@ -1336,9 +1340,13 @@ function AlertsWorkspace() {
                 <span className={styles.phoneCardText}>
                   <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{broadcastAcks?.acknowledged}</b> of{" "}
-                    <span className={styles.mono}>{broadcastAcks?.of}</span> answered · ends{" "}
-                    <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
+                    {broadcastAcks ? (
+                      <>
+                        <b className={styles.mono}>{broadcastAcks.acknowledged}</b> of{" "}
+                        <span className={styles.mono}>{broadcastAcks.of}</span> answered ·{" "}
+                      </>
+                    ) : null}
+                    ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                   </span>
                 </span>
                 <ChevronRight size={16} aria-hidden="true" />
@@ -1437,10 +1445,12 @@ function AlertsWorkspace() {
                     <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
                     <span className={styles.heroBroadcastMeta}>
                       ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
-                      <span className={styles.deskOnly}>
-                        {" "}
-                        · <span className={styles.mono}>{broadcastAcks?.acknowledged}</span> acknowledged
-                      </span>
+                      {broadcastAcks ? (
+                        <span className={styles.deskOnly}>
+                          {" "}
+                          · <span className={styles.mono}>{broadcastAcks.acknowledged}</span> acknowledged
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                 ) : null}
@@ -1672,15 +1682,17 @@ function AlertsWorkspace() {
                               </span>
                             </dd>
                           </div>
-                          <div>
-                            <dt>Acknowledged</dt>
-                            <dd>
-                              <span>
-                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units{" "}
-                                {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
-                              </span>
-                            </dd>
-                          </div>
+                          {broadcastAcks ? (
+                            <div>
+                              <dt>Acknowledged</dt>
+                              <dd>
+                                <span>
+                                  {broadcastAcks.acknowledged} of {broadcastAcks.of} units{" "}
+                                  {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
+                                </span>
+                              </dd>
+                            </div>
+                          ) : null}
                         </dl>
                         {broadcastKind(activeBroadcast) === "bed_call" ? (
                           <ReplyBoardList alert={activeBroadcast} units={units} now={now} />
