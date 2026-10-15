@@ -91,6 +91,10 @@ describe("fact markers", () => {
     ]);
   });
 
+  it("reports a stray closing tag", () => {
+    expect(unclosedMarkers("ok\nSupabase<!-- /fact -->")).toEqual([2]);
+  });
+
   it("leaves an unknown fact untouched and reports its name", () => {
     const text = "<!-- fact:made-up -->1<!-- /fact -->";
     const result = applyMarkers(text, facts);

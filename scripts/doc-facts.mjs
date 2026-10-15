@@ -51,12 +51,12 @@ export function defaultProvider(configSource, constName, envName) {
   return quoted.at(-1);
 }
 
-function countPages(dir) {
+function countPages(dir, names = ["page.tsx"]) {
   if (!existsSync(dir)) return 0;
   let count = 0;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) count += countPages(path.join(dir, entry.name));
-    else if (entry.name === "page.tsx") count += 1;
+    if (entry.isDirectory()) count += countPages(path.join(dir, entry.name), names);
+    else if (names.includes(entry.name)) count += 1;
   }
   return count;
 }
@@ -139,9 +139,9 @@ export function collectFacts(root = ROOT) {
     },
     {
       name: "app-route-count",
-      value: String(countPages(path.join(root, "src/app"))),
-      about: "All `page.tsx` routes, including sign-in and digest",
-      source: "src/app/",
+      value: String(countPages(path.join(root, "src/app/mockups"), ["page.tsx", "route.ts"])),
+      about: "Pages and route handlers under `/mockups`: the Ward Flow routes plus sign-in and digest",
+      source: "src/app/mockups/",
     },
     {
       name: "latest-decision",
@@ -222,12 +222,12 @@ export function renderFactsDoc(facts, terms) {
 // One line only: a stray opening tag must never reach a closing tag further down the file.
 const MARKER = /<!-- fact:([a-z0-9-]+) -->([^\n]*?)<!-- \/fact -->/gu;
 
-/** Line numbers holding an opening fact tag with no closing tag on the same line. */
+/** Line numbers holding an opening or closing fact tag that is not part of a one-line pair. */
 export function unclosedMarkers(text) {
   return text
     .split("\n")
     .map((line, index) => ({ line: line.replace(MARKER, ""), number: index + 1 }))
-    .filter(({ line }) => /<!-- fact:[a-z0-9-]+ -->/u.test(line))
+    .filter(({ line }) => /<!-- (?:fact:[a-z0-9-]+|\/fact) -->/u.test(line))
     .map(({ number }) => number);
 }
 
@@ -372,9 +372,11 @@ export function run({ root = ROOT, write = false, base = null } = {}) {
   for (const file of trackedMarkdown(root)) {
     if (file === FACTS_DOC) continue;
     const text = readFileSync(path.join(root, file), "utf8");
-    if (text.includes("<!-- fact:")) {
+    if (text.includes("<!-- fact:") || text.includes("<!-- /fact -->")) {
       for (const line of unclosedMarkers(text))
-        errors.push(`${file}:${line}: fact marker has no closing <!-- /fact --> on the same line.`);
+        errors.push(
+          `${file}:${line}: fact marker is not a complete <!-- fact:name -->value<!-- /fact --> pair on one line.`,
+        );
       const { updated, unknown, stale } = applyMarkers(text, factsByName);
       for (const name of unknown) errors.push(`${file}: unknown fact "${name}" (see ${FACTS_DOC}).`);
       if (stale.length > 0) {

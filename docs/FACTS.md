@@ -5,18 +5,18 @@
 The values below are read from source on every run, so this page is current whenever CI is
 green. Quote a fact instead of restating it, and it updates itself when the source changes.
 
-| Fact                | Value                                       | Meaning                                                   | Read from                       |
-| ------------------- | ------------------------------------------- | --------------------------------------------------------- | ------------------------------- |
-| `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set    | `backend/ward-flow/config.mjs`  |
-| `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set | `backend/ward-flow/config.mjs`  |
-| `latest-migration`  | 005-retention-and-indexes                   | Newest shared-workspace database migration                | `backend/ward-flow/migrations/` |
-| `migration-count`   | 5                                           | Numbered database migrations                              | `backend/ward-flow/migrations/` |
-| `ward-route-count`  | 50                                          | `page.tsx` routes under `/mockups/ward-flow`              | `src/app/mockups/ward-flow/`    |
-| `app-route-count`   | 52                                          | All `page.tsx` routes, including sign-in and digest       | `src/app/`                      |
-| `latest-decision`   | D-54                                        | Newest entry in the decision log                          | `docs/ward-flow/decisions.md`   |
-| `next-decision`     | D-55                                        | Number to use for the next decision                       | `docs/ward-flow/decisions.md`   |
-| `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                   | `package.json`                  |
-| `backend-env-vars`  | 34 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads            | `backend/ward-flow/*.mjs`       |
+| Fact                | Value                                       | Meaning                                                                                 | Read from                       |
+| ------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------- |
+| `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set                                  | `backend/ward-flow/config.mjs`  |
+| `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set                               | `backend/ward-flow/config.mjs`  |
+| `latest-migration`  | 005-retention-and-indexes                   | Newest shared-workspace database migration                                              | `backend/ward-flow/migrations/` |
+| `migration-count`   | 5                                           | Numbered database migrations                                                            | `backend/ward-flow/migrations/` |
+| `ward-route-count`  | 50                                          | `page.tsx` routes under `/mockups/ward-flow`                                            | `src/app/mockups/ward-flow/`    |
+| `app-route-count`   | 52                                          | Pages and route handlers under `/mockups`: the Ward Flow routes plus sign-in and digest | `src/app/mockups/`              |
+| `latest-decision`   | D-54                                        | Newest entry in the decision log                                                        | `docs/ward-flow/decisions.md`   |
+| `next-decision`     | D-55                                        | Number to use for the next decision                                                     | `docs/ward-flow/decisions.md`   |
+| `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                                 | `package.json`                  |
+| `backend-env-vars`  | 34 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                          | `backend/ward-flow/*.mjs`       |
 
 ## backend-env-vars
 
