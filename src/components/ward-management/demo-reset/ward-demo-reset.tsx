@@ -1,7 +1,7 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/wf";
 
@@ -33,7 +33,18 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
   const { scenario, dispatch } = useWardFlow();
   const now = useWardFlowClock();
   const [pending, setPending] = useState<WardScenario | null>(null);
+  const loadButton = useRef<HTMLButtonElement>(null);
+  // The confirm takes focus as it opens, so keyboard and screen reader users meet it straight away.
+  useEffect(() => {
+    if (pending) loadButton.current?.focus();
+  }, [pending]);
   if (!enabled) return null;
+
+  function cancel() {
+    const choice = pending;
+    setPending(null);
+    if (choice) document.querySelector<HTMLElement>(`[data-testid="ward-demo-reset-${choice}"]`)?.focus();
+  }
 
   function load(next: WardScenario) {
     setPending(null);
@@ -80,12 +91,15 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
           data-testid="ward-demo-reset-confirm"
         >
           <p>Load {scenarioLabels[pending]}? This replaces the demo data for everyone in this workspace.</p>
-          <Button variant="pri" size="sm" onClick={() => load(pending)} data-testid="ward-demo-reset-confirm-load">
+          <Button
+            ref={loadButton}
+            variant="pri"
+            onClick={() => load(pending)}
+            data-testid="ward-demo-reset-confirm-load"
+          >
             Load {scenarioLabels[pending]}
           </Button>
-          <Button size="sm" onClick={() => setPending(null)}>
-            Cancel
-          </Button>
+          <Button onClick={cancel}>Cancel</Button>
         </div>
       ) : null}
     </section>

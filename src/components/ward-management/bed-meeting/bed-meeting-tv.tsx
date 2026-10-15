@@ -30,7 +30,14 @@ import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-manageme
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
-import { edTvSheet, wardTvSheet, type EdTvSheet, type TvJourneyRow, type WardTvSheet } from "./tv-derivations";
+import {
+  TV_ROW_LIMIT,
+  edTvSheet,
+  wardTvSheet,
+  type EdTvSheet,
+  type TvJourneyRow,
+  type WardTvSheet,
+} from "./tv-derivations";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -452,14 +459,17 @@ export function WardTvView({
           {sheet.away.length === 0 ? (
             <Empty>Everyone is on the ward.</Empty>
           ) : (
-            <ol className={styles.list}>
-              {sheet.away.map((person) => (
-                <li key={person.key}>
-                  <span className={styles.who}>{personLine(person)}</span>
-                  <span className={styles.wait}>{splitDuration((person.awayAtEdHours ?? 0) * 60)}</span>
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className={styles.list}>
+                {sheet.away.slice(0, TV_ROW_LIMIT).map((person) => (
+                  <li key={person.key}>
+                    <span className={styles.who}>{personLine(person)}</span>
+                    <span className={styles.wait}>{splitDuration((person.awayAtEdHours ?? 0) * 60)}</span>
+                  </li>
+                ))}
+              </ol>
+              <More count={Math.max(0, sheet.away.length - TV_ROW_LIMIT)} noun="at an ED" />
+            </>
           )}
         </Panel>
       </div>
@@ -621,7 +631,10 @@ function useFullscreen(target: RefObject<HTMLElement | null>) {
 }
 
 /** Which screen to show: plain links, so a TV can be pointed at one ward or one ED for good. */
-function ScreenPicker({ current }: { current: string }) {
+function ScreenPicker({ current, design }: { current: string; design: TvTileDesign }) {
+  // A review link's box design follows the viewer from screen to screen.
+  const keep = (href: string) =>
+    design === "recommended" ? href : `${href}${href.includes("?") ? "&" : "?"}tiles=${design}`;
   const { units } = useWardFlow();
   const wards = [...units].sort((a, b) => a.name.localeCompare(b.name));
   const eds = [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name));
@@ -634,7 +647,7 @@ function ScreenPicker({ current }: { current: string }) {
       <nav className={styles.pickerMenu} aria-label="TV screens">
         <div>
           <h2 className={styles.pickerHeading}>Network</h2>
-          <Link href={bedMeetingTvHref()} aria-current={current === "network" ? "page" : undefined}>
+          <Link href={keep(bedMeetingTvHref())} aria-current={current === "network" ? "page" : undefined}>
             Bed meeting
           </Link>
         </div>
@@ -643,7 +656,7 @@ function ScreenPicker({ current }: { current: string }) {
           {eds.map((ed) => (
             <Link
               key={ed.id}
-              href={bedMeetingTvHref({ ed: ed.id })}
+              href={keep(bedMeetingTvHref({ ed: ed.id }))}
               aria-current={current === `ed:${ed.id}` ? "page" : undefined}
             >
               {edName(ed.name)}
@@ -655,7 +668,7 @@ function ScreenPicker({ current }: { current: string }) {
           {wards.map((unit) => (
             <Link
               key={unit.id}
-              href={bedMeetingTvHref({ ward: unit.id })}
+              href={keep(bedMeetingTvHref({ ward: unit.id }))}
               aria-current={current === `ward:${unit.id}` ? "page" : undefined}
             >
               {unit.name}
@@ -775,12 +788,12 @@ export function BedMeetingTvScreen({ ward, ed, tiles }: BedMeetingTvScreenProps 
           <h1 id="bed-meeting-tv-title" className={styles.title}>
             {title}
           </h1>
-          <p className={styles.sub} aria-live="polite" data-testid="bed-meeting-tv-as-at">
+          <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
             {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} · updates on its own
           </p>
         </div>
         <div className={styles.actions}>
-          <ScreenPicker current={current} />
+          <ScreenPicker current={current} design={design} />
           {fullscreen.supported ? (
             <button
               type="button"

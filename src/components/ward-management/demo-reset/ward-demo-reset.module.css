@@ -77,6 +77,10 @@
 }
 
 @media (max-width: 48rem) {
+  .confirm button {
+    min-block-size: var(--wf-row-touch);
+  }
+
   .choices {
     grid-template-columns: minmax(0, 1fr);
   }

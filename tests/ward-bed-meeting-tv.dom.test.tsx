@@ -147,6 +147,15 @@ describe("the ward and ED TV views", () => {
     for (const ed of allEmergencyDepartments()) expect(hrefs).toContain(bedMeetingTvHref({ ed: ed.id }));
   });
 
+  it("keeps a review link's box design when changing screen", () => {
+    renderTv({ tiles: "bold" });
+    const hrefs = within(screen.getByTestId("bed-meeting-tv-picker"))
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href") ?? "");
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) expect(href).toMatch(/[?&]tiles=bold$/);
+  });
+
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
     const { state, inputs } = seedInputs();
     // The ward with the most people coming in, so the panels have rows.
@@ -237,6 +246,7 @@ describe("the one tap demo reset", () => {
       // It asks first: the shared workspace has no undo.
       expect(screen.getByTestId("scenario")).toHaveTextContent(before ?? "");
       expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent("replaces the demo data for everyone");
+      expect(screen.getByTestId("ward-demo-reset-confirm-load")).toHaveFocus();
       fireEvent.click(screen.getByTestId("ward-demo-reset-confirm-load"));
       expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();
       expect(screen.getByTestId("scenario")).toHaveTextContent(scenario);
@@ -255,6 +265,7 @@ describe("the one tap demo reset", () => {
     fireEvent.click(screen.getByTestId("ward-demo-reset-ed-crisis"));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();
+    expect(screen.getByTestId("ward-demo-reset-ed-crisis")).toHaveFocus();
     expect(screen.getByTestId("scenario").textContent).toBe(before);
   });
 
