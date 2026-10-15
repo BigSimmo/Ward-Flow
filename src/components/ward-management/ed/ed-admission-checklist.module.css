@@ -1,0 +1,24 @@
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.label {
+  flex: 1 1 auto;
+}
+
+.detail {
+  color: var(--wf-ink-2);
+}

@@ -10,6 +10,7 @@ import {
   BED_CALL_MAX_BEDS,
   BROADCAST_ANSWER_LABELS,
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
+  DEFAULT_BROADCAST_EXTENSION_MINUTES,
   READY_IN_CHOICES,
   broadcastKind,
   deskHasAnswered,
@@ -32,6 +33,8 @@ import { resolveAlertSubject } from "@/components/ward-management/alerts/alerts-
 import { useActNowNotificationPreference } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   REFERRAL_DECLINE_REASONS,
@@ -195,9 +198,29 @@ function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
   const entries = bannerEntriesForDesk(broadcastAlerts, movements, desk, now, units);
   const top = entries[0];
   useActNowNotice(top, desk.id);
+  // Top 25 item 25: the desks EVENT_ROLE lets extend or stand down an alert can do it from here.
+  const extendOn = useWardFeatureFlag("top25-broadcast-extend");
+  const gate = useRoleGate();
+  const actingRole = useRouteRole();
 
   if (!top) return null;
   const more = entries.length - 1;
+  const manageable = extendOn && broadcastKind(top.alert) !== "pull_now";
+  const alertId = top.alert.id;
+  const lifecycle = manageable
+    ? {
+        extend: gate("EXTEND_BROADCAST_ALERT").allowed
+          ? () => {
+              dispatch({ type: "EXTEND_BROADCAST_ALERT", role: actingRole, now, alertId });
+            }
+          : undefined,
+        standDown: gate("STAND_DOWN_BROADCAST_ALERT").allowed
+          ? () => {
+              dispatch({ type: "STAND_DOWN_BROADCAST_ALERT", role: actingRole, now, alertId });
+            }
+          : undefined,
+      }
+    : undefined;
 
   return (
     <BannerBody
@@ -209,6 +232,7 @@ function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
       units={units}
       lookup={{ patients, referrals, movements }}
       onDispatch={dispatch}
+      lifecycle={lifecycle}
     />
   );
 }
@@ -223,7 +247,10 @@ function BannerBody({
   units,
   lookup,
   onDispatch,
+  lifecycle,
 }: {
+  /** Top 25 item 25 (flagged): extend or stand down this alert, when this desk may. */
+  lifecycle?: { extend?: () => void; standDown?: () => void };
   entry: BannerEntry;
   more: number;
   desk: { role: string; id: string | null };
@@ -407,6 +434,17 @@ function BannerBody({
             <Link href={subject.patientHref} className={buttonClass({ size: "sm" })}>
               Open patient
             </Link>
+          ) : null}
+
+          {lifecycle?.extend ? (
+            <Button size="sm" onClick={lifecycle.extend} data-testid="ward-broadcast-extend">
+              Extend {durMinutes(DEFAULT_BROADCAST_EXTENSION_MINUTES)}
+            </Button>
+          ) : null}
+          {lifecycle?.standDown ? (
+            <Button size="sm" variant="ghost" onClick={lifecycle.standDown} data-testid="ward-broadcast-stand-down">
+              Stand down
+            </Button>
           ) : null}
 
           <Link href={WARD_ALERTS_HREF} className={buttonClass({ size: "sm", variant: "ghost" })}>

@@ -15,6 +15,7 @@ import {
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
@@ -128,6 +129,25 @@ export interface PatientStatusContext {
    * where the bed is held, instead of reading "Not active".
    */
   acceptedReferral?: { unitName: string; boardHref: string };
+  /**
+   * Top 25 item 24 (flag `top25-awol-tracker`): the absent without leave card also says how long
+   * the person has been away and, past `awolBedHoldWarning`, asks for a review of the held bed.
+   * The steps stay the local policy list (`absenceStepsFor`). A warning only, nothing is released.
+   */
+  awolTracker?: boolean;
+}
+
+/**
+ * Top 25 item 24: time since absent and, past `awolBedHoldWarning`, the bed hold review warning.
+ * The bed stays held (the leave bed is the hold); the warning asks a person to review it.
+ */
+export function awolTrackerMeta(since: number, now: number, stayUnitName?: string): string {
+  const away = Math.max(0, now - since);
+  const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
+  const base = `Since ${clock(since)}, away ${dur(away)}, owner nurse in charge`;
+  if (away < holdWarning) return base;
+  const bed = stayUnitName ? `Bed on ${stayUnitName}` : "Bed";
+  return `${base}. ${bed} held over ${holdWarning % 60 === 0 ? `${holdWarning / 60}h` : dur(holdWarning)}, review the hold`;
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -670,7 +690,9 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       verdict: voluntary ? "Not back from leave" : "Absent without leave",
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
-      meta: `Since ${clock(absence.since)}, owner nurse in charge`,
+      meta: ctx.awolTracker
+        ? awolTrackerMeta(absence.since, now, ctx.stayUnitName)
+        : `Since ${clock(absence.since)}, owner nurse in charge`,
       cells: [],
       rows,
     };

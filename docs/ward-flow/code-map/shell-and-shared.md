@@ -138,7 +138,6 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/reports/downtime`               | `DowntimePackScreen`                                                                            |
 | `/search`                         | `PatientSearchPage`                                                                             |
 | `/settings`                       | `SettingsScreen`                                                                                |
-| `/sovereign`                      | `SovereignShowcaseScreen`                                                                       |
 | `/statistics`                     | `StatisticsScreen`                                                                              |
 | `/statistics/community/[teamId]`  | `StatisticsCommunityScreen`                                                                     |
 | `/statistics/compare`             | `StatisticsCompareScreen`                                                                       |
@@ -167,20 +166,16 @@ its own `/delays?from=<name>` (Delays reads that query param to show an alias ba
 
 ### 1.3 Error and loading boundaries
 
-Three `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tree:
+Two `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tree:
 
 - `src/app/mockups/ward-flow/error.tsx` — the outer boundary. Wraps every route in the tree except
-  the `statistics/**` routes (which have their own nearer boundary) and the `sovereign/` pair
-  (which have their own). It **cannot** catch a throw from `layout.tsx` itself (the provider's
+  the `statistics/**` routes (which have their own nearer boundary). It **cannot** catch a throw from `layout.tsx` itself (the provider's
   `useReducer` initialiser, or a module-scope throw in `ward-movements.ts`'s seed construction) —
   those still escape to the app-wide `src/app/error.tsx`.
 - `src/app/mockups/ward-flow/statistics/error.tsx` — the nearer boundary for the statistics
   routes. Exists because six of the prototype's render guards (five "section no longer defined"
   checks plus `admissionStagePosition`'s `default:` arm) live only there, so `retry()` re-renders
   just that segment and the message can name what failed.
-- `src/app/mockups/ward-flow/sovereign/error.tsx` and `sovereign/loading.tsx` — a self-contained
-  pair for the one showcase route, styled from `sovereign-showcase.module.css` rather than
-  `WardFlowErrorPanel`.
 - `src/app/mockups/ward-flow/ward-flow-error-panel.tsx` — the shared recovery UI the first two
   boundaries both render (`WardFlowErrorPanel`), deliberately **not** the repository's generic
   `@/components/route-error-boundary`: `tests/ward-flow-seam.test.ts` caps Ward Flow's outward
@@ -205,10 +200,6 @@ Three `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tr
 - **`src/app/mockups/ward-flow/error.tsx`** (56 lines) — the outer error boundary. See §1.3.
 - **`src/app/mockups/ward-flow/statistics/error.tsx`** (41 lines) — the nearer statistics boundary.
   See §1.3.
-- **`src/app/mockups/ward-flow/sovereign/error.tsx`** (32 lines) — self-contained boundary for the
-  showcase route; does not use `WardFlowErrorPanel`.
-- **`src/app/mockups/ward-flow/sovereign/loading.tsx`** (26 lines) — skeleton loading state for the
-  showcase route.
 - **`src/app/mockups/ward-flow/alerts/page.tsx`** (13) — `/alerts` → `AlertsScreen`.
 - **`src/app/mockups/ward-flow/board/[unitId]/page.tsx`** (14) — `/board/[unitId]` → `WardBoard` (`@/components/ward-management/board/ward-board`).
 - **`src/app/mockups/ward-flow/capacity/page.tsx`** (19) — `/capacity` → `CapacityScreen`. Doc
@@ -261,8 +252,6 @@ defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/mockups/ward-flow/reports/downtime/page.tsx`** — `/reports/downtime` → `DowntimePackScreen` (`@/components/ward-management/reports/downtime-pack-screen`).
 - **`src/app/mockups/ward-flow/search/page.tsx`** (12) — `/search` → `PatientSearchPage`.
 - **`src/app/mockups/ward-flow/settings/page.tsx`** (13) — `/settings` → `SettingsScreen`.
-- **`src/app/mockups/ward-flow/sovereign/page.tsx`** (12) — `/sovereign` →
-  `SovereignShowcaseScreen`.
 - **`src/app/mockups/ward-flow/statistics/page.tsx`** (25) — `/statistics` → `StatisticsScreen` (`@/components/ward-management/statistics/statistics-screen`).
   Doc comment: the screen must never be passed `admissions`/`referrals`/`bedReleases`/`movements` —
   those are test-only override props, and passing them from the route would silently pin a live
