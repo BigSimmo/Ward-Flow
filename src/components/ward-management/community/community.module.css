@@ -2813,8 +2813,9 @@ button.searchBox:hover {
 }
 
 @media (max-width: 48rem) {
+  /* The card's patient line is a touch target, so it keeps the tap floor. */
   .refOpen {
-    min-height: 48px;
+    min-height: var(--ward-tap, 3rem);
   }
 }
 
