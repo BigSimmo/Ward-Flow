@@ -38,6 +38,7 @@ import {
   BREAK_GLASS_REASONS,
   accessIsWholeNetwork,
   canBreakGlass,
+  edInScope,
   homeHrefFor,
   screenDecision,
   screenForPath,
@@ -89,6 +90,21 @@ const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
 export function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
+}
+
+/**
+ * Whether a ward or ED desk id is in this desk's place, or `undefined` when every desk is. A scoped
+ * desk holds only its own acknowledgements, so its counts are against its own desks (review on PR #330).
+ */
+export function useDeskInScope(): ((deskId: string) => boolean) | undefined {
+  const on = useWardFeatureFlag("role-access");
+  const access = useEffectiveWardAccess();
+  const { units } = useUnscopedWardFlow();
+  return useMemo(() => {
+    if (!on || accessIsWholeNetwork(access)) return undefined;
+    const places = wardPlaceLookup(units);
+    return (deskId: string) => unitInScope(access.scope, deskId, places) || edInScope(access.scope, deskId, places);
+  }, [on, access, units]);
 }
 
 /**

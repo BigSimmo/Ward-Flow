@@ -2,6 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { directiveAcknowledgements } from "../src/components/ward-management/alerts/global-alert-view";
 import type { BroadcastAlert } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -362,6 +363,11 @@ describe("broadcast alerts for a desk", () => {
   it("keeps only the desk's own acknowledgements on a directive", () => {
     const [seen] = scopeBroadcastAlerts([base], wardDesk, state.units, places);
     expect(seen.acknowledgedUnits).toEqual([unitId]);
+  });
+
+  it("counts a directive's acknowledgements against the desk's own desks", () => {
+    const [seen] = scopeBroadcastAlerts([base], wardDesk, state.units, places);
+    expect(directiveAcknowledgements(seen, state.units, (id) => id === unitId)).toEqual({ acknowledged: 1, of: 1 });
   });
 
   it("trims a bed call to a service coordinator's own service", () => {
