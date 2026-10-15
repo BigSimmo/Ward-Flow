@@ -164,6 +164,8 @@ const ROLE_SCREENS: Record<string, WardChromeRole> = {
   "capacity/planned-admissions-panel.tsx": "coordinator",
   "delays/delays-screen.tsx": "coordinator",
   "discharges/discharge-board.tsx": "coordinator",
+  // Split from discharge-board.tsx (15 Oct 2026): the record dossier dispatches its own date change.
+  "discharges/discharge-detail-panes.tsx": "coordinator",
   "out-of-area/out-of-area-board.tsx": "coordinator",
   "hub/hub-screen.tsx": "coordinator",
   "settings/settings-screen.tsx": "coordinator",
