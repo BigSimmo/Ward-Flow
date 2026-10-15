@@ -46,6 +46,7 @@ import { resetWardChecksForTests, useWardChecksPublisher } from "@/components/wa
 import type { WardReconciliationCheck } from "@/components/ward-management/shell/ward-shell-types";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   WARD_NAV,
   WARD_VIEWS,
@@ -126,9 +127,10 @@ describe("assertion 1 — owner-selected rail destinations", () => {
   it("renders the owner-selected groups in order, with Patients only in Work", () => {
     renderShell();
     const links = screen.getAllByTestId("ward-rail-link");
-    expect(links).toHaveLength(21);
+    // 22 with the bed meeting TV view, which shows while its feature flag is on (the test default).
+    expect(links).toHaveLength(22);
     const groups = [
-      ["Today", ["Home", "Movements", "Capacity", "Delays", "Network"]],
+      ["Today", ["Home", "Movements", "Capacity", "Delays", "Network", "Bed meeting TV"]],
       ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Referrals", "Handover", "Discharges"]],
       ["Checks", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call"]],
@@ -138,10 +140,22 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       expect(groupLinks.map((link) => link.getAttribute("aria-label")?.split(",")[0])).toEqual(labels);
     }
     const destinations = links.map((link) => link.getAttribute("href"));
-    expect(new Set(destinations).size).toBe(21);
+    expect(new Set(destinations).size).toBe(22);
     // Alerts and On-call are now reachable from the rail (previously orphaned / weakly discoverable).
     expect(destinations).toContain("/mockups/ward-flow/alerts");
     expect(destinations).toContain("/mockups/ward-flow/on-call");
+  });
+
+  it("leaves the bed meeting TV view off the rail while its feature flag is off", () => {
+    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
+    try {
+      renderShell();
+      const links = screen.getAllByTestId("ward-rail-link");
+      expect(links).toHaveLength(21);
+      expect(links.some((link) => link.getAttribute("href") === "/mockups/ward-flow/bed-meeting")).toBe(false);
+    } finally {
+      act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
+    }
   });
 
   it("keeps Wards active for a ward answer without restoring the removed example link", () => {
@@ -692,7 +706,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps scenario controls and the role switcher under Shift desk while account utilities stay out", async () => {
+  it("keeps the one Demo panel and the role switcher in the Tools sheet while account utilities stay out", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -700,14 +714,15 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    expect(withinDialog.queryByRole("button", { name: /^Demo$/ })).toBeNull();
-    await user.click(withinDialog.getByRole("button", { name: /^Shift desk$/ }));
-    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeVisible();
+    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top and
+    // the scenario controls sit in the Demo row at the foot.
+    expect(withinDialog.queryByRole("button", { name: /^Shift desk$/ })).toBeNull();
+    expect(await withinDialog.findByRole("button", { name: /^Change view/ }, { timeout: 15_000 })).toBeVisible();
+    await user.click(withinDialog.getByTestId("ward-tools-toggle-demo"));
+    expect(withinDialog.getByTestId("ward-tools-demo-panel")).toBeVisible();
+    expect(withinDialog.getByRole("region", { name: "Demo" })).toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
-    // The role switcher renders its own labelled control — asserting the heading it sits under
-    // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Scenario controls")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {

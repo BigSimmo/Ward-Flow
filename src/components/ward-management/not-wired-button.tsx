@@ -7,7 +7,7 @@ import { announceToWardShell } from "./shell/ward-live-region";
 import styles from "./not-wired-button.module.css";
 
 /** D4 wording, shared with the shell's primary action (`shell/ward-bar.tsx`, D-16). */
-export const NOT_WIRED_NOTE = "Not wired in this prototype.";
+const NOT_WIRED_NOTE = "Not wired in this prototype.";
 
 type NotWiredButtonProps = Omit<ComponentPropsWithRef<"button">, "children" | "onClick"> & {
   variant?: ButtonVariant;

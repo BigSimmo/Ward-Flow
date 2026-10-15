@@ -1,3 +1,4 @@
+// @ts-check
 /** Portable PostgreSQL deliberately has no provider-specific host allowlist. */
 export function validatePostgresConnectionString(connectionString, { runtime = true } = {}) {
   try {

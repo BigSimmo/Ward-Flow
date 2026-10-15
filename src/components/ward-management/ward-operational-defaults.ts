@@ -158,8 +158,8 @@ export const OVERDUE_AFTER_MINUTES_BY_TIER: Readonly<Record<1 | 2 | 3, number>> 
 export const OVERDUE_AFTER_ANY_TIER_MINUTES = CLINICAL_VALUES.anyTierOverdue.value;
 
 /** The Mental Health Act calculator's after-hours window, as hours of the day (17:00 to 08:00). */
-export const AFTER_HOURS_START_HOUR = 17;
-export const AFTER_HOURS_END_HOUR = 8;
+const AFTER_HOURS_START_HOUR = 17;
+const AFTER_HOURS_END_HOUR = 8;
 
 /**
  * How long a leave bed may stay open before Ward Flow warns, in hours. Josh, 26 Sept 2026 (D-23,
@@ -202,18 +202,15 @@ function hoursText(minutes: number): string {
 export const VERY_LONG_WAIT_MINUTES = CLINICAL_VALUES.veryLongWait.value;
 
 /** This group's entries for the settings list; `OPERATIONAL_DEFAULTS` below includes them. */
-export const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [
+const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [
   { name: "Wait shown as very long from", display: hoursText(VERY_LONG_WAIT_MINUTES) },
 ];
 
 /** The list the settings screen shows, read-only, in the order a coordinator meets them. */
 export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   { name: "Arrival counted as late after", display: `${LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimate` },
-  {
-    name: "ED pressure shown as elevated from",
-    display: `a ${hoursText(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} wait`,
-  },
-  { name: "ED pressure shown as severe from", display: `an ${hoursText(ED_SEVERE_PRESSURE_WAIT_MINUTES)} wait` },
+  { name: "ED pressure shown as elevated from", display: `a wait of ${hoursText(ED_ELEVATED_PRESSURE_WAIT_MINUTES)}` },
+  { name: "ED pressure shown as severe from", display: `a wait of ${hoursText(ED_SEVERE_PRESSURE_WAIT_MINUTES)}` },
   { name: "Wait shown as long from", display: hoursText(LONG_WAIT_MINUTES) },
   {
     name: "Occupancy colour bands",
@@ -249,47 +246,6 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   },
   ...OPERATIONAL_DEFAULTS_FIX,
 ];
-
-export const OPERATIONAL_DEFAULTS_STORAGE_KEY = "ward-flow-operational-defaults";
-
-/**
- * Reads any user-customized operational defaults saved in this browser's localStorage.
- */
-export function loadCustomOperationalDefaults(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(OPERATIONAL_DEFAULTS_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return typeof parsed === "object" && parsed !== null ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-/**
- * Saves user-customized operational defaults into this browser's localStorage.
- */
-export function saveCustomOperationalDefaults(customDefaults: Record<string, string>): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(OPERATIONAL_DEFAULTS_STORAGE_KEY, JSON.stringify(customDefaults));
-  } catch {
-    // Quota or private-mode storage failures leave the in-memory draft as the only copy; nothing to surface.
-  }
-}
-
-/**
- * Clears custom operational defaults from localStorage, restoring standard defaults.
- */
-export function clearCustomOperationalDefaults(): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(OPERATIONAL_DEFAULTS_STORAGE_KEY);
-  } catch {
-    // Clearing is best-effort; a locked or unavailable store still leaves defaults restored in memory.
-  }
-}
 
 /**
  * Global alerts (Josh picked option A, 10 Oct 2026). Labelled defaults, never clinical or service

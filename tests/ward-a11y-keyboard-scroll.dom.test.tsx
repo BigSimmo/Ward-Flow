@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import React from "react";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
-import { WardMhaCalculator } from "@/components/ward-management/tools/ward-mha-calculator";
+import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -59,41 +59,22 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     expect(presetButtons[0]).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("renders WardMhaCalculator tabs with roving tabindex and keyboard accessible tabpanels", () => {
+  it("gives every Form times control a visible label, so it is reachable by name from the keyboard", () => {
+    // Form times replaced the MHA form calculator's tabbed panels (Tools review, 15 Oct 2026).
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardMhaCalculator />
+        <WardFormTimes />
       </WardFlowProvider>,
     );
 
-    const tablist = screen.getByRole("tablist", { name: /Statutory form selection/i });
-    expect(tablist).toBeInTheDocument();
-
-    const tab1A = screen.getByRole("tab", { name: /Form 1A/i });
-    const tab3A = screen.getByRole("tab", { name: /Form 3A/i });
-    const tab4B = screen.getByRole("tab", { name: /Form 4B/i });
-
-    // Active tab (Form 1A) has tabIndex=0, inactive tabs have tabIndex=-1
-    expect(tab1A).toHaveAttribute("aria-selected", "true");
-    expect(tab1A).toHaveAttribute("tabindex", "0");
-    expect(tab3A).toHaveAttribute("aria-selected", "false");
-    expect(tab3A).toHaveAttribute("tabindex", "-1");
-    expect(tab4B).toHaveAttribute("aria-selected", "false");
-    expect(tab4B).toHaveAttribute("tabindex", "-1");
-
-    // Active tabpanel has tabIndex=0 for keyboard scrolling
-    const panel1A = screen.getByRole("tabpanel");
-    expect(panel1A).toHaveAttribute("tabindex", "0");
-    expect(panel1A).toHaveAttribute("id", "panel-1A");
-
-    // Switch to Form 3A
-    fireEvent.click(tab3A);
-    expect(tab3A).toHaveAttribute("aria-selected", "true");
-    expect(tab3A).toHaveAttribute("tabindex", "0");
-    expect(tab1A).toHaveAttribute("tabindex", "-1");
-
-    const panel3A = screen.getByRole("tabpanel");
-    expect(panel3A).toHaveAttribute("tabindex", "0");
-    expect(panel3A).toHaveAttribute("id", "panel-3A");
+    const form = screen.getByRole("combobox", { name: "Form" });
+    expect(form).toHaveValue("1A");
+    fireEvent.change(form, { target: { value: "3A" } });
+    expect(form).toHaveValue("3A");
+    expect(screen.getByLabelText("Date written on form")).toHaveAttribute("type", "date");
+    expect(screen.getByLabelText("Time written on form")).toHaveAttribute("type", "time");
+    // The result shows only a typed time (rule D5), so type one before reading it back.
+    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
+    expect(screen.getByRole("status")).toHaveTextContent(/^Form 3A/u);
   });
 });

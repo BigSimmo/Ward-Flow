@@ -42,9 +42,7 @@ export type ClinicalValueSignature =
   | { readonly status: "synthetic" }
   | { readonly status: "signed"; readonly signedBy: string; readonly signedOn: string };
 
-export type ClinicalValueStatus = ClinicalValueSignature["status"];
-
-export type ClinicalValueGroup =
+type ClinicalValueGroup =
   | "Referral tiers"
   | "Emergency department waits"
   | "Bed occupancy"
@@ -54,7 +52,7 @@ export type ClinicalValueGroup =
   | "Discharge, leave and absence";
 
 /** Another figure some screen used, or a document named, for the same rule. */
-export interface ClinicalValueAlternative {
+interface ClinicalValueAlternative {
   readonly value: number;
   readonly where: string;
 }

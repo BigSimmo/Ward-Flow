@@ -148,7 +148,7 @@ export type WardGlobalSearchProps = {
   movements: Movement[];
   patients: readonly Patient[];
   /** D-39: a journey linked through a referral needs the referral to find its UMRN. */
-  referrals?: PatientLookup["referrals"];
+  referrals?: Parameters<typeof searchWardFlow>[0]["referrals"];
   units: Unit[];
   /**
    * The one thing that may differ by role — rendered exactly as given, with no interpretation.

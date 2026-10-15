@@ -74,11 +74,4 @@ Final response for `dependency` must include:
 - Risks or follow-up work.
 - Confirmation that no commit or push was made unless explicitly requested.
 
-After setup:
-
-- Verify root `AGENTS.md` contains exactly one `## Dependency shortcut` section (or pointer).
-- Show the final diff for `AGENTS.md`.
-- Summarize what changed.
-- Confirm no dependency update, install, test, build, audit, commit, or push was performed.
-
 <!-- END:dependency-shortcut -->

@@ -67,7 +67,7 @@
   min-height: 1.375rem;
   align-items: center;
   border: 0.0625rem solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   padding: 0 0.5rem;
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -191,7 +191,7 @@
   padding: 0 0.3125rem;
   place-items: center;
   border: 0.0625rem solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   letter-spacing: 0;
@@ -335,7 +335,7 @@
   display: inline-flex;
   align-items: center;
   border: 0.0625rem solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   padding: 0.0625rem 0.4375rem;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
@@ -816,7 +816,7 @@
 
 .actionToolbar > div:not([data-testid]) button {
   flex: 0 0 auto;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 /* Below 1400px the bar also caps its own height and keeps clear of the phone's safe area. */
@@ -1266,7 +1266,7 @@
   min-height: 2.75rem;
   padding: 0.25rem 0.625rem;
   border: 0.0625rem solid var(--wf-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface-2);
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);

@@ -68,16 +68,20 @@ import {
   changeReasonLabels,
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  daysBetween,
-  formatInstantWithDay,
-  minuteOfDayFromClockText,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useCommunityScopedReferrals,
+  useDanglingReferralIds,
+  useWardFlow,
+  useWardFlowClock,
+} from "@/components/ward-management/ward-flow-provider";
+import type {
+  CommunityScopedAddressing,
+  CommunityScopedReferral,
+} from "@/components/ward-management/ward-referral-visibility";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import {
   COMMUNITY_DECLINE_REASONS,
@@ -86,12 +90,15 @@ import {
   type CommunityDeclineReason,
   type LegalForm,
   type Movement,
-  type Referral,
-  type ReferralAddressing,
   type TransportLegalStatus,
   type TransportProvider,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import {
+  instantFromEstimatedTimeInputs,
+  transportAnswersBlockedReason,
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
 import { COMMUNITY_DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -220,14 +227,7 @@ const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
 
 const NO_TRANSPORT_PROVIDER_VALUE = "";
 
-type TransportDraftState = {
-  provider: TransportProvider | undefined;
-  escortRequired: boolean | undefined;
-  cadNumber: string;
-  transportLegalStatus: TransportLegalStatus | undefined;
-  estimatedTime: string;
-  estimatedDay: "today" | "tomorrow";
-};
+type TransportDraftState = TransportBookingAnswers;
 
 const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   provider: undefined,
@@ -237,35 +237,6 @@ const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   estimatedTime: "",
   estimatedDay: "today",
 };
-
-/** Same HH:MM (or digits only, "0930") parser the ED booking popup uses: `minuteOfDayFromClockText`. */
-function minutesFromTimeInput(value: string): number | undefined {
-  return minuteOfDayFromClockText(value);
-}
-
-function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function transportAnswersBlockedReason(draft: TransportDraftState, now: Instant): string | undefined {
-  const missing: string[] = [];
-  if (draft.provider === undefined) missing.push("choose who is collecting the patient");
-  if (draft.escortRequired === undefined) missing.push("answer the escort question");
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
-  if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("enter the estimated time");
-  }
-  if (missing.length === 0) return undefined;
-  return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
-}
 
 type ActiveTabType = "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload";
 
@@ -315,7 +286,7 @@ type CaseloadRow = {
   umrn: string | undefined;
   ageBand: string;
   legalForm: LegalForm | undefined;
-  addressingState: ReferralAddressing["state"] | undefined;
+  addressingState: CommunityScopedAddressing["state"] | undefined;
 };
 
 /**
@@ -466,23 +437,16 @@ type CaseloadRow = {
  * accepted and declined count this team's answers decided in the window.
  */
 function teamSinceItems(
-  referrals: readonly {
-    raisedAt: Instant;
-    destinations: readonly { destination: { kind: string; teamName?: string }; state: string; decidedAt?: Instant }[];
-  }[],
+  referrals: readonly CommunityScopedReferral[],
   names: readonly string[],
   since: Instant,
   now: Instant,
   waiting: number,
 ): SinceItem[] {
   const within = (at: Instant | undefined) => at !== undefined && at >= since && at <= now;
-  const ours = (entry: { destination: { kind: string; teamName?: string } }) =>
-    entry.destination.kind === "community_team" && names.includes(entry.destination.teamName ?? "");
-  const addressed = referrals.filter((referral) => referral.destinations.some(ours));
+  const addressed = referrals.filter((referral) => names.includes(referral.addressing.destination.teamName));
   const decided = (state: string) =>
-    addressed.filter((referral) =>
-      referral.destinations.some((entry) => ours(entry) && entry.state === state && within(entry.decidedAt)),
-    ).length;
+    addressed.filter((referral) => referral.addressing.state === state && within(referral.addressing.decidedAt)).length;
   return [
     {
       id: "in",
@@ -504,7 +468,8 @@ export function CommunityScreen({
   teamId: string;
   demonstration?: boolean;
   admissions?: Admission[];
-  referrals?: Referral[];
+  /** Already community-scoped (FD-23): this page never holds another destination. */
+  referrals?: CommunityScopedReferral[];
 }) {
   usePrintableDisclosures();
   // Phone only (8 Oct 2026): the provenance and coverage disclosure starts closed under 48rem so
@@ -518,7 +483,6 @@ export function CommunityScreen({
   }, []);
   const {
     admissions: liveAdmissions,
-    referrals: liveReferrals,
     notices,
     units,
     movements,
@@ -528,6 +492,7 @@ export function CommunityScreen({
     readDischargeRecord,
     dispatch,
   } = useWardFlow();
+  const liveReferrals = useCommunityScopedReferrals();
   const now = useWardFlowClock();
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
   const umrnLookup = useMemo(
@@ -550,7 +515,7 @@ export function CommunityScreen({
   const [cancelTransportReason, setCancelTransportReason] = useState<CancelTransportReason | undefined>(undefined);
   const [activeModal, setActiveModal] = useState<{
     type: "review" | "assign";
-    referral: Referral;
+    referral: CommunityScopedReferral;
   } | null>(null);
   // These dialogs do not join the sheet stack, so they hold the page still themselves (phone).
   useWardPageScrollLock(transportBookFor !== undefined || transportCancelFor !== undefined || activeModal !== null);
@@ -568,7 +533,6 @@ export function CommunityScreen({
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
-  const selectedReferral = (referrals ?? liveReferrals).find((referral) => referral.id === selectedReferralId);
   const [pendingAcceptance, setPendingAcceptance] = useState<{ id: string; rejectionCount: number } | null>(null);
 
   /*
@@ -624,14 +588,9 @@ export function CommunityScreen({
   useEffect(() => {
     if (!pendingAcceptance || !team || toastedAcceptRef.current === pendingAcceptance.id) return;
     const names = [team.name, ...ratifiedSameServiceNames(team.name)];
-    const accepted = liveReferrals
-      .find((referral) => referral.id === pendingAcceptance.id)
-      ?.destinations.some(
-        (entry) =>
-          entry.destination.kind === "community_team" &&
-          names.includes(entry.destination.teamName) &&
-          entry.state === "accepted",
-      );
+    const addressing = liveReferrals.find((referral) => referral.id === pendingAcceptance.id)?.addressing;
+    const accepted =
+      addressing !== undefined && names.includes(addressing.destination.teamName) && addressing.state === "accepted";
     if (!accepted) return;
     toastedAcceptRef.current = pendingAcceptance.id;
     pushDecisionToast(pendingAcceptance.id, "accepted");
@@ -734,7 +693,7 @@ export function CommunityScreen({
     }
   }, []);
 
-  function handleActionClick(action: "Contacted" | "Review" | "Assign", referral: Referral) {
+  function handleActionClick(action: "Contacted" | "Review" | "Assign", referral: CommunityScopedReferral) {
     if (action === "Contacted") {
       const recorded = recordClinicalContact(dispatch, now, teamId);
       if (recorded !== null) {
@@ -827,19 +786,13 @@ export function CommunityScreen({
    */
   const handleConfirmAccept = useCallback(
     (referralId: string) => {
-      const current = liveReferrals.find((referral) => referral.id === referralId);
-      const addressing = current?.destinations.find(
-        (entry) =>
-          entry.destination.kind === "community_team" &&
-          !!team &&
-          [team.name, ...ratifiedSameServiceNames(team.name)].includes(entry.destination.teamName),
-      );
-      const firstCommunityAddressing = current?.destinations.find(
-        (entry) => entry.destination.kind === "community_team",
-      );
+      // The projection carries the referral's one community addressing (the reducer refuses two), so
+      // it is this team's only when it names this team or a ratified same-service spelling.
+      const addressing = liveReferrals.find((referral) => referral.id === referralId)?.addressing;
       if (
         !addressing ||
-        firstCommunityAddressing !== addressing ||
+        !team ||
+        ![team.name, ...ratifiedSameServiceNames(team.name)].includes(addressing.destination.teamName) ||
         addressing.state !== "queued" ||
         addressing.withdrawnAt !== undefined
       ) {
@@ -1005,6 +958,7 @@ export function CommunityScreen({
   // as the admissions are. Overridable together, and from the same place, so a test cannot supply
   // one without the other and get a page that is quietly empty for the wrong reason.
   const sourceReferrals = referrals ?? liveReferrals;
+  const danglingReferralIds = useDanglingReferralIds(source);
 
   if (!team) {
     return (
@@ -1021,6 +975,13 @@ export function CommunityScreen({
       </div>
     );
   }
+
+  // Only a referral addressed to this team, or a ratified same-service name, opens in the drawer.
+  const selectedReferral = sourceReferrals.find(
+    (referral) =>
+      referral.id === selectedReferralId &&
+      [team.name, ...ratifiedSameServiceNames(team.name)].includes(referral.addressing.destination.teamName),
+  );
 
   const teamConfig = resolveCommunityTeamConfig(team);
   const careActor = { role: "community", actingTeamId: team.id } as const;
@@ -1042,13 +1003,11 @@ export function CommunityScreen({
   }
   const acceptedAddressing =
     pendingAcceptance &&
-    liveReferrals
-      .find((referral) => referral.id === pendingAcceptance.id)
-      ?.destinations.find(
-        (entry) =>
-          entry.destination.kind === "community_team" &&
-          [team.name, ...ratifiedSameServiceNames(team.name)].includes(entry.destination.teamName),
-      );
+    [liveReferrals.find((referral) => referral.id === pendingAcceptance.id)?.addressing].find(
+      (addressing) =>
+        addressing !== undefined &&
+        [team.name, ...ratifiedSameServiceNames(team.name)].includes(addressing.destination.teamName),
+    );
   const acceptanceRefusal =
     pendingAcceptance &&
     rejections
@@ -1083,7 +1042,23 @@ export function CommunityScreen({
    * sign flipped, and nothing would announce it. `tests/ward-community-membership-resolution.test.ts`
    * holds both directions, and its load-bearing case is the repaired fixture rather than this one.
    */
-  const resolution = communityMembershipResolution(source, team, sourceReferrals);
+  /*
+   * FD-23 (owner's choice, 15 Oct 2026): this page holds only the referrals that name a community
+   * team. An admission whose referral went only to a ward or an ED is left out, as the page may not
+   * see it. A referral id that matches nothing at all stays in, so a broken link still reads as
+   * not computable.
+   */
+  const visibleReferralIds = new Set(sourceReferrals.map((referral) => referral.id));
+  const resolution = communityMembershipResolution(
+    source.filter(
+      (admission) =>
+        admission.referralId === null ||
+        visibleReferralIds.has(admission.referralId) ||
+        danglingReferralIds.has(admission.referralId),
+    ),
+    team,
+    sourceReferrals,
+  );
   const cannotResolve = resolution.state === "not-computable";
   const nearDuplicates = nearDuplicateSpellingsOf(team.name);
   const sameService = ratifiedSameServiceNames(team.name);
@@ -1133,9 +1108,7 @@ export function CommunityScreen({
     }
     return true;
   });
-  const hasAnyReferralsForTeam = sourceReferrals.some((r) =>
-    r.destinations.some((d) => d.destination.kind === "community_team" && d.destination.teamName === team.name),
-  );
+  const hasAnyReferralsForTeam = sourceReferrals.some((r) => r.addressing.destination.teamName === team.name);
   const caseloadRows = caseloadRowsForTeam(sourceReferrals, movements, patients, team, [
     ...lists.currentlyAdmitted,
     ...lists.dischargedIntoTheArea,
@@ -5790,7 +5763,7 @@ function otherDepartureDestinations(departures: readonly Admission[]): string {
  * `community-vocabulary.ts`'s own near-identical duplication note records the same reasoning. A
  * source missing from this map still renders, as its own raw value, via the `??` fallback below.
  */
-const REFERRAL_SOURCE_LABELS: Record<Referral["source"], string> = {
+const REFERRAL_SOURCE_LABELS: Record<CommunityScopedReferral["source"], string> = {
   community: "Community",
   crisis_service: "Crisis service",
   ambulance: "Ambulance",
@@ -5812,7 +5785,7 @@ const REFERRAL_SOURCE_LABELS: Record<Referral["source"], string> = {
  * `wardSites` already owns. An unresolvable site code renders as the code itself rather than a
  * blank or a guess, the same discipline `unitName` holds a few functions above.
  */
-function referralOriginLabel(referral: Referral): string {
+function referralOriginLabel(referral: CommunityScopedReferral): string {
   const channel = REFERRAL_SOURCE_LABELS[referral.source] ?? referral.source;
   const site = siteByCode(referral.originSiteCode);
   const origin = site ? `${channel} · ${site.name}` : `${channel} · site ${referral.originSiteCode}`;
@@ -5827,10 +5800,11 @@ function referralOriginLabel(referral: Referral): string {
  * makes for an admission, read here for the referral itself rather than for who it eventually
  * admitted. `undefined` when this referral never named this team at all.
  */
-function communityAddressingFor(referral: Referral, team: CommunityTeam): ReferralAddressing | undefined {
-  return referral.destinations.find(
-    (addressing) => addressing.destination.kind === "community_team" && addressing.destination.teamName === team.name,
-  );
+function communityAddressingFor(
+  referral: CommunityScopedReferral,
+  team: CommunityTeam,
+): CommunityScopedAddressing | undefined {
+  return referral.addressing.destination.teamName === team.name ? referral.addressing : undefined;
 }
 
 function caseloadStatutoryFormCode(row: CaseloadRow): string | undefined {
@@ -5845,7 +5819,7 @@ function caseloadRecordedExpiryLabel(row: CaseloadRow, now: Instant): string {
   return expiresAt !== undefined ? formatInstantWithDay(expiresAt, now) : "No expiry recorded";
 }
 function caseloadRowsForTeam(
-  referrals: readonly Referral[],
+  referrals: readonly CommunityScopedReferral[],
   movements: readonly Movement[],
   patients: readonly Patient[],
   team: CommunityTeam,
@@ -5915,7 +5889,10 @@ function caseloadRowsForTeam(
  * something else entirely; that is exactly why this reads the ADDRESSING's own state, never
  * `referralState(referral)`, which would read the referral's overall (and irrelevant) outcome.
  */
-function referralsWaitingOnTeam(referrals: readonly Referral[], team: CommunityTeam): Referral[] {
+function referralsWaitingOnTeam(
+  referrals: readonly CommunityScopedReferral[],
+  team: CommunityTeam,
+): CommunityScopedReferral[] {
   /*
    * 🔴 **FD-5 OPT-IN — EXCLUDED. This is a WORKLIST, and that is the whole of the answer.**
    * Every row here is something a person must accept or decline. A referral the referrer has taken
@@ -5941,7 +5918,7 @@ function referralsWaitingOnTeam(referrals: readonly Referral[], team: CommunityT
 /**
  * ⚠️ **THE MOST DELICATE DERIVATION ON THIS SCREEN, AND WHY EACH BRANCH IS WORDED AS IT IS.**
  *
- * `ReferralAddressing` carries `state: "accepted"` and `decidedAt` — WHEN this team said yes.
+ * `CommunityScopedAddressing` carries `state: "accepted"` and `decidedAt` — WHEN this team said yes.
  * `Admission` carries `arrivedAt` — when the bed began. Comparing the two is real and derivable;
  * nothing else about "is this person still with the team" is. `ward-model.ts` holds no team
  * discharge, no episode end and no closing date for a community addressing — checked, not assumed
@@ -5982,7 +5959,7 @@ type TeamAdmissionCategory =
 function categoriseTeamAdmission(
   admission: Admission,
   team: CommunityTeam,
-  referrals: readonly Referral[],
+  referrals: readonly CommunityScopedReferral[],
   now: Instant,
 ): TeamAdmissionCategory {
   const arrivedAt = admission.arrivedAt;

@@ -40,7 +40,7 @@
 
 .heroActions > * {
   min-height: var(--ph-tap);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 /* Change handover and Start meeting share the row equally, both labelled. */
@@ -207,7 +207,7 @@
   flex: none;
   gap: 6px;
   min-height: var(--ph-tap);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .chipCount {
@@ -441,7 +441,7 @@
   flex: 0 0 auto;
   height: 18px;
   padding: 0 6px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -648,7 +648,7 @@
   min-width: 0;
   min-height: var(--ph-tap);
   justify-content: center;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 /* ---------------------------------------------------------------- shift sheet */

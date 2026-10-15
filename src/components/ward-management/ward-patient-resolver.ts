@@ -2,6 +2,9 @@ import { patientDisplayName, type Patient, type PatientId } from "./ward-patient
 import type { Movement, Referral } from "./ward-model";
 import type { Admission, PlannedAdmission } from "./ward-admissions";
 
+/** All the resolver reads of a referral: its id and the person it points at. */
+type ReferralPointer = Pick<Referral, "id" | "patientId">;
+
 /** A boolean consistency check for one already-linked episode record. It exposes no patient
  * identity, other referral destinations, history, place or count. Keep identity reads inside
  * this existing D-14-authorised resolver rather than adding new patient-link readers. */
@@ -22,7 +25,7 @@ const DUPLICATE = Symbol("DUPLICATE");
 
 interface ResolvedIndex {
   patientMap: Map<string, Patient | typeof DUPLICATE>;
-  referralMap: Map<string, Referral | typeof DUPLICATE>;
+  referralMap: Map<string, ReferralPointer | typeof DUPLICATE>;
   movementMap: Map<string, Movement | typeof DUPLICATE>;
   formattedMap: Map<Patient, ResolvedPatientInfo>;
   /** Stream D: a converted planned admission, by the admission it became. */
@@ -31,14 +34,14 @@ interface ResolvedIndex {
 
 const stateIndexCache = new WeakMap<object, ResolvedIndex>();
 
-export function buildPatientResolverIndex(state: {
+function buildPatientResolverIndex(state: {
   patients?: readonly Patient[];
-  referrals?: readonly Referral[];
+  referrals?: readonly ReferralPointer[];
   movements?: readonly Movement[];
   plannedAdmissions?: readonly PlannedAdmission[];
 }): ResolvedIndex {
   const patientMap = new Map<string, Patient | typeof DUPLICATE>();
-  const referralMap = new Map<string, Referral | typeof DUPLICATE>();
+  const referralMap = new Map<string, ReferralPointer | typeof DUPLICATE>();
   const movementMap = new Map<string, Movement | typeof DUPLICATE>();
   const formattedMap = new Map<Patient, ResolvedPatientInfo>();
 
@@ -83,7 +86,7 @@ export function buildPatientResolverIndex(state: {
 function getOrBuildIndex(
   state: object & {
     patients?: readonly Patient[];
-    referrals?: readonly Referral[];
+    referrals?: readonly ReferralPointer[];
     movements?: readonly Movement[];
     plannedAdmissions?: readonly PlannedAdmission[];
   },
@@ -179,7 +182,7 @@ export function resolveSubjectPatient(
   subject: PatientResolutionSubject,
   state: {
     patients?: readonly Patient[];
-    referrals?: readonly Referral[];
+    referrals?: readonly ReferralPointer[];
     movements?: readonly Movement[];
     plannedAdmissions?: readonly PlannedAdmission[];
   },
@@ -196,7 +199,7 @@ export function resolveSubjectPatient(
  */
 export function createPatientResolver(state: {
   patients?: readonly Patient[];
-  referrals?: readonly Referral[];
+  referrals?: readonly ReferralPointer[];
   movements?: readonly Movement[];
   plannedAdmissions?: readonly PlannedAdmission[];
 }): (subject: PatientResolutionSubject) => ResolvedPatientInfo {
@@ -254,7 +257,7 @@ type MovementIdOnly = { movementId: string };
  *  its index on this object's identity, so a fresh literal per call rebuilds the index each time. */
 export type PatientLookup = {
   patients?: readonly Patient[];
-  referrals?: readonly Referral[];
+  referrals?: readonly ReferralPointer[];
   movements?: readonly Movement[];
   /** Stream D: initials-only converted stays resolve through the booking that created them. */
   plannedAdmissions?: readonly PlannedAdmission[];

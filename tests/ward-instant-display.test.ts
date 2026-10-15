@@ -32,6 +32,10 @@ const MAY_ASSERT_TODAY = new Map([
   ["now", "the current instant - today by definition"],
   ["liveNow", "the morning page's live view; the current instant under another name"],
   ["MORNING_HANDOVER_MINUTES", "08:00 of the day being shown, a constant time of day rather than a point in history"],
+  [
+    "DAY_SHIFT_END_MINUTE",
+    "the day shift's 15:00 end named as the handover time on the board and beds matrix, a constant time of day rather than a point in history",
+  ],
   ["confirmedAt", "ward-freshness renders a capacity confirmation beside its own staleness figure"],
   ["unit.allocatable.confirmedAt", "STILL TO SWEEP - a capacity confirmed yesterday would read as this morning"],
   ["detail.allocatable.confirmedAt", "STILL TO SWEEP - same field, network detail panel"],
@@ -128,7 +132,6 @@ describe("nothing renders a bare clock face unless it is entitled to assert toda
       // Governance no longer renders the change-audit history on this screen. The remaining
       // clock in ward-management-modes.tsx is formatInstant(now), which is today by definition.
       "coordinator/shortlist-panel.tsx",
-      "escalation/escalation-board.tsx",
       "ward/ward-screen.tsx",
     ];
     for (const file of swept) {

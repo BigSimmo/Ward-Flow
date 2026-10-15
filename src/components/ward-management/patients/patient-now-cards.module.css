@@ -6,7 +6,7 @@
   height: 22px;
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -236,5 +236,5 @@
   flex: none;
   height: 44px;
   min-height: 44px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }

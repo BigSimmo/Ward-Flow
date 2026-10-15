@@ -116,14 +116,14 @@ export function referralSenderRole(referral: Referral): "ed" | "community" {
   return referral.source === "ed_medical" ? "ed" : "community";
 }
 
-export const NON_WITHDRAWABLE_STAGES = ["moving", "arrived", "closed"] as const;
+const NON_WITHDRAWABLE_STAGES = ["moving", "arrived", "closed"] as const;
 
 /**
  * S2-14: Whether a movement is still in a withdrawable state.
  * Refuses once the patient is in transit ("moving"), arrived, or closed,
  * or if transport has physically collected the patient.
  */
-export function movementWithdrawable(movement: Movement): boolean {
+function movementWithdrawable(movement: Movement): boolean {
   if (movement.closure !== undefined) return false;
   if (movement.transport?.collectedAt !== undefined) return false;
   if ((NON_WITHDRAWABLE_STAGES as readonly string[]).includes(movement.stage)) return false;
@@ -203,7 +203,7 @@ export function referralState(referral: Referral): ReferralState {
  * directly for the same reason, and `isAwaitingTeamAnswer` (`community-derivations.ts`) delegates
  * here rather than holding a second copy of the rule.
  */
-export function isAwaitingAnswer(addressing: ReferralAddressing): boolean {
+export function isAwaitingAnswer(addressing: Pick<ReferralAddressing, "state" | "withdrawnAt">): boolean {
   return addressing.state === "queued" && addressing.withdrawnAt === undefined;
 }
 
@@ -340,7 +340,7 @@ export function referralPurposeLabel(purpose: ReferralPurpose): string {
 
 /** The ED arm, named so signatures can require it — the same service `WardReferralDestination`
  *  performs for the ward arm, and derived from the union rather than restated. */
-export type EdReferralDestination = Extract<ReferralDestination, { kind: "emergency_department" }>;
+type EdReferralDestination = Extract<ReferralDestination, { kind: "emergency_department" }>;
 
 /**
  * One referral as an emergency department's own board sees it: the referral, the single addressing
@@ -891,7 +891,7 @@ export function catchmentSuburbOf(suburb: ReferralSuburb): string | null {
   return suburb.kind === "named" ? suburb.name : null;
 }
 
-export function referralClocks(referral: Referral, now: Instant): ReferralClocks {
+export function referralClocks(referral: Pick<Referral, "raisedAt" | "triagedAt">, now: Instant): ReferralClocks {
   const { raisedAt, triagedAt } = referral;
   // ⚠️ OPEN QUESTION (lint clean-up, 2026-10-04): an earlier comment here said presence should read
   // `inDepartmentAt ?? triagedAt`, matching `hasArrivedInDepartment`, and computed that value — but
@@ -1483,23 +1483,6 @@ export function outOfAreaLedger(
   }
 
   return { entries, notBanded };
-}
-
-/**
- * Reassessment of Clinical Decisions (WF-17):
- * Allows wards to accept previously declined referrals upon updated clinical facts or clearance.
- * If clinical facts have been updated (or clearance refreshed), a destination that was previously
- * declined can be reassessed rather than permanently locked out.
- */
-export function canReassessReferral(
-  referral: Referral,
-  destinationKind: ReferralDestinationKind,
-  clinicalFactsUpdated?: boolean,
-): boolean {
-  if (!clinicalFactsUpdated) return false;
-  const addressing = referral.destinations.find((d) => d.destination.kind === destinationKind);
-  if (!addressing) return false;
-  return addressing.state === "declined";
 }
 
 /**

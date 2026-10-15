@@ -31,7 +31,7 @@ import { referralClocks, REFERRAL_CLOCK_TERMS } from "@/components/ward-manageme
  * from minutes here — two screens each doing their own hours-from-minutes conversion is what kept
  * `25h 30m` alive on eleven surfaces.
  */
-export function referralWaitLine(referral: Referral, now: Instant): string {
+export function referralWaitLine(referral: Pick<Referral, "raisedAt" | "triagedAt">, now: Instant): string {
   const clocks = referralClocks(referral, now);
   // The running branch keeps the exact register every other live wait in Ward Flow uses, so a
   // queue that has always read "40m waiting" still does — only a clock that has actually STOPPED

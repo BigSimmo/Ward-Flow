@@ -100,16 +100,14 @@ describe("the community-viewer assumption, inverted for the projection that now 
     expect(source).not.toMatch(/scopedReferralFor|referralForRole|referralForViewer/u);
   });
 
-  it("WARD_FACING in the screen-boundary guard now contains the community screen, so FD-23 covers it", () => {
-    const source = readFileSync(BOUNDARY_TEST_PATH, "utf8");
-    // Comment-stripped -- see tests/ward-guard-comment-blindness.test.ts. Proved by mutation:
-    // renaming the real array entry away and adding a decoy comment carrying the original literal
-    // text ("community/community-team-hub.tsx") inside the array body left this check green against
-    // the unstripped source.
-    const codeOnly = stripAllComments(source);
-    const match = /const WARD_FACING: readonly string\[\] = \[([\s\S]*?)\]\.map/u.exec(codeOnly);
-    expect(match, "WARD_FACING array literal not found -- the extractor above needs updating").toBeTruthy();
-    const listBody = match![1];
-    expect(listBody).toMatch(/community\/community-team-hub\.tsx/u);
+  it("WARD_FACING in the screen-boundary guard names the live community team page, so FD-23 covers it", () => {
+    // community/community-team-hub.tsx held this place until it was deleted on 15 Oct 2026 as
+    // unreachable. The live team page took it the same day, once it read the community-scoped
+    // projection (owner's choice). Comment-stripped so a quoted path cannot stand in for the entry.
+    const wardFacing = /const WARD_FACING[^=]*=\s*\[([\s\S]*?)\]/u.exec(
+      stripAllComments(readFileSync(BOUNDARY_TEST_PATH, "utf8")),
+    );
+    expect(wardFacing, "WARD_FACING not found in the screen-boundary guard").not.toBeNull();
+    expect(wardFacing![1]).toMatch(/"community\/community-screen\.tsx"/u);
   });
 });

@@ -195,6 +195,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "IS the plumbing the guard exists to sit downstream of, not a screen.",
   },
   {
+    file: "ward-flow-record-events.ts",
+    reason:
+      "The reducer's RECORD_* cases, moved out of ward-flow-reducer.ts unchanged on 15 October 2026. " +
+      "The same engine plumbing as the reducer entry above (for example RECORD_COMMUNITY_TREATMENT_ORDER " +
+      "checking an event's patientId against state.patients), not a screen.",
+  },
+  {
     file: "movements/movement-drawer.tsx",
     reason:
       "🔴 OWNER RULING O-16.3, 2026-09-11 — 'Yes show the patient name.' The Movement detail " +
@@ -247,6 +254,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   {
     file: "handover/handover-page.tsx",
     reason: "Owner mandate 2026-09-21: clinical handover sheet displays patient name and UMRN for each active journey.",
+  },
+  {
+    file: "ward-referral-visibility.ts",
+    reason:
+      "Owner's choice, 15 Oct 2026 (decision card, Engine safety thread): the community team page reads " +
+      "the community-scoped projection, so that projection copies the referral's own patient link across " +
+      "by name. One referral's own person, for community-screen.tsx above, never another destination.",
   },
   {
     file: "community/community-screen.tsx",
@@ -303,7 +317,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(24);
+    // 25 → 26 on 2026-10-15: ward-referral-visibility.ts, the community projection the team page now reads.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(26);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
@@ -320,7 +335,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     ).toBeGreaterThan(80);
     expect(files.map((file) => basename(file))).toContain("ward-board.tsx");
     expect(files.map((file) => basename(file))).toContain("ward-screen.tsx");
-    expect(files.map((file) => basename(file))).toContain("community-team-hub.tsx");
+    expect(files.map((file) => basename(file))).toContain("community-screen.tsx");
   });
 
   it("proves the detector can actually fire, before trusting what it did not flag", () => {

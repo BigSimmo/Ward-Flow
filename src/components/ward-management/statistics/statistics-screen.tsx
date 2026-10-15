@@ -32,7 +32,7 @@ import {
   pullToArrival,
   refusedAndNothingPending,
 } from "@/components/ward-management/statistics/statistics-derivations";
-import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { axisMax } from "@/components/ward-management/statistics/statistics-axis";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -1093,4 +1093,3 @@ export function StatisticsScreen({
 }
 
 // Kept for the community chooser deep link and the per-team statistics route.
-export { communityStatisticsHref };
