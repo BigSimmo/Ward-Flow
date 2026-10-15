@@ -103,6 +103,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { referralSuburbIsKnown, wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
 import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
@@ -927,6 +928,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // A1-8 (audit round 2): an accept from the Ward flow list offers Undo on its toast, as the Ward
   // answer view and the Bed board already do. Set by the accept, read once by the check below.
   const acceptUndoRef = useRef<{ movementId: string; unitId: string } | null>(null);
+  const { offer: offerAcceptUndo } = useUndoableStep({ dispatch, rejections, now, routeRole, toast });
 
   useEffect(() => {
     if (checkToken === 0) return;
@@ -944,38 +946,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     } else {
       setLastActionRejection(undefined);
       if (acceptUndo && toast) {
-        const success = "Accepted in principle.";
-        const undoLimit = roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE");
-        toast.push({
-          tone: "success",
-          title: success,
-          ...(undoLimit
-            ? { body: `Undo: ${undoLimit}` }
-            : {
-                undo: {
-                  durationMs: UNDO_TOAST_MS,
-                  onUndo: () => {
-                    boardCheckRef.current = {
-                      prior: rejectionCountRef.current,
-                      bed: 0,
-                      success: "Acceptance undone. The referral is back with this ward.",
-                    };
-                    dispatch({
-                      type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                      role: "ward",
-                      now: nowRef.current,
-                      movementId: acceptUndo.movementId,
-                      actingUnitId: acceptUndo.unitId,
-                    });
-                    setBoardToken((token) => token + 1);
-                  },
-                },
-              }),
+        offerAcceptUndo({
+          success: "Accepted in principle.",
+          undo: (at) => ({
+            type: "UNDO_ACCEPT_IN_PRINCIPLE",
+            role: "ward",
+            now: at,
+            movementId: acceptUndo.movementId,
+            actingUnitId: acceptUndo.unitId,
+          }),
+          undone: "Acceptance undone. The referral is back with this ward.",
         });
       }
     }
     priorRejectionCountRef.current = rejections.length;
-    // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
+    // `toast` and `offerAcceptUndo` are read as they are now; the token drives this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
