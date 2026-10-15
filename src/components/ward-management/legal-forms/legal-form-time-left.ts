@@ -1,5 +1,5 @@
 import type { WfTone } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { type DueSoonThresholds, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { currentLegalDueAt } from "./legal-forms-derivations";
@@ -24,11 +24,15 @@ export type FormTimeLeft = {
   actNow: boolean;
 };
 
-export function formTimeLeft(movement: Movement | undefined, now: Instant): FormTimeLeft | undefined {
+export function formTimeLeft(
+  movement: Movement | undefined,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): FormTimeLeft | undefined {
   const form = movement?.legalForm;
   const dueAt = movement ? currentLegalDueAt(movement) : undefined;
   if (!movement || !form || dueAt === undefined) return undefined;
-  const standing = clockStanding(movement, now);
+  const standing = clockStanding(movement, now, thresholds);
   const passed = standing === "passed";
   return {
     code: `Form ${form.code}`,

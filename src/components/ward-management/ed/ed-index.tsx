@@ -54,7 +54,7 @@ import {
   type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -186,7 +186,13 @@ function rowClock(row: EdRow): WaitClock {
 }
 
 export function EdIndex() {
-  const { movements, patients, referrals, units, configuration } = useWardFlow();
+  const { movements, patients, referrals, units, configuration } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "units",
+    "configuration",
+  );
   const { now, paused, togglePause } = usePageLive();
   const accessTarget = configuration.edAccessTargetMinutes;
 

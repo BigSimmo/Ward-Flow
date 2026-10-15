@@ -33,7 +33,7 @@ import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-managem
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { movementHref, teamHref, unitHref } from "../shell/ward-facade";
 
@@ -392,7 +392,7 @@ const SITE_NAME_NOISE = new Set([
 function mentionsKnownSite(query: string): boolean {
   const needle = query.trim().toLowerCase();
   const tokens = needle.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
-  return wardSites.some((site) => {
+  return siteDirectory.some((site) => {
     const code = site.code.toLowerCase();
     const name = site.name.toLowerCase();
     if (needle.length >= 3 && (code === needle || name.includes(needle))) return true;

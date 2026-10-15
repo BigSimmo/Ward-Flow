@@ -2,7 +2,12 @@
 
 import { usePathname } from "next/navigation";
 
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -42,15 +47,32 @@ export function useWardNavCounts(): {
   placeId: string | undefined;
 } {
   const pathname = usePathname() ?? "";
-  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
+  const thresholds = useDueSoonThresholds();
+  const network = useWardNetwork();
   const routeRole = wardChromeRole(pathname);
   // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
   const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
   return {
     role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
     shellRole: deskRole,
-    counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
+    counts: wardNavCounts({
+      movements,
+      units,
+      sites: network.sites,
+      referrals,
+      bedReleases,
+      leaveBeds,
+      now,
+      thresholds,
+    }),
     placeId: wardPlaceIdFor(pathname),
   };
 }

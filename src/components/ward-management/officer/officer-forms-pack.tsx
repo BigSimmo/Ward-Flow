@@ -5,7 +5,7 @@ import { FileUp, Upload, X } from "lucide-react";
 
 import { Button, Icon, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
 import { formTitleForCode } from "@/lib/form-register";
@@ -169,7 +169,7 @@ function PackUploadDialog({
   who: string;
   onClose: () => void;
 }) {
-  const { dispatch } = useWardFlow();
+  const { dispatch } = useWardFlowSelect("dispatch");
   const now = useWardFlowClock();
   const [code, setCode] = useState<string | undefined>(slot.codes.length === 1 ? slot.codes[0] : initialCode);
   const [file, setFile] = useState<{ name: string; size: number } | null>(null);

@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
-import { useWardFlow } from "../ward-flow-provider";
+import { useWardFlowSelect } from "../ward-flow-provider";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
 import { DischargeCareJourney } from "../discharges/discharge-care-journey";
 export function CommunityFollowUp({ admissionId, teamId }: { admissionId: string; teamId: string }) {
-  const { openDischargeRecord, readDischargeRecord } = useWardFlow();
+  const { openDischargeRecord, readDischargeRecord } = useWardFlowSelect("openDischargeRecord", "readDischargeRecord");
   const [handle, setHandle] = useState<DischargeOpenHandle | null>(null);
   const actor = { role: "community", actingTeamId: teamId } as const;
   const read = readDischargeRecord?.(actor, admissionId, handle);

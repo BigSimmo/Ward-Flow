@@ -36,9 +36,17 @@
  * already resolved, so a figure computed here and a figure computed in a screen cannot be about two
  * different moments.
  */
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type {
+  BedRelease,
+  LeaveBed,
+  Movement,
+  Referral,
+  ReferralSource,
+  Site,
+  Unit,
+} from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -112,10 +120,13 @@ export type ShellFigure = {
 export type ShellFigureInput = {
   readonly movements: Movement[];
   readonly units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  readonly sites: readonly Site[];
   readonly referrals: Referral[];
   readonly bedReleases: readonly BedRelease[];
   readonly leaveBeds: readonly LeaveBed[];
   readonly now: Instant;
+  readonly thresholds: DueSoonThresholds;
   readonly plannedAdmissions?: readonly PlannedAdmission[];
 };
 
@@ -150,10 +161,12 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
   const counts = wardNavCounts({
     movements: input.movements,
     units: input.units,
+    sites: input.sites,
     referrals: input.referrals,
     bedReleases: input.bedReleases,
     leaveBeds: input.leaveBeds,
     now: input.now,
+    thresholds: input.thresholds,
   });
 
   function required(key: "capacity" | "movements" | "delays" | "referrals"): ShellFigure {
@@ -361,7 +374,6 @@ export function communityStatisticsHref(teamId: string): string {
  * GP referral source. So the type is no longer restated here — it is the model's own, quoted, and
  * anything this file can put in a link is something `Referral.source` can hold.
  */
-import type { ReferralSource } from "@/components/ward-management/ward-model";
 export type RaiseReferralTarget = {
   readonly patientId?: string;
   /** Where the referral comes from. Optional: the bar's "New referral" menu names only where it goes. */

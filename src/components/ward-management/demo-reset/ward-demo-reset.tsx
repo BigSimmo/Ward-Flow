@@ -7,7 +7,7 @@ import { Button } from "@/components/wf";
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   DEMO_RESET_SCENARIOS,
   scenarioDescriptions,
@@ -30,7 +30,7 @@ import styles from "./ward-demo-reset.module.css";
  */
 export function WardDemoReset({ className, headingClassName }: { className?: string; headingClassName?: string }) {
   const enabled = useWardFeatureFlag("demo-reset");
-  const { scenario, dispatch } = useWardFlow();
+  const { scenario, dispatch } = useWardFlowSelect("scenario", "dispatch");
   const now = useWardFlowClock();
   const [pending, setPending] = useState<WardScenario | null>(null);
   const loadButton = useRef<HTMLButtonElement>(null);

@@ -39,7 +39,7 @@ import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-managem
 import { HEALTH_SERVICES, type HealthService, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
@@ -91,7 +91,7 @@ function shortSiteName(name: string): string {
  *
  * ⚠️ **EVERY UNIT READ HERE COMES FROM THE PROVIDER'S LIVE `units`, NEVER FROM `allUnits()` OR
  * `unitById()`.** Which SITE a health service owns, and which SITE an emergency department sits at,
- * is identity rather than capacity, so `wardSites`, `siteByCode` and `allEmergencyDepartments()` are
+ * is identity rather than capacity, so `siteDirectory`, `siteByCode` and `allEmergencyDepartments()` are
  * read directly.
  *
  * ⚠️ **DECLINES ATTRIBUTED TO A WARD OR A SERVICE ARE A WITHHELD PRODUCT DECISION, NOT BUILT HERE.**
@@ -142,7 +142,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     );
   }
 
-  const serviceSites = wardSites.filter((site) => site.service === service);
+  const serviceSites = siteDirectory.filter((site) => site.service === service);
   const serviceSiteCodes = new Set(serviceSites.map((site) => site.code));
   const serviceUnits = liveUnits.filter((unit) => serviceSiteCodes.has(unit.siteCode));
   const serviceEds = allEmergencyDepartments().filter((department) => serviceSiteCodes.has(department.siteCode));

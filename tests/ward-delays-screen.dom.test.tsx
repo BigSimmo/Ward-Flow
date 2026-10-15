@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -646,7 +646,7 @@ describe("the Delays screen", () => {
 describe("the Delays filters narrow the table, and always say how many they hide", () => {
   const units = allUnits();
   const open = seededMovements.filter(isOpen);
-  const baselineGroups = delayGroups(seededMovements, units, NOW_ANCHOR);
+  const baselineGroups = delayGroups(seededMovements, units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
 
   function listed(): string[] {
     const region = screen.getByRole("region", { name: "Waiting" });
@@ -726,7 +726,7 @@ describe("Wave 4 item 15 — Delays alias pedagogy banners", () => {
 
 describe("the Menu's Delays row lands on its own figure (shell-9)", () => {
   it("opens with the severe filter on when the address says show=severe, its count inside the chip", () => {
-    const severe = delayGroups(seededMovements, allUnits(), NOW_ANCHOR)
+    const severe = delayGroups(seededMovements, allUnits(), NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)
       .filter((group) => SEVERE_CAUSES.includes(group.cause))
       .reduce((total, group) => total + group.movements.length, 0);
     window.history.replaceState(null, "", "/mockups/ward-flow/delays?show=severe");

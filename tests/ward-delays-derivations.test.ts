@@ -19,7 +19,7 @@ import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-re
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { referrals, wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { clockState, minutesUntil } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, minutesUntil } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
 /**
@@ -70,7 +70,7 @@ const BASE_MOVEMENT: Movement = {
 describe("delayGroups", () => {
   it("places every open movement in exactly one group — a patient is not counted twice", () => {
     const open = wardMovements.filter(isOpen);
-    const grouped = delayGroups(wardMovements, allUnits(), NOW).flatMap((group) =>
+    const grouped = delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS).flatMap((group) =>
       group.movements.map((movement) => movement.id),
     );
     expect(new Set(grouped).size, "a movement appears in two groups").toBe(grouped.length);
@@ -78,7 +78,7 @@ describe("delayGroups", () => {
   });
 
   it("puts an expiring legal authority first, above a longer wait", () => {
-    const groups = delayGroups(wardMovements, allUnits(), NOW);
+    const groups = delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     // Only assert the ordering rule when the fixture actually exercises it, and say so when it does
     // not — a silently skipped ordering rule is how one comes back wrong.
     const legal = groups.findIndex((group) => group.cause === "legal_expiring");
@@ -99,7 +99,7 @@ describe("delayGroups", () => {
         const dueAt = movement.legalForm?.dueAt;
         if (dueAt === undefined) continue;
         expect(
-          clockState(dueAt, NOW),
+          clockState(dueAt, NOW, DEFAULT_DUE_SOON_THRESHOLDS),
           `${movement.id}'s legal clock is critical, so legal_expiring should have been populated`,
         ).not.toBe("critical");
       }
@@ -109,7 +109,7 @@ describe("delayGroups", () => {
   });
 
   it("returns no empty group, because a heading over nothing reads as a category that is fine", () => {
-    for (const group of delayGroups(wardMovements, allUnits(), NOW)) {
+    for (const group of delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS)) {
       expect(group.movements.length, `${group.cause} is empty`).toBeGreaterThan(0);
     }
   });
@@ -123,7 +123,7 @@ describe("delayGroups", () => {
    * Nothing above would have gone red: every other assertion here passes with the group missing.
    */
   it("actually finds the people with nowhere eligible, rather than dropping the group", () => {
-    const groups = delayGroups(wardMovements, allUnits(), NOW);
+    const groups = delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const nowhere = groups.find((group) => group.cause === "no_eligible_bed");
     expect(nowhere, "no_eligible_bed is absent — the classifier can no longer detect it").toBeDefined();
     expect(nowhere?.movements.length ?? 0).toBeGreaterThan(0);
@@ -131,7 +131,9 @@ describe("delayGroups", () => {
 
   /** Every cause the type allows must be reachable, or the union is bigger than the classifier. */
   it("uses only causes the classifier can actually produce", () => {
-    const produced = new Set(delayGroups(wardMovements, allUnits(), NOW).map((group) => group.cause));
+    const produced = new Set(
+      delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((group) => group.cause),
+    );
     expect(produced.size, "the fixture exercises too few causes to be a useful guard").toBeGreaterThan(2);
   });
 
@@ -149,7 +151,7 @@ describe("delayGroups", () => {
       "the fixture carries no expired bed pull — this assertion would otherwise be vacuous",
     ).toBeGreaterThan(0);
 
-    const groups = delayGroups(wardMovements, allUnits(), NOW);
+    const groups = delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const expiredGroup = groups.find((group) => group.cause === "bed_pull_expired");
     expect(expiredGroup, "bed_pull_expired is absent — the classifier can no longer detect it").toBeDefined();
     const expiredGroupIds = new Set(expiredGroup?.movements.map((movement) => movement.id));
@@ -173,7 +175,7 @@ describe("delayGroups", () => {
    * `bed_pull_expired` must outrank `awaiting_bed_ready` whenever both groups are present.
    */
   it("ranks bed_pull_expired above awaiting_bed_ready when both are present", () => {
-    const groups = delayGroups(wardMovements, allUnits(), NOW);
+    const groups = delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const expiredIndex = groups.findIndex((group) => group.cause === "bed_pull_expired");
     const bedReadyIndex = groups.findIndex((group) => group.cause === "awaiting_bed_ready");
     if (expiredIndex === -1 || bedReadyIndex === -1) {
@@ -204,7 +206,7 @@ describe("delayGroups", () => {
     const nonUrgent = withDeadline.filter((movement) => {
       const dueAt = movement.legalForm?.dueAt;
       if (dueAt === undefined) return false;
-      const state = clockState(dueAt, NOW);
+      const state = clockState(dueAt, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
       return state === "due" || state === "clear";
     });
     // Audit A3-4 (13 Oct 2026): the warning windows are inclusive, so the seeded form at exactly
@@ -214,7 +216,7 @@ describe("delayGroups", () => {
       "every seeded legal deadline is breached or critical — this test no longer covers the non-urgent case it names",
     ).toBeGreaterThan(0);
 
-    const groups = delayGroups(wardMovements, allUnits(), NOW);
+    const groups = delayGroups(wardMovements, allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const legalIds = new Set(
       groups
         .filter((group) => group.cause === "legal_breached" || group.cause === "legal_expiring")
@@ -266,10 +268,14 @@ describe("delayGroups", () => {
     // movements is invented beyond the one field whose value decides the branch.
     const breached = { ...first, legalForm: { ...first.legalForm!, dueAt: NOW - 10 } };
     const expiring = { ...second, legalForm: { ...second.legalForm!, dueAt: NOW + 30 } };
-    expect(clockState(NOW - 10, NOW), "the breached clone is not breached").toBe("breached");
-    expect(clockState(NOW + 30, NOW), "the expiring clone is not critical").toBe("critical");
+    expect(clockState(NOW - 10, NOW, DEFAULT_DUE_SOON_THRESHOLDS), "the breached clone is not breached").toBe(
+      "breached",
+    );
+    expect(clockState(NOW + 30, NOW, DEFAULT_DUE_SOON_THRESHOLDS), "the expiring clone is not critical").toBe(
+      "critical",
+    );
 
-    const groups = delayGroups([breached, expiring], allUnits(), NOW);
+    const groups = delayGroups([breached, expiring], allUnits(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const causes = groups.map((group) => group.cause);
     // Both must be present before the ordering means anything — an absent group would make
     // `indexOf` return -1 and the comparison below pass for the wrong reason.

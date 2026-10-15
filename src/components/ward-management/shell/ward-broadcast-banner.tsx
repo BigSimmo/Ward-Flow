@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Check, ChevronRight } from "lucide-react";
 import { Button, StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  type WardFlowContextValue,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   BED_CALL_MAX_BEDS,
   BROADCAST_ANSWER_LABELS,
@@ -188,7 +192,14 @@ function ControlledBroadcastBanner({
 }
 
 function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
-  const { broadcastAlerts, dispatch, units, movements, patients, referrals } = useWardFlow();
+  const { broadcastAlerts, dispatch, units, movements, patients, referrals } = useWardFlowSelect(
+    "broadcastAlerts",
+    "dispatch",
+    "units",
+    "movements",
+    "patients",
+    "referrals",
+  );
   const now = useWardFlowClock();
   const pathname = usePathname() ?? "";
   const routeRole = wardChromeRole(pathname);
@@ -258,7 +269,7 @@ function BannerBody({
   now: Instant;
   units: readonly Unit[];
   lookup: Lookup;
-  onDispatch: ReturnType<typeof useWardFlow>["dispatch"];
+  onDispatch: WardFlowContextValue["dispatch"];
 }) {
   const { alert, tone, needsAnswer } = entry;
   const kind = broadcastKind(alert);

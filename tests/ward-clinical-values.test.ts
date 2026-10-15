@@ -315,7 +315,7 @@ const INLINE_SHAPES: ReadonlyArray<{ rule: string; shape: RegExp }> = [
   { rule: "longStayPrompt", shape: /\.days\s*>=?\s*\d|daysInBed\([^)]*\)\s*\?\?\s*0\)\s*>=?\s*\d/ },
   { rule: "longWait", shape: /openedAt\s*>=?\s*\d{3,}/ },
   { rule: "silentWardFirstReminder or silentWardSecondReminder", shape: /elapsedMinutes\s*[<>]=?\s*\d{2,}/ },
-  { rule: "dueSoonUrgent (currentDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
+  { rule: "dueSoonUrgent (useDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
 ];
 
 function inlineThresholdsIn(source: string): string[] {

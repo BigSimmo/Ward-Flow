@@ -35,7 +35,7 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDebouncedValue } from "@/components/ward-management/search/use-debounced-value";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -741,7 +741,13 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlow();
+  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "referrals",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
@@ -953,10 +959,66 @@ export function WardPhoneMenu({
     groups,
   } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
-  const flow = useWardFlow();
+  const {
+    movements,
+    units,
+    configuration,
+    inboxSnoozes,
+    leaveBeds,
+    admissions,
+    patients,
+    referrals,
+    supportNotifications,
+    plannedAdmissions,
+    now: flowNow,
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "configuration",
+    "inboxSnoozes",
+    "leaveBeds",
+    "admissions",
+    "patients",
+    "referrals",
+    "supportNotifications",
+    "plannedAdmissions",
+    "now",
+  );
+  // `useWardFlowSelect` returns a new object each render, so the memo lists the fields it reads, not
+  // that object: typing in the menu search must not recount the act-now tasks.
   const actNowCount = useMemo(
-    () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
-    [shellRole, flow],
+    () =>
+      wardTasksAreActionableForRole(shellRole)
+        ? activeActNowItems(
+            {
+              movements,
+              units,
+              configuration,
+              inboxSnoozes,
+              leaveBeds,
+              admissions,
+              patients,
+              referrals,
+              supportNotifications,
+              plannedAdmissions,
+            },
+            flowNow,
+          ).length
+        : 0,
+    [
+      shellRole,
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      leaveBeds,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      flowNow,
+    ],
   );
   const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
 

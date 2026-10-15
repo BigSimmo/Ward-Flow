@@ -77,9 +77,13 @@ import { transportEtaRemainingLabel } from "@/components/ward-management/ward-bo
 import {
   useCommunityScopedReferrals,
   useDanglingReferralIds,
-  useWardFlow,
   useWardFlowClock,
+  useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import {
+  cancelTransportBlockedReason,
+  communityDeclineBlockedReason,
+} from "@/components/ward-management/community/community-blocked-reasons";
 import type {
   CommunityScopedAddressing,
   CommunityScopedReferral,
@@ -222,8 +226,7 @@ const TEAM_TABS = [
  * screen reader (the repo's D4 wording) — for exactly as long as no reason is chosen; the same
  * "state a reason before declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
  */
-const COMMUNITY_DECLINE_REASON_UNCHOSEN = "Choose the reason this team cannot take this referral before declining it.";
-const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first. The provider is told.";
+// Its blocked-reason sentence, and the cancel-transport one, live in `community-blocked-reasons.ts`.
 
 const ESCORT_ANSWERS = [
   { value: true, label: "Escort required" },
@@ -501,7 +504,17 @@ export function CommunityScreen({
     openDischargeRecord,
     readDischargeRecord,
     dispatch,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "admissions",
+    "notices",
+    "units",
+    "movements",
+    "patients",
+    "rejections",
+    "openDischargeRecord",
+    "readDischargeRecord",
+    "dispatch",
+  );
   const liveReferrals = useCommunityScopedReferrals();
   const now = useWardFlowClock();
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
@@ -531,6 +544,7 @@ export function CommunityScreen({
   const [transportDraft, setTransportDraft] = useState<TransportDraftState>(BLANK_TRANSPORT_DRAFT);
   const [transportCancelFor, setTransportCancelFor] = useState<string | undefined>(undefined);
   const [cancelTransportReason, setCancelTransportReason] = useState<CancelTransportReason | undefined>(undefined);
+  const cancelTransportBlocked = cancelTransportBlockedReason(cancelTransportReason);
   const [activeModal, setActiveModal] = useState<{
     type: "review" | "assign";
     referral: CommunityScopedReferral;
@@ -2163,7 +2177,7 @@ export function CommunityScreen({
             : phoneDeclining
               ? {
                   label: "Decline referral",
-                  disabledReason: declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined,
+                  disabledReason: communityDeclineBlockedReason(declineDraft),
                   onAction: () => {
                     handleConfirmDecline(phoneReferral.id);
                     closePhoneReferral();
@@ -3006,8 +3020,7 @@ export function CommunityScreen({
                             const declineOpen = declineOpenFor === referral.id;
                             // Blocked only until a reason is chosen — the same "state a reason before
                             // declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
-                            const declineBlocked =
-                              declineDraft === undefined ? COMMUNITY_DECLINE_REASON_UNCHOSEN : undefined;
+                            const declineBlocked = communityDeclineBlockedReason(declineDraft);
                             return (
                               <li
                                 key={referral.id}
@@ -4626,26 +4639,26 @@ export function CommunityScreen({
                     type="button"
                     className={styles.transportConfirmButton}
                     data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
-                    aria-disabled={cancelTransportReason === undefined ? "true" : undefined}
+                    aria-disabled={cancelTransportBlocked === undefined ? undefined : "true"}
                     aria-describedby={
-                      cancelTransportReason === undefined
-                        ? `ward-community-cancel-transport-blocked-${transportCancelFor}`
-                        : undefined
+                      cancelTransportBlocked === undefined
+                        ? undefined
+                        : `ward-community-cancel-transport-blocked-${transportCancelFor}`
                     }
-                    title={cancelTransportReason === undefined ? CANCEL_TRANSPORT_UNCHOSEN : undefined}
+                    title={cancelTransportBlocked}
                     onClick={
-                      cancelTransportReason === undefined
-                        ? ignoreUnavailableActivation
-                        : () => submitCancelTransport(transportCancelFor)
+                      cancelTransportBlocked === undefined
+                        ? () => submitCancelTransport(transportCancelFor)
+                        : ignoreUnavailableActivation
                     }
                   >
                     Confirm cancel
                   </button>
-                  {cancelTransportReason === undefined ? (
+                  {cancelTransportBlocked === undefined ? null : (
                     <span id={`ward-community-cancel-transport-blocked-${transportCancelFor}`} className="sr-only">
-                      {CANCEL_TRANSPORT_UNCHOSEN}
+                      {cancelTransportBlocked}
                     </span>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
@@ -5850,7 +5863,7 @@ const REFERRAL_SOURCE_LABELS: Record<CommunityScopedReferral["source"], string> 
  * Where a referral says it came from, in words a coordinator reading this queue can act on: the
  * channel (`REFERRAL_SOURCE_LABELS`) and, where the record names one, the originating site
  * (`siteByCode`) — never a literal hospital name, which would be a second home for a fact
- * `wardSites` already owns. An unresolvable site code renders as the code itself rather than a
+ * `siteDirectory` already owns. An unresolvable site code renders as the code itself rather than a
  * blank or a guess, the same discipline `unitName` holds a few functions above.
  */
 function referralOriginLabel(referral: CommunityScopedReferral): string {

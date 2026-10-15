@@ -17,7 +17,7 @@ import {
   type TimeRailMark,
   type TimelineItem,
 } from "@/components/wf";
-import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -43,6 +43,7 @@ import {
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /** The board's clock states, in the order the legend line names them. */
 export type RingState = "act" | "soon" | "running" | "demo" | "unwritten";
 const RING_ORDER: RingState[] = ["act", "soon", "running", "demo", "unwritten"];
@@ -87,6 +88,7 @@ function ClockRail({
   now: Instant;
   onSelect: (movement: Movement) => void;
 }) {
+  const thresholds = useDueSoonThresholds();
   const marks: TimeRailMark[] = movements
     .filter((movement) => currentLegalDueAt(movement) !== undefined)
     .map((movement) => ({
@@ -94,7 +96,7 @@ function ClockRail({
       at: movement.legalForm!.dueAt!,
       code: movement.legalForm!.code,
       name: `Form ${movement.legalForm!.code}`,
-      tone: STANDING_TONE[clockStanding(movement, now)],
+      tone: STANDING_TONE[clockStanding(movement, now, thresholds)],
       onSelect: () => onSelect(movement),
     }));
   return (
@@ -166,8 +168,9 @@ export function SummaryPanel({
   urgentHours: number;
   onSelect: (movement: Movement) => void;
 }) {
+  const thresholds = useDueSoonThresholds();
   const counts: Record<RingState, number> = { act: 0, soon: 0, running: 0, demo: 0, unwritten: 0 };
-  for (const movement of rows) counts[ringStateOf(movement, clockStanding(movement, now), dayZero)] += 1;
+  for (const movement of rows) counts[ringStateOf(movement, clockStanding(movement, now, thresholds), dayZero)] += 1;
   // Device audit 11 Oct 2026: the hero counts every form with no typed expiry as one figure, so
   // the board does too. The demo Act period is a reading of the same rows, given as a note.
   const demoOnly = counts.demo;
@@ -270,8 +273,9 @@ export function FocusPanel({
   onCopy: () => void;
   copied: boolean;
 }) {
+  const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm;
-  const standing = clockStanding(movement, now);
+  const standing = clockStanding(movement, now, thresholds);
   const breached = isLegalDeadlineBreached(movement, now);
   const reading = actPeriodReading(movement, dayZero);
   const facts = recordedFacts(movement);
@@ -336,7 +340,9 @@ export function FocusPanel({
             </>
           ) : (
             <>
-              <span className={styles.clockBig}>{formProgression(movement) ? "Ended" : standingWord(standing)}</span>
+              <span className={styles.clockBig}>
+                {formProgression(movement) ? "Ended" : standingWord(standing, thresholds)}
+              </span>
               <span className={styles.clockWord}>{legalDeadlineText(movement, now)}</span>
             </>
           )}

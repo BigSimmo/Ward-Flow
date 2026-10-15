@@ -7,20 +7,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const access = vi.hoisted(() => ({ mode: "normal" as "normal" | "denied" | "allocation-failed" }));
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
+  // The board reads named fields through `useWardFlowSelect`; both hooks get the same stand-ins.
+  function withAccess<T extends Partial<ReturnType<typeof actual.useWardFlow>>>(context: T): T {
+    const { openDischargeRecord, readDischargeRecord } = context;
+    return {
+      ...context,
+      ...(openDischargeRecord && {
+        openDischargeRecord: (...args: Parameters<typeof openDischargeRecord>) => {
+          if (access.mode === "allocation-failed") throw new Error("Record request allocation unavailable");
+          return openDischargeRecord(...args);
+        },
+      }),
+      ...(readDischargeRecord && {
+        readDischargeRecord: (...args: Parameters<typeof readDischargeRecord>) =>
+          access.mode === "denied" ? { status: "denied" as const } : readDischargeRecord(...args),
+      }),
+    };
+  }
   return {
     ...actual,
-    useWardFlow: () => {
-      const context = actual.useWardFlow();
-      return {
-        ...context,
-        openDischargeRecord: (...args: Parameters<typeof context.openDischargeRecord>) => {
-          if (access.mode === "allocation-failed") throw new Error("Record request allocation unavailable");
-          return context.openDischargeRecord(...args);
-        },
-        readDischargeRecord: (...args: Parameters<typeof context.readDischargeRecord>) =>
-          access.mode === "denied" ? { status: "denied" as const } : context.readDischargeRecord(...args),
-      };
-    },
+    useWardFlow: () => withAccess(actual.useWardFlow()),
+    useWardFlowSelect: (...keys: (keyof ReturnType<typeof actual.useWardFlow>)[]) =>
+      withAccess(actual.useWardFlowSelect(...keys)),
   };
 });
 vi.mock("next/link", () => ({

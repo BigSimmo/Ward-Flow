@@ -5,13 +5,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
 import { WardChromeSearch } from "@/components/ward-management/ward-chrome-search";
 import { WardStatsPanel, WardStatsToggle, standingFigures } from "@/components/ward-management/ward-standing-strip";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { serviceRollup, wardsConfirmedLabel } from "@/components/ward-management/ward-morning-rollup";
-import { wardSites } from "@/components/ward-management/ward-sites";
+
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 
 import styles from "./ward-chrome-header.module.css";
@@ -81,6 +86,8 @@ function roleAction(role: WardChromeRole): { href: string; label: string } {
  * never scroll**, where sticky applies, computes correctly and silently never moves.
  */
 export function WardChromeHeader() {
+  const network = useWardNetwork();
+  const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const {
@@ -95,23 +102,39 @@ export function WardChromeHeader() {
     inboxAcknowledgements,
     inboxCompletions,
     plannedAdmissions,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
 
   const [figuresOpen, setFiguresOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
 
   const chromeRole = wardChromeRole(pathname);
-  const figures = standingFigures({
-    movements,
-    units,
-    admissions,
-    bedReleases,
-    leaveBeds,
-    now,
-    chromeRole,
-    placeId: /\/(?:ward|board|ed)\/([^/]+)/u.exec(pathname)?.[1],
-  });
+  const figures = standingFigures(
+    {
+      movements,
+      units,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      now,
+      chromeRole,
+      placeId: /\/(?:ward|board|ed)\/([^/]+)/u.exec(pathname)?.[1],
+    },
+    thresholds,
+    network,
+  );
 
   const tasks = useMemo(
     () => buildActionInbox(movements.filter(isOpen), now, units, { plannedAdmissions }),
@@ -130,13 +153,13 @@ export function WardChromeHeader() {
 
   /*
    * ⚠️ **THE SAME `serviceRollup` CALL EVERY SIBLING SURFACE MAKES** (`ward-standing-strip.tsx`,
-   * `tests/ward-sidebar.dom.test.tsx`) — `wardSites` for grouping/display, the live `units` from
-   * context for the figures, never the units embedded in `wardSites` itself (see that file's own
+   * `tests/ward-sidebar.dom.test.tsx`) — the scenario's network sites for grouping/display, the live `units` from
+   * context for the figures, never the units embedded in those sites (see that file's own
    * doc comment on why the two must not be conflated). Spread into new arrays for the same reason
    * `ward-standing-strip.tsx` does: this derivation must never share a reference with reducer state
    * it does not own.
    */
-  const rollup = serviceRollup(wardSites, units, [...bedReleases], [...leaveBeds], now);
+  const rollup = serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now);
   const action = roleAction(chromeRole);
 
   return (

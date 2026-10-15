@@ -1,13 +1,13 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useToast, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { stepUndoFor, undoStepSubjectId, type UndoStepType } from "@/components/ward-management/ward-undo";
 
@@ -88,7 +88,7 @@ export function useUndoableStep({
 }: UndoableStepOptions) {
   const layoutToast = useLayoutToast();
   // Read where a provider exists; a screen rendered alone falls back to the step's time alone.
-  const undoRecords = useContext(WardFlowContext)?.undoRecords;
+  const undoRecords = useOptionalWardFlowSelect("undoRecords")?.undoRecords;
   const sink = toast ?? layoutToast;
   const pendingRef = useRef<Pending | null>(null);
   const [token, setToken] = useState(0);

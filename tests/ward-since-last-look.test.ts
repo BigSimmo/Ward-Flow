@@ -11,6 +11,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
 function seededWorld(): LastLookWorld {
@@ -27,8 +28,8 @@ function seededWorld(): LastLookWorld {
 describe("what changed since you last looked", () => {
   it("reports nothing when the world is unchanged", () => {
     const world = seededWorld();
-    const before = takeLastLookSnapshot(world, NOW);
-    const after = takeLastLookSnapshot(world, NOW);
+    const before = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
+    const after = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const changes = changesSinceLastLook(before, after, world);
     expect(changes).toBeDefined();
     expect(hasAnyChange(changes!)).toBe(false);
@@ -37,14 +38,14 @@ describe("what changed since you last looked", () => {
 
   it("has nothing to compare on a first look or after a scenario switch", () => {
     const world = seededWorld();
-    const now = takeLastLookSnapshot(world, NOW);
+    const now = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(changesSinceLastLook(undefined, now, world)).toBeUndefined();
     expect(changesSinceLastLook({ ...now, scenario: "other" }, now, world)).toBeUndefined();
   });
 
   it("lists a new referral, a newly ready bed and a new escalation", () => {
     const world = seededWorld();
-    const before = takeLastLookSnapshot(world, NOW);
+    const before = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
 
     const unit = world.units[0]!;
     const escalated = world.movements.find((movement) => isOpen(movement) && !movement.escalation)!;
@@ -70,7 +71,7 @@ describe("what changed since you last looked", () => {
           : movement,
       ),
     };
-    const after = takeLastLookSnapshot(later, NOW + 30);
+    const after = takeLastLookSnapshot(later, NOW + 30, DEFAULT_DUE_SOON_THRESHOLDS);
     const changes = changesSinceLastLook(before, after, later)!;
 
     expect(changes.newReferralIds).toEqual(["RF-NEW"]);
@@ -81,7 +82,7 @@ describe("what changed since you last looked", () => {
 
   it("counts a delay as new when a movement enters a delay group it was not in", () => {
     const world = seededWorld();
-    const after = takeLastLookSnapshot(world, NOW);
+    const after = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const [firstKey] = after.delayKeys;
     expect(firstKey).toBeDefined();
     const before = { ...after, delayKeys: after.delayKeys.filter((key) => key !== firstKey) };
@@ -93,14 +94,14 @@ describe("what changed since you last looked", () => {
 
   it("does not report fewer ready beds as beds freed", () => {
     const world = seededWorld();
-    const after = takeLastLookSnapshot(world, NOW);
+    const after = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     const unitId = Object.keys(after.readyByUnit)[0]!;
     const before = { ...after, readyByUnit: { ...after.readyByUnit, [unitId]: after.readyByUnit[unitId]! + 2 } };
     expect(changesSinceLastLook(before, after, world)!.bedsFreed).toEqual([]);
   });
 
   it("stores ids, counts and one instant only, and rejects anything malformed", () => {
-    const snapshot = takeLastLookSnapshot(seededWorld(), NOW);
+    const snapshot = takeLastLookSnapshot(seededWorld(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(Object.keys(snapshot).sort()).toEqual(
       [
         "at",

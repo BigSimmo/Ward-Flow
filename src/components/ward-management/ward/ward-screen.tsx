@@ -58,7 +58,6 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import {
   calendarDateOf,
-  currentDueSoonThresholds,
   dayOf,
   formatInstant,
   formatInstantWithDay,
@@ -79,7 +78,11 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -323,6 +326,7 @@ const unavailablePatientIdentity = (): ResolvedPatientInfo => ({
 });
 
 function WardOverviewScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
+  const thresholds = useDueSoonThresholds();
   const {
     movements,
     resolvePatientIdentity = unavailablePatientIdentity,
@@ -340,7 +344,24 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dayZero,
     wardReferralInbox,
     patients,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "resolvePatientIdentity",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "refreshRequests",
+    "dispatch",
+    "recordWardDeparture",
+    "rejections",
+    "admissions",
+    "notices",
+    "morningRollupConfirmations",
+    "configuration",
+    "dayZero",
+    "wardReferralInbox",
+    "patients",
+  );
   const now = useWardFlowClock();
 
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
@@ -1206,7 +1227,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         const remaining = minutesUntil(dueAt, now);
         alerts.push({
           key: `form-${movement.id}`,
-          tone: remaining <= currentDueSoonThresholds().urgentMinutes ? "critical" : "warning",
+          tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
           title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
           countdown: remaining < 0 ? "Due time has passed" : formatRemaining(remaining),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.

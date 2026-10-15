@@ -238,7 +238,7 @@ function buildCapacityRollup(units: Unit[], breakdowns: CapacityBreakdown[]): Ca
  * problem instead of surfacing it.
  */
 export function serviceRollup(
-  sites: Site[],
+  sites: readonly Site[],
   units: Unit[],
   releases: BedRelease[],
   leave: LeaveBed[],

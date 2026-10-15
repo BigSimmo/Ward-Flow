@@ -54,6 +54,7 @@ export const taskItems = rememberLastCall(deriveTaskItems, (source: TaskSource, 
   source.supportNotifications,
   source.plannedAdmissions,
   source.leaveBeds,
+  source.stuckHandoverMinutes,
   now,
 ]);
 

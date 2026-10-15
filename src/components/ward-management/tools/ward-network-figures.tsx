@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useDueSoonThresholds, useWardFlow, useWardFlowClock, useWardNetwork } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
@@ -24,21 +24,27 @@ const root = "/mockups/ward-flow";
 export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {}) {
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlow();
   const now = useWardFlowClock();
+  const thresholds = useDueSoonThresholds();
+  const network = useWardNetwork();
   const [category, setCategory] = useState("all");
   const capacity = units.map((unit) => capacityBreakdown(unit, bedReleases, leaveBeds, now));
   const total = units.reduce((sum, unit) => sum + unit.beds, 0);
   const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds);
   const available = capacity.reduce((sum, value) => sum + value.availableNow, 0);
   const open = movements.filter(isOpen);
-  const deadlines = standingFigures({
-    units,
-    admissions,
-    movements,
-    bedReleases,
-    leaveBeds,
-    now,
-    chromeRole: "coordinator",
-  })
+  const deadlines = standingFigures(
+    {
+      units,
+      admissions,
+      movements,
+      bedReleases,
+      leaveBeds,
+      now,
+      chromeRole: "coordinator",
+    },
+    thresholds,
+    network,
+  )
     .filter((figure) => ["passed", "within-hour", "longest"].includes(figure.key))
     .map((figure) => (figure.key === "longest" ? longestWait(open, now) : figure));
   const groups = [

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { clockState } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -70,7 +70,7 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
   it("fixture sanity: WF-014's due time is genuinely in the past once the clock is advanced", () => {
     const advancedNow = NOW_ANCHOR + ADVANCE_MINUTES;
     expect(
-      clockState(WF_014_DUE_AT, advancedNow),
+      clockState(WF_014_DUE_AT, advancedNow, DEFAULT_DUE_SOON_THRESHOLDS),
       "the advance no longer crosses WF-014's own due time — this scenario proves nothing",
     ).toBe("breached");
   });

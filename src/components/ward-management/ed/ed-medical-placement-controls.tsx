@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 import styles from "./ed.module.css";
 
@@ -15,7 +15,12 @@ export function EdMedicalPlacementControls({
   movementId: string;
   actingPlaceId: string;
 }) {
-  const { movements, referrals, rejections, dispatch } = useWardFlow();
+  const { movements, referrals, rejections, dispatch } = useWardFlowSelect(
+    "movements",
+    "referrals",
+    "rejections",
+    "dispatch",
+  );
   const now = useWardFlowClock();
   const movement = movements.find((record) => record.id === movementId);
   const clearance = movement ? recordedMovementMedicalClearance(movement, referrals) : undefined;

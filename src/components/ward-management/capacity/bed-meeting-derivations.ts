@@ -3,7 +3,7 @@ import { delayGroups, type DelayCause } from "@/components/ward-management/delay
 import { edOpenSummaries, elapsedOpenMinutes } from "@/components/ward-management/ed/ed-home-derivations";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -112,6 +112,8 @@ export type BedMeetingInput = {
   admissions: Admission[];
   leaveBeds: LeaveBed[];
   now: Instant;
+  /** The due-time warnings Settings sets (`useDueSoonThresholds`). */
+  thresholds: DueSoonThresholds;
   /** The service scope chosen on Capacity; `null` is all services. */
   service: HealthService | null;
   /** Resolves a movement to the patient's display name — the screen's own resolver. */
@@ -124,7 +126,7 @@ function byWaitThenId<T extends { waitMinutes: number; id: string }>(a: T, b: T)
 }
 
 export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
-  const { units, movements, bedReleases, admissions, leaveBeds, now, service, nameOf } = input;
+  const { units, movements, bedReleases, admissions, leaveBeds, now, thresholds, service, nameOf } = input;
 
   const scopedUnits = service === null ? units : units.filter((unit) => unitHealthService(unit) === service);
   const scopedUnitIds = new Set(scopedUnits.map((unit) => unit.id));
@@ -215,7 +217,7 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
   };
 
   // Delays — the Delays screen's own causes, worst first.
-  const delayed = delayGroups(scopedMovements.filter(isOpen), units, now);
+  const delayed = delayGroups(scopedMovements.filter(isOpen), units, now, thresholds);
   const delayPeople = delayed
     .flatMap((group) =>
       group.movements.map((movement) => ({

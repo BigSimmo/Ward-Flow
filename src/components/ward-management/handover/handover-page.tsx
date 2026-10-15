@@ -32,7 +32,12 @@ import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-manag
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+  isClockBreached,
+} from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -40,7 +45,7 @@ import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-rol
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { HEALTH_SERVICES, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -49,7 +54,6 @@ import { allEmergencyDepartments, edById } from "@/components/ward-management/wa
 import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { referralForMovement } from "@/components/ward-management/ward-derivations";
-import { clockState } from "@/components/ward-management/ward-clock";
 import {
   Button,
   Card,
@@ -223,7 +227,7 @@ function recordHandoverSignOff(
 export function movementIsUrgent(movement: Movement, now: Instant): boolean {
   if (movement.flaggedUrgent) return true;
   const dueAt = movement.legalForm?.dueAt;
-  return dueAt !== undefined && clockState(dueAt, now) === "breached";
+  return dueAt !== undefined && isClockBreached(dueAt, now);
 }
 
 /** THE WHOLE OF CONDITION 3, AS ONE FUNCTION */
@@ -361,7 +365,20 @@ export function HandoverPage() {
     rejections,
     configuration,
     inboxSnoozes,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "admissions",
+    "bedReleases",
+    "dispatch",
+    "dayZero",
+    "handoverSignOffs",
+    "rejections",
+    "configuration",
+    "inboxSnoozes",
+  );
   const now = useWardFlowClock();
   const longStayOn = useWardFeatureFlag("top25-long-stay-dossier");
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);

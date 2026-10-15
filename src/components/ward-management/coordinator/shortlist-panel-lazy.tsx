@@ -13,7 +13,18 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadShortlistPanel = () => import("./shortlist-panel");
 
-export const ShortlistPanel = dynamic(() => loadShortlistPanel().then((m) => m.ShortlistPanel));
-export const ReferralPlacementPanel = dynamic(() => loadShortlistPanel().then((m) => m.ReferralPlacementPanel));
+/*
+ * `loading` gives each panel its own Suspense boundary. Without one, `next/dynamic` adds none, so
+ * an update that lands before the code arrives suspends the nearest boundary above, which is the
+ * whole route: Home blanked for a moment about two seconds after load. Now only the panel waits.
+ */
+const panelPending = () => null;
+
+export const ShortlistPanel = dynamic(() => loadShortlistPanel().then((m) => m.ShortlistPanel), {
+  loading: panelPending,
+});
+export const ReferralPlacementPanel = dynamic(() => loadShortlistPanel().then((m) => m.ReferralPlacementPanel), {
+  loading: panelPending,
+});
 
 preloadWhenIdle(loadShortlistPanel);
