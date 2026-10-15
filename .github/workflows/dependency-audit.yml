@@ -1,0 +1,63 @@
+name: Ward Flow dependency audit
+
+# Advisory intelligence changes even when the lockfiles do not. This independent workflow
+# reports on main nightly (02:30 AWST); it does not change PR or release-gate policy.
+on:
+  schedule:
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Ward Flow dependency audit (${{ matrix.label }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - directory: "."
+            label: frontend
+          - directory: "backend/ward-flow"
+            label: backend
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    steps:
+      - name: Check out the locked source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the supported Node version
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.15.0"
+      # npm audit reads the lockfile; no dependency install or lifecycle scripts are needed.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      # Keep development-tool findings visible without making a known upstream-blocked
+      # tooling advisory a production release gate. See docs/dependency-security.md.
+      - name: Report all dependency advisories
+        id: full-audit
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          set +e
+          npm audit --json > "$RUNNER_TEMP/dependency-audit.json"
+          audit_status=$?
+          cat "$RUNNER_TEMP/dependency-audit.json"
+          exit "$audit_status"
+      - name: Flag the full audit for review
+        if: ${{ !cancelled() && steps.full-audit.outcome == 'failure' }}
+        run: echo "::warning::The full dependency audit needs review (including development tooling or audit-service errors). See the retained JSON report; production high/critical findings fail the production audit step."
+      - name: Retain the full advisory report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ward-dependency-audit-${{ matrix.label }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/dependency-audit.json
+          if-no-files-found: error
+          retention-days: 7

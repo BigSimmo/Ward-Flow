@@ -148,7 +148,7 @@ jobs:
         working-directory: backend/ward-flow
         env:
           WARD_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/wardflow_test
-        run: npm run build:engine && npm test
+        run: npm run build:engine && npm run typecheck && npm test
       # Prettier and ESLint (errors) on the PR's changed files, plus the test-deletion guard.
       # Seconds, and pre-existing issues in untouched files never block the PR.
       - name: Check changed files
