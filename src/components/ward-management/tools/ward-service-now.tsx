@@ -6,6 +6,8 @@ import { StatusGlyph } from "@/components/wf";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
+import { isOpen } from "../ward-derivations";
+import { longestWait } from "./ward-network-figures";
 import styles from "./ward-tools-sheet.module.css";
 
 /** The standing figures a coordinator scans first, in this order. Only the two legal ones flag. */
@@ -31,7 +33,9 @@ export function WardServiceNow() {
       now,
       chromeRole: "coordinator",
     });
-    return GLANCE_KEYS.flatMap((key) => all.filter((figure) => figure.key === key));
+    return GLANCE_KEYS.flatMap((key) =>
+      key === "longest" ? [longestWait(movements.filter(isOpen), now)] : all.filter((figure) => figure.key === key),
+    );
   }, [units, admissions, movements, bedReleases, leaveBeds, now]);
 
   return (
@@ -45,8 +49,7 @@ export function WardServiceNow() {
                 {figure.flagged ? <StatusGlyph tone={figure.key === "passed" ? "danger" : "warning"} size={8} /> : null}
                 {figure.value}
               </span>
-              {/* The longest wait's sub is a movement id, which the glance never shows. */}
-              {figure.sub && figure.key !== "longest" ? <small>{figure.sub}</small> : null}
+              {figure.sub ? <small>{figure.sub}</small> : null}
             </dd>
           </div>
         ))}

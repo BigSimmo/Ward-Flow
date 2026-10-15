@@ -6,7 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
-import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
+import { occupiedBeds } from "../statistics/statistics-occupancy";
 import { dayOf, formatInstant, minutesUntil, splitDuration, type Instant } from "../ward-clock";
 import type { Movement } from "../ward-model";
 import { isOpen } from "../ward-derivations";
@@ -52,8 +52,7 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
         {
           label: "Occupied",
           value: String(occupied.occupied),
-          // Occupied + Pulled, the one occupancy figure every other page prints (L1, 12 Oct 2026).
-          sub: total ? `${occupancyPercent(occupied)}% occupancy` : "—",
+          sub: total ? `${Math.round((occupied.occupied / total) * 100)}% occupancy` : "—",
         },
         {
           label: "Ready",
@@ -201,7 +200,7 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
  * the movement's internal reference and the word "waiting", which cut the label off in this grid
  * (Tools polish, Josh approved 15 Oct 2026).
  */
-function longestWait(open: readonly Movement[], now: Instant) {
+export function longestWait(open: readonly Movement[], now: Instant) {
   const worst = open.reduce<Movement | undefined>(
     (found, movement) => (found === undefined || movement.openedAt < found.openedAt ? movement : found),
     undefined,
