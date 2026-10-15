@@ -892,7 +892,19 @@ export function WardGlobalSearch({
     }
   }
 
-  function select(href: string) {
+  /**
+   * Leaving the page can unmount a form with unsaved fields. Ask the composed leave guard first
+   * (it prompts once if ANY mounted guard is dirty) and stay put when the answer is no.
+   */
+  function confirmLeave(): boolean {
+    const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
+      .__wardFlowConfirmNavigation;
+    return !confirmNavigation || confirmNavigation();
+  }
+
+  /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
+  function select(href: string, confirmed = false) {
+    if (!confirmed && !confirmLeave()) return;
     remember(href);
     close();
     if (onNavigate) onNavigate(href);
@@ -915,7 +927,8 @@ export function WardGlobalSearch({
       return;
     }
     event.preventDefault();
-    select(href);
+    // A real anchor click was already confirmed by the dirty-state guard's own click handler.
+    select(href, true);
   }
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
@@ -1228,9 +1241,11 @@ export function WardGlobalSearch({
                     disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-coordinator"
                     onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
                       setDeskRole("coordinator", "/mockups/ward-flow");
                       dispatchPersonaSyncForRole("coordinator");
-                      select("/mockups/ward-flow");
+                      select("/mockups/ward-flow", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to Coordinator desk</span>
@@ -1242,9 +1257,11 @@ export function WardGlobalSearch({
                     disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-ward"
                     onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
                       setDeskRole("ward", "/mockups/ward-flow/wards");
                       dispatchPersonaSyncForRole("ward");
-                      select("/mockups/ward-flow/wards");
+                      select("/mockups/ward-flow/wards", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to Ward desk</span>
@@ -1256,9 +1273,11 @@ export function WardGlobalSearch({
                     disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-ed"
                     onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
                       setDeskRole("ed", "/mockups/ward-flow/ed");
                       dispatchPersonaSyncForRole("ed");
-                      select("/mockups/ward-flow/ed");
+                      select("/mockups/ward-flow/ed", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to ED desk</span>
@@ -1270,9 +1289,11 @@ export function WardGlobalSearch({
                     disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-desk-officer"
                     onClick={() => {
+                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
+                      if (!confirmLeave()) return;
                       setDeskRole("officer", "/mockups/ward-flow/transport/officer");
                       dispatchPersonaSyncForRole("officer");
-                      select("/mockups/ward-flow/transport/officer");
+                      select("/mockups/ward-flow/transport/officer", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to Transport desk</span>
