@@ -69,12 +69,10 @@ function phoneMediaBlocks(source: string): string[] {
  *
  * `morning/morning.module.css` left this list on 2026-09-17 (item 41, owner-approved): unlike the
  * others, which stayed on disk with a redirected or retired owner, the whole `morning/` component
- * directory was deleted outright, so the estate scan below no longer finds the file at all. */
-const DORMANT_FIXED_PHONE_RESERVE_STYLES = [
-  "escalation/escalation.module.css",
-  "tracker/live-tracker.module.css",
-  "ward-chrome-header.module.css",
-];
+ * directory was deleted outright, so the estate scan below no longer finds the file at all.
+ * `escalation/escalation.module.css` and `tracker/live-tracker.module.css` left the same way on
+ * 15 Oct 2026, deleted with their unreachable components. */
+const DORMANT_FIXED_PHONE_RESERVE_STYLES = ["ward-chrome-header.module.css"];
 
 describe("Ward Flow sidebar — phone contract", () => {
   it("finds the shell stylesheets it is about to check (sanity check on the scan)", () => {

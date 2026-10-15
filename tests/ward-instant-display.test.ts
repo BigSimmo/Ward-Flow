@@ -132,7 +132,6 @@ describe("nothing renders a bare clock face unless it is entitled to assert toda
       // Governance no longer renders the change-audit history on this screen. The remaining
       // clock in ward-management-modes.tsx is formatInstant(now), which is today by definition.
       "coordinator/shortlist-panel.tsx",
-      "escalation/escalation-board.tsx",
       "ward/ward-screen.tsx",
     ];
     for (const file of swept) {

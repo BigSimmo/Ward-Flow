@@ -167,7 +167,7 @@ import { referralState } from "@/components/ward-management/ward-referrals";
  * rather than aliased to it. An alias would mean a field added to the model's ward arm arrives
  * here automatically; a separate declaration means somebody has to decide.
  */
-export type WardScopedDestination = {
+type WardScopedDestination = {
   kind: "psychiatric_ward";
   sex: RecordedSex;
   /**
@@ -261,7 +261,7 @@ export type WardScopedReferral = {
  * Two types, no converter — see this module's header on why a function both a ward screen and a
  * community screen reach is the FD-23 exemption arriving by the front door.
  */
-export type CommunityScopedDestination = {
+type CommunityScopedDestination = {
   kind: "community_team";
   teamName: string;
 };
@@ -371,7 +371,7 @@ export type CommunityScopedReferral = {
  * `purpose`. A seat that could not see why it was asked would answer a medical notification with a
  * psychiatric-review affordance — the exact confusion `REFERRAL_PURPOSES` exists to prevent.
  */
-export type EdScopedDestination = {
+type EdScopedDestination = {
   kind: "emergency_department";
   edId: string;
   purpose: ReferralPurpose;

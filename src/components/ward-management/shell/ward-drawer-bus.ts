@@ -49,7 +49,7 @@ export function subscribeWardDrawerClose(onClose: () => void) {
 const WARD_MENU_EVENT = "ward-flow-open-menu";
 
 /** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the shell keys off it. */
-export const PHONE_QUERY = "(max-width: 48rem)";
+const PHONE_QUERY = "(max-width: 48rem)";
 
 /** Read once, outside React, so the phone menu and the rail's sheet never both answer Menu. */
 export function isPhoneViewport(): boolean {
