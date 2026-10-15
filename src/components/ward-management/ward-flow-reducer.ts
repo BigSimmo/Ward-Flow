@@ -191,7 +191,7 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { GENDERS } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, GENDERS } from "@/components/ward-management/ward-patients";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
 import {
@@ -1502,6 +1502,20 @@ export function dischargeMovement(state: WardFlowState, admission: Admission): M
         movement.admissionId === undefined &&
         movement.closure === undefined,
     )
+  );
+}
+
+/** The single legal-status lookup used by both the ward card and the command reducer. */
+export function admissionCriteriaEligibility(
+  state: Pick<WardFlowState, "movements" | "patients">,
+  admission: Admission,
+) {
+  const movement = dischargeMovement(state, admission);
+  const patient = uniqueRecord(state.patients, admission.patientId);
+  return criteriaEligibility(
+    patient?.legalStatus,
+    movement?.legalStatus,
+    activeCommunityTreatmentOrder(patient) !== undefined,
   );
 }
 
@@ -6709,9 +6723,10 @@ export function reduceClinicalEvent(
       }
       if (admission.state !== "occupied")
         return reject(state, event, "Discharge criteria are for a patient on the ward.");
-      const movement = dischargeMovement(state, admission);
-      const patient = uniqueRecord(state.patients, admission.patientId);
-      const eligibility = criteriaEligibility(patient?.legalStatus, movement?.legalStatus);
+      if (finiteInstant(event.now) === null || event.now < NOW_ANCHOR + state.clockOffsetMinutes) {
+        return reject(state, event, "Discharge criteria review time is invalid or before the ward clock.");
+      }
+      const eligibility = admissionCriteriaEligibility(state, admission);
       const next = nextDischargeCriteria(admission.dischargeCriteria, event, eligibility, event.now);
       if ("refusal" in next) return reject(state, event, next.refusal);
       return {

@@ -85,7 +85,9 @@ export type DischargeCriteriaChange = {
 export function criteriaEligibility(
   patientLegalStatus: string | undefined,
   movementLegalStatus: string | undefined,
+  ctoInForce = false,
 ): CriteriaEligibility {
+  if (ctoInForce) return "not_recorded";
   const patientStatus = patientLegalStatus?.trim();
   const recordInvoluntary =
     patientStatus !== undefined &&
@@ -140,7 +142,11 @@ export function nextDischargeCriteria(
       setAt: change.setByTreatingPsychiatrist || !current ? now : current.setAt,
       items: criteria.map((criterion) => ({
         criterion,
-        metAt: change.met.includes(criterion) ? (metBefore.get(criterion) ?? now) : null,
+        metAt: change.setByTreatingPsychiatrist
+          ? null
+          : change.met.includes(criterion)
+            ? (metBefore.get(criterion) ?? now)
+            : null,
       })),
     },
   };

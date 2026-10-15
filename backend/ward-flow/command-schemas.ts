@@ -107,6 +107,14 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     expectedDischargeAt: instant,
     actingUnitId: id.optional(),
   }),
+  SET_DISCHARGE_CRITERIA: z.looseObject({
+    admissionId: id,
+    now: instant,
+    criteria: z.array(z.unknown()).nullable(),
+    met: z.array(z.unknown()),
+    setByTreatingPsychiatrist: z.boolean(),
+    actingUnitId: id.optional(),
+  }),
   REVIEW_AUDIT_EVENT: z.looseObject({
     eventId: id,
     expectedGeneration: count,
