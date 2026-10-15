@@ -1,7 +1,7 @@
 import { BellRing, type LucideIcon } from "lucide-react";
 
 import type { Admission } from "./ward-admissions";
-import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
+import { MINUTES_PER_DAY, minuteOfDayFromClockText, type Instant } from "./ward-clock";
 import type { WardFlowRole } from "./ward-flow-roles";
 import { INBOX_CATEGORIES, type InboxItemKind } from "./ward-inbox-reducer";
 import { SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES } from "./ward-operational-defaults";
@@ -191,14 +191,14 @@ export function supportNotificationSubjects(records: NotificationRecords): Suppo
 }
 
 /**
- * The instant for a typed `HH:MM` on the day `daysAgo` before `now`'s day (0 today, 1 yesterday,
- * 2 the day before). Null for anything that is not a 24-hour clock time or a whole day 0 to 2. May
- * be later than `now` (today, a time still to come); the caller says so rather than moving the day.
+ * The instant for a typed `HH:MM` (or digits only, "1405") on the day `daysAgo` before `now`'s day
+ * (0 today, 1 yesterday, 2 the day before). Null for anything that is not a 24-hour clock time or a
+ * whole day 0 to 2. May be later than `now` (today, a time still to come); the caller says so
+ * rather than moving the day.
  */
 export function clockTextOnDay(text: string, daysAgo: number, now: Instant): Instant | null {
-  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(text.trim());
-  if (!match || !Number.isInteger(daysAgo) || daysAgo < 0 || daysAgo > 2) return null;
-  const typed = Number(match[1]) * 60 + Number(match[2]);
+  const typed = minuteOfDayFromClockText(text);
+  if (typed === undefined || !Number.isInteger(daysAgo) || daysAgo < 0 || daysAgo > 2) return null;
   const nowOfDay = ((Math.floor(now) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   return (Math.floor(now) - nowOfDay - daysAgo * MINUTES_PER_DAY + typed) as Instant;
 }

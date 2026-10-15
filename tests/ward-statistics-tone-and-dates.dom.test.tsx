@@ -29,7 +29,7 @@ import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
  * stats-9: one tone rule for a long ED wait (red at the long-wait line, amber before) on Weekly as
  * on the ED page, and the week's figure says when it stops counting.
  * stats-10 (Josh, 13 Oct 2026): no service colour dot on Statistics phone rows.
- * stats-12: a planned discharge date already passed is marked, and counted beside "Due out, 7d".
+ * stats-12: a planned discharge date already passed is marked, and counted beside "Due out within 7 days".
  */
 
 function asPhone() {

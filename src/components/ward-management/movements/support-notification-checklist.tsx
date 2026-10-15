@@ -129,7 +129,7 @@ export function SupportNotificationChecklist({
     if (!subject) return;
     const contactedAt = clockTextOnDay(time, Number(day), now);
     if (outcome === "told" && contactedAt === null) {
-      setTimeError("Enter the time as HH:MM, for example 14:05");
+      setTimeError("Enter the time as HH:MM, for example 14:05 or 1405");
       return;
     }
     if (outcome === "told" && contactedAt !== null && contactedAt > now) {

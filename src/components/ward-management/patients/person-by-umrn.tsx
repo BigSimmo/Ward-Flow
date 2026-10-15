@@ -3,7 +3,7 @@
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 
 /**
  * shell-6 (13 Oct 2026): `/people/UM100023` used to say a real UMRN "is not a person's record

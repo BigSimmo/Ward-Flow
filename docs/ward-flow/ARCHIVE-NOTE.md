@@ -37,6 +37,24 @@ git checkout 26d09877cf0ca5362426090d5356206e6c90bccd -- docs/archive/ward-flow-
 
 Links to removed files now read as plain text marked "removed in the 15 Oct 2026 docs trim".
 
+### Second pass, same day: old drawings notes and finished plans
+
+A second trim removed 54 more files that nothing in the app, tests or scripts reads:
+
+- `docs/ward-flow/mockups/reference/` (the Gemini restyle copies of 15 September, never built from)
+- the five dated handover and status notes at the top of `docs/ward-flow/mockups/`
+- four dated notes in `docs/ward-flow/mockups/third-edition-kit/` (`REVIEW-FINDINGS.json`, `HANDOVER-MOCKUPS-CHAT-2026-09-10.md`, `MERGE-BRIEF.md`, `RESUME-2026-09-09.md`)
+- 24 finished plans and specs in `docs/superpowers/` (every one the dead-code check already treats as history)
+
+Kept on purpose: every drawing listed in `mockups/MANIFEST.json` (the screen verification check reads it), the kit's checker scripts, fonts, inputs and shell files, `AGENT-BRIEF.md`, every plan with unticked tasks (the dead-code check still reads those) and the four specs the code cites.
+
+These files are kept in commit `5afce0b` (`5afce0b62413f4e182cfbefc7966e03b97126422`), the last `main` commit before this pass. Read or restore them the same way, for example:
+
+```sh
+git fetch origin 5afce0b62413f4e182cfbefc7966e03b97126422
+git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- docs/ward-flow/mockups/reference
+```
+
 ## Documentation system
 
 Process / freshness / tip lock: [../DOCS-SYSTEM.md](../DOCS-SYSTEM.md).

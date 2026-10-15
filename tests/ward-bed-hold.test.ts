@@ -74,7 +74,7 @@ describe("Movement detail (A4-1)", () => {
     const status = buildPatientStatus("held", ctx(NOW + 27));
     const bed = status.cells.find((cell) => cell.key === "bed")!;
     expect(bed.tone).toBe("warning");
-    expect(bed.sub).toBe("Pulled, 27m left");
+    expect(bed.sub).toBe("Bed held, 27m left");
     expect(status.tone).not.toBe("danger");
   });
 });

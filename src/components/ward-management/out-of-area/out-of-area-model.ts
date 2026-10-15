@@ -3,6 +3,7 @@ import {
   dayOf,
   formatInstantWithDay,
   minuteOfDay,
+  minuteOfDayFromClockText,
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
@@ -116,17 +117,9 @@ export const BLANK_REPAT_DRAFT: RepatDraft = {
   estimatedDay: "today",
 };
 
-/** Same HH:MM parser the ED booking popup uses, kept local so this screen does not import from ed-screen. */
+/** Same HH:MM (or digits only, "0930") parser the ED booking popup uses: `minuteOfDayFromClockText`. */
 export function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
+  return minuteOfDayFromClockText(value);
 }
 
 export function instantFromEstimatedTimeInputs(

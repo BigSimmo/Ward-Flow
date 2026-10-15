@@ -1516,3 +1516,11 @@
     display: none;
   }
 }
+
+/* Phone review F-24: one plain line for the hero's "Pulled" and "Stale counts". */
+.phoneKey {
+  margin: 0 var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}

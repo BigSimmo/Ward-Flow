@@ -20,6 +20,7 @@ import {
   PHONE_PUSH_SCOPE,
   PHONE_PUSH_WORKER_URL,
   PhonePushAccessContext,
+  iosDevice,
   phonePushRow,
   releasePhonePush,
   usePhonePush,
@@ -191,6 +192,37 @@ describe("usePhonePush", () => {
       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
     );
     expect(hook({ kind: "connected", api: fakeApi() }).result.current[0]).toBe("install");
+  });
+
+  // F-29: iPadOS Safari reports itself as a Mac, so a touch screen marks it as an iPad.
+  const MAC_SAFARI =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
+  it("on an iPad browser tab (which reports a Mac), says to add Ward Flow to the Home Screen", () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_SAFARI);
+    Object.defineProperty(navigator, "maxTouchPoints", { value: 5, configurable: true });
+    try {
+      expect(iosDevice()).toBe(true);
+      expect(hook({ kind: "connected", api: fakeApi() }).result.current[0]).toBe("install");
+    } finally {
+      Reflect.deleteProperty(navigator, "maxTouchPoints");
+    }
+  });
+
+  it("a Mac without a touch screen is not an iPad", () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_SAFARI);
+    Object.defineProperty(navigator, "maxTouchPoints", { value: 0, configurable: true });
+    try {
+      expect(iosDevice()).toBe(false);
+      expect(hook({ kind: "connected", api: fakeApi() }).result.current[0]).toBe("unsupported");
+    } finally {
+      Reflect.deleteProperty(navigator, "maxTouchPoints");
+    }
+  });
+
+  // F-11: a trailing slash left Home (/mockups/ward-flow) outside the worker's scope.
+  it("registers the worker with a scope that covers Ward Flow Home", () => {
+    expect(PHONE_PUSH_SCOPE).toBe("/mockups/ward-flow");
+    expect(PHONE_PUSH_WORKER_URL).toBe("/ward-flow-push-sw.js");
   });
 
   it("says when the server is not set up for phone alerts", async () => {
@@ -494,16 +526,25 @@ describe("shared connection phone alerts", () => {
 
 /* The service worker ------------------------------------------------------------------------ */
 
-function loadWorker(openWindows: string[]) {
+function loadWorker(openWindows: string[], { controlled = true } = {}) {
   const listeners: Record<string, (event: unknown) => void> = {};
   const focused: string[] = [];
   const opened: string[] = [];
   const shown: unknown[] = [];
+  const posted: unknown[] = [];
+  const matchAllOptions: unknown[] = [];
   const windows = openWindows.map((url) => ({
     url,
     focus: async () => {
       focused.push(url);
-      return { navigate: async (target: string) => opened.push(`navigate ${target}`) };
+      return {
+        // navigate() rejects for a window the worker does not control.
+        navigate: async (target: string) => {
+          if (!controlled) throw new TypeError("Not controlled");
+          opened.push(`navigate ${target}`);
+        },
+        postMessage: (message: unknown) => posted.push(message),
+      };
     },
   }));
   const self = {
@@ -514,7 +555,10 @@ function loadWorker(openWindows: string[]) {
     skipWaiting: () => {},
     clients: {
       claim: async () => {},
-      matchAll: async () => windows,
+      matchAll: async (options: unknown) => {
+        matchAllOptions.push(options);
+        return windows;
+      },
       openWindow: async (url: string) => opened.push(`open ${url}`),
     },
     registration: { showNotification: async (title: string, options: unknown) => shown.push({ title, options }) },
@@ -525,7 +569,7 @@ function loadWorker(openWindows: string[]) {
     listeners[type]({ ...event, waitUntil: (promise: Promise<unknown>) => (work = promise) });
     await work;
   }
-  return { fire, focused, opened, shown };
+  return { fire, focused, opened, shown, posted, matchAllOptions };
 }
 
 describe("phone alert service worker", () => {
@@ -543,6 +587,16 @@ describe("phone alert service worker", () => {
     await worker.fire("notificationclick", click("/mockups/ward-flow/alerts"));
     expect(worker.focused).toEqual(["https://ward.example/mockups/ward-flow/beds"]);
     expect(worker.opened).toEqual(["navigate /mockups/ward-flow/alerts"]);
+  });
+
+  // F-11: Home open in a window the worker does not control yet is reused, not doubled.
+  it("reuses an uncontrolled Ward Flow window: focuses it and asks the page to open the alert", async () => {
+    const worker = loadWorker(["https://ward.example/mockups/ward-flow"], { controlled: false });
+    await worker.fire("notificationclick", click("/mockups/ward-flow/alerts"));
+    expect(worker.matchAllOptions).toEqual([{ type: "window", includeUncontrolled: true }]);
+    expect(worker.focused).toEqual(["https://ward.example/mockups/ward-flow"]);
+    expect(worker.opened).toEqual([]);
+    expect(worker.posted).toEqual([{ type: "ward-flow-open", url: "/mockups/ward-flow/alerts" }]);
   });
 
   it("shows the server's words, and links only inside Ward Flow", async () => {

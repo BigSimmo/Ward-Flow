@@ -1244,3 +1244,20 @@
   position: relative;
   z-index: 1;
 }
+
+/* Phone review F-25: the amber dot's key at the foot of the phone list. */
+.phoneDotKey {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phoneDotKey > svg {
+  flex: none;
+}

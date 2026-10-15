@@ -120,6 +120,10 @@ const APPROVED_ROUTE_REFERENCES = new Map([
     'the front page: Ward Flow is the only app left, so "/" redirects to its Coordinator view (Josh, 26 September 2026)',
   ],
   ["src/app/not-found.tsx", "the standalone app's not-found fallback returns visitors to its only product, Ward Flow"],
+  [
+    "src/app/manifest.ts",
+    "the installed app opens Ward Flow directly and its home-screen shortcuts name Ward Flow pages (phone PWA plan, 15 October 2026)",
+  ],
 ]);
 
 const WARD_ROUTE_LITERAL = "mockups/ward-flow";
@@ -312,7 +316,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // default destination.
     // 7 -> 8 on 2026-10-09: the pre-paint theme script read the ward appearance pin on ward routes.
     // 8 -> 7 on 2026-10-10: one theme key for the whole app, so the script no longer names the route.
-    expect(APPROVED_ROUTE_REFERENCES.size).toBe(7);
+    // 7 -> 8 on 2026-10-15: the web app manifest's start_url and shortcuts name Ward Flow pages, so the
+    // installed app opens on Ward Flow rather than following the "/" redirect (phone PWA plan).
+    expect(APPROVED_ROUTE_REFERENCES.size).toBe(8);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);
   });

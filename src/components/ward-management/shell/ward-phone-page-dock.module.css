@@ -50,6 +50,18 @@
     visibility: hidden;
   }
 
+  /* F-07: while the on-screen keyboard is up (set by useMobileKeyboard) the dock steps out of view,
+     and the bars that seat on its edge rest on the keyboard instead. --keyboard-height is 0 where
+     the browser already shrinks the page for the keyboard, so they sit at the foot. */
+  :global(html[data-wf-keyboard="open"]) .pageDock.pageDock {
+    visibility: hidden;
+  }
+
+  :global(html[data-wf-keyboard="open"] body):has(.pageDock) {
+    --wf-dock-clear: var(--keyboard-height, 0px);
+    --wf-dock-top: var(--keyboard-height, 0px);
+  }
+
   /* A swipe that reaches the end of a popup stops there instead of carrying on to the page. */
   :global(body):has(.pageDock) :global([aria-modal="true"]) {
     overscroll-behavior: contain;

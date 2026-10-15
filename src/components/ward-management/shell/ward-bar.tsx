@@ -91,8 +91,7 @@ import {
 import { WardDemoClockPopover, WardDemoControls } from "@/components/ward-management/ward-demo-controls";
 export { WardDemoClockPopover };
 import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
-import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
-import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,

@@ -784,12 +784,31 @@
     border-color: var(--wf-line-2);
   }
 
+  /* The three buttons wrap rather than set a row wider than the phone (F-03): Reset and Register
+     share a line when they fit, and Add patient takes its own full line. */
   .main[data-phone-form="true"] .submitActions {
     flex: 1 1 100%;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .main[data-phone-form="true"] .submitActions > * {
+    max-width: 100%;
   }
 
   .main[data-phone-form="true"] .submitActions > :last-child {
-    flex: 1 1 auto;
+    flex: 1 1 100%;
+  }
+
+  /* The Identity head's badge and note drop under the title instead of pushing the card wide. */
+  .main[data-phone-form="true"] .idHead {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .main[data-phone-form="true"] .idHead > :last-child {
+    flex-wrap: wrap;
+    max-width: 100%;
   }
 }
 

@@ -191,6 +191,8 @@ describe("read-only report screens", () => {
       const pack = lastDowntimePack();
       expect(pack).not.toBeNull();
       expect(printPack.getByTestId("ward-downtime-beds")).toBeTruthy();
+      // F-08: the printout carries the synthetic notice, so paper is never read as real records.
+      expect(printPack.getByTestId("ward-downtime-print-notice").textContent).toMatch(/invented records/u);
       const ed = printPack.getByTestId("ward-downtime-ed");
       expect(within(ed).getAllByRole("row")).toHaveLength(pack!.edQueue.length + 1);
       expect(within(ed).getByRole("columnheader", { name: "Legal status" })).toBeTruthy();

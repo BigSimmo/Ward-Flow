@@ -151,6 +151,17 @@
   border-radius: 2px;
 }
 
+/* F-18: on a touch phone the value link ("Not booked") is 44px tall to a finger. The padding is
+   taken back by the margin, so the line and its neighbours do not move. */
+@media (max-width: 48rem) and (pointer: coarse) {
+  .valueLink {
+    position: relative;
+    z-index: 1;
+    padding-block: 11px;
+    margin-block: -11px;
+  }
+}
+
 .sub {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);

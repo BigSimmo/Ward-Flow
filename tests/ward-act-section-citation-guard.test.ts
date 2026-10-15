@@ -104,6 +104,8 @@ const OWNER_APPROVED_CITATION_FILES = new Set([
  * Named exemption: `docs/ward-flow/mockups/reference/` holds Gemini reference copies that nothing
  * in the product is built from — 53 citation lines live there, left in place deliberately as a
  * historical artefact of what an earlier pass produced, not as a drawing this repository ships.
+ * The 15 October 2026 docs trim removed that folder; the exemption stays so a restore from Git
+ * history does not fail this guard.
  * `docs/ward-flow/mockups/third-edition-kit/` is a sibling directory under the same drawings root
  * and is NOT exempt — it carries build tooling and handover notes for the drawings and is scanned
  * like any other subfolder.

@@ -86,7 +86,7 @@ describe("carer, PSP and MHAS checklist", () => {
     fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "25:00" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save" }));
     expect(screen.getByRole("form", { name: "Record Personal support person" })).toBeInTheDocument();
-    expect(screen.getByText(/Enter the time as HH:MM/)).toBeInTheDocument();
+    expect(screen.getByText(/Enter the time as HH:MM, for example 14:05 or 1405/)).toBeInTheDocument();
   });
 });
 
@@ -98,7 +98,15 @@ describe("clock time on a chosen day", () => {
     expect(clockTextOnDay("11:00", 0, now)).toBe(3 * 1440 + 660);
     expect(clockTextOnDay("11:00", 1, now)).toBe(2 * 1440 + 660);
     expect(clockTextOnDay("23:30", 2, now)).toBe(1 * 1440 + 1410);
-    expect(clockTextOnDay("9:00", 0, now)).toBeNull();
+    expect(clockTextOnDay("9:00", 0, now)).toBe(3 * 1440 + 540);
+    // The iPhone number pad has no ":" key, so digits only reads the same (F-01).
+    expect(clockTextOnDay("0900", 0, now)).toBe(3 * 1440 + 540);
+    expect(clockTextOnDay("2330", 2, now)).toBe(1 * 1440 + 1410);
+    expect(clockTextOnDay("9:0", 0, now)).toBeNull();
+    expect(clockTextOnDay("90", 0, now)).toBeNull();
+    // Three digits could be a dropped digit ("143" for 14:30), so they are refused, not guessed.
+    expect(clockTextOnDay("900", 0, now)).toBeNull();
+    expect(clockTextOnDay("2400", 0, now)).toBeNull();
     expect(clockTextOnDay("24:00", 0, now)).toBeNull();
     expect(clockTextOnDay("09:00", 3, now)).toBeNull();
   });

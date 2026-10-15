@@ -217,7 +217,8 @@ export function StatisticsEdsIndexScreen() {
                     </span>
                   }
                   value={row.waiting}
-                  time={`longest ${waitText(row.longest)}`}
+                  // Phone review F-24: "longest none" read as a wait; an empty ED reads "0 waiting".
+                  time={row.longest === null ? "waiting" : `longest ${waitText(row.longest)}`}
                   href={edStatisticsHref(row.id)}
                 />
               );

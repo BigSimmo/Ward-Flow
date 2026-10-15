@@ -69,6 +69,18 @@
   scroll-padding-top: var(--wf-header-height);
 }
 
+/* F-13: the offline banner's pinned holder keeps its full height. As a shrinkable item of this
+   fixed-height column it was squeezed when the page ran long, and the banner spilled over the page
+   heading (the header bar's own flex-shrink note). A heading scrolled or focused into view also
+   stops below the banner, not under it: 5rem holds its three lines at the narrowest phone. */
+.shellContent > :has(> [data-testid="ward-offline-banner"]) {
+  flex-shrink: 0;
+}
+
+.shellContent:has([data-testid="ward-offline-banner"]) {
+  scroll-padding-top: calc(var(--wf-header-height) + 5rem);
+}
+
 /*
  * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 1000px` BREAKPOINT EXACTLY.** Below
  * it, `WardRail`'s `.rail` sets its own `width: 100%; height: auto` and reflows to a wrapping row
@@ -113,6 +125,10 @@
 
   :global(html):has(.shellRow) {
     scroll-padding-top: var(--wf-header-height);
+  }
+
+  :global(html):has(.shellRow [data-testid="ward-offline-banner"]) {
+    scroll-padding-top: calc(var(--wf-header-height) + 5rem);
   }
 }
 
