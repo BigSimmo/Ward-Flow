@@ -6,6 +6,10 @@ import { migrate } from "./migrate.mjs";
 import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
 import { pushPayload } from "./push.mjs";
 import { RECEIPT_RETENTION_DAYS, pruneReceipts } from "./prune-receipts.mjs";
+import { readFile } from "node:fs/promises";
+import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+import { verifyRuntimeRole } from "./portable-postgres.mjs";
+import { LATEST_MIGRATION } from "./migrations.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -30,7 +34,10 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     const seed = await storeA.read(actorA);
     assert.equal(seed.revision, 1);
     assert.equal(seed.dataMode, "prototype");
-    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 5);
+    assert.equal(
+      (await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version,
+      LATEST_MIGRATION,
+    );
     const { rows: protectedFunctions } = await pool.query(
       "SELECT proname, proconfig FROM pg_proc WHERE oid IN ('ward_flow.protect_audit()'::regprocedure, 'ward_flow.protect_workspace_mode()'::regprocedure) ORDER BY proname",
     );
@@ -670,6 +677,93 @@ test(
       });
     } finally {
       await pool.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: row-level security lets only the runtime role through, and rolls back to 5",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const admin = new Pool({ connectionString: url, max: 2 });
+    const database = `wardflow_rls_${randomUUID().replaceAll("-", "")}`;
+    const target = new URL(url);
+    target.pathname = `/${database}`;
+    // Each pool acts as one role from the start of every connection, as the real logins do.
+    const as = (role) =>
+      new Pool({ connectionString: target.href, max: 2, ...(role && { options: `-c role=${role}` }) });
+    const pools = [];
+    const sql = (name) => readFile(new URL(name, import.meta.url), "utf8");
+    const actor = "11111111-1111-4111-8111-111111111111";
+    const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+    const runtimeOk = (pool) => verifyRuntimeRole(pool, "wardflow_backend", true, "unavailable", "unsafe");
+    await admin.query(`CREATE DATABASE ${database}`);
+    try {
+      const owner = as();
+      const runtime = as("wardflow_backend");
+      pools.push(owner, runtime);
+      await verifyPostgresNamespace(owner);
+      await migrate(owner);
+      await owner.query(await sql("./infra/postgres-runtime-role.sql"));
+      await verifyPostgresNamespace(owner);
+      const { rows: tables } = await owner.query(
+        "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
+      );
+      assert.equal(tables.length, 7);
+      assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
+
+      await runtimeOk(runtime);
+      const store = createWorkspaceStore(runtime, { workspaceId: randomUUID(), engine, demoEvents: true });
+      await store.ready();
+      await store.read(actor);
+      assert.equal((await store.command(actor, randomUUID(), 1, refresh)).status, 200);
+
+      // A role with a grant it should never have still sees and writes nothing.
+      await owner.query("DROP ROLE IF EXISTS wardflow_rls_probe");
+      await owner.query("CREATE ROLE wardflow_rls_probe NOLOGIN");
+      await owner.query(
+        "GRANT USAGE ON SCHEMA ward_flow TO wardflow_rls_probe; GRANT SELECT, INSERT ON ward_flow.workspaces, ward_flow.audit TO wardflow_rls_probe",
+      );
+      const probe = as("wardflow_rls_probe");
+      pools.push(probe);
+      assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.workspaces")).rows[0].n, 0);
+      assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.audit")).rows[0].n, 0);
+      await assert.rejects(
+        probe.query("INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES (gen_random_uuid(), 1, '{}')"),
+        /row-level security/,
+      );
+      await probe.end();
+      pools.pop();
+      await owner.query("REVOKE ALL ON ward_flow.workspaces, ward_flow.audit FROM wardflow_rls_probe");
+      await owner.query("REVOKE ALL ON SCHEMA ward_flow FROM wardflow_rls_probe; DROP ROLE wardflow_rls_probe");
+
+      // The rollback takes the database back to 5 and the same backend keeps working.
+      const rollback = await owner.connect();
+      try {
+        await rollback.query("BEGIN");
+        await rollback.query(await sql("./infra/rollback-006-row-level-security.sql"));
+        await rollback.query("COMMIT");
+      } finally {
+        rollback.release();
+      }
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 5);
+      await verifyPostgresNamespace(owner);
+      await runtimeOk(runtime);
+      await store.ready();
+      assert.equal((await store.command(actor, randomUUID(), 2, refresh)).status, 200);
+
+      // Re-applying 6 works; a policy removed afterwards is refused by both checks.
+      await migrate(owner);
+      await verifyPostgresNamespace(owner);
+      await runtimeOk(runtime);
+      await owner.query("DROP POLICY runtime_only ON ward_flow.audit");
+      await assert.rejects(runtimeOk(runtime), /unsafe/);
+      await assert.rejects(verifyPostgresNamespace(owner), /Unrecognised or unsafe/);
+    } finally {
+      for (const pool of pools) await pool.end();
+      await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
+      await admin.end();
     }
   },
 );

@@ -66,7 +66,12 @@ const CATALOG = `WITH namespace AS (
       OR (t.typtype='b' AND t.typelem IN (SELECT oid FROM pg_catalog.pg_type
         WHERE typtype='c' AND typrelid IN (SELECT oid FROM objects WHERE kind='r'))))) AS unknown_types,
   (SELECT count(*)::integer FROM pg_catalog.pg_rewrite r JOIN objects o ON o.oid=r.ev_class) AS rules,
-  (SELECT count(*)::integer FROM pg_catalog.pg_policy p JOIN objects o ON o.oid=p.polrelid) AS policies,
+  coalesce((SELECT jsonb_agg(to_jsonb(p)) FROM (
+    SELECT o.name AS table_name, p.polname AS name, p.polpermissive AS permissive, p.polcmd AS command,
+      p.polroles::text AS roles, pg_catalog.pg_get_expr(p.polqual, p.polrelid) AS qual,
+      pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid) AS with_check
+    FROM pg_catalog.pg_policy p JOIN objects o ON o.oid=p.polrelid ORDER BY o.name, p.polname LIMIT 65
+  ) p), '[]'::jsonb) AS policies,
   (SELECT count(*)::integer FROM pg_catalog.pg_extension e JOIN namespace n ON n.oid=e.extnamespace) AS extensions`;
 
 function normalise(value) {
@@ -253,7 +258,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
       object.owner !== catalog.owner ||
       ["anon", "authenticated"].includes(object.owner) ||
       object.persistence !== "p" ||
-      object.rls ||
+      object.rls !== (version >= 6 && tables.includes(object.name)) ||
       object.force_rls ||
       object.inherited !== false
     )
@@ -272,6 +277,23 @@ function verifyCatalog(catalog, version, runtimeRole) {
       if (object.kind !== "i" || object.valid !== true || expression(object.definition) !== expression(expected))
         refuse();
     }
+  }
+  // Migration 6: one runtime-only policy per table, nothing else; before it, no policy at all.
+  const policies = version >= 6 ? tables : [];
+  if (catalog.policies.length !== policies.length) refuse();
+  const runtimeOnly = expression("(CURRENT_USER = 'wardflow_backend'::name)");
+  for (const table of policies) {
+    const policy = catalog.policies.find((p) => p.table_name === table);
+    if (
+      !policy ||
+      policy.name !== "runtime_only" ||
+      policy.permissive !== true ||
+      policy.command !== "*" ||
+      policy.roles !== "{0}" ||
+      expression(policy.qual) !== runtimeOnly ||
+      expression(policy.with_check) !== runtimeOnly
+    )
+      refuse();
   }
   const expected = expectedConstraints(version, tables);
   if (catalog.constraints.length !== expected.length) refuse();
@@ -371,9 +393,11 @@ export async function verifyPostgresNamespace(pool, { runtimeRole = "wardflow_ba
     ["sequences", 64],
   ]))
     if (!Array.isArray(catalog[key]) || catalog[key].length > maximum) refuse();
-  for (const key of ["unknown_types", "rules", "policies", "extensions"]) if (catalog[key] !== 0) refuse();
+  if (!Array.isArray(catalog.policies) || catalog.policies.length > 64) refuse();
+  for (const key of ["unknown_types", "rules", "extensions"]) if (catalog[key] !== 0) refuse();
+  // Row-level security is checked against the version below; the owner reads the ledger either way.
   const migrations = catalog.objects.find((object) => object.name === "migrations");
-  if (!migrations || migrations.kind !== "r" || migrations.rls || migrations.force_rls) refuse();
+  if (!migrations || migrations.kind !== "r" || migrations.force_rls) refuse();
   verifyColumns(migrations.columns, columns(tableColumns.migrations));
   let versions;
   try {

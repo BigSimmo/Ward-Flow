@@ -36,9 +36,21 @@ export const MIGRATIONS = Object.freeze([
     file: "005-retention-and-indexes.sql",
     sha256: "60b974d282568a5183d2e855b702c19cbbfe9d59a102a85132267bc15131e2ec",
   },
+  {
+    version: 6,
+    file: "006-row-level-security.sql",
+    sha256: "71b2829ed1661df8ae0be9830f4c467934ad93f6a6959459775c60f9dfe666b5",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
+
+/**
+ * The oldest schema the running backend accepts. Row-level security (6) is applied to a live
+ * database separately, so the backend runs on 5 or 6: it can deploy before that migration, and
+ * keeps running if infra/rollback-006-row-level-security.sql takes the database back to 5.
+ */
+export const MINIMUM_RUNTIME_MIGRATION = 5;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

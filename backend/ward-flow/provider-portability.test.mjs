@@ -160,6 +160,7 @@ const roleFields = [
   "browser_denied",
   "guards_valid",
   "sequence_restricted",
+  "rls_valid",
 ];
 function safeSummary() {
   return {
@@ -178,17 +179,21 @@ function summaryPool(row = safeSummary()) {
   };
 }
 
-test("runtime role verification requires every safeguard and the complete migration 5 ledger", async () => {
+test("runtime role verification requires every safeguard and a complete ledger at migration 5 or 6", async () => {
   const config = { connectionString: databaseUrl(), pushEnabled: false };
   await verifyPortableRuntimeRole(summaryPool(), config);
   await verifySupabaseRuntimeRole(summaryPool(), { pushEnabled: false });
+  // Row-level security (6) is applied live separately, so the backend runs before and after it.
+  await verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions: [1, 2, 3, 4, 5, 6] }), {
+    pushEnabled: false,
+  });
   for (const field of roleFields) {
     for (const value of [false, null, undefined, "true"]) {
       const row = { ...safeSummary(), [field]: value };
       await assert.rejects(verifyPortableRuntimeRole(summaryPool(row), config), /Unsafe or unprepared/);
     }
   }
-  for (const versions of [[], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
+  for (const versions of [[], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 6], [1, 2, 3, 4, 5, 6, 7]])
     await assert.rejects(
       verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions })),
       /Unsafe or unprepared/,
@@ -240,23 +245,20 @@ test("enabled push requires its grants while optional push remains off by config
   );
 });
 
-test("shared readiness refuses a missing migration 5 without applying SQL", async () => {
+test("shared readiness needs migration 5 or 6 and applies no SQL", async () => {
   const calls = [];
-  let prepared = false;
+  let version = null;
   const pool = {
     query: async (sql, args) => {
       calls.push([sql, args]);
-      return { rows: prepared ? [{ version: 5 }] : [] };
+      return { rows: [{ version }] };
     },
   };
   const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine: {} });
-  await assert.rejects(store.ready(), /Shared schema unavailable/);
-  prepared = true;
-  await store.ready();
-  assert.deepEqual(
-    calls,
-    Array.from({ length: 2 }, () => ["SELECT version FROM ward_flow.migrations WHERE version=$1", [5]]),
-  );
+  for (version of [null, 4, 7, "5"]) await assert.rejects(store.ready(), /Shared schema unavailable/);
+  for (version of [5, 6]) await store.ready();
+  assert.equal(calls.length, 6);
+  assert.ok(calls.every(([sql]) => sql === "SELECT max(version) AS version FROM ward_flow.migrations"));
 });
 
 test("migration namespace refusal performs no mutation or administrator checkout", async () => {
