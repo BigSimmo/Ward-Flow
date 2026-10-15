@@ -51,7 +51,7 @@ export const WARD_FEATURE_FLAGS = {
     removeWhen: "Never in a demonstration build. Keep off in production, where there is no demo data to reset.",
   },
   "top25-discharge-prep": {
-    label: "Discharge prep before the date",
+    label: "Discharge prep before expected discharge",
     description:
       "Patients due out within a day show on the ward with their discharge barrier, so the barrier can be set before the day.",
     owner: "Josh",
