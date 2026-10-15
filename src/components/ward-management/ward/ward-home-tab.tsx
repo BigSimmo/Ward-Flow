@@ -1,6 +1,7 @@
 "use client";
 
 import { bedsPendingPreparation, releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/wa
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
+  deriveAfternoonDischarges,
   restrictionNotice,
   eligibilityWarning,
   stageCopy,
@@ -268,7 +270,8 @@ export function WardHomeTab({
   phoneShiftLabel,
 }: WardHomeTabProps) {
   const phoneSheets = phonePanel !== undefined;
-  const { bedReleases, leaveBeds = [] } = useWardFlow();
+  const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlow();
+  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -890,6 +893,27 @@ export function WardHomeTab({
           }
         : undefined,
     });
+  }
+  // Top 25 item 5: each stay due out within the discharge prep window, with its barrier, so the
+  // barrier is recorded before the day. Named by bed, like every discharge row on this list.
+  if (dischargePrepOn) {
+    const dueSoon = deriveAfternoonDischarges(
+      admissions.filter((admission) => admission.unitId === unit.id && admission.state === "occupied"),
+      now,
+    );
+    for (const admission of dueSoon) {
+      const bed = bedByAdmission(admission.id);
+      if (!bed || admission.expectedDischargeAt === null) continue;
+      laterToday.push({
+        key: `prep-${admission.id}`,
+        title: `${bed.bedLabel} due out ${formatInstantWithDay(admission.expectedDischargeAt, now)}`,
+        detail: admission.dischargeBarrier
+          ? `Discharge barrier: ${admission.dischargeBarrier}`
+          : "No discharge barrier recorded",
+        tone: admission.dischargeBarrier ? "warning" : "neutral",
+        action: { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
+      });
+    }
   }
   for (const [id, label, hint, at] of [
     ["drugs", "Controlled drug count", "Tick when the register has been checked.", localChecks.drugs],

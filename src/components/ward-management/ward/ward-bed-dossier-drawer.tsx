@@ -7,7 +7,16 @@ import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
+import {
+  DISCHARGE_BARRIERS,
+  isDischargeBarrier,
+  LEAVING_DESTINATIONS,
+  type DischargeBarrier,
+  type LeavingDestination,
+} from "@/components/ward-management/ward-admissions";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { deriveAfternoonDischarges } from "@/components/ward-management/ward-derivations";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -44,6 +53,8 @@ interface WardBedDossierDrawerProps {
   fullReferralHref?: string;
   /** Item #5a: role-locked notice with 1-click Switch to Ward desk action when not on Ward desk. */
   roleLockNote?: React.ReactNode;
+  /** Top 25 item 5: records the stay's discharge barrier (`SET_DISCHARGE_BARRIER`). Absent when the role cannot. */
+  onSetBarrier?: (admissionId: string, barrier: DischargeBarrier | null) => void;
 }
 
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
@@ -127,9 +138,11 @@ export function WardBedDossierDrawer({
   onRaiseReferral,
   fullReferralHref,
   roleLockNote,
+  onSetBarrier,
 }: WardBedDossierDrawerProps) {
   const { admissions, resolvePatientIdentity } = useWardFlow();
   const now = useWardFlowClock();
+  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
@@ -197,6 +210,47 @@ export function WardBedDossierDrawer({
       : null;
 
   const observation = bedItem?.isSpecialling ? "1:1" : bedItem?.highAcuity ? "High acuity" : "Not 1:1";
+
+  // Top 25 item 5: due out within the discharge prep window, the barrier is asked for here. The
+  // engine takes a barrier only from the long stay prompt day, so before then it says so instead.
+  const prepHours = Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60);
+  const longStayDays = CLINICAL_VALUES.longStayPrompt.value;
+  const dueForPrep =
+    dischargePrepOn && admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
+  const barrierRow =
+    dischargePrepOn && admission && bedItem?.admissionId ? (
+      <Row label="Barrier">
+        {onSetBarrier && stayDays !== null && stayDays >= longStayDays ? (
+          <select
+            className={styles.select}
+            aria-label="Discharge barrier"
+            data-testid="ward-drawer-barrier-select"
+            value={admission.dischargeBarrier ?? "None"}
+            onChange={(e) => {
+              const value = e.target.value;
+              onSetBarrier(admission.id, isDischargeBarrier(value) ? value : null);
+            }}
+          >
+            <option value="None">None recorded</option>
+            {DISCHARGE_BARRIERS.map((barrier) => (
+              <option key={barrier} value={barrier}>
+                {barrier}
+              </option>
+            ))}
+          </select>
+        ) : (
+          (admission.dischargeBarrier ??
+          (stayDays !== null && stayDays < longStayDays
+            ? `None recorded. A barrier can be recorded from day ${longStayDays} of the stay.`
+            : "None recorded"))
+        )}
+      </Row>
+    ) : null;
+  const prepNote = dueForPrep ? (
+    <p className={styles.meta} data-testid="ward-drawer-discharge-prep">
+      Due out within {prepHours} hours. Record any discharge barrier now so it can be sorted before the day.
+    </p>
+  ) : null;
   const admittedAt = admission?.arrivedAt ?? admission?.pulledAt ?? null;
 
   // Only what the stay itself recorded, newest first. Nothing here is inferred.
@@ -304,6 +358,8 @@ export function WardBedDossierDrawer({
         roleLockNote={roleLockNote}
         bedDrawerRef={bedDrawerRef}
         onKeyDown={onKeyDown}
+        planRows={barrierRow}
+        planNote={prepNote}
       />
     );
   }
@@ -487,8 +543,10 @@ export function WardBedDossierDrawer({
                       <Row label="Confirmed">{confirmation}</Row>
                       {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
                       <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
-                      {bedItem?.dischargeBarrier ? <Row label="Barrier">{bedItem.dischargeBarrier}</Row> : null}
+                      {barrierRow ??
+                        (bedItem?.dischargeBarrier ? <Row label="Barrier">{bedItem.dischargeBarrier}</Row> : null)}
                     </dl>
+                    {prepNote}
                     {bedItem?.blockReason && bedItem?.admissionId && onUpdateBlocker ? (
                       <div className={styles.editor}>
                         <Button
@@ -779,6 +837,10 @@ interface PhoneBedSheetProps {
   roleLockNote?: ReactNode;
   bedDrawerRef: React.RefObject<HTMLElement | null>;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
+  /** Top 25: extra Plan to leave rows (flagged), built once by the drawer for both layouts. */
+  planRows?: ReactNode;
+  /** Top 25: a short note under Plan to leave (flagged). */
+  planNote?: ReactNode;
 }
 
 /**
@@ -821,6 +883,8 @@ function PhoneBedSheet({
   roleLockNote,
   bedDrawerRef,
   onKeyDown,
+  planRows,
+  planNote,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
   const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
@@ -912,6 +976,7 @@ function PhoneBedSheet({
               <dl className={styles.phoneKv}>
                 <Row label="Expected">{expectedPlan}</Row>
                 <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
+                {planRows}
                 {isOccupied && admissionId ? (
                   <Row label="Going to">
                     <select
@@ -932,6 +997,7 @@ function PhoneBedSheet({
                   </Row>
                 ) : null}
               </dl>
+              {planNote}
               {bedItem?.blockReason && admissionId && onUpdateBlocker ? (
                 <div className={styles.editor}>
                   <Button

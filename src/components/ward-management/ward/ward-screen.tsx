@@ -345,6 +345,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
+  // Top 25 item 5: the bed drawer asks for the discharge barrier of a stay due out soon.
+  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
+  const barrierGate = useRoleGate()("SET_DISCHARGE_BARRIER");
   const isPhone = useIsPhone();
   const [phonePanel, setPhonePanel] = useState<"shift" | "flow" | null>(null);
   // A sheet left open when the screen widens past the phone is closed, not reopened on return.
@@ -3482,6 +3485,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   }
                   fullReferralHref={fullWardReferralHref(selectedBedItem?.patientInfo?.patient?.id)}
                   roleLockNote={wardRoleLockNote}
+                  onSetBarrier={
+                    dischargePrepOn && barrierGate.allowed
+                      ? (admissionId, barrier) => {
+                          dispatch({
+                            type: "SET_DISCHARGE_BARRIER",
+                            role: routeRole,
+                            now,
+                            actingUnitId: unitId,
+                            admissionId,
+                            barrier,
+                          });
+                          setToastMessage(
+                            barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
+                          );
+                        }
+                      : undefined
+                  }
                 />
               );
             })()
