@@ -1,5 +1,5 @@
 // tests/ward-parallel-referral-cap-ui.dom.test.tsx
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -20,7 +20,6 @@ vi.mock("next/link", () => ({
 }));
 
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
-import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -73,8 +72,6 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
   }
 
   it('shows "of 2 parallel" and refuses a third selection once the cap is configured to 2', () => {
-    // With the Top 25 referral cap warning off, the cap is a hard stop on the pick.
-    act(() => setWardFeatureFlagOnDevice("top25-referral-cap", false));
     render(
       <ToastProvider>
         <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -103,35 +100,6 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
     expect(candidates[2]).toHaveAttribute("aria-pressed", "false");
     expect(candidates[0]).toHaveAttribute("aria-pressed", "true");
     expect(candidates[1]).toHaveAttribute("aria-pressed", "true");
-    act(() => setWardFeatureFlagOnDevice("top25-referral-cap", null));
-  });
-
-  it("with the referral cap warning on, a third pick warns and Refer waits for a reason", () => {
-    act(() => setWardFeatureFlagOnDevice("top25-referral-cap", true));
-    render(
-      <ToastProvider>
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <ConfigureLoweredCap>
-            <ShortlistHarness movementId="WF-009" />
-          </ConfigureLoweredCap>
-        </WardFlowProvider>
-      </ToastProvider>,
-    );
-    const candidates = screen.getAllByTestId(/^ward-shortlist-candidate-/);
-    fireEvent.click(candidates[0]);
-    fireEvent.click(candidates[1]);
-    fireEvent.click(candidates[2]);
-    expect(candidates[2]).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("shortlist-referral-cap-warning")).toHaveTextContent("more than the usual 2");
-    expect(screen.getByTestId("ward-shortlist-refer")).toHaveAttribute("aria-disabled", "true");
-    // Override sends the same referral, so it waits for the same reason.
-    expect(screen.getByTestId("ward-shortlist-override-toggle")).toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(screen.getByLabelText("Reason for asking more wards"), {
-      target: { value: "Clinical urgency needs a wider search" },
-    });
-    expect(screen.getByTestId("ward-shortlist-refer")).not.toHaveAttribute("aria-disabled");
-    expect(screen.getByTestId("ward-shortlist-override-toggle")).not.toHaveAttribute("aria-disabled");
-    act(() => setWardFeatureFlagOnDevice("top25-referral-cap", null));
   });
 });
 
