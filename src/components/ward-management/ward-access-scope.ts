@@ -20,6 +20,8 @@
  *
  * Pure and browser free: the backend applies the same function to every reply (plan PR 2).
  */
+import { directiveDesks } from "@/components/ward-management/alerts/global-alert-view";
+import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -463,6 +465,41 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     notices,
     breakGlassPatientIds: visibleOnlyByGrant,
   };
+}
+
+/**
+ * The broadcast alerts a desk other than the coordinator may read (review on PR #330). A directive
+ * reaches every desk, or only the desks its target covers. A bed call or Pull now keeps only the
+ * desk's own wards, their answers and their acknowledgements, so a ward never learns which other
+ * wards were asked.
+ */
+export function scopeBroadcastAlerts(
+  alerts: readonly BroadcastAlert[],
+  access: WardAccess,
+  units: readonly Unit[],
+  places: PlaceLookup,
+): BroadcastAlert[] {
+  const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
+  return alerts.flatMap((alert) => {
+    if (alert.targetUnitIds === undefined) {
+      if (alert.targetScope === "all") return [alert];
+      const asked = directiveDesks(alert, units).some((id) => unitIn(id) || edInScope(access.scope, id, places));
+      return asked ? [alert] : [];
+    }
+    const own = alert.targetUnitIds.filter(unitIn);
+    if (own.length === 0) return [];
+    if (own.length === alert.targetUnitIds.length) return [alert];
+    const names = own.map((id) => units.find((unit) => unit.id === id)?.name ?? id);
+    return [
+      {
+        ...alert,
+        targetUnitIds: own,
+        acknowledgedUnits: alert.acknowledgedUnits.filter(unitIn),
+        ...(alert.replies ? { replies: alert.replies.filter((reply) => unitIn(reply.unitId)) } : {}),
+        targetScopeLabel: names.length === 1 ? names[0] : `${names.length} wards`,
+      },
+    ];
+  });
 }
 
 /**

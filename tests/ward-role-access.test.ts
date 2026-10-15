@@ -2,10 +2,15 @@ import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import type { BroadcastAlert } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
-import { scopeWorkspace, smallNumberText } from "../src/components/ward-management/ward-access-scope";
+import {
+  scopeBroadcastAlerts,
+  scopeWorkspace,
+  smallNumberText,
+} from "../src/components/ward-management/ward-access-scope";
 import {
   ROLE_SCREENS,
   STATEWIDE_COORDINATOR,
@@ -308,6 +313,50 @@ describe("the scoped workspace", () => {
     expect(smallNumberText(0)).toBe("0");
     expect(smallNumberText(3)).toMatch(/fewer than/i);
     expect(smallNumberText(40)).toBe("40");
+  });
+});
+
+describe("broadcast alerts for a desk", () => {
+  const other = state.units.find((unit) => unit.id !== unitId)!;
+  const base = {
+    id: "synthetic-alert",
+    title: "Synthetic",
+    message: "Synthetic message",
+    severity: "critical",
+    category: "capacity_gridlock",
+    targetScope: "all",
+    targetScopeLabel: "2 wards",
+    durationMinutes: 60,
+    dispatchedAt: NOW_ANCHOR,
+    expiresAt: NOW_ANCHOR + 60,
+    dispatchedByRole: "coordinator",
+    dispatchedByName: "Synthetic coordinator",
+    status: "active",
+    acknowledgedUnits: [unitId, other.id],
+  } satisfies BroadcastAlert;
+
+  it("keeps only the desk's own ward, answers and acknowledgements on a bed call", () => {
+    const call = {
+      ...base,
+      kind: "bed_call" as const,
+      targetUnitIds: [unitId, other.id],
+      replies: [
+        { unitId, answer: "can_take" as const, at: NOW_ANCHOR, role: "ward" as const },
+        { unitId: other.id, answer: "can_take" as const, at: NOW_ANCHOR, role: "ward" as const },
+      ],
+    };
+    const [seen] = scopeBroadcastAlerts([call], wardDesk, state.units, places);
+    expect(seen.targetUnitIds).toEqual([unitId]);
+    expect(seen.acknowledgedUnits).toEqual([unitId]);
+    expect(seen.replies?.map((reply) => reply.unitId)).toEqual([unitId]);
+    expect(seen.targetScopeLabel).toBe(state.units[0].name);
+  });
+
+  it("drops a directive whose target covers none of the desk's places", () => {
+    const edOnly = { ...base, acknowledgedUnits: [], targetScope: "ed_liaison" as const };
+    expect(scopeBroadcastAlerts([edOnly], wardDesk, state.units, places)).toEqual([]);
+    const everyone = { ...base, acknowledgedUnits: [] };
+    expect(scopeBroadcastAlerts([everyone], wardDesk, state.units, places)).toHaveLength(1);
   });
 });
 
