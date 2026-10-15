@@ -19,7 +19,11 @@ import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/b
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   ED_TREND_SPAN_MINUTES,
   ED_TREND_STEP_MINUTES,
@@ -790,7 +794,7 @@ function useScreenWakeLock(active: boolean) {
 
 /** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
 function ScreenPicker({ current }: { current: string }) {
-  const { units } = useWardFlow();
+  const { units } = useWardFlowSelect("units");
   const wards = [...units].sort((a, b) => a.name.localeCompare(b.name));
   const eds = [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name));
   const meetings: { key: string; label: string; service: HealthService | null }[] = [
@@ -858,7 +862,16 @@ export type BedMeetingTvScreenProps = {
 };
 
 export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeetingTvScreenProps = {}) {
-  const { units, movements, bedReleases, admissions, leaveBeds, scenario, configuration } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const { units, movements, bedReleases, admissions, leaveBeds, scenario, configuration } = useWardFlowSelect(
+    "units",
+    "movements",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "scenario",
+    "configuration",
+  );
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
   const patientOf = usePatientOf();
@@ -883,11 +896,11 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     const inputs = { units, movements, bedReleases, admissions, leaveBeds, now, nameOf };
     if (ward !== undefined) {
       if (!unit) return { kind: "missing" as const, what: "ward" };
-      return { kind: "ward" as const, sheet: wardTvSheet({ ...inputs, unit }) };
+      return { kind: "ward" as const, sheet: wardTvSheet({ ...inputs, unit, thresholds }) };
     }
     if (ed !== undefined) {
       const sheet = department
-        ? edTvSheet({ ...inputs, edId: department.id, accessTargetMinutes: accessTarget })
+        ? edTvSheet({ ...inputs, edId: department.id, accessTargetMinutes: accessTarget, thresholds })
         : undefined;
       if (!sheet) return { kind: "missing" as const, what: "emergency department" };
       return { kind: "ed" as const, sheet };
@@ -895,8 +908,8 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     if (service === undefined) return { kind: "missing" as const, what: "health service" };
     return {
       kind: "network" as const,
-      sheet: bedMeetingSheet({ ...inputs, service }),
-      extras: meetingTvExtras({ ...inputs, service }),
+      sheet: bedMeetingSheet({ ...inputs, service, thresholds }),
+      extras: meetingTvExtras({ ...inputs, service, thresholds }),
     };
   }, [
     units,
@@ -912,6 +925,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     unit,
     department,
     accessTarget,
+    thresholds,
   ]);
 
   const stamp = asAtStamp(now);

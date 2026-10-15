@@ -22,10 +22,15 @@ import {
 import Link from "next/link";
 import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
 
-import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/ui/sheet-focus";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -37,7 +42,6 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import {
   CheckingFoot,
   Hero,
@@ -207,7 +211,7 @@ function ago(minutes: number): string {
 }
 
 /** U1 (review 12 Oct 2026): legal status is never cut. A short form chip, the full name as its title. */
-function legalCell(row: BoardRow): ReactNode {
+function legalCell(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
   const form = row.movement.legalForm;
   const short = legalStatusShort(row.movement);
   const full = legalStatusFull(row.movement);
@@ -217,7 +221,7 @@ function legalCell(row: BoardRow): ReactNode {
         {short}
       </span>
     );
-  const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn);
+  const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds);
   const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
   return (
     <span className={styles.lg} title={`${full}, ${left}`}>
@@ -253,13 +257,13 @@ function updateCell(row: BoardRow, now: Instant): ReactNode {
 }
 
 /** v10 phone: the second line leads with the recorded legal time left, or that it was escalated. */
-function phonePrefix(row: BoardRow): ReactNode {
+function phonePrefix(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
   const form = row.movement.legalForm;
   if (form !== undefined && row.dueIn !== undefined) {
     const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
     return (
       <>
-        <Glyph tone={row.dueIn < 0 ? "danger" : dueTone(row.dueIn)} />
+        <Glyph tone={row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds)} />
         <b className={styles.phPre}>{`Form ${form.code} ${left}`}</b>
         {" · "}
       </>
@@ -322,6 +326,7 @@ function WaitBar({ row }: { row: BoardRow }) {
 
 /** The open row's own journey: arrival to now, then the recorded legal time if there is one. */
 function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: Instant }) {
+  const thresholds = useDueSoonThresholds();
   const all = rowEvents(row, units, now);
   const keep = all.length <= 3 ? all : [all[0], ...all.slice(-2)];
   // Only a time still ahead is drawn as due; one already passed is marked once by the block below.
@@ -349,7 +354,7 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
       p: dueP,
       time: formatInstantWithDay(now + due, now),
       text: `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
-      tone: dueTone(due) ?? "warning",
+      tone: dueTone(due, thresholds) ?? "warning",
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
   const passed = row.dueIn !== undefined && row.dueIn < 0 && row.movement.legalForm ? -row.dueIn : undefined;
@@ -394,7 +399,7 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
           <>
             <span className={styles.sxAhead} style={{ left: `${nowP}%`, width: `${dueP - nowP}%` }} />
             <span
-              className={`${styles.sxDue} ${dueTone(due) === "danger" ? styles.sxDueHot : ""}`}
+              className={`${styles.sxDue} ${dueTone(due, thresholds) === "danger" ? styles.sxDueHot : ""}`}
               style={{ left: `${dueP}%` }}
             />
           </>
@@ -433,7 +438,8 @@ function PersonPanel({
   onEscalate: (movement: Movement) => void;
   panelRef: RefObject<HTMLElement | null>;
 }) {
-  const { referrals, setFocusMovementId } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
   const patientOf = usePatientOf();
   const { movement, cause } = row;
   const patient = patientOf(movement);
@@ -547,7 +553,7 @@ function PersonPanel({
 
         {legalForm !== undefined && row.dueIn !== undefined ? (
           <div className={`${styles.inset} ${styles.clock}`} data-testid={`delays-legal-clock-${movement.id}`}>
-            <Glyph tone={row.dueIn < 0 ? "danger" : (dueTone(row.dueIn) ?? "warning")} />
+            <Glyph tone={row.dueIn < 0 ? "danger" : (dueTone(row.dueIn, thresholds) ?? "warning")} />
             <div className={styles.grow}>
               <b>
                 {row.dueIn < 0
@@ -1107,6 +1113,7 @@ export function DelaysBoard({
   empty,
   initialSevere = false,
 }: DelaysBoardProps) {
+  const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   const rows = useMemo(() => boardRows(groups, now), [groups, now]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
@@ -1155,7 +1162,10 @@ export function DelaysBoard({
   // Owner ruling, 9 October 2026: filters narrow the table (the approved mockup), and the table
   // always says how many people they hide, with Show everyone. It supersedes, for this board, the
   // 7 September "a chip highlights, it never hides" ruling.
-  const shown = useMemo(() => filterRows(rows, filters, bins, nameOf), [rows, filters, bins, nameOf]);
+  const shown = useMemo(
+    () => filterRows(rows, filters, bins, nameOf, thresholds),
+    [rows, filters, bins, nameOf, thresholds],
+  );
   // A person the filters hide is never shown as open: their panel closes rather than sit beside no row.
   const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
   // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
@@ -1234,11 +1244,11 @@ export function DelaysBoard({
 
   const over8 = rows.filter((row) => row.waited >= OVER_8H).length;
   const over24 = rows.filter((row) => row.waited >= OVER_24H).length;
-  const dueSoon = rows.filter(isDueSoon).length;
+  const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
   const silentCount = rows.filter((row) => row.silent).length;
-  const urgentMinutes = currentDueSoonThresholds().urgentMinutes;
-  const soonHours = currentDueSoonThresholds().soonMinutes / 60;
+  const urgentMinutes = thresholds.urgentMinutes;
+  const soonHours = thresholds.soonMinutes / 60;
 
   const heroStat = (
     value: number,
@@ -1370,7 +1380,7 @@ export function DelaysBoard({
           >
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
-              {isPhone ? phonePrefix(row) : null}
+              {isPhone ? phonePrefix(row, thresholds) : null}
               {[patient.umrn, transitNote(movement, now), originLabel(movement)].filter(Boolean).join(" · ")}
             </span>
           </button>
@@ -1400,7 +1410,7 @@ export function DelaysBoard({
           </span>
         </td>
         <td role="cell" className={styles.cLegal}>
-          {legalCell(row)}
+          {legalCell(row, thresholds)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
           {isPhone ? phoneUpdate(row) : updateCell(row, now)}
@@ -1507,8 +1517,8 @@ export function DelaysBoard({
       }
     }
   } else {
-    const pinned = shown.filter(isPinned).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
-    const rest = shown.filter((row) => !isPinned(row)).sort(byWait);
+    const pinned = shown.filter((row) => isPinned(row, thresholds)).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
+    const rest = shown.filter((row) => !isPinned(row, thresholds)).sort(byWait);
     if (pinned.length > 0) {
       body.push(
         <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>

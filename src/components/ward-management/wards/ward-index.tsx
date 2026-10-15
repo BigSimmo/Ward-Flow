@@ -45,7 +45,7 @@ import { wardServiceOrder } from "@/components/ward-management/ward-derivations"
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -379,7 +379,13 @@ type WardRow = {
 };
 
 export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
-  const { units: liveUnits, bedReleases, movements, admissions, leaveBeds } = useWardFlow();
+  const {
+    units: liveUnits,
+    bedReleases,
+    movements,
+    admissions,
+    leaveBeds,
+  } = useWardFlowSelect("units", "bedReleases", "movements", "admissions", "leaveBeds");
   const units = unitsOverride ?? liveUnits;
   const { now, paused, togglePause } = usePageLive();
 

@@ -51,7 +51,12 @@ import { formatInstant, formatInstantWithDay, splitDuration } from "@/components
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
@@ -527,6 +532,8 @@ function isReferralSheetPath(pathname: string): boolean {
 }
 
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
+  const network = useWardNetwork();
+  const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
@@ -551,7 +558,26 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     inboxSnoozes,
     configuration,
     supportNotifications,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "admissions",
+    "referrals",
+    "rejections",
+    "bedReleases",
+    "leaveBeds",
+    "refreshRequests",
+    "notices",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+    "inboxOwnership",
+    "inboxSnoozes",
+    "configuration",
+    "supportNotifications",
+  );
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();
@@ -773,8 +799,22 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         leaveBeds,
         refreshRequests,
         now,
+        sites: network.sites,
+        thresholds,
       }),
-    [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
+    [
+      movements,
+      patients,
+      units,
+      referrals,
+      rejections,
+      bedReleases,
+      leaveBeds,
+      refreshRequests,
+      now,
+      thresholds,
+      network,
+    ],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);

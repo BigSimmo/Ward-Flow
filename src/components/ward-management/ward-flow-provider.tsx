@@ -8,11 +8,13 @@ import type { LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
 
 import {
+  type Context,
   createContext,
   type Dispatch,
   Fragment,
   type ReactNode,
   type SetStateAction,
+  use,
   useCallback,
   useContext,
   useEffect,
@@ -42,9 +44,13 @@ import {
 } from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
-import type { Instant } from "@/components/ward-management/ward-clock";
-import { absoluteWallClockMinutes, applyDueSoonThresholds, demoDayZero } from "@/components/ward-management/ward-clock";
-import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  absoluteWallClockMinutes,
+  demoDayZero,
+  type DueSoonThresholds,
+  dueSoonThresholdsOf,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
@@ -72,8 +78,12 @@ import type {
   Rejection,
   Unit,
 } from "@/components/ward-management/ward-model";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { activateScenarioNetwork, type WardScenario } from "@/components/ward-management/ward-scenarios";
+import { activeWardNetwork, NOW_ANCHOR, type WardNetwork } from "@/components/ward-management/ward-sites";
+import {
+  activateScenarioNetwork,
+  scenarioWardNetwork,
+  type WardScenario,
+} from "@/components/ward-management/ward-scenarios";
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
@@ -89,6 +99,7 @@ import {
   type ScenarioFileBuild,
 } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
+import { broadcastDispatchEvent, nextOpenRequestSequence } from "./ward-flow-provider-helpers";
 
 /**
  * The screens never see the raw reducer state or the clock's internal offsets — they see the
@@ -216,16 +227,151 @@ type WardFlowContextValue = {
 };
 
 export type { WardFlowContextValue };
+/** The whole value in one object. Every reader re-renders on every change and every clock tick, so
+ *  screens read through `useWardFlowSelect` instead; this stays for whole-value readers and tests. */
 export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
 export const WardClockContext = createContext<Instant | null>(null);
 
+export type WardFlowKey = keyof WardFlowContextValue;
+
+/**
+ * Every field of the value, each in its own context (fix list 1.2 and 7.1, 15 Oct 2026). A screen
+ * that reads `movements` and `now` re-renders when either changes, and not when an acknowledgement,
+ * the event log or a far-off collection changes. The compile-time check below fails if a field is
+ * added to `WardFlowContextValue` without a context here.
+ */
+const WARD_FLOW_KEY_SET = {
+  worldGeneration: true,
+  sessionAdopted: true,
+  recordWardDeparture: true,
+  readDischargeRecords: true,
+  openDischargeRecord: true,
+  readDischargeRecord: true,
+  readAuditEvents: true,
+  readGovernanceAuditEvents: true,
+  readAuditReviews: true,
+  movements: true,
+  units: true,
+  referrals: true,
+  wardReferralInbox: true,
+  rejections: true,
+  bedReleases: true,
+  leaveBeds: true,
+  refreshRequests: true,
+  handoverSignOffs: true,
+  repatriations: true,
+  inboxAcknowledgements: true,
+  inboxCompletions: true,
+  inboxOwnership: true,
+  inboxSnoozes: true,
+  undoRecords: true,
+  notices: true,
+  morningRollupConfirmations: true,
+  resolvePatientIdentity: true,
+  patients: true,
+  admissions: true,
+  now: true,
+  dayZero: true,
+  scenario: true,
+  configuration: true,
+  broadcastAlerts: true,
+  plannedAdmissions: true,
+  supportNotifications: true,
+  eventLog: true,
+  dispatch: true,
+  focusMovementId: true,
+  setFocusMovementId: true,
+  resetDemoState: true,
+  saveScenarioFile: true,
+  loadScenarioFile: true,
+  savingOnDevice: true,
+} as const satisfies Record<WardFlowKey, true>;
+const WARD_FLOW_KEYS = Object.keys(WARD_FLOW_KEY_SET) as WardFlowKey[];
+
+/** Marks a field context with no provider above it, as distinct from a field whose value is undefined. */
+const NO_WARD_FLOW_PROVIDER: unique symbol = Symbol("no-ward-flow-provider");
+type WardFlowFieldContexts = { [K in WardFlowKey]: Context<WardFlowContextValue[K] | typeof NO_WARD_FLOW_PROVIDER> };
+const WARD_FLOW_FIELD_CONTEXTS = Object.fromEntries(
+  WARD_FLOW_KEYS.map((key) => {
+    const context = createContext<unknown>(NO_WARD_FLOW_PROVIDER);
+    context.displayName = `WardFlow.${key}`;
+    return [key, context];
+  }),
+) as unknown as WardFlowFieldContexts;
+
+/** Provides each field of `value` through its own context, around `children`. */
+function WardFlowFieldProviders({ value, children }: { value: WardFlowContextValue; children: ReactNode }) {
+  let tree = children;
+  for (const key of WARD_FLOW_KEYS) {
+    const FieldContext = WARD_FLOW_FIELD_CONTEXTS[key] as Context<unknown>;
+    tree = <FieldContext.Provider value={value[key]}>{tree}</FieldContext.Provider>;
+  }
+  return tree;
+}
+
+/**
+ * Replaces part of the value for one subtree, for both whole-value and field readers. A bare
+ * `WardFlowContext.Provider` inside the real provider would reach only whole-value readers, so every
+ * override goes through this instead (the coordinator cockpit's coordinator-role dispatch, tests).
+ */
+export function WardFlowOverride({ value, children }: { value: WardFlowContextValue; children: ReactNode }) {
+  return (
+    <WardFlowContext.Provider value={value}>
+      <WardFlowFieldProviders value={value}>{children}</WardFlowFieldProviders>
+    </WardFlowContext.Provider>
+  );
+}
+
+function pickWardFlow<K extends WardFlowKey>(
+  value: WardFlowContextValue,
+  keys: readonly K[],
+): Pick<WardFlowContextValue, K> {
+  const picked = {} as Pick<WardFlowContextValue, K>;
+  for (const key of keys) picked[key] = value[key];
+  return picked;
+}
+
+/**
+ * The named fields only, re-rendering when one of them changes. `null` outside any provider.
+ *
+ * `configuration` and `scenario` are always read as well, even when not named. The scenario points
+ * the module-wide ward lookups at its network during the provider's render (`activateScenarioNetwork`),
+ * which many derivations read without naming it, so every reader must still re-render when it
+ * changes. `configuration` doubles as the check for a real provider. Both change rarely, so this
+ * costs nothing in ordinary use.
+ *
+ * A hand-built `WardFlowContext.Provider` with no `WardFlowProvider` (some tests) has no field
+ * contexts, so the whole value is read from it instead.
+ */
+export function useOptionalWardFlowSelect<K extends WardFlowKey>(
+  ...keys: readonly K[]
+): Pick<WardFlowContextValue, K> | null {
+  if (use(WARD_FLOW_FIELD_CONTEXTS.configuration) === NO_WARD_FLOW_PROVIDER) {
+    const whole = use(WardFlowContext);
+    return whole ? pickWardFlow(whole, keys) : null;
+  }
+  use(WARD_FLOW_FIELD_CONTEXTS.scenario);
+  const picked = {} as Pick<WardFlowContextValue, K>;
+  for (const key of keys) picked[key] = use(WARD_FLOW_FIELD_CONTEXTS[key]) as WardFlowContextValue[K];
+  return picked;
+}
+
+/** `useWardFlow()` narrowed to the named fields: `const { movements, now } = useWardFlowSelect("movements", "now")`. */
+export function useWardFlowSelect<K extends WardFlowKey>(...keys: readonly K[]): Pick<WardFlowContextValue, K> {
+  const picked = useOptionalWardFlowSelect(...keys);
+  if (!picked) throw new Error("useWardFlow must be used within WardFlowProvider.");
+  return picked;
+}
+
+// `use`, not `useContext`, so a reader that finds the first clock never subscribes to the next
+// context, in particular never to the whole `WardFlowContext` and its every change.
 export function useWardClock(fallback?: Instant): Instant {
-  const clock = useContext(WardClockContext);
-  const flowClock = useContext(WardFlowClockContext);
-  const wardFlow = useContext(WardFlowContext);
+  const clock = use(WardClockContext);
   if (clock !== null) return clock;
+  const flowClock = use(WardFlowClockContext);
   if (flowClock !== null) return flowClock;
+  const wardFlow = use(WardFlowContext);
   if (wardFlow) return wardFlow.now;
   if (fallback !== undefined) return fallback;
   throw new Error("useWardClock must be used within WardFlowProvider.");
@@ -518,54 +664,6 @@ export function clearWardFlowDemoState(): boolean {
   }
 }
 
-let sharedBroadcastChannel: BroadcastChannel | null = null;
-
-function getSharedBroadcastChannel(): BroadcastChannel | null {
-  if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") {
-    return null;
-  }
-  try {
-    if (!sharedBroadcastChannel) {
-      sharedBroadcastChannel = new window.BroadcastChannel("ward-flow-sync");
-    }
-    return sharedBroadcastChannel;
-  } catch {
-    return null;
-  }
-}
-
-function broadcastDispatchEvent(eventType: string): void {
-  try {
-    const channel = getSharedBroadcastChannel();
-    if (channel) {
-      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType });
-    }
-  } catch {
-    sharedBroadcastChannel = null;
-  }
-}
-
-/**
- * Audit finding ISSUE-P1-83, defect 3c: `OPEN_DISCHARGE_RECORD` requests are identified by a
- * monotonically increasing `requestId` (`WardFlowWorld`'s `openRequestSequence` below), and
- * `readOpenedDischargeRecord` (`ward-discharge-records.ts`) finds a request's own audit receipt by
- * matching `requestId` against `state.auditEvents`. A restored session's audit log already holds
- * `requestId`s from before the restore; if the counter restarted at 0, the next open would either
- * collide with an old receipt for a DIFFERENT admission (denied as a replay) or, had none existed to
- * collide with, still leave the door open for the very next id to collide once the log grew back to
- * where it left off. Continuing past the highest id already on the restored log is the only value
- * that can never collide with it.
- */
-function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): number {
-  let highest = -1;
-  for (const entry of auditEvents) {
-    if (entry.category !== "record-access" || entry.action !== "OPEN_DISCHARGE_RECORD") continue;
-    const requestId = entry.details.requestId;
-    if (typeof requestId === "number" && Number.isFinite(requestId) && requestId > highest) highest = requestId;
-  }
-  return highest + 1;
-}
-
 /**
  * 🔴 **THE WALL CLOCK IS READ AFTER MOUNT, NOT DURING RENDER — BECAUSE A `useState` INITIALISER
  * RUNS TWICE AND THE TWO RUNS ARE ON DIFFERENT MACHINES.**
@@ -804,13 +902,6 @@ function WardFlowWorld({
   // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
   // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
   activateScenarioNetwork(state.scenario);
-  // The due-time warnings follow Settings (Josh, 26 Sept 2026, question 3) the same way: applied
-  // before any child renders, idempotent. A configuration saved before these keys existed has
-  // neither, so the defaults stand in.
-  applyDueSoonThresholds(
-    state.configuration.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
-    state.configuration.dueSoonMinutes ?? DUE_SOON_MINUTES,
-  );
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -1102,62 +1193,82 @@ function WardFlowWorld({
     [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
 
-  const value = useMemo<WardFlowContextValue>(
-    () => ({
-      worldGeneration: state.worldGeneration,
-      sessionAdopted: container.sessionAdopted === true,
-      recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
-        const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
-        if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
+  // The readers and the two record actions close over `state`, so they are rebuilt when it changes,
+  // and only then: in the value memo below they were rebuilt on every clock tick as well, which woke
+  // every screen that reads one of them.
+  const stateBound = useMemo(
+    () =>
+      ({
+        recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
+          const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
+          if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
+            dispatch({
+              type: "RECORD_LEAVING",
+              role: "ward",
+              now: nowRef.current,
+              admissionId,
+              actingUnitId,
+              leavingDestination,
+            });
+            return;
+          }
           dispatch({
-            type: "RECORD_LEAVING",
+            type: "RECORD_PATIENT_DISCHARGE",
             role: "ward",
             now: nowRef.current,
             admissionId,
             actingUnitId,
             leavingDestination,
+            patientId:
+              read.status === "allowed" && read.value.identity.kind === "linked"
+                ? read.value.identity.patient.id
+                : "PT-unresolved",
+            expectedGeneration: state.worldGeneration,
+            expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
           });
-          return;
-        }
-        dispatch({
-          type: "RECORD_PATIENT_DISCHARGE",
-          role: "ward",
-          now: nowRef.current,
-          admissionId,
-          actingUnitId,
-          leavingDestination,
-          patientId:
-            read.status === "allowed" && read.value.identity.kind === "linked"
-              ? read.value.identity.patient.id
-              : "PT-unresolved",
-          expectedGeneration: state.worldGeneration,
-          expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
-        });
-      },
-      readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
-      readDischargeRecord: (actor, admissionId, handle) => readOpenedDischargeRecord(state, actor, admissionId, handle),
-      readAuditEvents: (actor) => readAuditEvents(state, actor),
-      readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(state, actor),
-      readAuditReviews: (actor) => readAuditReviews(state, actor),
-      openDischargeRecord: (actor, admissionId) => {
-        if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
-          throw new Error("Record request allocation unavailable");
-        const handle = { generation: state.worldGeneration, requestId: openRequestSequence.current++ };
-        const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
-        dispatch({
-          ...declaredActor,
-          type: "OPEN_DISCHARGE_RECORD",
-          now: nowRef.current,
-          admissionId,
-          expectedGeneration: handle.generation,
-          requestId: handle.requestId,
-        });
-        return handle;
-      },
+        },
+        readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
+        readDischargeRecord: (actor, admissionId, handle) =>
+          readOpenedDischargeRecord(state, actor, admissionId, handle),
+        readAuditEvents: (actor) => readAuditEvents(state, actor),
+        readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(state, actor),
+        readAuditReviews: (actor) => readAuditReviews(state, actor),
+        openDischargeRecord: (actor, admissionId) => {
+          if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
+            throw new Error("Record request allocation unavailable");
+          const handle = { generation: state.worldGeneration, requestId: openRequestSequence.current++ };
+          const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
+          dispatch({
+            ...declaredActor,
+            type: "OPEN_DISCHARGE_RECORD",
+            now: nowRef.current,
+            admissionId,
+            expectedGeneration: handle.generation,
+            requestId: handle.requestId,
+          });
+          return handle;
+        },
+        wardReferralInbox: (unitId: string) => wardReferralInboxEntries(state.referrals, unitId),
+        resolvePatientIdentity: (subject) =>
+          resolveSubjectPatient(subject, {
+            patients: state.patients,
+            referrals: state.referrals,
+            movements: state.movements,
+            // A stay converted from an initials-only booking is named through that booking.
+            plannedAdmissions: state.plannedAdmissions,
+          }),
+      }) satisfies Partial<WardFlowContextValue>,
+    [state, dispatch],
+  );
+
+  const value = useMemo<WardFlowContextValue>(
+    () => ({
+      worldGeneration: state.worldGeneration,
+      sessionAdopted: container.sessionAdopted === true,
+      ...stateBound,
       movements: state.movements,
       units: state.units,
       referrals: state.referrals,
-      wardReferralInbox: (unitId: string) => wardReferralInboxEntries(state.referrals, unitId),
       rejections: state.rejections,
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
@@ -1171,14 +1282,6 @@ function WardFlowWorld({
       undoRecords: state.undoRecords,
       notices: state.notices,
       morningRollupConfirmations: state.morningRollupConfirmations,
-      resolvePatientIdentity: (subject) =>
-        resolveSubjectPatient(subject, {
-          patients: state.patients,
-          referrals: state.referrals,
-          movements: state.movements,
-          // A stay converted from an initials-only booking is named through that booking.
-          plannedAdmissions: state.plannedAdmissions,
-        }),
       patients: state.patients,
       admissions: state.admissions,
       now,
@@ -1208,6 +1311,7 @@ function WardFlowWorld({
       // `react-hooks/exhaustive-deps` flagged the individual fields as redundant once `state` was
       // added, not as a reason to remove `state` and go back to naming fields one at a time.
       state,
+      stateBound,
       container.sessionAdopted,
       container.typedTextSeen,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
@@ -1238,7 +1342,7 @@ function WardFlowWorld({
   );
 
   return (
-    <WardFlowContext.Provider value={value}>
+    <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
         {(storageUnavailable || container.recoveryNotice) && (
           <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
@@ -1262,7 +1366,7 @@ function WardFlowWorld({
           </ToastDeviceSaveContext.Provider>
         </WardDemoNotSavedContext.Provider>
       </WardClockContext.Provider>
-    </WardFlowContext.Provider>
+    </WardFlowOverride>
   );
 }
 
@@ -1337,10 +1441,28 @@ export function useDanglingReferralIds(admissions: readonly Admission[]): Readon
 }
 
 export function useWardFlowClock(fallback?: Instant): Instant {
-  const clock = useContext(WardFlowClockContext);
-  const wardFlow = useContext(WardFlowContext);
+  const clock = use(WardFlowClockContext);
   if (clock !== null) return clock;
+  const wardFlow = use(WardFlowContext);
   if (wardFlow) return wardFlow.now;
   if (fallback !== undefined) return fallback;
   throw new Error("useWardFlowClock must be used within WardFlowProvider.");
+}
+
+/**
+ * The due-time warnings Settings sets (Josh, 26 Sept 2026, question 3), as an input a screen passes
+ * on: `clockState(due, now, thresholds)`. The defaults outside a provider.
+ */
+export function useDueSoonThresholds(): DueSoonThresholds {
+  const picked = useOptionalWardFlowSelect("configuration");
+  return dueSoonThresholdsOf(picked?.configuration);
+}
+
+/**
+ * The wards of the scenario on screen, as an input a screen passes on (`network.unitById(id)`,
+ * `network.sites`). Outside a provider, whichever network the module-wide lookups point at.
+ */
+export function useWardNetwork(): WardNetwork {
+  const picked = useOptionalWardFlowSelect("scenario");
+  return picked ? scenarioWardNetwork(picked.scenario) : activeWardNetwork();
 }

@@ -25,7 +25,11 @@ import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-head
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
@@ -201,7 +205,19 @@ export function PatientNowScreen({
   initialExampleId = "WF-009",
   initialTaskAction,
 }: PatientNowScreenProps) {
-  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
+    useWardFlowSelect(
+      "patients",
+      "movements",
+      "referrals",
+      "admissions",
+      "units",
+      "leaveBeds",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
   const now = useWardFlowClock();
   // Top 25 item 24: time away and the held bed review warning on the absent without leave card.
   const awolTracker = useWardFeatureFlag("top25-awol-tracker");
@@ -624,9 +640,9 @@ export function PatientNowScreen({
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
   // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
-  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now);
+  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now, thresholds);
   const movementTimeLeft =
-    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now) : undefined;
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds) : undefined;
   // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
   const formMovementNext = formProgression(formMovement);
   const phoneLegal = ctoInForce

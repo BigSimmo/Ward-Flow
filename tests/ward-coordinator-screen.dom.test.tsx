@@ -1,11 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { dueWindowLabel } from "@/components/ward-management/coordinator/home-ed-pressure";
-import { applyDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** Saves a first warning of 90 minutes, the way Settings does. */
@@ -27,8 +26,6 @@ function SaveUrgentWindow() {
     </button>
   );
 }
-
-afterEach(() => applyDueSoonThresholds(DUE_SOON_URGENT_MINUTES, DUE_SOON_MINUTES));
 
 describe("CoordinatorScreen", () => {
   it("renders the prototype footer with coordinator governance disclosure", () => {

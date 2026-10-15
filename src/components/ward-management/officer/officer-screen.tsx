@@ -49,7 +49,7 @@ import { movementUmrn, resolveSubjectPatient } from "@/components/ward-managemen
 import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   TRANSPORT_PROVIDERS,
   type Movement,
@@ -384,7 +384,16 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, dispatch, rejections, patients, referrals, dayZero, notices } = useWardFlow();
+  const { movements, units, dispatch, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
+    "movements",
+    "units",
+    "dispatch",
+    "rejections",
+    "patients",
+    "referrals",
+    "dayZero",
+    "notices",
+  );
   const [isPhone, setIsPhone] = useState(false);
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;

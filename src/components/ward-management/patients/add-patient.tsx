@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
   duplicateCandidates,
@@ -239,7 +239,7 @@ const MATCH_LABEL: Record<MatchKind, string> = {
 };
 
 export function AddPatientForm() {
-  const { dispatch, patients, rejections } = useWardFlow();
+  const { dispatch, patients, rejections } = useWardFlowSelect("dispatch", "patients", "rejections");
   const now = useWardFlowClock();
   const router = useRouter();
 

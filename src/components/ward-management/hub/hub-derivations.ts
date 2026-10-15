@@ -4,7 +4,7 @@ import { wardServiceOrder } from "@/components/ward-management/ward-derivations"
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Site, Unit } from "@/components/ward-management/ward-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 /**
@@ -147,12 +147,14 @@ function communityHref(teamId: string): string {
  */
 export function hubEntries(input: {
   units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`), for the wards on each emergency department's site. */
+  sites: readonly Site[];
   bedReleases: BedRelease[];
   admissions?: readonly Admission[];
   leaveBeds?: readonly LeaveBed[];
   now: Instant;
 }): HubEntry[] {
-  const { units, bedReleases, admissions = [], leaveBeds = [], now } = input;
+  const { units, sites, bedReleases, admissions = [], leaveBeds = [], now } = input;
 
   const wardEntries: HubEntry[] = units.map((unit) => {
     const site = siteByCode(unit.siteCode);
@@ -195,7 +197,8 @@ export function hubEntries(input: {
       site: site?.name,
       service: site?.service,
       // Read off the SITE, which is where the model keeps them — never inferred from a name match.
-      onSiteUnits: (site?.units ?? []).map((unit) => unit.name),
+      // The wards are the scenario's, so from the active network rather than the site's identity.
+      onSiteUnits: (sites.find((candidate) => candidate.code === ed.siteCode)?.units ?? []).map((unit) => unit.name),
     };
   });
 

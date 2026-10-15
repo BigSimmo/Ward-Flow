@@ -1,4 +1,3 @@
-import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { wardSites } from "@/components/ward-management/ward-sites";
 
 /**
@@ -8,11 +7,12 @@ import { wardSites } from "@/components/ward-management/ward-sites";
  * act-now notifier) each worked out the same counts and task lists on every render. On a phone
  * that was the single largest cost of the first load (fix list 7.6, October 2026). Wrapping the
  * derivation here means the first caller pays and the rest reuse the answer until a record, the
- * clock minute, the active network or the due-soon thresholds change.
+ * clock minute or another input changes.
  *
  * Only for derivations whose inputs are reducer records (replaced, never mutated) and whose result
- * callers treat as read-only. The network and thresholds are module-wide globals the provider sets
- * during render, so they are part of every key.
+ * callers treat as read-only. Every input the derivation reads must be in `keyOf`, the due-soon
+ * thresholds and the scenario's sites included, since those are passed in. The module-wide network
+ * is added to every key as well, because lookups outside React (`unitById`) still read it.
  */
 export function rememberLastCall<A extends unknown[], R>(
   derive: (...args: A) => R,
@@ -21,7 +21,7 @@ export function rememberLastCall<A extends unknown[], R>(
   let lastKey: readonly unknown[] | undefined;
   let lastResult: R;
   return (...args: A) => {
-    const key = [...keyOf(...args), wardSites, currentDueSoonThresholds()];
+    const key = [...keyOf(...args), wardSites];
     if (lastKey && lastKey.length === key.length && lastKey.every((part, index) => Object.is(part, key[index]))) {
       return lastResult;
     }

@@ -16,7 +16,14 @@ import {
   cx,
   durMinutes,
 } from "@/components/wf";
-import { clockState, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  isClockBreached,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -44,6 +51,7 @@ import { allClinicalValuesSigned } from "@/components/ward-management/ward-clini
 
 import styles from "./home.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
 export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
@@ -83,10 +91,10 @@ export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
 }`;
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
-function isSoon(movement: Movement, now: Instant) {
+function isSoon(movement: Movement, now: Instant, thresholds: DueSoonThresholds) {
   const dueAt = movement.legalForm?.dueAt;
   if (dueAt === undefined) return false;
-  const state = clockState(dueAt, now);
+  const state = clockState(dueAt, now, thresholds);
   return state === "due" || state === "critical" || state === "breached";
 }
 
@@ -164,6 +172,7 @@ export function PriorityQueue({
   pinnedIds,
   units = [],
 }: PriorityQueueProps) {
+  const dueSoonThresholds = useDueSoonThresholds();
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
@@ -175,9 +184,9 @@ export function PriorityQueue({
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
-  const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
+  const soonCount = movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)).length;
   // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
-  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
@@ -263,9 +272,9 @@ export function PriorityQueue({
             const selected = movement.id === selectedId;
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
-            const { score, factors } = operationalScore(movement, now);
+            const { score, factors } = operationalScore(movement, now, dueSoonThresholds);
             const legalDueAt = movement.legalForm?.dueAt;
-            const legalBreached = legalDueAt !== undefined && clockState(legalDueAt, now) === "breached";
+            const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
             const waitedMinutes = Math.max(0, now - movement.openedAt);
             const thresholds = queueWaitThresholds(movement.urgency);

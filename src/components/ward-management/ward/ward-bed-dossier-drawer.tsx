@@ -20,7 +20,7 @@ import { deriveAfternoonDischarges } from "@/components/ward-management/ward-der
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import {
@@ -151,7 +151,11 @@ export function WardBedDossierDrawer({
   roleLockNote,
   onSetBarrier,
 }: WardBedDossierDrawerProps) {
-  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlow();
+  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlowSelect(
+    "admissions",
+    "bedReleases",
+    "resolvePatientIdentity",
+  );
   const now = useWardFlowClock();
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");

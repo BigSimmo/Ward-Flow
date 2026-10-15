@@ -26,7 +26,7 @@ import { currentShiftStartInstant } from "@/components/ward-management/ward-boar
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
-  WardFlowContext,
+  WardFlowOverride,
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
@@ -105,6 +105,32 @@ export function useDeskInScope(): ((deskId: string) => boolean) | undefined {
     const places = wardPlaceLookup(units);
     return (deskId: string) => unitInScope(access.scope, deskId, places) || edInScope(access.scope, deskId, places);
   }, [on, access, units]);
+}
+
+function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
+/**
+ * The scoped value rebuilds its lists on every change, the clock tick included. Screens read the app
+ * state field by field, so a list keeps its previous identity while it holds the same items, and a
+ * reader of that field does not re-render for an unrelated change (review on PR #322).
+ */
+function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
+  const [steady, setSteady] = useState(next);
+  let changed = false;
+  const merged = { ...next } as Record<string, unknown>;
+  const before = steady as unknown as Record<string, unknown>;
+  for (const key of Object.keys(merged)) {
+    const was = before[key];
+    const now = merged[key];
+    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) merged[key] = was;
+    if (merged[key] !== was) changed = true;
+  }
+  if (Object.keys(before).length !== Object.keys(merged).length) changed = true;
+  const result = changed ? (merged as unknown as WardFlowContextValue) : steady;
+  if (result !== steady) setSteady(result);
+  return result;
 }
 
 /**
@@ -230,12 +256,13 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       },
     };
   }, [context, access, activeGrants, now, previewing]);
+  const steadyScoped = useSteadyLists(value.scoped);
 
   return (
     <UnscopedWardFlowContext.Provider value={context}>
-      <WardFlowContext.Provider value={value.scoped}>
+      <WardFlowOverride value={steadyScoped}>
         <BreakGlassContext.Provider value={value.glass}>{children}</BreakGlassContext.Provider>
-      </WardFlowContext.Provider>
+      </WardFlowOverride>
     </UnscopedWardFlowContext.Provider>
   );
 }

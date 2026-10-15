@@ -27,7 +27,7 @@ import {
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
@@ -315,15 +315,22 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 };
 
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
+  const network = useWardNetwork();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlow();
+  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+    "units",
+    "bedReleases",
+    "movements",
+    "configuration",
+    "admissions",
+  );
   const now = useWardFlowClock();
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
   const phone = useIsPhone();
   // A phone never draws the rail (below), so it skips the bed alert figures too.
   const bedAlerts = phone
     ? NO_BED_ALERTS
-    : deriveServiceBedAlerts(units, bedReleases, undefined, movements, now, accessTargetMinutes, admissions);
+    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
   const open = useRailOpenStore();
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();

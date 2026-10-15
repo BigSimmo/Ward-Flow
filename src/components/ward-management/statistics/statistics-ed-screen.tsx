@@ -33,7 +33,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
+import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -151,8 +151,7 @@ export function StatisticsEdScreen({
       department: each,
       figures,
       breached: figures.departmentMovements.filter(
-        (movement) =>
-          movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "breached",
+        (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
       ).length,
     };
   });

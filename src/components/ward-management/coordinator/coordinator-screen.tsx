@@ -24,7 +24,12 @@ import {
   referralBlockedReason,
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -144,6 +149,8 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  * queue and the ED card, never the bedflow or the shortlist.
  */
 export function CoordinatorScreen() {
+  const network = useWardNetwork();
+  const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
   const {
     movements,
@@ -163,7 +170,25 @@ export function CoordinatorScreen() {
     patients,
     supportNotifications,
     inboxSnoozes,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "rejections",
+    "referrals",
+    "refreshRequests",
+    "dispatch",
+    "focusMovementId",
+    "setFocusMovementId",
+    "configuration",
+    "scenario",
+    "plannedAdmissions",
+    "patients",
+    "supportNotifications",
+    "inboxSnoozes",
+  );
   // Top 25 item 12: name a stuck handover once the transport booked target has passed.
   const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const liveNow = useWardFlowClock();
@@ -528,12 +553,26 @@ export function CoordinatorScreen() {
       leaveBeds,
       refreshRequests,
       now,
+      sites: network.sites,
+      thresholds,
     });
     return activity.content.changes.slice(0, SINCE_TIMELINE_LINES).map((change) => ({
       ...change,
       tone: activity.tones[change.id] ?? "info",
     }));
-  }, [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now]);
+  }, [
+    movements,
+    patients,
+    units,
+    referrals,
+    rejections,
+    bedReleases,
+    leaveBeds,
+    refreshRequests,
+    now,
+    thresholds,
+    network,
+  ]);
 
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(
@@ -545,13 +584,16 @@ export function CoordinatorScreen() {
         bedReleases,
         leaveBeds,
         now,
+        sites: network.sites,
+        thresholds,
       }),
-    [movements, units, referrals, bedReleases, leaveBeds, now],
+    [movements, units, referrals, bedReleases, leaveBeds, now, thresholds, network],
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
   const breachWithinHour = openMovements.filter(
-    (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "critical",
+    (movement) =>
+      movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "critical",
   ).length;
   const bedsReady = counts.capacity?.value ?? 0;
   // The two highlight chips count the queue they highlight (after the ED and service filters).

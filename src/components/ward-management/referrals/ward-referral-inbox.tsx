@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL, type GenderPlacementReason } from "../ward-change-reasons";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { genderReviewNeeded, REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "../ward-model";
 import { DECLINE_REASON_LABELS, wardTransferNeedsCoordinator } from "../ward-referrals";
 import { useRouteRole } from "../ward-role-gate";
@@ -32,7 +32,13 @@ function routeUnitId(pathname: string): string | undefined {
  * D-30 transfers from another hospital and a gender placement that needs a recorded reason.
  */
 export function WardReferralInbox({ unitId }: { unitId: string }) {
-  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units } = useWardFlow();
+  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units } = useWardFlowSelect(
+    "wardReferralInbox",
+    "resolvePatientIdentity",
+    "dispatch",
+    "rejections",
+    "units",
+  );
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const pathname = usePathname() ?? "";

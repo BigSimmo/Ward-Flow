@@ -30,7 +30,7 @@ import {
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
@@ -133,7 +133,17 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     dayZero,
     rejections,
     repatriations: liveRepatriations,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "patients",
+    "referrals",
+    "movements",
+    "dispatch",
+    "dayZero",
+    "rejections",
+    "repatriations",
+  );
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();

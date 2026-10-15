@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
 import {
   setWardAccess,
@@ -115,6 +115,7 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+  const network = useWardNetwork();
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
   const { movements, units, bedReleases, admissions, leaveBeds, focusMovementId, configuration } =
     useUnscopedWardFlow();
@@ -138,11 +139,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   const { statewide, sites, teams } = useMemo(
     () =>
       workstationDesks({
-        hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
+        hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites }),
         eds: edHomeSummaries(movements, now, configuration.edAccessTargetMinutes),
         movements,
       }),
-    [units, bedReleases, admissions, leaveBeds, movements, now, configuration.edAccessTargetMinutes],
+    [units, bedReleases, admissions, leaveBeds, movements, now, configuration.edAccessTargetMinutes, network],
   );
   const allDesks = useMemo(
     () => [...statewide, ...sites.flatMap((site) => site.desks), ...teams],

@@ -22,7 +22,7 @@ import {
   waitBand,
   wardSummary,
 } from "@/components/ward-management/delays/delays-board-model";
-import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -35,7 +35,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const state = seedWardFlowState();
 const UNITS = allUnits();
 const OPEN = state.movements.filter(isOpen);
-const ROWS = boardRows(delayGroups(state.movements, UNITS, NOW_ANCHOR), NOW_ANCHOR);
+const ROWS = boardRows(delayGroups(state.movements, UNITS, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS), NOW_ANCHOR);
 const nameOf = () => "";
 
 describe("the Delays board model", () => {
@@ -69,7 +69,7 @@ describe("the Delays board model", () => {
     )!;
     expect(accepted, "nobody has an accepted bed in this fixture").toBeDefined();
     const movement = { ...accepted.movement, acceptedAt: NOW_ANCHOR - 5 };
-    const groups = delayGroups([movement], UNITS, NOW_ANCHOR);
+    const groups = delayGroups([movement], UNITS, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     const [row] = boardRows(groups, NOW_ANCHOR);
     expect(row.activity?.what).toBe("a ward accepted");
     expect(row.quiet).toBe(5);
@@ -122,18 +122,24 @@ describe("the Delays board model", () => {
 
   it("filters combine, and no filter shows everyone", () => {
     const bins = runwayBins(ROWS);
-    expect(filterRows(ROWS, NO_FILTERS, bins, nameOf)).toHaveLength(ROWS.length);
-    const lockedYours = filterRows(ROWS, { ...NO_FILTERS, owner: "yours", locked: true }, bins, nameOf);
+    expect(filterRows(ROWS, NO_FILTERS, bins, nameOf, DEFAULT_DUE_SOON_THRESHOLDS)).toHaveLength(ROWS.length);
+    const lockedYours = filterRows(
+      ROWS,
+      { ...NO_FILTERS, owner: "yours", locked: true },
+      bins,
+      nameOf,
+      DEFAULT_DUE_SOON_THRESHOLDS,
+    );
     expect(lockedYours.every((row) => row.owner === "yours" && row.locked)).toBe(true);
     expect(lockedYours).toHaveLength(ROWS.filter((row) => row.owner === "yours" && row.locked).length);
-    const over24 = filterRows(ROWS, { ...NO_FILTERS, threshold: 3 }, bins, nameOf);
+    const over24 = filterRows(ROWS, { ...NO_FILTERS, threshold: 3 }, bins, nameOf, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(over24.every((row) => row.waited >= OVER_24H)).toBe(true);
   });
 
   it("the severe filter keeps exactly the severe causes the Menu's Delays figure counts (shell-9)", () => {
     const bins = runwayBins(ROWS);
-    const severe = filterRows(ROWS, { ...NO_FILTERS, severe: true }, bins, nameOf);
-    const menuFigure = delayGroups(state.movements, UNITS, NOW_ANCHOR)
+    const severe = filterRows(ROWS, { ...NO_FILTERS, severe: true }, bins, nameOf, DEFAULT_DUE_SOON_THRESHOLDS);
+    const menuFigure = delayGroups(state.movements, UNITS, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)
       .filter((group) => SEVERE_CAUSES.includes(group.cause))
       .reduce((total, group) => total + group.movements.length, 0);
     expect(menuFigure, "fixture drifted: no severe delay to filter to").toBeGreaterThan(0);
@@ -174,8 +180,9 @@ describe("the Delays board model", () => {
   });
 
   it("pins only recorded legal times within the soon warning", () => {
-    const soon = currentDueSoonThresholds().soonMinutes;
-    for (const row of ROWS) expect(isPinned(row)).toBe(row.dueIn !== undefined && row.dueIn <= soon);
+    const soon = DEFAULT_DUE_SOON_THRESHOLDS.soonMinutes;
+    for (const row of ROWS)
+      expect(isPinned(row, DEFAULT_DUE_SOON_THRESHOLDS)).toBe(row.dueIn !== undefined && row.dueIn <= soon);
   });
 
   it("scales the spread linearly to 24 hours, then compresses up to 7 days", () => {

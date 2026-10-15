@@ -21,8 +21,8 @@ import {
   minutesUntil,
   splitDuration,
   wallClockNow,
+  DEFAULT_DUE_SOON_THRESHOLDS,
 } from "../src/components/ward-management/ward-clock";
-
 const NOW = 10 * 60 + 42; // 10:42 on the synthetic day
 
 describe("ward clock", () => {
@@ -32,11 +32,11 @@ describe("ward clock", () => {
   });
 
   it("classifies a deadline by how much time is left", () => {
-    expect(clockState(NOW - 1, NOW)).toBe("breached");
-    expect(clockState(NOW + 30, NOW)).toBe("critical");
-    expect(clockState(NOW + 120, NOW)).toBe("due");
-    expect(clockState(NOW + 400, NOW)).toBe("clear");
-    expect(clockState(NaN, NOW)).toBe("due");
+    expect(clockState(NOW - 1, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("breached");
+    expect(clockState(NOW + 30, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("critical");
+    expect(clockState(NOW + 120, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("due");
+    expect(clockState(NOW + 400, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("clear");
+    expect(clockState(NaN, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("due");
   });
 
   it("formats a remaining duration for a coordinator, not a machine", () => {

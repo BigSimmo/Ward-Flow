@@ -54,7 +54,7 @@ import { bedsPendingPreparation, openBedsNow } from "@/components/ward-managemen
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
@@ -108,7 +108,7 @@ export function StatisticsWardScreen({
   const live = useStatisticsLive();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
-  const { dayZero } = useWardFlow();
+  const { dayZero } = useWardFlowSelect("dayZero");
   const isPhone = useIsPhone();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;

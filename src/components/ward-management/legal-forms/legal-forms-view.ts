@@ -1,11 +1,12 @@
 import type { WfTone } from "@/components/wf";
 import {
+  type DueSoonThresholds,
   formatInstantWithDay,
+  type Instant,
   minuteOfDayFromClockText,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -78,10 +79,10 @@ export function formTitle(code: string): string {
 /** Where a form stands against the warning windows. `none` when no expiry was typed. */
 export type ClockStanding = "passed" | "urgent" | "soon" | "later" | "none";
 
-export function clockStanding(movement: Movement, now: Instant): ClockStanding {
+export function clockStanding(movement: Movement, now: Instant, thresholds: DueSoonThresholds): ClockStanding {
   if (currentLegalDueAt(movement) === undefined) return "none";
   if (isLegalDeadlineBreached(movement, now)) return "passed";
-  const reminder = legalExpiryReminderOf(movement, now);
+  const reminder = legalExpiryReminderOf(movement, now, thresholds);
   if (reminder === "within-urgent") return "urgent";
   if (reminder === "within-soon") return "soon";
   return "later";
@@ -96,10 +97,10 @@ export const STANDING_TONE: Record<ClockStanding, WfTone> = {
 };
 
 /** The short word beside a typed expiry: "Passed", "Within 1h", "Within 3h" or "Later". */
-export function standingWord(standing: ClockStanding): string {
+export function standingWord(standing: ClockStanding, thresholds: DueSoonThresholds): string {
   if (standing === "passed") return "Passed";
-  if (standing === "urgent") return `Within ${reminderHours("within-urgent")}h`;
-  if (standing === "soon") return `Within ${reminderHours("within-soon")}h`;
+  if (standing === "urgent") return `Within ${reminderHours("within-urgent", thresholds)}h`;
+  if (standing === "soon") return `Within ${reminderHours("within-soon", thresholds)}h`;
   if (standing === "later") return "Later";
   return "Time not written";
 }
