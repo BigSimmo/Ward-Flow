@@ -31,17 +31,17 @@ These identifiers are resource references, not credentials. Check the exact targ
 
 ## Configuration
 
-Railway service settings hold the build and start commands. Railpack installs the locked dependencies using its default installer; a custom install command caused a missing `/opt/corepack` packaging error and was removed.
+[`railway.json`](../railway.json) holds the builder, build command, start command and health check path, and overrides the matching Railway service settings. Variables and watch paths stay in the service settings. Railpack installs the locked dependencies using its default installer; a custom install command caused a missing `/opt/corepack` packaging error and was removed.
 
 - Builder: Railpack, Node `24.19.0`; npm version comes from `packageManager`.
-- Build setting: `node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack` (includes Next.js type checking).
-- Start setting: `node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT`.
+- Build command: `node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack` (includes Next.js type checking).
+- Start command: `node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT`.
 - Variables: `NODE_ENV=production`, `PORT=8080`, `NEXT_PUBLIC_MOCKUPS_ENABLED=true`, `NEXT_PUBLIC_SITE_URL=https://ward-flow-production.up.railway.app`, `RAILPACK_NODE_VERSION=24.19.0`.
 - The setup record reported no Supabase, OpenAI or other database/provider credentials for this service. Current settings were not inspected.
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.
 
-The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/mockups/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
+The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200), and `railway.json` sets it as the deploy health check. It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/mockups/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
 
 ## Separate drawer preview — 5 October 2026
 
