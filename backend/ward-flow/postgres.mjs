@@ -46,6 +46,8 @@ export function createWorkspaceStore(
 ) {
   const snapshot = (row, at) => ({
     dataMode: row.data_mode,
+    // Whether the demonstration controls work here, so the screens can say when they do not.
+    demoControls: demoEvents,
     revision: Number(row.revision),
     payload: row.payload,
     now: engine.worldNow(row.payload, at),
@@ -357,25 +359,22 @@ export function createWorkspaceStore(
     async poll(actorId, knownRevision) {
       const at = clock();
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, started_at, clock_offset_minutes AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
       const row = rows[0];
       if (
         row &&
         Number(row.revision) === knownRevision &&
-        row.started_at instanceof Date &&
-        Number.isFinite(row.started_at.getTime()) &&
-        Number.isFinite(Number(row.clock_offset))
+        typeof row.started_at === "string" &&
+        Number.isFinite(Date.parse(row.started_at)) &&
+        Number.isFinite(row.clock_offset)
       )
         return {
           notModified: true,
           dataMode: row.data_mode,
           revision: knownRevision,
-          now: engine.worldNow(
-            { startedAt: row.started_at.toISOString(), state: { clockOffsetMinutes: Number(row.clock_offset) } },
-            at,
-          ),
+          now: engine.worldNow({ startedAt: row.started_at, state: { clockOffsetMinutes: row.clock_offset } }, at),
         };
       return { notModified: false, snapshot: await read(actorId) };
     },
@@ -393,6 +392,7 @@ export function createWorkspaceStore(
      */
     async command(actorId, commandId, expectedRevision, event, { revisionOnly = false } = {}) {
       if (!engine.validCommand(event)) throw new Error("invalid-command");
+      const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprint = createHash("sha256")
         .update(JSON.stringify(canonical({ expectedRevision, event })))
         .digest("hex");
@@ -425,7 +425,8 @@ export function createWorkspaceStore(
         let changes = {};
         let reason = "The workspace changed. Review the latest board before trying again.";
         const priorRevision = Number(row.revision);
-        if (!demoEvents && engine.demoOnlyCommand(event)) {
+        if (demoRefused) {
+          // Refused like any other denial, so the attempt is audited and a retry replays it.
           outcome = "denied";
           status = 422;
           reason = "Demo controls are switched off on the shared workspace.";
@@ -469,11 +470,7 @@ export function createWorkspaceStore(
         );
         return {
           status,
-          body: {
-            ...result,
-            ...(outcome === "denied" && !demoEvents && engine.demoOnlyCommand(event) ? { code: "demo-disabled" } : {}),
-            ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at) }),
-          },
+          body: { ...result, ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at) }) },
         };
       });
       if (queued) {

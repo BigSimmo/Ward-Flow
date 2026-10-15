@@ -40,8 +40,7 @@ import styles from "./ward-demo-controls.module.css";
  * `*BlockedReason` guard: raised with `role: "demo"`, the reducer can never refuse either.
  */
 export function WardDemoControls() {
-  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice, sharedDemoControls } = useWardFlow();
-  if (!sharedDemoControls) return null;
+  const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const [fileMessage, setFileMessage] = useState<string | null>(null);

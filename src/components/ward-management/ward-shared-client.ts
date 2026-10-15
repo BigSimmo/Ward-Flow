@@ -9,11 +9,11 @@ export type SharedSnapshot = {
   revision: number;
   now: number;
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
+  /** False when the server refuses the demonstration controls (clock, reset and scenario). */
+  demoControls?: boolean;
 };
 type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
 export type SharedView = {
-  /** Whether the server permits synthetic clock and scenario controls. */
-  demoControls?: boolean;
   snapshot: SharedSnapshot | null;
   receivedAt: number;
   status: SharedStatus;
@@ -31,14 +31,7 @@ type PendingCommand = {
 };
 
 export class SharedWorkspaceClient {
-  private view: SharedView = {
-    demoControls: false,
-    snapshot: null,
-    receivedAt: 0,
-    status: "loading",
-    error: null,
-    eventLog: [],
-  };
+  private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
   private queue: WardFlowEvent[] = [];
   private disposed = false;
@@ -124,7 +117,6 @@ export class SharedWorkspaceClient {
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
       if (!response.ok) throw new Error("Workspace unavailable");
-      if (typeof value?.demoControls === "boolean") this.publish({ demoControls: value.demoControls });
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
@@ -144,10 +136,6 @@ export class SharedWorkspaceClient {
     }
   }
   dispatch = (event: WardFlowEvent) => {
-    if (!this.view.demoControls && (event.type === "ADVANCE_CLOCK" || event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO")) {
-      this.publish({ status: "ready", error: "Demo controls are switched off on the shared workspace." });
-      return;
-    }
     if (
       !this.view.snapshot ||
       this.view.status === "unavailable" ||
@@ -186,14 +174,15 @@ export class SharedWorkspaceClient {
         this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });
         this.pending = null;
         if (!response.ok) {
-          // A refused demo command must not discard later independent actions.
-          if (value?.code !== "demo-disabled") this.queue = [];
+          this.queue = [];
           this.publish({
             status: "ready",
             error:
               response.status === 409
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
-                : "The action was not applied. Review the workflow requirements.",
+                : command.event.role === "demo" && value.snapshot?.demoControls === false
+                  ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                  : "The action was not applied. Review the workflow requirements.",
           });
           break;
         }

@@ -147,12 +147,7 @@ export function createSharedHandler({
       if (config.dataMode && config.dataMode !== "prototype")
         return reply(503, { error: "Live data mode is not commissioned" });
       if (path === "/v1/workspace" && request.method === "GET") {
-        const workspace = {
-          role: "coordinator",
-          actorId,
-          workspaceId: config.workspaceId,
-          demoControls: config.sharedDemoEvents === true,
-        };
+        const workspace = { role: "coordinator", actorId, workspaceId: config.workspaceId };
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const since = Number(new URL(request.url).searchParams.get("since"));

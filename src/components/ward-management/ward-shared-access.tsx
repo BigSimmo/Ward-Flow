@@ -75,7 +75,6 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       pushApi,
       dispatch: () => {},
       snapshot: null,
-      demoControls: false,
       eventLog: [],
       signedIn: false,
       status: "unavailable",
