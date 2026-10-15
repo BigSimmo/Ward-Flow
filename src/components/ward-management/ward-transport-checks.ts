@@ -5,7 +5,7 @@
  * Nothing here blocks a step. A check that is not met is shown as a warning, and a person who goes
  * ahead records which checks were open and a coded reason (`TransportException`).
  */
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { minuteOfDayFromClockText, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
   TRANSPORT_EXCEPTION_GAPS,
@@ -16,6 +16,7 @@ import {
   type TransportExceptionGap,
   type TransportExceptionReason,
   type TransportLegalStatus,
+  type TransportProvider,
 } from "@/components/ward-management/ward-model";
 
 export const TRANSPORT_EXCEPTION_GAP_LABELS: Record<TransportExceptionGap, string> = {
@@ -162,4 +163,60 @@ export function transportExceptionRecord(
 export function transportExceptionText(exception: TransportException): string {
   const gaps = exception.gaps.map((gap) => TRANSPORT_EXCEPTION_GAP_LABELS[gap]).join("; ");
   return `${gaps}. ${TRANSPORT_EXCEPTION_REASON_LABELS[exception.reason]}`;
+}
+
+/* ------------------------------------------------------------------------------------------- *
+ * Transport booking answers, shared by the ED, community and out-of-area booking popups.
+ * ------------------------------------------------------------------------------------------- */
+
+/**
+ * `HH:MM`, or digits only ("0930", the iPhone number pad has no ":"), to minutes since midnight.
+ * Refuses rather than guesses: a blank or malformed time returns `undefined`, never a made-up value.
+ */
+export function minutesFromTimeInput(value: string): number | undefined {
+  return minuteOfDayFromClockText(value);
+}
+
+/**
+ * A typed `HH:MM` plus "today" or "tomorrow" (owner's third ruling, 2026-09-17: a time read off a
+ * phone call, not a date picker) as an `Instant`, finding "today" by rounding `now` down to its day.
+ * `undefined` when the time cannot be read.
+ */
+export function instantFromEstimatedTimeInputs(
+  timeValue: string,
+  day: "today" | "tomorrow",
+  now: Instant,
+): number | undefined {
+  const minuteOfDay = minutesFromTimeInput(timeValue);
+  if (minuteOfDay === undefined) return undefined;
+  const startOfToday = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY;
+  return startOfToday + (day === "tomorrow" ? MINUTES_PER_DAY : 0) + minuteOfDay;
+}
+
+/** The answers a transport booking popup collects. `undefined` and `""` mean not yet answered. */
+export type TransportBookingAnswers = {
+  provider: TransportProvider | undefined;
+  escortRequired: boolean | undefined;
+  cadNumber: string;
+  transportLegalStatus: TransportLegalStatus | undefined;
+  estimatedTime: string;
+  estimatedDay: "today" | "tomorrow";
+};
+
+/**
+ * Why the booking confirm control is unavailable, or `undefined` when every answer is in. Owner's
+ * third ruling, 2026-09-17: the CAD number, legal status and time are read off the phone call and
+ * none is filled in for the person booking.
+ */
+export function transportAnswersBlockedReason(draft: TransportBookingAnswers, now: Instant): string | undefined {
+  const missing: string[] = [];
+  if (draft.provider === undefined) missing.push("choose who is collecting the patient");
+  if (draft.escortRequired === undefined) missing.push("answer the escort question");
+  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
+  if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
+  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
+    missing.push("enter the estimated time");
+  }
+  if (missing.length === 0) return undefined;
+  return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
 }

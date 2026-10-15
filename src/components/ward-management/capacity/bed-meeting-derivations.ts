@@ -33,7 +33,7 @@ import { networkServiceGroupTotals, networkWardRows } from "./capacity-derivatio
 /** How many named rows each section prints before it says "and N more". One A4 page is the brief. */
 export const BED_MEETING_ROW_LIMIT = 6;
 
-type BedMeetingCapacity = {
+export type BedMeetingCapacity = {
   wards: number;
   beds: number;
   occupied: number;
@@ -45,14 +45,14 @@ type BedMeetingCapacity = {
   pendingPreparation: number | undefined;
 };
 
-type BedMeetingDischargeRow = {
+export type BedMeetingDischargeRow = {
   id: string;
   ward: string;
   status: "Held up" | "Confirmed" | "Expected";
   note: string | null;
 };
 
-type BedMeetingDischarges = {
+export type BedMeetingDischarges = {
   heldUp: number;
   confirmed: number;
   expected: number;
