@@ -325,7 +325,8 @@ describe("RECEIVE_REFERRAL", () => {
       });
       expect(after.referrals).toEqual(before.referrals);
       expect(after.rejections).toHaveLength(1);
-      expect(after.rejections[0].reason).toContain("PT-999");
+      // D-39: refusals never quote a record number.
+      expect(after.rejections[0].reason).not.toContain("PT-999");
       expect(after.rejections[0].reason).toMatch(/patient|person/i);
     });
 
@@ -683,7 +684,9 @@ describe("ACCEPT_REFERRAL", () => {
       unitId: "scgh-adult-open",
     });
     expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toContain("RF-DOES-NOT-EXIST");
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(after.rejections[0].reason).not.toContain("RF-DOES-NOT-EXIST");
+    expect(after.rejections[0].reason).toContain("that id");
   });
 
   /**
@@ -843,7 +846,9 @@ describe("DECLINE_REFERRAL", () => {
       reason: "no_suitable_bed",
     });
     expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toContain("RF-DOES-NOT-EXIST");
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(after.rejections[0].reason).not.toContain("RF-DOES-NOT-EXIST");
+    expect(after.rejections[0].reason).toContain("that id");
   });
 
   // Same gap as ACCEPT_REFERRAL's own withdrawal pair above, on the decline path: the
@@ -1018,7 +1023,9 @@ describe("RECORD_LOCAL_BED_SOUGHT", () => {
       referralId: "RF-DOES-NOT-EXIST",
     });
     expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toContain("RF-DOES-NOT-EXIST");
+    // D-39: refusals say "this referral" or "this stay", never the record number.
+    expect(after.rejections[0].reason).not.toContain("RF-DOES-NOT-EXIST");
+    expect(after.rejections[0].reason).toContain("that id");
     expect(after.referrals).toEqual(before.referrals);
   });
 });

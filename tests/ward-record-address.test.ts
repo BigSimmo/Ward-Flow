@@ -6,8 +6,10 @@ import {
   recordIdFromAddress,
   recordIdFromParam,
 } from "@/components/ward-management/shell/ward-record-address";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { withoutRecordNumbers } from "@/components/ward-management/ward-patient-resolver";
 import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** D-39 (15 October 2026): an address code that carries no record number. */
 const seed = seedWardFlowState();
@@ -61,5 +63,39 @@ describe("record address codes (D-39)", () => {
     expect(recordIdFromParam(null)).toBeNull();
     expect(recordIdFromParam("")).toBeNull();
     expect(recordIdFromParam(encodeRecordAddress("PT-001"))).toBe("PT-001");
+  });
+});
+
+describe("refusal and notice wording keeps record numbers off screen (D-39)", () => {
+  it("says this referral, this stay or this patient in place of the number", () => {
+    expect(withoutRecordNumbers("referral RF-012 was already decided (accepted)")).toBe(
+      "this referral was already decided (accepted)",
+    );
+    expect(withoutRecordNumbers("cannot initiate repatriation for discharged admission AD-LEFT-01")).toBe(
+      "cannot initiate repatriation for discharged stay",
+    );
+    expect(withoutRecordNumbers("but admission AD-1 belongs to unit y")).toBe("but this stay belongs to unit y");
+    expect(withoutRecordNumbers("admission AD-1 is on leave (WL-003); record the return first")).toBe(
+      "this stay is on leave (this leave bed); record the return first",
+    );
+    expect(withoutRecordNumbers("patient PT-001 already has a community treatment order recorded")).toBe(
+      "this patient already has a community treatment order recorded",
+    );
+    expect(withoutRecordNumbers("UMRN UM100047 is unchanged")).toBe("UMRN UM100047 is unchanged");
+  });
+
+  it("refuses with plain words while the rejection keeps its data fields", () => {
+    const state = seedWardFlowState();
+    const decided = state.referrals.find((referral) => referral.destinations.every((d) => d.state !== "queued"))!;
+    const next = wardFlowReducer(state, {
+      type: "RECORD_LOCAL_BED_SOUGHT",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      referralId: decided.id,
+    } as Parameters<typeof wardFlowReducer>[1]);
+    expect(next.rejections.length).toBe(state.rejections.length + 1);
+    const rejection = next.rejections.at(-1)!;
+    expect(rejection.reason).toContain("this referral");
+    expect(rejection.reason).not.toContain(decided.id);
   });
 });

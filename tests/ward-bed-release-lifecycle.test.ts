@@ -1007,7 +1007,7 @@ describe("ward bed release lifecycle", () => {
     });
     expect(refused.rejections).toHaveLength(1);
     expect(refused.rejections[0]?.reason).toBe(
-      `release ${target.id} completes when admission ${target.admissionId} is recorded as having left (RECORD_LEAVING); they are still occupied`,
+      `release ${target.id} completes when this stay is recorded as having left (RECORD_LEAVING); they are still occupied`,
     );
     expect(release(refused, target.id)).toEqual(target);
 

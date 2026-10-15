@@ -1336,7 +1336,7 @@ export function reduceRecordedFactEvent(
             "community_referral_withdrawn",
             { role: "community", placeId: communityTeamSlug(teamName) },
             { referralId: referral.id },
-            `The referrer withdrew this referral's request to your team; referral ${referral.id}.`,
+            "The referrer withdrew this referral's request to your team.",
           ),
         ]);
       }
