@@ -366,6 +366,19 @@
   cursor: pointer;
 }
 
+/* Touch: a transparent hit area takes the 32px jump button up to the 48px tap floor. */
+@media (pointer: coarse) {
+  .jumpButton {
+    position: relative;
+  }
+
+  .jumpButton::before {
+    content: "";
+    position: absolute;
+    inset: calc((32px - var(--spacing-tap, 3rem)) / 2) 0;
+  }
+}
+
 .jumpButton:hover {
   background: var(--wf-hover);
 }

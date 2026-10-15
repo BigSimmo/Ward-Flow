@@ -357,6 +357,26 @@
   cursor: pointer;
 }
 
+/* Phone: the code chips take the shared phone pill face, with a transparent hit area up to the
+   48px tap floor. Desktop keeps the 32px chip. */
+@media (max-width: 48rem) {
+  .codeChips {
+    gap: var(--wf-phone-pill-gap);
+  }
+
+  .codeChip {
+    position: relative;
+    height: var(--wf-phone-pill-h);
+    padding: 0 var(--wf-phone-pill-px);
+  }
+
+  .codeChip::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}
+
 .codeChip:hover {
   background: var(--wf-hover);
 }
