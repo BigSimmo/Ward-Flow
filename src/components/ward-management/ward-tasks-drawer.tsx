@@ -826,6 +826,7 @@ export function WardTasksDrawer({
             onClick={onClose}
             aria-label="Close tasks panel"
             title="Close tasks panel"
+            data-sheet-autofocus="true"
           >
             <X aria-hidden="true" />
           </button>

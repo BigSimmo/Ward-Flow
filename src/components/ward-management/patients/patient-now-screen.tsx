@@ -57,7 +57,13 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
-import { PatientTransitOperations } from "./patient-transit-operations";
+import dynamic from "next/dynamic";
+import { preloadWhenIdle } from "../preload-when-idle";
+// F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
+// fetched once the page is idle, rather than with the patient page.
+const loadTransitOperations = () => import("./patient-transit-operations");
+const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
+preloadWhenIdle(loadTransitOperations);
 import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
