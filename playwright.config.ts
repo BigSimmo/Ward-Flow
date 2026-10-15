@@ -27,7 +27,7 @@ const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
 const mockupTag = /@mockup/;
 // The release gate (15 October 2026): four core bed-flow journeys with an axe check at each key
 // step, on desktop Chrome and phone WebKit. Its own projects, its own CI job, nothing else in them.
-const releaseGateSpecPattern = /.*release-gate-(?:journeys|axe-sweep)\.spec\.ts/;
+const releaseGateSpecPattern = /.*(?:release-gate-journeys|release-gate-axe-sweep)\.spec\.ts/;
 
 // Ward Flow fold gate (Josh, 25 September 2026): the known-failing journeys still run every gate, but
 // in their own project with a short timeout, so a known failure fails fast instead of waiting out
@@ -38,7 +38,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:release-gate-(?:journeys|axe-sweep)|api-csrf-proxy|ui-ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit))\.spec\.ts/,
+    /.*(?:release-gate-journeys|release-gate-axe-sweep|api-csrf-proxy|ui-ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
