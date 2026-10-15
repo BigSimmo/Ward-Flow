@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { EventEmitter } from "node:events";
 import { readConfig } from "./config.mjs";
-import { createHandler, registerShutdown } from "./server.mjs";
+import { HEADERS_TIMEOUT_MS, MAX_CONNECTIONS, createHandler, listen, registerShutdown } from "./server.mjs";
 import { VerifierUnavailableError } from "./auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 
@@ -286,4 +286,17 @@ test("nonshared shutdown closes the listener without a pool", async (t) => {
   await close();
   assert.equal(server.close.mock.callCount(), 1);
   assert.equal(signals.exitCode, undefined);
+});
+
+test("the listener allows many connections but drops slow headers after 5 seconds", async () => {
+  const server = listen(async () => new Response(null, { status: 204 }), { port: 0, host: "127.0.0.1" });
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    assert.equal(server.maxConnections, MAX_CONNECTIONS);
+    assert.ok(MAX_CONNECTIONS >= 128);
+    assert.equal(server.headersTimeout, HEADERS_TIMEOUT_MS);
+    assert.ok(HEADERS_TIMEOUT_MS <= 5_000 && server.requestTimeout > HEADERS_TIMEOUT_MS);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
