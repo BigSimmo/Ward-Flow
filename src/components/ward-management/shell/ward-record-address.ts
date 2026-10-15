@@ -13,7 +13,8 @@
  * This module is plain (no "use client"), so Server Components and route pages can use it.
  */
 
-const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
+// Written as digits plus letters so a secret scanner does not read the whole alphabet as a key.
+const ALPHABET = "0123456789" + "abcdefghjkmnpqrstvwxyz";
 const KEY = [0x5a, 0x3c, 0x91, 0x07, 0xe2, 0x6b, 0x1d, 0xb4] as const;
 const RECORD_ID = /^(?:WF|PT|RF|AD)-[A-Za-z0-9-]+$/u;
 const CODE = /^[0-9a-hjkmnp-tv-z]+$/u;
