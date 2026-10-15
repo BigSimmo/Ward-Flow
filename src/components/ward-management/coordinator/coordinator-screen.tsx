@@ -723,7 +723,7 @@ export function CoordinatorScreen() {
             titleMeta={
               isPhone
                 ? `Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% occupied` : ""
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
                   }`
                 : undefined
             }

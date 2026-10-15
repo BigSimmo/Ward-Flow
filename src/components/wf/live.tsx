@@ -114,6 +114,7 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
       {/* A1-18: offline is not an act-now state, so its dot is neutral grey, not red. */}
       {state === "offline" ? <StatusGlyph tone="neutral" size={9} /> : null}
       {word}
+      {/* Collapsed in the flex pill, but keeps "Demo 10:42" two words for label-in-name (F-19). */}{" "}
       {state === "live" && shownAge != null ? (
         <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
       ) : null}

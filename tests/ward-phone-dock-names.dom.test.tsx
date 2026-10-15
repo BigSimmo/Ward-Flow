@@ -47,7 +47,7 @@ function renderDock(tasksCount: number, activityUnread: number) {
 /** The words a control shows, in order, one space between each piece of text. */
 function shownWords(element: HTMLElement): string {
   return Array.from(element.querySelectorAll("span"))
-    .filter((span) => span.children.length === 0)
+    .filter((span) => span.children.length === 0 && !span.closest("[aria-hidden='true']"))
     .map((span) => span.textContent?.trim() ?? "")
     .filter(Boolean)
     .join(" ");
@@ -58,10 +58,10 @@ afterEach(() => {
 });
 
 describe("phone dock names (F-19)", () => {
-  it("starts Tasks and Activity with their badge and word", () => {
+  it("starts Tasks and Activity with their word, then the badge", () => {
     renderDock(12, 3);
-    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("12 Tasks outstanding");
-    expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("3 Activity unread");
+    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Tasks, 12 outstanding");
+    expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity, 3 unread");
   });
 
   it("keeps the plain word when there is no badge", () => {
@@ -75,8 +75,12 @@ describe("phone dock names (F-19)", () => {
     const links = screen.getAllByTestId("ward-phone-dock-link");
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
-      const name = link.getAttribute("aria-label") ?? "";
-      expect(name.startsWith(shownWords(link)), `${name} / ${shownWords(link)}`).toBe(true);
+      // Named by its content, not an aria-label, so the name cannot drift from the screen.
+      expect(link.hasAttribute("aria-label")).toBe(false);
+      // The first word on screen: the visible label (the count chip is hidden from the name).
+      const shown = shownWords(link).split(" ")[0] ?? "";
+      expect(shown.length).toBeGreaterThan(0);
+      expect(link).toHaveAccessibleName(new RegExp(`^${shown.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
     }
   });
 });

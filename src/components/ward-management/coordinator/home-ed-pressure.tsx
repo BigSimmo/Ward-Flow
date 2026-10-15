@@ -136,9 +136,11 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                     </>
                   ) : null}
                 </span>
+                {/* A space between the lines (collapsed in the flex column) so the visible words read
+                    apart for voice control and axe label-in-name, F-19. */}{" "}
                 <span className={styles.edWaiting} aria-hidden="true">
                   <span className={styles.edWaitingValue}>{row.waiting}</span> waiting
-                </span>
+                </span>{" "}
                 <span className={styles.edLine} aria-hidden="true">
                   {row.waiting > 0 ? (
                     <>
@@ -150,7 +152,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                   ) : (
                     <span className={styles.edWord}>No wait</span>
                   )}
-                </span>
+                </span>{" "}
                 <span className={`${styles.edLine} ${styles.edDeadline}`} aria-hidden="true">
                   <StatusGlyph tone={deadline.tone} size={9} />
                   <span className={styles.edWord}>{deadline.text}</span>
