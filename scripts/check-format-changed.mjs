@@ -118,10 +118,12 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
   if (write) {
     const partial = partialStagedFiles(root, files);
     if (partial.length) throw new Error(`Refusing to rewrite partially staged files: ${partial.join(", ")}`);
-    const { unsignedWardFiles, signOutConflicts } = await import("./pre-commit-checks.mjs");
+    const { unsignedWardFiles, signOutConflicts, signOutLogOptional } = await import("./pre-commit-checks.mjs");
     const log = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
     if (!existsSync(log)) {
-      // Same rule as the pre-commit guard: no shared log on this machine means no claims to check.
+      // Same rule as the pre-commit guard: only an unnamed default log off Windows may be absent.
+      if (!signOutLogOptional())
+        throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
       console.warn(`Sign-out log not found at ${log}; formatting the named files without an ownership check.`);
     } else {
       const claims = readFileSync(log, "utf8");

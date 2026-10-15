@@ -52,20 +52,33 @@ it("detects partially staged input before rewriting it", () => {
 });
 it("requires explicit file ownership scope for write mode", () =>
   expect(main(["--write"])).rejects.toThrow("exact owned paths"));
-it("formats named files without an ownership check when no sign-out log exists", async () => {
+it("refuses to format when an explicitly named sign-out log is missing", () => {
   const { root } = fixture();
   const previous = process.env.WARD_SIGNOUT_FILE;
   process.env.WARD_SIGNOUT_FILE = path.join(root, "absent", "sign-out.md");
-  try {
-    // The fixture has no node_modules, so reaching the Prettier lookup proves the missing log did not block.
-    await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow(
-      "Locked local Prettier unavailable",
-    );
-  } finally {
-    if (previous === undefined) delete process.env.WARD_SIGNOUT_FILE;
-    else process.env.WARD_SIGNOUT_FILE = previous;
-  }
+  return expect(main(["--write", "--files", "space name.md"], root))
+    .rejects.toThrow("sign-out log unavailable")
+    .finally(() => {
+      if (previous === undefined) delete process.env.WARD_SIGNOUT_FILE;
+      else process.env.WARD_SIGNOUT_FILE = previous;
+    });
 });
+it.skipIf(process.platform === "win32")(
+  "formats named files without an ownership check when the default log is absent off Windows",
+  async () => {
+    const { root } = fixture();
+    const previous = process.env.WARD_SIGNOUT_FILE;
+    delete process.env.WARD_SIGNOUT_FILE;
+    try {
+      // The fixture has no node_modules, so reaching the Prettier lookup proves the missing log did not block.
+      await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow(
+        "Locked local Prettier unavailable",
+      );
+    } finally {
+      if (previous !== undefined) process.env.WARD_SIGNOUT_FILE = previous;
+    }
+  },
+);
 it("checks all verdicts on formatter config drift without granting directory writes", () => {
   const { root } = fixture();
   writeFileSync(path.join(root, "package.json"), '{"prettier":{"semi":true}}');

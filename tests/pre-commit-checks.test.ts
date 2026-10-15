@@ -11,6 +11,7 @@ import {
   parseAddedLines,
   scanAddedLines,
   signOutConflicts,
+  signOutLogOptional,
   unsignedWardFiles,
 } from "../scripts/pre-commit-checks.mjs";
 
@@ -144,6 +145,15 @@ function ihiWithValidCheckDigit(): string {
 function added(file: string, ...lines: string[]) {
   return new Map([[file, lines.map((text, index) => ({ line: index + 1, text }))]]);
 }
+
+describe("signOutLogOptional", () => {
+  it("lets only an unnamed default log off Windows be absent", () => {
+    expect(signOutLogOptional({}, "linux")).toBe(true);
+    expect(signOutLogOptional({}, "darwin")).toBe(true);
+    expect(signOutLogOptional({}, "win32")).toBe(false);
+    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "/tmp/typo.md" }, "linux")).toBe(false);
+  });
+});
 
 describe("identifier validators", () => {
   it("accepts a checksum-valid Medicare number and rejects the synthetic ones", () => {
@@ -286,14 +296,34 @@ describe("the hook script end to end", () => {
     expect(passed.stderr).toContain("[pre-commit] ok");
   });
 
-  it("warns and skips the ownership check when no sign-out log exists on this machine", () => {
+  it("still blocks when an explicitly named sign-out log is missing", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     const signOutFile = join(root, "absent", "sign-out.md");
-    const passed = stageAndRun(root, "docs/ward-flow/probe.md", "synthetic probe\n", {
+    const blocked = stageAndRun(root, "docs/ward-flow/probe.md", "synthetic probe\n", {
       WARD_SIGNOUT_FILE: signOutFile,
     });
-    expect(passed.status).toBe(0);
-    expect(passed.stderr).toContain(`sign-out guard skipped (no log at ${signOutFile}`);
+    expect(blocked.status).toBe(1);
+    expect(blocked.stderr).toContain(`Ward files without your sign-out in ${signOutFile}`);
   });
+
+  it.skipIf(process.platform === "win32")(
+    "warns and skips the ownership check when the default log is absent off Windows",
+    () => {
+      const root = repo();
+      execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+      const env = { ...process.env };
+      delete env.WARD_SIGNOUT_FILE;
+      mkdirSync(join(root, "docs", "ward-flow"), { recursive: true });
+      writeFileSync(join(root, "docs/ward-flow/probe.md"), "synthetic probe\n");
+      execFileSync("git", ["add", "docs/ward-flow/probe.md"], { cwd: root });
+      const passed = spawnSync(process.execPath, [join(process.cwd(), "scripts", "pre-commit-checks.mjs")], {
+        cwd: root,
+        encoding: "utf8",
+        env,
+      });
+      expect(passed.status).toBe(0);
+      expect(passed.stderr).toContain("sign-out guard skipped (no log at D:/Repos/ward-flow-logs/sign-out.md");
+    },
+  );
 });
