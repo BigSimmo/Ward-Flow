@@ -155,30 +155,8 @@ run individually per file; nothing here was executed. Back to [the code map inde
 
 ## `scripts/ward-flow/` — coordination and dev tooling
 
-- **`scripts/ward-flow/chat-control.mjs`** (3,404 lines — the largest file in this area) — Local-only
-  multi-session coordination: validates the role contract (lead/builder/verifier), creates
-  content-addressed assignments, handovers and reset certificates in
-  `docs/ward-flow/control/` (`handoverDirectory`, `promptDirectory`), manages atomic local role
-  leases, and renders a recreation prompt. Subcommands: `validate`, `status`, `export-chat-log`,
-  `capture-checkout-artifacts`, `create-assignment`, `create-handover`, `publish-handover`,
-  `certify-reset`, `recreate --role lead|builder|verifier`. Imports `receiptKey` from
-  `../gate-receipts.mjs`. Never commits, merges, fetches, pushes or contacts a provider. Not
-  npm-wired; invoked directly by whichever chat-control workflow doc names it.
-- **`scripts/ward-flow/whois.mjs`** (239 lines) — Usage: `node scripts/ward-flow/whois.mjs [name]
-[--role <query>] [--all]`. Resolves "what is checked out in folder X" from git state, because a
-  session's self-reported name or branch label cannot be trusted (documented incident: one session
-  claimed two contradictory identities from the same transport address in one day). Explicitly a
-  folder audit, not an identity system — it answers a different question from "who sent this
-  message". Full protocol: `docs/ward-flow/who-is-who.md`. Tested by
-  `tests/ward-whois-register.test.ts` (its own doc comment warns that `process.exit` inside the
-  `--role` path would end a whole Vitest run, not just a test, if imported carelessly).
-- **`scripts/ward-flow/folded.sh`** (110 lines, bash) — Usage: `folded.sh <worktree> <line-ref>
-<known-folded-control> <sha>...`. Answers "has this commit actually landed on the ward line", as
-  opposed to `git log --all -S '<text>'` which answers "which commit introduced this text" — a
-  substitution that produced two same-day false "unfolded" reports. Refuses to report at all until
-  a commit named as KNOWN-FOLDED resolves as folded (proves the checker CAN say yes before trusting
-  a no). Three exit codes: 0 all folded, 1 at least one not folded, 2 CANNOT TELL (control or ref
-  failed to resolve) — code 2 is deliberately not collapsed into "not folded".
+- `chat-control.mjs`, `whois.mjs` and `folded.sh` were removed on 15 Oct 2026 with the other
+  scripts that only served the old Database checkout (fix list 10.11). Git history keeps them.
 - **`scripts/ward-flow/role-map.py`** (103 lines, Python) — Prints the second-edition →
   ward-tokens colour-role mapping with WCAG contrast ratios, authored by ROLE rather than by VALUE
   (six of seven neutral roles differ by only a hex digit, so value-matching cannot discover the

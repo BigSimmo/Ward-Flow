@@ -70,9 +70,9 @@ where marked "(inferred)". Back to [the code map index](README.md).
 - **`design-test-registry.json`** (452 lines) — registry connecting mockups and React components to
   their automated test suites and clinical invariants. Actively read by
   `scripts/ward-flow/design-test-sync.mjs`; not itself marked generated.
-- **`live-state.json`** (228 lines) — chat-control/reconciliation state file, read by
-  `scripts/ward-flow/chat-control.mjs`, `scripts/ward-flow/check-live-state.mjs` and
-  `tests/ward-flow-chat-control.test.ts`. Its own `capturedAt` field says 2026-08-31 and its
+- **`live-state.json`** (228 lines) — reconciliation state file, read by
+  `scripts/ward-flow/check-live-state.mjs` (`chat-control.mjs` and its test were removed on 15 Oct
+  2026). Its own `capturedAt` field says 2026-08-31 and its
   `chatControlSystem.contract` field points at `docs/ward-flow/control/roles.json`, a path that no
   longer exists (`HOW-WE-WORK.md` §7: "`control/README.md` (gone — deleted with WLQ-33)"). The file
   is still functionally live (code reads it), but do not trust its embedded pointers or timestamp.
@@ -197,8 +197,7 @@ in them as belonging to the tree named, never as current.
   the sweep would survive even if the session did not.
 - **`who-is-who.md`** (156 lines, 1 Sept 2026) — "a role is a folder, not a name": identity is bound
   to worktree + `.ward-session.json`, checked against `git worktree list`. The role scheme is
-  historical, but the tool it documents, `scripts/ward-flow/whois.mjs`, still exists on disk and
-  still works as a plain worktree/branch identifier regardless of which role naming is current.
+  historical, and the tool it documents, `scripts/ward-flow/whois.mjs`, was removed on 15 Oct 2026.
 - **`action-reachable-absence-prereg-2026-09-12.txt`** (78 lines, 12 Sept 2026) — a pre-registration
   (predictions written before measuring) for a sweep of action-reachable UI states.
 - **`none-census-prereg-2026-09-11.txt`** (33 lines, 11 Sept 2026) — pre-registration for a census of
@@ -560,8 +559,8 @@ this file directly.
    before following one of these, not just the file's own banner.
 2. **`live-state.json`'s embedded pointer is dead.** It names `docs/ward-flow/control/roles.json` as
    its contract; that `control/` folder was deleted with WLQ-33 (`HOW-WE-WORK.md` §7). The file is
-   still read by code (`scripts/ward-flow/chat-control.mjs`), but do not follow its internal path
-   fields.
+   still read by code (`scripts/ward-flow/check-live-state.mjs`), but do not follow its internal
+   path fields.
 3. **The mockups' `reference/gemini-2026-09-15/` folder shares filenames with the real mockups one
    level up** (`patient-now-third-edition.html` exists at both paths, with different content). A
    path-blind grep or diff across the whole `mockups/` tree will silently compare or conflate the
