@@ -712,6 +712,18 @@ test(
       await store.ready();
       await store.read(actor);
       assert.equal((await store.command(actor, randomUUID(), 1, refresh)).status, 200);
+      // The backend can approve or end a role, never rewrite who holds it, what it is, or where.
+      await runtime.query(
+        "UPDATE ward_flow.memberships SET revoked_at=now(), revoked_by=gen_random_uuid() WHERE false",
+      );
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.memberships SET role='admin' WHERE false"),
+        /permission denied/,
+      );
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.memberships SET expires_at=now() WHERE false"),
+        /permission denied/,
+      );
 
       // A role with a grant it should never have still sees and writes nothing.
       await owner.query("DROP ROLE IF EXISTS wardflow_rls_probe");
@@ -760,8 +772,14 @@ test(
         ["./infra/rollback-007-prototype-only.sql", 6],
         ["./infra/rollback-006-row-level-security.sql", 5],
       ]) {
+        if (version === 7) assert.equal((await store.viewer(actor, { bootstrap: true })).version, 8);
         await rollBack(file);
         assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, version);
+        if (version === 7) {
+          // The cached version still says 8 for one request, which fails; the next reads it again.
+          await assert.rejects(store.viewer(actor), /does not exist/);
+          assert.deepEqual(await store.viewer(actor), { status: "none" });
+        }
         await verifyPostgresNamespace(owner);
         await runtimeOk(runtime);
         await store.ready();
@@ -1004,3 +1022,20 @@ test(
     }
   },
 );
+
+test("a ward desk may send the events its screen sends under another role, and nothing else borrowed", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [world.state.units[0].id] });
+  const notYours = "This change is not part of your role.";
+  const refusal = (event) => engine.commandRefusal(world, ward, event, at);
+  // The ward's Raise referral is sent as community, a pair in CROSS_ROLE_ALLOWED.
+  assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
+  // A borrowed role the event does not take, or an event with no pair, is still refused.
+  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);
+  assert.equal(
+    refusal({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: world.state.units[0].id }),
+    notYours,
+  );
+});

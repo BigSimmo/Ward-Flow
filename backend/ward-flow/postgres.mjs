@@ -74,6 +74,11 @@ export function createWorkspaceStore(
     known = { version, until: now + VERSION_TRUSTED_MS };
     return version;
   }
+  // After a rollback the cached version can name a table or column that is gone. That request
+  // fails, and the next one reads the version again instead of failing for the rest of the minute.
+  function forgetVersionOnMissing(error) {
+    if (error?.code === "42P01" || error?.code === "42703") known = { version: 0, until: 0 };
+  }
   /** One audit row, naming the sender's role and place once migration 8 holds them. */
   async function audit(client, view, actorId, row) {
     const values = [
@@ -106,6 +111,7 @@ export function createWorkspaceStore(
       await client.query("COMMIT");
       return result;
     } catch (error) {
+      forgetVersionOnMissing(error);
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -323,10 +329,15 @@ export function createWorkspaceStore(
     const version = await schemaVersion();
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE }] : [];
     if (version >= ROLE_ACCESS_MIGRATION) {
-      const { rows } = await pool.query(
-        "SELECT id, role, scope FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
-        [workspaceId, actorId, at, APPROVED_ROLES],
-      );
+      const { rows } = await pool
+        .query(
+          "SELECT id, role, scope FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
+          [workspaceId, actorId, at, APPROVED_ROLES],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
       for (const row of rows) {
         // A row the access table would not allow is skipped, never widened.
         const access = engine.parseAccess(row.role, row.scope);

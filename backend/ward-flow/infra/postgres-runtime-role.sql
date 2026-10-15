@@ -59,8 +59,11 @@ GRANT USAGE, SELECT ON SEQUENCE ward_flow.audit_sequence_seq TO wardflow_backend
 GRANT SELECT, INSERT, UPDATE ON ward_flow.push_baselines TO wardflow_backend;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_subscriptions, ward_flow.push_deliveries TO wardflow_backend;
 GRANT USAGE, SELECT ON SEQUENCE ward_flow.push_subscriptions_id_seq TO wardflow_backend;
--- Role access (migration 8): memberships are read, granted and ended; break glass rows only added.
-GRANT SELECT, INSERT, UPDATE ON ward_flow.memberships TO wardflow_backend;
+-- Role access (migration 8): memberships are read, granted, approved and ended, and nothing else
+-- about a granted role can change; break glass rows are only added.
+REVOKE UPDATE ON ward_flow.memberships FROM wardflow_backend;
+GRANT SELECT, INSERT ON ward_flow.memberships TO wardflow_backend;
+GRANT UPDATE (approved_by, approved_at, revoked_by, revoked_at) ON ward_flow.memberships TO wardflow_backend;
 GRANT SELECT, INSERT ON ward_flow.break_glass TO wardflow_backend;
 GRANT USAGE, SELECT ON SEQUENCE ward_flow.break_glass_id_seq TO wardflow_backend;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC;

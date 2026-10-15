@@ -217,10 +217,15 @@ export function commandRefusal(
   if (accessIsWholeNetwork(access)) return null;
   const notYours = "This change is not part of your role.";
   if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
+  // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
+  // coordinator takes every action), so only its place limits it, below.
   if (access.role !== "coordinator") {
+    const accepted = EVENT_ROLE[type].includes(role as WardFlowEvent["role"]);
+    // A `CROSS_ROLE_ALLOWED` pair lets the desk's screen send the event under the role the event
+    // takes (the ward's Raise referral is sent as community).
     const allowed =
-      role === access.role &&
-      (EVENT_ROLE[type].includes(role as WardFlowEvent["role"]) ||
+      accepted &&
+      (role === access.role ||
         CROSS_ROLE_ALLOWED.some((entry) => entry.routeRole === access.role && entry.event === type));
     if (!allowed) return notYours;
   }
