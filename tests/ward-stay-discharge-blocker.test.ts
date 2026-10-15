@@ -136,6 +136,34 @@ describe("a stay-level discharge blocker, recorded before any bed release exists
       expect(releaseOf(flagged, person.id).blockedBy).not.toBeNull();
     });
 
+    it("a release flagged with an explicit blocker puts that blocker on the stay too", () => {
+      const state = seedWardFlowState();
+      const person = freshOccupant(state);
+      const withFlag = (s: WardFlowState) =>
+        wardFlowReducer(s, {
+          type: "FLAG_BED_RELEASE",
+          role: "ward",
+          now: NOW,
+          unitId: person.unitId,
+          actingUnitId: person.unitId,
+          admissionId: person.id,
+          waitingOn: "Nothing outstanding",
+          expectedAt: NOW + 60,
+          blocker: BED_RELEASE_BLOCKERS[2],
+        });
+
+      // Stay had no reason.
+      const fromNone = withFlag(state);
+      expect(fromNone.rejections).toHaveLength(state.rejections.length);
+      expect(releaseOf(fromNone, person.id).blocker).toBe(BED_RELEASE_BLOCKERS[2]);
+      expect(find(fromNone, person.id).blockReason).toBe(BED_RELEASE_BLOCKERS[2]);
+
+      // Stay had a different reason: the flag's explicit blocker wins on both.
+      const fromOther = withFlag(record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]));
+      expect(releaseOf(fromOther, person.id).blocker).toBe(BED_RELEASE_BLOCKERS[2]);
+      expect(find(fromOther, person.id).blockReason).toBe(BED_RELEASE_BLOCKERS[2]);
+    });
+
     it("a release flagged with no stay blocker stays unblocked", () => {
       const state = seedWardFlowState();
       const person = freshOccupant(state);

@@ -6683,7 +6683,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return { ...state, bedReleases: [...state.bedReleases, release] };
+      // The stay's reason follows the release's blocker, so an explicit blocker on the flag is not left off the stay.
+      return withStayBlocker(
+        { ...state, bedReleases: [...state.bedReleases, release] },
+        flaggedAdmission.id,
+        release.blocker,
+      );
     }
 
     case "CONFIRM_BED_RELEASE": {
