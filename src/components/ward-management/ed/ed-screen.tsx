@@ -1418,12 +1418,12 @@ export function EdScreen({ edId }: EdScreenProps) {
   /**
    * v10 pass 3: a recorded decline shows a toast with Undo (`UNDO_REFERRAL_DECISION`, the ED's own
    * decision only, within the engine's undo window). `pendingDeclineRef` holds the referral just
-   * declined until the rejection check says whether the reducer accepted it; `undoCheckRef` holds
-   * the count before an Undo so a refused Undo can say why.
+   * declined until the rejection check says whether the reducer accepted it; the shared
+   * `useUndoableStep` then offers Undo and says why a refused Undo was refused.
    */
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
-  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
   // A2-1 (audit 13 Oct 2026): a raised referral used to land off screen with no word. The movement
   // ids held before the raise; the new one is announced with a toast that opens its row.
   const raisePendingRef = useRef<Set<string> | null>(null);
@@ -1454,8 +1454,6 @@ export function EdScreen({ edId }: EdScreenProps) {
   const [phoneSheetFor, setPhoneSheetFor] = useState<string | undefined>(undefined);
   const [phoneSheetReason, setPhoneSheetReason] = useState<string | undefined>(undefined);
   const pendingDeclineRef = useRef<string | undefined>(undefined);
-  const undoCheckRef = useRef<number | undefined>(undefined);
-  const [undoCheckToken, setUndoCheckToken] = useState(0);
   type DepartmentTabKey = "review" | "cleared" | "expected" | "forms" | "referred";
   const [departmentListTab, setDepartmentListTab] = useState<DepartmentTabKey>("review");
   const [boardFilter, setBoardFilter] = useState<
@@ -1567,39 +1565,19 @@ export function EdScreen({ edId }: EdScreenProps) {
       setDeclineRejection(undefined);
       const declined = pendingDeclineRef.current;
       if (declined !== undefined) {
-        toast?.push({
-          tone: "success",
-          title: "Referral declined",
-          body: "The referrer sees the reason. Undo puts it back in the inbox.",
-          undo: {
-            durationMs: 8000,
-            onUndo: () => {
-              undoCheckRef.current = rejections.length;
-              dispatch({ type: "UNDO_REFERRAL_DECISION", role: "ed", now, referralId: declined });
-              setUndoCheckToken((token) => token + 1);
-            },
-          },
+        offerStep({
+          success: "Referral declined",
+          undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined }),
+          undone: "Decline undone",
         });
       }
     }
     pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
-    // `toast`, `dispatch` and `now` are read at the moment the check runs; the check itself is keyed
+    // `offerStep` is read at the moment the check runs; the check itself is keyed
     // on the dispatch token so it runs once per decline.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, declineCheckToken]);
-
-  useEffect(() => {
-    if (undoCheckToken === 0 || undoCheckRef.current === undefined) return;
-    if (rejections.length > undoCheckRef.current) {
-      const newest = rejections[rejections.length - 1];
-      toast?.push({ tone: "warning", title: "Undo was refused", body: newest.reason });
-    } else {
-      toast?.push({ tone: "info", title: "Decline undone", body: "The referral is back in the inbox." });
-    }
-    undoCheckRef.current = undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rejections, undoCheckToken]);
 
   useEffect(() => {
     const before = raisePendingRef.current;
@@ -2869,7 +2847,6 @@ export function EdScreen({ edId }: EdScreenProps) {
           aria-label="Raise into a movement"
           hidden={!referralOpen}
           className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
-          tabIndex={0}
         >
           <div className={styles.ph}>
             <h2>Raise into a movement</h2>
@@ -3233,7 +3210,6 @@ export function EdScreen({ edId }: EdScreenProps) {
           data-pane="board"
           className={`${styles.panel} ${styles.full} ${styles.listSection}${!boardTable && fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
           data-handover-view={boardTable && fullscreenBoard ? "true" : undefined}
-          tabIndex={0}
         >
           <div className={styles.ph}>
             <h2>ED psychiatry</h2>
@@ -4483,12 +4459,14 @@ export function EdScreen({ edId }: EdScreenProps) {
                           // Since ED page A2 this dialog opens over the patient's sheet, which
                           // inerts everything outside itself; these markers keep the dialog live
                           // and stop the sheet taking its focus back.
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
                           <div
                             className={styles.modalBackdrop}
                             onClick={closeTransportDialog}
                             data-sheet-inert-skip=""
                             data-sheet-portal=""
                           >
+                            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                             <div
                               ref={transportDialogRef}
                               className={styles.declineForm}
@@ -5615,6 +5593,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           : `${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length} referred`}
                 </span>
               </div>
+              {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div
                 className={`${styles.tabbar} ${styles.departmentListTabs}`}
                 role="tablist"
@@ -5715,12 +5694,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 className={styles.lstWrap}
                 tabIndex={0}
               >
-                <section
-                  aria-label="Referrals"
-                  className={styles.inboxSection}
-                  data-testid="ward-ed-inbox"
-                  tabIndex={0}
-                >
+                <section aria-label="Referrals" className={styles.inboxSection} data-testid="ward-ed-inbox">
                   <h3 className={styles.inboxSubheading}>
                     Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
                   </h3>
@@ -6552,6 +6526,7 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         {selectedPatient ? (
           <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
             <dialog
               ref={patientDialogRef}
               className={`${styles.menuPanel} ${styles.patientDialog}`}

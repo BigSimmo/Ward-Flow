@@ -711,6 +711,7 @@ export function DelaysBoardGraphs(props: Props) {
   return (
     <section className={`${styles.card} ${styles.gCard}`} aria-label="Delay graphs" data-ward-primitive="panel">
       <div className={styles.chead}>
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div className={`${styles.seg} ${styles.gTabs}`} role="tablist" aria-label="Delay graph" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button

@@ -92,6 +92,7 @@ export function Tabs({ items, value, onChange, label, className, children }: Tab
        * negative margin exists to prevent.
        */}
       <div className="overflow-x-auto">
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div
           role="tablist"
           aria-label={label}

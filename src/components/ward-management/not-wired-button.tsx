@@ -70,6 +70,7 @@ export function NotWiredButton({
   };
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
     <span
       ref={wrapRef}
       className={wrapClassName ? `${styles.wrap} ${wrapClassName}` : styles.wrap}

@@ -70,6 +70,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import {
@@ -553,19 +554,31 @@ export function CommunityScreen({
 
   /*
    * v10 pass 3: an Accept or Decline recorded here shows a toast with Undo
-   * (`UNDO_REFERRAL_DECISION`, this team's own decision). `rejectionsRef` reads the newest count at
-   * the moment Undo is pressed, and a refused Undo says why.
+   * (`UNDO_REFERRAL_DECISION`, this team's own decision), through the shared `useUndoableStep`: a
+   * refused step or Undo says why.
    */
   const toast = useOptionalToast();
-  const rejectionsRef = useRef(rejections.length);
-  useEffect(() => {
-    rejectionsRef.current = rejections.length;
-  }, [rejections]);
+  const { run: runDecision, offer: offerDecision } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: "community",
+    toast,
+  });
+  const decisionStep = useCallback(
+    (referralId: string, word: "accepted" | "declined") => ({
+      success: `Referral ${word}`,
+      undo: (at: Instant): WardFlowEvent => ({
+        type: "UNDO_REFERRAL_DECISION",
+        role: "community",
+        now: at,
+        referralId,
+      }),
+      undone: "Decision undone. The referral is back in the queue.",
+    }),
+    [],
+  );
   const toastedAcceptRef = useRef<string | null>(null);
-  const declineCheckRef = useRef<{ referralId: string; count: number } | null>(null);
-  const [declineCheckToken, setDeclineCheckToken] = useState(0);
-  const undoCheckRef = useRef<number | null>(null);
-  const [undoCheckToken, setUndoCheckToken] = useState(0);
   const [switchOpen, setSwitchOpen] = useState(false);
   // Phone (v10): the waiting referral and the departure open as bottom sheets.
   const isPhone = useIsPhone();
@@ -582,25 +595,6 @@ export function CommunityScreen({
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const pushDecisionToast = useCallback(
-    (referralId: string, word: "accepted" | "declined") => {
-      toast?.push({
-        tone: "success",
-        title: `Referral ${word}`,
-        body: "Undo puts it back in the queue.",
-        undo: {
-          durationMs: 8000,
-          onUndo: () => {
-            undoCheckRef.current = rejectionsRef.current;
-            dispatch({ type: "UNDO_REFERRAL_DECISION", role: "community", now, referralId });
-            setUndoCheckToken((token) => token + 1);
-          },
-        },
-      });
-    },
-    [toast, dispatch, now],
-  );
-
   useEffect(() => {
     if (!pendingAcceptance || !team || toastedAcceptRef.current === pendingAcceptance.id) return;
     const names = [team.name, ...ratifiedSameServiceNames(team.name)];
@@ -609,27 +603,8 @@ export function CommunityScreen({
       addressing !== undefined && names.includes(addressing.destination.teamName) && addressing.state === "accepted";
     if (!accepted) return;
     toastedAcceptRef.current = pendingAcceptance.id;
-    pushDecisionToast(pendingAcceptance.id, "accepted");
-  }, [pendingAcceptance, liveReferrals, team, pushDecisionToast]);
-
-  useEffect(() => {
-    const check = declineCheckRef.current;
-    if (declineCheckToken === 0 || check === null) return;
-    declineCheckRef.current = null;
-    if (rejections.length > check.count) return;
-    pushDecisionToast(check.referralId, "declined");
-  }, [rejections, declineCheckToken, pushDecisionToast]);
-
-  useEffect(() => {
-    if (undoCheckToken === 0 || undoCheckRef.current === null) return;
-    if (rejections.length > undoCheckRef.current) {
-      toast?.push({ tone: "warning", title: "Undo was refused", body: rejections[rejections.length - 1].reason });
-    } else {
-      toast?.push({ tone: "info", title: "Decision undone", body: "The referral is back in the queue." });
-    }
-    undoCheckRef.current = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rejections, undoCheckToken]);
+    offerDecision(decisionStep(pendingAcceptance.id, "accepted"));
+  }, [pendingAcceptance, liveReferrals, team, decisionStep, offerDecision]);
 
   const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
   const [showCareEditor, setShowCareEditor] = useState(false);
@@ -774,20 +749,21 @@ export function CommunityScreen({
   const handleConfirmDecline = useCallback(
     (referralId: string) => {
       if (declineDraft === undefined) return;
-      declineCheckRef.current = { referralId, count: rejectionsRef.current };
-      setDeclineCheckToken((token) => token + 1);
-      dispatch({
-        type: "DECLINE_REFERRAL",
-        role: "community",
-        now,
-        referralId,
-        destinationKind: "community_team",
-        reason: declineDraft,
-      });
+      runDecision(
+        {
+          type: "DECLINE_REFERRAL",
+          role: "community",
+          now,
+          referralId,
+          destinationKind: "community_team",
+          reason: declineDraft,
+        },
+        decisionStep(referralId, "declined"),
+      );
       setDeclineOpenFor(undefined);
       setDeclineDraft(undefined);
     },
-    [declineDraft, dispatch, now],
+    [declineDraft, decisionStep, now, runDecision],
   );
 
   /**
@@ -2842,6 +2818,7 @@ export function CommunityScreen({
                           data-testid="ward-community-waiting-list"
                         >
                           {demoVisibleReferrals.map((referral) => (
+                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
                             <li
                               key={referral.id}
                               className={styles.refCard}
@@ -2861,9 +2838,20 @@ export function CommunityScreen({
                                 </span>
                               </div>
                               <div className={styles.refPatientRow}>
-                                <b className={styles.patientIdWrap}>
-                                  {demoUmrnOf(referral.patientId)} ({referral.patientDetails})
-                                </b>
+                                {/* The card click is a pointer shortcut. This button is the keyboard route. */}
+                                <button
+                                  type="button"
+                                  className={styles.refOpen}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedPatientId(referral.patientId);
+                                    setActiveDrawer("pxDrawer");
+                                  }}
+                                >
+                                  <b className={styles.patientIdWrap}>
+                                    {demoUmrnOf(referral.patientId)} ({referral.patientDetails})
+                                  </b>
+                                </button>
                                 <span className={`${styles.statusPillBadge} ${styles[referral.legalStatusTone]}`}>
                                   {referral.legalStatus}
                                 </span>
@@ -2874,6 +2862,7 @@ export function CommunityScreen({
                               >
                                 {referral.clinicalSummary}
                               </p>
+                              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                               <div className={styles.refActionsRow} onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
@@ -4346,6 +4335,7 @@ export function CommunityScreen({
 
         {transportBookFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={transportBookDialogRef}
               className={styles.modalDialog}
@@ -4544,6 +4534,7 @@ export function CommunityScreen({
 
         {transportCancelFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={transportCancelDialogRef}
               className={styles.modalDialog}
@@ -4627,6 +4618,7 @@ export function CommunityScreen({
 
         {activeModal !== null && (
           <div className={styles.modalBackdrop} role="presentation" onClick={() => setActiveModal(null)}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               className={styles.modalDialog}
               role="dialog"
@@ -4684,6 +4676,7 @@ export function CommunityScreen({
             role="presentation"
             onClick={() => setActiveDrawer(null)}
           >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               className={styles.drawerPanel}
               id={
@@ -5330,6 +5323,7 @@ export function CommunityScreen({
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         {activeModalType !== null && (
           <div className={styles.modalOverlay} role="presentation" onClick={() => setActiveModalType(null)}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               className={styles.modalBox}
               id={

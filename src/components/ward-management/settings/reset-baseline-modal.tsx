@@ -65,6 +65,7 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
   if (!isOpen) return null;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
     <div
       className={styles.modalOverlay}
       data-testid="ward-reset-baseline-modal"
