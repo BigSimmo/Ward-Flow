@@ -16,8 +16,8 @@ const ciUrl = new URL("../.github/workflows/ci.yml", import.meta.url);
 const workflow = existsSync(ciUrl) ? readFileSync(ciUrl, "utf8") : "";
 const prShardRunner = readFileSync(new URL("../scripts/playwright-pr-shards.mjs", import.meta.url), "utf8");
 // live-web-vitals.yml and ops-digest.yml were PsychSift's (its live website and search canary) and
-// were retired on 26 September 2026 (docs/ward-flow/archive/retired-psychsift-tail/, kept at the Git tag
-// archive/docs-pre-trim-2026-10-15), with the
+// were retired on 26 September 2026 (docs/ward-flow/archive/retired-psychsift-tail/, kept in commit
+// 26d0987 before the 15 Oct 2026 docs trim), with the
 // two tests here that read only them.
 
 describe("CI cache safety", () => {

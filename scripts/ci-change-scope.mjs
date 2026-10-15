@@ -412,8 +412,8 @@ const dbPatterns = [
 // rag_eval_changed is kept as an output for its callers, but nothing in this repository can set it:
 // the RAG stack it selected (src/lib/rag, the answer/search API, the eval scripts) was removed with
 // PsychSift on 26 September 2026. The full list is in
-// docs/ward-flow/archive/retired-tooling/ci-change-scope-2026-09-26.mjs.txt, kept at the Git tag
-// archive/docs-pre-trim-2026-10-15 (docs/ward-flow/ARCHIVE-NOTE.md).
+// docs/ward-flow/archive/retired-tooling/ci-change-scope-2026-09-26.mjs.txt, kept in commit
+// 26d0987 before the 15 Oct 2026 docs trim (docs/ward-flow/ARCHIVE-NOTE.md).
 const ragEvalPatterns = [];
 
 // Untrusted-document parsing and ingestion surfaces are guarded by a narrow,
