@@ -50,6 +50,7 @@ import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
   TRANSPORT_PROVIDERS,
   type Movement,
@@ -384,10 +385,9 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, dispatch, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
+  const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
     "movements",
     "units",
-    "dispatch",
     "rejections",
     "patients",
     "referrals",
@@ -425,6 +425,7 @@ export function OfficerScreen() {
     return movement ? officerPatientName(movement) : "Not recorded";
   };
   const now = useWardFlowClock();
+  const raise = useWardRaise("officer");
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   const jobs = movements.filter(isOfficerJob);
@@ -709,7 +710,7 @@ export function OfficerScreen() {
   // v10 pass 3: Undo takes back the step just recorded (UNDO_TRANSPORT_STEP, within the engine's window).
   const undoTransportStep = (movementId: string) => {
     const prior = rejections.length;
-    dispatch({ type: "UNDO_TRANSPORT_STEP", role: "officer", now, movementId });
+    raise("UNDO_TRANSPORT_STEP", { movementId });
     setToastMessage({
       success: "Undone. Back as it was.",
       refused: "Undo was refused:",
@@ -736,7 +737,7 @@ export function OfficerScreen() {
       : undefined;
 
   const runAccepted = (movement: Movement) => {
-    dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
+    raise("TRANSPORT_ACCEPTED", { movementId: movement.id });
     reportOutcome(
       `Transport accepted for ${officerPatientName(movement)}.`,
       "Transport acceptance",
@@ -745,7 +746,7 @@ export function OfficerScreen() {
     );
   };
   const runEnRoute = (movement: Movement) => {
-    dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
+    raise("TRANSPORT_EN_ROUTE", { movementId: movement.id });
     reportOutcome(
       `Transport en route for ${officerPatientName(movement)}.`,
       "En route",
@@ -762,10 +763,7 @@ export function OfficerScreen() {
     recordCollected(movement);
   };
   const recordCollected = (movement: Movement, exception?: TransportExceptionInput) => {
-    dispatch({
-      type: "PATIENT_COLLECTED",
-      role: "officer",
-      now,
+    raise("PATIENT_COLLECTED", {
       movementId: movement.id,
       ...(exception ? { exception } : {}),
     });
@@ -777,7 +775,7 @@ export function OfficerScreen() {
     );
   };
   const runDelivered = (movement: Movement) => {
-    dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: movement.id });
+    raise("PATIENT_ARRIVED", { movementId: movement.id });
     reportOutcome(
       `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
       "Delivery",
@@ -1398,10 +1396,7 @@ export function OfficerScreen() {
                   onClick={
                     diversionReady
                       ? () => {
-                          dispatch({
-                            type: "RECORD_DIVERSION",
-                            role: "officer",
-                            now,
+                          raise("RECORD_DIVERSION", {
                             movementId: movement.id,
                             reason: diversionReason,
                             place: diversionPlace,

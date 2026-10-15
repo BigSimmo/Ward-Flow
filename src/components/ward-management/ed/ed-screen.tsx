@@ -64,6 +64,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
   bookTransportBlockedReason,
   communityReferralBlockedReason,
@@ -975,6 +976,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     "admissions",
   );
   const now = useWardFlowClock();
+  const raise = useWardRaise("ed");
   // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
   const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
   const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
@@ -2184,10 +2186,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     ) {
       return;
     }
-    dispatch({
-      type: "RAISE_REFERRAL",
-      role: "ed",
-      now,
+    raise("RAISE_REFERRAL", {
       edId: thisEdId,
       // Opus review round 2, 17 September 2026 (P2), item 6: `undefined` in the ordinary,
       // unlinked case (this form's existing behaviour) — set only when this form was opened via
@@ -2244,10 +2243,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     event.preventDefault();
     // A real <form>: Enter inside a field submits it whatever the button advertises.
     if (urgencyDraft.reason === undefined) return;
-    dispatch({
-      type: "CHANGE_URGENCY",
-      role: "ed",
-      now,
+    raise("CHANGE_URGENCY", {
       movementId,
       urgency: urgencyDraft.urgency,
       reason: urgencyDraft.reason,
@@ -2266,10 +2262,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // the same bypass the raise-referral form guards. An `aria-disabled` control alone would not
     // catch it, and the reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
     if (legalStatusDraft.reason === undefined) return;
-    dispatch({
-      type: "CHANGE_LEGAL_STATUS",
-      role: "ed",
-      now,
+    raise("CHANGE_LEGAL_STATUS", {
       movementId,
       legalStatus: legalStatusDraft.legalStatus,
       reason: legalStatusDraft.reason,
@@ -2282,7 +2275,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
 
   function confirmWithdrawReferral(movementId: string) {
-    dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", now, movementId, actingPlaceId: thisEdId });
+    raise("WITHDRAW_REFERRAL", { movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
   }
 
@@ -2309,7 +2302,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // control never advertises a save it already knows the reducer would refuse.
     if (dueAt === undefined) return;
     if (currentDueAt !== undefined && dueAt <= currentDueAt) return;
-    dispatch({ type: "RECORD_LEGAL_FORM_EXPIRY", role: "ed", now, movementId, dueAt });
+    raise("RECORD_LEGAL_FORM_EXPIRY", { movementId, dueAt });
     setLegalFormExpiryOpenFor(undefined);
     setLegalFormExpiryDraft(BLANK_TYPED_EXPIRY_DRAFT);
   }
@@ -2327,10 +2320,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // bypass every other panel on this screen guards against — the reducer requires a reason, so
     // an unguarded Enter would dispatch `undefined`.
     if (receiptCorrectionReasonDraft === undefined) return;
-    dispatch({
-      type: "CORRECT_LEGAL_FORM_RECEIPT",
-      role: "ed",
-      now,
+    raise("CORRECT_LEGAL_FORM_RECEIPT", {
       movementId,
       reason: receiptCorrectionReasonDraft,
     });
@@ -2362,10 +2352,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     if (declineDraft === undefined) return;
     priorRejectionCountRef.current = rejections.length;
     pendingDeclineRef.current = referralId;
-    dispatch({
-      type: "DECLINE_REFERRAL",
-      role: "ed",
-      now,
+    raise("DECLINE_REFERRAL", {
       referralId,
       // Named, never defaulted: this screen is the emergency department's own inbox, so the
       // destination answering here is the emergency department. The reducer must not have to guess
@@ -2396,10 +2383,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     ) {
       return;
     }
-    dispatch({
-      type: "BOOK_TRANSPORT",
-      role: "ed",
-      now,
+    raise("BOOK_TRANSPORT", {
       movementId,
       provider,
       escortRequired,
@@ -3400,10 +3384,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         data-testid={`ward-ed-no-referral-raised-${movement.id}`}
                         className={styles.acceptButton}
                         onClick={() =>
-                          dispatch({
-                            type: "RECORD_NO_REFERRAL",
-                            role: "ed",
-                            now,
+                          raise("RECORD_NO_REFERRAL", {
                             movementId: movement.id,
                           })
                         }
@@ -3452,10 +3433,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         data-action={`ed-mark-form-received-${movement.id}`}
                         className={styles.acceptButton}
                         onClick={() =>
-                          dispatch({
-                            type: "RECORD_LEGAL_FORM_RECEIVED",
-                            role: "ed",
-                            now,
+                          raise("RECORD_LEGAL_FORM_RECEIVED", {
                             movementId: movement.id,
                           })
                         }
@@ -3920,10 +3898,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           data-action={`ward-ed-mark-left-${movement.id}`}
                           className={`${styles.acceptButton} ${styles.primaryActionButton}`}
                           onClick={() =>
-                            dispatch({
-                              type: "RECORD_LEFT_DEPARTMENT",
-                              role: "ed",
-                              now,
+                            raise("RECORD_LEFT_DEPARTMENT", {
                               movementId: movement.id,
                             })
                           }
@@ -4152,10 +4127,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             className={styles.declineButton}
                             onClick={() => {
                               if (!communityTeamChoice) return;
-                              dispatch({
-                                type: "REFER_TO_COMMUNITY_TEAM",
-                                role: "ed",
-                                now,
+                              raise("REFER_TO_COMMUNITY_TEAM", {
                                 movementId: movement.id,
                                 team: communityTeamChoice,
                               });
@@ -4485,10 +4457,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 dischargeBlocked
                                   ? ignoreUnavailableActivation
                                   : () => {
-                                      dispatch({
-                                        type: "RECORD_ED_OUTCOME",
-                                        role: "ed",
-                                        now,
+                                      raise("RECORD_ED_OUTCOME", {
                                         movementId: movement.id,
                                         outcome: "for_discharge",
                                       });
@@ -4503,10 +4472,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                               data-testid={`ward-ed-outcome-community-${movement.id}`}
                               className={styles.acceptButton}
                               onClick={() => {
-                                dispatch({
-                                  type: "RECORD_ED_OUTCOME",
-                                  role: "ed",
-                                  now,
+                                raise("RECORD_ED_OUTCOME", {
                                   movementId: movement.id,
                                   outcome: "for_community_follow_up",
                                 });
@@ -6057,10 +6023,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   data-testid={`ward-ed-release-diverted-bed-${movement.id}`}
                                   className={styles.declineButton}
                                   onClick={() =>
-                                    dispatch({
-                                      type: "RELEASE_DIVERTED_BED",
-                                      role: "ed",
-                                      now,
+                                    raise("RELEASE_DIVERTED_BED", {
                                       movementId: movement.id,
                                     })
                                   }
@@ -6178,10 +6141,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   onClick={() => {
                                     const gender = genderRecordDraft[movement.id];
                                     if (!gender) return;
-                                    dispatch({
-                                      type: "RECORD_MOVEMENT_GENDER",
-                                      role: "ed",
-                                      now,
+                                    raise("RECORD_MOVEMENT_GENDER", {
                                       movementId: movement.id,
                                       gender,
                                     });

@@ -7,7 +7,12 @@ import { Button } from "@/components/wf";
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  DEMO_CONTROLS_OFF,
+  useDemoControlsAvailable,
+  useWardRaise,
+} from "@/components/ward-management/ward-flow-raise";
 import {
   DEMO_RESET_SCENARIOS,
   scenarioDescriptions,
@@ -30,8 +35,9 @@ import styles from "./ward-demo-reset.module.css";
  */
 export function WardDemoReset({ className, headingClassName }: { className?: string; headingClassName?: string }) {
   const enabled = useWardFeatureFlag("demo-reset");
-  const { scenario, dispatch } = useWardFlowSelect("scenario", "dispatch");
-  const now = useWardFlowClock();
+  const { scenario } = useWardFlowSelect("scenario");
+  const raise = useWardRaise("demo");
+  const demoOn = useDemoControlsAvailable();
   const [pending, setPending] = useState<WardScenario | null>(null);
   const loadButton = useRef<HTMLButtonElement>(null);
   // The confirm takes focus as it opens, so keyboard and screen reader users meet it straight away.
@@ -48,7 +54,7 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
 
   function load(next: WardScenario) {
     setPending(null);
-    dispatch({ type: "SET_SCENARIO", role: "demo", now, scenario: next });
+    raise("SET_SCENARIO", { scenario: next });
     announceToWardShell(`${scenarioLabels[next]} loaded. Synthetic demo data only.`);
   }
 
@@ -63,6 +69,11 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
         Demo reset
         <span>Synthetic data, not a clinical action</span>
       </h3>
+      {demoOn ? null : (
+        <p id="ward-demo-reset-off" data-testid="ward-demo-reset-off">
+          {DEMO_CONTROLS_OFF}
+        </p>
+      )}
       <div className={styles.choices}>
         {DEMO_RESET_SCENARIOS.map((choice) => {
           const loaded = scenario === choice;
@@ -72,8 +83,11 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
               type="button"
               className={styles.choice}
               data-testid={`ward-demo-reset-${choice}`}
-              aria-describedby={`ward-demo-reset-${choice}-note`}
+              aria-describedby={
+                demoOn ? `ward-demo-reset-${choice}-note` : `ward-demo-reset-${choice}-note ward-demo-reset-off`
+              }
               aria-pressed={loaded}
+              disabled={!demoOn}
               onClick={() => setPending(choice)}
             >
               <strong>{scenarioLabels[choice]}</strong>
@@ -83,7 +97,7 @@ export function WardDemoReset({ className, headingClassName }: { className?: str
           );
         })}
       </div>
-      {pending ? (
+      {pending && demoOn ? (
         <div
           className={styles.confirm}
           role="group"

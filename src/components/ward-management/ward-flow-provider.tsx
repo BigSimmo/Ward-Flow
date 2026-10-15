@@ -224,6 +224,8 @@ type WardFlowContextValue = {
   loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
+  /** False when the shared workspace has switched demo controls off. Optional for test contexts. */
+  demoControlsAvailable?: boolean;
 };
 
 export type { WardFlowContextValue };
@@ -286,6 +288,7 @@ const WARD_FLOW_KEY_SET = {
   saveScenarioFile: true,
   loadScenarioFile: true,
   savingOnDevice: true,
+  demoControlsAvailable: true,
 } as const satisfies Record<WardFlowKey, true>;
 const WARD_FLOW_KEYS = Object.keys(WARD_FLOW_KEY_SET) as WardFlowKey[];
 
@@ -1038,6 +1041,7 @@ function WardFlowWorld({
   // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
   // storage fails. Shared mode does not save actions on this device.
   const savingOnDevice = !shared.enabled && initialNow === undefined && !container.typedTextSeen && !storageUnavailable;
+  const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     savesOnDeviceRef.current = savingOnDevice;
   }, [savingOnDevice, state]);
@@ -1299,6 +1303,7 @@ function WardFlowWorld({
       saveScenarioFile,
       loadScenarioFile,
       savingOnDevice: initialNow !== undefined ? !container.typedTextSeen && !storageUnavailable : savingOnDevice,
+      demoControlsAvailable,
     }),
     [
       // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
@@ -1318,6 +1323,7 @@ function WardFlowWorld({
       container.eventLog,
       shared.enabled,
       shared.eventLog,
+      demoControlsAvailable,
       dayZero,
       dispatch,
       focusMovementId,

@@ -20,6 +20,7 @@ import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
   duplicateCandidates,
@@ -239,8 +240,9 @@ const MATCH_LABEL: Record<MatchKind, string> = {
 };
 
 export function AddPatientForm() {
-  const { dispatch, patients, rejections } = useWardFlowSelect("dispatch", "patients", "rejections");
+  const { patients, rejections } = useWardFlowSelect("patients", "rejections");
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
   const router = useRouter();
 
   const [handoff] = useState(() => takeHandedOffPatientQuery());
@@ -458,10 +460,7 @@ export function AddPatientForm() {
       rejectionCount: rejections.length,
     };
     const suburbTrimmed = suburb.trim();
-    dispatch({
-      type: "ADD_PATIENT",
-      role: "coordinator",
-      now,
+    raise("ADD_PATIENT", {
       umrn: answered.umrn,
       givenName: answered.givenName,
       familyName: answered.familyName,

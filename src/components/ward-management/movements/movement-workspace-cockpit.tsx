@@ -35,6 +35,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
@@ -130,8 +131,7 @@ export function MovementWorkspaceCockpit({
   role?: "ward" | "coordinator";
 }) {
   const thresholds = useDueSoonThresholds();
-  const { dispatch, movements, units, patients, referrals, admissions } = useWardFlowSelect(
-    "dispatch",
+  const { movements, units, patients, referrals, admissions } = useWardFlowSelect(
     "movements",
     "units",
     "patients",
@@ -139,6 +139,7 @@ export function MovementWorkspaceCockpit({
     "admissions",
   );
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
 
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);
   const mastheadInfo = patient ? resolveSubjectPatient(patient, { patients, referrals, movements }) : undefined;
@@ -486,10 +487,7 @@ export function MovementWorkspaceCockpit({
                 disabled={genderRecordDraft === undefined}
                 onClick={() => {
                   if (genderRecordDraft === undefined) return;
-                  dispatch({
-                    type: "RECORD_MOVEMENT_GENDER",
-                    role: "coordinator",
-                    now,
+                  raise("RECORD_MOVEMENT_GENDER", {
                     movementId: patient.id,
                     gender: genderRecordDraft,
                   });
@@ -1246,10 +1244,7 @@ export function MovementWorkspaceCockpit({
                   className={styles.controlButton}
                   data-testid="ward-console-urgent-flag-toggle"
                   onClick={() =>
-                    dispatch({
-                      type: "CLEAR_MOVEMENT_URGENT_FLAG",
-                      role: "coordinator",
-                      now,
+                    raise("CLEAR_MOVEMENT_URGENT_FLAG", {
                       movementId: movement.id,
                     })
                   }
@@ -1293,10 +1288,7 @@ export function MovementWorkspaceCockpit({
                       urgentFlagReason === undefined
                         ? ignoreUnavailableActivation
                         : () => {
-                            dispatch({
-                              type: "FLAG_MOVEMENT_URGENT",
-                              role: "coordinator",
-                              now,
+                            raise("FLAG_MOVEMENT_URGENT", {
                               movementId: movement.id,
                               reason: urgentFlagReason,
                             });
@@ -1338,10 +1330,7 @@ export function MovementWorkspaceCockpit({
                   className={styles.controlRow}
                   onSubmit={(submitted) => {
                     submitted.preventDefault();
-                    dispatch({
-                      type: "RECORD_MOVEMENT_BLOCKER",
-                      role: "coordinator",
-                      now,
+                    raise("RECORD_MOVEMENT_BLOCKER", {
                       movementId: movement.id,
                       blocker: blockerDraft,
                     });
@@ -1370,10 +1359,7 @@ export function MovementWorkspaceCockpit({
                       className={styles.controlButton}
                       data-testid="ward-console-blocker-clear"
                       onClick={() =>
-                        dispatch({
-                          type: "CLEAR_MOVEMENT_BLOCKER",
-                          role: "coordinator",
-                          now,
+                        raise("CLEAR_MOVEMENT_BLOCKER", {
                           movementId: movement.id,
                         })
                       }
@@ -1449,10 +1435,7 @@ export function MovementWorkspaceCockpit({
                       cancelTransportReason === undefined
                         ? ignoreUnavailableActivation
                         : () => {
-                            dispatch({
-                              type: "CANCEL_TRANSPORT",
-                              role: "coordinator",
-                              now,
+                            raise("CANCEL_TRANSPORT", {
                               movementId: movement.id,
                               reason: cancelTransportReason,
                             });
@@ -1553,10 +1536,7 @@ export function MovementWorkspaceCockpit({
                       stopTransportReason === undefined || stopTransportWhereabouts === undefined
                         ? ignoreUnavailableActivation
                         : () => {
-                            dispatch({
-                              type: "STOP_TRANSPORT",
-                              role: "coordinator",
-                              now,
+                            raise("STOP_TRANSPORT", {
                               movementId: movement.id,
                               reason: stopTransportReason,
                               whereabouts: stopTransportWhereabouts,
@@ -1590,10 +1570,7 @@ export function MovementWorkspaceCockpit({
                   className={styles.controlButton}
                   data-testid="ward-console-release-held-bed"
                   onClick={() =>
-                    dispatch({
-                      type: "RELEASE_HELD_BED",
-                      role: "coordinator",
-                      now,
+                    raise("RELEASE_HELD_BED", {
                       movementId: movement.id,
                     })
                   }
@@ -1680,10 +1657,7 @@ export function MovementWorkspaceCockpit({
                       diversionReason === undefined || diversionPlace === undefined
                         ? ignoreUnavailableActivation
                         : () => {
-                            dispatch({
-                              type: "RECORD_DIVERSION",
-                              role: "coordinator",
-                              now,
+                            raise("RECORD_DIVERSION", {
                               movementId: movement.id,
                               reason: diversionReason,
                               place: diversionPlace,
@@ -1717,10 +1691,7 @@ export function MovementWorkspaceCockpit({
                   className={styles.controlButton}
                   data-testid="ward-console-release-diverted-bed"
                   onClick={() =>
-                    dispatch({
-                      type: "RELEASE_DIVERTED_BED",
-                      role: "coordinator",
-                      now,
+                    raise("RELEASE_DIVERTED_BED", {
                       movementId: movement.id,
                     })
                   }
@@ -1798,10 +1769,7 @@ export function MovementWorkspaceCockpit({
                         withdrawReason === undefined
                           ? ignoreUnavailableActivation
                           : () => {
-                              dispatch({
-                                type: "WITHDRAW_ACCEPTANCE",
-                                role: "coordinator",
-                                now,
+                              raise("WITHDRAW_ACCEPTANCE", {
                                 movementId: movement.id,
                                 reason: withdrawReason,
                               });
@@ -1906,10 +1874,7 @@ export function MovementWorkspaceCockpit({
                         stepBackTo === undefined || stepBackReason === undefined
                           ? ignoreUnavailableActivation
                           : () => {
-                              dispatch({
-                                type: "STEP_BACK_STAGE",
-                                role: "coordinator",
-                                now,
+                              raise("STEP_BACK_STAGE", {
                                 movementId: movement.id,
                                 to: stepBackTo,
                                 reason: stepBackReason,

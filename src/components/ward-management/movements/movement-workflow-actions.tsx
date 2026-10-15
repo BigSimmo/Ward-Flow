@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
 import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
@@ -10,14 +11,9 @@ import { perthDateTimeLocal } from "../ward-clock";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
-  const { dispatch, units, leaveBeds, rejections, dayZero } = useWardFlowSelect(
-    "dispatch",
-    "units",
-    "leaveBeds",
-    "rejections",
-    "dayZero",
-  );
+  const { units, leaveBeds, rejections, dayZero } = useWardFlowSelect("units", "leaveBeds", "rejections", "dayZero");
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [reason, setReason] = useState<ReleasePullReason | "">("");
@@ -54,12 +50,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             onClick={() => {
               before();
               if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
-                dispatch({ type: "CLEAR_EXPECT_FLAG", role: "coordinator", now, movementId: movement.id });
+                raise("CLEAR_EXPECT_FLAG", { movementId: movement.id });
               } else {
-                dispatch({
-                  type: "RAISE_EXPECT_FLAG",
-                  role: "coordinator",
-                  now,
+                raise("RAISE_EXPECT_FLAG", {
                   movementId: movement.id,
                   kind: movement.legalStatus === "Voluntary" ? "voluntary_48h" : "involuntary_7d",
                 });
@@ -80,7 +73,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           }
           onClick={() => {
             before();
-            dispatch({ type: "EVALUATE_ARRIVAL_LATENESS", role: "coordinator", now, movementId: movement.id });
+            raise("EVALUATE_ARRIVAL_LATENESS", { movementId: movement.id });
           }}
         >
           Review late arrival
@@ -90,7 +83,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           disabled={!leaveBeds.some((b) => leaveBedNeedsOpenWarning(b.confirmedAt, b.openWarningAt, now))}
           onClick={() => {
             before();
-            dispatch({ type: "EVALUATE_LEAVE_BED_WARNINGS", role: "coordinator", now });
+            raise("EVALUATE_LEAVE_BED_WARNINGS");
           }}
         >
           Review leave bed warnings
@@ -101,10 +94,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           onClick={() => {
             if (!unit || !mismatch) return;
             before();
-            dispatch({
-              type: "FLAG_LEGAL_MISMATCH",
-              role: "coordinator",
-              now,
+            raise("FLAG_LEGAL_MISMATCH", {
               movementId: movement.id,
               unitId: unit.id,
               kind: mismatch,
@@ -118,10 +108,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             type="button"
             onClick={() => {
               before();
-              dispatch({
-                type: "SEND_WARD_BUZZ",
-                role: "coordinator",
-                now,
+              raise("SEND_WARD_BUZZ", {
                 unitId: unit.id,
                 message: "Please review and confirm ward capacity.",
                 urgent: false,
@@ -139,10 +126,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             e.preventDefault();
             if (!reason) return;
             before();
-            dispatch({
-              type: "RELEASE_AND_REOPEN_SEARCH",
-              role: "coordinator",
-              now,
+            raise("RELEASE_AND_REOPEN_SEARCH", {
               movementId: movement.id,
               actingUnitId: movement.acceptedUnitId ?? "",
               reason,
@@ -212,10 +196,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                 return;
               }
               before();
-              dispatch({
-                type: "RECORD_LEGAL_FORM_CONTINUATION",
-                role: "coordinator",
-                now,
+              raise("RECORD_LEGAL_FORM_CONTINUATION", {
                 movementId: movement.id,
                 formCode: form,
                 startedAt: started,
@@ -234,10 +215,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                 return;
               }
               before();
-              dispatch({
-                type: "RECORD_COUNTRY_EXTENSION",
-                role: "coordinator",
-                now,
+              raise("RECORD_COUNTRY_EXTENSION", {
                 movementId: movement.id,
                 paperExpiresAt: due,
               });

@@ -49,6 +49,7 @@ import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/wa
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import type {
   BedRelease,
@@ -964,7 +965,6 @@ export function WardBoard({
     units: liveUnits,
     admissions,
     leaveBeds,
-    dispatch,
     recordWardDeparture,
     movements,
     bedReleases: liveBedReleases,
@@ -979,7 +979,6 @@ export function WardBoard({
     "units",
     "admissions",
     "leaveBeds",
-    "dispatch",
     "recordWardDeparture",
     "movements",
     "bedReleases",
@@ -989,6 +988,7 @@ export function WardBoard({
     "dayZero",
   );
   const now = useWardFlowClock();
+  const raise = useWardRaise("ward");
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);
   // Audit r1 item 4: an arrival with no transport leg and fit to travel open, waiting on a reason.
@@ -1129,10 +1129,7 @@ export function WardBoard({
     const movement = movements.find((candidate) => candidate.id === movementId);
     dispatchAndReport(
       () =>
-        dispatch({
-          type: "PATIENT_ARRIVED",
-          role: "ward",
-          now,
+        raise("PATIENT_ARRIVED", {
           movementId,
           actingUnitId: unit.id,
           ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
@@ -1578,10 +1575,7 @@ export function WardBoard({
         () =>
           recordWardDeparture
             ? recordWardDeparture(admissionId, unit.id, leavingDestination)
-            : dispatch({
-                type: "RECORD_LEAVING",
-                role: "ward",
-                now,
+            : raise("RECORD_LEAVING", {
                 admissionId: admissionId,
                 actingUnitId: unit.id,
                 leavingDestination,
@@ -1595,10 +1589,7 @@ export function WardBoard({
     } else if (pendingConfirm.kind === "away_at_ed" && pendingConfirm.admissionId) {
       dispatchAndReport(
         () =>
-          dispatch({
-            type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-            role: "ward",
-            now,
+          raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
             admissionId: pendingConfirm.admissionId!,
             actingUnitId: unit.id,
           }),
@@ -1616,10 +1607,7 @@ export function WardBoard({
           () =>
             recordWardDeparture
               ? recordWardDeparture(item.selectableKey!, unit.id, leavingDestination)
-              : dispatch({
-                  type: "RECORD_LEAVING",
-                  role: "ward",
-                  now,
+              : raise("RECORD_LEAVING", {
                   admissionId: item.selectableKey!,
                   actingUnitId: unit.id,
                   leavingDestination,
@@ -1675,19 +1663,13 @@ export function WardBoard({
       dispatchAndReport(
         () => {
           if (matchingLeave) {
-            dispatch({
-              type: "END_LEAVE_BED",
-              role: "ward",
-              now,
+            raise("END_LEAVE_BED", {
               leaveBedId: matchingLeave.id,
               actingUnitId: unit.id,
             });
           }
           if (isAwayAtEd) {
-            dispatch({
-              type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-              role: "ward",
-              now,
+            raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
               admissionId: item.selectableKey!,
               actingUnitId: unit.id,
             });
@@ -2761,10 +2743,7 @@ export function WardBoard({
                                   () =>
                                     recordWardDeparture
                                       ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
-                                      : dispatch({
-                                          type: "RECORD_LEAVING",
-                                          role: "ward",
-                                          now,
+                                      : raise("RECORD_LEAVING", {
                                           admissionId: selectedTile.key,
                                           actingUnitId: unit.id,
                                           leavingDestination,
@@ -2838,11 +2817,8 @@ export function WardBoard({
                                     : today;
                                 dispatchAndReport(
                                   () =>
-                                    dispatch({
-                                      type: "UPDATE_EXPECTED_DISCHARGE",
-                                      role: "ward",
+                                    raise("UPDATE_EXPECTED_DISCHARGE", {
                                       actingUnitId: unit.id,
-                                      now,
                                       admissionId: admission.id,
                                       expectedDischargeAt,
                                     }),
@@ -2916,10 +2892,7 @@ export function WardBoard({
                                   const executeAway = () => {
                                     dispatchAndReport(
                                       () =>
-                                        dispatch({
-                                          type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-                                          role: "ward",
-                                          now,
+                                        raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
                                           admissionId: selectedTile.key,
                                           actingUnitId: unit.id,
                                         }),
@@ -2951,10 +2924,7 @@ export function WardBoard({
                                 data-tone="good"
                                 data-testid="ward-board-record-returned-submit"
                                 onClick={() =>
-                                  dispatch({
-                                    type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-                                    role: "ward",
-                                    now,
+                                  raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
                                     admissionId: selectedTile.key,
                                     actingUnitId: unit.id,
                                   })
@@ -2975,10 +2945,7 @@ export function WardBoard({
                               data-tone={selectedOccupant.stepDownCandidate ? "good" : undefined}
                               data-testid="ward-board-stepdown-toggle"
                               onClick={() => {
-                                dispatch({
-                                  type: "SET_STEP_DOWN_CANDIDATE",
-                                  role: "ward",
-                                  now,
+                                raise("SET_STEP_DOWN_CANDIDATE", {
                                   actingUnitId: unit.id,
                                   admissionId: selectedOccupant.key,
                                   stepDownCandidate: !selectedOccupant.stepDownCandidate,
@@ -3016,10 +2983,7 @@ export function WardBoard({
                                   value={selectedOccupant.dischargeBarrier ?? "None"}
                                   onChange={(e) => {
                                     const val = e.target.value;
-                                    dispatch({
-                                      type: "SET_DISCHARGE_BARRIER",
-                                      role: "ward",
-                                      now,
+                                    raise("SET_DISCHARGE_BARRIER", {
                                       actingUnitId: unit.id,
                                       admissionId: selectedOccupant.key,
                                       barrier: val === "None" ? null : (val as DischargeBarrier),
@@ -3393,10 +3357,7 @@ export function WardBoard({
                           } else {
                             dispatchAndReport(
                               () =>
-                                dispatch({
-                                  type: "BLOCK_BED_RELEASE",
-                                  role: "ward",
-                                  now,
+                                raise("BLOCK_BED_RELEASE", {
                                   releaseId: ownRelease.id,
                                   actingUnitId: unit.id,
                                   blocker: selectedBlocker,
