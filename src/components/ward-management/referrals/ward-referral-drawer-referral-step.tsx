@@ -69,6 +69,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     setEdNeeds,
     toggleRisk,
     originValid,
+    sendingWard,
   } = s;
   return (
     <div
@@ -78,77 +79,85 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     >
       <section className={styles.refCard}>
         <CardHead icon={MapPin} title="From">
-          <span className={styles.asideText}>{sourceKind === "ed" ? "Emergency referral" : "Community referral"}</span>
+          <span className={styles.asideText}>
+            {sendingWard ? "Ward referral" : sourceKind === "ed" ? "Emergency referral" : "Community referral"}
+          </span>
         </CardHead>
         <div className={styles.cardBody}>
-          <div className={styles.fieldGrid}>
-            <div className={styles.formField}>
-              <div className={styles.fieldLabelRow}>
-                <span className={styles.required} id={`${sectionId}-source`}>
-                  Source
-                </span>
+          {sendingWard ? (
+            <p className={styles.asideText} data-testid="ward-referral-drawer-sending-ward">
+              Sent from {sendingWard.name}, in this ward&apos;s own name.
+            </p>
+          ) : (
+            <div className={styles.fieldGrid}>
+              <div className={styles.formField}>
+                <div className={styles.fieldLabelRow}>
+                  <span className={styles.required} id={`${sectionId}-source`}>
+                    Source
+                  </span>
+                </div>
+                <div className={styles.segmented} role="group" aria-labelledby={`${sectionId}-source`}>
+                  {(["ed", "community"] as const).map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      aria-pressed={sourceKind === kind}
+                      onClick={() => {
+                        setSourceKind(kind);
+                        setOriginSiteCode("");
+                      }}
+                    >
+                      {kind === "community" ? "Community" : "Emergency"}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className={styles.segmented} role="group" aria-labelledby={`${sectionId}-source`}>
-                {(["ed", "community"] as const).map((kind) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    aria-pressed={sourceKind === kind}
-                    onClick={() => {
-                      setSourceKind(kind);
-                      setOriginSiteCode("");
-                    }}
-                  >
-                    {kind === "community" ? "Community" : "Emergency"}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Field
-              label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
-              htmlFor={`${sectionId}-origin`}
-              required
-              error={attempted.referral && !originValid ? "Choose the location of referral" : null}
-            >
-              <SelectBox>
-                <select
-                  id={`${sectionId}-origin`}
-                  className={styles.fieldSelect}
-                  value={originSiteCode}
-                  onChange={(e) => setOriginSiteCode(e.target.value)}
-                >
-                  <option value="">Choose location</option>
-                  {siteDirectory
-                    .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
-                    .map((site) => (
-                      <option key={site.code} value={site.code}>
-                        {sourceKind === "ed" ? site.emergencyDepartment?.name : site.name}
-                      </option>
-                    ))}
-                </select>
-              </SelectBox>
-            </Field>
-            {sourceKind === "community" && (
               <Field
-                label="Referring community service"
-                htmlFor={`${sectionId}-sending`}
+                label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
+                htmlFor={`${sectionId}-origin`}
                 required
-                wide
-                error={attempted.referral && !sendingTeam.trim() ? "Record the referring community service" : null}
+                error={attempted.referral && !originValid ? "Choose the location of referral" : null}
               >
-                <input
-                  id={`${sectionId}-sending`}
-                  className={styles.fieldInput}
-                  list={`${sectionId}-teams`}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  value={sendingTeam}
-                  maxLength={200}
-                  onChange={(e) => setSendingTeam(e.target.value)}
-                />
+                <SelectBox>
+                  <select
+                    id={`${sectionId}-origin`}
+                    className={styles.fieldSelect}
+                    value={originSiteCode}
+                    onChange={(e) => setOriginSiteCode(e.target.value)}
+                  >
+                    <option value="">Choose location</option>
+                    {siteDirectory
+                      .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
+                      .map((site) => (
+                        <option key={site.code} value={site.code}>
+                          {sourceKind === "ed" ? site.emergencyDepartment?.name : site.name}
+                        </option>
+                      ))}
+                  </select>
+                </SelectBox>
               </Field>
-            )}
-          </div>
+              {sourceKind === "community" && (
+                <Field
+                  label="Referring community service"
+                  htmlFor={`${sectionId}-sending`}
+                  required
+                  wide
+                  error={attempted.referral && !sendingTeam.trim() ? "Record the referring community service" : null}
+                >
+                  <input
+                    id={`${sectionId}-sending`}
+                    className={styles.fieldInput}
+                    list={`${sectionId}-teams`}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    value={sendingTeam}
+                    maxLength={200}
+                    onChange={(e) => setSendingTeam(e.target.value)}
+                  />
+                </Field>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

@@ -48,6 +48,17 @@ export function wardChromeRole(pathname: string): WardChromeRole {
   return "coordinator";
 }
 
+/** The ward a `/ward/<unitId>` or `/board/<unitId>` route belongs to, if any. */
+export function wardRouteUnitId(pathname: string): string | undefined {
+  const match = /\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
+  if (!match?.[1]) return undefined;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
 /**
  * **THE PERSON THE SHELL IS SIGNED IN AS — device audit, 11 October 2026 (Recommended, item 6).**
  *

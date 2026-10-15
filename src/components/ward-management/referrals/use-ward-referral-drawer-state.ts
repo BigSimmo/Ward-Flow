@@ -3,7 +3,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, useRouteRole, type RoleGate } from "@/components/ward-management/ward-role-gate";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   ATS_CATEGORIES,
@@ -17,6 +17,7 @@ import {
   type ReferralDestination,
   type Cohort,
   type HealthService,
+  type Unit,
   REFERRAL_HISTORY_LIMITS,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -41,7 +42,7 @@ import {
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
-import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { wardChromeRole, wardRouteUnitId } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
 import { createReadmissionIndex, priorDischargeWithinWindow } from "@/components/ward-management/ward-readmission";
 import {
@@ -85,6 +86,37 @@ import {
   type WardReferralDrawerContentProps,
 } from "./ward-referral-drawer-model";
 
+/** Why a ward page that names no real ward cannot send: the referral must come from a ward. */
+export const NO_SENDING_WARD = "Open New referral from your ward's page, so it is sent in that ward's name.";
+
+/**
+ * Who the sheet sends as. On a ward page the referral comes from that ward, as source
+ * psychiatric_ward. A ward page that names no real ward cannot send, and says why (the rail shows
+ * the reason beside Confirm and send).
+ */
+function useSheetSender(
+  gate: ReturnType<typeof useRoleGate>,
+  units: readonly Unit[],
+  pathname: string,
+  baseId: string,
+): { sendGate: RoleGate; sendingWard: Unit | undefined } {
+  const routeRole = useRouteRole();
+  const roleSendGate = gate("RECEIVE_REFERRAL");
+  const routeUnitId = wardRouteUnitId(pathname);
+  const sendingWard = routeRole === "ward" ? units.find((unit) => unit.id === routeUnitId) : undefined;
+  if (routeRole !== "ward" || sendingWard) return { sendGate: roleSendGate, sendingWard };
+  const id = `${baseId}-no-sending-ward`;
+  return {
+    sendGate: {
+      allowed: false,
+      reason: NO_SENDING_WARD,
+      buttonProps: { disabled: true, "aria-describedby": id },
+      note: null,
+    },
+    sendingWard,
+  };
+}
+
 /**
  * All of the referral slide-out's state, effects and handlers, moved unchanged and in their
  * original order from `ward-referral-drawer.tsx`. The sections read the result as `s`.
@@ -110,11 +142,11 @@ export function useWardReferralDrawerState({
 
   const capacityRecords = useWardCapacity();
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
-  const myProfile = profileForChromeRole(wardChromeRole(usePathname() ?? ""));
-  // Feature 11: the sheet dispatches as the referral's source; routes whose role `EVENT_ROLE` omits
-  // keep it through the listed cross-role pairs in `ward-role-permissions.ts`.
+  const pathname = usePathname() ?? "";
+  const myProfile = profileForChromeRole(wardChromeRole(pathname));
+  // Feature 11: the sheet dispatches as the referral's source. A ward page sends in its own ward's
+  // name (role access plan item 8, Josh 15 Oct 2026), so it never borrows the ED or community role.
   const gate = useRoleGate();
-  const sendGate = gate("RECEIVE_REFERRAL");
   const addPatientGate = gate("ADD_PATIENT");
 
   const {
@@ -141,6 +173,7 @@ export function useWardReferralDrawerState({
     "units",
   );
   const now = useWardFlowClock();
+  const { sendGate, sendingWard } = useSheetSender(gate, units, pathname, searchId);
 
   const urlPrefill = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -706,17 +739,25 @@ export function useWardReferralDrawerState({
   }
   function referralError() {
     if (
-      !originSiteCode ||
-      !siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
+      !sendingWard &&
+      (!originSiteCode ||
+        !siteDirectory.some(
+          (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
+        ))
     )
       return "Choose the location of referral.";
-    if (sourceKind === "community" && !sendingTeam.trim()) return "Record the referring community service.";
+    if (!sendingWard && sourceKind === "community" && !sendingTeam.trim())
+      return "Record the referring community service.";
     if (!URGENCY_LEVELS.some((tier) => String(tier) === urgency)) return "Choose the referral urgency.";
     return null;
   }
   const originValid =
-    !!originSiteCode &&
-    siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
+    !!sendingWard ||
+    (!!originSiteCode &&
+      siteDirectory.some(
+        (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
+      ));
+  const needsSendingTeam = !sendingWard && sourceKind === "community";
   const needed: Record<DrawerSection, number> = {
     patient: [
       !patientRecord && !unidentified?.trim(),
@@ -726,7 +767,7 @@ export function useWardReferralDrawerState({
     ].filter(Boolean).length,
     referral: [
       !originValid,
-      sourceKind === "community" && !sendingTeam.trim(),
+      needsSendingTeam && !sendingTeam.trim(),
       !URGENCY_LEVELS.some((tier) => String(tier) === urgency),
     ].filter(Boolean).length,
     documentation: documentationNeeded(documentation),
@@ -738,8 +779,7 @@ export function useWardReferralDrawerState({
   // all ready. The checklist rows below are labels for the letter, not a second count.
   // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
   // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
-  const itemsTotal =
-    4 + (sourceKind === "community" ? 3 : 2) + documentationItems(documentation) + 1 + CONTACT_FIELD_COUNT;
+  const itemsTotal = 4 + (needsSendingTeam ? 3 : 2) + documentationItems(documentation) + 1 + CONTACT_FIELD_COUNT;
   // The saved history carries the unidentified label ahead of the patient story, so the two together
   // must fit the history limit or the reducer refuses the referral with no visible reason.
   function storyError() {
@@ -851,16 +891,17 @@ export function useWardReferralDrawerState({
     setFlowError(null);
     dispatch({
       type: "RECEIVE_REFERRAL",
-      role: sourceKind === "ed" ? "ed" : "community",
+      role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
       now,
       patientId: patientRecord?.id,
       ageBand: cohort,
       homeRegion,
       suburb: suburbKnown ? { kind: "named", name: catchmentSuburb } : { kind: "unknown", reason: "not_known" },
       destinations: selectedDestinations,
-      source: sourceKind === "ed" ? "ed_medical" : "community",
-      originSiteCode,
-      sendingTeamName: sourceKind === "community" ? sendingTeam : undefined,
+      source: sendingWard ? "psychiatric_ward" : sourceKind === "ed" ? "ed_medical" : "community",
+      originSiteCode: sendingWard?.siteCode ?? originSiteCode,
+      ...(sendingWard ? { originUnitId: sendingWard.id, actingUnitId: sendingWard.id } : {}),
+      sendingTeamName: needsSendingTeam ? sendingTeam : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
       transportNeeded: destType === "ward" && transport !== "carer",
@@ -930,11 +971,13 @@ export function useWardReferralDrawerState({
   const suburbKnown =
     !!catchmentSuburb &&
     suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.trim().toLowerCase());
-  const originLabel = originValid
-    ? sourceKind === "ed"
-      ? (siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
-      : (siteByCode(originSiteCode)?.name ?? originSiteCode)
-    : "";
+  const originLabel = sendingWard
+    ? sendingWard.name
+    : originValid
+      ? sourceKind === "ed"
+        ? (siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
+        : (siteByCode(originSiteCode)?.name ?? originSiteCode)
+      : "";
   /** The board calls a referral overdue after this tier window, a service default (`OPERATIONAL_DEFAULT_LABEL`). */
   function decisionDueAt(from: Instant): string | undefined {
     return tier === undefined ? undefined : formatInstantWithDay(from + OVERDUE_AFTER_MINUTES_BY_TIER[tier], now);
@@ -1150,6 +1193,7 @@ export function useWardReferralDrawerState({
     myProfile,
     gate,
     sendGate,
+    sendingWard,
     addPatientGate,
     movements,
     patients,
