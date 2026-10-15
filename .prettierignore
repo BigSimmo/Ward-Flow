@@ -14,10 +14,6 @@ public/demo-documents/
 scratch/
 .claude/worktrees/
 .impeccable/
-# Ward Flow's records kept from PsychSift's retired issue list and review records, copied word
-# for word on 26 September 2026 (see that folder's README.md). They are history, so no formatter
-# may rewrite them.
-docs/ward-flow/archive/psychsift-era-records/
 
 # Content-addressed Ward Flow control-plane records. THE FILENAME IS THE SHA-256 OF THE FILE'S OWN
 # CANONICAL JSON, so reformatting the content breaks the content-address and the record no longer

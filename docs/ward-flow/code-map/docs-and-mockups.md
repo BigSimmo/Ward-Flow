@@ -208,16 +208,11 @@ in them as belonging to the tree named, never as current.
 
 ## Big history folders and small tooling folders
 
-- **`archive/dated-notes/`** — 178 files (177 dated notes + its own `README.md`), spanning roughly
-  1–19 September 2026 by filename date. Every owner-answer dump, handover and one-off measurement
-  note moved out of the top level during "docs hardening." Its `README.md` states plainly: "Not live
-  guidance," and points back to `README.md`, `LOCAL-FIRST-RUN.md`, `STATUS.md`. Nothing outside this
-  folder reads it as data, but `OWNER-RULINGS.md`'s generator scans `archive/dated-notes/owner-*.md`
-  by pattern, and several current docs cite specific files here by path (e.g. `README.md` cites
-  `archive/dated-notes/owner-answers-2026-09-17.md`). Worth knowing: `HOW-TO-FOLD-2026-09-10.md`
-  (fold procedure detail `HOW-WE-WORK.md` points to), `owner-answers-2026-09-17.md` and
-  `owner-answers-2026-09-18.md` (round-2 owner rulings, still cited), `PROJECT-ISSUES.md` (archived
-  copy of the top-level redirect), `START-LOCAL-CHAT.md` (archived copy).
+- **`archive/dated-notes/`** — 36 files (34 `owner-*.md` rulings and questions, the clinician check
+  rulings and its own `README.md`). The 15 October 2026 docs trim removed the other dated notes
+  (handovers, prompts, censuses); they are kept at the Git tag `archive/docs-pre-trim-2026-10-15`
+  (see `ARCHIVE-NOTE.md`). `OWNER-RULINGS.md`'s generator scans `archive/dated-notes/owner-*.md` by
+  pattern, and `README.md` cites `archive/dated-notes/owner-answers-2026-09-17.md`.
 - **`lessons/`** — 209 files (207 lessons + `README.md` + `MEMORY.md`), all named for their topic, no
   dates in filenames. This is a **versioned, committed copy** of the live lesson store at
   `~/.claude/projects/D--Repos-Database/memory/` (outside git, machine-local). The store is the

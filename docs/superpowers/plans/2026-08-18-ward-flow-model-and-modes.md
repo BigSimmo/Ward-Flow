@@ -13,7 +13,7 @@
 
 **Tech Stack:** Next.js 16 App Router (server component route → `"use client"` workspace), React 19, TypeScript 6 strict, CSS Modules with local `--net-*`/`--ward-*` token scales, Vitest for contracts, Playwright Chromium for journeys.
 
-**Spec:** [`docs/archive/ward-management-mode-map.md`](../../archive/ward-management-mode-map.md) (route/role model), [`docs/archive/ward-management-context.md`](../../archive/ward-management-context.md) (glossary), [`docs/archive/ward-management-decisions.md`](../../archive/ward-management-decisions.md) (ADRs 1–3)
+**Spec:** `docs/archive/ward-management-mode-map.md` (removed in the 15 Oct 2026 docs trim) (route/role model), `docs/archive/ward-management-context.md` (removed in the 15 Oct 2026 docs trim) (glossary), `docs/archive/ward-management-decisions.md` (removed in the 15 Oct 2026 docs trim) (ADRs 1–3)
 
 ## Global Constraints
 
