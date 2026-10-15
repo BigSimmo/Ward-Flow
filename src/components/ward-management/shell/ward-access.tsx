@@ -20,7 +20,7 @@ import { Button, buttonClass } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { scopeWorkspace } from "@/components/ward-management/ward-access-scope";
+import { scopeBroadcastAlerts, scopeWorkspace } from "@/components/ward-management/ward-access-scope";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -201,22 +201,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         // a saved scenario is the whole workspace, so both stay the coordinator's (review on PR #330).
         broadcastAlerts: coordinator
           ? context.broadcastAlerts
-          : context.broadcastAlerts.flatMap((alert) => {
-              if (alert.targetUnitIds === undefined) return [alert];
-              // Only the desk's own wards stay named, as on the movement (review on PR #330).
-              const own = alert.targetUnitIds.filter(unitIn);
-              if (own.length === 0) return [];
-              if (own.length === alert.targetUnitIds.length) return [alert];
-              const names = own.map((id) => context.units.find((unit) => unit.id === id)?.name ?? id);
-              return [
-                {
-                  ...alert,
-                  targetUnitIds: own,
-                  ...(alert.replies ? { replies: alert.replies.filter((reply) => unitIn(reply.unitId)) } : {}),
-                  targetScopeLabel: names.length === 1 ? names[0] : `${names.length} wards`,
-                },
-              ];
-            }),
+          : scopeBroadcastAlerts(context.broadcastAlerts, access, context.units, places),
         undoRecords: coordinator ? context.undoRecords : [],
         saveScenarioFile: coordinator ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
