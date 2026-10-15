@@ -28,8 +28,8 @@ import {
   type RefObject,
 } from "react";
 
-import { Sheet } from "@/components/ui/sheet";
-import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { Sheet } from "@/components/wf/sheet";
+import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import {
   StatusGlyph,
   WF_BAND_SCROLLED_PX,
@@ -132,7 +132,7 @@ import styles from "./ward-bar.module.css";
  *   Ctrl/Cmd+K shortcuts, its own Escape/ArrowDown/Enter keyboard contract). Building a second
  *   search engine here would be the exact "second definition of matches" that file's own header
  *   comment already warns against for ITS OWN callers.
- * - **The three drawers' modal chrome** is `<Sheet placement="right">` (`@/components/ui/sheet`)
+ * - **The three drawers' modal chrome** is `<Sheet placement="right">` (`@/components/wf/sheet`)
  *   — this codebase's established accessible dialog: focus trap via `inert` on the rest of the
  *   page (not a hand-rolled Tab-cycle), Escape-closes, backdrop-click-closes, and focus returned
  *   to the trigger on close. It is already used across the app for exactly this shape of overlay.

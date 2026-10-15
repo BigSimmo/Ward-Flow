@@ -129,6 +129,19 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
     reason:
       "Audit A2-1: Raise referral starts from a found person (draft.patientId) instead of filing an Unknown Patient, and the ED row reads its own patient's open ward referral via ed-bed-search-step.",
   },
+  // Fix list 2.5 and 9.6 (15 Oct 2026): ed-screen.tsx was split into sibling files with no change
+  // to behaviour. These two hold reads that were already in ed-screen.tsx under the Audit A2-1
+  // entry above, moved unchanged. They are not new readers and read nothing more than before.
+  {
+    file: "ed/ed-screen-raise-section.tsx",
+    reason:
+      "Audit A2-1, moved unchanged from ed-screen.tsx: the Raise into a movement form shows and edits the found person on its own draft (draft.patientId).",
+  },
+  {
+    file: "ed/ed-screen-inbox.tsx",
+    reason:
+      "Audit A2-1, moved unchanged from ed-screen.tsx: Raise into a movement from an inbox referral copies that one referral's own person (referral.patientId) into the draft.",
+  },
   {
     file: "referrals/accepted-ward-referral.ts",
     reason:
@@ -284,6 +297,26 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
     reason:
       "Community team hub: resolves and displays patient identity for active community care and referral episodes.",
   },
+  // Fix list 2.5 and 9.6 (15 Oct 2026): `community-screen.tsx` was split into sections and hooks as a
+  // pure refactor. These are the parts of it that carry its reads, named one by one so a new file
+  // still has to be added here on purpose. Each entry is void if the file is rendered by anything
+  // other than the community team screen.
+  ...[
+    "community/community-screen-helpers.ts",
+    "community/community-screen-panels.tsx",
+    "community/community-screen-phone.tsx",
+    "community/community-screen-waiting-tab.tsx",
+    "community/community-screen-in-bed-tab.tsx",
+    "community/community-screen-back-tab.tsx",
+    "community/community-screen-caseload-tab.tsx",
+    "community/community-screen-drawer.tsx",
+  ].map((file) => ({
+    file,
+    reason:
+      "Split out of community/community-screen.tsx (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor: " +
+      "the same patient identity reads that entry above is allowed, moved with their markup, and rendered " +
+      "only by that screen.",
+  })),
   {
     file: "patients/patient-now-adapter.ts",
     reason:
@@ -335,7 +368,10 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
     // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
     // 25 → 26 on 2026-10-15: ward-referral-visibility.ts, the community projection the team page now reads.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(29);
+    // 29 → 39 on 2026-10-15: fix list 2.5 and 9.6 split ed-screen.tsx and community-screen.tsx into
+    // sections. No new reader: the same A2-1 reads moved, two into ED parts and eight into community
+    // parts, each named beside its entry.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(39);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

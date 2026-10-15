@@ -28,7 +28,7 @@ import {
   type Instant,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
-import { hasOpenSheet } from "@/components/ui/sheet-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";

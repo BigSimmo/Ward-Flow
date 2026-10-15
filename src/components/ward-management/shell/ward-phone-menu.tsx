@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { Dot, SrOnly } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";

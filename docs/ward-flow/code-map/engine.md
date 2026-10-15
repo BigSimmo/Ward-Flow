@@ -851,7 +851,7 @@ guard.test.ts` is what proves that check can actually fail.
   `docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md` first — the owner's ruling was
   that this prototype computes no legal time limits of its own.
 - **Three engine files are the only ones with outside imports** at all
-  (`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/ui/sheet-focus`) — per the
+  (`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/wf/sheet-focus`) — per the
   overview map. The engine otherwise only imports from itself, so a change here has an unusually
   contained blast radius compared to the screens.
 

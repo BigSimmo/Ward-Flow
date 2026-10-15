@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
 import { X } from "lucide-react";
-import { OverlayPortal } from "@/components/ui/overlay-root";
+import { OverlayPortal } from "./overlay-root";
 import { Button } from "./button";
 import { cx, present } from "./cx";
 import styles from "./dialog.module.css";

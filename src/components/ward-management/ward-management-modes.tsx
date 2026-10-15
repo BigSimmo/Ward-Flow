@@ -6,7 +6,7 @@ import { useState } from "react";
 import { roleLabels, type ChangeAuditEntry, type WardRole } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardNetworkWorkspace } from "@/components/ward-management/ward-management-network";
-import type { WardMode } from "@/components/ward-management/ward-management-navigation";
+import type { WardMode } from "@/components/ward-management/ward-nav";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { DEMONSTRATION_DAY_LABEL, JURISDICTION_LABEL } from "@/components/ward-management/ward-sites";
 import { GovernanceWorkbench } from "@/components/ward-management/governance-registers";

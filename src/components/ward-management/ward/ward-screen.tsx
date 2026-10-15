@@ -21,7 +21,7 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { hasOpenSheet } from "@/components/ui/sheet-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-scope";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";

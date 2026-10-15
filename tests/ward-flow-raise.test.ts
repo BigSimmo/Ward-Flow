@@ -8,7 +8,8 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 /**
  * Fix list 1.5: screens raise events by name (`useWardRaise(role)`), not by building event objects
  * with a desk role and the time at each call. Raw `dispatch({` calls may only go down, file by file.
- * When a screen moves over, lower or remove its line here.
+ * When a screen moves over, lower or remove its line here. A file split into siblings carries its
+ * allowance with the moved calls, never more in total (screen and component cleanup, 15 Oct 2026).
  */
 const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/alerts/alerts-screen.tsx": 7,
@@ -19,8 +20,9 @@ const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/capacity/step-down-board.tsx": 1,
   "src/components/ward-management/community/community-screen.tsx": 1,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 9,
-  "src/components/ward-management/discharges/discharge-board.tsx": 3,
+  "src/components/ward-management/discharges/discharge-board.tsx": 1,
   "src/components/ward-management/discharges/discharge-care-journey.tsx": 1,
+  "src/components/ward-management/discharges/discharge-detail-panes.tsx": 1,
   "src/components/ward-management/discharges/discharge-follow-up.tsx": 1,
   "src/components/ward-management/governance-registers.tsx": 2,
   "src/components/ward-management/handover/handover-page.tsx": 1,
@@ -32,9 +34,10 @@ const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/patients/patient-now-screen.tsx": 10,
   "src/components/ward-management/patients/patient-transit-operations.tsx": 16,
   "src/components/ward-management/referrals/arrival-time-modal.tsx": 1,
-  "src/components/ward-management/referrals/referral-match.tsx": 9,
+  "src/components/ward-management/referrals/referral-history-corrections.tsx": 1,
+  "src/components/ward-management/referrals/referral-match.tsx": 7,
   "src/components/ward-management/referrals/upload-forms-modal.tsx": 1,
-  "src/components/ward-management/referrals/ward-referral-drawer.tsx": 2,
+  "src/components/ward-management/referrals/use-referral-match-state.tsx": 1,
   "src/components/ward-management/referrals/ward-referral-inbox.tsx": 3,
   "src/components/ward-management/shell/ward-bar.tsx": 1,
   "src/components/ward-management/shell/ward-broadcast-banner.tsx": 2,

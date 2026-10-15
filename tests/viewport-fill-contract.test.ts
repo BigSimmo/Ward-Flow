@@ -116,7 +116,7 @@ const EXEMPTIONS: Exemption[] = [
     // Sheet primitive, not a page. A fullscreen-on-phone sheet sizes itself against the
     // inset-0 backdrop and is cancelled at sm (`sm:min-h-0`); it is an overlay box, so it
     // is not growing into `#main-content` and invariant 24's fill box does not apply.
-    file: "src/components/ui/sheet.tsx",
+    file: "src/components/wf/sheet.tsx",
     match: "min-h-[calc(100dvh-2rem)]",
     count: 2,
     reason: "overlay primitive sizing on phone, cancelled at sm by sm:min-h-0",

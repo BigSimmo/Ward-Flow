@@ -32,8 +32,10 @@ function routeExists(route: string): boolean {
 describe("figma token sync", () => {
   it("exports day, night and size values that round-trip with no changes", () => {
     const tokens = exportTokens(css) as Tokens;
-    expect(tokens.Colour.Day["--wf-accent"]).toBe("#2f4c66");
-    expect(tokens.Colour.Night["--wf-accent"]).toBe("#8fb0d4");
+    // The values the screens actually paint: the v6 baseline (#2f4c66, #8fb0d4) was overridden by v9
+    // until both sheets became one on 15 Oct 2026, so Figma now receives the live accent.
+    expect(tokens.Colour.Day["--wf-accent"]).toBe("#245a8c");
+    expect(tokens.Colour.Night["--wf-accent"]).toBe("#8cbcf0");
     expect(tokens.Colour.Night["--wf-hero-ink"]).toBe("#ffffff");
     expect(tokens.Size["--wf-r-md"]).toBe(12);
     expect(tokens.Size["--wf-fs-28"]).toBe(28);
@@ -59,10 +61,22 @@ describe("figma token sync", () => {
     const result = applyTokens(css, pulled);
     expect(result.skipped).toEqual([]);
     expect(result.css.match(/--wf-accent: #8099cc;/g)).toHaveLength(2);
-    expect(result.css).toContain("--wf-accent: #2f4c66;");
+    expect(result.css).toContain("--wf-accent: #245a8c;");
     expect(result.css).toContain("--wf-line: rgba(22, 30, 40, 0.1);");
     expect(result.css).toContain("--wf-r-lg: 18px;");
     expect(diffTokens(result.css, pulled).changes).toEqual([]);
+  });
+
+  it("refuses a size edit whose literal a later alias overrides, and never rewrites the alias", () => {
+    expect(css.match(/--wf-row: var\(--wf-row-[a-z]+\);/g)?.length).toBeGreaterThan(0);
+    const pulled = exportTokens(css) as Tokens;
+    pulled.Size["--wf-row"] = 48;
+    const result = applyTokens(css, pulled);
+    expect(result.applied).toBe(0);
+    expect(result.skipped).toEqual([
+      "--wf-row: a later alias in the CSS sets the live value, so this edit would not take effect",
+    ]);
+    expect(result.css).toBe(css);
   });
 
   it("refuses a Day edit that would also change Night when the CSS holds one value for both", () => {
@@ -115,7 +129,7 @@ describe("Figma import validation", () => {
       mkdirSync(join(root, "scripts"));
       mkdirSync(join(root, "src/app"), { recursive: true });
       cpSync("scripts/figma-tokens.mjs", join(root, "scripts/figma-tokens.mjs"));
-      const cssFile = join(root, "src/app/ward-flow-v6-tokens.css");
+      const cssFile = join(root, "src/app/ward-flow-v9-tokens.css");
       writeFileSync(cssFile, css);
       const incoming = join(root, "incoming.json");
       writeFileSync(incoming, JSON.stringify({ Size: { "--wf-r-md": 15, "--wf-r-xs": null } }));

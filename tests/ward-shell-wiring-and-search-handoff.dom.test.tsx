@@ -9,7 +9,7 @@ import { setServiceScope } from "@/components/ward-management/shell/ward-service
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { takeHandedOffPatientSearchText } from "@/components/ward-management/search/patient-query-handoff";
-import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({

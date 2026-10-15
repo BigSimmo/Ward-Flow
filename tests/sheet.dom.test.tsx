@@ -4,8 +4,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Sheet } from "@/components/ui/sheet";
-import { OverlayRoot } from "@/components/ui/overlay-root";
+import { Sheet } from "@/components/wf/sheet";
+import { OverlayRoot } from "@/components/wf/overlay-root";
 
 // jsdom (via vitest's environment) normally provides requestAnimationFrame, but
 // guard it so the Sheet's focus scheduling never throws if a runner omits it.
