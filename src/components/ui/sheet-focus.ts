@@ -137,7 +137,7 @@ export function canRestoreFocusTo(target: HTMLElement | null) {
  * Notifies on every push/pop so the top-most sheet can re-take focus the moment
  * a sibling sheet finishes tearing down, instead of polling for it.
  */
-export function subscribeToSheetStack(listener: () => void) {
+function subscribeToSheetStack(listener: () => void) {
   stackListeners.add(listener);
   return () => {
     stackListeners.delete(listener);

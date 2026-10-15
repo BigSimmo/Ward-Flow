@@ -13,6 +13,7 @@ import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-bro
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
@@ -132,6 +133,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
           <WardActNowNotifier />
           <WardPwaRegistration />
           <WardOfflineLinks />
+          {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
+          <WardFeatureFlagLink />
           <div className={styles.shellRow}>
             <WardRail />
             {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),

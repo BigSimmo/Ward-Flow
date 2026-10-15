@@ -4,8 +4,8 @@ import { Loader2, type LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { cn, controlBase } from "@/components/ui-primitives";
 
-export type ButtonVariant = "primary" | "secondary" | "toolbar" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "toolbar" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 // One filled `--command` button per surface (register #12). `secondary` is the
 // default for everything that is not the single primary action on screen.
@@ -33,30 +33,6 @@ const SIZE: Record<ButtonSize, string> = {
   md: "px-4 text-sm",
   lg: "px-5 text-sm",
 };
-
-/**
- * The Button face as a class string, for a control that has to be an anchor
- * rather than a `<button>`.
- *
- * The case this exists for: a result row whose whole surface navigates needs a
- * real `<a>`, so that a tap, a cmd-click, a middle-click and a long-press all
- * behave the way the browser already knows how to make them behave — none of
- * which a `router.push` in an `onClick` can offer. `Button` always renders a
- * `<button>` and has no polymorphic escape, so the caller builds the anchor and
- * borrows the face from here rather than copying the variant strings, which
- * would then drift the next time a variant changes.
- */
-export function buttonFaceClass({
-  variant = "secondary",
-  size = "md",
-  block = false,
-}: {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  block?: boolean;
-} = {}) {
-  return cn(controlBase, VARIANT[variant], SIZE[size], block && "w-full");
-}
 
 export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   variant?: ButtonVariant;

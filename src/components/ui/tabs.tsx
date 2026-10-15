@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { type ReactNode, useCallback, useId, useRef } from "react";
 import { cn } from "@/components/ui-primitives";
 
-export type TabItem = {
+type TabItem = {
   id: string;
   label: string;
   icon?: LucideIcon;

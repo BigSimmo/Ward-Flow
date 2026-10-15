@@ -24,6 +24,9 @@ import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/wa
 
 /**
  * THE DEMONSTRATION NETWORKS: "EMHS demo" and "EMHS surge". Owner rulings 2026-09-25 10:08.
+ * The one-tap demo resets (Josh, 15 Oct 2026) add "quiet" (beds free, short ED waits), "winter"
+ * (every ward full or one short, more people waiting) and "ed-crisis" (surge wards with long EMHS
+ * ED waits). Each comes from this same generator with its own fixed seed; demo and surge are unchanged.
  *
  * ⚠️ **EVERYTHING HERE IS SYNTHETIC.** No ward, bed count, patient or event is real. The sites keep
  * their public names and codes (so travel bands, distances, catchment routing and service colours
@@ -56,7 +59,9 @@ import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/wa
  */
 export const INCLUDE_UNRECORDED_AND_NON_BINARY_GENDER = false;
 
-export type DemoNetworkVariant = "demo" | "surge";
+/** The variants whose occupancy each ward spec states directly. */
+type StatedVariant = "demo" | "surge";
+export type DemoNetworkVariant = StatedVariant | "quiet" | "winter" | "ed-crisis";
 
 export type DemoNetwork = {
   sites: Site[];
@@ -76,8 +81,11 @@ type WardSpec = {
   beds: number;
   lockedBeds: number;
   sexDesignation: SexDesignation;
-  /** Beds with a person in them on each variant. Beds held for a pulled patient come on top. */
-  occupied: Record<DemoNetworkVariant, number>;
+  /**
+   * Beds with a person in them on the demo and surge variants. Beds held for a pulled patient come
+   * on top. The other variants derive theirs from these (`occupiedOn`).
+   */
+  occupied: Record<StatedVariant, number>;
   specialling: number;
   highAcuity: number;
   authorised?: false;
@@ -399,6 +407,52 @@ const ED_WAITS: Record<DemoNetworkVariant, Record<string, readonly number[]>> = 
     "peel-ed": [7 * 60],
     "rgh-ed": [4 * 60],
   },
+  // A quiet day: a handful of short waits, the longest seven hours.
+  quiet: {
+    "rph-ed": [7 * 60, 4 * 60, 2 * 60, 70],
+    "arm-ed": [5 * 60, 80],
+    "sjgm-ed": [3 * 60],
+    "fsh-ed": [100],
+  },
+  // Winter: like the surge, with more people waiting everywhere.
+  winter: {
+    "rph-ed": [33 * 60, 25 * 60, 19 * 60, 14 * 60, 10 * 60, 8 * 60, 6 * 60, 4 * 60, 3 * 60, 90, 30],
+    "arm-ed": [40 * 60, 29 * 60, 21 * 60, 13 * 60, 9 * 60, 6 * 60, 4 * 60, 2 * 60, 45],
+    "sjgm-ed": [26 * 60, 18 * 60, 12 * 60, 8 * 60, 5 * 60, 3 * 60, 100, 20],
+    "scgh-ed": [13 * 60, 5 * 60, 2 * 60],
+    "fsh-ed": [10 * 60, 4 * 60, 80],
+    "jhc-ed": [6 * 60, 2 * 60],
+    "peel-ed": [8 * 60],
+    "rgh-ed": [5 * 60, 90],
+  },
+  // An ED crisis: many more people in the East Metro EDs, several past a day and a few past two.
+  "ed-crisis": {
+    "rph-ed": [
+      54 * 60,
+      37 * 60,
+      30 * 60,
+      26 * 60,
+      21 * 60,
+      17 * 60,
+      14 * 60,
+      11 * 60,
+      9 * 60,
+      7 * 60,
+      5 * 60,
+      4 * 60,
+      3 * 60,
+      2 * 60,
+      70,
+      25,
+    ],
+    "arm-ed": [50 * 60, 34 * 60, 25 * 60, 19 * 60, 15 * 60, 11 * 60, 8 * 60, 6 * 60, 4 * 60, 2 * 60, 50],
+    "sjgm-ed": [49 * 60, 28 * 60, 22 * 60, 16 * 60, 12 * 60, 9 * 60, 6 * 60, 3 * 60, 100, 30],
+    "scgh-ed": [11 * 60, 3 * 60],
+    "fsh-ed": [9 * 60, 2 * 60],
+    "jhc-ed": [5 * 60],
+    "peel-ed": [7 * 60],
+    "rgh-ed": [4 * 60],
+  },
 };
 
 const ED_SITE: Record<string, string> = {
@@ -569,6 +623,15 @@ type PersonSpec = {
   suburb?: string;
 };
 
+/** One fixed seed per variant, so every load builds the same records. */
+const SEEDS: Record<DemoNetworkVariant, number> = {
+  demo: 20260925,
+  surge: 20260926,
+  quiet: 20260927,
+  winter: 20260928,
+  "ed-crisis": 20260929,
+};
+
 class NetworkBuilder {
   readonly patients: Patient[] = [];
   readonly admissions: Admission[] = [];
@@ -581,7 +644,7 @@ class NetworkBuilder {
   private readonly next: () => number;
 
   constructor(readonly variant: DemoNetworkVariant) {
-    this.next = random(variant === "demo" ? 20260925 : 20260926);
+    this.next = random(SEEDS[variant]);
   }
 
   pick<T>(items: readonly T[]): T {
@@ -755,7 +818,7 @@ function edMovement(
   if (stage === "pulled") {
     // A bed can only be held on a ward with an empty bed not already held for someone else.
     const roomy = candidates.filter(
-      (spec) => spec.beds - spec.occupied[build.variant] - (heldBeds.get(spec.id) ?? 0) > 0,
+      (spec) => spec.beds - occupiedOn(spec, build.variant) - (heldBeds.get(spec.id) ?? 0) > 0,
     );
     if (roomy.length === 0) stage = "accepted_awaiting_bed";
     else candidates.splice(0, candidates.length, ...roomy);
@@ -1121,21 +1184,76 @@ const DUE_TODAY: Record<DemoNetworkVariant, readonly string[]> = {
     "dn-mid-secure",
   ],
   surge: ["dn-rph-acute", "dn-bty-older", "dn-arm-acute", "dn-mid-acute", "dn-mid-secure"],
+  quiet: [
+    "dn-rph-acute",
+    "dn-rph-acute",
+    "dn-rph-acute",
+    "dn-rph-older",
+    "dn-bty-secure",
+    "dn-bty-women",
+    "dn-bty-youth",
+    "dn-bty-older",
+    "dn-arm-acute",
+    "dn-arm-acute",
+    "dn-arm-older",
+    "dn-mid-acute",
+    "dn-mid-acute",
+    "dn-mid-secure",
+  ],
+  winter: ["dn-rph-acute", "dn-arm-acute", "dn-mid-secure"],
+  "ed-crisis": ["dn-rph-acute", "dn-bty-older", "dn-mid-acute", "dn-mid-secure"],
 };
 
 const ON_LEAVE: Record<DemoNetworkVariant, readonly string[]> = {
   demo: ["dn-rph-acute", "dn-bty-women", "dn-bty-youth", "dn-arm-acute", "dn-mid-acute"],
   surge: ["dn-rph-acute", "dn-arm-acute", "dn-mid-acute"],
+  quiet: [
+    "dn-rph-acute",
+    "dn-rph-acute",
+    "dn-rph-older",
+    "dn-bty-women",
+    "dn-bty-youth",
+    "dn-arm-acute",
+    "dn-mid-acute",
+  ],
+  winter: ["dn-rph-acute", "dn-mid-acute"],
+  "ed-crisis": ["dn-arm-acute", "dn-mid-acute"],
 };
+
+/**
+ * Beds with a person in them on this ward for a variant. Demo and surge read the spec. The others
+ * are derived from it, so no ward carries a standalone figure for them:
+ *   - quiet: about three quarters of the beds (never more than the demo day), and never fewer than
+ *     the due-today, on-leave and out-of-area stays the ward must hold;
+ *   - winter: every ward full or one short of full, and never below the surge;
+ *   - ed-crisis: the surge wards.
+ */
+function occupiedOn(spec: WardSpec, variant: DemoNetworkVariant): number {
+  switch (variant) {
+    case "demo":
+    case "surge":
+      return spec.occupied[variant];
+    case "quiet": {
+      const due = DUE_TODAY.quiet.filter((unitId) => unitId === spec.id).length;
+      const leave = ON_LEAVE.quiet.filter((unitId) => unitId === spec.id).length;
+      const away = OUT_OF_AREA.filter((entry) => entry.unitId === spec.id).length;
+      return Math.max(due + leave, away, Math.min(spec.occupied.demo, Math.floor(spec.beds * 0.75)));
+    }
+    case "winter":
+      return Math.max(spec.occupied.surge, spec.beds - 1);
+    case "ed-crisis":
+      return spec.occupied.surge;
+  }
+}
 
 function fillWard(build: NetworkBuilder, spec: WardSpec): void {
   const variant = build.variant;
   const held = build.admissions.filter((admission) => admission.unitId === spec.id);
   const heldLocked = held.filter((admission) => admission.bedKind === "locked").length;
-  const count = spec.occupied[variant];
+  const count = occupiedOn(spec, variant);
   const whollyLocked = spec.lockedBeds > 0 && spec.lockedBeds === spec.beds;
-  // A mixed ward keeps one locked bed free on the demo day.
-  const reserve = spec.lockedBeds > 0 && !whollyLocked && variant === "demo" ? 1 : 0;
+  // A mixed ward keeps one locked bed free on the demo day and the quiet day.
+  const reserve = spec.lockedBeds > 0 && !whollyLocked && (variant === "demo" || variant === "quiet") ? 1 : 0;
   const lockedToFill = Math.max(0, Math.min(count, spec.lockedBeds - heldLocked - reserve));
   const service = serviceOf(spec.siteCode);
   const dueToday = DUE_TODAY[variant].filter((unitId) => unitId === spec.id).length;

@@ -84,7 +84,7 @@ export function resetWardLiveRegionForTests(): void {
   for (const listener of Array.from(listeners)) listener();
 }
 
-export function useWardLiveRegionText(): string {
+function useWardLiveRegionText(): string {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return snapshot.text;
 }

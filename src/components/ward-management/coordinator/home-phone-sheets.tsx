@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-import { Button, Card, CardHead, Sheet, StackBar, StatusGlyph, durMinutes, type StackSegment } from "@/components/wf";
+import { Button, Sheet, StackBar, StatusGlyph, durMinutes, type StackSegment } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { shortlistCandidates } from "@/components/ward-management/ward-derivations";
@@ -15,9 +14,6 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { fitKind, type FitKind } from "./home-fit";
 import { queueWaitThresholds } from "./priority-queue";
 import styles from "./home.module.css";
-
-/** Wards shown on the phone's Beds ready card before Show all (v10 Home phone: long lists tuck away). */
-const PHONE_WARDS_SHOWN = 5;
 /** People listed in a ward sheet, in queue order (mockup A ward sheet). */
 const WARD_SHEET_PEOPLE = 6;
 
@@ -30,71 +26,6 @@ type BedsProps = {
 
 function readyOf(unit: Unit, { admissions, bedReleases, leaveBeds }: Omit<BedsProps, "units">) {
   return bedStates(unit, admissions, bedReleases, leaveBeds);
-}
-
-/**
- * Phone direction A: the wards with a bed ready now, most first, each opening its ward sheet.
- * The queue stays the page; this card sits under it. Five show, the rest behind Show all.
- */
-export function HomeBedsReadyCard({
-  units,
-  admissions,
-  bedReleases,
-  leaveBeds,
-  onOpenWard,
-}: BedsProps & {
-  onOpenWard: (unitId: string) => void;
-}) {
-  const [all, setAll] = useState(false);
-  const rows = useMemo(
-    () =>
-      units
-        .map((unit) => ({ unit, ready: readyOf(unit, { admissions, bedReleases, leaveBeds }).ready }))
-        .filter((row) => row.ready > 0)
-        .sort((a, b) => b.ready - a.ready),
-    [units, admissions, bedReleases, leaveBeds],
-  );
-  const shown = all ? rows : rows.slice(0, PHONE_WARDS_SHOWN);
-  // Ready counts never subtract a bed still being cleaned, so the card says how many are (owner ruling).
-  const pendingPreparation = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
-  const meta =
-    pendingPreparation > 0 ? `${rows.length} wards · ${pendingPreparation} being made ready` : `${rows.length} wards`;
-  return (
-    <Card className={styles.phoneBedsCard} aria-label="Beds ready">
-      <CardHead title="Beds ready" meta={meta} />
-      {rows.length === 0 ? (
-        <p className={styles.emptyLine}>No ward has a bed ready now.</p>
-      ) : (
-        <ul className={styles.phoneWardList}>
-          {shown.map(({ unit, ready }) => (
-            <li key={unit.id}>
-              <button
-                type="button"
-                className={styles.phoneWardRow}
-                onClick={() => onOpenWard(unit.id)}
-                data-testid={`ward-home-phone-ward-${unit.id}`}
-              >
-                <span className={styles.phoneWardName}>{unit.name}</span>
-                <span className={styles.phoneWardSub}>
-                  {siteByCode(unit.siteCode)?.service ?? "Health service not resolved"}
-                </span>
-                <span className={styles.phoneWardReady}>
-                  <span className={styles.mono}>{ready}</span> ready
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {rows.length > PHONE_WARDS_SHOWN ? (
-        <div className={styles.cardFoot}>
-          <button type="button" className={styles.footButton} onClick={() => setAll((open) => !open)}>
-            {all ? "Show fewer" : `Show all ${rows.length}`}
-          </button>
-        </div>
-      ) : null}
-    </Card>
-  );
 }
 
 type WardSheetProps = BedsProps & {

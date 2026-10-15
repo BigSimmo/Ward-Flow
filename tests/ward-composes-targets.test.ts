@@ -256,13 +256,9 @@ describe("ward-management composes: targets resolve to real files and real class
     for (const name of [join("ward-panel.module.css"), join("ward-chip.module.css"), join("ward-figure.module.css")]) {
       expect(byFile(name).length, `expected exactly one composes declaration in ${name}`).toBe(1);
     }
-    for (const name of [
-      join("community", "community-home.module.css"),
-      join("community", "community-team-hub.module.css"),
-      join("community", "community-teams-table.module.css"),
-      join("ed", "ed-home.module.css"),
-      join("ed", "ed-service-bands.module.css"),
-    ]) {
+    // The other five adopters (community-home, community-team-hub, community-teams-table, ed-home
+    // and ed-service-bands stylesheets) were deleted on 15 Oct 2026 with their unreachable screens.
+    for (const name of [join("community", "community.module.css")]) {
       expect(
         byFile(name).some((d) => d.rawPath === "../ward-tokens.module.css"),
         `expected ${name} to compose wardTokens from "../ward-tokens.module.css"`,
@@ -292,7 +288,7 @@ describe("ward-management composes: targets resolve to real files and real class
         className: "descendantKill",
       },
       {
-        file: join(ROOT, "community", "community-home.module.css"),
+        file: join(ROOT, "community", "community.module.css"),
         rawPath: "../ward-tokens.module.css",
         className: "wardTokens",
       },

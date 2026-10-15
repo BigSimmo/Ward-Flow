@@ -29,7 +29,7 @@ export type DowntimeWard = {
   pendingPreparation: number;
 };
 
-export type DowntimeEdLine = {
+type DowntimeEdLine = {
   movementId: string;
   person: string;
   ed: string;
@@ -41,7 +41,7 @@ export type DowntimeEdLine = {
   acceptedWard: string;
 };
 
-export type DowntimeMoveLine = {
+type DowntimeMoveLine = {
   movementId: string;
   person: string;
   from: string;
@@ -51,7 +51,7 @@ export type DowntimeMoveLine = {
   transportEta: Instant | null;
 };
 
-export type DowntimeLegalLine = {
+type DowntimeLegalLine = {
   movementId: string;
   person: string;
   form: string;

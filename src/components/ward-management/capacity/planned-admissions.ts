@@ -2,11 +2,7 @@
 //
 // The planned admissions calendar's derivations (stream D, 9 October 2026). Pure functions: the
 // fourteen-day count per day per health service, and the agenda of bookings still waiting.
-import {
-  PLANNED_ADMISSION_WINDOW_DAYS,
-  plannedAdmissionIsOverdue,
-  type PlannedAdmission,
-} from "@/components/ward-management/ward-admissions";
+import { PLANNED_ADMISSION_WINDOW_DAYS, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { HEALTH_SERVICES, type HealthService, type Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
@@ -60,9 +56,4 @@ export function plannedAdmissionAgenda(planned: readonly PlannedAdmission[]): Pl
   return planned
     .filter((booking) => booking.state === "booked")
     .sort((a, b) => a.expectedArrivalAt - b.expectedArrivalAt || a.id.localeCompare(b.id));
-}
-
-/** How many booked planned admissions are past their expected arrival. */
-export function overduePlannedAdmissionCount(planned: readonly PlannedAdmission[], now: Instant): number {
-  return planned.filter((booking) => plannedAdmissionIsOverdue(booking, now)).length;
 }

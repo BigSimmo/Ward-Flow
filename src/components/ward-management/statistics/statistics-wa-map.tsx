@@ -14,7 +14,7 @@ import styles from "./statistics-wa-map.module.css";
  * and latitude, nudged a little where two circles would overlap. The map shows where a site is relative to the others; it does not measure distance.
  */
 
-export type WaMapStatus = "warning" | "danger";
+type WaMapStatus = "warning" | "danger";
 
 /** One site as the map draws it. The map draws what it is given; the view derives the figures. */
 export type WaMapNode = {
@@ -170,14 +170,7 @@ const phone = ([x, y]: readonly [number, number]): [number, number] => [x * 0.64
 
 const pathOf = (points: ReadonlyArray<readonly [number, number]>) =>
   points.map(([x, y], index) => `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-
-export const WA_MAP_METRO_CODES: readonly string[] = Object.keys(METRO);
-export const WA_MAP_REGIONAL_CODES: readonly string[] = Object.keys(REGIONAL);
-
-/** Whether the map can place this site. A site it cannot place still ranks in the list. */
-export function waMapPlaces(code: string): boolean {
-  return code in METRO || code in REGIONAL;
-}
+const WA_MAP_REGIONAL_CODES: readonly string[] = Object.keys(REGIONAL);
 
 function desktopXY(code: string): [number, number] | null {
   const metro = METRO[code];

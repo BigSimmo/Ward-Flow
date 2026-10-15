@@ -384,12 +384,23 @@ test(
       });
       await t.test("an interrupted delivery left pending is sent by the next sweep", async () => {
         let hang = true;
+        // The command stops waiting after 50 ms whether or not the sends have begun, so the test
+        // waits for both sends to start rather than assuming 50 ms was long enough.
+        let bothStarted;
+        const started = new Promise((resolve) => {
+          bothStarted = resolve;
+        });
         const { workspaceId, sent, store } = setup({
           deliveryWaitMs: 50,
-          send: async () => (hang ? new Promise(() => {}) : undefined),
+          send: async () => {
+            if (!hang) return undefined;
+            if (sent.length === 2) bothStarted();
+            return new Promise(() => {});
+          },
         });
         await subscribeTwo(store);
         assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        await started;
         assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"], "sends started, then the instance stopped");
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 pending 1"]);
         hang = false;
@@ -532,15 +543,32 @@ test(
         const held = new Promise((resolve) => {
           release = resolve;
         });
-        const { sent, store } = setup({ deliveryWaitMs: 50, send: async () => held });
+        let sendStarted;
+        const started = new Promise((resolve) => {
+          sendStarted = resolve;
+        });
+        const { workspaceId, sent, store } = setup({
+          deliveryWaitMs: 50,
+          send: async () => {
+            sendStarted();
+            return held;
+          },
+        });
         await store.read(actorA);
         await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/s1", ...keys });
-        const started = performance.now();
+        // The send is held until after the command returns, so returning at all proves the save
+        // response did not wait for delivery.
         assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
-        assert.ok(performance.now() - started < 1000, "returned before delivery finished");
+        await started;
         assert.deepEqual(sent, ["s1"], "delivery had started");
+        assert.deepEqual(await statuses(workspaceId), ["s1 pending 1"], "not yet delivered when the save returned");
         release({ outcome: "sent" });
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Wait for the background delivery to record the send, so it never outlives the pool.
+        for (let tries = 0; tries < 200; tries += 1) {
+          if ((await statuses(workspaceId))[0] === "s1 sent 1") break;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        assert.deepEqual(await statuses(workspaceId), ["s1 sent 1"]);
       });
     } finally {
       await pool.end();

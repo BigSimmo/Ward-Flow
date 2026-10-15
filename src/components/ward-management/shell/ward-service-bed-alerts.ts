@@ -1,16 +1,10 @@
 import {
   trackServiceBedCapacity,
-  deriveBedCapacityTone,
-  deriveEdWarning,
-  evaluateCompoundEscalation,
   METRO_HEALTH_SERVICES,
   type CapacityAlertCode,
   type CompoundEscalationAlert,
   type HospitalBedTracking,
-  type HospitalEdMetrics,
-  type ServiceCapacityTracking,
   type ServiceEdSummary,
-  type StatewideCapacityReport,
 } from "@/components/ward-management/capacity/service-capacity-tracker";
 import {
   type BedRelease,
@@ -28,23 +22,7 @@ import {
   OCCUPANCY_CRITICAL_PERCENT,
 } from "@/components/ward-management/ward-operational-defaults";
 
-export {
-  METRO_HEALTH_SERVICES,
-  trackServiceBedCapacity,
-  deriveBedCapacityTone,
-  deriveEdWarning,
-  evaluateCompoundEscalation,
-};
-
-export type {
-  CapacityAlertCode,
-  CompoundEscalationAlert,
-  HospitalBedTracking,
-  HospitalEdMetrics,
-  ServiceCapacityTracking,
-  ServiceEdSummary,
-  StatewideCapacityReport,
-};
+export { METRO_HEALTH_SERVICES };
 
 export type ServiceBedAlertCode = CapacityAlertCode;
 

@@ -8,6 +8,7 @@ import {
   type WardViewItem,
 } from "@/components/ward-management/ward-nav";
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
+import type { WardFeatureFlag } from "@/components/ward-management/ward-feature-flags";
 
 import { edHref, patientHref } from "./ward-facade";
 
@@ -20,6 +21,8 @@ export type RailEntry = {
   href: string;
   label: string;
   icon: (typeof WARD_VIEW_ICONS)[keyof typeof WARD_VIEW_ICONS];
+  /** Shown only while this feature flag is on. */
+  flag?: WardFeatureFlag;
 };
 
 // Owner-requested navigation, 2026-09-13. Select presentation entries only;
@@ -33,6 +36,8 @@ export const RAIL_GROUPS = [
       ["capacity", "Capacity"],
       ["delays", "Delays"],
       ["network", "Network"],
+      // Behind the `bed-meeting-tv` feature flag (15 Oct 2026).
+      ["bed-meeting", "Bed meeting TV"],
     ],
   },
   {
@@ -69,7 +74,11 @@ export const RAIL_GROUPS = [
   },
 ] as const;
 
-export function railEntries(): RailEntry[] {
+/**
+ * The rail's entries, without any whose feature flag is off. `flagOn` defaults to every flag on,
+ * so a caller that does not know the flags sees the full registry.
+ */
+export function railEntries(flagOn: (flag: WardFeatureFlag | undefined) => boolean = () => true): RailEntry[] {
   const views: RailEntry[] = WARD_VIEWS.map((item: WardViewItem) => ({
     id: item.id,
     href: item.href,
@@ -81,15 +90,16 @@ export function railEntries(): RailEntry[] {
     href: item.href,
     label: item.label,
     icon: WARD_NAV_ICONS[item.id],
+    ...(item.flag ? { flag: item.flag } : {}),
   }));
   const registry = new Map([...views, ...nav].map((entry) => [entry.id, entry]));
   // The rail's Emergency entry opens the statewide ED index rather than the `ed` nav entry's one
   // example department, the same way Wards opens All wards rather than one ward.
   const hrefOverride: Record<string, string> = { ed: WARD_ED_HREF };
   return RAIL_GROUPS.flatMap((group) =>
-    group.entries.map(([id, label]) => {
+    group.entries.flatMap(([id, label]) => {
       const entry = registry.get(id)!;
-      return { ...entry, label, href: hrefOverride[id] ?? entry.href };
+      return flagOn(entry.flag) ? [{ ...entry, label, href: hrefOverride[id] ?? entry.href }] : [];
     }),
   );
 }

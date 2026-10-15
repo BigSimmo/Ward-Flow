@@ -36,7 +36,7 @@ import {
 export const NOT_WIRED = "Not wired in this prototype.";
 
 /** Form codes this page may mark written or received. Other catalogue entries stay read-only. */
-export const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "6A", "6B", "6C", "5A", "5B"] as const;
+const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "6A", "6B", "6C", "5A", "5B"] as const;
 export type OwnedLegalFormCode = (typeof OWNED_LEGAL_FORM_CODES)[number];
 
 export function isOwnedLegalFormCode(code: string | undefined): code is OwnedLegalFormCode {
@@ -244,7 +244,7 @@ export function handoverLines(
 }
 
 /** Same HH:MM parser the ED legal-form panel uses. */
-export function minutesFromTimeInput(value: string): number | undefined {
+function minutesFromTimeInput(value: string): number | undefined {
   const parts = value.split(":");
   if (parts.length !== 2) return undefined;
   const [rawHours, rawMinutes] = parts;
