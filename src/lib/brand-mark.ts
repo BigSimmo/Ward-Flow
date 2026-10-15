@@ -5,10 +5,11 @@
 // (app/icon.svg), and the generated app-icon / maskable / OG image routes can
 // never drift apart.
 //
-// The construction is recorded in docs/brand/brand-mark.md and the master
-// artwork lives in public/brand/. Do not re-draw the paths below by hand: they
-// are the exact output of that construction, and the two strokes are one path
-// and its point reflection, which is what keeps the cut between them parallel.
+// The construction is recorded in docs/brand/brand-mark.md. The PsychSift
+// master artwork it came from is not in this repository. Do not re-draw the
+// paths below by hand: they are the exact output of that construction, and the
+// two strokes are one path and its point reflection, which is what keeps the
+// cut between them parallel.
 //
 // Pure data + strings (no JSX, no imports) so it is consumable everywhere: the
 // React <BrandMark> renders the exported geometry as JSX; scripts/generate-

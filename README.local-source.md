@@ -83,7 +83,7 @@ Without a key, Cursor expands `${env:CONTEXT7_API_KEY}` to empty and the server
 runs anonymously at lower rate limits. **Reload MCP servers** (or restart Cursor)
 after setting or rotating the key — the stdio child captures env at spawn.
 `.env.local` alone does not expand project MCP `${env:}`. Full setup notes:
-`docs/agents-guide.md`. Never commit the API key.
+`docs/agents/context7.md`. Never commit the API key.
 
 ### Figma
 
@@ -96,7 +96,7 @@ prompt such as: _"Call Figma whoami and report only handle and plan tier."_
 (Cloud/Automations return Forbidden; OAuth from desktop does not carry over). Use
 **Cursor Desktop** (or Codex with its Figma plugin) for Figma MCP. Repo
 `.cursor/mcp.json` still helps the IDE; it does not unlock Cloud Agents. Details:
-`docs/agents-guide.md`.
+`docs/agents/figma-sync.md`.
 
 ## Documentation
 
