@@ -5,7 +5,8 @@ import { type ChangeEvent, useRef, useState } from "react";
 import { WardDemoReset } from "../demo-reset/ward-demo-reset";
 import { formatInstant } from "../ward-clock";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
-import { WARD_SCENARIOS, scenarioLabels } from "../ward-scenarios";
+import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels } from "../ward-scenarios";
+import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import styles from "./ward-tools-sheet.module.css";
 
 /**
@@ -18,6 +19,11 @@ export function WardDemoPanel() {
   const { scenario, dispatch, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
   const now = useWardFlowClock();
   const [message, setMessage] = useState<string | null>(null);
+  // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
+  // picker above does not offer them a second time.
+  const resetOn = useWardFeatureFlag("demo-reset");
+  const resetScenarios: readonly string[] = DEMO_RESET_SCENARIOS;
+  const pickable = resetOn ? WARD_SCENARIOS.filter((candidate) => !resetScenarios.includes(candidate)) : WARD_SCENARIOS;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function saveToFile() {
@@ -62,7 +68,7 @@ export function WardDemoPanel() {
     <div className={styles.toolBody} data-testid="ward-tools-demo-panel">
       <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
       <div className={styles.scenarioGrid} role="radiogroup" aria-label="Demo scenario">
-        {WARD_SCENARIOS.map((candidate) => (
+        {pickable.map((candidate) => (
           <button
             key={candidate}
             type="button"
@@ -128,7 +134,7 @@ export function WardDemoPanel() {
       >
         Reset demo
       </button>
-      <WardDemoReset />
+      <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} />
       <p className={styles.note}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
       <p className={styles.liveNote} role="status">
         {message}
