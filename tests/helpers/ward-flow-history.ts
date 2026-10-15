@@ -1,39 +1,29 @@
 import { execFileSync } from "node:child_process";
-import { WARD_FLOW_IDENTITY_ANCHOR } from "../../scripts/pre-commit-checks.mjs";
+import path from "node:path";
+import { isPublicWardFlowCheckout, WARD_FLOW_IDENTITY_ANCHOR } from "../../scripts/pre-commit-checks.mjs";
+
+const repositoryRoot = path.resolve(__dirname, "../..");
 
 /**
  * Guard tests build tiny fixture repositories that borrow this checkout's objects so their history
- * descends from the Ward-Flow identity anchor. A shallow clone (cloud containers, `--depth 1` CI
- * checkouts) does not hold that commit, so those fixtures cannot be built. Skip them with this reason
- * rather than fail. CI checks out full history (`fetch-depth: 0`), so on CI a missing anchor still fails
- * loudly instead of silently skipping.
+ * descends from the Ward-Flow identity anchor, and some also check this checkout's own identity. That
+ * needs the anchor's commit and tree objects plus a verified Ward-Flow checkout (canonical origin, history
+ * from the anchor). A shallow or object-filtered clone, or one with another remote, cannot build those
+ * fixtures, so the tests skip with this reason rather than fail. CI checks out full history
+ * (`fetch-depth: 0`), so on CI a missing prerequisite still fails loudly instead of silently skipping.
  */
-function anchorReachable(): boolean {
+function anchorObjectsPresent(): boolean {
   try {
-    execFileSync("git", ["cat-file", "-e", `${WARD_FLOW_IDENTITY_ANCHOR}^{commit}`], { stdio: "ignore" });
+    for (const object of [`${WARD_FLOW_IDENTITY_ANCHOR}^{commit}`, `${WARD_FLOW_IDENTITY_ANCHOR}^{tree}`])
+      execFileSync("git", ["-C", repositoryRoot, "cat-file", "-e", object], { stdio: "ignore" });
     return true;
   } catch {
     return false;
   }
 }
 
-/** The checkout itself must descend from the anchor; an independently fetched object is not enough. */
-function checkoutHistoryReachable(): boolean {
-  try {
-    execFileSync("git", ["merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD"], { stdio: "ignore" });
-    execFileSync("git", ["merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "refs/remotes/origin/main"], {
-      stdio: "ignore",
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Fixture tests create their own descendants of the anchor and only need its object.
-export const HAS_WARD_FLOW_HISTORY = anchorReachable() || process.env.CI === "true";
-// Checkout-dependent tests need an unbroken ancestry to both refs, not just the anchor object.
-export const HAS_WARD_FLOW_CHECKOUT_HISTORY = checkoutHistoryReachable() || process.env.CI === "true";
+export const HAS_WARD_FLOW_HISTORY =
+  process.env.CI === "true" || (anchorObjectsPresent() && isPublicWardFlowCheckout(repositoryRoot));
 
 export const NEEDS_WARD_FLOW_HISTORY =
-  "needs full Ward-Flow history (shallow clone); run `git fetch --unshallow origin` to include these";
+  "needs a full, unfiltered Ward-Flow clone with its canonical origin; run `git fetch --unshallow origin` to include these";

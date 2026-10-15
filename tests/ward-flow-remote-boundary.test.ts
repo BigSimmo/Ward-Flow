@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { directMainPushVerdict, wardFlowCheckoutVerdict, wardFlowRemoteVerdict } from "../scripts/guard-push.mjs";
-import { HAS_WARD_FLOW_CHECKOUT_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 const script = join(process.cwd(), "scripts", "guard-push.mjs");
 const hook = join(process.cwd(), ".githooks", "pre-push");
@@ -63,7 +63,7 @@ describe("Ward-Flow push destination", () => {
   });
 
   it("requires canonical origin fetch and push URLs plus shared main history", (ctx) => {
-    ctx.skip(!HAS_WARD_FLOW_CHECKOUT_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     expect(wardFlowCheckoutVerdict().ok).toBe(true);
     const root = mkdtempSync(join(tmpdir(), "ward-flow-guard-checkout-"));
     const git = (...args: string[]) => {
@@ -103,7 +103,7 @@ describe("Ward-Flow push destination", () => {
   });
 
   it("requires explicit direct-main confirmation even with optional guards skipped", (ctx) => {
-    ctx.skip(!HAS_WARD_FLOW_CHECKOUT_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const mainInput = `refs/heads/main ${head} refs/heads/main ${head}\n`;
     expect(directMainPushVerdict(mainInput, {} as unknown as NodeJS.ProcessEnv).ok).toBe(false);
     expect(run("https://github.com/BigSimmo/Ward-Flow.git", mainInput).status).toBe(1);
@@ -182,14 +182,14 @@ describe("Ward-Flow push destination", () => {
   });
 
   it("allows Ward Flow branch pushes to the canonical remote", (ctx) => {
-    ctx.skip(!HAS_WARD_FLOW_CHECKOUT_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const result = run("git@github.com:BigSimmo/Ward-Flow.git");
     expect(result.status, `${result.stderr}\n${result.stdout}`).toBe(0);
     expect(result.stderr).not.toContain("ward-flow-push");
   });
 
   it.runIf(existsSync(shell))("enforces destination identity through the Git hook", (ctx) => {
-    ctx.skip(!HAS_WARD_FLOW_CHECKOUT_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const invoke = (remoteUrl?: string, path = process.env.PATH) =>
       spawnSync(shell, [hook, "origin", ...(remoteUrl ? [remoteUrl] : [])], {
         cwd: process.cwd(),
