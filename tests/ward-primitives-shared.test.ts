@@ -353,8 +353,6 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/ward-modes-second-edition.module.css: 60",
     "src/components/ward-management/ward-management.module.css: 64",
     "src/components/ward-management/ward-shared.module.css: 60",
-    "src/components/ward-management/ward-sidebar.module.css: 40.0625",
-    "src/components/ward-management/ward-sidebar.module.css: 64",
     // ⚠️ ADDED — Task 2, fourth-edition statistics language port (wise-singing-thunder). Not a new
     // step in the scale: both rows below are `ward-figure.module.css`'s own two pinned values, two
     // rows above. `statistics-v4.module.css`'s new `.band` primitive is the same "a strip of

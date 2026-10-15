@@ -32,8 +32,8 @@ import { describe, expect, it } from "vitest";
  * through `OverlayPortal` (`@/components/ui/overlay-root`). Portalled content leaves the shell's
  * subtree entirely, so `.drawerBody` and everything inside it is NOT covered by this chain.
  *
- * That is why `ward-sidebar.module.css`'s own three-root print block — `.panel`, `.drawerBody`,
- * `.phoneBar`, each with its wildcard — is LOAD-BEARING rather than belt-and-braces, and must not be
+ * That is why each portalling file's own print block (for example `ward-rail.module.css`'s
+ * `.moreSheet, .moreSheet *`) is LOAD-BEARING rather than belt-and-braces, and must not be
  * removed as redundant on the strength of the chain below.
  *
  * ⚠️ AND NOTE HOW THE WRONG ANSWER WAS NEARLY REACHED, TWICE. A grep for `createPortal` across
@@ -229,9 +229,9 @@ describe("the fixtures this guard reads are the real ones", () => {
  * The chain above covers in-flow content. Portalled content leaves the shell's subtree, so the ONLY
  * thing covering it is the portalling file's own stylesheet. Today that is exactly one file:
  *
- *     ward-management-navigation.tsx  ->  @/components/ui/sheet  ->  overlay-root (createPortal)
+ *     shell/ward-rail.tsx  ->  @/components/ui/sheet  ->  overlay-root (createPortal)
  *
- * and `ward-sidebar.module.css` covers its content with `.drawerBody, .drawerBody *`.
+ * and `ward-rail.module.css` covers its content with `.moreSheet, .moreSheet *`.
  *
  * The hazard is a SECOND portal. Add a sheet, dialog or overlay to any ward screen and its content
  * silently leaves the shell — the central reset stops reaching it, every existing guard stays green,
@@ -243,7 +243,7 @@ describe("the fixtures this guard reads are the real ones", () => {
  *
  * ⚠️ A RED HERE IS A DECISION REQUIRED, NOT A DEFECT. The repair is never "remove the Sheet". It is
  * "give the portalled content its own print reset, then add the file here" — the same shape as
- * `ward-sidebar`'s three-root block, which exists for exactly this reason and is load-bearing.
+ * `ward-rail.module.css`'s `.moreSheet` block, which exists for exactly this reason and is load-bearing.
  *
  * Detection resolves imports two hops deep rather than matching names: a module counts as portalling
  * if it calls `createPortal`, or imports a module under `src/components/ui/` that does. Matching the
@@ -271,7 +271,7 @@ describe("the set of ward files that render through a portal", () => {
     "shell/ward-bar.tsx":
       "renders three drawers (Activity, Tasks, Tools) through <Sheet> -> OverlayPortal. Their " +
       "content is covered by ward-bar.module.css's `.drawerSheet, .activitySection, .tasksBody` " +
-      "print reset, which is LOAD-BEARING the same way ward-sidebar.module.css's is.",
+      "print reset, which is LOAD-BEARING the same way ward-rail.module.css's is.",
     // M6's per-movement detail drawer. This guard reddened on it the moment M6 met the
     // six-branch fold and COULD NOT have reddened earlier — the file did not exist on any
     // branch this guard ran on, so no branch-local green said anything about it.
@@ -350,7 +350,7 @@ describe("the set of ward files that render through a portal", () => {
       `these ward files render content through a portal, which leaves the shell's DOM subtree, so the ` +
         `central print reset in ward-tokens.module.css CANNOT reach it: ${unlisted.join(", ")}. ` +
         `The repair is NOT to remove the portal. Give the portalled content its own @media print reset ` +
-        `in the owning stylesheet — see ward-sidebar.module.css's .drawerBody, .drawerBody * block — ` +
+        `in the owning stylesheet — see ward-rail.module.css's .moreSheet, .moreSheet * block — ` +
         `then add the file to PORTALLING_WARD_FILES with the reason.`,
     ).toEqual([]);
   });
@@ -372,15 +372,7 @@ describe("the set of ward files that render through a portal", () => {
     expect(/!important/u.test(block)).toBe(true);
   });
 
-  it("the sidebar's portalled content is actually covered by its own stylesheet", () => {
-    const sidebar = stripCssComments(read("src/components/ward-management/ward-sidebar.module.css"));
-    const block = printBlock(sidebar);
-    expect(
-      /\.drawerBody\s*\*/u.test(block),
-      `ward-sidebar.module.css: the print block must cover .drawerBody AND its descendants. The drawer ` +
-        `renders through a portal, so the shell chain never reaches it and this block is the only cover.`,
-    ).toBe(true);
-    expect(neutralisesForPrint(block, "color")).toBe(true);
-    expect(neutralisesForPrint(block, "background")).toBe(true);
-  });
+  // Retired 15 Oct 2026: "the sidebar's portalled content is actually covered by its own
+  // stylesheet". ward-sidebar.module.css had no component left and was deleted; the rail's
+  // portalled content keeps its own case above, and the portal set below lists the rest.
 });

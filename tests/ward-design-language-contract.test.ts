@@ -112,7 +112,7 @@ describe("the Ward Flow design language holds across every Ward Flow stylesheet"
    * vacuously true over an empty file set, which the empty-ROOT mutation below depends on.
    */
   it("declares the token layer only in the canonical file, or the one documented exception", () => {
-    const ALLOWED = new Set([TOKEN_FILE, join(ROOT, "ward-sidebar.module.css")]);
+    const ALLOWED = new Set([TOKEN_FILE]);
     const offenders = CSS.filter((f) => !ALLOWED.has(f) && readFileSync(f, "utf8").includes("--ward-space-10:"));
     expect(offenders, `token layer redeclared outside the known set: ${offenders.join(", ")}`).toEqual([]);
   });
@@ -556,7 +556,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     "ward-figure.module.css",
     "ward-shared.module.css",
     "ward-shell.module.css",
-    "ward-sidebar.module.css",
     "ward-tokens.module.css",
     // ⚠️ ADDED 2026-09-05, second-edition visual pass on QueueView/ExceptionsView/GovernanceView.
     // Same shape as `ward-panel.module.css` above: its first declared rule is `.panel`, a

@@ -584,6 +584,20 @@
       "after": 0,
       "reason": "Tested fold-lock.mjs and fold-preflight.mjs, both already refusing as retired. The three ready-check.mjs remote refusal cases it also carried were RE-POINTED, not dropped: they live on in tests/ward-ready-check-remote-boundary.test.ts, which strips host GIT_* controls so they also run in a cloud container. Removed with the scripts that only served the old Database checkout (fix list 10.11, dead-code deletion approved by Josh on 15 October 2026). Nothing live calls the script, and no current document presents it.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-sidebar-phone-contract.test.ts",
+      "before": 8,
+      "after": 7,
+      "reason": "Retired the one case that read ward-sidebar.module.css. Its component (ClinicalRail) was already gone and no route imported the stylesheet, so the file was deleted (scorecard leftovers item 2, wave F). The mounted rail keeps its own cases in this file. A record, not a gate condition: 1 of 8 is under the per-file floor.",
+      "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-shell-print-ancestor.test.ts",
+      "before": 13,
+      "after": 12,
+      "reason": "Retired the case pinning the print reset inside ward-sidebar.module.css, deleted with its already-removed component (scorecard leftovers item 2, wave F). The live portalled surfaces stay pinned by the rail case and the two-sided portal set in this file. A record, not a gate condition: 1 of 13 is under the per-file floor.",
+      "approvedOn": "2026-10-15"
     }
   ]
 }

@@ -100,22 +100,9 @@ describe("Ward Flow sidebar — phone contract", () => {
     );
   });
 
-  it("shows the phone bar only below 40rem, and the labelled panel only from 64rem", () => {
-    const sidebar = readModule("ward-sidebar.module.css");
-    expect(sidebar).toContain("@media (max-width: 40rem) {\n  .phoneBar {\n    display: flex;\n  }\n}");
-    expect(sidebar).toContain("@media (min-width: 64rem) {\n  .panel {\n    display: flex;\n  }\n}");
-    // Default state for each, so a browser with no media-query support shows the rail alone
-    // rather than three sidebars stacked.
-    // ⚠️ ASSERT THE PROPERTY, NOT THE LINE THAT HAPPENED TO BE FIRST. This previously read
-    // toContain(".phoneBar {\n  position: fixed;"), which pinned ADJACENCY: it broke the moment a
-    // `composes:` line was added above, even though `position: fixed` was untouched and the
-    // guarantee held. A test that fails when the thing it names is still true trains people to
-    // edit the test, which is how the next real break gets waved through.
-    const phoneBarBlock = /\.phoneBar \{([^}]*)\}/u.exec(sidebar)?.[1];
-    expect(phoneBarBlock, ".phoneBar rule not found in ward-sidebar.module.css").toBeTruthy();
-    expect(phoneBarBlock).toMatch(/^\s*(?:composes:[^;]*;\s*)?position: fixed;/u);
-    expect(sidebar).toMatch(/\.panel \{\n {2}display: none;/);
-  });
+  // Retired 15 Oct 2026: "shows the phone bar only below 40rem, and the labelled panel only from
+  // 64rem". It read ward-sidebar.module.css, whose component (ClinicalRail) was already gone, so
+  // the stylesheet was deleted. The mounted rail is checked by the case below.
 
   it("keeps the shared rail in normal flow without requiring a retired phone-bar reserve", () => {
     const reserveFiles = shellStylesheets()
