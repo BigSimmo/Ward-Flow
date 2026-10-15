@@ -340,7 +340,7 @@ const KEEP_KIND_ONLY = new Set([
 ]);
 const RECORD_TOKEN = String.raw`(RF|AD|PT|WR|WL)-[A-Za-z0-9-]*[A-Za-z0-9]`;
 const NAMED_RECORD = new RegExp(
-  String.raw`(\b[A-Za-z]+\s+)?\b(referral|admission|stay|patient|person|bed release|release|leave bed)\s+${RECORD_TOKEN}\b`,
+  String.raw`(\b[A-Za-z]+\s+)?\b(referral|admission|stay|patient|person|bed release|release|leave bed)\s+(?:[A-Za-z0-9]+-)*?${RECORD_TOKEN}\b`,
   "giu",
 );
 const ID_RECORD = new RegExp(String.raw`\bids?\s+${RECORD_TOKEN}\b`, "gu");

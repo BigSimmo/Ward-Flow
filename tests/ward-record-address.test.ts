@@ -81,6 +81,9 @@ describe("refusal and notice wording keeps record numbers off screen (D-39)", ()
     expect(withoutRecordNumbers("patient PT-001 already has a community treatment order recorded")).toBe(
       "this patient already has a community treatment order recorded",
     );
+    expect(withoutRecordNumbers("cannot move release derived-expected-AD-014 from confirmed to expected")).toBe(
+      "cannot move this bed release from confirmed to expected",
+    );
     expect(withoutRecordNumbers("UMRN UM100047 is unchanged")).toBe("UMRN UM100047 is unchanged");
   });
 

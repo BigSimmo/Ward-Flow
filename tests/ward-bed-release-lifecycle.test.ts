@@ -914,7 +914,7 @@ describe("ward bed release lifecycle", () => {
       actingUnitId: target.unitId,
     });
     expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0]?.reason).toBe(`cannot move release ${target.id} from confirmed to confirmed`);
+    expect(next.rejections[0]?.reason).toBe(`cannot move this bed release from confirmed to confirmed`);
     expect(release(next, target.id)).toEqual(before);
   });
 
@@ -932,7 +932,7 @@ describe("ward bed release lifecycle", () => {
       actingUnitId: target.unitId,
     });
     expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0]?.reason).toBe(`cannot move release ${target.id} from discharged to confirmed`);
+    expect(next.rejections[0]?.reason).toBe(`cannot move this bed release from discharged to confirmed`);
     expect(release(next, target.id)).toEqual(before);
   });
 
@@ -951,7 +951,7 @@ describe("ward bed release lifecycle", () => {
       blocker: BED_RELEASE_BLOCKERS[0],
     });
     expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0]?.reason).toBe(`cannot block release ${target.id} because it is already released`);
+    expect(next.rejections[0]?.reason).toBe(`cannot block this bed release because it is already released`);
     expect(release(next, target.id)).toEqual(before);
   });
 
@@ -975,9 +975,7 @@ describe("ward bed release lifecycle", () => {
     // exist. Interpolating the stage as well produced "from discharged to discharged", a tautology
     // in the one message somebody reads when something has gone wrong — so it names the state once
     // and says what is actually refused. The transition being refused is unchanged.
-    expect(next.rejections[0]?.reason).toBe(
-      `release ${target.id} is already discharged and cannot be discharged again`,
-    );
+    expect(next.rejections[0]?.reason).toBe(`this bed release is already discharged and cannot be discharged again`);
     expect(release(next, target.id)).toEqual(before);
   });
 
@@ -1007,7 +1005,7 @@ describe("ward bed release lifecycle", () => {
     });
     expect(refused.rejections).toHaveLength(1);
     expect(refused.rejections[0]?.reason).toBe(
-      `release ${target.id} completes when this stay is recorded as having left (RECORD_LEAVING); they are still occupied`,
+      `this bed release completes when this stay is recorded as having left (RECORD_LEAVING); they are still occupied`,
     );
     expect(release(refused, target.id)).toEqual(target);
 
