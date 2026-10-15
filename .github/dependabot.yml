@@ -1,0 +1,39 @@
+# Weekly dependency updates, grouped so each ecosystem opens one minor/patch PR a week.
+# Majors still arrive as their own PRs so a breaking change is reviewed on its own.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Australia/Perth
+    open-pull-requests-limit: 5
+    groups:
+      root-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /backend/ward-flow
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Australia/Perth
+    open-pull-requests-limit: 3
+    groups:
+      backend-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Australia/Perth
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]

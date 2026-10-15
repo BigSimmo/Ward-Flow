@@ -1,7 +1,5 @@
 # Ward Flow
 
-[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/BigSimmo/Ward-Flow?utm_source=badge)
-
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
 **All patient data is synthetic. This is a development prototype, not an approved system for real patient care.**
@@ -26,7 +24,7 @@ This is the public source snapshot of the main local Ward Flow branch, published
 
 ## Local development
 
-The package specifies Node.js 24.15 or later within version 24, and npm 11. Use the versions in `package.json` and `.node-version`.
+Use Node.js 24.19.0 (`.nvmrc` and `.node-version`, the same version CI and Railway use) and npm 11. `package.json` accepts any Node 24 release from 24.15.
 
 ```sh
 npm ci

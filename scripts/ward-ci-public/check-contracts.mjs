@@ -114,13 +114,15 @@ function requireWorkflow(source) {
   assert.ok(buildJob, "the production build job is required");
   assert.doesNotMatch(buildJob, /^(?!\s*#).*WARD_GATE_BUILD/mu);
   assert.match(buildJob, /next\/dist\/bin\/next build --webpack/u);
-  // Railway builds with Node 24.19.0 (docs/hosting.md); the deploy build must use the same.
-  assert.match(buildJob, /node-version: "24\.19\.0"/u);
+  // One Node version everywhere: every job reads .nvmrc, which matches Railway's Node
+  // (docs/hosting.md, RAILPACK_NODE_VERSION). No job may pin its own literal version.
+  assert.match(buildJob, /node-version-file: \.nvmrc/u);
+  assert.doesNotMatch(source, /node-version: /u);
   // Whole-tree lint on non-PR runs is enforcing: the eslint command is the step's whole `run:`,
   // not wrapped in an `if !` that downgrades failure to a warning.
   assert.match(
     source,
-    /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--quiet[^\n]*\n/u,
+    /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--max-warnings 0[^\n]*\n/u,
   );
   assert.doesNotMatch(source, /if ! node[^\n]*eslint/u);
   // The coverage job must judge the thresholds: it may never set the shard flag that drops them, and it
@@ -202,7 +204,7 @@ for (const bad of [
   ),
   workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
   workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
-  workflow.replace('node-version: "24.19.0"', 'node-version: "24.15.0"'),
+  workflow.replace("node-version-file: .nvmrc", 'node-version: "24.15.0"'),
   workflow.replace(
     "        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",
     "        run: |\n          if ! node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",

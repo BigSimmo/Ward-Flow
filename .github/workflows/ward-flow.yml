@@ -80,7 +80,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -162,7 +162,7 @@ jobs:
       # the PR did not touch, which used to go red only on main. About a minute, off the critical path.
       - name: Lint the whole tree
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --quiet --no-error-on-unmatched-pattern
+        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern
       # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
       # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
       # shard would also fail. It shares this runner, which keeps two PRs' runs inside the
@@ -207,7 +207,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -256,7 +256,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -351,7 +351,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -434,8 +434,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          # Railway builds with Node 24.19.0 (docs/hosting.md, RAILPACK_NODE_VERSION); match it here.
-          node-version: "24.19.0"
+          # .nvmrc matches Railway's Node (docs/hosting.md, RAILPACK_NODE_VERSION).
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -469,7 +469,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
