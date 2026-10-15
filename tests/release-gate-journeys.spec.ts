@@ -4,17 +4,19 @@ import { unitById } from "@/components/ward-management/ward-sites";
 import { bedReleases, wardMovements } from "@/components/ward-management/ward-movements";
 
 import {
-  capacityFigure,
+  capacityReady,
+  escapeRegExp,
   expectAccessible,
   expectNoReloadSince,
   goToDesk,
   goViaNav,
   isPhoneLayout,
-  openCapacityTable,
+  openWardHome,
   openWardList,
   plantSentinel,
   waitForScreen,
   wardDesk,
+  wardFigure,
 } from "./helpers/ward-release-gate";
 
 /**
@@ -49,6 +51,8 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
       .locator('[data-testid^="ward-ed-patient-"]')
       .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-testid") ?? "")),
   );
+  // The phone ED page shows its board first; the referral inbox sits under Lists.
+  if (isPhoneLayout(page)) await page.getByRole("radio", { name: /^Lists/u }).click();
   await page
     .getByTestId("ward-ed-inbox-row-RF-009")
     .getByRole("button", { name: /View referral/u })
@@ -124,10 +128,9 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await page.goto("/mockups/ward-flow/capacity", { waitUntil: "load" });
   await waitForScreen(page, "ward-capacity-page");
   await plantSentinel(page);
-  await openCapacityTable(page, unitId);
-  await expectAccessible(page, testInfo, "capacity board");
-  const readyBefore = await capacityFigure(page, unitId, "ward-capacity-network-ready");
+  const readyBefore = await capacityReady(page, unitId, unitName);
   expect(readyBefore, "fixture assumption: this ward starts with at least one ready bed").toBeGreaterThan(0);
+  await expectAccessible(page, testInfo, "capacity board");
 
   await goToDesk(page, wardDesk(unitId, unitName), "ward-unit-screen");
   const wardScreen = page.getByTestId("ward-unit-screen");
@@ -138,13 +141,13 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await wardScreen.getByTestId("ward-capacity-input").fill("0");
   await expectAccessible(page, testInfo, "confirm capacity figures dialog");
   await wardScreen.getByTestId("ward-capacity-submit").click();
-  await expect(wardScreen.getByTestId("ward-unit-beds")).toContainText("Ready 0");
+  await expect(wardScreen.getByText(/Currently confirmed 0 at/u)).toBeVisible();
   await confirmDialog.getByRole("button", { name: "Done" }).click();
+  await expect.poll(() => wardFigure(page, "ready")).toBe(0);
   await expectNoReloadSince(page, "confirming the ward's numbers");
 
   await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
-  await openCapacityTable(page, unitId);
-  await expect.poll(() => capacityFigure(page, unitId, "ward-capacity-network-ready")).toBe(0);
+  await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(0);
   await expectNoReloadSince(page, "returning to the capacity board");
 });
 
@@ -194,15 +197,14 @@ test("Transfer with transport: the officer runs a booked job to delivery and the
   // The receiving ward closes the movement by confirming arrival, and its occupied count rises.
   await goToDesk(page, wardDesk(unitId!, unitName), "ward-unit-screen");
   const wardScreen = page.getByTestId("ward-unit-screen");
-  const occupied = wardScreen.getByTestId("ward-unit-beds").locator('[data-state="occupied"] strong');
-  const occupiedBefore = Number((await occupied.innerText()).trim());
+  const occupiedBefore = await wardFigure(page, "occupied");
   expect(Number.isNaN(occupiedBefore)).toBe(false);
   await openWardList(page, "Admissions");
   await expectAccessible(page, testInfo, "ward arrivals with the delivered patient");
   await wardScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
-  await page.locator("#tabBtn-attn").click();
-  await expect(wardScreen.getByTestId("ward-unit-beds")).toContainText(`Occupied ${occupiedBefore + 1}`);
+  await openWardHome(page);
+  await expect.poll(() => wardFigure(page, "occupied")).toBe(occupiedBefore + 1);
   await expectNoReloadSince(page, "confirming arrival");
 });
 
@@ -220,8 +222,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await page.goto("/mockups/ward-flow/capacity", { waitUntil: "load" });
   await waitForScreen(page, "ward-capacity-page");
   await plantSentinel(page);
-  await openCapacityTable(page, unitId);
-  const readyBefore = await capacityFigure(page, unitId, "ward-capacity-network-ready");
+  const readyBefore = await capacityReady(page, unitId, unitName);
 
   // The ward confirms the release from its Discharges list.
   await goToDesk(page, wardDesk(unitId, unitName), "ward-unit-screen");
@@ -239,7 +240,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
-      .getByRole("button", { name: new RegExp(`^${unitName}`, "u") })
+      .getByRole("button", { name: new RegExp(`^${escapeRegExp(unitName)}`, "u") })
       .first()
       .click();
     await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
@@ -265,7 +266,6 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
 
   // The coordinator's board shows one more ready bed.
   await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
-  await openCapacityTable(page, unitId);
-  await expect.poll(() => capacityFigure(page, unitId, "ward-capacity-network-ready")).toBe(readyBefore + 1);
+  await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(readyBefore + 1);
   await expectNoReloadSince(page, "returning to the capacity board");
 });

@@ -2306,7 +2306,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
+  // Release gate (15 Oct 2026): on a phone, All discharges and All arrivals sit in the Ward flow
+  // sheet. Close the sheet too, so the list is what the person lands on, not a tab behind the sheet
+  // (the same reason A1-7 closes it before opening one arrival).
   function openDischargesTab() {
+    setPhonePanel(null);
     setActiveTab("out");
   }
 
@@ -2975,6 +2979,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onShiftViewChange={setShiftView}
             morningRollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
             onOpenArrivals={() => {
+              setPhonePanel(null);
               setActiveTab("coming");
             }}
             onOpenBeds={() => {

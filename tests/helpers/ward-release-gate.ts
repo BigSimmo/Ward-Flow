@@ -40,6 +40,11 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
   expect(blocking, `serious or critical accessibility violations at "${step}":\n${summary}`).toEqual([]);
 }
 
+/** Ward names carry brackets and dots, for example "Maali (Ward 4.2) — open". */
+export function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
 /** True on the phone release-gate project (390px wide), where the header Menu replaces the rail. */
 export function isPhoneLayout(page: Page): boolean {
   return (page.viewportSize()?.width ?? 1440) < 768;
@@ -159,9 +164,17 @@ export function wardDesk(unitId: string, unitName: string) {
   };
 }
 
-/** The ward Home tab's Ward flow card opens the full Arrivals or Discharges list. */
+/**
+ * Opens the ward's full Arrivals or Discharges list. Desktop: the Home tab's Ward flow card. Phone:
+ * the Ward flow button in the ward's own toolbar opens the same card as a sheet.
+ */
 export async function openWardList(page: Page, list: "Admissions" | "Discharges") {
-  await page.locator("#tabBtn-attn").click();
+  if (isPhoneLayout(page)) {
+    await page.getByRole("toolbar", { name: "Ward actions" }).getByRole("button", { name: "Ward flow", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Ward flow" })).toBeVisible();
+  } else {
+    await page.locator("#tabBtn-attn").click();
+  }
   await page.getByRole("radio", { name: new RegExp(`^${list}`, "u") }).click();
   const button = list === "Admissions" ? "All arrivals" : "All discharges";
   await page.getByRole("button", { name: button, exact: true }).click();
@@ -171,8 +184,55 @@ export async function openWardList(page: Page, list: "Admissions" | "Discharges"
   );
 }
 
+/** Back to the ward's Home tab, where its bed figures live. */
+export async function openWardHome(page: Page) {
+  await page.locator("#tabBtn-attn").click();
+  await expect(page.locator("#tabBtn-attn")).toHaveAttribute("aria-selected", "true");
+}
+
+/**
+ * A ward's own occupied or ready figure, as its Home tab shows it. Desktop reads the bed grid's
+ * chip; the phone header carries the same figures in its summary line and Ready now button.
+ */
+export async function wardFigure(page: Page, figure: "occupied" | "ready"): Promise<number> {
+  const wardScreen = page.getByTestId("ward-unit-screen");
+  const grid = wardScreen.getByTestId("ward-unit-beds");
+  if (await grid.isVisible()) {
+    // The grid's Ready chip carries data-state="available".
+    const state = figure === "occupied" ? "occupied" : "available";
+    return Number((await grid.locator(`[data-state="${state}"] strong`).first().innerText()).trim());
+  }
+  const region = wardScreen.getByRole("region", { name: "This ward", exact: true });
+  if (figure === "occupied") {
+    const match = /(\d+) occupied/u.exec(await region.innerText());
+    expect(match, "the phone ward header must state how many beds are occupied").not.toBeNull();
+    return Number(match![1]);
+  }
+  const ready = region.getByRole("button", { name: /Ready now$/u });
+  const match = /^(\d+)/u.exec(((await ready.getAttribute("aria-label")) ?? (await ready.innerText())).trim());
+  expect(match, "the phone ward header must state how many beds are ready now").not.toBeNull();
+  return Number(match![1]);
+}
+
+/**
+ * Ready beds for one ward on the coordinator's capacity board. Desktop reads the bed map's Table
+ * layout; the phone shows the same figure in the Wards view, in each ward's bed strip label.
+ */
+export async function capacityReady(page: Page, unitId: string, unitName: string): Promise<number> {
+  if (isPhoneLayout(page)) {
+    const wards = page.getByRole("radio", { name: /^Wards/u });
+    if ((await wards.getAttribute("aria-checked")) !== "true") await wards.click();
+    const strip = page.getByRole("img", { name: new RegExp(`^${escapeRegExp(unitName)}: `, "u") }).first();
+    await expect(strip).toBeVisible();
+    const match = /: (\d+) ready/u.exec((await strip.getAttribute("aria-label")) ?? "");
+    return match ? Number(match[1]) : 0;
+  }
+  await openCapacityTable(page, unitId);
+  return capacityFigure(page, unitId, "ward-capacity-network-ready");
+}
+
 /** The capacity board's per-ward table is the bed map's Table layout; press until it shows. */
-export async function openCapacityTable(page: Page, unitId: string) {
+async function openCapacityTable(page: Page, unitId: string) {
   const table = page.getByRole("group", { name: "Bed map layout" }).getByRole("button", { name: "Table", exact: true });
   await expect(async () => {
     if ((await table.getAttribute("aria-pressed")) !== "true") await table.click();
@@ -182,7 +242,7 @@ export async function openCapacityTable(page: Page, unitId: string) {
 }
 
 /** A capacity table cell's own figure. "none" reads as 0; the "still being made ready" note is ignored. */
-export async function capacityFigure(page: Page, unitId: string, testId: string): Promise<number> {
+async function capacityFigure(page: Page, unitId: string, testId: string): Promise<number> {
   const text = (
     await page
       .getByTestId(`ward-capacity-network-row-${unitId}`)
