@@ -71,5 +71,5 @@ npm run ensure            # start/reuse dev server and print URL
 
 ## Do not use for first run
 
-- `docs/ward-flow/START-LOCAL-CHAT.md` (removed in the 15 Oct 2026 docs trim) — stub; archived chat-control procedure
+- [`START-LOCAL-CHAT.md`](START-LOCAL-CHAT.md) — kept stub. The archived chat-control procedure it pointed to was removed in the 15 Oct 2026 docs trim
 - Dated notes under [`archive/dated-notes/`](archive/dated-notes/README.md) — historical only
