@@ -17,7 +17,23 @@ function anchorReachable(): boolean {
   }
 }
 
+/** The checkout itself must descend from the anchor; an independently fetched object is not enough. */
+function checkoutHistoryReachable(): boolean {
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD"], { stdio: "ignore" });
+    execFileSync("git", ["merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "refs/remotes/origin/main"], {
+      stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Fixture tests create their own descendants of the anchor and only need its object.
 export const HAS_WARD_FLOW_HISTORY = anchorReachable() || process.env.CI === "true";
+// Checkout-dependent tests need an unbroken ancestry to both refs, not just the anchor object.
+export const HAS_WARD_FLOW_CHECKOUT_HISTORY = checkoutHistoryReachable() || process.env.CI === "true";
 
 export const NEEDS_WARD_FLOW_HISTORY =
   "needs full Ward-Flow history (shallow clone); run `git fetch --unshallow origin` to include these";
