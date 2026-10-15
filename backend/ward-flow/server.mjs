@@ -151,7 +151,7 @@ export function listen(handler, config) {
   return server.listen(config.port, config.host);
 }
 
-/** One phone-push re-check. A failure is logged with its cause (name, code, URL-free message), never silently. */
+/** One phone-push re-check. A failure is logged with closed diagnostic fields, never exception text. */
 export async function sweepPush(sharedStore, log = (event) => console.error(JSON.stringify(event))) {
   try {
     await sharedStore.sweepPush();

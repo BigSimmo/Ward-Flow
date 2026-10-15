@@ -175,6 +175,13 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
   for (const [error, status, outcome, fields] of [
     [outage, 503, "storage_unavailable", { errorName: "Error", errorCode: "57P01" }],
     [new Error("Connection terminated unexpectedly"), 503, "storage_unavailable", { errorName: "Error" }],
+    [
+      Object.assign(new Error("canceling statement due to lock timeout"), { code: "55P03" }),
+      503,
+      "storage_unavailable",
+      { errorName: "Error", errorCode: "55P03" },
+    ],
+    [new Error("Query read timeout"), 503, "storage_unavailable", { errorName: "Error" }],
     [fault, 500, "server_error", { errorName: "TypeError" }],
     [
       Object.assign(new Error('column "secret value" does not exist'), { code: "42703" }),
@@ -227,4 +234,31 @@ test("shared routes are logged with a request ID even when the shared workspace 
   assert.equal(logs[0].requestId, response.headers.get("x-request-id"));
   assert.equal(logs[0].route, "workspace");
   assert.equal(logs[0].outcome, "not_configured");
+});
+
+// Match the pg client's configured deadline vocabulary narrowly: arbitrary timeout text can
+// still be an application fault and must not hide behind a retryable database response.
+test("only the configured pg query timeout and lock SQLSTATE are storage failures", () => {
+  assert.equal(storageFailure(new Error("Query read timeout")), true);
+  assert.equal(storageFailure({ code: "55P03" }), true);
+  for (const message of ["Query read timeout: invalid application state", "application timeout", "query read timeout"])
+    assert.equal(storageFailure(new Error(message)), false, message);
+  for (const code of ["55000", "55P02", "55P04"]) assert.equal(storageFailure({ code }), false, code);
+});
+
+test("arbitrary exception fields cannot enter HTTP diagnostics or the response", async () => {
+  const { logs, handler } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw { name: "synthetic-private-name", code: "SECRT", message: "synthetic-private-marker" };
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 500);
+  const value = await response.json();
+  assert.equal(logs[0].errorName, "Error");
+  assert.equal(logs[0].errorCode, undefined);
+  assert.equal(logs[0].requestId, response.headers.get("x-request-id"));
+  assert.equal(logs[0].requestId, value.requestId);
+  assert.equal(logs[0].outcome, "server_error");
+  assert.doesNotMatch(JSON.stringify({ logs, value }), /synthetic-private|SECRT/);
 });
