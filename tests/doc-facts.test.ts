@@ -9,10 +9,13 @@ import {
   applyMarkers,
   backendEnvNames,
   defaultProvider,
+  diffLines,
   findRetiredTerms,
   isHistoricalPath,
   loadRetiredConfig,
+  renderFactsDoc,
   run,
+  unclosedMarkers,
 } from "../scripts/doc-facts.mjs";
 
 const fenceStart = "<!-- docs-script-refs:historical-start -->";
@@ -50,8 +53,17 @@ describe("doc facts extractors", () => {
 
   it("lists backend env names once, sorted, ignoring operating-system variables", () => {
     expect(
-      backendEnvNames(["env.WARD_B; env?.WARD_A; env.ComSpec; env.WARD_A", "env.SUPABASE_URL; env.PORT; env.HOME"]),
-    ).toEqual(["PORT", "SUPABASE_URL", "WARD_A", "WARD_B"]);
+      backendEnvNames([
+        "env.WARD_B; env?.WARD_A; env.ComSpec; env.WARD_A",
+        "env.SUPABASE_URL; env.PORT; env.HOST; env.HOME",
+      ]),
+    ).toEqual(["HOST", "PORT", "SUPABASE_URL", "WARD_A", "WARD_B"]);
+  });
+
+  it("builds the facts page example from the current provider", () => {
+    const page = renderFactsDoc([{ name: "database-provider", value: "PostgreSQL", about: "x", source: "y" }], []);
+    expect(page).toContain("<!-- fact:database-provider -->PostgreSQL<!-- /fact -->");
+    expect(page).not.toContain("Supabase");
   });
 });
 
@@ -71,6 +83,12 @@ describe("fact markers", () => {
     expect(result.updated).toBe(
       "Quote <!-- fact:database-provider --> like this.\nKeep me.\n<!-- fact:database-provider -->Supabase<!-- /fact -->",
     );
+  });
+
+  it("reports an opening tag with no closing tag on its line", () => {
+    expect(unclosedMarkers("ok <!-- fact:a -->1<!-- /fact -->\n<!-- fact:database-provider -->Azure\nmore")).toEqual([
+      2,
+    ]);
   });
 
   it("leaves an unknown fact untouched and reports its name", () => {
@@ -111,6 +129,20 @@ describe("retired terms", () => {
     expect(isHistoricalPath("docs/hosting.md", config)).toBe(false);
   });
 
+  it("accepts a term whose flags already include g", () => {
+    const root = mkdtempSync(join(tmpdir(), "doc-facts-flags-"));
+    try {
+      mkdirSync(join(root, "docs"));
+      writeFileSync(
+        join(root, "docs/retired-terms.json"),
+        JSON.stringify({ terms: [{ id: "x", pattern: "old", flags: "gi", why: "w", instead: "i" }] }),
+      );
+      expect(findRetiredTerms("a.md", "OLD thing", loadRetiredConfig(root))).toHaveLength(1);
+    } finally {
+      removePathSync(root, { recursive: true });
+    }
+  });
+
   it("covers Azure in the shipped retired-terms list", () => {
     const shipped = loadRetiredConfig();
     expect(shipped.terms.map((t: { id: string }) => t.id)).toContain("azure");
@@ -139,6 +171,7 @@ describe("added lines from a zero-context diff", () => {
       "+++ /dev/null",
     ].join("\n");
     expect([...(addedLines(diff).get("a.md") ?? [])]).toEqual([2, 3, 11]);
+    expect(diffLines(diff).removed.get("a.md")).toEqual(["old"]);
   });
 });
 
@@ -203,6 +236,19 @@ describe("doc facts run", () => {
     const result = run({ root, base });
     expect(result.errors).toEqual([{ file: "docs/hosting.md", line: 2, term: "azure", text: "Azure", isNew: true }]);
     expect(result.warnings).toEqual([{ file: "docs/hosting.md", line: 1, term: "azure", text: "Azure", isNew: false }]);
+  });
+
+  it("only warns when a branch rewords a line that already named the term", () => {
+    const { put, git } = fixture();
+    run({ root, write: true });
+    git("-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qam", "facts");
+    const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    put("docs/hosting.md", "Old Azure note, reworded\n");
+    git("-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qam", "reword");
+
+    const result = run({ root, base });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toHaveLength(1);
   });
 
   it("passes on this repository's current tree", () => {

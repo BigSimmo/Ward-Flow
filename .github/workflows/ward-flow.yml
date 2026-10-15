@@ -127,7 +127,7 @@ jobs:
       # (docs/retired-terms.json) warn on existing lines and fail only on lines this PR adds.
       - name: Check doc facts and retired terms
         env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/doc-facts.mjs
       - name: Check Ward screen verification record
         run: node scripts/ward-flow/screen-verification.mjs --check

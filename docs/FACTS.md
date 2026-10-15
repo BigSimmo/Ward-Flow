@@ -16,7 +16,7 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `latest-decision`   | D-54                                        | Newest entry in the decision log                          | `docs/ward-flow/decisions.md`   |
 | `next-decision`     | D-55                                        | Number to use for the next decision                       | `docs/ward-flow/decisions.md`   |
 | `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                   | `package.json`                  |
-| `backend-env-vars`  | 33 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads            | `backend/ward-flow/*.mjs`       |
+| `backend-env-vars`  | 34 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads            | `backend/ward-flow/*.mjs`       |
 
 ## backend-env-vars
 
@@ -25,6 +25,7 @@ Environment variables the shared backend reads:
 - `AZURE_STORAGE_ACCOUNT`
 - `AZURE_TENANT_ID`
 - `AzureWebJobsStorage__accountName`
+- `HOST`
 - `PORT`
 - `WARD_ALLOWED_OBJECT_ID`
 - `WARD_ALLOWED_ORIGIN`
