@@ -19,6 +19,7 @@ import {
   Plus,
   RotateCcwClock,
   Settings,
+  Tv,
   Search,
   Siren,
   Sun,
@@ -68,6 +69,7 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_BED_MEETING_TV_HREF,
   WARD_ED_HREF,
   WARD_HOME_HREF,
   WARD_NAV,
@@ -117,6 +119,8 @@ const WardMhaCalculator = dynamic(
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
+import { useWardFeatureFlag } from "./ward-feature-flag-store";
+import { WardDemoReset } from "../demo-reset/ward-demo-reset";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
   digestHref,
@@ -555,6 +559,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
   const isPhone = useIsPhone();
+  const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -2184,6 +2189,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             </div>
           </section>
 
+          <WardDemoReset className={styles.toolsSection} headingClassName={styles.toolsHeading} />
+
           <section className={styles.toolsSection}>
             <h3 className={styles.toolsHeading}>Quick actions</h3>
             <Link href={handoverHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
@@ -2213,6 +2220,22 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               </span>
               <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
             </button>
+            {bedMeetingTvOn && !isPhone ? (
+              <Link
+                href={WARD_BED_MEETING_TV_HREF}
+                className={styles.toolItem}
+                data-testid="ward-bar-bed-meeting-tv"
+                onClick={() => closePopover("tools", false)}
+              >
+                <span className={styles.toolIcon} aria-hidden="true">
+                  <Tv aria-hidden="true" strokeWidth={1.75} />
+                </span>
+                <span>
+                  Bed meeting TV<em>Read only view for the meeting room screen</em>
+                </span>
+                <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
+              </Link>
+            ) : null}
             <Link href={settingsHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
               <span className={styles.toolIcon} aria-hidden="true">
                 <Settings aria-hidden="true" strokeWidth={1.75} />
