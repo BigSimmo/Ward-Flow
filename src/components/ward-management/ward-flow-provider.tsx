@@ -241,6 +241,9 @@ type WardFlowProviderProps = {
    * re-reading the wall clock on every render.
    */
   initialNow?: Instant;
+  /** Perth midnight captured by the server layout, reused by the client's first render. Epoch ms
+   *  keeps the boundary serialisable. Client-only/test mounts can omit it. */
+  initialDayZero?: number;
 };
 
 export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
@@ -623,15 +626,12 @@ function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): num
  * genuinely different figures, on a board about beds. The warning is the only thing that would say
  * so.
  *
- * ⚠️ **WHAT THIS DOES NOT FIX, STATED RATHER THAN LEFT TO BE DISCOVERED.** `dayZero` below still
- * reads `new Date()` in a render-time initialiser, so a session whose SSR and hydration straddle
- * MIDNIGHT can still mismatch. That is left deliberately: it is day-granularity rather than
- * minute-granularity, so it is roughly 1/1440 as likely, it is no worse than before this change,
- * and deferring it has a cost the offset does not — `dayZero` is rendered as calendar dates and as
- * a patient's AGE (`person-screen.tsx`), so a placeholder would paint a wrong age for a frame.
- * **A visibly wrong clinical figure for one frame is worse than a rare console error.**
+ * The server layout supplies `initialDayZero` so calendar dates also match across hydration,
+ * including Perth midnight. After hydration the same clock-adoption effect captures the client's
+ * opening day; local restore still refuses yesterday's save. The opening day then stays fixed for
+ * this session, and a shared snapshot's own day remains authoritative.
  */
-export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps) {
+export function WardFlowProvider({ children, initialNow, initialDayZero }: WardFlowProviderProps) {
   const shared = useWardShared(initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true");
   useEffect(() => {
     clearWardFlowDraftCaches();
@@ -643,7 +643,7 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
    * A pinned `initialNow` never defers: it is already deterministic, and every existing suite
    * renders through this branch unchanged.
    */
-  const [adopted, setAdopted] = useState<{ mountedAtAbsolute: number } | null>(null);
+  const [adopted, setAdopted] = useState<{ mountedAtAbsolute: number; dayZero: Date } | null>(null);
 
   useEffect(() => {
     if (initialNow !== undefined) return; // pinned: never touch the wall clock
@@ -664,7 +664,7 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
      * rather than the comment.
      */
     // eslint-disable-next-line react-hooks/set-state-in-effect -- see above: the wall clock cannot be read during render without breaking hydration
-    setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes() });
+    setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) });
   }, [initialNow]);
 
   /*
@@ -675,8 +675,8 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
    * `anchorOffsetMinutes` at 0, so `now = NOW_ANCHOR + elapsed` — it ticks forward in REAL TIME from
    * the scenario anchor instead of jumping to the wall clock. Only a pinned `initialNow` (tests,
    * screenshots, contract walks) sets a non-zero offset, and that path is unchanged. `adopted` above
-   * now carries ONLY `mountedAtAbsolute` — the baseline `elapsed` is measured from — never an anchor
-   * offset.
+   * carries `mountedAtAbsolute` (the elapsed baseline) and the client's opening calendar day,
+   * never an anchor offset.
    */
   const anchorOffsetMinutes = initialNow !== undefined ? initialNow - NOW_ANCHOR : 0;
 
@@ -698,6 +698,8 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
       anchorOffsetMinutes={anchorOffsetMinutes}
       mountedAtAbsolute={adopted?.mountedAtAbsolute ?? null}
       initialNow={initialNow}
+      initialDayZero={initialDayZero}
+      adoptedDayZero={adopted?.dayZero ?? null}
       shared={shared}
     >
       {children}
@@ -708,12 +710,15 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
 function WardFlowWorld({
   children,
   initialNow,
+  initialDayZero,
+  adoptedDayZero,
   anchorOffsetMinutes,
   mountedAtAbsolute,
   shared,
 }: WardFlowProviderProps & {
   anchorOffsetMinutes: number;
   mountedAtAbsolute: number | null;
+  adoptedDayZero: Date | null;
   shared: WardSharedConnection;
 }) {
   /**
@@ -749,7 +754,12 @@ function WardFlowWorld({
    * same "computed exactly once per mount, then stable for the life of the mount" guarantee,
    * without ever touching a ref.
    */
-  const [localDayZero] = useState<Date>(() => demoDayZero(new Date()));
+  // The server's calendar is used through hydration; the client opening day is adopted once
+  // afterwards, alongside mountedAtAbsolute, before any local restore/save is allowed.
+  const [firstDayZero] = useState<Date>(() =>
+    initialDayZero === undefined ? demoDayZero(new Date()) : new Date(initialDayZero),
+  );
+  const localDayZero = adoptedDayZero ?? firstDayZero;
   // Key on the primitive dayZero string, not the snapshot object: SharedWorkspaceClient.adopt
   // publishes a fresh snapshot every 3s even when the revision is unchanged, and dayZero feeds
   // the context value memo — so object identity would re-render every consumer every poll.
