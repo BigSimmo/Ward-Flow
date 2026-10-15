@@ -289,6 +289,7 @@ function prettierWrite(root, files) {
   spawnSync(process.execPath, [bin, "--write", "--log-level", "warn", "--", ...files], { cwd: root, stdio: "inherit" });
 }
 
+/** @param {{ root?: string, write?: boolean, base?: string | null }} [options] */
 export function run({ root = ROOT, write = false, base = null } = {}) {
   const facts = collectFacts(root);
   const factsByName = new Map(facts.map((f) => [f.name, f.value]));
