@@ -189,6 +189,7 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
         onKeyDown: onTriggerKeyDown,
       })}
       {open ? (
+        // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
         <div
           id={menuId}
           role="menu"
@@ -302,6 +303,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
         onKeyDown: () => {},
       })}
       {open ? (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
         <div
           ref={panelRef}
           id={panelId}

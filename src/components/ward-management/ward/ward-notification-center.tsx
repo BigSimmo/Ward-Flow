@@ -199,7 +199,6 @@ export function WardNotificationCenter({
     // read out bare (expected red #1, announced figures carry their marker). No visible change.
     <section
       className={`${styles.panel} ${hasUrgentBuzz ? styles.urgentBuzzPulse : ""}`}
-      role="region"
       aria-label={`Ward notification and buzzer centre for ${unitName}`}
       aria-live="polite"
       data-testid="ward-notification-center"
@@ -241,6 +240,7 @@ export function WardNotificationCenter({
           )}
         </div>
 
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div role="tablist" aria-label="Notification filters" className={styles.tabList} onKeyDown={handleTabKeyDown}>
           {TABS.map((tab, index) => {
             const isSelected = activeTab === tab.id;
@@ -453,5 +453,3 @@ export function WardNotificationCenter({
     </section>
   );
 }
-
-export default WardNotificationCenter;

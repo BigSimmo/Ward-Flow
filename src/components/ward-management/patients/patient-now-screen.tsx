@@ -78,6 +78,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   TRANSPORT_EXCEPTION_REASON_LABELS,
   holdEndsBeforeEta,
+  instantFromEtaText,
   legalNowText,
   legalNowTransportStatus,
   transportExceptionText,
@@ -157,51 +158,6 @@ function getStageBedflowDetail(stageId: string, liveMovement?: Movement): StageP
       detail: `Recorded by ${change.by}${change.reason ? `: ${change.reason}` : ""}.`,
     })),
   };
-}
-
-/**
- * Turns a typed `HH:MM` time string into minutes from midnight (0–1439).
- * Same HH:MM parser the ED booking popup uses — local copy matching ed-screen.tsx.
- * Refuses rather than guesses: returns undefined if blank, malformed, or out of range.
- */
-function minutesFromTimeInput(value: string): number | undefined {
-  const clean = value.replace(/\s*AWST\s*/i, "").trim();
-  const parts = clean.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (!rawHours || !rawMinutes) return undefined;
-  if (rawHours.length < 1 || rawHours.length > 2 || rawMinutes.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
-function instantFromEstimatedTimeInputs(timeValue: string, day: "today" | "tomorrow", now: number): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function parseEtaToInstant(value: string, now: number): number | undefined {
-  const clean = value.trim();
-  if (!clean) return undefined;
-
-  // Relative minutes: "~45m", "45m", "~30", "+45", "45 min", "45"
-  const relMatch = clean.match(/^[~+]?\s*(\d+)\s*(?:m|min|mins|minutes)?$/i);
-  if (relMatch && !clean.includes(":")) {
-    const mins = Number(relMatch[1]);
-    if (Number.isFinite(mins) && mins >= 0) {
-      return now + mins;
-    }
-  }
-
-  // HH:MM clock time matching ed-screen.tsx instantFromEstimatedTimeInputs
-  const isTomorrow = /tomorrow/i.test(clean);
-  const cleanTime = clean.replace(/\s*tomorrow\s*/i, "").trim();
-  return instantFromEstimatedTimeInputs(cleanTime, isTomorrow ? "tomorrow" : "today", now);
 }
 
 function formatTransportLegalStatus(status?: string): string {
@@ -326,6 +282,9 @@ export function PatientNowScreen({
   const [clearanceAttested, setClearanceAttested] = useState(false);
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
+  // The saved ETA the form was refilled with. While the box still holds that exact text, the saved
+  // instant is kept as it is, so reopening and saving never moves an ETA from another day.
+  const [transportEtaRefill, setTransportEtaRefill] = useState<{ text: string; at: number } | undefined>();
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
   // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
   // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
@@ -545,15 +504,22 @@ export function PatientNowScreen({
   const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
   const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
   const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
-  const draftEtaAt = parseEtaToInstant(transportEtaDraft.trim(), now);
+  const etaFromDraft = (text: string) =>
+    transportEtaRefill !== undefined && text === transportEtaRefill.text
+      ? transportEtaRefill.at
+      : instantFromEtaText(text, now);
+  const draftEtaAt = etaFromDraft(transportEtaDraft.trim());
   // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
   const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
 
   function openTransportForm() {
     setTransportCadDraft(displayCadNumber ?? "");
-    setTransportEtaDraft(
-      liveMovement?.transport?.estimatedAt !== undefined ? clock(liveMovement.transport.estimatedAt) : "",
-    );
+    const savedEta = liveMovement?.transport?.estimatedAt;
+    // A saved ETA on another day keeps its day word ("tomorrow"), so the box reads back as the
+    // same instant and the bed hold warning still fires.
+    const refillText = savedEta === undefined ? "" : formatInstantWithDay(savedEta, now);
+    setTransportEtaDraft(refillText);
+    setTransportEtaRefill(savedEta === undefined ? undefined : { text: refillText, at: savedEta });
     setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
     setTransportLegalChanging(false);
     setTransportLegalReason("");
@@ -565,7 +531,7 @@ export function PatientNowScreen({
     e.preventDefault();
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
-    const estimatedAt = parseEtaToInstant(cleanEta, now);
+    const estimatedAt = etaFromDraft(cleanEta);
     const errors: { cad?: string; eta?: string; legal?: string } = {};
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
@@ -1748,6 +1714,7 @@ export function PatientNowScreen({
 
   /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
   const recordTabs = (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
       {(isPhone ? phoneTabs : tabs).map((tab) => (
         <button
@@ -2255,7 +2222,7 @@ export function PatientNowScreen({
         {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
 
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
-          <div className={styles.v6TabBody} id="pnBody" tabIndex={0}>
+          <div className={styles.v6TabBody} id="pnBody">
             {/* Tab 1: NOW. Only what is true at this moment: the status card, the work for this mode,
                 then why they are here, legal now and who to call. */}
             <div
@@ -2395,6 +2362,7 @@ export function PatientNowScreen({
       </div>
 
       {showClearanceModal && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
         <div
           className={styles.clearanceModalBackdrop}
           role="dialog"

@@ -825,6 +825,7 @@ export function SettingsScreen() {
             </li>
           ) : (
             results.map((entry, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- combobox option: the input handles the keys through aria-activedescendant
               <li
                 key={entry.id}
                 id={`settings-find-${entry.id}`}

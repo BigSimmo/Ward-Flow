@@ -2856,6 +2856,7 @@ export function CommunityScreen({
                           data-testid="ward-community-waiting-list"
                         >
                           {demoVisibleReferrals.map((referral) => (
+                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
                             <li
                               key={referral.id}
                               className={styles.refCard}
@@ -2875,9 +2876,20 @@ export function CommunityScreen({
                                 </span>
                               </div>
                               <div className={styles.refPatientRow}>
-                                <b className={styles.patientIdWrap}>
-                                  {demoUmrnOf(referral.patientId)} ({referral.patientDetails})
-                                </b>
+                                {/* The card click is a pointer shortcut. This button is the keyboard route. */}
+                                <button
+                                  type="button"
+                                  className={styles.refOpen}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedPatientId(referral.patientId);
+                                    setActiveDrawer("pxDrawer");
+                                  }}
+                                >
+                                  <b className={styles.patientIdWrap}>
+                                    {demoUmrnOf(referral.patientId)} ({referral.patientDetails})
+                                  </b>
+                                </button>
                                 <span className={`${styles.statusPillBadge} ${styles[referral.legalStatusTone]}`}>
                                   {referral.legalStatus}
                                 </span>
@@ -2888,6 +2900,7 @@ export function CommunityScreen({
                               >
                                 {referral.clinicalSummary}
                               </p>
+                              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                               <div className={styles.refActionsRow} onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
@@ -4359,6 +4372,7 @@ export function CommunityScreen({
 
         {transportBookFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={transportBookDialogRef}
               className={styles.modalDialog}
@@ -4557,6 +4571,7 @@ export function CommunityScreen({
 
         {transportCancelFor !== undefined ? (
           <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               ref={transportCancelDialogRef}
               className={styles.modalDialog}
@@ -4640,6 +4655,7 @@ export function CommunityScreen({
 
         {activeModal !== null && (
           <div className={styles.modalBackdrop} role="presentation" onClick={() => setActiveModal(null)}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               className={styles.modalDialog}
               role="dialog"
@@ -4697,6 +4713,7 @@ export function CommunityScreen({
             role="presentation"
             onClick={() => setActiveDrawer(null)}
           >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               className={styles.drawerPanel}
               id={
@@ -5343,6 +5360,7 @@ export function CommunityScreen({
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         {activeModalType !== null && (
           <div className={styles.modalOverlay} role="presentation" onClick={() => setActiveModalType(null)}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div
               className={styles.modalBox}
               id={

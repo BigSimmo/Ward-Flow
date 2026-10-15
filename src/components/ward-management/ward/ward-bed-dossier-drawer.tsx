@@ -415,6 +415,7 @@ export function WardBedDossierDrawer({
   return (
     <>
       <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <aside
         ref={bedDrawerRef}
         className={`${styles.drawer} ${styles.show}`}
@@ -501,6 +502,7 @@ export function WardBedDossierDrawer({
               <FactTile label="Observation" value={observation} />
             </div>
             <div className={styles.tabsWrap}>
+              {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div role="tablist" aria-label="Bed details" className={styles.tabs} onKeyDown={onTabKeyDown}>
                 {DRAWER_TABS.map((item, index) => {
                   const selected = item.id === tab;
@@ -958,6 +960,7 @@ function PhoneBedSheet({
   return (
     <>
       <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <aside
         ref={bedDrawerRef}
         className={cx(styles.drawer, styles.show, styles.phoneSheet)}

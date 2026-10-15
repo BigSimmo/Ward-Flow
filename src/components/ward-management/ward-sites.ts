@@ -878,7 +878,10 @@ export const STANDARD_WARD_SITES: Site[] = [
  * (Josh's card, 15 Oct 2026, "Pass values in"). Calculations outside React may still read it.
  *
  * ⚠️ A module-level binding, re-pointed rather than mutated: importers read the live value.
- * Nothing but `activateWardNetwork` may assign it.
+ * Nothing but `activateWardNetwork` may assign it. Starts as the standard network, so knip reads
+ * it as a duplicate of `STANDARD_WARD_SITES`. It is not one: it is re-pointed at runtime.
+ *
+ * @alias
  */
 export let wardSites: Site[] = STANDARD_WARD_SITES;
 

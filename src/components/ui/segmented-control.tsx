@@ -95,6 +95,7 @@ export function SegmentedControl<T extends string>({
   );
 
   return (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div
       role="radiogroup"
       aria-label={label}

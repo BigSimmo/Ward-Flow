@@ -2189,6 +2189,7 @@ function StageRow({
   const step = movementNextStep(movement);
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li
       ref={rowRef}
       tabIndex={-1}

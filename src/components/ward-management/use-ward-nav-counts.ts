@@ -31,9 +31,9 @@ import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
  * both trees recomputes rather than shares. That is the cheap half of the trade; the expensive half
  * would be a context whose absence yields a plausible answer silently.
  *
- * ⚠️ **`placeId` IS ADDED HERE FOR THE SAME REASON `role` ALREADY IS.** `WardSidebarAttention`
- * (`ward-sidebar-content.tsx`) needs to scope its list to the ward or emergency department the
- * reader is on, and `usePathname` is the one source both the role and the id must read — computing
+ * ⚠️ **`placeId` IS ADDED HERE FOR THE SAME REASON `role` ALREADY IS.** `shell/ward-bar.tsx`
+ * needs to scope its figures to the ward or emergency department the reader is on (the old
+ * `WardSidebarAttention` list that first needed it was removed on 15 Oct 2026), and `usePathname` is the one source both the role and the id must read — computing
  * the id separately in the panel would be a second place for the two to disagree about which route
  * they are on. See `wardPlaceIdFor` in `ward-place.ts`: it is a bare id, `undefined` on any route
  * that does not name one, never a resolved or validated place.

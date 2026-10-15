@@ -1269,8 +1269,8 @@ export function WardHomeTab({
             <section
               id="ward-awaiting-answer"
               aria-label="Awaiting your answer"
+              tabIndex={-1}
               className={styles.awaitingCard}
-              tabIndex={0}
             >
               <div className={styles.groupHead}>
                 <h3 id="ward-awaiting-heading" className={styles.groupTitle}>

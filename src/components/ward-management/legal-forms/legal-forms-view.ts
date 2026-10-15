@@ -3,6 +3,7 @@ import {
   type DueSoonThresholds,
   formatInstantWithDay,
   type Instant,
+  minuteOfDayFromClockText,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
@@ -244,23 +245,10 @@ export function handoverLines(
     );
 }
 
-/** Same HH:MM parser the ED legal-form panel uses. */
-function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
 /** Typed date and time to an Instant, counted from the provider's `dayZero`. No duration is added. */
 export function instantFromDateAndTimeInputs(dateValue: string, timeValue: string, dayZero: Date): number | undefined {
   if (dateValue === "" || timeValue === "") return undefined;
-  const minuteOfDayValue = minutesFromTimeInput(timeValue);
+  const minuteOfDayValue = minuteOfDayFromClockText(timeValue);
   if (minuteOfDayValue === undefined) return undefined;
   const dateParts = dateValue.split("-");
   if (dateParts.length !== 3) return undefined;

@@ -1834,6 +1834,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             />
           )}
           <div className={pageStyles.rightRail}>
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
             <aside
               ref={detailRef}
               className={`${pageStyles.detail}${selected || releaseId ? ` ${pageStyles.open}` : ""}`}

@@ -940,7 +940,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                 {view === "clocks" ? (
                   <section
                     className={styles.groups}
-                    role="region"
                     aria-label="Legal forms and deadlines"
                     data-testid="ward-legal-forms-groups"
                   >
