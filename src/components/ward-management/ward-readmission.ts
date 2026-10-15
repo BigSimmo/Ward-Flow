@@ -1,5 +1,6 @@
 import type { Admission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
 import type { Movement, Referral, Unit } from "./ward-model";
 import { createPatientResolver, type PatientResolutionSubject } from "./ward-patient-resolver";
 import type { Patient } from "./ward-patients";
@@ -14,7 +15,7 @@ import type { Patient } from "./ward-patients";
  */
 
 /** Default window, in days. Not a clinical or reporting standard. */
-export const READMISSION_WINDOW_DAYS = 28;
+export const READMISSION_WINDOW_DAYS = CLINICAL_VALUES.readmissionWindow.value;
 const WINDOW_MINUTES = READMISSION_WINDOW_DAYS * 24 * 60;
 
 export type ReadmissionFlag = {

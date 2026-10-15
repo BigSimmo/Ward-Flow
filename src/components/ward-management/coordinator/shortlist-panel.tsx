@@ -663,8 +663,8 @@ export function ShortlistPanel({
   const patientIdentity = resolvePatientIdentity(movement);
   const patientWho = patientIdentity.displayName;
   const patientUmrn = patientIdentity.umrn;
-  // Waiting against the tier target, the same figures the queue reads (targets pending clinical
-  // sign-off, labelled where they drive a figure).
+  // Waiting against the tier target, the same figures the queue reads (status from the clinical
+  // values file, labelled where they drive a figure).
   const waitedMinutes = Math.max(0, now - movement.openedAt);
   const targetMinutes = queueWaitThresholds(movement.urgency).overdue;
   const overTarget = waitedMinutes >= targetMinutes;

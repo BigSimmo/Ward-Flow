@@ -1373,6 +1373,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             className={styles.scopeBadgeBtn}
             data-testid="ward-bar-service-trigger"
             data-service={activeSwatchKey}
+            // The phone service line takes the band's ink from its own attribute: CI WebKit did not
+            // restyle it from the bar's data-band alone (release gate, 15 Oct 2026).
+            data-band={isPhone ? bandState : undefined}
             data-locked={isFixedJurisdiction ? "true" : undefined}
             aria-haspopup={isFixedJurisdiction ? undefined : isPhone ? "dialog" : "true"}
             aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}

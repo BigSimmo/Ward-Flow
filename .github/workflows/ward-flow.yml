@@ -336,6 +336,63 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+  # The release gate: four core bed-flow journeys (tests/release-gate-journeys.spec.ts) on desktop
+  # Chrome and phone WebKit, with an axe WCAG 2.1 AA check at each key step. Its own named check so it
+  # can be made a required status check on main (a GitHub branch protection setting). It runs on every
+  # main commit too, reuse or not, because Railway deploys a main commit only when this workflow passes.
+  release-gate:
+    name: Ward Flow release gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.15.0"
+          cache: npm
+      - name: Plan Ward scope
+        id: plan
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-ci-public/plan.mjs
+      - name: Install locked dependencies
+        id: install
+        if: ${{ !cancelled() && steps.plan.outputs.browser == 'true' }}
+        run: npm ci --ignore-scripts
+      # Chromium for desktop, WebKit for the phone (390x844 on the engine an iPhone runs).
+      - name: Install Chromium and WebKit
+        id: browsers
+        timeout-minutes: 10
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node node_modules/playwright/cli.js install --with-deps chromium webkit
+      # Restore only: the browser journeys job saves this entry on main; a PR reads main's copy.
+      - name: Restore Next build cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ward-next-cache
+          key: ward-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-${{ github.sha }}
+          restore-keys: |
+            ward-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-
+      - name: Run the release-gate journeys
+        id: gate
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        env:
+          WARD_GATE_BUILD: "1"
+          WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
+        run: npm run test:e2e:release-gate
+      - name: Upload failed release-gate evidence
+        if: ${{ !cancelled() && steps.gate.outcome == 'failure' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ward-release-gate-failures-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 3
+
   secret-scan:
     # Full-history secret scan with a pinned, checksum-verified gitleaks release binary (no
     # third-party action, licence key or token). It scans every commit reachable from the checked

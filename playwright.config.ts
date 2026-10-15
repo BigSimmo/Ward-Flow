@@ -31,6 +31,9 @@ const mockupSpecPattern =
 // production projects. The spec checks responsive geometry and keyboard access to local scrollers.
 const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
 const mockupTag = /@mockup/;
+// The release gate (15 October 2026): four core bed-flow journeys with an axe check at each key
+// step, on desktop Chrome and phone WebKit. Its own projects, its own CI job, nothing else in them.
+const releaseGateSpecPattern = /.*release-gate-journeys\.spec\.ts/;
 
 // Ward Flow fold gate (Josh, 25 September 2026): the known-failing journeys still run every gate, but
 // in their own project with a short timeout, so a known failure fails fast instead of waiting out
@@ -41,7 +44,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(accessible-table-mockup|smoke|stress|accessibility|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|caring-contacts-activation|caring-contacts-populated|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-show-all|tools-search-mode-mockup|tools-task-directory|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/,
+    /.*(?:release-gate-journeys|api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(accessible-table-mockup|smoke|stress|accessibility|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|caring-contacts-activation|caring-contacts-populated|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-show-all|tools-search-mode-mockup|tools-task-directory|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
@@ -89,6 +92,21 @@ export default defineConfig({
     serviceWorkers: "block",
   },
   projects: [
+    {
+      name: "release-gate-desktop",
+      testMatch: releaseGateSpecPattern,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 1024 },
+        ...(chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {}),
+      },
+    },
+    {
+      // Phone is its own design at 390x844, on the engine an iPhone actually runs.
+      name: "release-gate-phone",
+      testMatch: releaseGateSpecPattern,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
     {
       name: "firefox-ward-responsive",
       testMatch: wardResponsiveSpecPattern,
