@@ -42,7 +42,7 @@
   outline-offset: 2px;
 }
 
-/* Pill tabs (v10 .pt): a rounded track, the selected tab raised. Scrolls, never wraps. */
+/* Pill tabs (v10 .pt): a soft cornered track, the selected tab raised. Scrolls, never wraps. */
 .pt {
   display: inline-flex;
   align-items: center;
@@ -51,7 +51,7 @@
   max-width: 100%;
   padding: 2px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-track);
   background: var(--wf-track);
   border: 1px solid var(--wf-line);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
@@ -72,13 +72,15 @@
   height: var(--wf-h-sm);
   padding: 0 var(--wf-s-3);
   border: 0;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--wf-t-micro) var(--wf-ease-out);
+  transition:
+    color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-m-fast) var(--wf-ease);
 }
 
 .ptItem:hover {
@@ -123,7 +125,7 @@
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-track);
   background: var(--wf-track);
   border: 1px solid var(--wf-line);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
@@ -133,7 +135,7 @@
   height: var(--wf-target);
   padding: 0 10px;
   border: 0;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -146,7 +148,8 @@
   text-decoration: none;
   transition:
     background-color var(--wf-t-micro) var(--wf-ease-out),
-    color var(--wf-t-micro) var(--wf-ease-out);
+    color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-m-fast) var(--wf-ease);
 }
 
 .segItem:hover {
@@ -186,7 +189,7 @@
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-track);
   background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
 }
@@ -239,9 +242,9 @@
   align-items: center;
   gap: 6px;
   height: var(--wf-h-sm);
-  padding: 0 10px;
+  padding: 0 12px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-ctl);
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
@@ -249,6 +252,11 @@
   white-space: nowrap;
   cursor: pointer;
   min-width: 0;
+  transition:
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-m-fast) var(--wf-ease);
 }
 
 .chip:hover {
@@ -257,12 +265,35 @@
 }
 
 .chip[aria-pressed="true"] {
-  color: var(--wf-ink-1);
+  /* Refined buttons (15 Oct 2026): an on filter takes the accent tint and edge. Pick one controls
+   * (segments, pill tabs) keep the raised look, so the two kinds never look alike. */
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 60%, transparent);
+  color: var(--wf-accent-ink);
   font-weight: 600;
-  border-color: var(--wf-line-ctl);
-  box-shadow:
-    inset 0 1px 0 var(--wf-hl),
-    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
+}
+
+.chip[aria-pressed="true"] .k {
+  background: color-mix(in srgb, var(--wf-accent) 18%, transparent);
+  color: var(--wf-accent-ink);
+}
+
+/* Same press feel as the shared Button. */
+.chip:active,
+.segItem:active,
+.ptItem:active {
+  transform: scale(0.97);
+  transition-duration: 60ms;
+}
+
+/* No width jump: the label reserves its bold width, so a row stays still when one is pressed. */
+.chipLabel[data-text]::after {
+  content: attr(data-text);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 600;
 }
 
 .unavailableChip {
@@ -382,20 +413,27 @@
    * cannot fit). */
   .seg {
     padding: 2px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
   }
   .seg .segItem {
     flex: 1 0 auto;
     justify-content: center;
     padding: 0 12px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-fs-13);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .segItem {
+  .segItem,
+  .ptItem,
+  .chip {
     transition: none;
+  }
+  .chip:active,
+  .segItem:active,
+  .ptItem:active {
+    transform: none;
   }
 }
 
@@ -415,18 +453,18 @@
   }
 }
 
-/* Phone (v10 mockup): the hero track is the same pill as the phone Segmented. */
+/* Phone (v10 mockup): the hero track has the same shape as the phone Segmented. */
 @media (max-width: 48rem) {
   .trk {
-    padding: 2px;
-    border-radius: var(--wf-r-pill);
+    padding: 3px;
+    border-radius: var(--wf-r-track);
   }
 
   .trk .segItem {
     flex: 1 0 auto;
     justify-content: center;
     padding: 0 12px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
   }
 }
 
@@ -478,18 +516,21 @@
 
 /* ── Phone compact size (Josh, 12 Oct 2026) ────────────────────────────────────────────────────────
  * Every phone segmented control and filter chip reads at one compact size, set once in the v6 tokens
- * (`--wf-phone-*`): a 34px track with 28px options, 32px chips, 13px 600 labels. The tap target stays
+ * (`--wf-phone-*`): a 44px track with 38px options, 40px chips, 13px 600 labels (refined buttons,
+ * 15 Oct 2026). The tap target stays
  * at the 48px floor through a transparent hit area, never a bigger face.
  *
  * The phone track still scrolls sideways, and a scroller clips whatever leaves its box, so the track
  * box itself is the full 48px tall with a transparent band above and below (still shorter than the
- * old 54px track). The 1px edged pill is painted as a background inside that band, which lets each
+ * old 54px track). The 1px edged track is painted as a background inside that band, which lets each
  * option's hit area run the full 48px without being clipped. A chip row does the same with padding.
  * A page that pins the track can give it a `background-color` to hide the list under the band.
  * Nothing here applies above 48rem. */
 @media (max-width: 48rem) {
   .seg {
-    --wf-seg-r: calc(var(--wf-phone-seg-h) / 2);
+    --wf-seg-r: var(--wf-r-track);
+    --wf-seg-bg: var(--wf-track);
+    --wf-seg-edge: var(--wf-line);
     align-items: center;
     box-sizing: border-box;
     height: var(--spacing-tap, 3rem);
@@ -498,41 +539,65 @@
     border-radius: 0;
     box-shadow: none;
     background-color: transparent;
+    /* The edged, soft cornered track is painted inside the transparent band: four corner pieces,
+     * a horizontal strip with the top and bottom edges, and a vertical strip with the side edges. */
     background-image:
       radial-gradient(
-        circle at 100% 50%,
-        var(--wf-track) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        circle at 100% 100%,
+        var(--wf-seg-bg) calc(var(--wf-seg-r) - 1px),
+        var(--wf-seg-edge) calc(var(--wf-seg-r) - 0.5px),
         transparent var(--wf-seg-r)
       ),
       radial-gradient(
-        circle at 0 50%,
-        var(--wf-track) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        circle at 0 100%,
+        var(--wf-seg-bg) calc(var(--wf-seg-r) - 1px),
+        var(--wf-seg-edge) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      radial-gradient(
+        circle at 100% 0,
+        var(--wf-seg-bg) calc(var(--wf-seg-r) - 1px),
+        var(--wf-seg-edge) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      radial-gradient(
+        circle at 0 0,
+        var(--wf-seg-bg) calc(var(--wf-seg-r) - 1px),
+        var(--wf-seg-edge) calc(var(--wf-seg-r) - 0.5px),
         transparent var(--wf-seg-r)
       ),
       linear-gradient(
         to bottom,
         transparent var(--wf-phone-seg-band),
-        var(--wf-line) var(--wf-phone-seg-band),
-        var(--wf-line) calc(var(--wf-phone-seg-band) + 1px),
-        var(--wf-track) calc(var(--wf-phone-seg-band) + 1px),
-        var(--wf-track) calc(100% - var(--wf-phone-seg-band) - 1px),
-        var(--wf-line) calc(100% - var(--wf-phone-seg-band) - 1px),
-        var(--wf-line) calc(100% - var(--wf-phone-seg-band)),
+        var(--wf-seg-edge) var(--wf-phone-seg-band),
+        var(--wf-seg-edge) calc(var(--wf-phone-seg-band) + 1px),
+        var(--wf-seg-bg) calc(var(--wf-phone-seg-band) + 1px),
+        var(--wf-seg-bg) calc(100% - var(--wf-phone-seg-band) - 1px),
+        var(--wf-seg-edge) calc(100% - var(--wf-phone-seg-band) - 1px),
+        var(--wf-seg-edge) calc(100% - var(--wf-phone-seg-band)),
         transparent calc(100% - var(--wf-phone-seg-band))
+      ),
+      linear-gradient(
+        to right,
+        var(--wf-seg-edge) 1px,
+        var(--wf-seg-bg) 1px,
+        var(--wf-seg-bg) calc(100% - 1px),
+        var(--wf-seg-edge) calc(100% - 1px)
       );
     background-position:
-      left center,
-      right center,
+      left 0 top var(--wf-phone-seg-band),
+      right 0 top var(--wf-phone-seg-band),
+      left 0 bottom var(--wf-phone-seg-band),
+      right 0 bottom var(--wf-phone-seg-band),
+      center,
       center;
-    /* Each end cap is only the outer half circle, so no ring shows inside the track. */
     background-size:
-      var(--wf-seg-r) 100%,
-      var(--wf-seg-r) 100%,
-      calc(100% - var(--wf-phone-seg-h)) 100%;
+      var(--wf-seg-r) var(--wf-seg-r),
+      var(--wf-seg-r) var(--wf-seg-r),
+      var(--wf-seg-r) var(--wf-seg-r),
+      var(--wf-seg-r) var(--wf-seg-r),
+      calc(100% - 2 * var(--wf-seg-r)) 100%,
+      100% calc(100% - 2 * var(--wf-phone-seg-band) - 2 * var(--wf-seg-r));
     background-repeat: no-repeat;
   }
 

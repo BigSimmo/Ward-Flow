@@ -81,12 +81,20 @@
   --wf-r-lg: 16px;
   --wf-r-xl: 22px;
   --wf-r-pill: 999px;
+  /* Controls (Josh, 15 Oct 2026, refined buttons): buttons, chips, segments and icon buttons share
+     one soft corner, about a third of their height, instead of a full pill. A track sits 2px rounder
+     than its options so the corners nest, and a count or label tag uses the small corner. Dots,
+     avatars, progress bars and on/off switches stay round. Phone values are set below. */
+  --wf-r-ctl: 12px;
+  --wf-r-track: 14px;
+  --wf-r-seg-item: 10px;
+  --wf-r-tag: 6px;
   --wf-s-1: 4px;
   --wf-s-2: 8px;
   --wf-s-3: 12px;
   --wf-s-4: 16px;
   --wf-h-chip: 22px;
-  --wf-h-sm: 30px;
+  --wf-h-sm: 32px;
   --wf-h-md: 36px;
   /* Shared sticky header and navigation geometry. Phone overrides this in the Ward layout. */
   --wf-header-height: 3.75rem;
@@ -94,14 +102,14 @@
   /* Phone (max-width: 48rem) filter pills, chips and segmented controls share one compact size.
      Only phone rules read these. The visual face stays small; a transparent hit area reaches the
      --spacing-tap floor, so the tap target never drops below 48px. */
-  --wf-phone-pill-h: 32px;
+  --wf-phone-pill-h: 40px;
   --wf-phone-pill-px: 12px;
   --wf-phone-pill-gap: 8px;
   --wf-phone-pill-fs: var(--wf-fs-13);
   --wf-phone-pill-count-fs: var(--wf-fs-12);
   --wf-phone-pill-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-pill-h)) / 2);
-  --wf-phone-seg-h: 34px;
-  --wf-phone-seg-item-h: 28px;
+  --wf-phone-seg-h: 44px;
+  --wf-phone-seg-item-h: 38px;
   --wf-phone-seg-item-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-item-h)) / 2);
   --wf-phone-seg-band: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-h)) / 2);
   --wf-row: 52px;
@@ -296,6 +304,18 @@
   --wf-hero-success: #4cb383;
   --wf-hero-info: #7fa3c8;
   --wf-hero-neutral: #8fa0b1;
+}
+
+/* Phone corners (refined buttons, 15 Oct 2026): the taller phone controls take a 14px corner. */
+@media (max-width: 48rem) {
+  :root,
+  .day,
+  .night {
+    --wf-r-ctl: 14px;
+    --wf-r-track: 16px;
+    --wf-r-seg-item: 12px;
+    --wf-r-tag: 8px;
+  }
 }
 
 /* Touch: 44px targets on tablets. */

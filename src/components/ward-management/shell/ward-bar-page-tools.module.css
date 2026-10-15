@@ -14,7 +14,7 @@
   height: var(--wf-h-sm);
   padding: 0 12px;
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -50,7 +50,7 @@
   height: 18px;
   padding: 0 6px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface-2);
   border: 1px solid var(--wf-line);
   font: 600 var(--wf-fs-11) / 1 var(--wf-mono);

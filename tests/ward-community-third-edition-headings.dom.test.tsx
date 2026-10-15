@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -158,7 +159,13 @@ describe("community live-route source integrity", () => {
   it("uses the provider population on Fremantle routes just as explicit provider inputs do", () => {
     function ProviderInputs() {
       const { admissions, referrals } = useWardFlow();
-      return <CommunityScreen teamId="alma-street-fremantle" admissions={admissions} referrals={referrals} />;
+      return (
+        <CommunityScreen
+          teamId="alma-street-fremantle"
+          admissions={admissions}
+          referrals={communityScopedReferrals(referrals)}
+        />
+      );
     }
     const live = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

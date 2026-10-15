@@ -72,11 +72,11 @@ async function ensureToolsOpen(page: Page): Promise<void> {
   if ((await trigger.getAttribute("aria-expanded")) !== "true") {
     await trigger.click();
   }
+  // Tools review (15 Oct 2026): one sheet, Change view at its top, so no tab to pick.
   await page
     .getByRole("dialog", { name: "Tools" })
-    .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Shift desk", exact: true })
-    .click();
+    .getByRole("button", { name: /^Change view/ })
+    .waitFor();
 }
 
 /**
@@ -237,28 +237,26 @@ test.describe("@mockup Ward screen", () => {
     await card.getByTestId("ward-pull-WF-003").click();
     await expect(card).toContainText("Bed pull 4h 00m left");
 
-    // `WardDemoControls` renders inside `WardBar`'s Tools drawer now (Task 8, 2026-09-11), a
-    // layout-level sibling of `wardScreen` rather than a descendant of it — `page`-scoped, not
-    // `wardScreen`-scoped, and only present once the drawer is open. See `ensureToolsOpen`'s own
-    // header for why opening is conditional rather than an unconditional click.
+    // The demo controls live in the one Demo panel at the foot of `WardBar`'s Tools sheet (Tools
+    // review, 15 Oct 2026), a layout-level sibling of `wardScreen` rather than a descendant of it, so
+    // `page`-scoped, and only present once the drawer is open. See `ensureToolsOpen`'s own header
+    // for why opening is conditional rather than an unconditional click.
     await ensureToolsOpen(page);
 
-    // The trigger must never be mistaken for a clinical action — checked in words, not merely by
-    // colour: its accessible name and title both say so explicitly.
-    const trigger = page.getByTestId("ward-demo-controls-trigger");
-    await expect(trigger).toHaveAttribute("aria-label", /not a clinical action/i);
-    await expect(trigger).toHaveAttribute("title", /never a clinical action/i);
+    // The panel must never be mistaken for a clinical action, checked in words, not merely by
+    // colour: its row and its opening notice both say so explicitly.
+    const toggle = page.getByTestId("ward-tools-toggle-demo");
+    await expect(toggle).toContainText(/synthetic data only/i);
+    await toggle.click();
+    const panel = page.getByTestId("ward-tools-demo-panel");
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(/change the synthetic data only, never a clinical record/i);
 
-    await trigger.click();
-    const menu = page.locator("#ward-demo-controls-menu:visible");
-    await expect(menu).toBeVisible();
-    await expect(menu).toContainText(/demo tool, not part of the clinical record/i);
-
-    const advanceClockHour = menu.getByTestId("ward-demo-advance-60");
+    const advanceClockHour = panel.getByRole("button", { name: "+1 hour", exact: true });
     await advanceClockHour.click();
     await advanceClockHour.click();
     await advanceClockHour.click();
-    const advanceClock = menu.getByTestId("ward-demo-advance-15");
+    const advanceClock = panel.getByRole("button", { name: "+15 min", exact: true });
     await advanceClock.click();
     await advanceClock.click();
     await advanceClock.click();

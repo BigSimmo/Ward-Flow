@@ -19,6 +19,22 @@
   box-sizing: border-box;
 }
 
+/* Tools sheet: the sheet row is the frame, so the resolver sits flat inside it. */
+.compact {
+  gap: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.compact .header[hidden] {
+  display: none;
+}
+
+.compact .actionsBar {
+  flex-wrap: wrap;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 1rem;
@@ -335,7 +351,7 @@
   padding: 0.3125rem 0.75rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   border-width: 1px;
   border-style: solid;
 }

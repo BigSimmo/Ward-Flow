@@ -797,7 +797,7 @@
 .corridorTabs span {
   min-width: 18px;
   padding: 1px 5px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
