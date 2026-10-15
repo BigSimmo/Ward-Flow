@@ -6,10 +6,6 @@ import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-managem
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { movementSearchState } from "./search-operational-state";
 import { isCommunityReferral } from "./community-referral";
-
-export type ServiceFilter = "all" | "East Metro" | "North Metro" | "South Metro" | "WACHS";
-export type SettingFilter = "all" | "ed" | "inpatient" | "transit" | "community" | "scheduled" | "discharged";
-export type WaitFilter = "all" | "under6" | "6to24" | "over24";
 export type PresenceFilter = "all" | "live" | "community" | "scheduled" | "past";
 
 /**
@@ -28,15 +24,6 @@ export const LEGAL_FILTER_OPTIONS: ReadonlyArray<{ value: string; label: string 
   { value: "Involuntary", label: "Involuntary" },
   ...SELECTABLE_LEGAL_FORMS.map((form) => ({ value: `Form ${form.code}`, label: legalFormName(form) })),
 ];
-export type LegalFilter = "all" | (typeof LEGAL_FILTER_OPTIONS)[number]["value"];
-
-export interface DropdownFilters {
-  presence?: string;
-  service: string;
-  setting: string;
-  legal: string;
-  wait: string;
-}
 
 export const QUICK_CHIPS = [
   { label: "● On this board", query: "● On this board" },

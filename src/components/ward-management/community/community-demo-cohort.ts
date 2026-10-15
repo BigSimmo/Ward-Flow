@@ -834,7 +834,7 @@ export interface CommunityTeamConfig {
   sector: string;
 }
 
-export const KNOWN_TEAM_CONFIGS: Record<string, CommunityTeamConfig> = {
+const KNOWN_TEAM_CONFIGS: Record<string, CommunityTeamConfig> = {
   fremantle: {
     name: "Fremantle Adult CMHT (SMHS)",
     campus: "Fremantle Hospital · Alma Street",

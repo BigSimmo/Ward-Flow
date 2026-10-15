@@ -14,7 +14,7 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 export const REFERRAL_SHEET_PATH = "/mockups/ward-flow/referrals/new";
 
 /** Where the referral goes. The slide-out's first choice. */
-export type ReferralSheetDestination = "ward" | "community" | "ed";
+type ReferralSheetDestination = "ward" | "community" | "ed";
 
 /** Where the referral comes from, as the slide-out groups it. */
 export type ReferralSheetCategory = "community" | "ed" | "ward";

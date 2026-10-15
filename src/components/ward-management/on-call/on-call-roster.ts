@@ -1,4 +1,4 @@
-import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
+import { type HealthService } from "@/components/ward-management/ward-model";
 
 /**
  * 🔴 **WHO IS ON CALL — AND THIS FILE HOLDS NO PEOPLE, DELIBERATELY AND PERMANENTLY.**
@@ -82,29 +82,3 @@ export const SERVICE_ON_CALL_ROLES: Readonly<Record<HealthService, readonly OnCa
   CAHS: [],
   Private: [{ id: "pr-coordinator", role: "Coordinator on call", shift: "Business hours only, 08:00 to 17:00" }],
 };
-
-/**
- * Services holding no recorded role, derived rather than written down.
- *
- * ⚠️ **DERIVED, because the alternative is a hard-coded sentence naming WA Country that stays on the
- * screen after somebody adds a WACHS role** — a screen telling a coordinator nobody is on call for a
- * service that now has somebody. **A sentence about an absence has to be computed from the same
- * array the presence is.**
- */
-export function servicesWithNoRoleRecorded(): HealthService[] {
-  return HEALTH_SERVICES.filter((service) => SERVICE_ON_CALL_ROLES[service].length === 0);
-}
-
-/** How many roles this prototype records, and how many places it has to record one. */
-export function roleRecordCounts(): { recorded: number; possible: number } {
-  const perService = HEALTH_SERVICES.map((service) => SERVICE_ON_CALL_ROLES[service].length);
-  const recorded = NETWORK_ON_CALL_ROLES.length + perService.reduce((total, count) => total + count, 0);
-  /*
-   * ⚠️ **THE DENOMINATOR IS A CHOICE AND IT IS WRITTEN DOWN RATHER THAN LEFT TO BE INFERRED.** Two
-   * roles per health service (a coordinator and a duty consultant) plus the two network roles. It is
-   * the shape this prototype expects, not a fact about any real service — so the screen words it as
-   * what this prototype records, never as coverage.
-   */
-  const possible = NETWORK_ON_CALL_ROLES.length + HEALTH_SERVICES.length * 2;
-  return { recorded, possible };
-}

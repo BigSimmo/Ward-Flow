@@ -24,7 +24,7 @@ const changeEvent = "ward-flow-sidebar-collapsed-change";
  * first visit gets the icon rail the prototype has always had rather than a panel it never
  * asked for. Once a value is present, collapsed is true only for the explicit `"1"` pin.
  */
-export function readWardSidebarCollapsedPreference(storedValue: string | null | undefined): boolean {
+function readWardSidebarCollapsedPreference(storedValue: string | null | undefined): boolean {
   return storedValue === null || storedValue === undefined ? true : storedValue === "1";
 }
 

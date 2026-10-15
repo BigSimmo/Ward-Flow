@@ -104,13 +104,13 @@ export type RollupFreshness =
   | { kind: "partial"; oldestConfirmedAt: Instant; unitsConfirmed: number; unitsTotal: number }
   | { kind: "never" };
 
-export type CapacityRollup = CapacityBreakdown & {
+type CapacityRollup = CapacityBreakdown & {
   unitsTotal: number;
   freshness: RollupFreshness;
 };
 
-export type UnitRollup = { unit: Unit; breakdown: CapacityBreakdown; freshness: RollupFreshness };
-export type SiteRollup = { site: Site; rollup: CapacityRollup; units: UnitRollup[] };
+type UnitRollup = { unit: Unit; breakdown: CapacityBreakdown; freshness: RollupFreshness };
+type SiteRollup = { site: Site; rollup: CapacityRollup; units: UnitRollup[] };
 export type ServiceRollup = {
   service: CapacityRollup;
   sites: SiteRollup[];

@@ -1,5 +1,5 @@
 /** Thin adapter for the Supabase Auth REST contract: https://github.com/supabase/auth/blob/master/openapi.yaml. */
-export const WARD_SUPABASE_ORIGIN = "https://zakzoemeedfepxcstsou.supabase.co";
+const WARD_SUPABASE_ORIGIN = "https://zakzoemeedfepxcstsou.supabase.co";
 export const WARD_AUTH_STORAGE_KEY = "ward-flow:auth:zakzoemeedfepxcstsou:v1";
 export class WardAuthError extends Error {
   constructor(

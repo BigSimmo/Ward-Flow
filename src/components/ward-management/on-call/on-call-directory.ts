@@ -1,4 +1,4 @@
-import { HEALTH_SERVICES, type HealthService, type Site } from "@/components/ward-management/ward-model";
+import { type HealthService, type Site } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { referenceEntity } from "@/components/ward-management/reference/ward-reference-registry";
 import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
@@ -44,7 +44,7 @@ export type ContactLine = {
   window: ContactWindow | null;
 };
 
-export type ContactKind =
+type ContactKind =
   | "switchboard"
   | "epic"
   | "edLiaison"
@@ -89,8 +89,8 @@ export type DirectoryEntry = {
 
 export const CHECK_DUE_DAYS = 40;
 /** Minutes on the clock face, for wrapping times past midnight. A calendar fact, not a limit. */
-export const CLOCK_DAY = 24 * 60;
-export const mod = (value: number) => ((value % CLOCK_DAY) + CLOCK_DAY) % CLOCK_DAY;
+const CLOCK_DAY = 24 * 60;
+const mod = (value: number) => ((value % CLOCK_DAY) + CLOCK_DAY) % CLOCK_DAY;
 export const hhmm = (minute: number) =>
   `${String(Math.floor(mod(minute) / 60)).padStart(2, "0")}:${String(mod(minute) % 60).padStart(2, "0")}`;
 
@@ -652,7 +652,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
 
 /* ---------------- availability ---------------- */
 
-export function inWindow(window: ContactWindow | null, minute: number): boolean {
+function inWindow(window: ContactWindow | null, minute: number): boolean {
   if (window === null) return true;
   const [start, end] = window;
   const m = mod(minute);
@@ -914,14 +914,11 @@ export function keyLineLabel(entry: DirectoryEntry): string {
   return `${SERVICE_META[entry.service].short} bed flow`;
 }
 
-/** Health services in the directory, for any check that wants every service represented. */
-export const DIRECTORY_SERVICES: readonly DirectoryService[] = ["Statewide", ...HEALTH_SERVICES];
-
 /* ---------------- grouping, shared by desktop and phone ---------------- */
 
 export type DirectoryTab = DirectorySection | "mine";
 
-export const ROLE_ORDER: [ContactKind | "other", string][] = [
+const ROLE_ORDER: [ContactKind | "other", string][] = [
   ["epic", "EPIC, emergency physician in charge"],
   ["edLiaison", "ED mental health liaison"],
   ["registrar", "Psychiatry registrar on call"],

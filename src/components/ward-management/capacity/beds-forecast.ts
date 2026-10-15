@@ -22,7 +22,7 @@ import { plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer"
  * Tomorrow and the day after, as rolling windows from now (24 and 48 hours). Written in days so the
  * figures cannot be mistaken for the bed-release threshold or any Mental Health Act period.
  */
-export const BEDS_FORECAST_HORIZON_DAYS = [1, 2] as const;
+const BEDS_FORECAST_HORIZON_DAYS = [1, 2] as const;
 
 /**
  * Stages at which a person still needs a bed. From `pulled` onwards `PULL_PATIENT` has already
