@@ -41,7 +41,7 @@
   height: 1.5rem;
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line);
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }

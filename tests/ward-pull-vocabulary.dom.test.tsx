@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -357,7 +358,7 @@ describe("the community hub says a bed is PULLED for somebody who has not arrive
         <CommunityScreen
           teamId={TEAM.id}
           admissions={[admission({ referralId: referral!.id })]}
-          referrals={[referral!]}
+          referrals={communityScopedReferrals([referral!])}
         />
       </WardFlowProvider>,
     );
