@@ -269,9 +269,9 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   const shiftItem = workBand.getByTestId(`ward-board-shift-discharge-${release.admissionId}`);
   const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show \d+ more$/u });
   if (!(await shiftItem.isVisible()) && (await showMore.isVisible())) await showMore.click();
-  // Not asserted: the item's label. The board reads the admission's own confirmed flag, not the
-  // bed release the ward just confirmed, so it still says Expected discharge (reported on the PR).
+  // The ward's confirmation reaches the board: one discharge, one answer.
   await expect(shiftItem).toBeVisible();
+  await expect(shiftItem).toContainText("Confirmed discharge");
   await shiftItem.getByRole("button", { name: "They have left", exact: true }).click();
   const departure = page.getByRole("dialog", { name: "Confirm patient departure" });
   await expect(departure).toBeVisible();

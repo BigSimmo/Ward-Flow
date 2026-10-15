@@ -1037,6 +1037,23 @@ function replaceBedRelease(state: WardFlowState, releaseId: string, next: BedRel
   };
 }
 
+/**
+ * Keeps the stay's own discharge decision in step with its bed release. Screens that read the stay
+ * (the bed board's shift list, the patient card, the discharge board) read
+ * `Admission.dischargeConfirmedAt`; the ward's Confirm and Revert act on the release. Without this,
+ * one discharge carried two answers (release gate, 15 Oct 2026). `CONFIRM_BED_RELEASE` is
+ * ward-only, so the role is the ward manager, the one label `DISCHARGE_ROLE_LABELS` holds.
+ */
+function withAdmissionDischargeDecision(state: WardFlowState, admissionId: string, at: Instant | null): WardFlowState {
+  const admission = findAdmission(state, admissionId);
+  if (!admission) return state;
+  return replaceAdmission(state, admissionId, {
+    ...admission,
+    dischargeConfirmedAt: at,
+    dischargeConfirmedBy: at === null ? null : "Ward manager",
+  });
+}
+
 function findAdmission(state: WardFlowState, admissionId: string): Admission | undefined {
   return state.admissions.find((candidate) => candidate.id === admissionId);
 }
@@ -5467,7 +5484,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updated);
+      return withAdmissionDischargeDecision(
+        replaceBedRelease(state, release.id, updated),
+        release.admissionId,
+        event.now,
+      );
     }
 
     case "REVERT_BED_RELEASE": {
@@ -5501,7 +5522,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, reverted);
+      return withAdmissionDischargeDecision(replaceBedRelease(state, release.id, reverted), release.admissionId, null);
     }
 
     case "BLOCK_BED_RELEASE": {
