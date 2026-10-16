@@ -46,6 +46,8 @@ export function WardDischargeCriteriaCard({
   // here before saving, and not recorded, so the event carries nothing new.
   const [patientTold, setPatientTold] = useState(false);
   const status = dischargeCriteriaStatus(record, eligibility, now);
+  // Paused criteria can also be past their validity. Ticks then read as lapsed, not as met now.
+  const pastValidity = status.kind === "paused" && dischargeCriteriaStatus(record, "voluntary", now).kind === "lapsed";
   const ineligible = criteriaEligibilityRefusal(eligibility);
   const items = record?.items ?? [];
   const metList = items.filter((item) => item.metAt !== null).map((item) => item.criterion);
@@ -121,7 +123,11 @@ export function WardDischargeCriteriaCard({
                     {item.criterion}{" "}
                     {status.kind === "lapsed" || status.kind === "paused" ? (
                       <Badge size="sm" tone="neutral">
-                        {item.metAt !== null ? (status.kind === "lapsed" ? "Met before it lapsed" : "Met") : "Not met"}
+                        {item.metAt !== null
+                          ? status.kind === "lapsed" || pastValidity
+                            ? "Met before it lapsed"
+                            : "Met"
+                          : "Not met"}
                       </Badge>
                     ) : (
                       <Badge size="sm" tone={item.metAt !== null ? "success" : "neutral"}>

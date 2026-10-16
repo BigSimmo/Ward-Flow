@@ -86,9 +86,14 @@ describe("criteria led discharge card", () => {
     rerender(<WardDischargeCriteriaCard record={RECORD} eligibility="involuntary" now={NOW} onChange={vi.fn()} />);
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(/^Paused/);
     expect(screen.queryByRole("checkbox")).toBeNull();
-    // Paused criteria have not lapsed, so a met item still reads Met.
+    // Paused criteria still within their validity, so a met item still reads Met.
     expect(screen.getAllByText("Met")).toHaveLength(1);
     expect(screen.queryByText("Met before it lapsed")).toBeNull();
+    // Paused and past their validity, the ticks read as lapsed.
+    const later = NOW + CLINICAL_VALUES.dischargeCriteriaValidity.value;
+    rerender(<WardDischargeCriteriaCard record={RECORD} eligibility="involuntary" now={later} onChange={vi.fn()} />);
+    expect(screen.getByText("Met before it lapsed")).toBeInTheDocument();
+    expect(screen.queryByText("Met")).toBeNull();
     expect(screen.getByRole("button", { name: "Clear criteria" })).toBeInTheDocument();
   });
 
