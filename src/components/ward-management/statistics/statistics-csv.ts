@@ -1,3 +1,5 @@
+import { downloadBlob } from "@/components/ward-management/ward-download";
+
 /**
  * Quote one CSV cell. Text starting with = + - @ tab or CR is prefixed with an apostrophe so a
  * spreadsheet reads it as text, not a formula; numbers are written as they are.
@@ -10,14 +12,10 @@ export function csvCell(value: string | number): string {
 
 /** Writes rows as a CSV file and hands it to the browser as a download. */
 export function downloadCsv(filename: string, lines: readonly (readonly (string | number)[])[]): void {
-  const url = URL.createObjectURL(
+  downloadBlob(
     new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    filename,
   );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 /**

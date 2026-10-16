@@ -32,7 +32,7 @@ import type { AuditReview } from "@/components/ward-management/ward-audit";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   WardFlowOverride,
@@ -688,14 +688,23 @@ export function WardIdleLock() {
   );
 }
 
-/** Every print names who printed it, from where, and when (feature 11). */
-export function WardPrintFooter() {
+/** Reused inside isolated paper stacks as well as ordinary page print footers. */
+export function WardPrintAttribution({ at, className }: { at?: Instant; className?: string }) {
   const access = useEffectiveWardAccess();
   const { units, now } = useUnscopedWardFlow();
   return (
+    <span className={className} data-testid="ward-print-attribution">
+      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
+      {formatInstantWithDay(at ?? now, now)}. Synthetic data.
+    </span>
+  );
+}
+
+/** Every print names who printed it, from where, and when (feature 11). */
+export function WardPrintFooter() {
+  return (
     <p className={styles.printFooter} data-testid="ward-print-footer">
-      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at {formatInstant(now)}.
-      Synthetic data.
+      <WardPrintAttribution />
     </p>
   );
 }

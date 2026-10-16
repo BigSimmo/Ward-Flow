@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/components/ward-management/ward-download";
+
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
@@ -36,7 +38,7 @@ import {
   useAppearanceStore,
   useGlareStore,
 } from "@/components/ward-management/shell/ward-bar";
-import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
+import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail-preferences";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   playSyntheticUrgentChime,
@@ -602,14 +604,7 @@ export function SettingsScreen() {
         railOpen,
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `ward-flow-rules-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `ward-flow-rules-${new Date().toISOString().slice(0, 10)}.json`);
       showToast("Rules exported.");
     } catch {
       showToast("Rules could not be exported.");

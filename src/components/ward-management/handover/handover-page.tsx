@@ -41,6 +41,8 @@ import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-man
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { accessIsWholeNetwork, type WardAccess } from "@/components/ward-management/ward-role-access";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -134,11 +136,19 @@ import { type HandoverScope, NETWORK_SCOPE_VALUE, handoverScopeValue, parseHando
 
 export { type HandoverScope, handoverScopeValue, parseHandoverScope } from "./handover-scope";
 
+function allRecordsScopeLabel(access: WardAccess): string {
+  return accessIsWholeNetwork(access) ? "Whole network" : "All records you can access";
+}
+
 /** THE SCOPE'S NAME */
-export function handoverScopeLabel(scope: HandoverScope, units: Unit[]): string | undefined {
+export function handoverScopeLabel(
+  scope: HandoverScope,
+  units: Unit[],
+  allRecordsLabel = "Whole network",
+): string | undefined {
   switch (scope.kind) {
     case "network":
-      return "Whole network";
+      return allRecordsLabel;
     case "service":
       return scope.id;
     case "ward":
@@ -367,6 +377,8 @@ export function HandoverPage() {
     "inboxSnoozes",
   );
   const now = useWardFlowClock();
+  const access = useEffectiveWardAccess();
+  const allRecordsLabel = allRecordsScopeLabel(access);
   const longStayOn = useWardFeatureFlag("top25-long-stay-dossier");
   const isPhoneWidth = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -384,7 +396,7 @@ export function HandoverPage() {
     return handoverScopeLabel(parsed, units) === undefined ? NETWORK_SCOPE_VALUE : handoverScopeValue(parsed);
   });
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
-  const scopeLabel = handoverScopeLabel(scope, units) ?? "Whole network";
+  const scopeLabel = handoverScopeLabel(scope, units, allRecordsLabel) ?? allRecordsLabel;
 
   /* which handover */
   const [shift, setShift] = useState<HandoverShiftId>(() => defaultHandoverShift(now));
@@ -1596,6 +1608,7 @@ export function HandoverScopeControl({
   onChange: (value: string) => void;
   units: Unit[];
 }) {
+  const access = useEffectiveWardAccess();
   const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const sortedEds = useMemo(() => [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name)), []);
   const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
@@ -1612,7 +1625,7 @@ export function HandoverScopeControl({
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value={NETWORK_SCOPE_VALUE}>Whole network</option>
+        <option value={NETWORK_SCOPE_VALUE}>{allRecordsScopeLabel(access)}</option>
         <optgroup label="Service">
           {HEALTH_SERVICES.map((service) => (
             <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>

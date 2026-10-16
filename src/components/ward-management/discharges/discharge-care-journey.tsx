@@ -1,4 +1,6 @@
 "use client";
+
+import { downloadBlob } from "@/components/ward-management/ward-download";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-derivations";
 import { useState, type FormEvent, type ReactNode } from "react";
 import {
@@ -438,12 +440,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
               return;
             }
             const blob = new Blob([JSON.stringify(handoff, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "separation-review.json";
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, "separation-review.json");
           }}
         >
           Download coding review handoff

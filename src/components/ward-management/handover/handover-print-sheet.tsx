@@ -10,6 +10,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { flushSync } from "react-dom";
 import { ChevronLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
+import { WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
@@ -80,6 +81,9 @@ function paperItems(
   return out;
 }
 
+/** Page header allowance in px: title, stamp and the printed-by line, which may wrap. */
+const PAGE_HEADER_HEIGHT = 80;
+
 const itemHeight = (item: PaperItem) => (item.kind === "group" ? 22 : item.kind === "isbar" ? 20 : 23);
 
 /**
@@ -89,7 +93,7 @@ const itemHeight = (item: PaperItem) => (item.kind === "group" ? 22 : item.kind 
  */
 function paginate(items: PaperItem[], orientation: PrintOptions["orientation"], firstPageNote = 0): PaperItem[][] {
   const height = PAPER[orientation].height;
-  const avail = height - 30 - 24 - 58 - 34 - 22;
+  const avail = height - 30 - 24 - PAGE_HEADER_HEIGHT - 34 - 22;
   const total = items.reduce((sum, item) => sum + itemHeight(item), 34 + firstPageNote);
   const count = Math.max(1, Math.ceil(total / avail));
   const target = Math.min(avail, Math.ceil(total / count) + 30);
@@ -137,7 +141,7 @@ const extraHeight = (entry: ExtraEntry) => (entry.kind === "sigs" ? 105 : 23);
  * section that carries over repeats its heading marked "continued". Returns pages of columns.
  */
 function paginateExtra(streams: ExtraEntry[][], orientation: PrintOptions["orientation"]): ExtraSection[][][] {
-  const avail = PAPER[orientation].height - 30 - 24 - 58 - 22;
+  const avail = PAPER[orientation].height - 30 - 24 - PAGE_HEADER_HEIGHT - 22;
   const columns = streams.map((stream) => {
     const pages: ExtraSection[][] = [[]];
     const seen = new Set<ExtraSectionId>();
@@ -328,6 +332,7 @@ export function HandoverPrintSheet({
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
+        <WardPrintAttribution at={takenAt ?? now} className={styles.attribution} />
       </div>
     </header>
   );

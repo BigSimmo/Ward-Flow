@@ -165,6 +165,7 @@
 }
 
 .stamp {
+  max-width: 60%;
   margin-left: auto;
   flex: 0 0 auto;
   text-align: right;
@@ -176,6 +177,12 @@
   display: block;
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-ink-2);
+}
+
+/* Isolated handover pages carry the same provenance as ordinary page prints. */
+.stamp .attribution {
+  white-space: normal;
+  font-weight: 400;
 }
 
 .sum {
