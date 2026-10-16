@@ -1018,6 +1018,10 @@ function buildReferral(
   const decidedAt = NOW_ANCHOR - Math.floor(spec.raisedMinutesAgo / 2);
   const destination = {
     kind: "psychiatric_ward" as const,
+    // An answered arm belongs to the actual ward that accepted or declined it.
+    ...(spec.outcome
+      ? { unitId: "acceptedBy" in spec.outcome ? spec.outcome.acceptedBy : spec.outcome.declinedBy }
+      : {}),
     sex: spec.sex,
     gender: spec.sex,
     secureBedNeeded: spec.secure,

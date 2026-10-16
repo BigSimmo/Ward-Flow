@@ -2313,6 +2313,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "ger-adult-open",
           sex: "Female",
           // T10 (item 8): recorded so this referral, seeded as accepted at the network's one
           // Female-only ward, keeps passing `gender_designation` — never copied from `sex` in
@@ -2356,6 +2357,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "scgh-adult-open",
           sex: "Male",
           gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -2404,6 +2406,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "fsh-older-adult",
           sex: "Male",
           gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -2480,6 +2483,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "fsh-adult-secure",
           sex: "Male",
           // T10 (item 8): recorded so this referral keeps passing `gender_designation` at
           // `fsh-adult-secure`, the network's one Male-only ward — see RF-002's own comment above.
@@ -2564,6 +2568,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "bty-youth",
           sex: "Female",
           gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -2624,6 +2629,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "fsh-adult-secure",
           sex: "Male",
           // T10 (item 8): recorded for the same reason as RF-002/RF-006 above.
           gender: "Male",
@@ -3046,8 +3052,8 @@ export const referrals: Referral[] = [
    *
    * Every accepted one names a unit `referralEligibility()` genuinely accepts — checked against the
    * real function, the same discipline `RF-006`'s own fix-round comment holds every OTHER accepted
-   * referral in this file to, never merely plausible-looking. `RF-018` is the one decline; it names
-   * no unit at all. Five services get one of these each: WACHS gets two (`RF-016`, `RF-017`),
+   * referral in this file to, never merely plausible-looking. `RF-018` is the one decline, addressed
+   * to the local Geraldton ward. Five services get one of these each: WACHS gets two (`RF-016`, `RF-017`),
    * North Metro one (`RF-019`), South Metro one (`RF-020`), Private one (`RF-021`). `RF-016` is
    * also this fixture's first `"gp"`-sourced referral — a source the owner's 17 September answer 25
    * added to the model but nothing here had yet used.
@@ -3061,6 +3067,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "alb-adult-open",
           sex: "Female",
           gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -3092,6 +3099,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "bun-adult-open",
           sex: "Male",
           gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -3124,6 +3132,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "ger-adult-open",
           sex: "Female",
           gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -3156,6 +3165,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "scgh-adult-open",
           sex: "Female",
           gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -3188,6 +3198,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "fre-older-adult",
           sex: "Male",
           gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,
@@ -3220,6 +3231,7 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
+          unitId: "sjgs-adult-secure",
           sex: "Female",
           gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: true,

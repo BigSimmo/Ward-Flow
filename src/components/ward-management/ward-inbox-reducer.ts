@@ -255,19 +255,21 @@ export function reduceInboxEvent(
       }
       const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
       const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      // A discharge notification row names its stay, which may have no movement; a planned arrival
-      // row names its booking (stream D).
+      // Absence and discharge rows name stays; planned-arrival rows name bookings.
+      // Keep these category-specific checks so a movement id cannot impersonate a booking.
       const namesRecord =
-        inboxCategory === INBOX_CATEGORIES.support_notification_discharge
-          ? state.admissions.some((admission) => admission.id === inboxMovementId)
-          : inboxCategory === INBOX_CATEGORIES.planned_arrival_overdue
-            ? (state.plannedAdmissions ?? []).some((planned) => planned.id === inboxMovementId)
-            : state.movements.some((movement: Movement) => movement.id === inboxMovementId);
+        inboxCategory === INBOX_CATEGORIES.absent_without_leave
+          ? inboxRowExists(state, inboxItemId)
+          : inboxCategory === INBOX_CATEGORIES.support_notification_discharge
+            ? state.admissions.some((admission) => admission.id === inboxMovementId)
+            : inboxCategory === INBOX_CATEGORIES.planned_arrival_overdue
+              ? (state.plannedAdmissions ?? []).some((planned) => planned.id === inboxMovementId)
+              : state.movements.some((movement: Movement) => movement.id === inboxMovementId);
       if (!inboxCategory || !namesRecord) {
         return reject(
           state,
           event,
-          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id (an admission id for a discharge notification row)`,
+          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing record for that category`,
         );
       }
       decision.outcome = "accepted";

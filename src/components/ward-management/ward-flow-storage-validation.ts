@@ -31,6 +31,7 @@ import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
+import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -272,6 +273,7 @@ const movement = z
     admissionId: link,
     sourceAdmissionId: link,
     acceptedUnitId: link,
+    pullExpiresAt: z.optional(finite),
     closure: z.optional(closureRule),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
@@ -318,7 +320,7 @@ const admission = z.looseObject({
   homeRegion: nullableText,
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,
-  blockReason: nullableText,
+  blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
