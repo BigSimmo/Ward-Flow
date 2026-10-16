@@ -675,3 +675,11 @@
     overflow: visible;
   }
 }
+
+/* D-64: the criteria led discharge state beside "Record that they have left". */
+.footCriteria {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

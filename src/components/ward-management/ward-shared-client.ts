@@ -83,6 +83,9 @@ export class SharedWorkspaceClient {
   private viewGeneration = 0;
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
+  private needsRefresh = false;
+  /** Bumped when the working role ends, so a reply to a request sent under it is not adopted. */
+  private roleEpoch = 0;
   /** Local selection remains authoritative when a cleanup connection cannot persist a change. */
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
@@ -189,6 +192,7 @@ export class SharedWorkspaceClient {
       return new Error("Access denied");
     };
     const gate = (update: Partial<SharedView>) => {
+      // The person must choose or ask for a role first, so work made under the last one goes.
       this.pending = null;
       this.queue = [];
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
@@ -197,10 +201,34 @@ export class SharedWorkspaceClient {
     const answer = await send(workingAs);
     current();
     if (answer.noRole && workingAs) {
-      // Ending the selected role invalidates every concurrent request, including access steps
-      // waiting for a token. A fresh read chooses from the remaining roles without the old cache.
+      // The role this tab was working as has ended or been removed. Forget it, even when the external
+      // setter cannot persist that; never re-send a write under whichever remaining role the server
+      // would pick by default.
       this.workingAsOverride = null;
       this.options.workingAs?.set(null);
+      if (body) {
+        // Commands queued or awaiting retry were made under the ended role, so they go too. The desk
+        // is cleared, so nothing more can be queued, and read again in full before any change.
+        this.pending = null;
+        this.queue = [];
+        this.roleEpoch += 1;
+        this.viewGeneration += 1;
+        this.publish({ snapshot: null, eventLog: [] });
+        this.needsRefresh = true;
+        queueMicrotask(() => {
+          if (!this.busy && this.needsRefresh) {
+            this.needsRefresh = false;
+            void this.refresh();
+          }
+        });
+        const ended = {
+          code: "role-ended",
+          error: "The role this tab was working as has ended. Review the current desk before making changes.",
+        };
+        return { response: new Response(JSON.stringify(ended), { status: 422 }), value: ended };
+      }
+      // A read invalidates every concurrent request, including access steps waiting for a token. A
+      // fresh read chooses from the remaining roles without the old cache.
       this.viewGeneration += 1;
       const changed = gate({ status: "loading" });
       void this.refresh();
@@ -244,11 +272,15 @@ export class SharedWorkspaceClient {
     const grantGeneration = this.grantGeneration;
     try {
       const current = this.view.snapshot;
+      const epoch = this.roleEpoch;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
-      if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration) return;
+      // The role ended or a grant landed while this read was out: drop its desk, and the follow-up
+      // read replaces it.
+      if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
+        return;
       if (!response.ok) throw new Error("Workspace unavailable");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
@@ -274,6 +306,10 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
+      if (!this.disposed && this.needsRefresh) {
+        this.needsRefresh = false;
+        void this.refresh();
+      }
       if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
       else if (this.queue.length && this.view.status === "ready") void this.drain();
     }
@@ -305,10 +341,12 @@ export class SharedWorkspaceClient {
         this.publish({ status: "saving", error: null });
         const command = this.pending;
         const grantGeneration = this.grantGeneration;
+        const epoch = this.roleEpoch;
         const { response, value } = await this.request("/v1/workspace/commands", command);
-        if (generation !== this.viewGeneration) return;
+        // An ended role is this command's own definitive answer, though it also bumps the generation.
+        if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
         if (response.status >= 500) throw new Error("Save not confirmed");
-        if (value.snapshot) {
+        if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
           else {
             // Keep the definitive command result, but read the newly granted view rather than
@@ -344,9 +382,11 @@ export class SharedWorkspaceClient {
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
-                  : command.event.role === "demo" && value.snapshot?.demoControls === false
-                    ? "Demo controls are switched off on the shared workspace. Nothing was changed."
-                    : "The action was not applied. Review the workflow requirements.",
+                  : value?.code === "role-ended" && typeof value.error === "string"
+                    ? value.error
+                    : command.event.role === "demo" && value.snapshot?.demoControls === false
+                      ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                      : "The action was not applied. Review the workflow requirements.",
           });
           break;
         }
@@ -361,9 +401,14 @@ export class SharedWorkspaceClient {
     } finally {
       this.busy = false;
       if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
-      // A run that ended on a revision-only reply reads the board once to catch up.
-      if (!this.disposed && this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready")
+      // A run that ended on a revision-only reply or an ended role reads the board once to catch up.
+      if (
+        !this.disposed &&
+        (this.needsRefresh || (this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready"))
+      ) {
+        this.needsRefresh = false;
         void this.refresh();
+      }
     }
   }
   /**
