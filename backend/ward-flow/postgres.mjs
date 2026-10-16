@@ -169,7 +169,8 @@ export function createWorkspaceStore(
     let rollbackFailure;
     try {
       await client.query("BEGIN");
-      const result = await run(client, clock());
+      // A transaction owns this clock value; lock() refreshes it after any row-lock wait.
+      const result = await run(client, new Date(clock().getTime()));
       await client.query("COMMIT");
       return result;
     } catch (error) {
@@ -207,16 +208,16 @@ export function createWorkspaceStore(
         [workspaceId],
       ));
     }
+    at.setTime(clock().getTime());
     if (rows[0]?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
     if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
-    // `viewer()` ran before this transaction. A revoke takes this same lock, so checking again
-    // here means a role removed in between stops this request too.
+    // A selected ward desk can include several cover memberships. Resolve all of them again
+    // under the same workspace lock as revocation, using the time after any lock wait. Checking
+    // only the selected/base membership would leave ended cover in the request's write scope.
     if (view?.membershipId) {
-      const active = await client.query(
-        "SELECT 1 FROM ward_flow.memberships WHERE id=$1 AND workspace_id=$2 AND revoked_at IS NULL AND expires_at > $3",
-        [view.membershipId, workspaceId, at],
-      );
-      if (!active.rowCount) throw new Error("role-ended");
+      const current = await resolveViewer(actorId, { workingAs: view.membershipId }, client, at, view.version);
+      if (current.status !== "ok") throw new Error("role-ended");
+      Object.assign(view, current);
     }
     return rows[0];
   }
@@ -470,15 +471,17 @@ export function createWorkspaceStore(
    * say which with `workingAs`. Checked on
    * every request, so a removed or expired role stops at once.
    */
-  async function viewer(actorId, { bootstrap = false, workingAs = null } = {}) {
-    const at = clock();
-    const version = await schemaVersion();
+  async function viewer(actorId, options = {}) {
+    return resolveViewer(actorId, options, pool, clock(), await schemaVersion());
+  }
+  /** Resolve through the caller's connection so locked writes never use a stale joined scope. */
+  async function resolveViewer(actorId, { bootstrap = false, workingAs = null }, connection, at, version) {
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
     if (version >= ROLE_ACCESS_MIGRATION) {
       // From 9, a role not worked as for the set time is switched off (cover is too short to go
       // unused), and cover is a membership of its own kind.
       const covers = version >= ACCESS_COVER_MIGRATION;
-      const { rows } = await pool
+      const { rows } = await connection
         .query(
           covers
             ? "SELECT id, role, scope, kind, last_used_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $5) ORDER BY granted_at, id LIMIT 20"
@@ -547,7 +550,7 @@ export function createWorkspaceStore(
     )
       // When this role was last worked as, for the "not used" switch-off. Written at most hourly,
       // and only sent when due, so the board's poll does not cost a write each time.
-      await pool
+      await connection
         .query(
           "UPDATE ward_flow.memberships SET last_used_at=$2 WHERE id=$1 AND (last_used_at IS NULL OR last_used_at < $3)",
           [chosen.membershipId, at, writeEvery],
@@ -557,7 +560,7 @@ export function createWorkspaceStore(
           throw error;
         });
     if (chosen.membershipId) {
-      const { rows } = await pool.query(
+      const { rows } = await connection.query(
         "SELECT patient_id, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT 50",
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
@@ -834,7 +837,10 @@ export function createWorkspaceStore(
     async poll(actorId, knownRevision, view) {
       // A break glass record just opened or ended changes what this desk may see without a new
       // revision, so the whole scoped workspace goes back until it has settled.
-      if (view?.recentGrant) return { notModified: false, snapshot: await read(actorId, view) };
+      // A clinical revision does not identify a membership's view: cover can start or end
+      // without a workflow change. Without a client view token, member polls need the current
+      // scoped snapshot. Bootstrap whole-network polls keep the smaller unchanged reply.
+      if (view?.membershipId || view?.recentGrant) return { notModified: false, snapshot: await read(actorId, view) };
       const at = clock();
       const { rows } = await pool.query(
         "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
