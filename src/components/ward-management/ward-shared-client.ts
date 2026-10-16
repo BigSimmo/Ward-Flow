@@ -308,8 +308,21 @@ export class SharedWorkspaceClient {
           else {
             // Keep the definitive command result, but read the newly granted view rather than
             // replacing it with the command's earlier scope. Retry retains the same command ID.
-            const latest = await this.request("/v1/workspace");
-            if (generation !== this.viewGeneration) return;
+            // A concurrent grant can invalidate this reconciliation read. Retry the read with
+            // the new generation; the command response itself is already definitive.
+            let latest: Awaited<ReturnType<typeof this.request>>;
+            for (;;) {
+              const readGrantGeneration = this.grantGeneration;
+              try {
+                latest = await this.request("/v1/workspace");
+                if (generation !== this.viewGeneration) return;
+                if (readGrantGeneration !== this.grantGeneration) continue;
+                break;
+              } catch (error) {
+                if (generation === this.viewGeneration && readGrantGeneration !== this.grantGeneration) continue;
+                throw error;
+              }
+            }
             if (!latest.response.ok) throw new Error("Save not confirmed");
             this.adopt(latest.value.snapshot);
           }
