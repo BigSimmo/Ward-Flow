@@ -25,8 +25,6 @@ const REMAINING: Record<string, number> = {
   "src/components/ward-management/board/ward-board.tsx": 1,
   // Not mounted by any screen.
   "src/components/ward-management/ward-chrome-search.tsx": 18,
-  // Owned by the Tasks screen work.
-  "src/components/ward-management/ward-tasks-drawer.tsx": 6,
 };
 
 function isLiteral(node: ts.Expression): boolean {
