@@ -229,6 +229,11 @@
   gap: var(--wf-s-2);
 }
 
+/* D-64: the criteria led discharge tag sits with the glyph on the right, the number keeps the left. */
+.bedTileTag {
+  margin-left: auto;
+}
+
 .bedTileTop b {
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-14);
