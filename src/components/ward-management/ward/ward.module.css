@@ -4139,7 +4139,8 @@
   .phoneHeroTitle .wardSwitch::after {
     content: "";
     position: absolute;
-    inset: calc((32px - var(--spacing-tap, 3rem)) / 2);
+    /* The inset counts from inside the 1px border, so take that off too. */
+    inset: calc((32px - var(--spacing-tap, 3rem)) / 2 - 1px);
   }
 
   /* The hero title clips its overflow, which would clip the hit area too. The ward name keeps
