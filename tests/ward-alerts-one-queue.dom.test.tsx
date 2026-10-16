@@ -26,6 +26,7 @@ vi.mock("next/navigation", () => ({
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -53,8 +54,18 @@ beforeEach(() => {
 
 afterEach(() => {
   installMatchMediaStub(false);
-  act(() => setWardFeatureFlagOnDevice("alerts-one-queue", null));
+  act(() => {
+    setWardFeatureFlagOnDevice("alerts-one-queue", null);
+    setWardFeatureFlagOnDevice("role-access", null);
+    resetWardAccessStoreForTests();
+  });
 });
+
+/** An executive desk: the role access table gives it no Alerts screen. */
+function asExecutive() {
+  setWardFeatureFlagOnDevice("role-access", true);
+  setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+}
 
 describe("the drawer with one Alerts queue", () => {
   it("uses the Alerts name and groups, and links to the Alerts screen", () => {
@@ -117,6 +128,13 @@ describe("the phone dock with one Alerts queue", () => {
     renderDock();
     expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAttribute("aria-current", "page");
   });
+
+  it("keeps the Tasks drawer button for a role that may not open the Alerts screen", () => {
+    asExecutive();
+    renderDock();
+    expect(screen.queryByTestId("ward-phone-menu-alerts")).toBeNull();
+    expect(screen.getByTestId("ward-phone-menu-tasks")).toBeInTheDocument();
+  });
 });
 
 describe("the bar's Alerts button", () => {
@@ -154,5 +172,39 @@ describe("the bar's Alerts button", () => {
     fireEvent.click(trigger);
     expect(mockRouterPush).toHaveBeenCalledWith(WARD_ALERTS_HREF);
     expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
+  });
+
+  it("stays Tasks, with no link to Alerts, for a role that may not open the Alerts screen", async () => {
+    asExecutive();
+    installMatchMediaStub(true);
+    const trigger = renderBar();
+    expect(trigger).toHaveTextContent(/^Tasks/u);
+    fireEvent.click(trigger);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    const drawer = await screen.findByRole("complementary", { name: "Tasks" });
+    expect(within(drawer).queryByTestId("ward-tasks-open-alerts")).toBeNull();
+  });
+
+  it("chooses the Now tab before focusing the queue when another Alerts view is showing", async () => {
+    route.pathname = WARD_ALERTS_HREF;
+    const trigger = renderBar();
+    // A stand-in for the Alerts screen's tabs, with History showing and no queue rows drawn.
+    const tabs = document.createElement("div");
+    tabs.innerHTML =
+      '<section aria-label="Alerts"><button id="alerts-tab-now" role="tab" aria-selected="false">Now</button></section>';
+    document.body.append(tabs);
+    const nowTab = document.getElementById("alerts-tab-now")!;
+    const row = document.createElement("div");
+    row.dataset.alertId = "a1";
+    row.innerHTML = '<button data-testid="ward-alerts-open">Open</button>';
+    nowTab.addEventListener("click", () => {
+      nowTab.setAttribute("aria-selected", "true");
+      tabs.append(row);
+    });
+    fireEvent.click(trigger);
+    expect(nowTab).toHaveAttribute("aria-selected", "true");
+    await act(() => new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))));
+    expect(document.activeElement).toBe(within(row).getByTestId("ward-alerts-open"));
+    tabs.remove();
   });
 });

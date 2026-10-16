@@ -1053,7 +1053,9 @@ export function WardPhoneMenu({
       flowNow,
     ],
   );
-  const oneAlertsQueue = flagOn("alerts-one-queue");
+  // One Alerts queue only for a desk whose role may open the Alerts screen. Others keep the Tasks drawer.
+  const oneAlertsQueue =
+    flagOn("alerts-one-queue") && accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
 
   const close = () => setOpen(false);

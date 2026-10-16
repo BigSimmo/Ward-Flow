@@ -118,6 +118,7 @@ import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
+import { useAccessNavFilter } from "./ward-access";
 import styles from "./ward-bar.module.css";
 
 /**
@@ -535,16 +536,30 @@ const REFERRAL_BOARD_HREF = WARD_NAV.find((item) => item.id === "referrals")?.hr
  * itself when it is empty) instead of opening the same list again in a drawer.
  */
 function focusAlertsQueue(openCount: number) {
-  const target =
-    document.querySelector<HTMLElement>('[data-alert-id] [data-testid="ward-alerts-open"]') ??
-    document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
-  if (target) {
-    if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
-    target.scrollIntoView({ block: "nearest" });
-    target.focus();
+  const focusQueue = () => {
+    const target =
+      document.querySelector<HTMLElement>('[data-alert-id] [data-testid="ward-alerts-open"]') ??
+      document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
+    if (target) {
+      if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+      target.scrollIntoView({ block: "nearest" });
+      target.focus();
+    }
+    announceToWardShell(`You are on Alerts. ${openCount} invented alerts outstanding.`);
+  };
+  // Broadcast, Notices or History may be showing, with no queue rows mounted. Choose the Now tab
+  // first and focus once it has drawn, so the section fallback is only for an empty queue.
+  const nowTab = document.getElementById("alerts-tab-now");
+  if (nowTab && nowTab.getAttribute("aria-selected") !== "true") {
+    nowTab.click();
+    requestAnimationFrame(focusQueue);
+  } else {
+    focusQueue();
   }
-  announceToWardShell(`You are on Alerts. ${openCount} invented alerts outstanding.`);
 }
+
+/** The Alerts screen as an access entry, to ask whether this desk's role may open it. */
+const ALERTS_ACCESS_ENTRY = [{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }] as const;
 
 function isReferralSheetPath(pathname: string): boolean {
   return pathname.replace(/\/+$/, "") === WARD_REFERRAL_INTAKE_HREF;
@@ -560,7 +575,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
   // screen it does not open a second copy of the list; it takes the person to the queue.
-  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue");
+  // One Alerts queue only for a desk whose role may open the Alerts screen. Others keep Tasks.
+  const accessNav = useAccessNavFilter();
+  const alertsScreenOpen = accessNav(ALERTS_ACCESS_ENTRY).length > 0;
+  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen;
   const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
   const {
     movements,
@@ -2140,6 +2158,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               onSelectMovement={openMovement}
               onSelectDischarge={openDischarge}
               records={{ movements, admissions, patients, referrals, units }}
+              alertsScreenOpen={alertsScreenOpen}
             />
           </div>
         ) : null}

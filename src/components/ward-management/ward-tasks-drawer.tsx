@@ -88,6 +88,9 @@ type WardTasksDrawerProps = {
     units: readonly Unit[];
   };
   withBackdrop?: boolean;
+  /** One Alerts queue: false when this desk's role may not open the Alerts screen, so the drawer
+   *  keeps its Tasks words and offers no link to a screen the role cannot open. */
+  alertsScreenOpen?: boolean;
 };
 
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
@@ -267,9 +270,10 @@ export function WardTasksDrawer({
   onSelectDischarge,
   records,
   withBackdrop = false,
+  alertsScreenOpen = true,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  const words = useWardFeatureFlag("alerts-one-queue") ? ALERTS_WORDS : TASKS_WORDS;
+  const words = useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen ? ALERTS_WORDS : TASKS_WORDS;
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
