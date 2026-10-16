@@ -1,5 +1,7 @@
 "use client";
 
+import { perthCalendarDay } from "@/components/ward-management/ward-clock";
+
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
@@ -605,7 +607,9 @@ export function SettingsScreen() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `ward-flow-rules-${new Date().toISOString().slice(0, 10)}.json`;
+      const day = perthCalendarDay(new Date());
+      const date = `${day.year}-${String(day.monthIndex + 1).padStart(2, "0")}-${String(day.day).padStart(2, "0")}`;
+      anchor.download = `ward-flow-rules-${date}.json`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);

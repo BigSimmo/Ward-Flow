@@ -112,12 +112,14 @@ describe("what changed since you last looked", () => {
         "referralIds",
         "scenario",
         "version",
+        "worldGeneration",
+        "userId",
       ].sort(),
     );
     expect(parseLastLookSnapshot(JSON.stringify(snapshot))).toEqual(snapshot);
     expect(parseLastLookSnapshot(null)).toBeUndefined();
     expect(parseLastLookSnapshot("not json")).toBeUndefined();
-    expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, version: 2 }))).toBeUndefined();
+    expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, version: 1 }))).toBeUndefined();
     expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, referralIds: [1] }))).toBeUndefined();
     // A stored time that JSON overflows to Infinity would render as NaN:NaN.
     expect(
@@ -130,5 +132,18 @@ describe("what changed since you last looked", () => {
     }
     // An array (even an empty one) is not a map of ready counts by unit.
     expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, readyByUnit: [] }))).toBeUndefined();
+  });
+});
+
+describe("last-look world and account fences", () => {
+  it.each([
+    { worldGeneration: 2, userId: "account-one", at: NOW },
+    { worldGeneration: 1, userId: "account-two", at: NOW },
+    { worldGeneration: 1, userId: "account-one", at: NOW - 1 },
+  ])("starts fresh after generation, account or clock changes: %j", (next) => {
+    const world = { ...seededWorld(), worldGeneration: 1, userId: "account-one" };
+    const before = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
+    const after = takeLastLookSnapshot({ ...world, ...next }, next.at, DEFAULT_DUE_SOON_THRESHOLDS);
+    expect(changesSinceLastLook(before, after, world)).toBeUndefined();
   });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useUndoableStep } from "../use-undoable-step";
 import { useId, useMemo, useState } from "react";
 import { BellRing } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -14,6 +15,7 @@ import {
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
   SUPPORT_NOTIFICATION_PARTIES,
   SUPPORT_NOTIFICATION_PARTY_LABELS,
+  SUPPORT_NOTIFICATION_PARTY_SHORT,
   SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS,
   SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
   admissionSupportNotificationSubject,
@@ -91,11 +93,10 @@ export function SupportNotificationChecklist({
   const [day, setDay] = useState<ToldDay>("0");
   const [reason, setReason] = useState("");
   const [submittedAt, setSubmittedAt] = useState<number | null>(null);
-  const [savedFrom, setSavedFrom] = useState<number | null>(null);
+  const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
+  const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role, onMessage: setOutcomeMessage });
   const [timeError, setTimeError] = useState<string | null>(null);
-  const recordCount = supportNotifications?.length ?? 0;
-  // The form closes once the reducer has accepted (a new record exists); a refusal keeps it open.
-  const openParty = editing !== null && !(savedFrom !== null && recordCount > savedFrom) ? editing : null;
+  const openParty = editing;
 
   const subject = useMemo(() => {
     if (movementId) {
@@ -129,7 +130,7 @@ export function SupportNotificationChecklist({
     setDay("0");
     setReason("");
     setSubmittedAt(null);
-    setSavedFrom(null);
+    setOutcomeMessage(null);
     setTimeError(null);
   }
 
@@ -146,19 +147,33 @@ export function SupportNotificationChecklist({
     }
     setTimeError(null);
     setSubmittedAt(rejections.length);
-    setSavedFrom(recordCount);
     const target =
       subject.occasion === "discharge" ? { admissionId: subject.subjectId } : { movementId: subject.subjectId };
-    dispatch({
-      type: "RECORD_SUPPORT_NOTIFICATION",
-      role,
-      now,
-      occasion: subject.occasion,
-      ...target,
-      party,
-      outcome,
-      ...(outcome === "told" ? { who, contactedAt: contactedAt ?? now } : { reason }),
-    });
+    runRecorded(
+      () => {
+        const completion = dispatch({
+          type: "RECORD_SUPPORT_NOTIFICATION",
+          role,
+          now,
+          occasion: subject.occasion,
+          ...target,
+          party,
+          outcome,
+          ...(outcome === "told" ? { who, contactedAt: contactedAt ?? now } : { reason }),
+        });
+        if (completion && "then" in completion)
+          void completion.then((result) => {
+            if (result.status === "accepted") setEditing(null);
+          });
+        else if (completion?.status === "accepted") setEditing(null);
+        return completion;
+      },
+      {
+        success: `${SUPPORT_NOTIFICATION_PARTY_SHORT[party]} record saved`,
+        undo: (at) => ({ type: "UNDO_SUPPORT_NOTIFICATION", role, now: at, ...target }),
+        undone: "Tell record undone.",
+      },
+    );
   }
 
   return (
@@ -172,6 +187,7 @@ export function SupportNotificationChecklist({
           {SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion]} · Advisory · {done} of 3
         </span>
       </div>
+      {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
       {refusal ? (
         <p className={styles.error} role="alert">
           <StatusGlyph tone="danger" size={9} />

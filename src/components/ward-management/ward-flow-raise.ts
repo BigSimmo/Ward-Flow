@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import type { WardCommandDispatch } from "./ward-shared-client";
 import type { Instant } from "./ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "./ward-flow-events";
 import { useOptionalWardFlowSelect, useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
@@ -24,10 +25,13 @@ type FieldsArgument<T extends WardFlowEventType> = keyof WardEventFields<T> exte
   ? []
   : [fields: WardEventFields<T>];
 
-export type WardRaise = <T extends WardFlowEventType>(type: T, ...fields: FieldsArgument<T>) => void;
+export type WardRaise = <T extends WardFlowEventType>(
+  type: T,
+  ...fields: FieldsArgument<T>
+) => ReturnType<WardCommandDispatch>;
 
 /** The plain form, for a caller that already holds the dispatch, the desk and the time. */
-export function wardRaise(dispatch: (event: WardFlowEvent) => void, role: WardFlowRole, now: Instant): WardRaise {
+export function wardRaise(dispatch: WardCommandDispatch, role: WardFlowRole, now: Instant): WardRaise {
   return (type, ...[fields]) => dispatch({ ...fields, type, role, now } as WardFlowEvent);
 }
 

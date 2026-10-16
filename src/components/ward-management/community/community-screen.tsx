@@ -379,7 +379,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     }),
     [],
   );
-  const toastedAcceptRef = useRef<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
   // Phone (v10): the waiting referral and the departure open as bottom sheets.
   const isPhone = useIsPhone();
@@ -395,17 +394,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(false);
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!pendingAcceptance || !team || toastedAcceptRef.current === pendingAcceptance.id) return;
-    const names = [team.name, ...ratifiedSameServiceNames(team.name)];
-    const addressing = liveReferrals.find((referral) => referral.id === pendingAcceptance.id)?.addressing;
-    const accepted =
-      addressing !== undefined && names.includes(addressing.destination.teamName) && addressing.state === "accepted";
-    if (!accepted) return;
-    toastedAcceptRef.current = pendingAcceptance.id;
-    offerDecision(decisionStep(pendingAcceptance.id, "accepted"));
-  }, [pendingAcceptance, liveReferrals, team, decisionStep, offerDecision]);
 
   const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
   const [showCareEditor, setShowCareEditor] = useState(false);
@@ -568,12 +556,13 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       }
       setAcceptanceError(null);
       setPendingAcceptance({ id: referralId, rejectionCount: rejections.length });
-      raise("ACCEPT_REFERRAL", {
+      const completion = raise("ACCEPT_REFERRAL", {
         referralId,
         destinationKind: "community_team",
       });
+      offerDecision(decisionStep(referralId, "accepted"), { completion });
     },
-    [raise, liveReferrals, rejections.length, team],
+    [raise, liveReferrals, rejections.length, team, offerDecision, decisionStep],
   );
 
   useCommunityScreenWindowBridge({
@@ -965,7 +954,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     runDecision,
     offerDecision,
     decisionStep,
-    toastedAcceptRef,
     switchOpen,
     setSwitchOpen,
     isPhone,

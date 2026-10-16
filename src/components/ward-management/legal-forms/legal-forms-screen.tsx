@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
   Button,
@@ -161,7 +161,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   // who acted (the coordinator here) rather than a borrowed "ED".
   const routeRole = useRouteRole();
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
-  const { run: runStep, offer: offerUndo } = useUndoableStep({
+  const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -256,25 +256,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   );
   const partyCount = (party: SupportNotificationParty) =>
     tellSubjects.filter((subject) => subject.missing.includes(party)).length;
-  // A Tell record is made inside the sheet's checklist; Undo is offered here once it lands.
-  const tellOpen = tell !== null;
-  const tellCountRef = useRef(supportNotifications?.length ?? 0);
-  useEffect(() => {
-    const records = supportNotifications ?? [];
-    const grew = tellOpen && records.length > tellCountRef.current;
-    tellCountRef.current = records.length;
-    const record = grew ? records[records.length - 1] : undefined;
-    if (!record) return;
-    const target =
-      record.occasion === "discharge" ? { admissionId: record.subjectId } : { movementId: record.subjectId };
-    offerUndo({
-      success: `${SUPPORT_NOTIFICATION_PARTY_SHORT[record.party]} record saved`,
-      undo: (at) => ({ type: "UNDO_SUPPORT_NOTIFICATION", role: record.by, now: at, ...target }),
-      undone: "Tell record undone.",
-    });
-    // Only a new record while the sheet is open offers Undo.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supportNotifications, tellOpen]);
   const tellNext = (party: SupportNotificationParty) => {
     const first = tellSubjects.find((subject) => subject.missing.includes(party));
     setTell({ party, key: first?.key ?? null });

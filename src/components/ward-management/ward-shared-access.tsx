@@ -3,9 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import type { SharedChangeResult, SharedView, SharedWorkspaceClient } from "./ward-shared-client";
+import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
-import type { WardFlowEvent } from "./ward-flow-events";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
@@ -36,7 +35,7 @@ export type WardSharedConnection = SharedView & {
   signIn: () => void;
   signOut: () => void;
   retry: () => void;
-  dispatch: (event: WardFlowEvent) => void;
+  dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
   /** Roles, cover and requests for access through the signed-in connection. */
@@ -119,7 +118,12 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       credentials: undefined,
       enabled,
       pushApi,
-      dispatch: () => {},
+      dispatch: () =>
+        Promise.resolve({
+          commandId: "",
+          status: "cancelled",
+          message: "Shared sign-in configuration is unavailable.",
+        }),
       snapshot: null,
       eventLog: [],
       signedIn: false,
@@ -131,7 +135,13 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     enabled,
     pushApi,
     accessApi,
-    dispatch: (event) => supabase.client.current?.dispatch(event),
+    dispatch: (event) =>
+      supabase.client.current?.dispatchConfirmed(event) ??
+      Promise.resolve({
+        commandId: "",
+        status: "cancelled",
+        message: "Sign in and review the board before trying again.",
+      }),
     signOut: supabase.signOut,
   };
 }

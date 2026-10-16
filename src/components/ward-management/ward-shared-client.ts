@@ -61,6 +61,18 @@ export type SharedAccessRequest = {
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
+/** In-memory completion for one command. A failed save may have reached the server. */
+export type WardCommandOutcome = {
+  commandId: string;
+  status: "accepted" | "refused" | "failed" | "cancelled";
+  message?: string;
+  undoRecords?: WardFlowState["undoRecords"];
+  generation?: number;
+  /** Memory-only fence for an accepted toast; never serialized with workspace state. */
+  isCurrent?: () => boolean;
+};
+export type WardCommandDispatch = (event: WardFlowEvent) => void | WardCommandOutcome | Promise<WardCommandOutcome>;
+type QueuedCommand = { event: WardFlowEvent; commandId: string; confirmed: boolean; worldEpoch: number };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
 type PendingCommand = {
@@ -76,11 +88,32 @@ type PendingCommand = {
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
-  private queue: WardFlowEvent[] = [];
+  private queue: QueuedCommand[] = [];
+  private completions = new Map<string, (outcome: WardCommandOutcome) => void>();
+  private roleLifetime = new AbortController();
+  private settle(
+    commandId: string,
+    status: WardCommandOutcome["status"],
+    message?: string,
+    undoRecords?: WardFlowState["undoRecords"],
+  ) {
+    this.completions.get(commandId)?.({ commandId, status, message, undoRecords });
+    this.completions.delete(commandId);
+  }
+  private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
+    for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
+    this.queue = [];
+  }
+  private cancelAll(message: string) {
+    if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
+    this.pending = null;
+    this.cancelQueued(message);
+  }
   private disposed = false;
   private busy = false;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
+  private worldEpoch = 0;
   private readonly lifetime = new AbortController();
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
@@ -115,21 +148,30 @@ export class SharedWorkspaceClient {
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
       throw new Error("Incompatible workspace data");
-    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
+    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) {
+      if (
+        this.view.snapshot &&
+        snapshot.payload.state.worldGeneration !== this.view.snapshot.payload.state.worldGeneration
+      )
+        this.worldEpoch++;
+      this.publish({ snapshot, receivedAt: Date.now() });
+    }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
+    const roleSignal = this.roleLifetime.signal;
     let token: string;
     try {
       token = await this.options.token();
     } catch (error) {
+      if (this.disposed || roleSignal.aborted) throw error;
       if (error instanceof WardAuthError && error.kind === "session") {
-        this.pending = null;
-        this.queue = [];
+        if (this.pending) this.settle(this.pending.commandId, "refused", error.message);
+        this.cancelAll("The session ended. Sign in and review the board before trying again.");
         this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error: error.message });
       }
       throw error;
     }
-    if (this.disposed) throw new Error("Connection closed");
+    if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
     const stored = this.options.workingAs?.get() ?? null;
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
     const send = async (as: string | null) => {
@@ -142,23 +184,22 @@ export class SharedWorkspaceClient {
           ...(as ? { "x-ward-working-as": as } : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
-        signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal]),
+        signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal, roleSignal]),
       });
-      if (this.disposed) throw new Error("Connection closed");
+      if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const value = await response.json().catch(() => null);
-      if (this.disposed) throw new Error("Connection closed");
+      if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);
       return { response, value, noRole };
     };
     const denied = (error: string) => {
-      this.pending = null;
-      this.queue = [];
+      if (this.pending) this.settle(this.pending.commandId, "refused", error);
+      this.cancelAll("The session ended. Review the board before trying again.");
       this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });
       return new Error("Access denied");
     };
     const gate = (update: Partial<SharedView>) => {
-      this.pending = null;
-      this.queue = [];
+      this.cancelAll("Your working role changed. Review the board before trying again.");
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
       return new Error("Waiting on the person");
     };
@@ -166,6 +207,8 @@ export class SharedWorkspaceClient {
     if (answer.noRole && workingAs) {
       // The role this tab was working as has ended or been removed. Forget it and ask again.
       this.options.workingAs?.set(null);
+      // Never replay a mutation under a different role.
+      if (body && path === "/v1/workspace/commands") throw gate({ status: "loading", choices: undefined });
       answer = await send(null);
     }
     const { response, value, noRole } = answer;
@@ -202,6 +245,7 @@ export class SharedWorkspaceClient {
   async refresh() {
     if (this.busy || this.pending || this.disposed || this.gated()) return;
     this.busy = true;
+    const roleSignal = this.roleLifetime.signal;
     try {
       const current = this.view.snapshot;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
@@ -226,21 +270,51 @@ export class SharedWorkspaceClient {
         canRequest: undefined,
       });
     } catch {
-      if (!this.gated())
+      if (!roleSignal.aborted && !this.gated()) {
+        this.cancelQueued(
+          "This queued action was cancelled because the board could not be refreshed. Reconnect and review the board before trying again.",
+        );
         this.publish({
           status: "unavailable",
           error: "The shared board could not be refreshed. Reconnect before making changes.",
         });
+      }
     } finally {
       this.busy = false;
+      if (roleSignal.aborted && !this.disposed && this.view.status === "loading") void this.refresh();
       if (this.queue.length && this.view.status === "ready") void this.drain();
     }
   }
-  dispatch = (event: WardFlowEvent) => {
-    if (!this.view.snapshot || this.view.status === "unavailable" || this.gated() || this.disposed) return;
-    this.queue.push(event);
+  dispatch = (event: WardFlowEvent): Promise<WardCommandOutcome> => this.enqueue(event, false);
+  /** Feedback and Undo need this command's full accepted snapshot, even in a queued burst. */
+  dispatchConfirmed = (event: WardFlowEvent): Promise<WardCommandOutcome> => this.enqueue(event, true);
+  private enqueue(event: WardFlowEvent, confirmed: boolean): Promise<WardCommandOutcome> {
+    const commandId = (this.options.commandId ?? (() => crypto.randomUUID()))();
+    if (!this.view.snapshot || !["ready", "saving"].includes(this.view.status) || this.disposed)
+      return Promise.resolve({
+        commandId,
+        status: "cancelled",
+        message: "The workspace is not ready. Reconnect and review the board before trying again.",
+      });
+    const roleSignal = this.roleLifetime.signal;
+    const completion = new Promise<WardCommandOutcome>((resolve) =>
+      this.completions.set(commandId, (outcome) => {
+        const worldEpoch = this.worldEpoch;
+        resolve({
+          ...outcome,
+          isCurrent: () => !this.disposed && !roleSignal.aborted && this.worldEpoch === worldEpoch,
+        });
+      }),
+    );
+    this.queue.push({
+      event,
+      commandId,
+      confirmed: confirmed || event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO",
+      worldEpoch: this.worldEpoch,
+    });
     void this.drain();
-  };
+    return completion;
+  }
   private async drain() {
     if (this.busy || this.disposed) return;
     this.busy = true;
@@ -248,15 +322,23 @@ export class SharedWorkspaceClient {
       while (!this.disposed && (this.pending || this.queue.length)) {
         if (!this.pending) {
           const snapshot = this.view.snapshot;
-          const event = this.queue.shift();
-          if (!snapshot || !event) break;
+          const queued = this.queue.shift();
+          if (!snapshot || !queued) break;
+          if (queued.worldEpoch !== this.worldEpoch) {
+            this.settle(
+              queued.commandId,
+              "cancelled",
+              "The workspace was replaced before this queued action ran. Review the current board.",
+            );
+            continue;
+          }
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",
-            commandId: (this.options.commandId ?? (() => crypto.randomUUID()))(),
+            commandId: queued.commandId,
             expectedRevision: Math.max(snapshot.revision, this.headRevision),
-            event,
-            ...(this.queue.length ? { reply: "revision" as const } : {}),
+            event: queued.event,
+            ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
         }
         this.publish({ status: "saving", error: null });
@@ -269,7 +351,7 @@ export class SharedWorkspaceClient {
         this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });
         this.pending = null;
         if (!response.ok) {
-          this.queue = [];
+          this.cancelQueued();
           this.publish({
             status: "ready",
             error:
@@ -281,18 +363,30 @@ export class SharedWorkspaceClient {
                     ? "Demo controls are switched off on the shared workspace. Nothing was changed."
                     : "The action was not applied. Review the workflow requirements.",
           });
+          this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
           break;
         }
+        if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
+          this.worldEpoch++;
+        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords);
         this.publish({ status: "ready", error: null });
       }
     } catch {
-      if (!this.gated())
+      if (this.pending)
+        this.settle(
+          this.pending.commandId,
+          "failed",
+          "Save is not confirmed. Reconnect and review the board before trying again.",
+        );
+      this.cancelQueued();
+      if (!this.disposed && !this.gated() && this.view.status !== "loading")
         this.publish({
           status: "unavailable",
           error: "Save is not confirmed. Retry reconnects using the same command ID, so the action cannot run twice.",
         });
     } finally {
       this.busy = false;
+      if (!this.disposed && this.view.status === "loading") void this.refresh();
       // A run that ended on a revision-only reply reads the board once to catch up.
       if (!this.disposed && this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready")
         void this.refresh();
@@ -342,13 +436,18 @@ export class SharedWorkspaceClient {
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
+    this.cancelAll("Your working role changed. Review the board before trying again.");
+    this.roleLifetime.abort();
+    this.roleLifetime = new AbortController();
     this.options.workingAs?.set(workingAs);
     this.publish({ status: "loading", choices: undefined, error: null });
     void this.refresh();
   };
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
-    if (this.busy || this.pending) return;
+    this.cancelAll("Your working role changed. Review the board before trying again.");
+    this.roleLifetime.abort();
+    this.roleLifetime = new AbortController();
     this.options.workingAs?.set(null);
     this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
     void this.refresh();
@@ -440,8 +539,7 @@ export class SharedWorkspaceClient {
   dispose() {
     this.disposed = true;
     this.lifetime.abort();
-    this.queue = [];
-    this.pending = null;
+    this.cancelAll("The connection closed. Review the board before trying again.");
     this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   }
 }

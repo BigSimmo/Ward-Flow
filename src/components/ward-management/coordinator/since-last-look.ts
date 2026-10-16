@@ -19,7 +19,9 @@ import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-man
 export const LAST_LOOK_STORAGE_KEY = "ward-flow-coordinator-last-look";
 
 export type LastLookSnapshot = {
-  version: 1;
+  version: 2;
+  worldGeneration: number;
+  userId: string;
   /** The demo clock when this picture was taken. */
   at: Instant;
   /** A picture taken in another synthetic scenario is never compared with this one. */
@@ -34,6 +36,8 @@ export type LastLookSnapshot = {
 };
 
 export type LastLookWorld = {
+  worldGeneration?: number;
+  userId?: string;
   scenario: string;
   referrals: readonly Referral[];
   movements: readonly Movement[];
@@ -74,7 +78,9 @@ export function takeLastLookSnapshot(
     for (const movement of group.movements) delayKeys.push(`${movement.id}:${group.cause}`);
   }
   return {
-    version: 1,
+    version: 2,
+    worldGeneration: world.worldGeneration ?? 0,
+    userId: world.userId ?? "local-demo",
     at: now,
     scenario: world.scenario,
     referralIds: world.referrals.map((referral) => referral.id),
@@ -95,7 +101,14 @@ export function changesSinceLastLook(
   current: LastLookSnapshot,
   world: Pick<LastLookWorld, "movements" | "units">,
 ): ChangesSinceLastLook | undefined {
-  if (!previous || previous.scenario !== current.scenario) return undefined;
+  if (
+    !previous ||
+    previous.scenario !== current.scenario ||
+    previous.worldGeneration !== current.worldGeneration ||
+    previous.userId !== current.userId ||
+    previous.at > current.at
+  )
+    return undefined;
 
   const seenReferrals = new Set(previous.referralIds);
   const seenMovements = new Set(previous.movementIds);
@@ -218,7 +231,14 @@ function stringArray(field: unknown): boolean {
   return Array.isArray(field) && field.every((entry) => typeof entry === "string");
 }
 function snapshotHeaderInvalid(v: Record<string, unknown>): boolean {
-  return v.version !== 1 || typeof v.at !== "number" || !Number.isFinite(v.at) || typeof v.scenario !== "string";
+  return (
+    v.version !== 2 ||
+    !Number.isSafeInteger(v.worldGeneration) ||
+    typeof v.userId !== "string" ||
+    typeof v.at !== "number" ||
+    !Number.isFinite(v.at) ||
+    typeof v.scenario !== "string"
+  );
 }
 function snapshotListsInvalid(v: Record<string, unknown>): boolean {
   return ![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray);

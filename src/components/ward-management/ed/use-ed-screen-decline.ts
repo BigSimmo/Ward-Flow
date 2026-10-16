@@ -75,7 +75,7 @@ export function useEdInboxDecline({
   );
   const priorRejectionCountRef = useRef(rejections.length);
   const [declineCheckToken, setDeclineCheckToken] = useState(0);
-  const pendingDeclineRef = useRef<string | undefined>(undefined);
+  const pendingDeclineRef = useRef<{ id: string; completion: ReturnType<WardRaise> } | undefined>(undefined);
 
   useEffect(() => {
     // Nothing has been dispatched from this screen yet, so a rejection already in state belongs to
@@ -90,11 +90,14 @@ export function useEdInboxDecline({
       setDeclineRejection(undefined);
       const declined = pendingDeclineRef.current;
       if (declined !== undefined) {
-        offerStep({
-          success: "Referral declined",
-          undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined }),
-          undone: "Decline undone",
-        });
+        offerStep(
+          {
+            success: "Referral declined",
+            undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined.id }),
+            undone: "Decline undone",
+          },
+          { completion: declined.completion },
+        );
       }
     }
     pendingDeclineRef.current = undefined;
@@ -119,8 +122,7 @@ export function useEdInboxDecline({
     // button, so the control declines to advertise a decline it knows would be rejected.
     if (declineDraft === undefined) return;
     priorRejectionCountRef.current = rejections.length;
-    pendingDeclineRef.current = referralId;
-    raise("DECLINE_REFERRAL", {
+    const completion = raise("DECLINE_REFERRAL", {
       referralId,
       // Named, never defaulted: this screen is the emergency department's own inbox, so the
       // destination answering here is the emergency department. The reducer must not have to guess
@@ -128,6 +130,7 @@ export function useEdInboxDecline({
       destinationKind: "emergency_department",
       reason: declineDraft,
     });
+    pendingDeclineRef.current = { id: referralId, completion };
     setDeclineCheckToken((token) => token + 1);
     // ⚠️ **THE PANEL IS DELIBERATELY NOT CLOSED AND THE DRAFT NOT CLEARED HERE.** `dispatch` does
     // not say whether the reducer accepted, so closing on dispatch would discard a clinician's

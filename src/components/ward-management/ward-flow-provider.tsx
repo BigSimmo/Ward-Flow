@@ -1,5 +1,8 @@
 "use client";
 
+import { localCommandOutcome, useLocalCommandCompletion, type LocalCommandState } from "./use-local-command-completion";
+import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
+
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
@@ -117,7 +120,11 @@ type WardFlowContextValue = {
   worldGeneration: number;
   /** True once the saved session has been read (or declined). Before then the world is the seed. */
   sessionAdopted: boolean;
-  recordWardDeparture(admissionId: string, actingUnitId: string, leavingDestination: LeavingDestination): void;
+  recordWardDeparture(
+    admissionId: string,
+    actingUnitId: string,
+    leavingDestination: LeavingDestination,
+  ): ReturnType<WardCommandDispatch>;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string): DischargeOpenHandle;
   readDischargeRecord(
@@ -209,7 +216,7 @@ type WardFlowContextValue = {
   supportNotifications?: NonNullable<WardFlowState["supportNotifications"]>;
   /** Event log, step 1: every event dispatched this session (type, role, time, accepted, ids). */
   eventLog?: readonly EventLogEntry[];
-  dispatch: Dispatch<WardFlowEvent>;
+  dispatch: WardCommandDispatch;
   focusMovementId: string | undefined;
   setFocusMovementId: Dispatch<SetStateAction<string | undefined>>;
   resetDemoState: () => void;
@@ -426,6 +433,7 @@ type WardFlowContainer = {
    *  replays them on top of it, so an action taken in the first moments after load is applied (or
    *  refused, visibly) rather than silently dropped with the seed it landed on. */
   preAdoptionEvents?: readonly WardFlowEvent[];
+  earlyOutcomes?: readonly { event: WardFlowEvent; outcome: Omit<WardCommandOutcome, "commandId"> }[];
 };
 
 /**
@@ -535,15 +543,26 @@ function wardFlowContainerReducer(
  */
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
-  const accepted = nextWorld.rejections.length === container.world.rejections.length;
+  const outcome = localCommandOutcome(container.world, nextWorld);
+  const accepted = outcome.status === "accepted";
   const logged = eventLogEntryFor(event, accepted);
+  const earlyOutcomes = container.sessionAdopted
+    ? container.earlyOutcomes
+    : [...(container.earlyOutcomes ?? []), { event, outcome }];
   if (nextWorld.worldGeneration !== container.world.worldGeneration) {
-    return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
+    return {
+      ...container,
+      world: nextWorld,
+      typedTextSeen: false,
+      eventLog: [logged],
+      earlyOutcomes,
+      recoveryNotice: undefined,
+    };
   }
   const eventLog = [...(container.eventLog ?? []), logged];
   const typedTextSeen =
     container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
-  return { ...container, world: nextWorld, typedTextSeen, eventLog };
+  return { ...container, world: nextWorld, typedTextSeen, eventLog, earlyOutcomes };
 }
 
 /**
@@ -778,24 +797,52 @@ function WardFlowWorld({
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
   // for a typed-text event, before the toast that follows that dispatch is pushed.
+  const commandsRef = useRef<LocalCommandState>({ world: state, sequence: 0, early: new Map(), active: true });
+  useLocalCommandCompletion(commandsRef, state, container.earlyOutcomes, Boolean(container.sessionAdopted));
   const savesOnDeviceRef = useRef(false);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
-  const dispatch = useCallback<Dispatch<WardFlowEvent>>(
+  const dispatch = useCallback<WardCommandDispatch>(
     (event: WardFlowEvent) => {
       if (sharedEnabled) {
-        dispatchShared(event);
-        return;
+        return dispatchShared(event);
       }
       // A typed-text event stops saving on this device (the persistence effect below). Say so at once,
       // so a toast pushed straight after this dispatch does not claim the action was saved.
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
       localEditsSinceBroadcastRef.current = true;
+      const commandId = `local-${++commandsRef.current.sequence}`;
+      if (!container.sessionAdopted) {
+        const queuedEvent = { ...event } as WardFlowEvent;
+        const completion = new Promise<WardCommandOutcome>((resolve) =>
+          commandsRef.current.early.set(queuedEvent, (outcome) =>
+            resolve({
+              commandId,
+              ...outcome,
+              isCurrent: () =>
+                commandsRef.current.active && commandsRef.current.world.worldGeneration === outcome.generation,
+            }),
+          ),
+        );
+        dispatchContainer(queuedEvent);
+        return completion;
+      }
+      const before = commandsRef.current.world;
+      const next = wardFlowReducer(before, event);
+      commandsRef.current.world = next;
       dispatchContainer(event);
       broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
+      return {
+        commandId,
+        ...localCommandOutcome(
+          before,
+          next,
+          () => commandsRef.current.active && commandsRef.current.world.worldGeneration === next.worldGeneration,
+        ),
+      };
     },
-    [dispatchContainer, sharedEnabled, dispatchShared],
+    [dispatchContainer, sharedEnabled, dispatchShared, container.sessionAdopted],
   );
   // Every ward lookup follows the scenario on screen (`ward-scenarios.ts`). Synchronised in
   // `useLayoutEffect` (as well as reducer state transitions) so the component render body stays pure.
@@ -1033,8 +1080,11 @@ function WardFlowWorld({
             saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
           // A saved day identical to the seed already on screen (nothing was changed before the
           // reload) only moves the clock; the screens keep their nodes and their state.
-          const isSameWorld = JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
-          if (isSameWorld) return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
+          const isSameWorld =
+            !current.preAdoptionEvents?.length &&
+            JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
+          if (isSameWorld)
+            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined, recoveryNotice };
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
@@ -1042,12 +1092,13 @@ function WardFlowWorld({
             world: saved.state,
             typedTextSeen: false,
             restoredElapsed,
-            sessionAdopted: true,
+            sessionAdopted: false,
             sessionRestored: true,
+            recoveryNotice,
           };
           for (const event of current.preAdoptionEvents ?? [])
             restored = trackWardFlowTypedTextDispatch(restored, event);
-          return restored;
+          return { ...restored, sessionAdopted: true, preAdoptionEvents: undefined };
         }
         // The rejected or unreadable save leaves the first-render seed in place, with its notice.
         if (recoveryNotice) return { ...current, recoveryNotice, sessionAdopted: true, preAdoptionEvents: undefined };
@@ -1143,6 +1194,7 @@ function WardFlowWorld({
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
+      commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",
         world,
@@ -1172,7 +1224,7 @@ function WardFlowWorld({
         recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
           const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
           if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
-            dispatch({
+            return dispatch({
               type: "RECORD_LEAVING",
               role: "ward",
               now: nowRef.current,
@@ -1180,9 +1232,8 @@ function WardFlowWorld({
               actingUnitId,
               leavingDestination,
             });
-            return;
           }
-          dispatch({
+          return dispatch({
             type: "RECORD_PATIENT_DISCHARGE",
             role: "ward",
             now: nowRef.current,
@@ -1315,7 +1366,11 @@ function WardFlowWorld({
     <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
         {(storageUnavailable || container.recoveryNotice) && (
-          <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
+          <p role="status">
+            {storageUnavailable
+              ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice ?? ""}`.trim()
+              : container.recoveryNotice}
+          </p>
         )}
         <WardDemoNotSavedContext.Provider
           value={!shared.enabled && initialNow === undefined && container.typedTextSeen}

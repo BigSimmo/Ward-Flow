@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useMemo, useRef, useState, type Dispatch, type FormEvent } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
@@ -59,11 +59,7 @@ import {
   restrictionNotice,
 } from "@/components/ward-management/ward-derivations";
 import { eligibility, type EligibilityGate, type GateResult } from "@/components/ward-management/ward-eligibility";
-import {
-  WARD_FLOW_ROLE_LABELS,
-  type WardFlowEvent,
-  type WardFlowRole,
-} from "@/components/ward-management/ward-flow-events";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
   ARRIVAL_MODE_LABELS,
   URGENCY_LEVELS,
@@ -84,6 +80,7 @@ import {
   useOptionalWardFlowSelect,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -155,7 +152,7 @@ type ShortlistPanelProps = {
   referrals: Referral[];
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string) => void;
-  dispatch: Dispatch<WardFlowEvent>;
+  dispatch: WardCommandDispatch;
   /** Task 7 of the audit-wiring plan, 2026-09-16: the coordinator-configured parallel referral
    *  cap — previously the constant PARALLEL_REFERRAL_CAP, read directly in this file. */
   parallelReferralCap: number;
@@ -449,11 +446,13 @@ export function ShortlistPanel({
   const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId");
   const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
   const flowSetFocusMovementId = flowContext?.setFocusMovementId;
+  const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
   const { run: runStep } = useUndoableStep({
     dispatch,
     rejections: flowRejections,
     now,
     routeRole: "coordinator",
+    onMessage: setOutcomeMessage,
   });
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   /**
@@ -686,7 +685,8 @@ export function ShortlistPanel({
   // optimistically and left for the reducer to refuse silently (the defect Task 5's `canRefer`
   // exists to prevent, applied here to the undo path). Mirrors `RELEASE_PULL`/`CANCEL_TRANSPORT`'s
   // own preconditions in `ward-flow-reducer.ts` exactly.
-  const canReleasePull = movement.stage === "pulled";
+  const activeTransport = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+  const canReleasePull = movement.stage === "pulled" && !activeTransport;
   const canCancelTransport =
     movement.transport !== undefined &&
     movement.transport.cancelledAt === undefined &&
@@ -977,14 +977,17 @@ export function ShortlistPanel({
     // Task 6: `escalationContact` is now always one of `ESCALATION_CONTACTS` — a `<select>` can
     // never submit an empty or arbitrary value, so the old trim-and-check-length guard this
     // replaced is gone along with the free-text state it protected.
-    dispatch({
-      type: "RECORD_ESCALATION",
-      role: "coordinator",
-      now,
-      movementId,
-      triedUnitIds: declinedUnitIds,
-      contact: escalationContact,
-    });
+    runStep(
+      {
+        type: "RECORD_ESCALATION",
+        role: "coordinator",
+        now,
+        movementId,
+        triedUnitIds: declinedUnitIds,
+        contact: escalationContact,
+      },
+      { success: "Escalation recorded." },
+    );
     setEscalationOpen(false);
     setEscalationContact(ESCALATION_CONTACTS[0]);
   }
@@ -1040,7 +1043,10 @@ export function ShortlistPanel({
     if (!canReleasePull) return;
     // A real <form>: Enter inside a field submits it whatever the button advertises.
     if (releasePullReason === undefined) return;
-    dispatch({ type: "RELEASE_PULL", role: "coordinator", now, movementId, reason: releasePullReason });
+    runStep(
+      { type: "RELEASE_PULL", role: "coordinator", now, movementId, reason: releasePullReason },
+      { success: "Pulled bed released." },
+    );
     setReleasePullOpen(false);
   }
 
@@ -1054,7 +1060,10 @@ export function ShortlistPanel({
     if (!canCancelTransport) return;
     // A real <form>: Enter inside a field submits it whatever the button advertises.
     if (cancelTransportReason === undefined) return;
-    dispatch({ type: "CANCEL_TRANSPORT", role: "coordinator", now, movementId, reason: cancelTransportReason });
+    runStep(
+      { type: "CANCEL_TRANSPORT", role: "coordinator", now, movementId, reason: cancelTransportReason },
+      { success: "Transport cancelled." },
+    );
     setCancelTransportOpen(false);
   }
 
@@ -1207,6 +1216,7 @@ export function ShortlistPanel({
 
   return (
     <div className={`${styles.shortlistBody} ${shortlistStyles.body}`} data-testid={`ward-shortlist-${movement.id}`}>
+      {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
       <header className={`${styles.shortlistHeader} ${shortlistStyles.subjectHeader}`}>
         {/* PlacementPanel (v10 Home): the patient as "Given Surname" with UMRN and where they are,
             the Urgent and tier pills, then a facts grid. Words neutral, glyphs carry tone. */}
@@ -2468,15 +2478,17 @@ export function ShortlistPanel({
           pulled bed or cancelled a transport job was closing the movement outright, by recording an
           examination with outcome community_order or revoked. Each control renders only while the
           reducer would actually accept it — see `canReleasePull`/`canCancelTransport` above. */}
-        {canReleasePull || canCancelTransport ? (
+        {movement.stage === "pulled" || canCancelTransport ? (
           <section aria-label="Release or cancel">
             <h4 className={styles.shortlistSectionHeading}>Release the pulled bed or cancel transport</h4>
             <div className={styles.shortlistActionRow}>
-              {canReleasePull ? (
+              {movement.stage === "pulled" ? (
                 <button
                   type="button"
                   data-testid="ward-release-pull-toggle"
                   aria-expanded={releasePullOpen}
+                  disabled={!canReleasePull}
+                  aria-describedby={!canReleasePull ? "ward-release-pull-transport-blocked" : undefined}
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                   onClick={() => setReleasePullOpen((open) => !open)}
                 >
@@ -2496,6 +2508,11 @@ export function ShortlistPanel({
               ) : null}
             </div>
 
+            {movement.stage === "pulled" && activeTransport ? (
+              <p id="ward-release-pull-transport-blocked">
+                Cancel the active transport booking before releasing the pulled bed.
+              </p>
+            ) : null}
             {canReleasePull && releasePullOpen ? (
               <form
                 className={styles.shortlistOverrideForm}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
@@ -975,6 +977,7 @@ export function WardBoard({
     resolvePatientIdentity,
     rejections,
     dayZero,
+    dispatch,
   } = useWardFlowSelect(
     "units",
     "admissions",
@@ -986,6 +989,7 @@ export function WardBoard({
     "resolvePatientIdentity",
     "rejections",
     "dayZero",
+    "dispatch",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
@@ -1107,24 +1111,58 @@ export function WardBoard({
 
   /*
    * Walkthrough D12 (25 Sept 2026): the board announced success without checking whether the
-   * reducer refused. `dispatch` never says, so, as on the ward screen, the rejection count is read
-   * before the dispatch and compared on the next render: a new rejection shows its reason and says
-   * nothing was changed; otherwise the success message shows.
+   * reducer refused. Real commands now return their own terminal outcome, including shared saves.
+   * Standalone legacy dispatchers still compare their local refusal count on the next render.
    */
-  const outcomeCheckRef = useRef<{ prior: number; success: string; spoken: string } | null>(null);
+  const outcomeCheckRef = useRef<{
+    prior: number;
+    success: string;
+    spoken: string;
+    outcome?: WardCommandOutcome;
+  } | null>(null);
   const [outcomeToken, setOutcomeToken] = useState(0);
   // `record` makes the dispatch itself, with a literal event type at the call site, so every
   // dispatch stays readable to the override-surfaces guard; this only brackets it with the check.
   // `spoken` is what the screen reader hears: privacy review, 27 Sept 2026, a spoken announcement
   // never carries the patient's name, though the visible toast may.
   const dispatchAndReport = useCallback(
-    (record: () => void, success: string, spoken: string) => {
-      outcomeCheckRef.current = { prior: rejections.length, success, spoken };
-      record();
-      setOutcomeToken((token) => token + 1);
+    (record: () => ReturnType<WardCommandDispatch>, success: string, spoken: string) => {
+      const check = { prior: rejections.length, success, spoken };
+      const result = record();
+      if (result && "then" in result) {
+        void result.then((outcome) => {
+          outcomeCheckRef.current = { ...check, outcome };
+          setOutcomeToken((token) => token + 1);
+        });
+      } else {
+        outcomeCheckRef.current = result ? { ...check, outcome: result } : check;
+        setOutcomeToken((token) => token + 1);
+      }
     },
     [rejections.length],
   );
+  const { runRecorded: runDeparture } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: "ward",
+    onMessage: (message) => {
+      setToastMessage(message);
+      announceToWardShell(
+        message.startsWith("Recorded departure") ? "Recorded departure: this patient has left the ward." : message,
+      );
+    },
+  });
+  const recordDepartureAndReport = (
+    record: () => ReturnType<WardCommandDispatch>,
+    success: string,
+    admissionId: string,
+  ) =>
+    runDeparture(record, {
+      success,
+      undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
+      undone: "Departure undone. This patient is back on the ward.",
+    });
   const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
     dispatchAndReport(
@@ -1142,10 +1180,19 @@ export function WardBoard({
     const check = outcomeCheckRef.current;
     if (outcomeToken === 0 || check === null) return;
     outcomeCheckRef.current = null;
-    const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
-    const msg = refused ? `Not recorded: ${refused.reason}. Nothing was changed.` : check.success;
+    const refused = check.outcome
+      ? undefined
+      : rejections.length > check.prior
+        ? rejections[rejections.length - 1]
+        : undefined;
+    const unaccepted = check.outcome && check.outcome.status !== "accepted";
+    const msg = unaccepted
+      ? (check.outcome!.message ?? "Save is not confirmed. Review the board before trying again.")
+      : refused
+        ? `Not recorded: ${refused.reason}. Nothing was changed.`
+        : check.success;
     setToastMessage(msg);
-    announceToWardShell(refused ? msg : check.spoken);
+    announceToWardShell(refused || unaccepted ? msg : check.spoken);
   }, [outcomeToken, rejections]);
 
   useEffect(() => {
@@ -1571,7 +1618,7 @@ export function WardBoard({
     if (pendingConfirm.kind === "leaving") {
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
       if (!admissionId) return;
-      dispatchAndReport(
+      recordDepartureAndReport(
         () =>
           recordWardDeparture
             ? recordWardDeparture(admissionId, unit.id, leavingDestination)
@@ -1581,7 +1628,7 @@ export function WardBoard({
                 leavingDestination,
               }),
         `Recorded departure: ${pendingConfirm.who} has left the ward.`,
-        "Recorded departure: this patient has left the ward.",
+        admissionId,
       );
       if (selectedTile && admissionId === selectedTile.key) {
         closeDetail();
@@ -1603,7 +1650,7 @@ export function WardBoard({
   const handleShiftAction = (item: ShiftTileItem, word: string) => {
     if (word === "They have left") {
       const executeLeaving = () => {
-        dispatchAndReport(
+        recordDepartureAndReport(
           () =>
             recordWardDeparture
               ? recordWardDeparture(item.selectableKey!, unit.id, leavingDestination)
@@ -1613,7 +1660,7 @@ export function WardBoard({
                   leavingDestination,
                 }),
           `Recorded departure: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
-          "Recorded departure: this patient has left the ward.",
+          item.selectableKey!,
         );
       };
 
@@ -2739,7 +2786,7 @@ export function WardBoard({
                             data-testid="ward-board-record-leaving-submit"
                             onClick={(e) => {
                               const executeLeaving = () => {
-                                dispatchAndReport(
+                                recordDepartureAndReport(
                                   () =>
                                     recordWardDeparture
                                       ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
@@ -2749,7 +2796,7 @@ export function WardBoard({
                                           leavingDestination,
                                         }),
                                   `Recorded departure: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
-                                  "Recorded departure: this patient has left the ward.",
+                                  selectedTile.key,
                                 );
                                 closeDetail();
                               };

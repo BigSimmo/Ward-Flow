@@ -1,7 +1,7 @@
 "use client";
 
 import { History } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 
 import { createBrowserStore } from "@/lib/client-store-factory";
 
@@ -22,7 +22,8 @@ import {
   type LastLookWorld,
 } from "./since-last-look";
 
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
+import { useOptionalWardFlowSelect, useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /**
  * Smart feature 9: the short "Since you last looked" notice at the top of the Command screen. The
  * comparison lives in `since-last-look.ts`; this file only remembers when the coordinator left and
@@ -113,7 +114,13 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
  */
 export function useSinceLastLook(world: LastLookWorld, now: Instant) {
   const thresholds = useDueSoonThresholds();
-  const current = useMemo(() => takeLastLookSnapshot(world, now, thresholds), [world, now, thresholds]);
+  const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
+  const account = useContext(SharedAccessContext);
+  const userId = account?.actorId ?? "local-demo";
+  const current = useMemo(
+    () => takeLastLookSnapshot({ ...world, worldGeneration: generation, userId }, now, thresholds),
+    [world, now, thresholds, generation, userId],
+  );
   const latest = useRef(current);
   useEffect(() => {
     latest.current = current;
