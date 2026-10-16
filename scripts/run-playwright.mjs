@@ -499,7 +499,15 @@ function deriveIsolatedRunExclude(rootProjectRoot, isolatedRunExtraEntries) {
     );
   }
   const derivedEntries = rootExclude.map((entry) => {
-    if (typeof entry !== "string" || entry.length === 0 || entry.startsWith("/") || entry.startsWith(".")) {
+    // A hidden directory is root-relative too. Reject path roots and traversal segments on both
+    // platforms, rather than rejecting every leading dot (including .worktrees/**).
+    if (
+      typeof entry !== "string" ||
+      entry.length === 0 ||
+      path.posix.isAbsolute(entry) ||
+      path.win32.parse(entry).root.length > 0 ||
+      entry.split(/[\\/]/).some((segment) => segment === "." || segment === "..")
+    ) {
       throw new Error(
         `${rootTsconfigPath} "exclude" entry ${JSON.stringify(entry)} is not a plain root-relative pattern; the isolated Playwright run's tsconfig cannot safely rewrite it to "../../".`,
       );
