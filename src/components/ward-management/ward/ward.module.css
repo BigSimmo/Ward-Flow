@@ -4130,8 +4130,10 @@
 
 /* F-18: the phone's 32px ward switch reaches 44px on touch through a hit area, not a bigger face. */
 @media (max-width: 48rem) and (pointer: coarse) {
+  /* Above the ward name and meta line, so their text does not swallow the hit area. */
   .phoneHeroTitle .wardSwitch {
     position: relative;
+    z-index: 1;
   }
 
   .phoneHeroTitle .wardSwitch::after {
