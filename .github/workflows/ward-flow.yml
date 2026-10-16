@@ -156,7 +156,7 @@ jobs:
       - name: Check for new unused code
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
-          KNIP_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          KNIP_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: npm run check:knip
       # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
       # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a

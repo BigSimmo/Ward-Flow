@@ -58,10 +58,13 @@ export function baselineGrowth(baseline, baseBaseline) {
   return baseline.filter((entry) => !known.has(entry));
 }
 
-// The baseline as it stood at the pull request's base commit, or null when there is none to compare
-// with (not a pull request, or the baseline is being introduced by this very change).
+// The baseline as it stood at the base commit, or null when there is none to compare with (no base
+// given, or the baseline is being introduced by this very change). A base commit that cannot be read
+// fails closed, so a shallow checkout cannot switch the growth check off.
 function baseBaseline(sha) {
   if (!sha) return null;
+  const commit = spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`]);
+  if (commit.status !== 0) throw new Error(`Cannot read base commit ${sha} to compare knip-baseline.json`);
   const result = spawnSync("git", ["show", `${sha}:knip-baseline.json`], { encoding: "utf8" });
   if (result.status !== 0) return null;
   return JSON.parse(result.stdout);
