@@ -33,7 +33,6 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
     selectedPatientJourneyEvents,
     patientBay,
   } = ctx;
-  const closePatientDialog = () => setSelectedPatientId(null);
   return (
     <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
@@ -197,7 +196,8 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                   data-testid={`ward-ed-drawer-arrival-plan-toggle-${selectedPatient.id}`}
                   className={styles.acceptButton}
                   onClick={() => {
-                    closePatientDialog();
+                    // Keep this dialog mounted so the arrival modal can restore focus to its
+                    // trigger when it closes.
                     setArrivalPlanOpenFor(selectedPatient.id);
                   }}
                 >
