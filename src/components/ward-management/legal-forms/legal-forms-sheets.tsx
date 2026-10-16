@@ -17,6 +17,7 @@ import {
   cx,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { form3CRefusedAfter3D } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
@@ -184,6 +185,7 @@ export function RecordFormSheet({
   openMovements,
   labelOf,
   now = 0,
+  recordUnavailable,
   onSaveForm,
 }: {
   open: boolean;
@@ -193,6 +195,7 @@ export function RecordFormSheet({
   openMovements: Movement[];
   labelOf: (movement: Movement) => string;
   now?: Instant;
+  recordUnavailable?: string;
   onSaveForm?: (input: { movementId: string; formCode: string; writtenAt: Instant }) => boolean;
 }) {
   // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
@@ -200,20 +203,26 @@ export function RecordFormSheet({
   const [timeOnForm, setTimeOnForm] = useState("");
   const typeRef = useRef<HTMLSelectElement | null>(null);
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
+  const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
   // Dismissing without saving drops the typed time, so it never greets the next patient's form.
   const dismiss = () => {
     setTimeOnForm("");
     onClose();
   };
-  const saveBlockReason = !draft.movement
-    ? "Choose a movement first."
-    : !draft.form
-      ? "Choose a form type first."
-      : !isOwnedLegalFormCode(draft.form)
-        ? `Form ${draft.form} written time is not recorded on this sheet.`
-        : parsedWrittenAt === null
-          ? "Enter the time written on the form as HH:MM, no later than now."
-          : undefined;
+  const saveBlockReason =
+    recordUnavailable ??
+    (!draft.movement
+      ? "Choose a movement first."
+      : !draft.form
+        ? "Choose a form type first."
+        : !isOwnedLegalFormCode(draft.form)
+          ? `Form ${draft.form} written time is not recorded on this sheet.`
+          : draft.form === "3C" &&
+              form3CRefusedAfter3D(selectedMovement?.legalForm?.code ?? selectedMovement?.legalClock?.code)
+            ? "Form 3C is refused when the person arrived on a Form 3D."
+            : parsedWrittenAt === null
+              ? "Enter the time written on the form as HH:MM, no later than now."
+              : undefined);
   return (
     <Sheet
       open={open}
@@ -321,12 +330,14 @@ export function ExtendSheet({
   label,
   now,
   onClose,
+  extendUnavailable,
   onExtendForm,
 }: {
   target: Movement | null;
   label: string;
   now: Instant;
   onClose: () => void;
+  extendUnavailable?: string;
   onExtendForm?: (movement: Movement, dueAt: Instant) => boolean;
 }) {
   const thresholds = useDueSoonThresholds();
@@ -334,7 +345,8 @@ export function ExtendSheet({
   const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
   const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
   const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
-  const extendBlockReason = parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined;
+  const extendBlockReason =
+    extendUnavailable ?? (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
     setExpiryState(null);
@@ -360,7 +372,7 @@ export function ExtendSheet({
             disabledReason={extendBlockReason}
             title={extendBlockReason}
             onClick={() => {
-              if (!target || parsedDueAt === null) return;
+              if (extendBlockReason || !target || parsedDueAt === null) return;
               const accepted = onExtendForm ? onExtendForm(target, parsedDueAt) : true;
               if (accepted) {
                 setExpiryState(null);

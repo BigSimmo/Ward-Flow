@@ -36,6 +36,7 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { form3CRefusedAfter3D } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -299,6 +300,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
   // Record a form: the coordinator always may; another route sees it greyed with the reason.
   const recordGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
+  const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
   const markReceived = (movement: Movement) => {
     if (!receivedGate.allowed) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
@@ -449,6 +451,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       focusGap={focusGap}
       refusal={lastWrittenRefusal?.reason}
       onSaveWritten={({ writtenAt, region, ageBand }) => {
+        if (!recordGate.allowed) return;
         const formCode = selected.legalForm?.code;
         if (!isOwnedLegalFormCode(formCode)) return;
         const movementId = selected.id;
@@ -470,9 +473,11 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           },
         );
       }}
+      recordUnavailable={recordGate.reason}
       onMarkReceived={() => markReceived(selected)}
       markReceivedUnavailable={receivedGate.reason}
       onExtend={() => setExtendId(selected.id)}
+      extendUnavailable={extendGate.reason}
       onRecordNext={() => openRecord(selected.id)}
       onRequirements={(code) => setRequirementsCode(code)}
       onCopy={copySelectedSummary}
@@ -494,7 +499,12 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     selected && nextGap
       ? {
           label: GAP_ACTION[nextGap],
-          disabledReason: nextGap === "received" && !receivedGate.allowed ? receivedGate.reason : undefined,
+          disabledReason:
+            nextGap === "received" && !receivedGate.allowed
+              ? receivedGate.reason
+              : nextGap === "written" && !recordGate.allowed
+                ? recordGate.reason
+                : undefined,
           onAction: () => {
             if (nextGap === "received") markReceived(selected);
             else {
@@ -507,7 +517,14 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   // v10 phone: the sheet foot always pins the next step. With no gap left to record it is the
   // panel's own "Record next form", and Copy sits beside it, so neither floats mid-sheet.
   const phoneSheetPrimary =
-    phonePrimary ?? (selected ? { label: "Record next form", onAction: () => openRecord(selected.id) } : undefined);
+    phonePrimary ??
+    (selected
+      ? {
+          label: "Record next form",
+          disabledReason: recordGate.allowed ? undefined : recordGate.reason,
+          onAction: () => openRecord(selected.id),
+        }
+      : undefined);
   const phoneSheetSecondary = selected
     ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
     : undefined;
@@ -1060,9 +1077,14 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           openMovements={openMovements}
           labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
           now={now}
+          recordUnavailable={recordGate.reason}
           onSaveForm={({ movementId, formCode, writtenAt }) => {
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
-            if (!openMovements.some((movement) => movement.id === movementId)) return false;
+            const movement = openMovements.find((candidate) => candidate.id === movementId);
+            if (!movement) return false;
+            if (formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
+              return false;
+            }
             runStep(
               {
                 type: "RECORD_LEGAL_FORM_WRITTEN",
@@ -1089,7 +1111,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           })()}
           now={now}
           onClose={() => setExtendId(null)}
+          extendUnavailable={extendGate.reason}
           onExtendForm={(movement, dueAt) => {
+            if (!extendGate.allowed) return false;
             if (!openMovements.some((candidate) => candidate.id === movement.id)) return false;
             runStep(
               {
@@ -1101,6 +1125,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               },
               {
                 success: `Form ${movement.legalForm?.code ?? ""} extended`,
+                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
                 undone: "Form extension undone.",
               },
             );
