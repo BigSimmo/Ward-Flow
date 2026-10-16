@@ -61,6 +61,7 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
       </WardFlowProvider>,
     );
 
+    fireEvent.click(screen.getAllByRole("button", { name: /^Open No eligible bed/ })[0]!);
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
     const escalateBtn = within(panel).getByRole("button", { name: /Escalate/i });
     expect(escalateBtn).not.toBeDisabled();

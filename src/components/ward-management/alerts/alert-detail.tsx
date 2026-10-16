@@ -31,6 +31,7 @@ import {
   alertDetail,
   alertGroupOf,
   alertKindOf,
+  escalationAppliesTo,
   minutesText,
   raisedAt,
   type AlertSubject,
@@ -244,12 +245,18 @@ export function AlertDetail({
           variant="ghost"
           icon={isEscalated ? Check : ArrowUpRight}
           disabledReason={
-            isEscalated ? "Already escalated" : !movement ? "This alert has no movement to escalate" : undefined
+            isEscalated
+              ? "Already escalated"
+              : !movement
+                ? "This alert has no movement to escalate"
+                : !escalationAppliesTo(item)
+                  ? "Escalation records that the bed search is exhausted, which this alert is not about"
+                  : undefined
           }
           reasonDisplay="tooltip"
           aria-label={isEscalated ? `Escalated ${subjectLine}` : `Escalate ${subjectLine}`}
           onClick={() => {
-            if (movement) handlers.onEscalate?.(item);
+            if (movement && escalationAppliesTo(item)) handlers.onEscalate?.(item);
           }}
         >
           {isEscalated ? "Escalated" : "Escalate"}

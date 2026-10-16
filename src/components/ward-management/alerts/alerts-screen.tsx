@@ -76,6 +76,7 @@ import {
   alertGroupOf,
   alertKindOf,
   byOldest,
+  escalationAppliesTo,
   effectiveOwner,
   isQueueItem,
   minutesText,
@@ -613,7 +614,7 @@ function AlertsWorkspace() {
     },
     onEscalate: (item) => {
       setChosenId(item.id);
-      if (item.movementId) {
+      if (item.movementId && escalationAppliesTo(item)) {
         const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
         track({
           type: "RECORD_ESCALATION",
@@ -626,7 +627,7 @@ function AlertsWorkspace() {
           contact: ESCALATION_CONTACTS[0],
         });
       }
-      // An alert with no movement has nothing to escalate: the button is disabled, so no notice is made.
+      // An alert with no movement, or not about a bed search, has nothing to escalate: the button is disabled, so no notice is made.
     },
   };
   const queueHandlers: QueueHandlers = {

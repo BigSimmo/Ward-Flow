@@ -58,6 +58,19 @@ export function alertKindOf(id: string): AlertKind | undefined {
   return KIND_PREFIXES.find(([, prefix]) => id.startsWith(prefix))?.[0];
 }
 
+/**
+ * Escalate stamps `Movement.escalation`, which means "the bed search is exhausted and the state desk
+ * was rung". Only the alerts about finding a placement can honestly say that: every ward declined,
+ * the destination is unsuitable, or no eligible bed exists. A legal-form deadline, a held bed, a
+ * transport delay and the rest are about something else, so Escalate stays unavailable for them.
+ */
+const PLACEMENT_ALERT_KINDS: readonly AlertKind[] = ["declines", "unsuitable", "nobed"];
+
+export function escalationAppliesTo(item: InboxItem): boolean {
+  const kind = alertKindOf(item.id);
+  return kind !== undefined && PLACEMENT_ALERT_KINDS.includes(kind);
+}
+
 /** Only the categories this screen has always shown; anything else in the inbox stays elsewhere. */
 export function isQueueItem(item: InboxItem): boolean {
   return alertKindOf(item.id) !== undefined;
