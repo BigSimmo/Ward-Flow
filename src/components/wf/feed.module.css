@@ -208,21 +208,6 @@
   flex: 0 0 auto;
 }
 
-@keyframes wfSkShimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sk {
-    animation: none;
-  }
-}
-
 @media (forced-colors: active) {
   .tl::before {
     background: CanvasText;

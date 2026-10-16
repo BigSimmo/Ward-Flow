@@ -412,9 +412,6 @@
   .stat {
     border-left-color: CanvasText;
   }
-  .current {
-    outline: 2px solid CanvasText;
-  }
 }
 
 /* A stat that opens a panel: a soft pill that reads as a control, chevron turns when open. */

@@ -1,16 +1,10 @@
-/* Page tools in the header bar: quiet pill buttons with an icon, a label and an optional count. */
+/* Page tools in the header bar: a group that hides on phones. */
 
 .tools {
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
-}
-
-@media (max-width: 1600px) {
-  .tool {
-    padding: 0 10px;
-  }
 }
 
 @media (max-width: 48rem) {
