@@ -72,6 +72,8 @@ export class SharedWorkspaceClient {
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
   private workingAs: string | null = null;
+  /** Responses started under an earlier membership must not update the newly selected desk. */
+  private membershipGeneration = 0;
   private readonly lifetime = new AbortController();
   private accessDenied() {
     return this.view.status === "not-authorised";
@@ -186,10 +188,14 @@ export class SharedWorkspaceClient {
     this.busy = true;
     try {
       const current = this.view.snapshot;
+      const membershipGeneration = this.membershipGeneration;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
+      // A role switch may have completed while this request was in flight. Its response belongs
+      // to the old desk, even when it has the same revision as the new desk.
+      if (membershipGeneration !== this.membershipGeneration) return;
       if (!response.ok) throw new Error("Workspace unavailable");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
@@ -240,7 +246,15 @@ export class SharedWorkspaceClient {
         }
         this.publish({ status: "saving", error: null });
         const command = this.pending;
+        const membershipGeneration = this.membershipGeneration;
         const { response, value } = await this.request("/v1/workspace/commands", command);
+        if (membershipGeneration !== this.membershipGeneration) {
+          // Do not apply an old desk's command response (or carry its queued actions into the
+          // newly selected desk).
+          this.pending = null;
+          this.queue = [];
+          continue;
+        }
         if (response.status >= 500) throw new Error("Save not confirmed");
         if (value.snapshot) this.adopt(value.snapshot);
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
@@ -321,6 +335,7 @@ export class SharedWorkspaceClient {
     if (!membershipId || !membershipId.trim()) throw new Error("A role is required");
     const chosenId = membershipId.trim();
     const previousWorkingAs = this.workingAs;
+    this.membershipGeneration += 1;
     this.workingAs = chosenId;
     try {
       const { response, value } = await this.request("/v1/workspace");
