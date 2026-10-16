@@ -11,12 +11,11 @@ import {
   THEME_COOKIE_NAME,
 } from "@/lib/theme";
 import { AppAnnouncements } from "@/components/app-announcements";
-import { OverlayRoot } from "@/components/ui/overlay-root";
+import { OverlayRoot } from "@/components/wf/overlay-root";
 import { PRIVATE_APP_ROBOTS_METADATA } from "@/lib/crawler-policy";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
 import { startupImages } from "./icons/startup-images";
 import "./globals.css";
-import "./ward-flow-v6-tokens.css";
 import "./ward-flow-v9-tokens.css";
 
 const geistSans = localFont({

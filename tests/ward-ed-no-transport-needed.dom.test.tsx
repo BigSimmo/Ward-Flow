@@ -1,9 +1,10 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { transportNeedState } from "@/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+import { edScreenSource } from "./helpers/ed-screen-source";
 
 /**
  * "No transport needed" — owner ruling, 17 September 2026 (second round, item 10): it "is recorded
@@ -51,7 +52,9 @@ describe("recording that no transport is needed", () => {
 
   it("the ED board carries the control that dispatches it", () => {
     // The reachability suite proves a dispatch exists SOMEWHERE in ward source. This pins where.
-    const source = readFileSync("src/components/ward-management/ed/ed-screen.tsx", "utf8");
+    // The screen is split across `ed-screen.tsx` and its sibling files (fix list 2.5 and 9.6,
+    // 15 Oct 2026); `edScreenSource()` reads all of them.
+    const source = edScreenSource();
     expect(source).toContain("ward-ed-no-transport-needed-");
     expect(source).toContain('type: "RECORD_TRANSPORT_NEED"');
     expect(source).toContain("No transport needed");

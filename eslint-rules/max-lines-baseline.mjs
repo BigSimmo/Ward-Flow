@@ -11,17 +11,12 @@ export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward-flow-reducer.ts": 7200,
-  "src/components/ward-management/ed/ed-screen.tsx": 6950,
-  "src/components/ward-management/community/community-screen.tsx": 6200,
-  "src/components/ward-management/referrals/ward-referral-drawer.tsx": 4350,
   "src/components/ward-management/board/ward-board.tsx": 3950,
   "src/components/ward-management/ward/ward-screen.tsx": 3900,
   "src/components/ward-management/ward-model.ts": 3500,
   "src/components/ward-management/ward-movements.ts": 3400,
   "src/components/ward-management/ward-flow-events.ts": 3200,
-  "src/components/ward-management/discharges/discharge-board.tsx": 2900,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 2850,
-  "src/components/ward-management/referrals/referral-match.tsx": 2850,
   "src/components/ward-management/governance-registers.tsx": 2700,
   "src/components/ward-management/movements/movements-screen.tsx": 2700,
   "src/components/ward-management/patients/patient-now-screen.tsx": 2700,

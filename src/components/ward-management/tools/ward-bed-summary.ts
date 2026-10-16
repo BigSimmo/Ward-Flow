@@ -2,14 +2,17 @@ import { standingFigures } from "../ward-standing-strip";
 import { bedsPendingPreparation, capacityBreakdown } from "../ward-bed-availability";
 import { unitHealthService } from "../ward-service-scope";
 import { waitingInEds } from "../ward-shared-figures";
-import { formatInstant } from "../ward-clock";
+import { type DueSoonThresholds, formatInstant } from "../ward-clock";
 import { HEALTH_SERVICES, type HealthService } from "../ward-model";
+import type { WardNetwork } from "../ward-sites";
 import type { useWardFlow } from "../ward-flow-provider";
 
 type Flow = ReturnType<typeof useWardFlow>;
 
 export type BedSummaryInput = Pick<Flow, "units" | "admissions" | "movements" | "bedReleases" | "leaveBeds"> & {
   now: number;
+  thresholds: DueSoonThresholds;
+  network: WardNetwork;
 };
 
 /**
@@ -19,7 +22,7 @@ export type BedSummaryInput = Pick<Flow, "units" | "admissions" | "movements" | 
  * carry their pending count (owner ruling 2026-09-05). Plain text only: no arrows, no symbols.
  */
 export function bedSummaryText(input: BedSummaryInput): string {
-  const { units, admissions, movements, bedReleases, leaveBeds, now } = input;
+  const { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network } = input;
   const ready = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
   let readyTotal = 0;
   let pendingTotal = 0;
@@ -38,15 +41,19 @@ export function bedSummaryText(input: BedSummaryInput): string {
   }
   const beds = units.reduce((sum, unit) => sum + unit.beds, 0);
   const waiting = waitingInEds(movements, now);
-  const flagged = standingFigures({
-    movements,
-    units,
-    admissions,
-    bedReleases,
-    leaveBeds,
-    now,
-    chromeRole: "coordinator",
-  }).filter((figure) => figure.flagged);
+  const flagged = standingFigures(
+    {
+      movements,
+      units,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      now,
+      chromeRole: "coordinator",
+    },
+    thresholds,
+    network,
+  ).filter((figure) => figure.flagged);
 
   const byService = HEALTH_SERVICES.filter((service) => (ready.get(service) ?? 0) > 0)
     .map((service) => `${service} ${ready.get(service)}`)

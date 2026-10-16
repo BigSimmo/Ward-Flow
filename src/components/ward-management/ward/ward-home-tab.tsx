@@ -6,7 +6,7 @@ import {
   stalePreparingReleases,
 } from "@/components/ward-management/ward-bed-availability";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -281,7 +281,7 @@ export function WardHomeTab({
   phoneShiftLabel,
 }: WardHomeTabProps) {
   const phoneSheets = phonePanel !== undefined;
-  const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlow();
+  const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions");
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
   const walkRoundOn = useWardFeatureFlag("top25-walk-round");

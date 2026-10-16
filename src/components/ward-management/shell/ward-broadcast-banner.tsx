@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Check, ChevronRight } from "lucide-react";
 import { Button, StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  type WardFlowContextValue,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   BED_CALL_MAX_BEDS,
   BROADCAST_ANSWER_LABELS,
@@ -31,6 +35,7 @@ import {
 } from "@/components/ward-management/alerts/global-alert-view";
 import { resolveAlertSubject } from "@/components/ward-management/alerts/alerts-model";
 import { useActNowNotificationPreference } from "@/components/ward-management/shell/ward-act-now-notifications";
+import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -187,7 +192,14 @@ function ControlledBroadcastBanner({
 }
 
 function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
-  const { broadcastAlerts, dispatch, units, movements, patients, referrals } = useWardFlow();
+  const { broadcastAlerts, dispatch, units, movements, patients, referrals } = useWardFlowSelect(
+    "broadcastAlerts",
+    "dispatch",
+    "units",
+    "movements",
+    "patients",
+    "referrals",
+  );
   const now = useWardFlowClock();
   const pathname = usePathname() ?? "";
   const routeRole = wardChromeRole(pathname);
@@ -257,13 +269,14 @@ function BannerBody({
   now: Instant;
   units: readonly Unit[];
   lookup: Lookup;
-  onDispatch: ReturnType<typeof useWardFlow>["dispatch"];
+  onDispatch: WardFlowContextValue["dispatch"];
 }) {
   const { alert, tone, needsAnswer } = entry;
   const kind = broadcastKind(alert);
   const [choosing, setChoosing] = useState<BroadcastAnswer | null>(null);
   const [changing, setChanging] = useState(false);
   const isPhone = useIsPhone();
+  const deskInScope = useDeskInScope();
   const isRed = tone === "act_now";
   const actingRole = desk.role === "coordinator" ? "coordinator" : desk.role === "ed" ? "ed" : "ward";
 
@@ -294,7 +307,9 @@ function BannerBody({
   const subject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
   const myReply = desk.id ? latestReplies(alert).get(desk.id) : undefined;
   const board = kind === "directive" ? undefined : replyBoard(alert, units);
-  const acks = kind === "directive" ? directiveAcknowledgements(alert, units) : undefined;
+  const directiveAcks = kind === "directive" ? directiveAcknowledgements(alert, units, deskInScope) : undefined;
+  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
+  const acks = directiveAcks && (directiveAcks.of > 0 || !deskInScope) ? directiveAcks : undefined;
   const showAnswers = (needsAnswer || changing) && kind !== "directive";
   const headline = subject ? subject.displayName : alert.title;
   const countText = board

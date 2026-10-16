@@ -6,6 +6,10 @@ import { migrate } from "./migrate.mjs";
 import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
 import { pushPayload } from "./push.mjs";
 import { RECEIPT_RETENTION_DAYS, pruneReceipts } from "./prune-receipts.mjs";
+import { readFile } from "node:fs/promises";
+import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+import { verifyRuntimeRole } from "./portable-postgres.mjs";
+import { LATEST_MIGRATION } from "./migrations.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -30,7 +34,10 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     const seed = await storeA.read(actorA);
     assert.equal(seed.revision, 1);
     assert.equal(seed.dataMode, "prototype");
-    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 5);
+    assert.equal(
+      (await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version,
+      LATEST_MIGRATION,
+    );
     const { rows: protectedFunctions } = await pool.query(
       "SELECT proname, proconfig FROM pg_proc WHERE oid IN ('ward_flow.protect_audit()'::regprocedure, 'ward_flow.protect_workspace_mode()'::regprocedure) ORDER BY proname",
     );
@@ -151,21 +158,15 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
         /command_workspace_mode/,
       );
     });
-    await t.test("a prototype connection never reads or changes a live-tagged workspace", async () => {
-      const liveId = randomUUID();
-      // Invented fixture tagged live to prove separation, never real patient data.
-      await pool.query("INSERT INTO ward_flow.workspaces(id,revision,payload,data_mode) VALUES($1,1,$2,'live')", [
-        liveId,
-        seed.payload,
-      ]);
-      const wrongStore = createWorkspaceStore(pool, { workspaceId: liveId, engine, clock: () => at });
-      await assert.rejects(wrongStore.read(actorA), /data mode mismatch/);
-      await assert.rejects(wrongStore.command(actorA, randomUUID(), 1, pull(winner.movement)), /data mode mismatch/);
-      assert.equal(
-        (await pool.query("SELECT revision FROM ward_flow.workspaces WHERE id=$1", [liveId])).rows[0].revision,
-        "1",
+    await t.test("a workspace cannot be labelled live at all", async () => {
+      // Invented fixture tagged live to prove the database refuses it, never real patient data.
+      await assert.rejects(
+        pool.query("INSERT INTO ward_flow.workspaces(id,revision,payload,data_mode) VALUES($1,1,$2,'live')", [
+          randomUUID(),
+          seed.payload,
+        ]),
+        /workspaces_data_mode_check/,
       );
-      assert.equal((await wrongStore.audit()).length, 0);
     });
     await t.test("audit failure rolls back the workflow state and receipt", async () => {
       const failingId = randomUUID();
@@ -539,7 +540,6 @@ test(
             event: "ward_backend_push_evaluation_failure",
             errorName: "TypeError",
             errorCode: "ENGINE",
-            message: "unexpected state",
           },
         ]);
       });
@@ -673,3 +673,407 @@ test(
     }
   },
 );
+
+test(
+  "real PostgreSQL: row-level security lets only the runtime role through, and 008, 007 then 006 roll back to 5",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const admin = new Pool({ connectionString: url, max: 2 });
+    const database = `wardflow_rls_${randomUUID().replaceAll("-", "")}`;
+    const target = new URL(url);
+    target.pathname = `/${database}`;
+    // Each pool acts as one role from the start of every connection, as the real logins do.
+    const as = (role) =>
+      new Pool({ connectionString: target.href, max: 2, ...(role && { options: `-c role=${role}` }) });
+    const pools = [];
+    const sql = (name) => readFile(new URL(name, import.meta.url), "utf8");
+    const actor = "11111111-1111-4111-8111-111111111111";
+    const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+    const runtimeOk = (pool) => verifyRuntimeRole(pool, "wardflow_backend", true, "unavailable", "unsafe");
+    await admin.query(`CREATE DATABASE ${database}`);
+    try {
+      const owner = as();
+      const runtime = as("wardflow_backend");
+      pools.push(owner, runtime);
+      await verifyPostgresNamespace(owner);
+      await migrate(owner);
+      await owner.query(await sql("./infra/postgres-runtime-role.sql"));
+      await verifyPostgresNamespace(owner);
+      const { rows: tables } = await owner.query(
+        "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
+      );
+      assert.equal(tables.length, 9);
+      assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
+
+      await runtimeOk(runtime);
+      const store = createWorkspaceStore(runtime, { workspaceId: randomUUID(), engine, demoEvents: true });
+      await store.ready();
+      await store.read(actor);
+      assert.equal((await store.command(actor, randomUUID(), 1, refresh)).status, 200);
+      // The backend can approve or end a role, never rewrite who holds it, what it is, or where.
+      await runtime.query(
+        "UPDATE ward_flow.memberships SET revoked_at=now(), revoked_by=gen_random_uuid() WHERE false",
+      );
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.memberships SET role='admin' WHERE false"),
+        /permission denied/,
+      );
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.memberships SET expires_at=now() WHERE false"),
+        /permission denied/,
+      );
+
+      // A role with a grant it should never have still sees and writes nothing.
+      await owner.query("DROP ROLE IF EXISTS wardflow_rls_probe");
+      await owner.query("CREATE ROLE wardflow_rls_probe NOLOGIN");
+      await owner.query(
+        "GRANT USAGE ON SCHEMA ward_flow TO wardflow_rls_probe; GRANT SELECT, INSERT ON ward_flow.workspaces, ward_flow.audit TO wardflow_rls_probe",
+      );
+      const probe = as("wardflow_rls_probe");
+      pools.push(probe);
+      assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.workspaces")).rows[0].n, 0);
+      assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.audit")).rows[0].n, 0);
+      await assert.rejects(
+        probe.query("INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES (gen_random_uuid(), 1, '{}')"),
+        /row-level security/,
+      );
+      await probe.end();
+      pools.pop();
+      await owner.query("REVOKE ALL ON ward_flow.workspaces, ward_flow.audit FROM wardflow_rls_probe");
+      await owner.query("REVOKE ALL ON SCHEMA ward_flow FROM wardflow_rls_probe; DROP ROLE wardflow_rls_probe");
+
+      // Each rollback, newest first, takes the database back one step and the same backend keeps
+      // working at every step. After 007's, a live label is allowed again, exactly as before.
+      const rollBack = async (file) => {
+        const client = await owner.connect();
+        try {
+          await client.query("BEGIN");
+          await client.query(await sql(file));
+          await client.query("COMMIT");
+        } catch (error) {
+          await client.query("ROLLBACK");
+          throw error;
+        } finally {
+          client.release();
+        }
+      };
+      // Out of order, each rollback refuses and changes nothing, so the ledger never has a gap.
+      await assert.rejects(
+        rollBack("./infra/rollback-006-row-level-security.sql"),
+        /Roll back the newer migrations first/,
+      );
+      await assert.rejects(rollBack("./infra/rollback-007-prototype-only.sql"), /roll back 008 first/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 8);
+      let revision = 2;
+      for (const [file, version] of [
+        ["./infra/rollback-008-role-access.sql", 7],
+        ["./infra/rollback-007-prototype-only.sql", 6],
+        ["./infra/rollback-006-row-level-security.sql", 5],
+      ]) {
+        if (version === 7) assert.equal((await store.viewer(actor, { bootstrap: true })).version, 8);
+        await rollBack(file);
+        assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, version);
+        if (version === 7) {
+          // The cached version still says 8 for one request, which fails; the next reads it again.
+          await assert.rejects(store.viewer(actor), /does not exist/);
+          assert.deepEqual(await store.viewer(actor), { status: "none" });
+          // The access routes say roles need 008 rather than failing on the missing table.
+          assert.equal((await store.listAccess(await store.viewer(actor, { bootstrap: true }))).status, 409);
+        }
+        await verifyPostgresNamespace(owner);
+        await runtimeOk(runtime);
+        await store.ready();
+        assert.equal((await store.command(actor, randomUUID(), revision++, refresh)).status, 200);
+      }
+      const { rows: check } = await owner.query(
+        "SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname='workspaces_data_mode_check'",
+      );
+      assert.equal(check[0].def, "CHECK ((data_mode = ANY (ARRAY['prototype'::text, 'live'::text])))");
+      await assert.rejects(rollBack("./infra/rollback-007-prototype-only.sql"), /not at migration 7/);
+
+      // 007 refuses, and the whole run rolls back, while any workspace is labelled live.
+      const liveId = randomUUID();
+      await owner.query("INSERT INTO ward_flow.workspaces(id,revision,payload,data_mode) VALUES($1,1,'{}','live')", [
+        liveId,
+      ]);
+      await assert.rejects(migrate(owner), /not prototype/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 5);
+      await owner.query("DELETE FROM ward_flow.workspaces WHERE id=$1", [liveId]);
+
+      // The runtime grants re-run cleanly on a database still at 5, before the 008 tables exist.
+      await owner.query(await sql("./infra/postgres-runtime-role.sql"));
+      // Re-applying 6 to 8 works once the runtime grants are run again, as setup does; a policy
+      // removed afterwards is refused by both checks.
+      await migrate(owner);
+      await owner.query(await sql("./infra/postgres-runtime-role.sql"));
+      await verifyPostgresNamespace(owner);
+      await runtimeOk(runtime);
+      await owner.query("DROP POLICY runtime_only ON ward_flow.audit");
+      await assert.rejects(runtimeOk(runtime), /unsafe/);
+      await assert.rejects(verifyPostgresNamespace(owner), /Unrecognised or unsafe/);
+      // So is a same-named policy with no USING clause, whose missing expression must not read as a match.
+      await owner.query("CREATE POLICY runtime_only ON ward_flow.audit WITH CHECK (current_user = 'wardflow_backend')");
+      await assert.rejects(runtimeOk(runtime), /unsafe/);
+      await assert.rejects(verifyPostgresNamespace(owner), /Unrecognised or unsafe/);
+    } finally {
+      for (const pool of pools) await pool.end();
+      await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
+      await admin.end();
+    }
+  },
+);
+
+test("real PostgreSQL: the Supabase runtime grants pass the runtime role check", { skip: !url }, async () => {
+  const admin = new Pool({ connectionString: url, max: 1 });
+  const database = `wardflow_supa_${randomUUID().replaceAll("-", "")}`;
+  const target = new URL(url);
+  target.pathname = `/${database}`;
+  // Supabase's browser roles, which the script revokes from by name.
+  for (const role of ["anon", "authenticated"])
+    await admin.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='${role}') THEN CREATE ROLE ${role} NOLOGIN; END IF; END $$`,
+    );
+  await admin.query(`CREATE DATABASE ${database}`);
+  const owner = new Pool({ connectionString: target.href, max: 1 });
+  const runtime = new Pool({ connectionString: target.href, max: 1, options: "-c role=wardflow_backend" });
+  try {
+    const grants = await readFile(new URL("./infra/supabase-runtime-role.sql", import.meta.url), "utf8");
+    await migrate(owner);
+    await owner.query(grants);
+    await verifyRuntimeRole(runtime, "wardflow_backend", true, "unavailable", "unsafe");
+  } finally {
+    await owner.end();
+    await runtime.end();
+    await admin.query(`DROP DATABASE ${database}`);
+    await admin.end();
+  }
+});
+
+test(
+  "real PostgreSQL: roles come from memberships, every reply is scoped, and access changes are audited",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    let at = new Date("2026-10-07T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine, clock: () => at });
+    const [lead, second, nurse, admin, coordinator] = Array.from({ length: 5 }, () => randomUUID());
+    const later = new Date("2027-01-01T00:00:00Z");
+    try {
+      await migrate(pool);
+      const leadView = await store.viewer(lead, { bootstrap: true });
+      assert.equal(leadView.status, "ok");
+      assert.deepEqual(leadView.access, engine.STATEWIDE);
+      const secondView = await store.viewer(second, { bootstrap: true });
+      assert.deepEqual(await store.viewer(nurse), { status: "none" });
+
+      const full = await store.read(lead, leadView);
+      const world = full.payload;
+      const stay = world.state.admissions.find((row) => row.patientId !== null && row.leftAt === null);
+      const elsewhere = world.state.admissions.find(
+        (row) => row.unitId !== stay.unitId && row.patientId !== null && row.patientId !== stay.patientId,
+      );
+      const ward = { kind: "ward", unitIds: [stay.unitId] };
+
+      // Nobody grants themselves a role, a place must exist, and a grant needs an end date.
+      assert.equal(
+        (await store.grantAccess(leadView, { actorId: lead, role: "ward", scope: ward, expiresAt: later })).status,
+        422,
+      );
+      assert.equal(
+        (
+          await store.grantAccess(leadView, {
+            actorId: nurse,
+            role: "ward",
+            scope: { kind: "ward", unitIds: ["nowhere"] },
+            expiresAt: later,
+          })
+        ).status,
+        422,
+      );
+      assert.equal(
+        (
+          await store.grantAccess(leadView, {
+            actorId: nurse,
+            role: "ward",
+            scope: { kind: "site", siteCode: "X" },
+            expiresAt: later,
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (await store.grantAccess(leadView, { actorId: nurse, role: "ward", scope: ward, expiresAt: at })).status,
+        400,
+      );
+      const granted = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: later,
+      });
+      assert.equal(granted.status, 200);
+      assert.equal(granted.body.membership.approved, true);
+
+      // The nurse's desk is the ward, and everything sent back is that ward's part only.
+      const nurseView = await store.viewer(nurse);
+      assert.equal(nurseView.status, "ok");
+      assert.deepEqual(nurseView.access, { role: "ward", scope: ward });
+      const scoped = await store.read(nurse, nurseView);
+      assert.ok(engine.validWorld(JSON.parse(JSON.stringify(scoped.payload))));
+      assert.ok(scoped.payload.state.patients.length < world.state.patients.length);
+      assert.equal(JSON.stringify(scoped.payload).includes(JSON.stringify(elsewhere.id)), false);
+      // The HTTP layer refuses the audit to a ward; the store would give it nothing anyway.
+      assert.deepEqual(await store.audit(nurseView), []);
+
+      // A command naming another ward's stay is refused before the revision is even looked at,
+      // and the refusal is audited under the nurse's own role and place.
+      const refused = await store.command(
+        nurse,
+        randomUUID(),
+        999,
+        { type: "FLAG_BED_RELEASE", role: "ward", admissionId: elsewhere.id },
+        { view: nurseView },
+      );
+      assert.equal(refused.status, 422);
+      assert.equal(refused.body.code, "scope");
+      assert.equal(JSON.stringify(refused.body.snapshot.payload).includes(JSON.stringify(elsewhere.id)), false);
+      const { rows: nurseAudit } = await pool.query(
+        "SELECT actor_role, actor_scope, outcome FROM ward_flow.audit WHERE actor_id=$1",
+        [nurse],
+      );
+      assert.deepEqual(nurseAudit, [{ actor_role: "ward", actor_scope: ward, outcome: "denied" }]);
+
+      // Break glass: one patient, for a set time, recorded and audited; a pattern after the set
+      // number in a shift. The statewide coordinator never needs it.
+      assert.equal((await store.breakGlass(leadView, elsewhere.patientId, "handover")).status, 422);
+      assert.equal((await store.breakGlass(nurseView, elsewhere.patientId, "because")).status, 400);
+      assert.equal((await store.breakGlass(nurseView, stay.patientId, "handover")).status, 422);
+      const opened = await store.breakGlass(nurseView, elsewhere.patientId, "bed-search");
+      assert.equal(opened.status, 200);
+      assert.equal(opened.body.pattern, false);
+      assert.ok(opened.body.snapshot.payload.state.patients.some((row) => row.id === elsewhere.patientId));
+      const withGrant = await store.viewer(nurse);
+      assert.deepEqual(
+        withGrant.grants.map((grant) => grant.patientId),
+        [elsewhere.patientId],
+      );
+      // While a record is open (or has just closed) the poll sends the whole scoped workspace.
+      assert.equal((await store.poll(nurse, scoped.revision, withGrant)).notModified, false);
+      const others = world.state.patients
+        .filter((row) => !scoped.payload.state.patients.some((own) => own.id === row.id))
+        .map((row) => row.id)
+        .filter((id) => id !== elsewhere.patientId);
+      let pattern = false;
+      for (const id of others.slice(0, engine.BREAK_GLASS_PER_SHIFT))
+        pattern = (await store.breakGlass(nurseView, id, "other")).body.pattern;
+      assert.equal(pattern, true);
+      at = new Date(at.getTime() + (engine.BREAK_GLASS_MINUTES + 2) * 60_000);
+      const closed = await store.viewer(nurse);
+      assert.deepEqual(closed.grants, []);
+      assert.equal(closed.recentGrant, false);
+
+      // A coordinator or access admin role waits for a second person, never the granter or the
+      // person themselves.
+      const pending = await store.grantAccess(leadView, {
+        actorId: admin,
+        role: "admin",
+        scope: { kind: "statewide" },
+        expiresAt: later,
+      });
+      assert.equal(pending.body.membership.approved, false);
+      assert.deepEqual(await store.viewer(admin), { status: "none" });
+      assert.equal((await store.approveAccess(leadView, pending.body.membership.id)).status, 422);
+      assert.equal((await store.approveAccess(nurseView, pending.body.membership.id)).status, 403);
+      assert.equal((await store.approveAccess(secondView, pending.body.membership.id)).status, 200);
+      const adminView = await store.viewer(admin);
+      assert.equal(adminView.access.role, "admin");
+      const coordinatorGrant = await store.grantAccess(leadView, {
+        actorId: coordinator,
+        role: "coordinator",
+        scope: { kind: "statewide" },
+        expiresAt: later,
+      });
+      assert.equal((await store.approveAccess(adminView, coordinatorGrant.body.membership.id)).status, 200);
+      assert.equal((await store.viewer(coordinator)).access.role, "coordinator");
+
+      // The access admin reads role changes only.
+      const adminAudit = await store.audit(adminView);
+      assert.ok(adminAudit.length > 0);
+      assert.ok(adminAudit.every((row) => row.action.startsWith("ACCESS_")));
+      // Which patient was opened, and why, is the statewide coordinator's to read.
+      assert.ok((await store.audit()).some((row) => row.action === "BREAK_GLASS" && row.changes.pattern === true));
+      assert.equal((await store.listAccess(adminView)).body.memberships.length, 3);
+      assert.equal((await store.listAccess(nurseView)).status, 403);
+
+      // Two roles: the account says which one it works as.
+      await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "community",
+        scope: { kind: "team", teamName: "Synthetic team" },
+        expiresAt: later,
+      });
+      const choose = await store.viewer(nurse);
+      assert.equal(choose.status, "choose");
+      assert.equal(choose.choices.length, 2);
+      assert.equal((await store.viewer(nurse, { workingAs: nurseView.membershipId })).access.role, "ward");
+      assert.deepEqual(await store.viewer(nurse, { workingAs: "bootstrap" }), { status: "none" });
+
+      // A removed role stops at the next request, and the audit still names it.
+      assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 200);
+      assert.equal((await store.viewer(nurse)).access.role, "community");
+      // A change that looked up its role just before the revoke is stopped inside the lock.
+      await assert.rejects(
+        store.command(
+          nurse,
+          randomUUID(),
+          999,
+          { type: "FLAG_BED_RELEASE", role: "ward", admissionId: elsewhere.id },
+          { view: nurseView },
+        ),
+        /role-ended/,
+      );
+      assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
+      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted.
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await assert.rejects(
+          client.query(await readFile(new URL("./infra/rollback-008-role-access.sql", import.meta.url), "utf8")),
+          /cannot be removed/,
+        );
+      } finally {
+        await client.query("ROLLBACK");
+        client.release();
+      }
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+test("a ward desk may send the events its screen sends under another role, and nothing else borrowed", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [world.state.units[0].id] });
+  const notYours = "This change is not part of your role.";
+  const refusal = (event) => engine.commandRefusal(world, ward, event, at);
+  // A ward raises referrals in its own name only, from Raise referral and from its New referral
+  // sheet (Josh, 15 Oct 2026). The sheet still adds a patient as ED, through its CROSS_ROLE_ALLOWED
+  // pair.
+  assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ward" }), notYours);
+  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
+  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "ed" }), notYours);
+  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
+  // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
+  // still refused.
+  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);
+  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "coordinator" }), notYours);
+  assert.equal(refusal({ type: "ADD_PATIENT", role: "coordinator" }), notYours);
+  assert.equal(
+    refusal({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: world.state.units[0].id }),
+    notYours,
+  );
+});

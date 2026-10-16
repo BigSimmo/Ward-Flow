@@ -2,9 +2,9 @@ import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-mana
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-import { wardSites } from "@/components/ward-management/ward-sites";
-import type { Instant } from "@/components/ward-management/ward-clock";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
+import { rememberLastCall } from "@/components/ward-management/ward-last-call";
+import type { BedRelease, LeaveBed, Movement, Referral, Site, Unit } from "@/components/ward-management/ward-model";
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
 
 /**
@@ -50,24 +50,43 @@ export type WardNavCounts = Partial<Record<WardMode | WardNavId, WardNavCount>>;
 export type WardNavCountInput = {
   movements: Movement[];
   units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  sites: readonly Site[];
   referrals: Referral[];
   bedReleases: readonly BedRelease[];
   leaveBeds: readonly LeaveBed[];
   now: Instant;
+  thresholds: DueSoonThresholds;
 };
 
-export function wardNavCounts(input: WardNavCountInput): WardNavCounts {
-  const { movements, units, referrals, bedReleases, leaveBeds, now } = input;
+/**
+ * The rail, the phone dock and menu and the sidebar all ask for these counts on every render, and
+ * the delay groups behind them are costly, so the answer is shared until a record or the clock
+ * minute changes (`ward-last-call.ts`).
+ */
+export const wardNavCounts = rememberLastCall(deriveWardNavCounts, (input: WardNavCountInput) => [
+  input.movements,
+  input.units,
+  input.sites,
+  input.referrals,
+  input.bedReleases,
+  input.leaveBeds,
+  input.now,
+  input.thresholds,
+]);
+
+function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
+  const { movements, units, sites, referrals, bedReleases, leaveBeds, now, thresholds } = input;
 
   const open = movements.filter(isOpen);
-  const rollup = serviceRollup(wardSites, units, [...bedReleases], [...leaveBeds], now);
+  const rollup = serviceRollup(sites, units, [...bedReleases], [...leaveBeds], now);
 
   /*
    * `SEVERE_CAUSES` is `delays-derivations.ts`'s own list — a breached statutory deadline, one
    * expiring inside the hour, and a patient with nowhere lawful to go. Read from there rather than
    * restated here, so a cause the owner later promotes or demotes moves this figure with it.
    */
-  const severe = delayGroups(movements, units, now)
+  const severe = delayGroups(movements, units, now, thresholds)
     .filter((group) => SEVERE_CAUSES.includes(group.cause))
     .reduce((total, group) => total + group.movements.length, 0);
 

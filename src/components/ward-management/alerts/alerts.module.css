@@ -1716,7 +1716,7 @@ button.check[aria-pressed="true"] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
+  height: 32px;
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl);

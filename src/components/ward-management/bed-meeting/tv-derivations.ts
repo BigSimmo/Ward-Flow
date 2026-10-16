@@ -27,7 +27,7 @@ import { groupDischarges } from "@/components/ward-management/discharges/dischar
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -68,6 +68,8 @@ type TvInputs = {
   admissions: Admission[];
   leaveBeds: LeaveBed[];
   now: Instant;
+  /** The due-time warnings Settings sets (`useDueSoonThresholds`). */
+  thresholds: DueSoonThresholds;
   /** The screen's own resolver, narrowed to initials by the caller. */
   nameOf: (movement: Movement) => string;
 };
@@ -117,7 +119,7 @@ export type WardTvSheet = {
 };
 
 export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
-  const { unit, movements, bedReleases, admissions, leaveBeds, now, nameOf } = input;
+  const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf } = input;
   const sheet = bedMeetingSheet({
     units: [unit],
     movements,
@@ -125,6 +127,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     admissions,
     leaveBeds,
     now,
+    thresholds,
     service: null,
     nameOf,
   });

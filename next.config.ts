@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
   // never wires up its listeners.
   allowedDevOrigins: ["127.0.0.1"],
   devIndicators: false,
+  // Fix list 7.3: the React Compiler memoises screens on the inputs it can see. Screens take the
+  // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
+  // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
+  reactCompiler: true,
   experimental: {
     // Default 1 is the safe fallback for a Node-24 webpack WasmHash worker crash
     // seen on constrained local builds (see the webpack hashFunction override

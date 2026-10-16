@@ -160,6 +160,8 @@ const roleFields = [
   "browser_denied",
   "guards_valid",
   "sequence_restricted",
+  "rls_valid",
+  "access_grants",
 ];
 function safeSummary() {
   return {
@@ -178,17 +180,31 @@ function summaryPool(row = safeSummary()) {
   };
 }
 
-test("runtime role verification requires every safeguard and the complete migration 5 ledger", async () => {
+test("runtime role verification requires every safeguard and a complete ledger at migration 5 to 8", async () => {
   const config = { connectionString: databaseUrl(), pushEnabled: false };
   await verifyPortableRuntimeRole(summaryPool(), config);
   await verifySupabaseRuntimeRole(summaryPool(), { pushEnabled: false });
+  // Row-level security (6) is applied live separately, so the backend runs before and after it.
+  for (const versions of [
+    [1, 2, 3, 4, 5, 6],
+    [1, 2, 3, 4, 5, 6, 7],
+    [1, 2, 3, 4, 5, 6, 7, 8],
+  ])
+    await verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions }), { pushEnabled: false });
   for (const field of roleFields) {
     for (const value of [false, null, undefined, "true"]) {
       const row = { ...safeSummary(), [field]: value };
       await assert.rejects(verifyPortableRuntimeRole(summaryPool(row), config), /Unsafe or unprepared/);
     }
   }
-  for (const versions of [[], [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4, "5"], [1, 2, 3, 4, 5, 6]])
+  for (const versions of [
+    [],
+    [1, 2, 3, 4],
+    [1, 2, 3, 5],
+    [1, 2, 3, 4, "5"],
+    [1, 2, 3, 4, 6],
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  ])
     await assert.rejects(
       verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions })),
       /Unsafe or unprepared/,
@@ -240,23 +256,20 @@ test("enabled push requires its grants while optional push remains off by config
   );
 });
 
-test("shared readiness refuses a missing migration 5 without applying SQL", async () => {
+test("shared readiness needs migration 5 to 8 and applies no SQL", async () => {
   const calls = [];
-  let prepared = false;
+  let version = null;
   const pool = {
     query: async (sql, args) => {
       calls.push([sql, args]);
-      return { rows: prepared ? [{ version: 5 }] : [] };
+      return { rows: [{ version }] };
     },
   };
   const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine: {} });
-  await assert.rejects(store.ready(), /Shared schema unavailable/);
-  prepared = true;
-  await store.ready();
-  assert.deepEqual(
-    calls,
-    Array.from({ length: 2 }, () => ["SELECT version FROM ward_flow.migrations WHERE version=$1", [5]]),
-  );
+  for (version of [null, 4, 9, "5"]) await assert.rejects(store.ready(), /Shared schema unavailable/);
+  for (version of [5, 6, 7, 8]) await store.ready();
+  assert.equal(calls.length, 8);
+  assert.ok(calls.every(([sql]) => sql === "SELECT max(version) AS version FROM ward_flow.migrations"));
 });
 
 test("migration namespace refusal performs no mutation or administrator checkout", async () => {
@@ -279,9 +292,10 @@ test("administrator grant failure rolls back its transaction and releases the cl
   const client = {
     query: async (sql) => {
       queries.push(sql);
+      // The grants script checks to_regclass itself, so it is matched first.
+      if (sql.includes("Runtime role flags are unsafe")) throw new Error("synthetic grant refusal");
       if (sql.includes("to_regclass")) return { rows: [{ relation: "ward_flow.migrations" }] };
       if (sql.includes("SELECT max(version)")) return { rows: [{ version: 5 }] };
-      if (sql.includes("Runtime role flags are unsafe")) throw new Error("synthetic grant refusal");
       return { rows: [] };
     },
     release: () => {
@@ -432,10 +446,13 @@ test("Supabase verifier rejects malformed input before fetch and bounds headers 
     "Bearer synthetic-offline-token",
     legacyToken(config, { exp: Math.floor(Date.now() / 1000) - 1 }),
     legacyToken(config, { iss: "https://otherproject.supabase.co/auth/v1" }),
-    legacyToken(config, { sub: randomUUID() }),
   ])
     await assert.rejects(verify(header), /Unauthorised/);
   assert.equal(calls, 0);
+  // Any account may sign in (its role is the workspace's own record), but Supabase must confirm
+  // the token's own subject.
+  await assert.rejects(verify(legacyToken(config, { sub: randomUUID() })), /Unauthorised/);
+  assert.equal(calls, 1);
   for (const fetch of [() => new Promise(() => {}), async () => ({ ok: true, json: () => new Promise(() => {}) })])
     await assert.rejects(
       createSupabaseAuthenticator(config, { fetch, timeoutMs: 10 })(legacyToken(config)),
@@ -648,7 +665,7 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
       worldNow: (_p, at) => at,
     },
   });
-  const doc = await store.read("coordinator-1", "2026-10-14T10:00:00.000Z");
+  const doc = await store.read("coordinator-1");
   assert.equal(doc.revision, 7);
   assert.equal(seedCalls, 0);
   assert.equal(
@@ -673,7 +690,7 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
     { connect: async () => brokenClient, query: async () => ({ rows: [] }) },
     { workspaceId: randomUUID(), engine: {} },
   );
-  await assert.rejects(brokenStore.read("coordinator-1", "2026-10-14T10:00:00.000Z"), /primary query failure/);
+  await assert.rejects(brokenStore.read("coordinator-1"), /primary query failure/);
   assert.equal(releasedWith, rollbackErr);
 
   // Verify unsubscribe() immediately prunes push_deliveries for the revoked subscription ID

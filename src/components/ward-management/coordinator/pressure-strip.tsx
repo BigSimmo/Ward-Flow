@@ -4,7 +4,7 @@ import { Activity, FileText } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Card, CardHead, Segmented, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
-import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
@@ -15,6 +15,7 @@ import { edShortName, siteByCode } from "@/components/ward-management/ward-sites
 
 import styles from "./pressure-strip.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 type Order = "worst" | "most" | "longest";
 
 const ORDER_ITEMS: { id: Order; label: string }[] = [
@@ -73,6 +74,7 @@ export function PressureStrip({
   foot,
   edAccessTargetMinutes = defaultWardConfiguration().edAccessTargetMinutes,
 }: PressureStripProps) {
+  const thresholds = useDueSoonThresholds();
   const [order, setOrder] = useState<Order>("worst");
   // Phone (v10 Network): a worst-first list of departments, three shown until asked for more.
   const isPhone = useIsPhone();
@@ -135,7 +137,7 @@ export function PressureStrip({
 
           const deadlines = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [])
             .filter((movement) => movement.legalForm?.dueAt !== undefined)
-            .map((movement) => clockState(movement.legalForm!.dueAt!, now));
+            .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
 

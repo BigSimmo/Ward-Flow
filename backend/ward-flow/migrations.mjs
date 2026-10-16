@@ -36,9 +36,35 @@ export const MIGRATIONS = Object.freeze([
     file: "005-retention-and-indexes.sql",
     sha256: "60b974d282568a5183d2e855b702c19cbbfe9d59a102a85132267bc15131e2ec",
   },
+  {
+    version: 6,
+    file: "006-row-level-security.sql",
+    sha256: "71b2829ed1661df8ae0be9830f4c467934ad93f6a6959459775c60f9dfe666b5",
+  },
+  {
+    version: 7,
+    file: "007-prototype-only.sql",
+    sha256: "e4d885037bb1660e58800cdc5d66d075d7eb8ec9c4750322dde346df5c09172f",
+  },
+  {
+    version: 8,
+    file: "008-role-access.sql",
+    sha256: "0b65ef63500d8ba6e074d1a501bb22f8810c21a4e565dfffe639f98383f788f2",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
+
+/**
+ * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
+ * (7) and role access (8) are applied to a live database separately, so the backend runs on 5 to
+ * 8: it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts
+ * take the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in.
+ */
+export const MINIMUM_RUNTIME_MIGRATION = 5;
+
+/** The first schema with memberships and break glass records (migration 8). */
+export const ROLE_ACCESS_MIGRATION = 8;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

@@ -112,7 +112,7 @@ describe("the Ward Flow design language holds across every Ward Flow stylesheet"
    * vacuously true over an empty file set, which the empty-ROOT mutation below depends on.
    */
   it("declares the token layer only in the canonical file, or the one documented exception", () => {
-    const ALLOWED = new Set([TOKEN_FILE, join(ROOT, "ward-sidebar.module.css")]);
+    const ALLOWED = new Set([TOKEN_FILE]);
     const offenders = CSS.filter((f) => !ALLOWED.has(f) && readFileSync(f, "utf8").includes("--ward-space-10:"));
     expect(offenders, `token layer redeclared outside the known set: ${offenders.join(", ")}`).toEqual([]);
   });
@@ -556,7 +556,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     "ward-figure.module.css",
     "ward-shared.module.css",
     "ward-shell.module.css",
-    "ward-sidebar.module.css",
     "ward-tokens.module.css",
     // ⚠️ ADDED 2026-09-05, second-edition visual pass on QueueView/ExceptionsView/GovernanceView.
     // Same shape as `ward-panel.module.css` above: its first declared rule is `.panel`, a
@@ -575,11 +574,10 @@ describe("the ground is not merely painted — it has to be visible", () => {
      * count floor.
      *
      * The test is whether the first rule is a PAGE ROOT (`.screen`, `.modeShell`) or a component
-     * that would not be itself without a background. Opened all three:
+     * that would not be itself without a background. Opened all three (`ward-tasks-panel` was a fourth until it was deleted, unused, on 15 Oct 2026):
      *
      *   `.wrap`   ward-standing-strip — the sticky figures band. Board content scrolls UNDER it, so
      *             a transparent one renders text through text. Opacity is what makes it chrome.
-     *   `.opener` ward-tasks-panel    — a `<button>`.
      *   `.drawer` ward-tasks-drawer   — a side panel with its own left border.
      *
      * None has a `.screen` or `.modeShell` equivalent anywhere in the file. Same category as
@@ -587,7 +585,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
      * chrome stylesheets and were exempted on the same reasoning.
      */
     "ward-standing-strip.module.css",
-    "ward-tasks-panel.module.css",
     "ward-tasks-drawer.module.css",
     /*
      * ⚠️ **`.bar` — the single header row, added when the owner asked for the figures toggle to sit
@@ -611,7 +608,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // ADDED 2026-10-03 (PR #33): first rules are `.disclosure` (a bordered, rounded disclosure card)
     // and `.chart` (a bordered chart card). Both are components mounted inside a statistics screen's
     // own root, which paints the ground beneath them; neither file has a `.screen` root.
-    "statistics/statistics-family.module.css",
     "statistics/statistics-insight-chart.module.css",
     // ADDED 2026-10-04 (stranded-patient prompts): first rule is `.panel`, a bordered, rounded
     // disclosure the ward board mounts inside its own root, which paints the ground beneath it.
@@ -639,7 +635,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // acquires a `.screen`-equivalent root, it belongs back in the detector.
     "ward-standing-strip.module.css",
     "ward-tasks-drawer.module.css",
-    "ward-tasks-panel.module.css",
     // ADDED 2026-09-17 (screens plan S2): the service scope bar. Its first rule is `.bar`, a strip a
     // scoped screen mounts inside its own page — a component that paints its own surface, not a
     // page root. Checked by opening the file, not assumed.

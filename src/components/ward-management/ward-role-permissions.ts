@@ -42,17 +42,14 @@ const REFERRAL_SHEET =
 export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
   // The coordinator may take every action (Josh, 10 Oct 2026), so it is in `EVENT_ROLE` itself and
   // needs no pair here.
-  // Ward screen Raise referral: a ward-to-ward referral is received as `community` with source
-  // `psychiatric_ward`; `EVENT_ROLE.RECEIVE_REFERRAL` has no `ward`.
-  {
-    routeRole: "ward",
-    event: "RECEIVE_REFERRAL",
-    reason: "Ward screen Raise referral and the New referral sheet dispatch as community",
-  },
+  // Ward Raise referral needs no pair: `EVENT_ROLE.RECEIVE_REFERRAL` includes `ward` (role access
+  // plan, 15 Oct 2026) and the reducer takes it from a ward only as source `psychiatric_ward`.
+  // The New referral sheet on a ward page sends in that ward's own name too (Josh, 15 Oct 2026),
+  // so it needs no pair either.
   // New referral sheet (`ward-referral-drawer.tsx`), on routes whose role `EVENT_ROLE` omits.
-  { routeRole: "officer", event: "RECEIVE_REFERRAL", reason: REFERRAL_SHEET },
+  // Role access plan decision 6 (Josh, 15 Oct 2026): the transport officer does not raise referrals
+  // or add patients, so the officer's two pairs are gone and its sheet shows "… only".
   { routeRole: "ward", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
-  { routeRole: "officer", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
 ];
 
 /** The allowance that lets `role` dispatch `eventType` outside `EVENT_ROLE`, if any. */

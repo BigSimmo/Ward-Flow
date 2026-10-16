@@ -7,6 +7,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { stripAllComments } from "./helpers/strip-source-comments";
+import {
+  COMMUNITY_SCREEN_FILES,
+  COMMUNITY_SCREEN_MAIN,
+  communityScreenFilesOnDisk,
+} from "./helpers/community-screen-sources";
 
 /**
  * NINE CLAIMS THAT WERE FALSE ON THE COMMUNITY SCREENS, PINNED SO THAT NONE OF THEM CAN COME BACK.
@@ -87,7 +92,18 @@ function proseOf(source: string): string {
     .trim();
 }
 
-const screenSource = sourceOf(SCREEN_PATH);
+/*
+ * The whole screen, not one file of it. On 15 Oct 2026 (fix list 2.5 and 9.6) `community-screen.tsx`
+ * was split into sections and hooks beside it, and every sentence these pins police moved with its
+ * code. Reading only the screen file would make each absence below pass over most of the screen.
+ * The screen file keeps its own length floor; the others are read in full and a missing one throws.
+ */
+const screenSource = [
+  sourceOf(SCREEN_PATH),
+  ...COMMUNITY_SCREEN_FILES.filter((path) => path !== SCREEN_PATH).map((path) =>
+    readFileSync(join(process.cwd(), path), "utf8"),
+  ),
+].join("\n");
 const derivationsSource = sourceOf(DERIVATIONS_PATH);
 const screenProse = proseOf(screenSource);
 const derivationsProse = proseOf(derivationsSource);
@@ -126,6 +142,20 @@ function visibleText(markup: string): string {
 
 const pageMarkup = renderTeamMarkup();
 const pageText = visibleText(pageMarkup);
+
+describe("the community screen's source is read whole", () => {
+  it("reads every file the screen was split into, so no moved sentence escapes the pins below", () => {
+    expect(COMMUNITY_SCREEN_MAIN).toBe(SCREEN_PATH);
+    expect(COMMUNITY_SCREEN_FILES[0]).toBe(SCREEN_PATH);
+    // A new section file must join the list on purpose: one left out would be read by nothing here.
+    expect([...COMMUNITY_SCREEN_FILES].sort()).toEqual(communityScreenFilesOnDisk());
+    for (const path of COMMUNITY_SCREEN_FILES) {
+      expect(screenSource, `${path} is not part of the scanned source`).toContain(
+        readFileSync(join(process.cwd(), path), "utf8"),
+      );
+    }
+  });
+});
 
 describe("the community screens rendered something to scan at all", () => {
   it("renders the real page, so every absence below is measured against text that exists", () => {

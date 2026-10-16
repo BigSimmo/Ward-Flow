@@ -47,21 +47,21 @@ const APPROVED_SHARED_MODULES = new Map([
     "@/components/clinical-dashboard/brand",
     "the product wordmark, so the prototype is not misread as a separate product",
   ],
-  ["@/components/ui/sheet", "the slide-over panel primitive"],
+  ["@/components/wf/sheet", "the slide-over panel primitive"],
   [
     "@/components/wf",
     "the approved v6 design system kit (Josh, 7 October 2026): tokens-only primitives every Ward Flow " +
       "screen builds from. Imported through this one barrel only, so it travels as one folder.",
   ],
   [
-    "@/components/ui/sheet-focus",
+    "@/components/wf/sheet-focus",
     "Ward Lead UI decision, 2026-09-23: receipt/upload dialogs share the already-approved Sheet " +
       "singleton for topmost Escape, inert background and safe focus return; a separate stack " +
       "would conflict with nested Sheets. This exact lifecycle dependency travels with Sheet " +
       "when extracted; it does not approve the rest of components/ui.",
   ],
   [
-    "@/components/ui/tooltip",
+    "@/components/wf/tooltip",
     "the existing portal, viewport positioning and focus/Escape lifecycle for the drawn closed-rail card; avoids clipping inside the required scrolling rail without duplicating overlay infrastructure (visual wave Task 1)",
   ],
   ["@/components/contextual-back-link", "shared back navigation"],
@@ -75,7 +75,7 @@ const APPROVED_SHARED_MODULES = new Map([
       "It also owns the Glare mode preference for the same reason.",
   ],
   [
-    "@/components/ui/missing-value",
+    "@/components/wf/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
 ]);
@@ -275,6 +275,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 9 → 10 on 2026-09-23: the same Sheet stack must coordinate custom Ward dialogs.
     // 10 -> 9 on 2026-09-28: the developer-key access gate was removed at Josh's request.
     // 9 -> 10 on 2026-10-07: the v6 design system kit, @/components/wf, approved by Josh.
+    // Same 11 on 2026-10-15 (fix list 2.2, one component library): sheet, sheet-focus, tooltip and
+    // missing-value moved from components/ui into components/wf. Each keeps its own approval under
+    // its new path, so the seam is the same four primitives, not the whole old ui folder.
     // 10 -> 11 on 2026-10-10: @/lib/theme-client, the one theme switch. The ward's own appearance key
     // was the defect, so the ward now calls the owner.
     expect(APPROVED_SHARED_MODULES.size).toBe(11);
@@ -289,11 +292,11 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/clinical-dashboard/brand",
       "@/components/contextual-back-link",
       "@/components/ui-primitives",
-      "@/components/ui/missing-value",
-      "@/components/ui/sheet",
-      "@/components/ui/sheet-focus",
-      "@/components/ui/tooltip",
       "@/components/wf",
+      "@/components/wf/missing-value",
+      "@/components/wf/sheet",
+      "@/components/wf/sheet-focus",
+      "@/components/wf/tooltip",
       "@/lib/client-store-factory",
       "@/lib/form-register",
       "@/lib/theme-client",

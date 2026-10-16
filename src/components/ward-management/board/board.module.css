@@ -4855,6 +4855,13 @@
     box-shadow: none;
   }
 
+  /* Keeps the keyboard ring on a past-date tile: the reset above would otherwise outrank
+     `.bed:focus-visible`. */
+  .screen .bedPast:focus-visible {
+    outline: var(--ward-space-3) solid var(--focus-ring, var(--primary));
+    outline-offset: 0.125rem;
+  }
+
   .screen .pastMark,
   .screen .awayMark,
   .screen .selectedMark {

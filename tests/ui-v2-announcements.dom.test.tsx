@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LiveAnnouncer, RouteAnnouncer, announce, resetAnnouncerForTests } from "@/components/ui/live-announcer";
+import { LiveAnnouncer, RouteAnnouncer, announce, resetAnnouncerForTests } from "@/components/wf/live-announcer";
 import { AppAnnouncements } from "@/components/app-announcements";
 
 const pathname = vi.hoisted(() => ({ current: "/answer" }));

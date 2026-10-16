@@ -26,8 +26,10 @@ describe("ED long wait steps (Top 25 item 13)", () => {
   });
 
   it("does not use the retired 12 hour step or 22 hour edge", () => {
-    expect(edWaitStep(CLINICAL_VALUES.edSecondEscalation.value)?.step).toBe(2);
-    expect(edWaitStep(CLINICAL_VALUES.edLadderActNowEdge.value)?.step).toBe(2);
+    expect(edWaitStep(12 * 60)?.step).toBe(2);
+    expect(edWaitStep(22 * 60)?.step).toBe(2);
+    expect("edSecondEscalation" in CLINICAL_VALUES).toBe(false);
+    expect("edLadderActNowEdge" in CLINICAL_VALUES).toBe(false);
   });
 
   it("labels each step in plain words", () => {

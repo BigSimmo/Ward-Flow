@@ -1,4 +1,9 @@
-import { clockState, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  isClockBreached,
+} from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type {
   BedRelease,
@@ -6,6 +11,7 @@ import type {
   Movement,
   Referral,
   Rejection,
+  Site,
   Unit,
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
@@ -42,12 +48,15 @@ export type CommandActivityInput = {
   /** D-39: read only to name each journey by its patient's UMRN. */
   patients: Patient[];
   units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  sites: readonly Site[];
   referrals: Referral[];
   rejections: Rejection[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
   refreshRequests: { unitId: string; at: Instant; byRole: string }[];
   now: Instant;
+  thresholds: DueSoonThresholds;
 };
 
 /**
@@ -87,7 +96,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     });
 
     const dueAt = movement.legalForm?.dueAt;
-    if (dueAt !== undefined && clockState(dueAt, now) === "breached") {
+    if (dueAt !== undefined && isClockBreached(dueAt, now)) {
       events.push({
         at: dueAt,
         id: `legal-deadline:${movement.id}:${dueAt}`,
@@ -184,7 +193,16 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   });
 
   const ordered = events.filter((event) => event.at <= now).sort((left, right) => right.at - left.at);
-  const counts = wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now });
+  const counts = wardNavCounts({
+    movements,
+    units,
+    sites: input.sites,
+    referrals,
+    bedReleases,
+    leaveBeds,
+    now,
+    thresholds: input.thresholds,
+  });
   const openMovements = counts.movements?.value ?? movements.filter(isOpen).length;
   const queuedReferrals = counts.referrals?.value ?? 0;
   const bedsReady = counts.capacity?.value ?? 0;

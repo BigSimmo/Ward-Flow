@@ -329,7 +329,20 @@ test.describe("@mockup Ward shell bar", () => {
       for (const route of COUNTED_ROUTES) {
         await gotoWardChrome(page, route);
 
-        for (const [testId, label] of EXACTLY_ONE) {
+        // A phone draws no rail (fix list 7.6, October 2026): the bar's Menu carries the navigation
+        // there, so at 375px the Menu is counted in the rail's place and the rail must be absent.
+        const shellControls =
+          width === 375
+            ? EXACTLY_ONE.map(([testId, label]) =>
+                testId === "ward-rail"
+                  ? (["ward-bar-phone-menu", "the phone Menu"] as const)
+                  : ([testId, label] as const),
+              )
+            : EXACTLY_ONE;
+        if (width === 375) {
+          await expect(page.getByTestId("ward-rail"), `a phone draws no rail on ${route}`).toHaveCount(0);
+        }
+        for (const [testId, label] of shellControls) {
           await expect(
             page.getByTestId(testId),
             `${label} (${testId}) must appear EXACTLY ONCE on ${route} at ${width}px. Two means ` +

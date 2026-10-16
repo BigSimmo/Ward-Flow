@@ -2,7 +2,6 @@
 
 import { isTierOverdue } from "../ward-shared-figures";
 import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
@@ -26,7 +25,11 @@ import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-head
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
@@ -114,6 +117,7 @@ import {
   StatusGlyph,
   buttonClass,
   useIsPhone,
+  useModalFocus,
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
@@ -201,7 +205,19 @@ export function PatientNowScreen({
   initialExampleId = "WF-009",
   initialTaskAction,
 }: PatientNowScreenProps) {
-  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
+    useWardFlowSelect(
+      "patients",
+      "movements",
+      "referrals",
+      "admissions",
+      "units",
+      "leaveBeds",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
   const now = useWardFlowClock();
   // Top 25 item 24: time away and the held bed review warning on the absent without leave card.
   const awolTracker = useWardFeatureFlag("top25-awol-tracker");
@@ -259,7 +275,6 @@ export function PatientNowScreen({
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
-  useWardPageScrollLock(showClearanceModal);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
@@ -283,44 +298,18 @@ export function PatientNowScreen({
 
   const closeClearanceModal = useCallback(() => {
     setShowClearanceModal(false);
-    clearanceTriggerRef.current?.focus();
   }, [setShowClearanceModal]);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (!showClearanceModal) return;
-      if (event.key === "Escape") {
-        closeClearanceModal();
-        return;
-      }
-      if (event.key === "Tab" && clearanceModalRef.current) {
-        const focusable = clearanceModalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
-          last.focus();
-          event.preventDefault();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          first.focus();
-          event.preventDefault();
-        }
-      }
-    }
-    if (showClearanceModal) {
-      window.addEventListener("keydown", handleKeyDown);
-      queueMicrotask(() => {
-        const first = clearanceModalRef.current?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        first?.focus();
-      });
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showClearanceModal, closeClearanceModal]);
+  // The shared modal contract: the page behind is inert and held still, focus starts on the first
+  // control, Tab wraps inside the box, Escape closes only this top layer, and focus returns to the
+  // button that opened it.
+  const { rootRef: clearanceBackdropRef } = useModalFocus({
+    open: showClearanceModal,
+    onClose: closeClearanceModal,
+    panelRef: clearanceModalRef,
+    returnFocusRef: clearanceTriggerRef,
+    focusOnOpen: "immediate",
+  });
 
   // Synchronize document title
   useEffect(() => {
@@ -471,7 +460,7 @@ export function PatientNowScreen({
   const displayCadNumber = liveMovement?.transport?.cadNumber;
   const displayEta =
     liveMovement?.transport?.estimatedAt !== undefined
-      ? `${clock(liveMovement.transport.estimatedAt)} AWST`
+      ? `${formatInstantWithDay(liveMovement.transport.estimatedAt, now)} AWST`
       : undefined;
   const displayProvider = liveMovement?.transport?.provider ?? "Not recorded";
   const displayLegalStatus = liveMovement?.transport?.transportLegalStatus
@@ -651,9 +640,9 @@ export function PatientNowScreen({
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
   // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
-  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now);
+  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now, thresholds);
   const movementTimeLeft =
-    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now) : undefined;
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds) : undefined;
   // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
   const formMovementNext = formProgression(formMovement);
   const phoneLegal = ctoInForce
@@ -1349,7 +1338,10 @@ export function PatientNowScreen({
                 {hasArrivalPlan ? (
                   <span className={styles.pulledClockBadge}>
                     <Clock size={14} aria-hidden="true" />
-                    <span>ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST</span>
+                    <span>
+                      ETA: {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120, now)}{" "}
+                      AWST
+                    </span>
                   </span>
                 ) : pullExpiresAt !== undefined ? (
                   <span
@@ -1377,7 +1369,8 @@ export function PatientNowScreen({
                   />
                   <div>
                     <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
-                    estimated arrival time ({clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST).
+                    estimated arrival time (
+                    {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now, now)} AWST).
                     Notification is not recorded here.
                   </div>
                 </div>
@@ -2348,6 +2341,7 @@ export function PatientNowScreen({
       {showClearanceModal && (
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
         <div
+          ref={clearanceBackdropRef}
           className={styles.clearanceModalBackdrop}
           role="dialog"
           aria-modal="true"

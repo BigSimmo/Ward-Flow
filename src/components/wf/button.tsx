@@ -2,7 +2,7 @@
 
 import { useId, type ComponentPropsWithRef, type MouseEvent, type ReactNode } from "react";
 import { ChevronDown, Lock, type LucideIcon } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Tooltip } from "./tooltip";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { Menu, type MenuItem } from "./menu";

@@ -20,6 +20,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionStagePosition,
@@ -115,6 +116,7 @@ const wardsWord = (n: number) => (n === 1 ? "ward" : "wards");
  */
 export function StatisticsOverviewScreen() {
   usePrintableDisclosures();
+  const small = useSmallNumber();
   const section = statisticsSectionById("overview");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
@@ -197,7 +199,7 @@ export function StatisticsOverviewScreen() {
               label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               tone={wardsOverLine > 0 ? "warning" : undefined}
             />
-            <HeroStat value={blockedTotal} label="Blocked" />
+            <HeroStat value={small(blockedTotal)} label="Blocked" />
           </>
         ),
       }}

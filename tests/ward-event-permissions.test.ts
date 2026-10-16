@@ -172,8 +172,10 @@ describe("who may raise which event", () => {
     RAISE_REFERRAL: ["ed", "community", "ward", "coordinator"],
     /* Widened to ["community", "ed"] by R9 (owner item 23, 2026-09-17): only `ed_medical` is
      * raised as `ed`, and the reducer's own `RECEIVE_REFERRAL` case refuses role `ed` paired with
-     * any other source — a pairing this table cannot itself express. */
-    RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
+     * any other source — a pairing this table cannot itself express. Widened to `ward` by the
+     * role access plan (15 Oct 2026): the reducer refuses role `ward` with any source but
+     * `psychiatric_ward`. */
+    RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
     RECORD_ESCALATION: ["coordinator"],
     RECORD_EXAMINATION: ["ed", "coordinator"],
     /* Ruling 1: ED marks Form 1A as received. CORRECTED 2026-09-17, T2r fix round, finding 10:
@@ -426,6 +428,7 @@ describe("who may raise which event", () => {
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+    SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],

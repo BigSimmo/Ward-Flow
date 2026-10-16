@@ -8,6 +8,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DischargeCriterion } from "@/components/ward-management/ward-discharge-criteria";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
   SupportNotificationOccasion,
@@ -1288,6 +1289,9 @@ export type WardFlowEvent =
        * occupied until arrival.
        */
       originUnitId?: string;
+      /** The ward raising it, when the role is `ward`. The reducer refuses a ward caller unless this
+       *  matches `originUnitId`, so a ward sends only in its own name. */
+      actingUnitId?: string;
       /**
        * WHICH TEAM OR SERVICE SENT IT, by name. Owner, 2026-09-12: **"Yes it should."**
        *
@@ -2014,6 +2018,22 @@ export type WardFlowEvent =
       actingUnitId?: string;
       admissionId: string;
       barrier: DischargeBarrier | "None" | null;
+    }
+  | {
+      /** D-60: sets, ticks or clears a voluntary patient's discharge criteria. */
+      type: "SET_DISCHARGE_CRITERIA";
+      role: WardFlowRole;
+      now: Instant;
+      actingUnitId?: string;
+      admissionId: string;
+      /** The chosen criteria in order, or null to clear them. */
+      criteria: DischargeCriterion[] | null;
+      /** The chosen criteria now met. */
+      met: DischargeCriterion[];
+      /** The ward records that the treating psychiatrist set this list. Needed to set or change it. */
+      setByTreatingPsychiatrist: boolean;
+      /** One criterion ticked or unticked, applied to the stored list rather than replacing it. */
+      tick?: { criterion: DischargeCriterion; met: boolean };
     }
   | {
       type: "RECORD_ED_MEDICAL_DETERIORATION";
@@ -2842,7 +2862,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // including GP, stays `community`." `ed` widens the table here; the reducer's own
   // `case "RECEIVE_REFERRAL"` couples it back to `source` — this list alone cannot express "only
   // when the source is ed_medical".
-  RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
+  //
+  // Role access plan (Josh, 15 Oct 2026): a ward raises a ward-to-ward referral in its own name.
+  // The reducer couples `ward` to source `psychiatric_ward` with a real sending ward, as it couples
+  // `ed` to `ed_medical`, so a ward cannot file a referral under another source.
+  RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
   ADD_PATIENT: ["ed", "community", "coordinator"],
   /**
@@ -2982,6 +3006,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+  SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],

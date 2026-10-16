@@ -502,7 +502,9 @@
   .in:focus-within,
   .native:focus-visible + .box,
   .native:focus-visible + .dot,
-  .switchRow:focus-visible .track {
+  .switchRow:focus-visible .track,
+  .stpButton:focus-visible,
+  .stpValue:focus-visible {
     outline: 2px solid CanvasText;
   }
   .switchRow[aria-checked="true"] .track {

@@ -3,15 +3,7 @@
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, Truck, X } from "lucide-react";
 
 import {
@@ -42,6 +34,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useModalFocus,
   type TimelineItem,
   type WfTone,
 } from "@/components/wf";
@@ -55,9 +48,9 @@ import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flo
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
   TRANSPORT_PROVIDERS,
   type Movement,
@@ -392,7 +385,15 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, dispatch, rejections, patients, referrals, dayZero, notices } = useWardFlow();
+  const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
+    "movements",
+    "units",
+    "rejections",
+    "patients",
+    "referrals",
+    "dayZero",
+    "notices",
+  );
   const [isPhone, setIsPhone] = useState(false);
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
@@ -424,6 +425,7 @@ export function OfficerScreen() {
     return movement ? officerPatientName(movement) : "Not recorded";
   };
   const now = useWardFlowClock();
+  const raise = useWardRaise("officer");
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   const jobs = movements.filter(isOfficerJob);
@@ -587,42 +589,18 @@ export function OfficerScreen() {
   // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
   // isPhone is declared above officerPatientName, which reads it.
 
-  const formModalSheetId = useId();
-  useEffect(() => {
-    if (!formModalJob) return;
-    const modal = formModalRef.current;
-    if (!modal) return;
-    // Registered on the shared overlay stack so it sits above the phone job sheet that opened it.
-    pushSheet(formModalSheetId, modal);
-    const firstFocusable = modal.querySelector<HTMLElement>(
-      'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    firstFocusable?.focus();
-    return () => {
-      popSheet(formModalSheetId);
-      // The trigger was inert until the pop, so focus returns here rather than only in the closer.
-      if (lastTriggerRef.current?.isConnected) lastTriggerRef.current.focus();
-    };
-  }, [formModalJob, formModalSheetId]);
-
-  const handleModalTabTrap = (modalElement: HTMLElement | null, event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Tab" || !modalElement) return;
-    const focusable = Array.from(
-      modalElement.querySelectorAll<HTMLElement>(
-        'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
+  // The form check opens over the phone job sheet, so it joins the shared modal contract: the
+  // sheet and page behind are inert, focus starts on the first control, Tab wraps inside, Escape
+  // closes only this dialog (handled first, before this screen's own Escape shortcut), and focus
+  // returns to the trigger once the stack has released it.
+  useModalFocus({
+    open: formModalJob !== null,
+    onClose: () => setFormModalJob(null),
+    panelRef: formModalRef,
+    returnFocusRef: lastTriggerRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
 
   // Newest first: `rejections` is appended in raise order
   const officerRefusals = [...rejections]
@@ -732,7 +710,7 @@ export function OfficerScreen() {
   // v10 pass 3: Undo takes back the step just recorded (UNDO_TRANSPORT_STEP, within the engine's window).
   const undoTransportStep = (movementId: string) => {
     const prior = rejections.length;
-    dispatch({ type: "UNDO_TRANSPORT_STEP", role: "officer", now, movementId });
+    raise("UNDO_TRANSPORT_STEP", { movementId });
     setToastMessage({
       success: "Undone. Back as it was.",
       refused: "Undo was refused:",
@@ -759,7 +737,7 @@ export function OfficerScreen() {
       : undefined;
 
   const runAccepted = (movement: Movement) => {
-    dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
+    raise("TRANSPORT_ACCEPTED", { movementId: movement.id });
     reportOutcome(
       `Transport accepted for ${officerPatientName(movement)}.`,
       "Transport acceptance",
@@ -768,7 +746,7 @@ export function OfficerScreen() {
     );
   };
   const runEnRoute = (movement: Movement) => {
-    dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
+    raise("TRANSPORT_EN_ROUTE", { movementId: movement.id });
     reportOutcome(
       `Transport en route for ${officerPatientName(movement)}.`,
       "En route",
@@ -785,10 +763,7 @@ export function OfficerScreen() {
     recordCollected(movement);
   };
   const recordCollected = (movement: Movement, exception?: TransportExceptionInput) => {
-    dispatch({
-      type: "PATIENT_COLLECTED",
-      role: "officer",
-      now,
+    raise("PATIENT_COLLECTED", {
       movementId: movement.id,
       ...(exception ? { exception } : {}),
     });
@@ -800,7 +775,7 @@ export function OfficerScreen() {
     );
   };
   const runDelivered = (movement: Movement) => {
-    dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: movement.id });
+    raise("PATIENT_ARRIVED", { movementId: movement.id });
     reportOutcome(
       `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
       "Delivery",
@@ -915,7 +890,6 @@ export function OfficerScreen() {
 
   const closeFormModal = () => {
     setFormModalJob(null);
-    lastTriggerRef.current?.focus();
   };
 
   // Every open job with a recorded ward ETA or booking estimate. The axis runs from the earlier of
@@ -1422,10 +1396,7 @@ export function OfficerScreen() {
                   onClick={
                     diversionReady
                       ? () => {
-                          dispatch({
-                            type: "RECORD_DIVERSION",
-                            role: "officer",
-                            now,
+                          raise("RECORD_DIVERSION", {
                             movementId: movement.id,
                             reason: diversionReason,
                             place: diversionPlace,
@@ -2218,7 +2189,7 @@ export function OfficerScreen() {
 
       {/* Form verification dialog */}
       {formModalJob ? (
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
         <div
           ref={formModalRef}
           className={styles.modalBackdrop}
@@ -2226,7 +2197,6 @@ export function OfficerScreen() {
           aria-modal="true"
           aria-labelledby="form-verify-title"
           onClick={closeFormModal}
-          onKeyDown={(e) => handleModalTabTrap(formModalRef.current, e)}
         >
           {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
           <div className={styles.modalDialog} onClick={(e) => e.stopPropagation()}>

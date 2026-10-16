@@ -10,7 +10,7 @@ import { wardMovements } from "../src/components/ward-management/ward-movements"
 import { isOpen } from "../src/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import type { Movement } from "../src/components/ward-management/ward-model";
-import type { Instant } from "../src/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, type Instant } from "../src/components/ward-management/ward-clock";
 
 function movementById(id: string) {
   const found = wardMovements.find((movement) => movement.id === id);
@@ -23,13 +23,17 @@ describe("operational score", () => {
     const base = movementById("WF-001");
     const tierOne: Movement = { ...base, urgency: 1 };
     const tierThree: Movement = { ...base, urgency: 3 };
-    expect(operationalScore(tierOne, NOW_ANCHOR).score).toBe(operationalScore(tierThree, NOW_ANCHOR).score);
+    expect(operationalScore(tierOne, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBe(
+      operationalScore(tierThree, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
+    );
   });
 
   it("scores a longer wait above a shorter one, all else equal", () => {
     const base = movementById("WF-001");
     const waitedLonger: Movement = { ...base, openedAt: base.openedAt - 240 };
-    expect(operationalScore(waitedLonger, NOW_ANCHOR).score).toBeGreaterThan(operationalScore(base, NOW_ANCHOR).score);
+    expect(operationalScore(waitedLonger, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBeGreaterThan(
+      operationalScore(base, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
+    );
   });
 
   /**
@@ -45,7 +49,7 @@ describe("operational score", () => {
   it("states the Time waiting factor in the model's own words, 'in ED', never 'since the placement request'", () => {
     const base = movementById("WF-001");
     const waited: Movement = { ...base, openedAt: base.openedAt - 240 };
-    const { factors } = operationalScore(waited, NOW_ANCHOR);
+    const { factors } = operationalScore(waited, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     const waitFactor = factors.find((factor) => factor.label === "Time waiting");
     expect(waitFactor, "fixture assumption: a 240-minute-older openedAt scores Time waiting points").toBeDefined();
     expect(waitFactor?.detail).toMatch(/ in ED$/);
@@ -72,13 +76,15 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "4A", kind: "transport", dueAt: NOW_ANCHOR + 400 },
     };
-    expect(operationalScore(breached, NOW_ANCHOR).score).toBeGreaterThan(operationalScore(clear, NOW_ANCHOR).score);
+    expect(operationalScore(breached, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBeGreaterThan(
+      operationalScore(clear, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
+    );
 
     // Fix wave 1, finding 7: before this, `"passed its deadline"` (ward-priority.ts) was pinned
     // by no unit test at all — deleting or renaming it would have gone undetected, because the
     // only test that mentioned the string was the new whole-page ABSENCE assertion in Playwright,
     // which a deletion makes *more* likely to pass. Assert the rendered factor positively here.
-    const breachFactor = operationalScore(breached, NOW_ANCHOR).factors.find(
+    const breachFactor = operationalScore(breached, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors.find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
     expect(breachFactor, "a past-due form must produce a Form due time factor").toBeDefined();
@@ -94,7 +100,7 @@ describe("operational score", () => {
     // points and so pushes no factor at all. Pinning that explicitly is the honest assertion —
     // and it is what makes the comparison above meaningful rather than a comparison of two
     // scored states.
-    const clearFactor = operationalScore(clear, NOW_ANCHOR).factors.find(
+    const clearFactor = operationalScore(clear, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors.find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
     expect(clearFactor, "a deadline still 400 min away must score no Form due time points").toBeUndefined();
@@ -107,7 +113,7 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "4A", kind: "transport", dueAt: NOW_ANCHOR + 90 },
     };
-    const approachingFactor = operationalScore(approaching, NOW_ANCHOR).factors.find(
+    const approachingFactor = operationalScore(approaching, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors.find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
     expect(approachingFactor?.detail).toBe("Form 4A due in 1h 30m");
@@ -124,7 +130,7 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "3B", kind: "detention" },
     };
-    const { factors } = operationalScore(noDeadline, NOW_ANCHOR);
+    const { factors } = operationalScore(noDeadline, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL)).toBeUndefined();
   });
 
@@ -139,7 +145,7 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "3B", kind: "detention" },
     };
-    const { factors } = operationalScore(noDeadline, NOW_ANCHOR);
+    const { factors } = operationalScore(noDeadline, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL)).toBeUndefined();
   });
 
@@ -157,7 +163,7 @@ describe("operational score", () => {
   it("scores no factor for having been examined or reviewed", () => {
     const forbidden = /exam|review|assess|bed need/i;
     for (const movement of wardMovements) {
-      for (const factor of operationalScore(movement, NOW_ANCHOR).factors) {
+      for (const factor of operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors) {
         expect(factor.label, `${movement.id} scored a factor labelled for review: ${factor.label}`).not.toMatch(
           forbidden,
         );
@@ -168,7 +174,7 @@ describe("operational score", () => {
     const base = movementById("WF-001");
     for (const outcome of ["inpatient_order", "community_order", "revoked"] as const) {
       const examined: Movement = { ...base, examination: { at: NOW_ANCHOR - 30, outcome } };
-      for (const factor of operationalScore(examined, NOW_ANCHOR).factors) {
+      for (const factor of operationalScore(examined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors) {
         expect(factor.label, `outcome ${outcome} scored a factor labelled for review`).not.toMatch(forbidden);
       }
     }
@@ -177,11 +183,11 @@ describe("operational score", () => {
   it("scores an examined movement exactly as it scores the same movement unexamined", () => {
     const unexamined = movementById("WF-001");
     expect(unexamined.examination, "fixture assumption: WF-001 carries no examination").toBeUndefined();
-    const before = operationalScore(unexamined, NOW_ANCHOR);
+    const before = operationalScore(unexamined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
 
     for (const outcome of ["inpatient_order", "community_order", "revoked"] as const) {
       const examined: Movement = { ...unexamined, examination: { at: NOW_ANCHOR - 30, outcome } };
-      const after = operationalScore(examined, NOW_ANCHOR);
+      const after = operationalScore(examined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(after.score, `recording ${outcome} must not move the score`).toBe(before.score);
       expect(after.factors, `recording ${outcome} must not add or alter a factor`).toEqual(before.factors);
     }
@@ -191,12 +197,14 @@ describe("operational score", () => {
     const examinedFixture = movementById("WF-009");
     expect(examinedFixture.examination?.outcome, "fixture assumption: WF-009 was examined").toBe("inpatient_order");
     const stripped: Movement = { ...examinedFixture, examination: undefined };
-    expect(operationalScore(stripped, NOW_ANCHOR).score).toBe(operationalScore(examinedFixture, NOW_ANCHOR).score);
+    expect(operationalScore(stripped, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBe(
+      operationalScore(examinedFixture, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
+    );
   });
 
   it("explains itself — every point scored is attributed to a named factor", () => {
     for (const movement of wardMovements) {
-      const { score, factors } = operationalScore(movement, NOW_ANCHOR);
+      const { score, factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.reduce((sum, factor) => sum + factor.points, 0)).toBe(score);
       for (const factor of factors) {
         expect(factor.label.length).toBeGreaterThan(0);
@@ -207,7 +215,7 @@ describe("operational score", () => {
 
   it("stays inside its stated range so it cannot be read as a percentage of anything", () => {
     for (const movement of wardMovements) {
-      const { score } = operationalScore(movement, NOW_ANCHOR);
+      const { score } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(100);
     }
@@ -216,7 +224,7 @@ describe("operational score", () => {
   it("does not report a blocker for a movement whose blocker field says there is none", () => {
     for (const id of ["WF-006", "WF-007", "WF-014"]) {
       const movement = movementById(id);
-      const { factors } = operationalScore(movement, NOW_ANCHOR);
+      const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.find((factor) => factor.label === "Active blocker")).toBeUndefined();
     }
   });
@@ -224,13 +232,13 @@ describe("operational score", () => {
   it("does not report a blocker for a value that only happens to start with 'None'", () => {
     const base = movementById("WF-001");
     const realBlocker: Movement = { ...base, blocker: "None of the secure units can take him" };
-    const { factors } = operationalScore(realBlocker, NOW_ANCHOR);
+    const { factors } = operationalScore(realBlocker, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.find((factor) => factor.label === "Active blocker")).toBeDefined();
   });
 
   it("states the decline count without a self-contradictory fraction against the parallel cap", () => {
     const movement = movementById("WF-009");
-    const { factors } = operationalScore(movement, NOW_ANCHOR);
+    const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     const declineFactor = factors.find((factor) => factor.label === "Destinations declined");
     expect(declineFactor).toBeDefined();
     expect(declineFactor?.detail).not.toContain(" of 3");
@@ -240,7 +248,7 @@ describe("operational score", () => {
   it("does not claim a transport delay for a movement already en route", () => {
     for (const movement of wardMovements) {
       if (movement.transport?.enRouteAt === undefined) continue;
-      const { factors } = operationalScore(movement, NOW_ANCHOR);
+      const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.find((factor) => factor.label === "Transport delay")).toBeUndefined();
     }
   });
@@ -248,7 +256,7 @@ describe("operational score", () => {
   it("still claims a transport delay for a movement accepted but not yet departed", () => {
     for (const id of ["WF-005", "WF-015"]) {
       const movement = movementById(id);
-      const { factors } = operationalScore(movement, NOW_ANCHOR);
+      const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.find((factor) => factor.label === "Transport delay")).toBeDefined();
     }
   });
@@ -541,9 +549,9 @@ describe("the urgent flag, and the ranking decision partly resolved beneath it",
     const tenHours: Movement = { ...base, openedAt: NOW_ANCHOR - 600 };
     const thirtyHours: Movement = { ...base, openedAt: NOW_ANCHOR - 1800 };
     expect(
-      operationalScore(tenHours, NOW_ANCHOR).score,
+      operationalScore(tenHours, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
       "operationalScore's own wait cap has moved. If that was deliberate, say so here and check " +
         "whether the factor breakdown priority-queue.tsx renders still reads honestly.",
-    ).toBe(operationalScore(thirtyHours, NOW_ANCHOR).score);
+    ).toBe(operationalScore(thirtyHours, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score);
   });
 });

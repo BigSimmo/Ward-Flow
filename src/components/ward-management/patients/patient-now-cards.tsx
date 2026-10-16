@@ -11,6 +11,7 @@ import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-for
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /**
  * The gate board's context cards for Now (9 Oct 2026). Now only ever shows what is true at this
  * moment: past presentations, closed records and superseded forms live in History and Documents.
@@ -87,6 +88,7 @@ export function PatientLegalNowCard({
   /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
   absent?: boolean;
 }) {
+  const thresholds = useDueSoonThresholds();
   const rows: Array<{
     tone: WfTone;
     code: string;
@@ -101,7 +103,7 @@ export function PatientLegalNowCard({
     // Audit S-6: after an inpatient order at the examination, or an arrival on an order, the old
     // form shows as ended and Form 6A is the one form to record next.
     const progression = formProgression(movement);
-    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now) : undefined;
+    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now, thresholds) : undefined;
     rows.push({
       tone: progression ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
       code: `Form ${movement.legalForm.code}`,

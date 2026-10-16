@@ -3,12 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>()),
   useWardFlow: () => context,
+  useWardFlowSelect: () => context,
+  useOptionalWardFlowSelect: () => context,
+  useDueSoonThresholds: () => dueSoonThresholdsOf(context?.configuration),
+  useWardNetwork: () => activeWardNetwork(),
   useWardFlowClock: () => NOW_ANCHOR,
 }));
 
