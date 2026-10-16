@@ -4,16 +4,6 @@ import { personPath } from "./helpers/ward-record-url";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/ward-management/ward-nav";
 
-// This file pins the Tasks drawer on every width, including the phone dock's Tasks button. The One
-// Alerts queue flag (on in development) turns that button into a link to the Alerts screen; its
-// behaviour is covered by tests/ward-alerts-one-queue.dom.test.tsx.
-test.beforeEach(async ({ page }) => {
-  // `WARD_FEATURE_FLAGS_STORAGE_KEY` in ward-feature-flag-store.ts.
-  await page.addInitScript(() =>
-    window.localStorage.setItem("ward_flow_feature_flags", JSON.stringify({ "alerts-one-queue": false })),
-  );
-});
-
 /**
  * BROWSER COVERAGE OF THE WARD FLOW SHELL BAR (`WardBar`, `shell/ward-bar.tsx`, mounted with
  * `WardRail` in `src/app/mockups/ward-flow/layout.tsx` above every ward route).
@@ -143,7 +133,7 @@ const EXACTLY_ONE: ReadonlyArray<readonly [string, string]> = [
   ["ward-global-search", "the search control"],
   ["ward-bar-service-trigger", "the Service selector"],
   ["ward-bar-activity-trigger", "the Activity (figures) control"],
-  ["ward-bar-tasks-trigger", "the Tasks control"],
+  ["ward-bar-tasks-trigger", "the Alerts control"],
   ["ward-bar-tools-trigger", "the Tools control"],
   ["ward-live-region", "the shell's polite announcer"],
 ];
@@ -207,7 +197,7 @@ function searchPopup(page: Page): Locator {
 const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
   ["ward-bar-service-trigger", "ward-bar-service-panel", "the Service selector"],
   ["ward-bar-activity-trigger", "ward-bar-activity-sheet", "the Activity drawer"],
-  ["ward-bar-tasks-trigger", "ward-bar-tasks-sheet", "the Tasks drawer"],
+  ["ward-bar-tasks-trigger", "ward-bar-tasks-sheet", "the Alerts quick look"],
   ["ward-bar-tools-trigger", "ward-bar-tools-sheet", "the Tools drawer"],
 ];
 
@@ -219,8 +209,16 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
 const PHONE_BAR_MAX_WIDTH = 768;
 const PHONE_DOCK_BUTTONS: Readonly<Record<string, string>> = {
   "ward-bar-activity-trigger": "ward-phone-menu-activity",
-  "ward-bar-tasks-trigger": "ward-phone-menu-tasks",
 };
+// One Alerts queue (D-61): the bed coordinator's dock carries an Alerts link to the Alerts screen,
+// not a drawer button, so on a phone the bar's Alerts quick look has no opener.
+const PHONE_DOCK_LINKS: Readonly<Record<string, string>> = {
+  "ward-bar-tasks-trigger": "ward-phone-menu-alerts",
+};
+
+function phoneOpens(testId: string, width: number): boolean {
+  return width > PHONE_BAR_MAX_WIDTH || !(testId in PHONE_DOCK_LINKS);
+}
 const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
   "ward-bar-tools-trigger": "ward-phone-menu-tools",
 };
@@ -228,7 +226,13 @@ const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "w
 
 function barOpeners(width: number): ReadonlyArray<readonly [string, string, string]> {
   return width <= PHONE_BAR_MAX_WIDTH
-    ? [...OPENERS.filter(([testId]) => !(testId in PHONE_MENU_ROWS) && !(testId in PHONE_DOCK_BUTTONS)), PHONE_MENU]
+    ? [
+        ...OPENERS.filter(
+          ([testId]) =>
+            !(testId in PHONE_MENU_ROWS) && !(testId in PHONE_DOCK_BUTTONS) && !(testId in PHONE_DOCK_LINKS),
+        ),
+        PHONE_MENU,
+      ]
     : OPENERS;
 }
 
@@ -470,7 +474,7 @@ test.describe("@mockup Ward shell bar", () => {
       await page.setViewportSize({ width, height: 900 });
       await gotoWardChrome(page);
 
-      for (const [triggerId, panelId, label] of OPENERS) {
+      for (const [triggerId, panelId, label] of OPENERS.filter(([testId]) => phoneOpens(testId, width))) {
         const panel = page.getByTestId(panelId);
 
         await expect(panel, `${label} must start closed`).toHaveCount(0);
@@ -698,7 +702,9 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   }
 });
 
-test("@mockup drawer workspace keeps All figures focus and every task reachable on a short phone", async ({ page }) => {
+test("@mockup drawer workspace keeps All figures focus and every alert reachable on a short phone", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 568 });
   await gotoWardChrome(page);
   const bar = page.getByTestId("ward-bar");
@@ -715,41 +721,16 @@ test("@mockup drawer workspace keeps All figures focus and every task reachable 
   await page.keyboard.press("Escape");
   await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
-  // Phone (device audit option A, 11 Oct 2026): Tasks opens from the dock, not the bar.
-  await openFromBar(page, "ward-bar-tasks-trigger", 390);
-  const tasks = page.getByRole("dialog", { name: "Tasks", exact: true });
-  expect(await tasks.locator("li").count()).toBeGreaterThan(0);
-  const scroller = tasks.locator('[class*="drawerBody"]');
-  await scroller.evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
-  });
-  const lastCard = tasks.locator("li").last();
-  await expect(lastCard).toBeInViewport();
-  await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
-  // Stream D (9 Oct 2026): a planned admission row has no movement and opens Capacity, so the
-  // journey is checked on the last card still labelled "Open patient", scrolled to like the rest.
-  // v10 phone Tasks sheet (11 Oct 2026): a row shows its title, person and due time; tapping the
-  // title expands it to its actions, Open among them. Expand from the last row upward until one
-  // offers "Open patient".
-  const rows = tasks.locator("li");
-  let openPatient: Locator | null = null;
-  for (let index = (await rows.count()) - 1; index >= 0 && !openPatient; index -= 1) {
-    const row = rows.nth(index);
-    await row.scrollIntoViewIfNeeded();
-    const title = row.locator("button[aria-expanded]").first();
-    if ((await title.count()) && (await title.getAttribute("aria-expanded")) !== "true") await title.click();
-    const candidate = row.getByRole("button", { name: "Open patient", exact: true });
-    if (await candidate.count()) openPatient = candidate;
-  }
-  expect(openPatient, "no task row offers Open patient").not.toBeNull();
-  await openPatient!.scrollIntoViewIfNeeded();
-  await expect(openPatient!).toBeInViewport();
-  await openPatient!.click();
-  // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
-  // its stay on the discharges board. Either way the task is reachable and the drawer closes.
-  // D-39: the address carries a code, never the WF or AD number.
-  await expect(page).toHaveURL(/\/movements\/[0-9a-z]+(?:[?#]|$)|\/discharges\?admissionId=[0-9a-z]+/u);
-  await expect(tasks).toHaveCount(0);
+  // One Alerts queue (D-61): the bed coordinator's dock carries Alerts, which opens the Alerts
+  // screen. Every queue row there must still be reachable on a short phone.
+  await page.getByTestId("ward-phone-menu-alerts").click();
+  await expect(page).toHaveURL(/\/mockups\/ward-flow\/alerts(?:[?#]|$)/u);
+  const rows = page.locator("[data-alert-id]:not([data-snoozed])");
+  await expect(rows.first()).toBeVisible();
+  const lastRow = rows.last();
+  await lastRow.scrollIntoViewIfNeeded();
+  await expect(lastRow).toBeInViewport();
+  await expect(lastRow.getByTestId("ward-alerts-open")).toBeInViewport();
 });
 
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {

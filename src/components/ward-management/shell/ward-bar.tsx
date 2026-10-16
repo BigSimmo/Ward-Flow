@@ -108,7 +108,6 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
-import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, edHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
@@ -633,7 +632,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const accessNav = useAccessNavFilter();
   const alertsScreenOpen = accessNav(ALERTS_ACCESS_ENTRY).length > 0;
   const alertsQueueForDesk = wardTasksAreActionableForRole(shellRole);
-  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen && alertsQueueForDesk;
+  const oneAlertsQueue = alertsScreenOpen && alertsQueueForDesk;
   const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();

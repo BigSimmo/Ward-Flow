@@ -1,5 +1,5 @@
-// One Alerts queue (Josh picked design B, 16 Oct 2026): with the `alerts-one-queue` flag on, Tasks
-// and Alerts are one queue. The bar button and the phone dock say Alerts, the desktop drawer is a
+// One Alerts queue (Josh picked design B and signed it off, 16 Oct 2026, D-61): for the bed
+// coordinator's desk, Tasks and Alerts are one queue. The bar button and the phone dock say Alerts, the desktop drawer is a
 // quick look with a way to the Alerts screen, a phone goes straight to that screen, and on the
 // Alerts screen the button does not open a second copy of the list.
 import "@testing-library/jest-dom/vitest";
@@ -44,7 +44,6 @@ const items = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.u
 beforeEach(() => {
   route.pathname = "/mockups/ward-flow";
   mockRouterPush.mockClear();
-  setWardFeatureFlagOnDevice("alerts-one-queue", true);
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
       setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;
@@ -56,7 +55,6 @@ beforeEach(() => {
 afterEach(() => {
   installMatchMediaStub(false);
   act(() => {
-    setWardFeatureFlagOnDevice("alerts-one-queue", null);
     setWardFeatureFlagOnDevice("role-access", null);
     resetWardAccessStoreForTests();
   });
