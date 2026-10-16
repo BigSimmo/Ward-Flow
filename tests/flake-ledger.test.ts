@@ -84,10 +84,11 @@ describe("flake ledger", () => {
   it("requires the exact title to exist in the referenced spec", () => {
     const entry = validEntry();
     const root = temporarySpec(`test(${JSON.stringify(entry.title)}, () => {});`);
-    expect(validateFlakeLedgerEntries([entry], { root })).toHaveLength(1);
-    expect(() => validateFlakeLedgerEntries([validEntry({ title: "missing @quarantine" })], { root })).toThrow(
-      /exact title is not present/,
-    );
+    expect(() =>
+      validateFlakeLedgerEntries([entry, validEntry({ id: "missing-flake", title: "missing @quarantine" })], {
+        root,
+      }),
+    ).toThrow(/^missing-flake: exact title is not present in collected tests from tests\/sample\.spec\.ts$/);
   });
 
   it("rejects comment, string and unrelated-call title decoys", () => {
@@ -109,12 +110,12 @@ describe("flake ledger", () => {
     const root = temporarySpec(
       'import { test as journey } from "playwright/test"; journey.describe("suite", () => { journey("exact flaky journey @quarantine", () => {}); });',
     );
-    expect(
-      validateFlakeLedgerEntries([validEntry({ title: "suite exact flaky journey @quarantine" })], { root }),
-    ).toHaveLength(1);
-    expect(() => validateFlakeLedgerEntries([validEntry()], { root })).toThrow(
-      /exact title is not present|collection failed/,
-    );
+    expect(() =>
+      validateFlakeLedgerEntries(
+        [validEntry({ title: "suite exact flaky journey @quarantine" }), validEntry({ id: "missing-nested-flake" })],
+        { root },
+      ),
+    ).toThrow(/^missing-nested-flake: exact title is not present in collected tests from tests\/sample\.spec\.ts$/);
   });
 
   it("extracts only exact failed testcase identities from JUnit", () => {

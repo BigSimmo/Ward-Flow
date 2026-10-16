@@ -19,11 +19,10 @@ const config = {
     // body. Give those transforms headroom on slower worktree filesystems while
     // retaining a finite timeout that still catches genuine hangs.
     testTimeout: 30_000,
-    // CI runners and dev containers here have 4 cores / ~16 GB; the node suite is
-    // CPU-bound (cold-imports large Next module graphs), so 2 workers left cores
-    // idle. Scale to the host but cap so a smaller runner cannot oversubscribe,
-    // and honour an explicit override for constrained environments.
-    maxWorkers: process.env.VITEST_MAX_WORKERS ? Number(process.env.VITEST_MAX_WORKERS) : 4,
+    // Full-screen jsdom rendering and accessibility queries contend with imports on shared hosts.
+    // Keep two workers by default; tune an explicit override from measurements on the target host.
+    // This changes concurrency only: the test population, timeouts and coverage floors stay shared.
+    maxWorkers: process.env.VITEST_MAX_WORKERS ? Number(process.env.VITEST_MAX_WORKERS) : 2,
     // CI runs (the unit shards and the related-tests step) start with no Vitest results cache, so run
     // their files longest first by measured cost; elsewhere Vitest orders by its own cached durations.
     ...(process.env.CI ? { sequence: { sequencer: UnitDurationSequencer } } : {}),

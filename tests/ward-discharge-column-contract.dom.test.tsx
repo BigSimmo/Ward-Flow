@@ -98,29 +98,27 @@ describe("the discharges board's column contract", () => {
     }
   });
 
-  it("keeps ward/service, timing and stage/blocker columns aligned across all groups", () => {
+  it.each(GROUPS)("keeps ward/service, timing and stage/blocker columns aligned in %s", (key) => {
     renderBoard();
-    for (const key of GROUPS) {
-      expect(headersFor(key)).toEqual(WORKLIST_COLUMNS);
-      const rows = [...screen.getByTestId(`ward-discharge-group-${key}`).querySelectorAll("tr")].filter((row) =>
-        row.querySelector("button"),
+    // The unconditional named detail region stays mounted throughout this all-row walk.
+    const details = screen.getByRole("region", { name: "Selected discharge details" });
+    expect(headersFor(key)).toEqual(WORKLIST_COLUMNS);
+    const rows = [...screen.getByTestId(`ward-discharge-group-${key}`).querySelectorAll("tr")].filter((row) =>
+      row.querySelector("button"),
+    );
+    expect(rows.length, `${key} must exercise actual release rows`).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect([...row.querySelectorAll("td")].map((cell) => cell.getAttribute("data-label"))).toEqual(WORKLIST_COLUMNS);
+      const stageCell = row.querySelector('td[data-label="Stage / blocker"]');
+      expect(stageCell?.querySelector("[data-status]")).not.toBeNull();
+      if (key === "blocked") expect(stageCell?.querySelector('[class*="blocker"]')?.textContent).toBeTruthy();
+      else expect(stageCell?.querySelector('[class*="blocker"]')).toBeNull();
+      fireEvent.click(within(row).getByRole("button"));
+      expect(details).toBeInTheDocument();
+      const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
+      expect(reported?.textContent, "freshness remains available in the selected release detail").toMatch(
+        /Confirmed \d{2}:\d{2}|Never confirmed/u,
       );
-      expect(rows.length, `${key} must exercise actual release rows`).toBeGreaterThan(0);
-      for (const row of rows) {
-        expect([...row.querySelectorAll("td")].map((cell) => cell.getAttribute("data-label"))).toEqual(
-          WORKLIST_COLUMNS,
-        );
-        const stageCell = row.querySelector('td[data-label="Stage / blocker"]');
-        expect(stageCell?.querySelector("[data-status]")).not.toBeNull();
-        if (key === "blocked") expect(stageCell?.querySelector('[class*="blocker"]')?.textContent).toBeTruthy();
-        else expect(stageCell?.querySelector('[class*="blocker"]')).toBeNull();
-        fireEvent.click(within(row).getByRole("button"));
-        const details = screen.getByRole("region", { name: "Selected discharge details" });
-        const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
-        expect(reported?.textContent, "freshness remains available in the selected release detail").toMatch(
-          /Confirmed \d{2}:\d{2}|Never confirmed/u,
-        );
-      }
     }
   });
 
