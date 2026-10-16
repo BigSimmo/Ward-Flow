@@ -1992,6 +1992,10 @@ function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, eve
   const before = findReferral(state, event.referralId);
   const after = findReferral(next, event.referralId);
   if (!before || !after || before === after) return next;
+  // A reassessment on an arm already accepted decides nothing, so it must not replace the
+  // acceptance's undo record (Undo would then take back only the note).
+  const decisionUnchanged = before.destinations.every((arm, index) => arm.state === after.destinations[index]?.state);
+  if (event.type === "ACCEPT_REFERRAL" && decisionUnchanged) return next;
   return {
     ...next,
     undoRecords: withUndoRecord(next.undoRecords, {

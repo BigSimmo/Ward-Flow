@@ -87,6 +87,11 @@ describe("Clinical state-machine edge cases", () => {
       "Second reassessment: medical toxicology clearance completed.",
     );
     expect(updatedReferral.reassessmentHistory).toHaveLength(2);
+
+    // The second reassessment decided nothing new, so the acceptance keeps its own undo record.
+    const decisionRecords = (state: typeof initial) =>
+      state.undoRecords.filter((record) => record.kind === "referral-decision" && record.referralId === queuedReferral!.id);
+    expect(decisionRecords(afterSecondReassessment)).toEqual(decisionRecords(afterFirstReassessment));
   });
 
   it("validates and records the clearance reason when clearing a bed release or stay discharge blocker", () => {
