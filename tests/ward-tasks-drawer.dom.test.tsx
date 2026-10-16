@@ -78,7 +78,7 @@ describe("the tasks drawer", () => {
   });
 
   it("AUD-13: does not trap focus or hijack global Escape without a backdrop, while local Escape collapses open sub-forms first and then closes the drawer", () => {
-    const { drawer, onClose } = renderDrawer({ withBackdrop: false });
+    const { drawer, onClose } = renderDrawer({ withBackdrop: false, records: seed });
     expect(drawer).toHaveAttribute("role", "complementary");
     expect(drawer).not.toHaveAttribute("aria-modal");
 
@@ -87,14 +87,27 @@ describe("the tasks drawer", () => {
     expect(onClose).not.toHaveBeenCalled();
 
     // If an inline Escalate sub-form is open, pressing Escape inside it collapses the sub-form first:
-    const escalateButtons = within(drawer).queryAllByRole("button", { name: /Escalate/i });
-    if (escalateButtons.length > 0) {
-      fireEvent.click(escalateButtons[0]!);
-      const input = within(drawer).getByPlaceholderText("Contact name or service");
-      fireEvent.keyDown(input, { key: "Escape" });
-      expect(onClose).not.toHaveBeenCalled();
-      expect(within(drawer).queryByPlaceholderText("Contact name or service")).toBeNull();
-    }
+    const item = items.find((candidate) => candidate.title === "Multiple destinations declined")!;
+    const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
+    const escalateTrigger = within(card).getByRole("button", { name: "Escalate" });
+    fireEvent.click(escalateTrigger);
+    const input = within(drawer).getByPlaceholderText("Contact name or service");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(within(drawer).queryByPlaceholderText("Contact name or service")).toBeNull();
+    // Focus goes back to the trigger that opened the form, not to the page.
+    expect(escalateTrigger).toHaveFocus();
+
+    // The same for the Contact panel: Escape from one of its Call buttons closes the panel and
+    // returns focus to that row's Contact trigger.
+    const contactTrigger = within(card).getByRole("button", { name: "Contact" });
+    fireEvent.click(contactTrigger);
+    const callButton = within(card).getAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u })[0]!;
+    callButton.focus();
+    fireEvent.keyDown(callButton, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(within(card).queryByTestId(`ward-task-contacts-${item.id}`)).toBeNull();
+    expect(contactTrigger).toHaveFocus();
 
     // Pressing Escape while focused inside the complementary drawer honours the visible Esc badge:
     const closeBtn = within(drawer).getByRole("button", { name: "Close tasks panel" });

@@ -15,7 +15,7 @@ import {
   resolveSubjectPatient,
   type PatientLookup,
 } from "@/components/ward-management/ward-patient-resolver";
-import { edById, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { edHref, movementHref, patientHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { unitReadyBedCount } from "./ward-smart-search";
 
@@ -567,8 +567,10 @@ export function GlobalSearchPreview({
   const flow = useOptionalWardFlow();
   const resolvedNow = now ?? flow?.now;
   const activeDate = useMemo(() => {
-    const resolvedDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
-    return calendarDateOf(resolvedNow ?? NOW_ANCHOR, resolvedDayZero);
+    // With no clock in scope (a preview rendered outside the provider), today's real date is the
+    // honest answer; the frozen demo epoch is not read here.
+    if (resolvedNow === undefined) return new Date();
+    return calendarDateOf(resolvedNow, dayZero ?? flow?.dayZero ?? demoDayZero(new Date()));
   }, [dayZero, flow?.dayZero, resolvedNow]);
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   let body;

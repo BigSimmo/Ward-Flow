@@ -8812,7 +8812,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L6-08 (AUD-SITEMAP / App Router Route Map Reachability)**: Audit all 53 Next.js App Router routes under `src/app/mockups/ward-flow/` to ensure every route is reachable via top navigation, phone menu, breadcrumbs, or deep links, eliminating orphan routes.
 - **TASK-L6-09 (AUD-PERF-05 / Dynamic Import Loading Skeletons)**: Add dimension-matched skeleton loaders to dynamic code-split views (`WardAnswerView`, lazy statistics tabs) to eliminate Cumulative Layout Shift (CLS) on slow network chunk arrivals.
 
-## §7.79 — Engine Fixes (PR #284) & Open Task Inventory (14 October 2026)
+## §7.79 — Engine Fixes (PR #284) & Open Task Inventory (14 October 2026, statuses reconciled 16 October 2026)
 
 Branch: [PR #284](https://github.com/BigSimmo/Ward-Flow/pull/284) (`feat/engine-and-screen-fixes`), merged to `origin/main` as `36e68bf`.
 
@@ -8843,6 +8843,8 @@ Branch: [PR #284](https://github.com/BigSimmo/Ward-Flow/pull/284) (`feat/engine-
 ### 2. Remaining Open Tasks Inventory (Categorized by Domain)
 
 The following outstanding tasks from recent engine audits, accessibility reviews, and backlog inventories are registered for subsequent implementation streams:
+
+> The inventory below was written on 14 October 2026, when every row was open. Rows now marked Resolved were closed afterwards (PR #290 and the 16 October Part 1 work in §7.80); their status cells were reconciled on 16 October 2026.
 
 #### Stream 1: Core State Machine & Reducer Invariants
 

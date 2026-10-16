@@ -240,9 +240,11 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
        * - Here in `eligibility()`, a Secure movement passes when `unitHasLockedBeds(unit)` is true
        *   even if all locked beds are currently occupied (`lockedBedsFree(unit) === 0`), so
        *   `ACCEPT_IN_PRINCIPLE` can accept the patient onto the ward's waitlist while `detail`
-       *   surfaces `"no locked bed is free right now (0 of N)"` to the coordinator. Physical bed
-       *   allocation at `PULL_PATIENT` (`ward-flow-reducer.ts`) then enforces `lockedBedsFree(unit) > 0`
-       *   via the `locked_bed_capacity` check.
+       *   reads "has locked beds but no locked bed is free" to the coordinator. Physical bed
+       *   allocation at `PULL_PATIENT` (`ward-flow-reducer.ts`) then refuses a Secure pull with no
+       *   free locked bed unless a valid override reason is recorded (it logs the
+       *   `locked_bed_capacity` override and the patient takes an open bed). Restoring an earlier pull
+       *   does not re-run that locked-bed check.
        * - By contrast, `referralEligibility()` below checks immediate placement readiness and
        *   requires both `unitHasLockedBeds(unit) && lockedBedsFree(unit) > 0` (mirroring how
        *   `allocatable_bed` checks `unit.allocatable.value > 0` here vs `availableNow > 0` there).
