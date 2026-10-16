@@ -59,7 +59,9 @@ export function useMediaQuery(query: string): boolean {
   );
   const snapshot = useCallback(() => canMatch() && window.matchMedia(query).matches, [query]);
   const serverSnapshot = useCallback(
-    () => (query === WF_PHONE_QUERY && serverPhone) || (query === WF_TABLET_PORTRAIT_QUERY && serverTablet),
+    () =>
+      ((query === WF_PHONE_QUERY || query === "(max-width: 40rem)") && serverPhone) ||
+      (query === WF_TABLET_PORTRAIT_QUERY && serverTablet),
     [query, serverPhone, serverTablet],
   );
   return useSyncExternalStore(subscribe, snapshot, serverSnapshot);

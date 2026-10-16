@@ -30,7 +30,7 @@ export function DemonstrationChart({
   const points = coordinates.map((point) => point.join(",")).join(" ");
   const last = values.at(-1)!;
   const format = (value: number) =>
-    unit === "%" ? value.toFixed(1) + "%" : Math.round(value).toLocaleString() + (unit ? " " + unit : "");
+    unit === "%" ? value.toFixed(1) + "%" : Math.round(value).toLocaleString("en-AU") + (unit ? " " + unit : "");
   return (
     <article
       className={styles.chart}

@@ -156,6 +156,21 @@ export function PatientTransitOperations({
   const job = movement.transport;
   const activeJob = job && job.cancelledAt === undefined;
   const noTransport = movement.transportNeed?.needed === false && !activeJob;
+  // Reasons a correction button is unavailable. The buttons stay focusable (aria-disabled, not native
+  // disabled) and point at these reasons so keyboard and screen-reader users hear why.
+  const releasePullBlocked = !releaseReason
+    ? "Choose a release reason first"
+    : job?.collectedAt !== undefined
+      ? "The bed cannot be released after the patient has been collected"
+      : activeJob
+        ? "Cancel the transport job before releasing the bed"
+        : null;
+  const stepBackBlocked = !backTo || !backReason ? "Choose both an earlier stage and a reason first" : null;
+  const withdrawBlocked = !confirmWithdraw
+    ? "Tick confirmation before withdrawing referral"
+    : movement.referredUnitIds.length === 0
+      ? "No open ward referrals to withdraw"
+      : null;
   const remaining = movement.pullExpiresAt === undefined ? undefined : movement.pullExpiresAt - now;
   const searchStage = ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage);
   const selectedTargets = selected.filter(
@@ -223,6 +238,7 @@ export function PatientTransitOperations({
             type="button"
             className={styles.primary}
             disabled={!overrideReason}
+            title={!overrideReason ? "Choose an override reason first" : undefined}
             onClick={() => {
               if (!overrideReason || !lastActionRejection) return;
               const reason = overrideReason;
@@ -831,12 +847,21 @@ export function PatientTransitOperations({
                     ))}
                   </select>
                 </label>
+                {releasePullBlocked ? (
+                  <span id={`${baseId}-release-pull-disabled-guidance`} className="sr-only">
+                    {releasePullBlocked}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!releaseReason || !!activeJob || job?.collectedAt !== undefined}
-                  onClick={() => {
-                    if (!releaseReason) return;
+                  aria-disabled={releasePullBlocked ? "true" : undefined}
+                  aria-describedby={releasePullBlocked ? `${baseId}-release-pull-disabled-guidance` : undefined}
+                  onClick={(e) => {
+                    if (releasePullBlocked || !releaseReason) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "RELEASE_PULL",
@@ -886,12 +911,21 @@ export function PatientTransitOperations({
                     ))}
                   </select>
                 </label>
+                {stepBackBlocked ? (
+                  <span id={`${baseId}-step-back-disabled-guidance`} className="sr-only">
+                    {stepBackBlocked}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!backTo || !backReason}
-                  onClick={() => {
-                    if (!backTo || !backReason) return;
+                  aria-disabled={stepBackBlocked ? "true" : undefined}
+                  aria-describedby={stepBackBlocked ? `${baseId}-step-back-disabled-guidance` : undefined}
+                  onClick={(e) => {
+                    if (stepBackBlocked || !backTo || !backReason) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "STEP_BACK_STAGE",
@@ -919,11 +953,21 @@ export function PatientTransitOperations({
                   />
                   Confirm this bed search is no longer required
                 </label>
+                {withdrawBlocked ? (
+                  <span id={`${baseId}-withdraw-referral-disabled-guidance`} className="sr-only">
+                    {withdrawBlocked}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
-                  onClick={() => {
+                  aria-disabled={withdrawBlocked ? "true" : undefined}
+                  aria-describedby={withdrawBlocked ? `${baseId}-withdraw-referral-disabled-guidance` : undefined}
+                  onClick={(e) => {
+                    if (withdrawBlocked || !confirmWithdraw || movement.referredUnitIds.length === 0) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "WITHDRAW_REFERRAL",

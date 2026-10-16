@@ -8,7 +8,7 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
@@ -63,6 +63,22 @@ import {
   type WalkRoundMark,
 } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
+
+export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
+  "Choose an override reason and confirm nurse unit manager consultation when needed.";
+export const DECLINE_SUBMIT_UNAVAILABLE_REASON = "Choose a decline reason first.";
+
+export function canSubmitOverride(
+  overrideReason: string | undefined,
+  isAcuityRefusal: boolean,
+  numConsulted: boolean,
+): boolean {
+  return Boolean(overrideReason && (!isAcuityRefusal || numConsulted));
+}
+
+export function canSubmitDecline(declineReason: DeclineReason | "" | undefined): declineReason is DeclineReason {
+  return Boolean(declineReason);
+}
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
   if (movement.stage !== "destination_review") {
@@ -281,6 +297,7 @@ export function WardHomeTab({
   phoneFind,
   phoneShiftLabel,
 }: WardHomeTabProps) {
+  const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
   const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions");
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
@@ -294,13 +311,15 @@ export function WardHomeTab({
   });
 
   // Derived real ward activity events for overhauled Shift Coordinator Log
-  const pendingBedReleases = bedReleases.filter(
-    (release) => release.unitId === unit.id && release.state !== "discharged",
+  const pendingBedReleases = useMemo(
+    () => bedReleases.filter((release) => release.unitId === unit.id && release.state !== "discharged"),
+    [bedReleases, unit.id],
   );
-  const dischargedBedReleases = bedReleases.filter(
-    (release) => release.unitId === unit.id && release.state === "discharged",
+  const dischargedBedReleases = useMemo(
+    () => bedReleases.filter((release) => release.unitId === unit.id && release.state === "discharged"),
+    [bedReleases, unit.id],
   );
-  const unitLeaveBeds = (leaveBeds ?? []).filter((bed) => bed.unitId === unit.id);
+  const unitLeaveBeds = useMemo(() => (leaveBeds ?? []).filter((bed) => bed.unitId === unit.id), [leaveBeds, unit.id]);
 
   function toggleLocalCheck(id: string) {
     setLocalChecks((current) => ({ ...current, [id]: current[id] === null ? now : null }));
@@ -308,10 +327,18 @@ export function WardHomeTab({
 
   const [innerFlowTab, setInnerFlowTab] = useState<WardFlowTab>("referrals");
   const flowTab = flowTabProp ?? innerFlowTab;
-  const setFlowTab = onFlowTabChange ?? setInnerFlowTab;
+  const setFlowTab = (next: WardFlowTab) => {
+    startTransition(() => {
+      (onFlowTabChange ?? setInnerFlowTab)(next);
+    });
+  };
   const [innerShiftView, setInnerShiftView] = useState<WardShiftView>("todo");
   const shiftView = shiftViewProp ?? innerShiftView;
-  const setShiftView = onShiftViewChange ?? setInnerShiftView;
+  const setShiftView = (next: WardShiftView) => {
+    startTransition(() => {
+      (onShiftViewChange ?? setInnerShiftView)(next);
+    });
+  };
   const [boardView, setBoardView] = useState<"board" | "list">("board");
   const isPhone = useIsPhone();
   const [showSettled, setShowSettled] = useState(false);
@@ -1443,11 +1470,27 @@ export function WardHomeTab({
                             </fieldset>
                             <button
                               type="submit"
-                              disabled={!declineReason}
+                              aria-disabled={!canSubmitDecline(declineReason) || undefined}
+                              aria-describedby={
+                                !canSubmitDecline(declineReason)
+                                  ? `ward-decline-submit-reason-${movement.id}`
+                                  : undefined
+                              }
+                              title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
+                              onClick={(event) => {
+                                if (!canSubmitDecline(declineReason)) {
+                                  event.preventDefault();
+                                }
+                              }}
                               className={buttonClass({ variant: "sec", size: "sm" })}
                             >
                               Confirm decline
                             </button>
+                            {!canSubmitDecline(declineReason) ? (
+                              <span id={`ward-decline-submit-reason-${movement.id}`} className="sr-only">
+                                {DECLINE_SUBMIT_UNAVAILABLE_REASON}
+                              </span>
+                            ) : null}
                           </form>
                         ) : null}
                       </li>

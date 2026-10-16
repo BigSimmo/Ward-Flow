@@ -73,7 +73,7 @@ export function WardFlowErrorPanel({
 
   return (
     <div
-      className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[color:var(--surface-lux)] px-4 py-8 font-sans text-[color:var(--text)]"
+      className="flex min-h-full flex-col items-center justify-center gap-4 bg-[color:var(--surface-lux)] px-4 py-8 font-sans text-[color:var(--text)]"
       data-testid={testId}
     >
       <p

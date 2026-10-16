@@ -15,6 +15,7 @@ export function GET() {
     {
       headers: {
         "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
       },
     },
   );

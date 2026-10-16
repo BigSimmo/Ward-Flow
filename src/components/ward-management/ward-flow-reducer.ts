@@ -2638,7 +2638,7 @@ export function reduceClinicalEvent(
             message: event.message,
             urgent: event.urgent,
           },
-        ],
+        ].slice(-500),
       };
     }
 
@@ -2671,8 +2671,12 @@ export function reduceClinicalEvent(
     case "CONVERT_PLANNED_ADMISSION": {
       return reducePlannedAdmission(state, event, decision);
     }
+    default: {
+      const _exhaustive: never = event;
+      void _exhaustive;
+      return state;
+    }
   }
-  return state;
 }
 
 // Passed to the RECORD_* and UNDO_* slices, which may not import this file at run time.

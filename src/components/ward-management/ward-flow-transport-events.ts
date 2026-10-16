@@ -1083,5 +1083,12 @@ export function reduceTransportEvent(
       }
       return appendNotices(next, notices);
     }
+
+    default: {
+      // Sub-reducer slice narrowed via `Extract<WardFlowEvent, ...>`; ensure every TransportEvent case is handled.
+      const _exhaustive: never = event;
+      void _exhaustive;
+      return state;
+    }
   }
 }

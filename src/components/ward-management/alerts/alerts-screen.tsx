@@ -157,7 +157,7 @@ type HeroPill = "act" | "wait" | "mine";
 type HistoryEntry = { id: string; at: Instant; tone: WfTone; title: string; sub: string; by: string; action: boolean };
 
 /** A request this screen sent, read back from the event log so a refused act never says it happened. */
-type ActionRequest = { type: string; logOffset: number; ok: string; refused: string };
+type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
 
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
@@ -293,20 +293,22 @@ function AlertsWorkspace() {
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
     type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";
-    logOffset: number;
+    logSequence: number;
     title: string;
     scope: BroadcastTargetScope;
     scopeLabel: string;
   } | null>(null);
   const broadcastResult = broadcastRequest
-    ? state.eventLog?.slice(broadcastRequest.logOffset).find((entry) => entry.type === broadcastRequest.type)
+    ? state.eventLog?.find(
+        (entry) => entry.sequence > broadcastRequest.logSequence && entry.type === broadcastRequest.type,
+      )
     : undefined;
   const broadcastAccepted = broadcastResult?.accepted === true;
   const broadcastRefused = broadcastResult?.accepted === false;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
   const actionResult = actionRequest
-    ? state.eventLog?.slice(actionRequest.logOffset).find((entry) => entry.type === actionRequest.type)
+    ? state.eventLog?.find((entry) => entry.sequence > actionRequest.logSequence && entry.type === actionRequest.type)
     : undefined;
 
   // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
@@ -551,10 +553,14 @@ function AlertsWorkspace() {
   // ---- Acts on a row, each read back from the event log ----
   // Notes where the event log stands before each dispatch, so the notice reads the reducer's verdict.
   const track = useCallback(
-    (request: Omit<ActionRequest, "logOffset">) => {
+    (request: Omit<ActionRequest, "logSequence">) => {
+      const tail = state.eventLog?.at(-1)?.sequence ?? -1;
       setBroadcastRequest(null);
       setBroadcastSuccessNotice(null);
-      setActionRequest({ ...request, logOffset: state.eventLog?.length ?? 0 });
+      setActionRequest((prev) => {
+        const prevPending = prev && !state.eventLog?.some((e) => e.sequence > prev.logSequence && e.type === prev.type);
+        return { ...request, logSequence: prevPending ? Math.max(tail, prev.logSequence + 1) : tail };
+      });
     },
     [state.eventLog],
   );
@@ -891,7 +897,7 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "DISPATCH_BROADCAST_ALERT",
-      logOffset: state.eventLog?.length ?? 0,
+      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: broadcastTitle.trim(),
       scope: broadcastScope,
       scopeLabel: targetScopeLabel,
@@ -920,7 +926,7 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "STAND_DOWN_BROADCAST_ALERT",
-      logOffset: state.eventLog?.length ?? 0,
+      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: alert?.title ?? "Directive",
       scope: alert?.targetScope ?? "all",
       scopeLabel: alert?.targetScopeLabel ?? "the selected scope",

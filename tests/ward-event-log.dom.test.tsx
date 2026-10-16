@@ -25,6 +25,7 @@ describe("eventLogEntryFor", () => {
       now: 123,
       accepted: true,
       movementId: "WF-1",
+      sequence: 0,
     });
     expect(JSON.stringify(entry)).not.toContain("Synthetic typed note");
   });

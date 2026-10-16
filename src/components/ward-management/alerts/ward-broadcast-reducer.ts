@@ -501,7 +501,10 @@ export function wardBroadcastReducer(
     case "CLEAR_BROADCAST_ALERT": {
       return { activeAlert: null };
     }
-    default:
+    default: {
+      const _exhaustive: never = action;
+      void _exhaustive;
       return state;
+    }
   }
 }

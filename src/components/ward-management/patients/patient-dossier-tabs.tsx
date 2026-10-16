@@ -352,6 +352,18 @@ export function PatientHistoryTab({
                       ? "Change the search or filter to review other episodes."
                       : (record.presentationsAbsent ?? "Earlier clinical history is not recorded here.")}
                   </p>
+                  {(query || filter !== "all") && (
+                    <button
+                      className={legacy.resetButton}
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        setFilter("all");
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  )}
                 </div>
               )}
               {prior.length === 0 && items.length > 0 && (
@@ -1008,6 +1020,17 @@ export function PatientDocumentsTab({
                 <FileText size={24} aria-hidden="true" />
                 <strong>{query || filter !== "all" ? "No matching document records" : "No documents recorded"}</strong>
                 <p>{query || filter !== "all" ? "Change the search or document filter." : record.documentsAbsent}</p>
+                {(query || filter !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setFilter("all");
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>

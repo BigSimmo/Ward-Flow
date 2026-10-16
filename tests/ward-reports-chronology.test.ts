@@ -235,8 +235,22 @@ describe("PIR chronology: one person's records", () => {
       ),
     };
     const log = [
-      { type: "HANDOVER_READY" as const, role: "ward" as const, now: at, accepted: true, movementId: MOVEMENT },
-      { type: "TRANSPORT_ACCEPTED" as const, role: "officer" as const, now: at, accepted: true, movementId: MOVEMENT },
+      {
+        type: "HANDOVER_READY" as const,
+        role: "ward" as const,
+        now: at,
+        accepted: true,
+        movementId: MOVEMENT,
+        sequence: 0,
+      },
+      {
+        type: "TRANSPORT_ACCEPTED" as const,
+        role: "officer" as const,
+        now: at,
+        accepted: true,
+        movementId: MOVEMENT,
+        sequence: 1,
+      },
     ];
     const chronology = patientChronology(inputFor(state, { auditEvents: null, eventLog: log }));
     const session = chronology.rows.filter((row) => row.source === "Session log");
@@ -296,8 +310,8 @@ describe("PIR chronology: one person's records", () => {
     };
     const delivered = { type: "PATIENT_ARRIVED" as const, role: "officer" as const, movementId: MOVEMENT };
     const log = [
-      { ...delivered, now: NOW_ANCHOR - 10, accepted: true },
-      { ...delivered, now: NOW_ANCHOR - 5, accepted: false },
+      { ...delivered, now: NOW_ANCHOR - 10, accepted: true, sequence: 0 },
+      { ...delivered, now: NOW_ANCHOR - 5, accepted: false, sequence: 1 },
     ];
     const rows = patientChronology(inputFor(state, { auditEvents: null, eventLog: log })).rows;
     const actions = rows.map((row) => row.action);
@@ -345,6 +359,7 @@ describe("PIR chronology: one person's records", () => {
         now: NOW_ANCHOR - 40,
         accepted: true,
         movementId: MOVEMENT,
+        sequence: 0,
       },
     ];
     const rows = patientChronology(inputFor(state, { eventLog: log })).rows;

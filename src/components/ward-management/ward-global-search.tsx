@@ -36,7 +36,7 @@ import {
   GlobalSearchPreview,
   type GlobalSearchPreviewItem,
 } from "@/components/ward-management/search/global-search-preview";
-import { StatusGlyph } from "@/components/wf";
+import { StatusGlyph, useIsPhone } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
@@ -416,19 +416,8 @@ const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-t
  * has no preview pane, so the preview (which derives a patient's stage, waits and links) is not
  * built there at all rather than built and hidden on every keystroke.
  */
-function subscribePhone(onChange: () => void) {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia(PHONE_SEARCH_QUERY);
-  query.addEventListener?.("change", onChange);
-  return () => query.removeEventListener?.("change", onChange);
-}
-
-function phoneSnapshot() {
-  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_SEARCH_QUERY).matches === true;
-}
-
 function useIsPhoneSearch() {
-  return useSyncExternalStore(subscribePhone, phoneSnapshot, () => false);
+  return useIsPhone();
 }
 
 function headerBottom(root: HTMLElement | null): number {

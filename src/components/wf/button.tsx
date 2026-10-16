@@ -84,11 +84,15 @@ export function Button(props: ButtonProps) {
     children,
     onClick,
     type = "button",
+    disabled,
+    "aria-disabled": ariaDisabled,
     "aria-describedby": describedBy,
     ...rest
   } = props;
   const reasonId = useId();
   const off = Boolean(disabledReason);
+  const isAriaDisabled = off || ariaDisabled === true || ariaDisabled === "true";
+  const restProps = isAriaDisabled ? rest : disabled !== undefined ? { ...rest, disabled } : rest;
   const iconSize = size === "lg" ? 16 : size === "sm" ? 14 : 16;
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -96,18 +100,22 @@ export function Button(props: ButtonProps) {
       event.preventDefault();
       return;
     }
+    if (isAriaDisabled) {
+      // Caller-owned aria-disabled: block the native action but let the caller's guard announce why.
+      event.preventDefault();
+    }
     onClick?.(event);
   };
 
   const button = (
     <button
+      {...restProps}
       type={type}
       className={buttonClass({ variant, size, iconOnly: Boolean(iconOnly), className })}
-      aria-disabled={off || undefined}
+      aria-disabled={isAriaDisabled || undefined}
       aria-busy={loading || undefined}
       aria-describedby={cx(describedBy, off && reasonId) || undefined}
       onClick={handleClick}
-      {...rest}
     >
       {loading ? <Spinner /> : icon ? <Icon icon={icon} size={iconSize} /> : null}
       {iconOnly ? null : <span className={styles.label}>{children}</span>}

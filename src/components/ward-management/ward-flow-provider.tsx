@@ -533,14 +533,20 @@ function wardFlowContainerReducer(
  * `resetDemoState()` at all). A REJECTED reset attempt (wrong role, or now also an invalid
  * `SET_SCENARIO` scenario) leaves `worldGeneration` unchanged, so it leaves the lock as it was.
  */
+const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
+
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
   const accepted = nextWorld.rejections.length === container.world.rejections.length;
-  const logged = eventLogEntryFor(event, accepted);
+  const logged = { ...eventLogEntryFor(event, accepted), sequence: (container.eventLog?.at(-1)?.sequence ?? -1) + 1 };
   if (nextWorld.worldGeneration !== container.world.worldGeneration) {
-    return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
+    return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [{ ...logged, sequence: 0 }] };
   }
-  const eventLog = [...(container.eventLog ?? []), logged];
+  const previousLog = container.eventLog ?? [];
+  const eventLog =
+    previousLog.length >= MAX_CLIENT_EVENT_LOG_ENTRIES
+      ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]
+      : [...previousLog, logged];
   const typedTextSeen =
     container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
   return { ...container, world: nextWorld, typedTextSeen, eventLog };

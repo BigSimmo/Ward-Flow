@@ -266,6 +266,7 @@
 .dialog {
   width: min(940px, calc(100vw - 32px));
   max-height: min(90vh, 980px);
+  max-height: min(90dvh, 980px);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;

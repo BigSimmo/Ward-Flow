@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { WardBedsMatrix, type BedItem } from "@/components/ward-management/ward/ward-beds-matrix";
 import { WardDischargesMatrix } from "@/components/ward-management/ward/ward-discharges-matrix";
@@ -59,5 +59,33 @@ describe("ward matrices only state recorded clinical facts", () => {
     );
     expect(view.container.textContent).not.toMatch(/Rowan Ross|14 Days Overdue|UM100032/);
     expect(screen.queryByRole("button", { name: "Escalate to State NDIS Lead" })).not.toBeInTheDocument();
+  });
+  it("lists a confirmed discharge as due out only once its date has arrived", () => {
+    const occupied = (bedNumber: number, extra: Partial<BedItem>): BedItem => ({
+      bedNumber,
+      bedLabel: String(bedNumber),
+      status: "occupied",
+      statusText: "Occupied",
+      podId: "a",
+      ...extra,
+    });
+    render(
+      <WardBedsMatrix
+        unit={unit}
+        bedsList={[
+          occupied(1, { dischargeConfirmed: true, expectedDays: 3 }),
+          occupied(2, { dischargeConfirmed: true, expectedDays: 0 }),
+        ]}
+        selectedBed={null}
+        setSelectedBed={vi.fn()}
+        selectedPod="all"
+        setSelectedPod={vi.fn()}
+        isMixed={true}
+      />,
+    );
+    const shift = screen.getByRole("region", { name: "Shift actions and alerts" });
+    expect(shift.textContent).toContain("Confirmed out today, still here.");
+    expect(shift.textContent).not.toContain("Confirmed discharge, still here.");
+    expect(within(shift).getAllByRole("button", { name: /Due out/ })[0]).toHaveTextContent("1");
   });
 });

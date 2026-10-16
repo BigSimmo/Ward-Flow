@@ -7,7 +7,12 @@
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
-    "strict": false,
+    "strict": true,
+    // Temporary compatibility opt-outs; remove after the existing .mjs diagnostics are remediated.
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
     "types": ["node"]
   },

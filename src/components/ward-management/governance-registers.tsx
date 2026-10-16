@@ -1974,6 +1974,20 @@ function GovernanceSession({
                       ? "Change the filters to see other captured events."
                       : "Recorded actions and discharge-record opens will appear here."}
                   </p>
+                  {events.length > 0 && (category !== "all" || outcome !== "all" || reviewFilter !== "all") ? (
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      onClick={() => {
+                        setCategory("all");
+                        setOutcome("all");
+                        setReviewFilter("all");
+                        choose(null);
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  ) : null}
                 </div>
               }
               allowed={allowed}

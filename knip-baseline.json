@@ -35,7 +35,6 @@
   "exports:src/components/ward-management/patients/patient-status-card.tsx:awolTrackerMeta",
   "exports:src/components/ward-management/referrals/referral-board-parts.tsx:NOT_WIRED",
   "exports:src/components/ward-management/referrals/referral-board-parts.tsx:REFERRAL_BEDS_HREF",
-  "exports:src/components/ward-management/referrals/referral-board-parts.tsx:REFERRAL_SHORTCUTS",
   "exports:src/components/ward-management/referrals/referral-board-parts.tsx:decisionWindow",
   "exports:src/components/ward-management/referrals/ward-referral-drawer-head.tsx:ReferralDrawerPhoneHero",
   "exports:src/components/ward-management/referrals/ward-referral-drawer-model.ts:MONTHS",
