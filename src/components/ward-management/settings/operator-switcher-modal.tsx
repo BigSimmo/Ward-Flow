@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
 import {
   setWardAccess,
@@ -123,7 +123,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
     useUnscopedWardFlow();
   // The patient in focus is named from the desk's own scoped workspace (review on PR #330), so a
   // restricted desk never sees the UMRN of someone outside its care here.
-  const scoped = useWardFlow();
+  const scoped = useWardFlowSelect("movements", "patients", "referrals");
   // Role access plan PR 1: with the flag on, opening a desk takes that desk's access.
   const accessOn = useWardFeatureFlag("role-access");
   const { access: currentAccess } = useWardAccessSnapshot();

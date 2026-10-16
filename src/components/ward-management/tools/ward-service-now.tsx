@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { StatusGlyph } from "@/components/wf";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
-import { useDueSoonThresholds, useWardFlow, useWardFlowClock, useWardNetwork } from "../ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import { isOpen } from "../ward-derivations";
 import { standingFigures } from "../ward-standing-strip";
 import { longestWait } from "./ward-network-figures";
@@ -21,7 +21,13 @@ const GLANCE_KEYS = ["ready", "waiting", "longest", "passed", "within-hour"] as 
  * opens the full set below it.
  */
 export function WardServiceNow() {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlow();
+  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "movements",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
