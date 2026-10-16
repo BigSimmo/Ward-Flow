@@ -306,7 +306,11 @@ describe("useDirtyStateGuard", () => {
     window.addEventListener("popstate", router);
     const hook = renderHook(() => useDirtyStateGuard({ isDirty: true }));
     unmount = hook.unmount;
-    window.dispatchEvent(new PopStateEvent("popstate", { state: { __NA: true } }));
+    window.dispatchEvent(
+      new PopStateEvent("popstate", {
+        state: { __NA: true, __wfHistoryIndex: window.history.state.__wfHistoryIndex - 1 },
+      }),
+    );
     expect(confirmSpy).toHaveBeenCalledTimes(1);
     expect(router).not.toHaveBeenCalled();
     hook.unmount();

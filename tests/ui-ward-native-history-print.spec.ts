@@ -125,6 +125,95 @@ test.describe("native history and handover print @mockup", () => {
     await expect(page.getByTestId("ward-planned-stay")).toHaveValue("7");
   });
 
+  test("unindexed legacy fallback without Navigation API keeps the form and restores its URL", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "navigation", { value: undefined });
+      for (const key of ["pushState", "replaceState"] as const) {
+        const original = History.prototype[key];
+        History.prototype[key] = function (data: unknown, title: string, url?: string | URL | null) {
+          const state = data && typeof data === "object" ? { ...data } : data;
+          if (state && typeof state === "object") delete (state as Record<string, unknown>).__wfHistoryIndex;
+          return original.call(this, state, title, url);
+        };
+      }
+    });
+    await page.goto(HOME);
+    await settled(page);
+    await navigate(page, "/capacity");
+    await navigate(page, "/settings");
+    await navigate(page, "/alerts");
+    await page.goBack();
+    await settled(page);
+    await page.goBack();
+    await settled(page);
+    await page.getByTestId("ward-planned-book").click();
+    await page.getByTestId("ward-planned-stay").fill("6");
+    let prompts = 0;
+    page.on("dialog", async (dialog) => {
+      prompts += 1;
+      await dialog.dismiss();
+    });
+    await page.evaluate(() => window.history.go(2));
+    await expect.poll(() => prompts).toBe(1);
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
+    await expect(page.getByTestId("ward-planned-stay")).toHaveValue("6");
+    await expect(page.getByTestId("ward-planned-stay")).toBeFocused();
+    expect(await page.evaluate(() => window.history.state.__NA)).toBe(true);
+    expect(await page.evaluate(() => window.history.state.__wfHistoryUncertain)).toBe(true);
+    // Once the cursor is uncertain, a second cancellation must also restore the form safely.
+    await page.evaluate(() => window.history.back());
+    await expect.poll(() => prompts).toBe(2);
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
+    await expect(page.getByTestId("ward-planned-stay")).toHaveValue("6");
+  });
+
+  test("native hash changes keep a booking form without a false leave prompt", async ({ page }) => {
+    await page.goto(`${HOME}/capacity`);
+    await settled(page);
+    await page.getByTestId("ward-planned-book").click();
+    await page.getByTestId("ward-planned-stay").fill("5");
+    let prompts = 0;
+    page.on("dialog", async (dialog) => {
+      prompts += 1;
+      await dialog.dismiss();
+    });
+    await page.evaluate(() => {
+      window.location.hash = "booking-control";
+    });
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity#booking-control$`));
+    await page.evaluate(() => window.history.back());
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
+    await expect(page.getByTestId("ward-planned-stay")).toHaveValue("5");
+    expect(prompts).toBe(0);
+  });
+
+  test("indexed fallback restores a multi-step traversal across a native hash entry", async ({ page }) => {
+    await page.addInitScript(() => Object.defineProperty(window, "navigation", { value: undefined }));
+    await page.goto(HOME);
+    await settled(page);
+    await navigate(page, "/capacity");
+    await page.evaluate(() => {
+      window.location.hash = "booking-control";
+    });
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity#booking-control$`));
+    await navigate(page, "/settings");
+    await navigate(page, "/alerts");
+    await page.evaluate(() => window.history.go(-3));
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
+    await settled(page);
+    await page.getByTestId("ward-planned-book").click();
+    await page.getByTestId("ward-planned-stay").fill("4");
+    let prompts = 0;
+    page.on("dialog", async (dialog) => {
+      prompts += 1;
+      await dialog.dismiss();
+    });
+    await page.evaluate(() => window.history.go(3));
+    await expect.poll(() => prompts).toBe(1);
+    await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
+    await expect(page.getByTestId("ward-planned-stay")).toHaveValue("4");
+  });
+
   test("long scoped desk attribution fits portrait handover pages", async ({ page }) => {
     await page.addInitScript(() =>
       sessionStorage.setItem(
