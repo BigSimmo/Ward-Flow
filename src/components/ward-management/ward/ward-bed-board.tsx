@@ -207,7 +207,9 @@ function cellLabel(
         : bed.status === "incoming"
           ? `pulled${alias ? `, ${alias}` : ""}`
           : `${alias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
-  return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${fits ? ", fits" : ""}`;
+  // D-64: the cell has room for a name only, so the criteria led discharge state is spoken and in the tooltip.
+  const criteria = bed.criteriaLedChip ? `, ${bed.criteriaLedChip.phrase}` : "";
+  return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${criteria}${fits ? ", fits" : ""}`;
 }
 
 function matchesQuery(bed: BedItem, query: string): boolean {

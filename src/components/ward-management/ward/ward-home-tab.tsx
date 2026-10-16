@@ -477,10 +477,10 @@ export function WardHomeTab({
                 ? bed.dischargeConfirmed
                   ? "Discharge confirmed"
                   : "Expected out today"
-                : bed.criteriaLedChip
-                  ? bed.criteriaLedChip.label
-                  : bed.isSpecialling
-                    ? "1:1 specialling"
+                : bed.isSpecialling
+                  ? "1:1 specialling"
+                  : bed.criteriaLedChip && bed.status === "occupied"
+                    ? bed.criteriaLedChip.label
                     : free
                       ? "Free to offer"
                       : stateWord;

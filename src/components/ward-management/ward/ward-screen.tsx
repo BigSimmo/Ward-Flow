@@ -1386,9 +1386,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission?.specialling === true;
 
-    // The same records the criteria led discharge card reads, so the Legal tile and the card agree.
-    const patientLegalStatus =
-      (admission ? admissionLegalStatus({ movements, patients }, admission) : undefined) ?? linkedMovement?.legalStatus;
+    // D-64, behind the criteria led discharge flag: the Legal tile reads the same records as the
+    // criteria card, so the two agree. With the flag off the tile is unchanged.
+    const recordLegalStatus =
+      criteriaLedOn && admission ? admissionLegalStatus({ movements, patients }, admission) : undefined;
+    const patientLegalStatus = recordLegalStatus ?? linkedMovement?.legalStatus;
     const criteriaLedChip =
       criteriaLedOn && admission?.state === "occupied"
         ? criteriaLedTileChip(
@@ -1399,7 +1401,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             ),
           )
         : null;
-    const patientLegalForm = linkedMovement?.legalForm;
+    // The movement's form only describes the status when that status came from the movement.
+    const patientLegalForm =
+      recordLegalStatus === undefined || recordLegalStatus === linkedMovement?.legalStatus
+        ? linkedMovement?.legalForm
+        : undefined;
     const legalStatusLabel = patientLegalForm
       ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
       : patientLegalStatus;

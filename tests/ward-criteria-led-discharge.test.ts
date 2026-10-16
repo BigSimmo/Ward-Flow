@@ -3,6 +3,7 @@ import {
   admissionCriteriaEligibility,
   admissionLegalStatus,
   seedWardFlowState,
+  seedWardFlowStateAt,
   wardFlowReducer,
 } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -294,6 +295,32 @@ describe("criteria led discharge on boards and at departure (D-64)", () => {
       })
       .sort();
     expect(kinds).toEqual(["all_met", "in_progress"]);
+  });
+
+  it("moves the seeded criteria times with the demo clock, so an offset demo keeps their status", () => {
+    const offset = 13 * 60;
+    const plain = seedWardFlowState();
+    const shifted = seedWardFlowStateAt(offset);
+    const withCriteria = plain.admissions.filter((a) => a.unitId === UNIT && a.dischargeCriteria);
+    expect(withCriteria).toHaveLength(2);
+    for (const admission of withCriteria) {
+      const moved = shifted.admissions.find((a) => a.id === admission.id)!;
+      expect(moved.dischargeCriteria!.setAt).toBe(admission.dischargeCriteria!.setAt + offset);
+      moved.dischargeCriteria!.items.forEach((item, index) => {
+        const before = admission.dischargeCriteria!.items[index].metAt;
+        expect(item.metAt).toBe(before === null ? null : before + offset);
+      });
+      expect(
+        dischargeCriteriaStatus(
+          moved.dischargeCriteria,
+          admissionCriteriaEligibility(shifted, moved),
+          NOW_ANCHOR + offset,
+        ).kind,
+      ).toBe(
+        dischargeCriteriaStatus(admission.dischargeCriteria, admissionCriteriaEligibility(plain, admission), NOW_ANCHOR)
+          .kind,
+      );
+    }
   });
 
   it("shows the legal status the eligibility rule reads, so the Legal tile and the card agree", () => {
