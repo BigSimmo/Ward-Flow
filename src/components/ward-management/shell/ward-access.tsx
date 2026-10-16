@@ -333,6 +333,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
         supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
           coordinator,
+          wholeNetwork,
           unitIn,
           role: access.role,
           movements: scoped.movements,

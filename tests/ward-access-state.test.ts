@@ -642,4 +642,58 @@ describe("a command from a desk", () => {
     const { state: statewideView } = scopeWardFlowState(withOutbound, STATEWIDE_COORDINATOR, options);
     expect(statewideView.supportNotifications?.map((record) => record.id)).toEqual(["SN-1"]);
   });
+
+  it("keeps arrival notifications with no receiving ward for the statewide desk only", () => {
+    const ownService = places.unitService(ownUnit)!;
+    const movementId = "WF-0994" as const;
+    const unplaced = {
+      ...state.movements[0],
+      id: movementId,
+      acceptedUnitId: undefined,
+      referredUnitIds: [ownUnit],
+      stage: "arrived" as const,
+      closure: { outcome: "arrived" as const, reason: "Arrived on ward", at: NOW_ANCHOR - 10 },
+      admissionId: undefined,
+    };
+    const withUnplaced: WardFlowState = {
+      ...state,
+      movements: [...state.movements, unplaced],
+      supportNotifications: [
+        {
+          id: "SN-2",
+          occasion: "admission",
+          subjectId: movementId,
+          party: "mhas",
+          outcome: "not_applicable",
+          reason: "Synthetic",
+          at: NOW_ANCHOR,
+          by: "coordinator",
+        },
+      ],
+    };
+    const serviceCoordinator: WardAccess = { role: "coordinator", scope: { kind: "service", service: ownService } };
+    const { state: serviceView } = scopeWardFlowState(withUnplaced, serviceCoordinator, options);
+    // The service still sees the move it was referred, but not notes with no receiving ward.
+    expect(serviceView.movements.some((movement) => movement.id === movementId)).toBe(true);
+    expect(serviceView.supportNotifications).toEqual([]);
+    expect(
+      commandScopeRefusal(
+        withUnplaced,
+        serviceCoordinator,
+        {
+          type: "RECORD_SUPPORT_NOTIFICATION",
+          role: "coordinator",
+          now: NOW_ANCHOR,
+          occasion: "admission",
+          movementId,
+          party: "carer",
+          outcome: "not_applicable",
+          reason: "Synthetic",
+        },
+        options,
+      ),
+    ).not.toBeNull();
+    const { state: statewideView } = scopeWardFlowState(withUnplaced, STATEWIDE_COORDINATOR, options);
+    expect(statewideView.supportNotifications?.map((record) => record.id)).toEqual(["SN-2"]);
+  });
 });
