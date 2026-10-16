@@ -330,3 +330,13 @@ Focused omission tests fail on the old checker and pass after the repair. The re
 aggregate verified links, commands, facts, generated indexes and reference compilation; staleness
 is advisory and not evidence of semantic correctness. These are local engineering observations,
 not hosted CI, deployment, clinical approval or closure of unrelated audit findings.
+
+### Integrated audit-resolution follow-up (all 44 retained IDs; 16 October 2026)
+
+The same audit task now has a [six-workstream implementation plan](superpowers/plans/2026-10-16-audit-resolution.md)
+and [complete per-issue resolution receipt](superpowers/plans/2026-10-16-audit-resolution-results.md).
+The local branch `codex/resolve-audit-20261016` starts at `c9f271a9`, which already includes
+PRs #365 and #366. It implements 34 findings, rechecks nine already-merged findings and retains
+R43 as an upstream-blocked braces advisory. The receipt distinguishes focused regressions,
+integrated verification and unavailable browser evidence. No hosted PR status, CI verdict,
+publication or deployment is implied.

@@ -37,10 +37,10 @@
 
 **Interfaces:** Preserve public reducer event/state shapes. Validate optional expiry as a finite instant when present; printed due text must tolerate unexpected data. Reuse `bedHoldLapsed`; distinguish stale-only capacity from true no-bed conditions. Audit scope refusal codes without widening permissions. Bind stand-down attribution to the actual role.
 
-- [ ] Write/port valid-input regressions: null/NaN expiry and valid control; unknown blocker and known/null controls; stale-only candidate; equality expiry; answered seeded ward recipient; AWOL acknowledgement and nonexisting-row refusal; wrong-ward departure scope code; stand-down actor attribution.
-- [ ] Run each focused file and confirm the intended assertion fails on this base. A previously fixed case is recorded as baseline verified.
-- [ ] Implement the smallest changes at the validation/derivation/writer boundary. Retain optional legacy fields only when genuinely supported.
-- [ ] Run the changed tests plus direct existing importers, format exact files, commit the coherent changes and report ID-to-test evidence.
+- [x] Write/port valid-input regressions: null/NaN expiry and valid control; unknown blocker and known/null controls; stale-only candidate; equality expiry; answered seeded ward recipient; AWOL acknowledgement and nonexisting-row refusal; wrong-ward departure scope code; stand-down actor attribution.
+- [x] Run each focused file and confirm the intended assertion fails on this base. A previously fixed case is recorded as baseline verified.
+- [x] Implement the smallest changes at the validation/derivation/writer boundary. Retain optional legacy fields only when genuinely supported.
+- [x] Run the changed tests plus direct existing importers, format exact files, commit the coherent changes and report ID-to-test evidence.
 
 ## Workstream 2: statistics, overdue counts and calendar labels
 
@@ -50,10 +50,10 @@
 
 **Interfaces:** Share the existing displayed occupancy numerator; classify raw values before rounding. Pool admissions through existing stay statistics rather than averaging averages. Count actual declines without waitlist aliases. Reuse the canonical unfinished-arrival and floored-day helpers.
 
-- [ ] Add discriminating fixtures: pulled/occupied sort inversion, a just-under-threshold percentage rounding upward, unequal ward populations, waitlist/no-bed history, arrived movement retaining ETA, and a negative demo instant.
-- [ ] Observe red assertions before editing.
-- [ ] Replace divergent calculations with owning pure helpers; preserve labels and layout.
-- [ ] Run focused tests and changed-file type/lint checks as appropriate, format and commit exact files.
+- [x] Add discriminating fixtures: pulled/occupied sort inversion, a just-under-threshold percentage rounding upward, unequal ward populations, waitlist/no-bed history, arrived movement retaining ETA, and a negative demo instant.
+- [x] Observe red assertions before editing.
+- [x] Replace divergent calculations with owning pure helpers; preserve labels and layout.
+- [x] Run focused tests and changed-file type/lint checks as appropriate, format and commit exact files.
 
 ## Workstream 3: confirmed shared outcomes and UI recovery
 
@@ -63,11 +63,11 @@
 
 **Interfaces:** Add or expose a command-specific completion result without breaking ordinary synchronous dispatch callers. The caller receives accepted/refused/failed/cancelled terminal status for its own dispatch; retries reuse the command identity, disposal/role/account changes settle pending results. `useUndoableStep` emits success/Undo only on its own accepted result. Local mode remains immediate and rejection-aware. Do not persist text or outcome payloads.
 
-- [ ] Pin delayed 200, 409, 422, 401, 5xx, queued cancellation/disposal and role/account-switch behavior; no early success or Undo, one truthful terminal result.
-- [ ] Pin shortlist cancellation/escalation feedback, active-transport release precondition and supported departure Undo with stale-record guards.
-- [ ] Pin save failure retaining old snapshot with an honest last-save label, same-scenario generation/user reset of last-look snapshots, and Perth export date around UTC midnight.
-- [ ] Implement the additive completion contract and update only owned consumers. Coordinate reducer changes with the domain owner instead of editing their files.
-- [ ] Run client/provider/hook and affected UI DOM tests, format and commit exact files. Report any necessary interface changes to the parent before integration.
+- [x] Pin delayed 200, 409, 422, 401, 5xx, queued cancellation/disposal and role/account-switch behavior; no early success or Undo, one truthful terminal result.
+- [x] Pin shortlist cancellation/escalation feedback, active-transport release precondition and supported departure Undo with stale-record guards.
+- [x] Pin save failure retaining old snapshot with an honest last-save label, same-scenario generation/user reset of last-look snapshots, and Perth export date around UTC midnight.
+- [x] Implement the additive completion contract and update only owned consumers. Coordinate reducer changes with the domain owner instead of editing their files.
+- [x] Run client/provider/hook and affected UI DOM tests, format and commit exact files. Report any necessary interface changes to the parent before integration.
 
 ## Workstream 4: CI semantics, CSRF and coverage/quarantine evidence
 
@@ -77,10 +77,10 @@
 
 **Interfaces:** Workflow contracts inspect actual executable jobs/steps, predicates and shell status, with bounded YAML parsing or strict structural checks. Required verdict includes release-gate and handles genuine planner skips/reuse explicitly. Coverage inventory compares real executable files against produced LCOV using a declared population. Quarantine metadata binds to actual collected test identity; a valid nonempty ledger is allowed.
 
-- [ ] Reproduce the eight accepted broken workflow copies and add controls that distinguish valid scoped skipping from silently omitted work.
-- [ ] Pin release failure/missing/skipped outcomes, root/file coverage omissions, nonexistent LCOV paths, a real ledger entry, comment-only title decoys and the real protected route's allowed response.
-- [ ] Strengthen guards and wire required checks without reducing the population or weakening thresholds.
-- [ ] Run dependency-free CI self-tests and focused Vitest; report browser spec verification separately. Format and commit exact files.
+- [x] Reproduce the eight accepted broken workflow copies and add controls that distinguish valid scoped skipping from silently omitted work.
+- [x] Pin release failure/missing/skipped outcomes, root/file coverage omissions, nonexistent LCOV paths, a real ledger entry, comment-only title decoys and the real protected route's allowed response.
+- [x] Strengthen guards and wire required checks without reducing the population or weakening thresholds.
+- [x] Run dependency-free CI self-tests and focused Vitest; report browser spec verification separately. Format and commit exact files.
 
 ## Workstream 5: documentation, reference-pack integrity and audit promises
 
@@ -90,10 +90,10 @@
 
 **Interfaces:** Document the actual selected gates and selective audit boundary, distinguishing the event log and governance audit. Retain provider truth in DATABASE.md. Manifest integrity covers the declared directory population with explicit justified exclusions and truthful hashes; do not silently bless changed clinical facts.
 
-- [ ] Recheck stale prose against current source and identify exact remaining paragraphs.
-- [ ] Add a manifest omission regression; confirm it fails while known listed-file mismatches still fail.
-- [ ] Correct actual source references, testing/receipt promises and audit coverage wording. Investigate the two pack-file diffs, then regenerate only the appropriate integrity metadata.
-- [ ] Run maintained links, commands, fact and manifest checks; format exact files, commit and report any source-sensitive drift rather than changing clinical facts.
+- [x] Recheck stale prose against current source and identify exact remaining paragraphs.
+- [x] Add a manifest omission regression; confirm it fails while known listed-file mismatches still fail.
+- [x] Correct actual source references, testing/receipt promises and audit coverage wording. Investigate the two pack-file diffs, then regenerate only the appropriate integrity metadata.
+- [x] Run maintained links, commands, fact and manifest checks; format exact files, commit and report any source-sensitive drift rather than changing clinical facts.
 
 ## Workstream 6: backend composition, dependencies and landed-fix verification
 
@@ -103,18 +103,20 @@
 
 **Interfaces:** A disposable loopback database test must traverse the actual HTTP handler with authentication and real store, exercise accepted save/reload/conflict and cleanup only its owned namespace. Preserve existing runtime-role safety. Use supported PostCSS/Vite/Codspeed versions and keep Vitest/coverage majors coordinated. No provider credentials or live endpoint calls.
 
-- [ ] Inspect the existing portable local PostgreSQL harness and add the missing authenticated-handler/real-store composition test; demonstrate the test detects a broken composition.
-- [ ] Verify the merged scope, break-glass, held-bed, transfer, diversion, notification, contact and shortcut fixes against current tests and actual producer state. Record R41/R42 as closed only if merge state and their corrected regression cases verify.
-- [ ] Inspect package constraints and registry-supported patches; update the smallest supported dependency set and exact lock. Check the braces advisory separately; retain a bounded exception when no supported patch exists.
-- [ ] Run backend composition, relevant dependency/role/shared tests and locked install/audit checks. Do not call a skipped database test passed. Commit coherent changes with exact issue evidence.
+- [x] Inspect the existing portable local PostgreSQL harness and add the missing authenticated-handler/real-store composition test; demonstrate the test detects a broken composition.
+- [x] Verify the merged scope, break-glass, held-bed, transfer, diversion, notification, contact and shortcut fixes against current tests and actual producer state. Record R41/R42 as closed only if merge state and their corrected regression cases verify.
+- [x] Inspect package constraints and registry-supported patches; update the smallest supported dependency set and exact lock. Check the braces advisory separately; retain a bounded exception when no supported patch exists.
+- [x] Run backend composition, relevant dependency/role/shared tests and locked install/audit checks. Do not call a skipped database test passed. Commit coherent changes with exact issue evidence.
 
 ## Integration and final verification
 
 **Owner:** parent agent. **Files:** this plan/spec, sanitized implementation receipt, integration-only fixes and coordinated generated indexes.
 
-- [ ] Revalidate each worker's diff, red/green logs and exact commits; serialize local cherry-picks into `codex/resolve-audit-20261016`. Obtain claim releases before touching a worker-owned file.
-- [ ] Resolve integration type/interface differences without overwriting peers; maintain a 44-ID closure table with fixed, already fixed, upstream-blocked or concrete evidence-gap status.
+- [x] Revalidate each worker's diff, red/green logs and exact commits; serialize local cherry-picks into `codex/resolve-audit-20261016`. Obtain claim releases before touching a worker-owned file.
+- [x] Resolve integration type/interface differences without overwriting peers; maintain a 44-ID closure table with fixed, already fixed, upstream-blocked or concrete evidence-gap status.
 - [ ] Run relevant changed-file formatting/lint, typecheck, full unit population and selected offline backend/browser gates once against the candidate tree. Run `npm run ensure` before browser QA and verify `/api/local-project-id`; stop owned processes afterward.
-- [ ] Dispatch a fresh review agent over the complete branch. Fix material regressions with discriminating tests and rerun the affected checks; do not count optional uncommissioned concerns as blockers.
+- [x] Dispatch a fresh review agent over the complete branch. Fix material regressions with discriminating tests and rerun the affected checks; do not count optional uncommissioned concerns as blockers.
 - [ ] Check diff integrity, documentation/index/manifest acceptance and a clean owned working tree. Commit each coherent result as it becomes ready.
 - [ ] Deliver the detailed per-issue closure receipt, exact branch/commits, decisive checks and any upstream/provider/browser limits. Do not claim merge, publication, deployment or clinical approval.
+
+Progress and per-ID evidence: [audit-resolution-results](2026-10-16-audit-resolution-results.md). An implemented fix and a completed verification gate are recorded separately.
