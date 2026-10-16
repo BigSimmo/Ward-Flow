@@ -8,11 +8,6 @@ import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
-// reset after, so no flag change re-renders a tree that is being torn down.
-beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
-
 /**
  * The catcher for phase-1.1 of the third-edition build plan (`docs/ward-flow/plans/2026-09-10-
  * third-edition-build-master-plan.md` §1.3, item 1.1): `WardRail` and `WardBar`
@@ -308,7 +303,8 @@ function focusableWithin(container: HTMLElement): HTMLElement[] {
 describe("assertion 3 — drawer focus trap and Escape order", () => {
   it.each([
     ["Activity", "ward-bar-activity-trigger"],
-    ["Tasks", "ward-bar-tasks-trigger"],
+    // The bed coordinator's Tasks button is the Alerts quick look (D-61).
+    ["Alerts", "ward-bar-tasks-trigger"],
     ["Tools", "ward-bar-tools-trigger"],
   ])(
     "%s opens as a modal dialog and traps focus inside its panel",

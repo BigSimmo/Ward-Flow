@@ -4,13 +4,7 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { createRef, type ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
-
-// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
-// reset after, so no flag change re-renders a tree that is being torn down.
-beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/mockups/ward-flow",
@@ -64,15 +58,16 @@ afterEach(() => {
 });
 
 describe("phone dock names (F-19)", () => {
-  it("starts Tasks and Activity with their word, then the badge", () => {
+  // The bed coordinator's dock carries Alerts in place of Tasks (D-61).
+  it("starts Alerts and Activity with their word, then the badge", () => {
     renderDock(12, 3);
-    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Tasks, 12 outstanding");
+    expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAccessibleName("Alerts, 12 outstanding");
     expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity, 3 unread");
   });
 
   it("keeps the plain word when there is no badge", () => {
     renderDock(0, 0);
-    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Tasks, 0 outstanding");
+    expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAccessibleName("Alerts, 0 outstanding");
     expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity");
   });
 
