@@ -121,7 +121,7 @@ export function WardDischargeCriteriaCard({
                     {item.criterion}{" "}
                     {status.kind === "lapsed" || status.kind === "paused" ? (
                       <Badge size="sm" tone="neutral">
-                        {item.metAt !== null ? "Met before it lapsed" : "Not met"}
+                        {item.metAt !== null ? (status.kind === "lapsed" ? "Met before it lapsed" : "Met") : "Not met"}
                       </Badge>
                     ) : (
                       <Badge size="sm" tone={item.metAt !== null ? "success" : "neutral"}>

@@ -443,6 +443,7 @@ export function WardBedDossierDrawer({
         planRows={barrierRow}
         planNote={prepNote}
         planCriteria={criteriaCard}
+        leavingCriteriaNote={criteriaDepartureNote}
         readyNote={readyNote}
       />
     );
@@ -952,6 +953,8 @@ interface PhoneBedSheetProps {
   /** Top 25: a short note under Plan to leave (flagged). */
   planNote?: ReactNode;
   planCriteria?: ReactNode;
+  /** D-64: the criteria led discharge note beside "Record that they have left". Warns, never blocks. */
+  leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
 }
@@ -999,6 +1002,7 @@ function PhoneBedSheet({
   planRows,
   planNote,
   planCriteria,
+  leavingCriteriaNote,
   readyNote,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
@@ -1192,10 +1196,23 @@ function PhoneBedSheet({
                     {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label}
                   </strong>
                 </p>
+                {leavingCriteriaNote ? (
+                  <p
+                    className={styles.footCriteria}
+                    id="drawer-leaving-criteria-phone"
+                    data-testid="ward-drawer-leaving-criteria"
+                  >
+                    {leavingCriteriaNote}
+                  </p>
+                ) : null}
                 <Button
                   variant={leavingNow ? "pri" : "sec"}
                   className={styles.pill}
-                  aria-describedby="drawer-leaving-summary-phone"
+                  aria-describedby={
+                    leavingCriteriaNote
+                      ? "drawer-leaving-summary-phone drawer-leaving-criteria-phone"
+                      : "drawer-leaving-summary-phone"
+                  }
                   onClick={() => {
                     onRecordLeft(admissionId, occupantAlias, drawerLeavingDestination);
                   }}

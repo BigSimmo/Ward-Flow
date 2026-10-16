@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { CRITERIA_VOLUNTARY_ONLY } from "@/components/ward-management/ward-discharge-criteria";
 import { WardDischargeCriteriaCard } from "@/components/ward-management/ward/ward-discharge-criteria-card";
 
@@ -49,6 +50,7 @@ describe("criteria led discharge card", () => {
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(/^1 of 2 met\. Review needed after/);
     // D-64: when each tick was made, and what to do if a criterion cannot be met.
     expect(screen.getAllByText(/^Ticked /)).toHaveLength(1);
+    expect(screen.getByText(`Ticked ${formatInstantWithDay(NOW - 30, NOW)}`)).toBeInTheDocument();
     expect(screen.getByTestId("ward-drawer-criteria-escalate")).toHaveTextContent(/ask for a medical review/);
     fireEvent.click(screen.getByRole("checkbox", { name: "Transport home arranged" }));
     expect(onChange).toHaveBeenCalledWith({
@@ -84,6 +86,9 @@ describe("criteria led discharge card", () => {
     rerender(<WardDischargeCriteriaCard record={RECORD} eligibility="involuntary" now={NOW} onChange={vi.fn()} />);
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(/^Paused/);
     expect(screen.queryByRole("checkbox")).toBeNull();
+    // Paused criteria have not lapsed, so a met item still reads Met.
+    expect(screen.getAllByText("Met")).toHaveLength(1);
+    expect(screen.queryByText("Met before it lapsed")).toBeNull();
     expect(screen.getByRole("button", { name: "Clear criteria" })).toBeInTheDocument();
   });
 

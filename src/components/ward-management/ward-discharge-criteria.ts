@@ -121,7 +121,7 @@ export function criteriaLedTileChip(
       return {
         label: "CLD paused",
         tone: "warning",
-        phrase: "Criteria led discharge paused, not recorded as voluntary",
+        phrase: "Criteria led discharge paused, legal status no longer allows it",
       };
   }
 }
@@ -142,7 +142,7 @@ export function criteriaLedDepartureNote(status: DischargeCriteriaStatus): strin
     case "lapsed":
       return "Criteria led discharge has lapsed. Ask the treating psychiatrist for a review before they leave.";
     case "paused":
-      return "Criteria led discharge is paused because the patient is no longer recorded as voluntary.";
+      return "Criteria led discharge is paused because the patient's legal status no longer allows it.";
   }
 }
 
