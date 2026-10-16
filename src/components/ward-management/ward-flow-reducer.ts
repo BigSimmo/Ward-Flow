@@ -4512,8 +4512,7 @@ export function reduceClinicalEvent(
       // No default: an omitted reason stays omitted rather than becoming a clinical reason.
       const clearedReason = event.reason as DischargeDelayClearReason | undefined;
       const reasonPatch = clearedReason === undefined ? {} : { reason: clearedReason };
-      const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
-      const linkedRelease = next.bedReleases.find(
+      const linkedRelease = state.bedReleases.find(
         (candidate) =>
           candidate.admissionId === admission.id &&
           candidate.state !== "discharged" &&
@@ -4521,7 +4520,16 @@ export function reduceClinicalEvent(
           candidate.unitId === event.actingUnitId &&
           candidate.blocker === admission.blockReason,
       );
-      if (!linkedRelease) return next;
+      const clearance = { at: event.now, by: event.role, ...reasonPatch, blocker: admission.blockReason };
+      if (!linkedRelease) {
+        // No bed release to hold the clearance, so the stay keeps it rather than losing it.
+        return replaceAdmission(state, admission.id, {
+          ...admission,
+          blockReason: null,
+          stayBlockClearances: [...(admission.stayBlockClearances ?? []), clearance],
+        });
+      }
+      const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
       return replaceBedRelease(next, linkedRelease.id, {
         ...linkedRelease,
         blocker: null,
@@ -4529,7 +4537,7 @@ export function reduceClinicalEvent(
         lastClearedBlockReason: clearedReason,
         clearedBlockHistory: [
           ...(linkedRelease.clearedBlockHistory ?? []),
-          { at: event.now, by: event.role, ...reasonPatch, blocker: admission.blockReason },
+          clearance,
         ],
       });
     }

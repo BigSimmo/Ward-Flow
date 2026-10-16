@@ -1,5 +1,10 @@
 import type { CareJourney } from "./ward-care-journey";
-import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import {
+  BED_RELEASE_BLOCKERS,
+  type BedReleaseBlocker,
+  type DischargeDelayClearReason,
+} from "@/components/ward-management/ward-change-reasons";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type { DischargeCriteriaRecord } from "@/components/ward-management/ward-discharge-criteria";
@@ -657,6 +662,18 @@ export type Admission = {
    * them. If a blocker is missing it is added THERE.
    */
   blockReason: BedReleaseBlocker | null;
+  /**
+   * Stay-level clearances, append-only. Written only when a stay blocker is cleared with no linked
+   * bed release to hold it (`BedRelease.clearedBlockHistory` holds the rest), so a clearance always
+   * keeps its time, role and any reason. Absent until the first such clearance.
+   */
+  stayBlockClearances?: ReadonlyArray<{
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+    /** Absent when the clearing event named no reason; never defaulted. */
+    readonly reason?: DischargeDelayClearReason;
+    readonly blocker: BedReleaseBlocker;
+  }>;
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
@@ -731,6 +748,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   dischargeConfirmedAt: true,
   dischargeConfirmedBy: true,
   blockReason: true,
+  stayBlockClearances: true,
   leavingDestination: true,
   leftAt: true,
   followUp: true,
