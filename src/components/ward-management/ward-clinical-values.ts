@@ -13,7 +13,8 @@ import {
  * signed: it may be Josh's product default, or a figure an earlier build typed in with no decision
  * behind it (`source` says which). **Signed** means a named person signed it on a date, and the
  * type will not accept a signed value without both. On 15 Oct 2026 Josh signed every value with a
- * recorded source (D-56), and two more with a national source (D-58). The rest stay synthetic. Signing is for
+ * recorded source (D-56), and two more with a national source (D-58). On 16 Oct 2026 he signed the rest,
+ * changing two of them (D-63). Signing is for
  * the prototype: real patient use still needs formal clinical governance sign-off (D-54). No value
  * is a legal limit (D-22) and none comes from the Mental Health Act: Act periods live only in
  * `legal-forms/act-periods-demo.ts` (D-29).
@@ -71,10 +72,10 @@ export type ClinicalValueEntry = ClinicalValueSignature & {
   readonly alternatives?: readonly ClinicalValueAlternative[];
 };
 
-const SYNTHETIC = { status: "synthetic" } as const;
 /** Josh signed every value with a recorded source on 15 Oct 2026 (D-56), and two with a national source (D-58). */
 const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-15" } as const;
-const NO_DECISION = "No decision recorded";
+/** Josh signed the remaining synthetic values for the prototype on 16 Oct 2026, two of them changed (D-63). */
+const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-16" } as const;
 
 /**
  * Every clinical value, keyed for typed reads (`CLINICAL_VALUES.tierOneOverdue.value`). The order
@@ -144,12 +145,12 @@ export const CLINICAL_VALUES = {
     source: "D-24 (26 Sep 2026), Josh's default, shown neutral",
   },
   veryLongWait: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Wait in hospital shown in the second, danger waiting band on statistics, from",
     group: "Emergency department waits",
     value: 48 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: `${NO_DECISION} (twice the long wait, statistics screens, 26 Sep 2026)`,
+    source: "D-63 (16 Oct 2026), twice the long wait, a display band with no WA or national mark",
   },
   edAccessTarget: {
     ...SIGNED_BY_JOSH,
@@ -264,28 +265,29 @@ export const CLINICAL_VALUES = {
     source: "Josh, 26 Sep 2026, his default",
   },
   bedCountFresh: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Ward bed count named as not checked after",
     group: "Alerts and holds",
     value: 1 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: `${NO_DECISION} (v10 Home, 10 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local workflow choice, no external source",
   },
   downtimePackStale: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Downtime pack shown as stale after",
     group: "Alerts and holds",
     value: 1 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: `${NO_DECISION} (v10 Downtime pack, 10 Oct 2026)`,
+    source:
+      "D-63 (16 Oct 2026), local workflow choice; each health service's business continuity plan sets downtime report refresh",
   },
   preparingBedStale: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Bed left as preparing or cleaning flagged after",
     group: "Alerts and holds",
     value: 1 * MINUTES_PER_HOUR + 1,
     unit: "minutes",
-    source: `${NO_DECISION} (Top 25 ghost bed clear, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), more than an hour, local workflow choice",
   },
 
   // ---- Arrivals and answers ------------------------------------------------------------------
@@ -367,20 +369,22 @@ export const CLINICAL_VALUES = {
 
   // ---- Discharge, leave and absence ----------------------------------------------------------
   dischargePrepWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Discharge prep prompt opens before the expected discharge",
     group: "Discharge, leave and absence",
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: `${NO_DECISION} (Top 25 discharge prep, 15 Oct 2026)`,
+    source:
+      "D-63 (16 Oct 2026), local workflow choice; matches the pre-discharge medical review window in the WACHS Criteria Led Discharge Guideline",
   },
   dischargeCriteriaValidity: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Criteria led discharge criteria need a fresh psychiatrist review after",
     group: "Discharge, leave and absence",
-    value: 72 * MINUTES_PER_HOUR,
+    value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: `${NO_DECISION} (D-60, criteria led discharge, 15 Oct 2026)`,
+    source:
+      "D-63 (16 Oct 2026), WACHS Criteria Led Discharge Guideline (16 Apr 2026), s 2.5 and s 3: a medical review within this window before discharge. Shortened from the D-60 figure",
   },
   leaveOpenWarning: {
     ...SIGNED_BY_JOSH,
@@ -391,12 +395,12 @@ export const CLINICAL_VALUES = {
     source: "D-23 (26 Sep 2026), Josh's default",
   },
   awolBedHoldWarning: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Bed held for a person absent without leave flagged for review after",
     group: "Discharge, leave and absence",
     value: 4 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: `${NO_DECISION} (Top 25 absence tracker, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service",
   },
   ctoFollowUpWindow: {
     ...SIGNED_BY_JOSH,
@@ -416,12 +420,12 @@ export const CLINICAL_VALUES = {
     source: "Ward board long stay line; no decision recorded for the Top 25 dossier",
   },
   delayedDischargeEscalation: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Delayed discharge escalated, by recorded hours, after more than",
     group: "Discharge, leave and absence",
     value: 72,
     unit: "hours",
-    source: `${NO_DECISION} (Top 25 long stay dossier, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local workflow choice, counted from the typed expected date",
   },
   readmissionWindow: {
     ...SIGNED_BY_JOSH,
@@ -433,92 +437,93 @@ export const CLINICAL_VALUES = {
   },
   // ---- Access and privacy (role access plan, Josh's go, 15 Oct 2026) ------------------------
   breakGlassWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Patient record opened outside your care (break glass) stays open for",
     group: "Access and privacy",
     value: 60,
     unit: "minutes",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local privacy choice under MP 0015/16 need to know and audit",
   },
   breakGlassPerShift: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Break glass openings in one shift before the coordinator is told it is a pattern",
     group: "Access and privacy",
     value: 3,
     unit: "count",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local privacy choice; every opening is still reviewed",
   },
   breakGlassShift: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "One shift, when counting break glass openings for a pattern, is the last",
     group: "Access and privacy",
     value: 12,
     unit: "hours",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), the longest common WA shift",
   },
   edHandoffWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Emergency department keeps sight of a patient after they reach the ward for",
     group: "Access and privacy",
     value: 24,
     unit: "hours",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local privacy choice",
   },
   wardHandoffWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Ward keeps sight of a patient after they leave, for the follow up, for",
     group: "Access and privacy",
     value: 7,
     unit: "days",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026); the same figure as the 7 day follow up`,
+    source: "D-63 (16 Oct 2026), the same figure as the 7 day follow up",
   },
   idleLock: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "A shared computer locks after no use for",
     group: "Access and privacy",
     value: 15,
     unit: "minutes",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), Australian Government ISM-0428: lock after at most 15 minutes of inactivity",
   },
   smallNumberHidden: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Executive headline counts of people below this show as fewer than this",
     group: "Access and privacy",
     value: 5,
     unit: "count",
-    source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), common Australian small cell practice (counts under 5)",
   },
   coverLength: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Cover for a second ward or ED, given for one shift, lasts at most",
     group: "Access and privacy",
     value: 12,
     unit: "hours",
-    source: `${NO_DECISION} (role access plan feature 2, Josh's go 16 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), one shift, the same figure as the break glass shift",
   },
   stepUpWindow: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Granting access or opening a record outside your care needs a sign-in within the last",
     group: "Access and privacy",
     value: 10,
     unit: "minutes",
-    source: `${NO_DECISION} (role access plan feature 9, Josh's go 16 Oct 2026)`,
+    source: "D-63 (16 Oct 2026), local security choice, stricter than NIST SP 800-63B",
   },
   accessExpiringSoon: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "Access review lists a role ending within",
     group: "Access and privacy",
     value: 14,
     unit: "days",
-    source: `${NO_DECISION} (role access plan feature 8)`,
+    source: "D-63 (16 Oct 2026), local choice, two weeks to renew",
   },
   accessUnused: {
-    ...SYNTHETIC,
+    ...SIGNED_BY_JOSH_16_OCT,
     name: "A role not used for this long is switched off by itself",
     group: "Access and privacy",
-    value: 90,
+    value: 45,
     unit: "days",
-    source: `${NO_DECISION} (role access plan feature 8)`,
+    source:
+      "D-63 (16 Oct 2026), Australian Government ISM-1404 and ISM-1648: access disabled after 45 days of inactivity. Was 90 days",
   },
 } satisfies Record<string, ClinicalValueEntry>;
 

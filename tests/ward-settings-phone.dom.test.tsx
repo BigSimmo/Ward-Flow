@@ -15,11 +15,7 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/ward-model";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
-import {
-  CLINICAL_VALUE_LIST,
-  clinicalValueStatusText,
-  unsignedClinicalValueCount,
-} from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUE_LIST, clinicalValueStatusText } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * Settings v10 pass 3: the phone is its own design (a compact profile hero, Find a setting, the
@@ -148,9 +144,7 @@ describe("Settings on a phone", () => {
 
     fireEvent.click(within(list).getByRole("radio", { name: /Clinical values/ }));
     const values = screen.getByTestId("ward-settings-clinical-values-phone");
-    expect(values).toHaveTextContent(
-      `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only`,
-    );
+    expect(values).toHaveTextContent(`All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`);
     for (const entry of CLINICAL_VALUE_LIST) {
       const row = within(values).getByTestId(`ward-settings-clinical-value-phone-${entry.id}`);
       expect(row).toHaveTextContent(entry.name);

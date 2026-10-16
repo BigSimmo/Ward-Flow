@@ -343,6 +343,8 @@ export type WardFlowEvent =
       type: "RECORD_TRANSPORT_NEED";
       role: WardFlowRole;
       actingUnitId?: string;
+      /** The ED desk raising it; must be the movement's origin ED. */
+      actingPlaceId?: string;
       now: Instant;
       movementId: string;
       needed: boolean;

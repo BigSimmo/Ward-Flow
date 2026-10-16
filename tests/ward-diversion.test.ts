@@ -252,6 +252,32 @@ describe("RECORD_DIVERSION — build plan item 29 / R2-7", () => {
     });
     expect(stopped.rejections.at(-1)?.reason).toMatch(/diverted/i);
   });
+
+  it("refuses RECORD_MOVEMENT_BLOCKER and CLEAR_MOVEMENT_BLOCKER while a diverted movement holds a bed", () => {
+    const { state: patientCollected, movementId } = collected(seedWardFlowState());
+    const diverted = divert(patientCollected, movementId);
+    expect(diverted.rejections).toHaveLength(0);
+    expect(movement(diverted, movementId).blocker).toBe(STAGE_TRANSITION_BLOCKERS.divertedAwaitingRelease);
+
+    const overwritten = wardFlowReducer(diverted, {
+      type: "RECORD_MOVEMENT_BLOCKER",
+      role: "coordinator",
+      now: NOW + 8,
+      movementId,
+      blocker: "Awaiting clinical review",
+    });
+    expect(overwritten.rejections.at(-1)?.reason).toMatch(/RELEASE_DIVERTED_BED/);
+    expect(movement(overwritten, movementId).blocker).toBe(STAGE_TRANSITION_BLOCKERS.divertedAwaitingRelease);
+
+    const cleared = wardFlowReducer(diverted, {
+      type: "CLEAR_MOVEMENT_BLOCKER",
+      role: "coordinator",
+      now: NOW + 8,
+      movementId,
+    });
+    expect(cleared.rejections.at(-1)?.reason).toMatch(/RELEASE_DIVERTED_BED/);
+    expect(movement(cleared, movementId).blocker).toBe(STAGE_TRANSITION_BLOCKERS.divertedAwaitingRelease);
+  });
 });
 
 describe("RELEASE_DIVERTED_BED — build plan item 29 / OA-29", () => {

@@ -15,8 +15,10 @@ const DESK_PAGE = 500;
 export const MAX_DELIVERY_ATTEMPTS = 5;
 /** How long the schema version is trusted before it is read again. */
 const VERSION_TRUSTED_MS = 60_000;
-/** A break glass record that ended this recently still sends the whole scoped workspace on a poll. */
+/** A break glass record opened or ended this recently still sends the whole scoped workspace on a poll. */
 const GRANT_SETTLE_MS = 60_000;
+/** Most break glass grants one desk is sent at once. */
+const GRANT_LIST_LIMIT = 50;
 /** Roles that work only once a second person has approved them. */
 const APPROVED_ROLES = ["coordinator", "admin"];
 /** How often a role's "last used" time is written: once an hour is enough for a 90 day rule. */
@@ -558,10 +560,27 @@ export function createWorkspaceStore(
         });
     if (chosen.membershipId) {
       const { rows } = await pool.query(
-        "SELECT patient_id, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT 50",
+        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
-      recentGrant = rows.length > 0;
+      const nowMs = at.getTime();
+      recentGrant = rows.some((row) => {
+        const openedAtMs =
+          row.opened_at !== undefined && row.opened_at !== null ? new Date(row.opened_at).getTime() : NaN;
+        const untilMs = new Date(row.until).getTime();
+        return (
+          (nowMs >= openedAtMs && nowMs - openedAtMs <= GRANT_SETTLE_MS) ||
+          (nowMs >= untilMs && nowMs - untilMs <= GRANT_SETTLE_MS)
+        );
+      });
+      // The list is capped, so a capped list may leave out a grant that just ended: ask directly.
+      if (!recentGrant && rows.length >= GRANT_LIST_LIMIT) {
+        const settling = await pool.query(
+          "SELECT EXISTS (SELECT 1 FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND ((opened_at <= $4 AND opened_at >= $5) OR (until <= $4 AND until >= $5))) AS settling",
+          [workspaceId, actorId, chosen.membershipId, at, new Date(at.getTime() - GRANT_SETTLE_MS)],
+        );
+        recentGrant = settling.rows[0]?.settling === true;
+      }
       grants = rows
         .filter((row) => row.until > at)
         .map((row) => ({ patientId: row.patient_id, until: new Date(row.until) }));
@@ -1188,6 +1207,16 @@ export function createWorkspaceStore(
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view } = options;
+      // A community sender's team is authenticated by the selected membership, not by the
+      // browser-supplied label. Bind it before applying the event so scope can safely recognise
+      // the sender as the owner of the referral later.
+      if (
+        view?.access?.role === "community" &&
+        view.access.scope.kind === "team" &&
+        event.type === "RECEIVE_REFERRAL"
+      ) {
+        event = { ...event, sendingTeamName: view.access.scope.teamName };
+      }
       if (!engine.validCommand(event)) throw new Error("invalid-command");
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprint = createHash("sha256")
