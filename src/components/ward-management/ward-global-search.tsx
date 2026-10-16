@@ -178,6 +178,10 @@ export type WardGlobalSearchProps = {
   now?: number;
   label?: string;
   placeholder?: string;
+  /** Text typed into the phone's placeholder field before this loaded (`ward-global-search-lazy.tsx`). */
+  initialQuery?: string;
+  /** Takes over the focus on mount, when the phone's placeholder field had it before this loaded. */
+  takeFocus?: boolean;
 };
 
 /**
@@ -608,6 +612,8 @@ export function WardGlobalSearch({
   onNavigate,
   label = "Search",
   placeholder = "Search people and movements…",
+  initialQuery = "",
+  takeFocus = false,
 }: WardGlobalSearchProps) {
   const id = useId();
   const listId = `${id}-list`;
@@ -621,7 +627,7 @@ export function WardGlobalSearch({
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -907,6 +913,13 @@ export function WardGlobalSearch({
     window.addEventListener("keydown", onWindowKeyDown);
     return () => window.removeEventListener("keydown", onWindowKeyDown);
   }, []);
+
+  // Mount only: the placeholder field had focus, so this one takes it (and opens, as a tap would).
+  // A later change of the prop is not a new tap, so the first value is kept.
+  const [focusOnMount] = useState(takeFocus);
+  useEffect(() => {
+    if (focusOnMount) inputRef.current?.focus();
+  }, [focusOnMount]);
 
   function remember(href: string) {
     const item = options.find((option) => option.href === href);
