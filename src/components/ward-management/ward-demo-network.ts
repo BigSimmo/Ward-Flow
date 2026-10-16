@@ -22,6 +22,41 @@ import type { Gender, Patient, PatientId } from "@/components/ward-management/wa
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
 
+/*
+ * THE DEMONSTRATION NETWORKS: "EMHS demo" and "EMHS surge". Owner rulings 2026-09-25 10:08.
+ * The one-tap demo resets (Josh, 15 Oct 2026) add "quiet" (beds free, short ED waits), "winter"
+ * (every ward full or one short, more people waiting) and "ed-crisis" (surge wards with long EMHS
+ * ED waits). Each comes from this same generator with its own fixed seed; demo and surge are unchanged.
+ *
+ * ⚠️ **EVERYTHING HERE IS SYNTHETIC.** No ward, bed count, patient or event is real. The sites keep
+ * their public names and codes (so travel bands, distances, catchment routing and service colours
+ * still resolve), but every ward is a plain demo label ("Bentley Women's Acute"), never a real
+ * ward name, so nobody mistakes a made-up bed count for a claim about a real ward.
+ *
+ * 🔴 **NO STANDALONE NUMBERS (owner rule 6).** Every figure a screen can show is derived from the
+ * records built here:
+ *   - a ward's empty beds are its beds minus the admissions occupying it;
+ *   - its sex mix is the count of those admissions by the sex they are counted under;
+ *   - its allocatable beds are its empty beds minus the beds held for a pulled patient (the
+ *     engine's own model: pulling a patient lowers allocatable, arrival lowers empty);
+ *   - ED waiting counts are the open movements at each department;
+ *   - discharges due are admissions whose expected discharge falls today, each with its release.
+ * Held and blocked beds, which no record here can back, are zero.
+ *
+ * Every person on every record is a generated patient (`PT-DN-nnnn`, synthetic UMRN `UM7nnnnn`)
+ * with a family name from a fixed list of minerals, so the data is obviously synthetic. The UMRN is
+ * two letters and six digits, a shape no real WA UMRN takes, and no Medicare or PSOLIS number
+ * appears anywhere. Optional details (preferred name, GP, interpreter, Aboriginal and Torres Strait
+ * Islander status, address) are deliberately left
+ * empty so screens show "Not recorded".
+ *
+ * Legal status uses only the app's existing form wording, with no section numbers and no
+ * computed deadline: no generated legal form carries a `dueAt`.
+ *
+ * ⏸ **Patients whose gender is not recorded, and non-binary patients, are held back** until the
+ * engine's matching rule for them (owner ruling 4, 10:08) is on the ward line.
+ */
+
 /** The variants whose occupancy each ward spec states directly. */
 type StatedVariant = "demo" | "surge";
 export type DemoNetworkVariant = StatedVariant | "quiet" | "winter" | "ed-crisis";
