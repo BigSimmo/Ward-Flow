@@ -116,6 +116,64 @@ describe("Clinical state-machine edge cases", () => {
     expect(undone.referrals).toEqual(quickReassessment.referrals);
   });
 
+  it("writes a reassessment into the journey only when it is the ED answer that raised the journey", () => {
+    const seeded = seedWardFlowState();
+    const referral = seeded.referrals.find((candidate) =>
+      candidate.destinations.some(
+        (dest) => dest.destination.kind === "emergency_department" && dest.state === "queued",
+      ),
+    )!;
+    const edArm = referral.destinations.find((dest) => dest.destination.kind === "emergency_department")!;
+    const edId = (edArm.destination as { edId: string }).edId;
+    const journey = seeded.movements.find((movement) => !movement.closure)!;
+    // A synthetic referral with an accepted ED answer, an accepted community answer and the journey the ED raised.
+    const initial = {
+      ...seeded,
+      referrals: seeded.referrals.map((candidate) =>
+        candidate.id !== referral.id
+          ? candidate
+          : {
+              ...candidate,
+              destinations: [
+                { ...edArm, state: "accepted" as const, decidedAt: NOW, decidedBy: "ed" as const },
+                {
+                  ...edArm,
+                  destination: { kind: "community_team" as const, teamName: "Synthetic community team" },
+                  state: "accepted" as const,
+                  decidedAt: NOW,
+                  decidedBy: "community" as const,
+                },
+              ],
+            },
+      ),
+      movements: seeded.movements.map((movement) =>
+        movement.id === journey.id
+          ? { ...movement, referralId: referral.id, originEdId: edId, reassessmentHistory: undefined }
+          : movement,
+      ),
+    } as typeof seeded;
+    const reassess = (state: typeof seeded, destinationKind: "community_team" | "emergency_department", note: string) =>
+      wardFlowReducer(state, {
+        type: "ACCEPT_REFERRAL",
+        role: destinationKind === "community_team" ? "community" : "ed",
+        now: NOW + 10,
+        referralId: referral.id,
+        destinationKind,
+        reassessment: true,
+        reassessmentNote: note,
+      });
+
+    const afterCommunity = reassess(initial, "community_team", "Community review.");
+    expect(afterCommunity.rejections).toEqual(initial.rejections);
+    expect(afterCommunity.movements.find((m) => m.id === journey.id)?.reassessmentHistory).toBeUndefined();
+
+    const afterEd = reassess(initial, "emergency_department", "ED review.");
+    expect(afterEd.rejections).toEqual(initial.rejections);
+    expect(afterEd.movements.find((m) => m.id === journey.id)?.reassessmentHistory?.map((entry) => entry.note)).toEqual(
+      ["ED review."],
+    );
+  });
+
   it("validates and records the clearance reason when clearing a bed release or stay discharge blocker", () => {
     const initial = seedWardFlowState();
     const releaseTarget = initial.bedReleases.find((release) => release.state !== "discharged")!;

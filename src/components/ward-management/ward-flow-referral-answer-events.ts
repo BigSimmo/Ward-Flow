@@ -763,7 +763,16 @@ export function reduceReferralAnswerEvent(
           ...(nextReferralHistory === undefined ? {} : { reassessmentHistory: nextReferralHistory }),
           ...(reassessmentEntry.note !== undefined ? { reassessmentNote: reassessmentEntry.note } : {}),
         });
-        const linkedMovement = nextState.movements.find((m) => m.referralId === referral.id && !m.closure);
+        // Only the ED answer that raised the journey belongs in its history. A community answer on
+        // the same referral is a separate destination and stays on the referral alone.
+        const reassessedEdId =
+          addressing.destination.kind === "emergency_department" ? addressing.destination.edId : null;
+        const linkedMovement =
+          reassessedEdId === null
+            ? undefined
+            : nextState.movements.find(
+                (m) => m.referralId === referral.id && m.originEdId === reassessedEdId && !m.closure,
+              );
         if (linkedMovement) {
           nextState = replaceMovement(nextState, linkedMovement.id, {
             ...linkedMovement,
