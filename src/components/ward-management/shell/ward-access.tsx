@@ -338,8 +338,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
                   : scoped.movements.some(
                       (movement) =>
                         movement.id === record.subjectId &&
-                        (coordinator ||
-                          (typeof movement.acceptedUnitId === "string" && unitIn(movement.acceptedUnitId))),
+                        (typeof movement.acceptedUnitId === "string" ? unitIn(movement.acceptedUnitId) : coordinator),
                     ),
               )
             : [],

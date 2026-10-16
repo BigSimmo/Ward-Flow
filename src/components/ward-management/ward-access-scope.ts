@@ -555,6 +555,18 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         return trimmed ? [trimmed] : [];
       });
       const referralIds = new Set(referrals.map((referral) => referral.id));
+      // Referrals asked of this team. A referral the team only sent shows its stay as ward and
+      // dates only, never the receiving ward's record (review on PR #365).
+      const askedOfTeam = new Set(
+        referrals
+          .filter((referral) =>
+            referral.destinations.some(
+              (addressing) =>
+                addressing.destination.kind === "community_team" && ownTeam(addressing.destination.teamName),
+            ),
+          )
+          .map((referral) => referral.id),
+      );
       movements = workspace.movements.filter(
         (movement) => movement.referralId !== undefined && referralIds.has(movement.referralId),
       );
@@ -563,14 +575,23 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       const catchment = new Set(
         workspace.patients.filter((patient) => ownTeam(patient.catchmentCommunityTeam)).map((patient) => patient.id),
       );
+      const askedMovementIds = new Set(
+        movements
+          .filter((movement) => movement.referralId !== undefined && askedOfTeam.has(movement.referralId))
+          .map((movement) => movement.id),
+      );
       const movementIds = new Set(movements.map((movement) => movement.id));
       admissions = workspace.admissions.flatMap((admission) => {
         if (
-          (admission.referralId !== null && referralIds.has(admission.referralId)) ||
-          (admission.movementId !== null && movementIds.has(admission.movementId))
+          (admission.referralId !== null && askedOfTeam.has(admission.referralId)) ||
+          (admission.movementId !== null && askedMovementIds.has(admission.movementId))
         )
           return [admission];
-        if (admission.patientId !== null && catchment.has(admission.patientId)) {
+        if (
+          (admission.referralId !== null && referralIds.has(admission.referralId)) ||
+          (admission.movementId !== null && movementIds.has(admission.movementId)) ||
+          (admission.patientId !== null && catchment.has(admission.patientId))
+        ) {
           datesOnlyAdmissionIds.add(admission.id);
           return [datesOnlyAdmission(admission)];
         }

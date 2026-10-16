@@ -714,6 +714,12 @@ describe("the desk store", () => {
 
     const communityScoped = scopeWorkspace(customState, communityDesk, opts);
     expect(communityScoped.referrals.some((r) => r.id === communityOutboundReferral.id)).toBe(true);
+    // The stay a sent referral led to is ward and dates only, never the receiving ward's record.
+    const sentStay = { ...state.admissions[0], id: "adm-outbound-comm-1", referralId: communityOutboundReferral.id };
+    const withSentStay = { ...customState, admissions: [...customState.admissions, sentStay] };
+    const sentStayScoped = scopeWorkspace(withSentStay, communityDesk, opts);
+    expect(sentStayScoped.admissions.some((a) => a.id === sentStay.id)).toBe(true);
+    expect(sentStayScoped.datesOnlyAdmissionIds.has(sentStay.id)).toBe(true);
     expect(
       commandScopeRefusal(
         customState,

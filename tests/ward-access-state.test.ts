@@ -561,7 +561,8 @@ describe("a command from a desk", () => {
     expect(validOnTheWire(malformed)).toBe(false);
   });
   it("keeps a receiving ward's arrival notifications from the sending ward", () => {
-    const otherUnit = state.units.find((unit) => unit.id !== ownUnit)!;
+    const ownService = places.unitService(ownUnit);
+    const otherUnit = state.units.find((unit) => places.unitService(unit.id) !== ownService)!;
     const outboundId = "WF-0993" as const;
     const outbound = {
       ...state.movements[0],
@@ -615,5 +616,11 @@ describe("a command from a desk", () => {
     const receiver: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [otherUnit.id] } };
     const { state: receiverView } = scopeWardFlowState(withOutbound, receiver, options);
     expect(receiverView.supportNotifications?.map((record) => record.id)).toEqual(["SN-1"]);
+    // Nor does the sending service's coordinator see another service's ward notes.
+    const sendingCoordinator: WardAccess = { role: "coordinator", scope: { kind: "service", service: ownService! } };
+    const { state: coordinatorView } = scopeWardFlowState(withOutbound, sendingCoordinator, options);
+    expect(coordinatorView.supportNotifications).toEqual([]);
+    const { state: statewideView } = scopeWardFlowState(withOutbound, STATEWIDE_COORDINATOR, options);
+    expect(statewideView.supportNotifications?.map((record) => record.id)).toEqual(["SN-1"]);
   });
 });

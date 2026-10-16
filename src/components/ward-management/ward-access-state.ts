@@ -105,9 +105,8 @@ function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boo
  * still sees its outbound move, but never the receiving ward's notes about it (review on PR #365).
  */
 function notifiesOnArrival(context: Context, movement: { acceptedUnitId?: string | null }): boolean {
-  return (
-    context.coordinator || (typeof movement.acceptedUnitId === "string" && context.unitIn(movement.acceptedUnitId))
-  );
+  // A service coordinator sees notes only from wards in its own service, as a ward desk does.
+  return typeof movement.acceptedUnitId === "string" ? context.unitIn(movement.acceptedUnitId) : context.coordinator;
 }
 
 /** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
@@ -444,14 +443,16 @@ export function commandScopeRefusal(
   // ones its own screens show.
   if (access.role === "coordinator") for (const id of seededAuditIds(scopedWithoutGrants, state)) writable.add(id);
   if (
-    access.role === "ward" &&
+    (access.role === "ward" || access.role === "coordinator") &&
     (command.type === "RECORD_SUPPORT_NOTIFICATION" || command.type === "UNDO_SUPPORT_NOTIFICATION") &&
     typeof command.movementId === "string"
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (
       movement &&
-      !(typeof movement.acceptedUnitId === "string" && unitInScope(access.scope, movement.acceptedUnitId, places))
+      (typeof movement.acceptedUnitId === "string"
+        ? !unitInScope(access.scope, movement.acceptedUnitId, places)
+        : access.role === "ward")
     )
       return outside;
   }
