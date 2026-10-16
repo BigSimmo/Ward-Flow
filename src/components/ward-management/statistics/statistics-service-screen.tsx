@@ -572,7 +572,13 @@ function ServicePhone({
         entry.unit.beds > 0 ? Math.round(((entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100) : 0,
     }))
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
-  const busiest = [...eds].sort((a, b) => b.figures.onTheList - a.figures.onTheList || a.name.localeCompare(b.name));
+  const busiest = [...eds].sort((a, b) => {
+    const aWaiting = countsOnly ? small(a.figures.onTheList) : a.figures.onTheList;
+    const bWaiting = countsOnly ? small(b.figures.onTheList) : b.figures.onTheList;
+    const aValue = typeof aWaiting === "number" ? aWaiting : 0;
+    const bValue = typeof bWaiting === "number" ? bWaiting : 0;
+    return bValue - aValue || a.name.localeCompare(b.name);
+  });
   // Executive: the departments add up to the "waiting" total above them, so they hide together.
   const waitingShown = parts(busiest.map((entry) => entry.figures.onTheList));
   const bedDays = outOfArea.reduce((total, entry) => total + Math.max(0, entry.sinceArrival), 0) / MINUTES_PER_DAY;
@@ -640,7 +646,9 @@ function ServicePhone({
       <PhoneSheetRow
         icon={MapPin}
         title="Far from home and out of area"
-        sub={`${outOfAreaShown} ${outOfAreaShown === 1 ? "person" : "people"} out of area · ${bedDays.toFixed(1)} bed days`}
+        sub={`${outOfAreaShown} ${outOfAreaShown === 1 ? "person" : "people"} out of area${
+          countsOnly && typeof outOfAreaShown === "string" ? "" : ` · ${bedDays.toFixed(1)} bed days`
+        }`}
         testId="ward-statistics-service-phone-out-of-area"
       >
         {outOfArea.length === 0 ? (
