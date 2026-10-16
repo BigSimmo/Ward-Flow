@@ -9,7 +9,7 @@ const greenSnapshot = {
   title: "Improve phone chrome verification",
   headRefOid: "abc123",
   labels: [],
-  statusCheckRollup: [{ name: "PR required", conclusion: "SUCCESS" }],
+  statusCheckRollup: [{ name: "Ward Flow required", conclusion: "SUCCESS" }],
 };
 
 describe("validatePullRequestSnapshot", () => {
@@ -23,7 +23,7 @@ describe("validatePullRequestSnapshot", () => {
         ...greenSnapshot,
         headRefOid: "changed",
         labels: [{ name: "hold" }],
-        statusCheckRollup: [{ name: "pr-required", conclusion: "FAILURE" }],
+        statusCheckRollup: [{ name: "Ward Flow required", conclusion: "FAILURE" }],
       },
       { expectedHead: "abc123" },
     );
@@ -44,13 +44,46 @@ describe("validatePullRequestSnapshot", () => {
 
   it("fails closed when the required aggregate check is absent", () => {
     const result = validatePullRequestSnapshot({ ...greenSnapshot, statusCheckRollup: [] });
-    expect(result.failures).toContain("required check(s) missing: pr-required");
+    expect(result.failures).toContain("required check(s) missing: ward-flow-required");
+  });
+
+  it.each([
+    { name: "Ward Flow required", conclusion: "FAILURE" },
+    { name: "Ward Flow required", conclusion: "CANCELLED" },
+    { name: "Ward Flow required", conclusion: null, status: "QUEUED" },
+    { name: "Ward Flow required", conclusion: null, status: "IN_PROGRESS" },
+    { context: "Ward Flow CI / Ward Flow required", state: "PENDING" },
+  ])("fails closed while the current aggregate is unsuccessful: %j", (check) => {
+    const result = validatePullRequestSnapshot({ ...greenSnapshot, statusCheckRollup: [check] });
+    expect(result.failures).toContain("1 check(s) are not settled successfully");
+    expect(result.missingRequiredChecks).toEqual([]);
+  });
+
+  it("does not let a retired green aggregate hide the current aggregate's failure", () => {
+    const result = validatePullRequestSnapshot({
+      ...greenSnapshot,
+      statusCheckRollup: [
+        { name: "PR required", conclusion: "SUCCESS" },
+        { context: "CI / PR required", state: "SUCCESS" },
+        { name: "Ward Flow required", conclusion: "FAILURE" },
+      ],
+    });
+    expect(result.failures).toContain("1 check(s) are not settled successfully");
+    expect(result.requiredChecks).toEqual([{ name: "Ward Flow required", conclusion: "FAILURE" }]);
+  });
+
+  it("does not accept a retired green aggregate when the current aggregate is missing", () => {
+    const result = validatePullRequestSnapshot({
+      ...greenSnapshot,
+      statusCheckRollup: [{ name: "PR required", conclusion: "SUCCESS" }],
+    });
+    expect(result.failures).toContain("required check(s) missing: ward-flow-required");
   });
 
   it("accepts GitHub's workflow-qualified required-check context", () => {
     const result = validatePullRequestSnapshot({
       ...greenSnapshot,
-      statusCheckRollup: [{ context: "CI / PR required", state: "SUCCESS" }],
+      statusCheckRollup: [{ context: "Ward Flow CI / Ward Flow required", state: "SUCCESS" }],
     });
     expect(result.failures).toEqual([]);
   });
@@ -59,8 +92,9 @@ describe("validatePullRequestSnapshot", () => {
     const result = validatePullRequestSnapshot({
       ...greenSnapshot,
       statusCheckRollup: [
-        { name: "PR required", conclusion: "SUCCESS" },
+        { name: "Ward Flow required", conclusion: "SUCCESS" },
         { name: "Advisory UI", conclusion: "FAILURE" },
+        { name: "Ward Flow release gate", conclusion: "FAILURE" },
       ],
     });
     expect(result.failures).toEqual([]);

@@ -18,6 +18,416 @@ const snapshot = (revision: number): SharedSnapshot => ({
 });
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as WardFlowEvent;
 
+describe("shared view response ordering", () => {
+  it("does not report an old opening as successful when its union read is interrupted by a desk change", async () => {
+    let view: SharedView | undefined;
+    const finishes = new Map<string, (response: Response) => void>();
+    let finishUnion!: (response: Response) => void;
+    let reads = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, init) => {
+        if (init?.body) {
+          const { patientId } = JSON.parse(String(init.body));
+          return new Promise((resolve) => {
+            finishes.set(patientId, resolve);
+          });
+        }
+        if (reads++ === 1)
+          return new Promise((resolve) => {
+            finishUnion = resolve;
+          });
+        return Response.json({
+          snapshot: snapshot(1),
+          workingAs: new Headers(init?.headers).get("x-ward-working-as") ?? "bootstrap",
+        });
+      },
+    });
+    await client.refresh();
+    const first = client.breakGlass("synthetic-first", "handover");
+    const second = client.breakGlass("synthetic-second", "handover");
+    await vi.waitFor(() => expect(finishes.size).toBe(2));
+    finishes.get("synthetic-second")!(Response.json({ snapshot: snapshot(1) }));
+    await expect(second).resolves.toBeNull();
+    finishes.get("synthetic-first")!(Response.json({ snapshot: snapshot(1) }));
+    await vi.waitFor(() => expect(finishUnion).toBeDefined());
+    const membership = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    client.chooseRole(membership);
+    await vi.waitFor(() => expect(view?.workingAs).toBe(membership));
+    finishUnion(Response.json({ snapshot: snapshot(1) }));
+    await expect(first).resolves.toMatch(/working view changed/i);
+    expect(view?.workingAs).toBe(membership);
+    expect(view?.status).toBe("ready");
+    client.dispose();
+  });
+
+  it("re-reads the union of overlapping grants when their snapshots arrive out of order", async () => {
+    let view: SharedView | undefined;
+    const finishes = new Map<string, (response: Response) => void>();
+    const scoped = (minutes: number): SharedSnapshot => ({
+      ...snapshot(1),
+      payload: {
+        ...snapshot(1).payload,
+        state: { ...state, configuration: { ...state.configuration, pullHoldMinutes: minutes } },
+      },
+    });
+    let reads = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, init) => {
+        if (init?.body) {
+          const { patientId } = JSON.parse(String(init.body));
+          return new Promise((resolve) => {
+            finishes.set(patientId, resolve);
+          });
+        }
+        return Response.json({ snapshot: reads++ === 0 ? snapshot(1) : scoped(60) });
+      },
+    });
+    await client.refresh();
+    const first = client.breakGlass("synthetic-first", "handover");
+    const second = client.breakGlass("synthetic-second", "handover");
+    await vi.waitFor(() => expect(finishes.size).toBe(2));
+    finishes.get("synthetic-second")!(Response.json({ snapshot: scoped(60) }));
+    await expect(second).resolves.toBeNull();
+    finishes.get("synthetic-first")!(Response.json({ snapshot: scoped(45) }));
+    await expect(first).resolves.toBeNull();
+    expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(60);
+    expect(reads).toBe(2);
+    client.dispose();
+  });
+
+  it("forgets a refused role locally even when the external role setter is read only", async () => {
+    let view: SharedView | undefined;
+    let reads = 0;
+    const seen: (string | null)[] = [];
+    const membership = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => membership, set: () => {} },
+      fetch: async (_url, init) => {
+        const workingAs = new Headers(init?.headers).get("x-ward-working-as");
+        seen.push(workingAs);
+        if (reads++ === 0) return Response.json({ snapshot: snapshot(1), workingAs });
+        if (reads === 2) return Response.json({ code: "no-role" }, { status: 403 });
+        if (workingAs) throw new Error("The test stops a repeated refused-role request");
+        return Response.json({ snapshot: snapshot(1), workingAs: "bootstrap" });
+      },
+    });
+    await client.refresh();
+    await client.refresh();
+    expect(view?.status).toBe("ready");
+    expect(view?.workingAs).toBe("bootstrap");
+    expect(seen).toEqual([membership, membership, null]);
+    client.dispose();
+  });
+
+  it("cancels a token-waiting access mutation when a poll discovers the selected role has ended", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    let tokens = 0;
+    let reads = 0;
+    let releaseToken!: (token: string) => void;
+    const posts: (string | null)[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => {
+        if (tokens++ === 1)
+          return new Promise((resolve) => {
+            releaseToken = resolve;
+          });
+        return "test";
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, init) => {
+        const workingAs = new Headers(init?.headers).get("x-ward-working-as");
+        if (init?.body) {
+          posts.push(workingAs);
+          return Response.json({});
+        }
+        if (reads++ === 0) return Response.json({ snapshot: snapshot(1), workingAs });
+        return workingAs
+          ? Response.json({ code: "no-role" }, { status: 403 })
+          : Response.json({ snapshot: snapshot(1), workingAs: "bootstrap" });
+      },
+    });
+    await client.refresh();
+    const mutation = client
+      .grantAccess({
+        actorId: "22222222-2222-4222-8222-222222222222",
+        role: "ward",
+        scope: { kind: "ward", unitIds: ["rph-adult-secure"] },
+        expiresInMinutes: 60,
+      })
+      .catch((error: unknown) => error);
+    await vi.waitFor(() => expect(releaseToken).toBeDefined());
+    await client.refresh();
+    expect(view?.workingAs).toBe("bootstrap");
+    releaseToken("test");
+    expect(await mutation).toBeInstanceOf(Error);
+    expect(posts).toEqual([]);
+    expect(view?.status).toBe("ready");
+    expect(view?.workingAs).toBe("bootstrap");
+    client.dispose();
+  });
+
+  it("does not replay a refused command through another role when its selected membership ends", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const commands: (string | null)[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, init) => {
+        const workingAs = new Headers(init?.headers).get("x-ward-working-as");
+        if (!init?.body) return Response.json({ snapshot: snapshot(1), workingAs: workingAs ?? "bootstrap" });
+        commands.push(workingAs);
+        return workingAs
+          ? Response.json({ code: "no-role", error: "No Ward Flow role is assigned to this account" }, { status: 403 })
+          : Response.json({ snapshot: snapshot(2) });
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.status).toBe("ready"));
+    expect(commands).toEqual(["3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d"]);
+    expect(view?.snapshot?.revision).toBe(1);
+    expect(view?.workingAs).toBe("bootstrap");
+    // Main's ended-role contract: the refused attempt is logged and the person is told why.
+    expect(view?.eventLog).toEqual([expect.objectContaining({ accepted: false })]);
+    expect(view?.error).toBe(
+      "The role this tab was working as has ended. Review the current desk before making changes.",
+    );
+    client.dispose();
+  });
+
+  it("forgets the old revision when a revoked desk falls back to the account's remaining role", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const urls: string[] = [];
+    let reads = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (url, init) => {
+        urls.push(String(url));
+        if (reads++ === 0) return Response.json({ snapshot: snapshot(1) });
+        if (new Headers(init?.headers).has("x-ward-working-as"))
+          return Response.json({ code: "no-role" }, { status: 403 });
+        return String(url).includes("?since=")
+          ? Response.json({ notModified: true, revision: 1, now: 700 })
+          : Response.json({ snapshot: snapshot(1), workingAs: "bootstrap" });
+      },
+    });
+    await client.refresh();
+    await client.refresh();
+    expect(urls).toEqual([
+      "https://example.test/v1/workspace",
+      "https://example.test/v1/workspace?since=1",
+      "https://example.test/v1/workspace",
+    ]);
+    expect(view?.workingAs).toBe("bootstrap");
+    expect(view?.status).toBe("ready");
+    client.dispose();
+  });
+
+  it("preserves the payload identity for identical full scoped polls while updating the server clock", async () => {
+    let view: SharedView | undefined;
+    let now = 642;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => Response.json({ snapshot: { ...snapshot(1), now } }),
+    });
+    await client.refresh();
+    const held = view?.snapshot;
+    now = 700;
+    await client.refresh();
+    expect(view?.snapshot?.now).toBe(700);
+    expect(view?.snapshot?.payload).toBe(held?.payload);
+    client.dispose();
+  });
+
+  it("confirms an in-flight command without losing a concurrently opened record", async () => {
+    let view: SharedView | undefined;
+    let finishCommand!: (response: Response) => void;
+    let granted = false;
+    let reads = 0;
+    const opened = (revision: number): SharedSnapshot => ({
+      ...snapshot(revision),
+      payload: {
+        ...snapshot(revision).payload,
+        state: { ...state, configuration: { ...state.configuration, pullHoldMinutes: 45 } },
+      },
+    });
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) => {
+        if (String(url).endsWith("/commands"))
+          return new Promise((resolve) => {
+            finishCommand = resolve;
+          });
+        if (String(url).endsWith("/break-glass")) {
+          granted = true;
+          return Response.json({ snapshot: opened(1) });
+        }
+        reads += 1;
+        return Response.json({ snapshot: granted ? opened(2) : snapshot(1) });
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(finishCommand).toBeDefined());
+    await expect(client.breakGlass("synthetic-patient", "handover")).resolves.toBeNull();
+    finishCommand(Response.json({ snapshot: snapshot(2) }));
+    await vi.waitFor(() => expect(view?.status).toBe("ready"));
+    expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
+    expect(view?.snapshot?.revision).toBe(2);
+    expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
+    expect(reads).toBe(2);
+    client.dispose();
+  });
+
+  it("keeps the opened view when a pre-grant poll's sign-in check fails after break glass", async () => {
+    let view: SharedView | undefined;
+    let failSignIn!: () => void;
+    let tokenCalls = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => {
+        if (++tokenCalls === 2)
+          await new Promise<never>((_, reject) => {
+            failSignIn = () => reject(new WardAuthError("session", "Sign in again."));
+          });
+        return "test";
+      },
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) =>
+        Response.json({ snapshot: String(url).endsWith("/break-glass") ? snapshot(2) : snapshot(1) }),
+    });
+    await client.refresh();
+    const stalePoll = client.refresh().catch(() => undefined);
+    await vi.waitFor(() => expect(failSignIn).toBeDefined());
+    await client.breakGlass("synthetic-patient", "handover");
+    failSignIn();
+    await stalePoll;
+    expect(view?.status).not.toBe("not-authorised");
+    expect(view?.snapshot?.revision).toBe(2);
+    client.dispose();
+  });
+
+  it.each([200, 403])("ignores a pre-grant poll answered after break glass (HTTP %i)", async (status) => {
+    let view: SharedView | undefined;
+    let finishPoll!: (response: Response) => void;
+    let reads = 0;
+    const opened = snapshot(1);
+    opened.payload = {
+      ...opened.payload,
+      state: {
+        ...state,
+        configuration: { ...state.configuration, pullHoldMinutes: 45 },
+      },
+    };
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) => {
+        if (String(url).endsWith("/break-glass")) return Response.json({ snapshot: opened });
+        if (reads++ === 0) return Response.json({ snapshot: snapshot(1) });
+        return new Promise((resolve) => {
+          finishPoll = resolve;
+        });
+      },
+    });
+    await client.refresh();
+    const pendingPoll = client.refresh();
+    await vi.waitFor(() => expect(finishPoll).toBeDefined());
+    await expect(client.breakGlass("synthetic-patient", "handover")).resolves.toBeNull();
+    expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
+    finishPoll(Response.json(status === 200 ? { snapshot: snapshot(1) } : { error: "Unauthorised" }, { status }));
+    await pendingPoll;
+    expect(view?.status).toBe("ready");
+    expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
+    client.dispose();
+  });
+
+  it("does not send a queued command as a new desk when its token wait finishes after a role choice", async () => {
+    let view: SharedView | undefined;
+    let releaseToken!: (token: string) => void;
+    let tokens = 0;
+    let stored: string | null = "bootstrap";
+    const membership = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const sent: { method: string; workingAs: string | null }[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => {
+        if (tokens++ === 1)
+          return new Promise((resolve) => {
+            releaseToken = resolve;
+          });
+        return "test";
+      },
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, init) => {
+        const workingAs = new Headers(init?.headers).get("x-ward-working-as");
+        sent.push({ method: init?.method ?? "GET", workingAs });
+        return Response.json({ snapshot: snapshot(1), workingAs });
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(releaseToken).toBeDefined());
+    client.chooseRole(membership);
+    releaseToken("test");
+    await vi.waitFor(() => expect(view?.status).toBe("ready"));
+    expect(sent).toEqual([
+      { method: "GET", workingAs: "bootstrap" },
+      { method: "GET", workingAs: membership },
+    ]);
+    expect(view?.eventLog).toEqual([]);
+    expect(view?.workingAs).toBe(membership);
+    client.dispose();
+  });
+});
+
 describe("shared workspace connection", () => {
   it.each([200, 409, 422, 400])("records a sanitized definitive command outcome for HTTP %i", async (status) => {
     const typedEvent = {
