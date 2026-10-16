@@ -1362,6 +1362,21 @@ describe("a referral addressed to several destinations", () => {
     });
     expect(wrong.rejections.at(-1)?.reason).toContain("answered by a team, not a bed");
 
+    // A blank `unitId` is a malformed event too, not "no unit": it is refused the same way rather
+    // than slipping past a truthiness check.
+    const blank = wardFlowReducer(after, {
+      type: "ACCEPT_REFERRAL",
+      role: "coordinator",
+      now: NOW + 2,
+      referralId: created.id,
+      destinationKind: "community_team",
+      unitId: "",
+    });
+    expect(blank.rejections.at(-1)?.reason).toContain("answered by a team, not a bed");
+    expect(blank.referrals.find((referral) => referral.id === created.id)).toEqual(
+      after.referrals.find((referral) => referral.id === created.id),
+    );
+
     // And the ward arm still REQUIRES one, so this is not simply ignoring `unitId` everywhere.
     const missing = wardFlowReducer(after, {
       type: "ACCEPT_REFERRAL",
