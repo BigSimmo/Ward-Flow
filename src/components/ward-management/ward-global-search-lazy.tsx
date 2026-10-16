@@ -2,9 +2,19 @@
 
 import { Search } from "lucide-react";
 import dynamic from "next/dynamic";
-import { type ComponentType, type ReactNode, type RefObject, useEffect, useId, useRef, useState } from "react";
+import {
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { useIsPhone } from "@/components/wf";
+import { isGlobalSearchShortcut } from "./search/search-shortcut";
 import type { WardGlobalSearchProps } from "./ward-global-search";
 import styles from "./ward-global-search.module.css";
 // The palette's preview styles stay in the shell's own stylesheet, in the same order as before, so
@@ -30,7 +40,8 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
   const [Loaded, setLoaded] = useState<ComponentType<WardGlobalSearchProps> | null>(null);
   // What the placeholder field holds, kept to the last keystroke so none is lost in the swap.
   const [draft, setDraft] = useState("");
-  const [focused, setFocused] = useState(false);
+  // True for the one commit in which both fields are drawn (see the layout effect below).
+  const [handingOff, setHandingOff] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const fieldRef = useRef<HTMLInputElement>(null);
@@ -41,12 +52,9 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
     loadSearch().then(
       (module) => {
         if (!live) return;
-        // Also covers a tap or typing before the page was ready, which raised no React events.
-        const field = fieldRef.current;
-        if (field) {
-          setDraft(field.value);
-          if (document.activeElement === field) setFocused(true);
-        }
+        // Also covers typing before the page was ready, which raised no React events.
+        if (fieldRef.current) setDraft(fieldRef.current.value);
+        setHandingOff(true);
         setLoaded(() => module.WardGlobalSearch);
       },
       () => {
@@ -58,6 +66,28 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
     };
   }, [deferred, attempt]);
 
+  // The real search is drawn first with the placeholder still beside it, and takes the focus and
+  // caret from it in its own layout effect, which runs before this one. Only then is the
+  // placeholder removed, in the same task and before any paint. Removing a focused field first
+  // would close an iPhone's keyboard, which a focus() outside a tap cannot reopen.
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the second, synchronous commit is the point: it removes the placeholder before any paint
+    if (handingOff) setHandingOff(false);
+  }, [handingOff]);
+
+  // While the placeholder is up, "/" and Ctrl/Cmd K focus it, as they will the real search.
+  const waiting = deferred && Loaded === null;
+  useEffect(() => {
+    if (!waiting) return;
+    function onWindowKeyDown(event: KeyboardEvent) {
+      if (!isGlobalSearchShortcut(event)) return;
+      event.preventDefault();
+      fieldRef.current?.focus();
+    }
+    window.addEventListener("keydown", onWindowKeyDown);
+    return () => window.removeEventListener("keydown", onWindowKeyDown);
+  }, [waiting]);
+
   // Offline before the code arrived: the next tap or keystroke tries again, even in a field that
   // already has the focus.
   const retry = () => {
@@ -67,28 +97,31 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
   };
 
   if (!deferred) return <SearchLoaded {...props} />;
-  if (Loaded) return <Loaded {...props} initialQuery={draft} takeFocus={focused} />;
+  const field =
+    Loaded === null || handingOff ? (
+      <SearchField
+        fieldRef={fieldRef}
+        label={props.label ?? "Search"}
+        placeholder={props.placeholder ?? "Search people and movements…"}
+        scope={props.scope}
+        onChange={(value) => {
+          setDraft(value);
+          retry();
+        }}
+        onFocus={retry}
+        onPointerDown={retry}
+      />
+    ) : null;
+  // One shape throughout, so the placeholder keeps its place (and its focus) until it is removed.
   return (
-    <SearchField
-      fieldRef={fieldRef}
-      label={props.label ?? "Search"}
-      placeholder={props.placeholder ?? "Search people and movements…"}
-      scope={props.scope}
-      onChange={(value) => {
-        setDraft(value);
-        retry();
-      }}
-      onFocus={() => {
-        setFocused(true);
-        retry();
-      }}
-      onPointerDown={retry}
-      onBlur={() => setFocused(false)}
-    />
+    <>
+      {Loaded ? <Loaded {...props} initialQuery={draft} takeFocusFrom={fieldRef} /> : null}
+      {field}
+    </>
   );
 }
 
-/** The search field as `WardGlobalSearch` first draws it, closed and empty, with nothing wired. */
+/** The search field as `WardGlobalSearch` first draws it, closed, holding only the typed text. */
 function SearchField({
   fieldRef,
   label,
@@ -97,7 +130,6 @@ function SearchField({
   onChange,
   onFocus,
   onPointerDown,
-  onBlur,
 }: {
   fieldRef: RefObject<HTMLInputElement | null>;
   label: string;
@@ -106,7 +138,6 @@ function SearchField({
   onChange: (value: string) => void;
   onFocus: () => void;
   onPointerDown: () => void;
-  onBlur: () => void;
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
@@ -135,9 +166,15 @@ function SearchField({
           aria-describedby={hintId}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            // Esc clears, as the guidance below says and the real search does.
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            event.currentTarget.value = "";
+            onChange("");
+          }}
           onFocus={onFocus}
           onPointerDown={onPointerDown}
-          onBlur={onBlur}
           data-testid="ward-global-search-input"
         />
         <kbd aria-hidden="true" className={styles.shortcut} data-ward-search-shortcut>

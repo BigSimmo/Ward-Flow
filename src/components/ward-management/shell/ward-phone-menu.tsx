@@ -3,7 +3,15 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentProps,
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   Activity,
   BedSingle,
@@ -727,11 +735,49 @@ type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
  * search normally finds them already there, and read "Searching…" until then.
  */
 const loadMenuResults = () => import("./ward-phone-menu-results");
-const MenuSearchResults = dynamic(() => loadMenuResults().then((m) => m.MenuSearchResults), {
-  ssr: false,
-  loading: () => <MenuSearching />,
-});
+type MenuSearchResultsProps = ComponentProps<(typeof import("./ward-phone-menu-results"))["MenuSearchResults"]>;
+// A failed load (offline before the code arrived) draws `MenuSearchRetry` in its place rather than
+// failing the whole shell.
+const MenuSearchResults = dynamic(
+  () =>
+    loadMenuResults().then(
+      (m) => m.MenuSearchResults,
+      () => MenuSearchRetry,
+    ),
+  { ssr: false, loading: () => <MenuSearching /> },
+);
 preloadWhenIdle(loadMenuResults);
+
+/**
+ * Stands in for the results when their code could not load. It tries again on each keystroke and
+ * each time the menu opens, and shows the real results once they arrive.
+ */
+function MenuSearchRetry(props: MenuSearchResultsProps) {
+  const [Results, setResults] = useState<ComponentType<MenuSearchResultsProps> | null>(null);
+  const [failed, setFailed] = useState(false);
+  const retryKey = Results ? "" : props.query;
+  useEffect(() => {
+    let live = true;
+    loadMenuResults().then(
+      (m) => {
+        if (live) setResults(() => m.MenuSearchResults);
+      },
+      () => {
+        if (live) setFailed(true);
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [retryKey]);
+  if (Results) return <Results {...props} />;
+  if (!failed) return <MenuSearching />;
+  return (
+    <Section label="Search unavailable">
+      <li className={styles.empty}>Search could not load. Check the connection, then type again.</li>
+    </Section>
+  );
+}
 
 function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string) => void }) {
   return (

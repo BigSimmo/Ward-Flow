@@ -1,6 +1,6 @@
 // Repo score follow-up (16 Oct 2026): phones load the header search after the page. These pin the
 // hand-over from the plain field the server draws to the real search, and that desktop is unchanged.
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
@@ -42,6 +42,32 @@ describe("header search on a phone", () => {
     expect(input()).not.toBe(field);
     expect(input()).toHaveValue("Hal");
     expect(input()).toHaveFocus();
+  });
+
+  it("keeps the caret where it was", async () => {
+    installMatchMediaStub(true);
+    renderSearch();
+    const field = input() as HTMLInputElement;
+    act(() => {
+      field.focus();
+      field.value = "Hal";
+      field.setSelectionRange(1, 2);
+    });
+    await waitFor(() => expect(input()).toHaveAttribute("aria-haspopup", "listbox"));
+    const loaded = input() as HTMLInputElement;
+    expect([loaded.selectionStart, loaded.selectionEnd]).toEqual([1, 2]);
+  });
+
+  it("answers Esc and the search shortcut while the real search loads", () => {
+    installMatchMediaStub(true);
+    renderSearch();
+    const field = input() as HTMLInputElement;
+    expect(field).not.toHaveAttribute("aria-haspopup");
+    fireEvent.keyDown(window, { key: "/" });
+    expect(field).toHaveFocus();
+    fireEvent.change(field, { target: { value: "Hal" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(field).toHaveValue("");
   });
 });
 
