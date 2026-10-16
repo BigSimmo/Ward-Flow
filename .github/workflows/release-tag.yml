@@ -1,11 +1,11 @@
 name: Ward Flow release tag
 
-# Tags each main commit that passed Ward Flow CI as `release-YYYY-MM-DD-<short sha>` (the CI run's UTC
-# start date), so every
-# commit Railway may deploy has a named point to compare against or roll back to. A tag means CI
-# passed, not that Railway finished deploying it: Railway's own deploy history is the record of
-# that. It runs only after a successful CI run for a push to main, and is the only workflow that may
-# write: it creates one tag through the API, checks out nothing and runs no repository code.
+# Tags each main commit that passed Ward Flow CI as `release-YYYY-MM-DD-<short sha>`, dated by the
+# CI run's UTC start, so every commit Railway may deploy has a named point to compare against or roll
+# back to. A tag means CI passed, not that Railway finished deploying it: Railway's own deploy history
+# is the record of that. It runs only after a successful CI run for a push to main, and is the only
+# workflow that may write: it creates one tag through the API, checks out nothing and runs no
+# repository code.
 on:
   workflow_run:
     workflows: [Ward Flow CI]
@@ -32,16 +32,18 @@ jobs:
           RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
         run: |
           case "$HEAD_SHA" in *[!0-9a-f]* | "") echo "Unexpected commit id" >&2; exit 1 ;; esac
-          tag="release-${RUN_STARTED_AT:0:10}-${HEAD_SHA:0:7}"
-          existing=""
-          if found="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq .object.sha 2>/dev/null)"; then
-            existing="$found"
-          fi
-          if [ "$existing" = "$HEAD_SHA" ]; then
-            echo "$tag already exists"
-            exit 0
-          fi
-          # Another commit from the same day shares the short id, so use the full one.
-          if [ -n "$existing" ]; then tag="release-${RUN_STARTED_AT:0:10}-$HEAD_SHA"; fi
-          gh api "repos/$REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$HEAD_SHA" >/dev/null
-          echo "Tagged $HEAD_SHA as $tag"
+          day="${RUN_STARTED_AT:0:10}"
+          # Try the short id first. If a different same-day commit holds it, use the full id.
+          for tag in "release-$day-${HEAD_SHA:0:7}" "release-$day-$HEAD_SHA"; do
+            if ! existing="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq .object.sha 2>/dev/null)"; then
+              gh api "repos/$REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$HEAD_SHA" >/dev/null
+              echo "Tagged $HEAD_SHA as $tag"
+              exit 0
+            fi
+            if [ "$existing" = "$HEAD_SHA" ]; then
+              echo "$tag already exists"
+              exit 0
+            fi
+          done
+          echo "Both tag names point at other commits" >&2
+          exit 1
