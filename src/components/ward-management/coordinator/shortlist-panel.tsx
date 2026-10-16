@@ -2487,10 +2487,10 @@ export function ShortlistPanel({
                   type="button"
                   data-testid="ward-release-pull-toggle"
                   aria-expanded={releasePullOpen}
-                  disabled={!canReleasePull}
+                  aria-disabled={!canReleasePull ? "true" : undefined}
                   aria-describedby={!canReleasePull ? "ward-release-pull-transport-blocked" : undefined}
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={() => setReleasePullOpen((open) => !open)}
+                  onClick={canReleasePull ? () => setReleasePullOpen((open) => !open) : ignoreUnavailableActivation}
                 >
                   Release the pulled bed
                 </button>

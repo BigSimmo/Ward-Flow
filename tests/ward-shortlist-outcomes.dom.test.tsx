@@ -1,3 +1,5 @@
+import "@testing-library/jest-dom/vitest";
+import userEvent from "@testing-library/user-event";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
@@ -43,11 +45,27 @@ function pending() {
   return { promise, finish };
 }
 describe("shortlist confirmed outcomes", () => {
-  it("explains why Release is disabled while the transport booking is active", () => {
+  it("keeps blocked Release focusable and explained without opening a form or dispatching", async () => {
+    const user = userEvent.setup();
     const base = state.movements.find((row) => row.stage === "pulled")!;
-    panel({ ...base, transport: { ...activeBooking() } }, vi.fn());
-    expect((screen.getByTestId("ward-release-pull-toggle") as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText("Cancel the active transport booking before releasing the pulled bed.")).toBeTruthy();
+    const dispatch = vi.fn<() => Promise<WardCommandOutcome>>();
+    panel({ ...base, transport: { ...activeBooking() } }, dispatch);
+    const release = screen.getByTestId("ward-release-pull-toggle");
+    expect(release).not.toBeDisabled();
+    expect(release).toHaveAttribute("aria-disabled", "true");
+    expect(release).toHaveAccessibleDescription("Cancel the active transport booking before releasing the pulled bed.");
+    release.focus();
+    expect(release).toHaveFocus();
+    await user.tab();
+    expect(screen.getByTestId("ward-cancel-transport-toggle")).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(release).toHaveFocus();
+    for (const activate of [() => user.keyboard("{Enter}"), () => user.keyboard(" "), () => user.click(release)]) {
+      await activate();
+      expect(release).toHaveAttribute("aria-expanded", "false");
+      expect(screen.queryByTestId("ward-release-pull")).not.toBeInTheDocument();
+      expect(dispatch).not.toHaveBeenCalled();
+    }
   });
   it.each(["accepted", "refused"] as const)("reports only the confirmed escalation %s", async (status) => {
     const result = pending();
