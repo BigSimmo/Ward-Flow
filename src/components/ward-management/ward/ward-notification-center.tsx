@@ -16,6 +16,7 @@ import {
 } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
+import { buzzKeys } from "./ward-buzz-keys";
 import styles from "./ward-notification-center.module.css";
 
 export interface WardNotificationCenterProps {
@@ -137,8 +138,9 @@ export function WardNotificationCenter({
   };
 
   // 1. Coordinator Buzzes matching unitId
+  const keys = buzzKeys(refreshRequests);
   const matchingBuzzes = refreshRequests
-    .map((buzz) => ({ buzz, buzzKey: `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}` }))
+    .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
     .filter(({ buzz }) => buzz.unitId === unitId);
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
@@ -318,10 +320,7 @@ export function WardNotificationCenter({
                   const messageText = buzz.message || "Capacity refresh requested";
 
                   return (
-                    <div
-                      key={`buzz-${buzzKey}`}
-                      className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}
-                    >
+                    <div key={`buzz-${buzzKey}`} className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}>
                       <div className={styles.cardBody}>
                         <div className={styles.cardHeader}>
                           <time className={styles.cardTime}>{formatInstantWithDay(buzz.at, now)}</time>

@@ -446,7 +446,8 @@ export function WardBedsMatrix({
     }> = [];
 
     for (const bed of bedsList) {
-      const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber) || 1;
+      const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber);
+      if (!Number.isFinite(bedNumber) || bedNumber <= 0) continue;
       const isDueOut =
         bed.pastDate === true ||
         (typeof bed.expectedDays === "number" && bed.expectedDays <= 0) ||

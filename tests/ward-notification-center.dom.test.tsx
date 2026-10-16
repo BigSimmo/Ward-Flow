@@ -115,12 +115,24 @@ describe("WardNotificationCenter DOM Component", () => {
     fireEvent.click(acknowledgeButtons[0]);
     expect(onDismissBuzz).toHaveBeenCalledTimes(1);
     expect(onDismissBuzz).toHaveBeenCalledWith(
-      "ward-alpha:540:coordinator:Please review pending discharges immediately:true",
+      "ward-alpha:540:coordinator:Please review pending discharges immediately:true#0",
     );
 
     fireEvent.click(acknowledgeButtons[1]);
     expect(onDismissBuzz).toHaveBeenCalledTimes(2);
-    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:570:coordinator::false");
+    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:570:coordinator::false#0");
+  });
+
+  it("keeps identical repeat buzzes as separate acknowledgements", () => {
+    const onDismissBuzz = vi.fn();
+    const buzz = { unitId: "ward-alpha", at: 540, byRole: "coordinator", message: "Same buzz" };
+    render(
+      <WardNotificationCenter {...defaultProps} refreshRequests={[buzz, { ...buzz }]} onDismissBuzz={onDismissBuzz} />,
+    );
+    const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge Buzz" });
+    expect(acknowledgeButtons).toHaveLength(2);
+    fireEvent.click(acknowledgeButtons[1]);
+    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:540:coordinator:Same buzz:false#1");
   });
 
   it("renders 09:30 overdue census banner with confirm callback", () => {

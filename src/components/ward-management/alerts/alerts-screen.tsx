@@ -299,7 +299,9 @@ function AlertsWorkspace() {
     scopeLabel: string;
   } | null>(null);
   const broadcastResult = broadcastRequest
-    ? state.eventLog?.find((entry) => entry.sequence > broadcastRequest.logSequence && entry.type === broadcastRequest.type)
+    ? state.eventLog?.find(
+        (entry) => entry.sequence > broadcastRequest.logSequence && entry.type === broadcastRequest.type,
+      )
     : undefined;
   const broadcastAccepted = broadcastResult?.accepted === true;
   const broadcastRefused = broadcastResult?.accepted === false;

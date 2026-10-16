@@ -147,6 +147,7 @@ import {
   whyBedDoesNotFit,
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import { buzzKeys } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
 import { WardDischargeNotices } from "./ward-discharge-notices";
@@ -1264,10 +1265,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit) return 0;
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const activeBuzzes = (refreshRequests ?? []).filter(
-      (r) =>
-        r.unitId === unit.id &&
-        !dismissedBuzzes.includes(`${r.unitId}:${r.at}:${r.byRole}:${r.message ?? ""}:${r.urgent === true}`),
+    const requests = refreshRequests ?? [];
+    const keys = buzzKeys(requests);
+    const activeBuzzes = requests.filter(
+      (r, index) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[index] ?? ""),
     );
     count += activeBuzzes.length;
     const overdueArrivals = movements.filter(
