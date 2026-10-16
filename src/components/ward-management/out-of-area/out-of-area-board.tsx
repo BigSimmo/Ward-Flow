@@ -67,7 +67,7 @@ import {
   bedMeetingComparison,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
-import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
+import { ReturnPlan, TravelIcon, canSendReturnPlan, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
@@ -165,6 +165,33 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     routeRole: useRouteRole(),
     onMessage: setRepatNotice,
   });
+  // The panel notice is written at once, so a refusal of that step (for example a shared workspace
+  // recording the stay as gone first) replaces it with the engine's reason and restores the draft.
+  const repatCheckRef = useRef<{
+    prior: number;
+    admissionId: string;
+    record: RepatriationRecord | undefined;
+    draft?: RepatDraft;
+  } | null>(null);
+  // Disarmed only by this step's own outcome: a refusal naming this stay, or this stay's record
+  // changing in content. Changes to other stays leave it armed, and once disarmed a later refusal is never
+  // read as this step's.
+  useEffect(() => {
+    const check = repatCheckRef.current;
+    if (!check) return;
+    const refused = rejections.slice(check.prior).find((rejection) => rejection.movementId === check.admissionId);
+    if (!refused) {
+      const record = liveRepatriations?.find((candidate) => candidate.admissionId === check.admissionId);
+      // Compared by content: a shared refresh can hand back an equal record as a new object, which is
+      // not this step's outcome.
+      if (JSON.stringify(record) !== JSON.stringify(check.record)) repatCheckRef.current = null;
+      return;
+    }
+    repatCheckRef.current = null;
+    const { admissionId, draft } = check;
+    if (draft) setDrafts((current) => ({ ...current, [admissionId]: draft }));
+    setRepatNotice(`Not recorded: ${refused.reason}. Nothing was changed.`);
+  }, [rejections, liveRepatriations]);
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -341,6 +368,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ? " Return transfer movement queued for bed placement at home health service."
       : " Return movement pending receiving ward agreement.";
     const recorded = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
     runStep(
       {
         type: "RECORD_REPATRIATION",
@@ -367,6 +395,88 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return next;
     });
     setRepatNotice(`${recorded}${movementFeedback}`);
+  }
+
+  function sendPlanToWard(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const draft = draftFor(admissionId);
+    if (!canSendReturnPlan(draft, now)) return;
+    const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
+    if (
+      estimatedAt === undefined ||
+      (draft.mode !== "road" && draft.mode !== "flight") ||
+      draft.provider === undefined ||
+      draft.transportLegalStatus === undefined
+    ) {
+      return;
+    }
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    // An explicit "Agreed" answer is kept: sending the plan never records it as still pending.
+    const wardAgreed = draft.receivingWardAgreed === true;
+    const sentNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. ${
+      wardAgreed
+        ? "Return transfer movement queued for bed placement at home health service."
+        : "Return movement pending receiving ward agreement."
+    }`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: draft.homeHospital,
+        receivingWardAgreed: wardAgreed,
+        mode: draft.mode,
+        provider: draft.provider,
+        cadNumber: draft.cadNumber.trim(),
+        transportLegalStatus: draft.transportLegalStatus,
+        estimatedAt,
+      },
+      {
+        success: sentNotice,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[admissionId];
+      return next;
+    });
+    setRepatNotice(sentNotice);
+  }
+
+  function markWardAgreed(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const existing = recordOf(admissionId);
+    if (!existing || existing.receivingWardAgreed) return;
+    const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
+    const agreedNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, record: existing };
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: existing.homeHospital,
+        receivingWardAgreed: true,
+        mode: existing.mode,
+        provider: existing.provider,
+        cadNumber: existing.cadNumber,
+        transportLegalStatus: existing.transportLegalStatus,
+        // The recorded departure estimate stands; agreeing the return never moves it.
+        estimatedAt: existing.estimatedAt,
+      },
+      {
+        success: agreedNotice,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        // Undo takes back only the agreement: the sent plan stays, awaiting the receiving ward.
+        undone: `Ward agreement undone for ${patientOf(entry).displayName}. The return plan is back to awaiting the receiving ward.`,
+      },
+    );
+    setRepatNotice(agreedNotice);
   }
 
   // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
@@ -399,6 +509,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       notice={repatNotice}
       onDismissNotice={() => setRepatNotice(null)}
       onRecord={() => recordReturn(entry)}
+      onSendToWard={() => sendPlanToWard(entry)}
+      onMarkWardAgreed={() => markWardAgreed(entry)}
       header={header}
       idPrefix={idPrefix}
     />

@@ -24,7 +24,7 @@ import { declineReasonLabels } from "@/components/ward-management/movements/move
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 
 /**
- * PIR CHRONOLOGY (D-37, WF-57): every recorded fact about one synthetic person, in time order, for a
+ * PIR CHRONOLOGY (D-37): every recorded fact about one synthetic person, in time order, for a
  * post-incident review. Read-only. It joins the person to their own referrals, movements and
  * admissions, then reads three sources that already exist:
  *

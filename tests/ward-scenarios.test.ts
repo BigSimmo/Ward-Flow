@@ -128,7 +128,7 @@ describe("ward scenarios", () => {
    * the two zeroes are what drive the rise. If the owner supplies real staffing figures these
    * numbers move again, and that will not be a regression either.
    *
-   * **RE-MEASURED 2026-09-16, after fixing WF-26** (the scarce map built `allocatable` from
+   * **RE-MEASURED 2026-09-16, after fixing audit rule** (the scarce map built `allocatable` from
    * `index % 3 === 0 ? 1 : 0` alone, never clamping to `unit.empty.value`, and never touched
    * `allocatableLocked` at all — see `ward-scenarios.ts`'s own comment on `scenarioUnits`).
    *
@@ -327,7 +327,7 @@ describe("ward scenarios", () => {
 });
 
 /**
- * WF-26: the scarce scenario built `allocatable` from `index % 3 === 0 ? 1 : 0` alone, never
+ * the scarce scenario built `allocatable` from `index % 3 === 0 ? 1 : 0` alone, never
  * looking at the unit's `empty` figure — so `gry-older-adult` (empty 0) was handed an allocatable
  * bed that did not physically exist. It also never touched `allocatableLocked` at all, so a unit
  * whose STANDARD `allocatableLocked` was 1 or 2 kept that figure on the scarce night even where

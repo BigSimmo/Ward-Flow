@@ -10,7 +10,7 @@ This line moved five times while the plan was being written, so re-grep before e
 [`2026-09-16-fix-plan-referral-model.md`](2026-09-16-fix-plan-referral-model.md). · Shared tokens:
 [`2026-09-17-build-plan-legal-clinical.md`](2026-09-17-build-plan-legal-clinical.md) §4.
 
-**Already on the line — don't rebuild:** R1 and WF-13. · A no-bed CANCEL_TRANSPORT removes the job, and rebook ids are
+**Already on the line — don't rebuild:** R1 and withdrawn-referral count updates. · A no-bed CANCEL_TRANSPORT removes the job, and rebook ids are
 unique. · The "Awaiting a bed at the accepting ward" blocker. · Settings wiring. · y2 (fold `73e617fbdc`) and y3's
 R3–R5 (fold `13594e4181`). **So no task waits for y2 or y3**; RB5 builds on y2's decline wiring and RB6 on y3's R5.
 

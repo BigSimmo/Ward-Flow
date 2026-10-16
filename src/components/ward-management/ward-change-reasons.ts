@@ -798,3 +798,15 @@ export const dischargeDelayMetadata: Record<DischargeDelayReason, DischargeDelay
       "Office of the Public Advocate / Public Guardian application, appointment, or accommodation determination pending.",
   },
 };
+
+export const DISCHARGE_DELAY_CLEAR_REASONS = [
+  "resolved_clinically",
+  "package_confirmed",
+  "accommodation_secured",
+  "transport_arranged",
+  "family_carer_ready",
+  "entered_in_error",
+  "other",
+] as const;
+
+export type DischargeDelayClearReason = (typeof DISCHARGE_DELAY_CLEAR_REASONS)[number];

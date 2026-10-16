@@ -82,7 +82,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
 - **`scripts/ward-flow/screen-verification-lib.mjs`** (137 lines) — The pure functions behind
   `screen-verification.mjs`: `drawingStatus` (has the DRAWING moved since the last look) and
   `implementationFiles`/`implementationSha256`/`implementationStatus` (has the BUILT screen moved).
-  Written after WF-35, where a drawing-hash match was printed as "CURRENT" and read as a claim
+  Written after an audit finding where a drawing-hash match was printed as "CURRENT" and read as a claim
   about the built screen, which nothing had actually compared.
 - **`scripts/ward-flow/contact-sheet.mjs`** (102 lines) — Writes
   `design/third-edition-mockups/CONTACT-SHEET.html`: one page of every current drawing as a live
@@ -642,7 +642,7 @@ generator `--check`s only when their own source changed.
    `docs/ward-flow/` will not find it; use `--show-report`.
 7. **The `screen-verification.mjs` `--check` gate cannot tell you a screen is wrong or stale on
    purpose.** It only fails on structural JSON problems. Reading a clean `--check` as "every screen
-   matches its drawing" is exactly the WF-35 misreading `screen-verification-lib.mjs` was written
+   matches its drawing" is the exact misreading `screen-verification-lib.mjs` was written
    to stop; read the generated `SCREEN-VERIFICATION.md` itself for per-screen status.
 8. **The journey-explorer probes (`prove-*.mjs`) mutate real source files in this folder and
    restore them.** They are hardened against a known Windows transient-lock failure

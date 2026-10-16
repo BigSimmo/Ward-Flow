@@ -1,6 +1,6 @@
 // tests/ward-activity-count-separate.dom.test.tsx
 //
-// WF-10. `ward-bar.tsx`'s Activity drawer drew its "Activity" segment count as
+// `ward-bar.tsx`'s Activity drawer drew its "Activity" segment count as
 // `changes.length + scopedNotices.length` — a derived fact (recent changes) and an authored,
 // addressed fact (a notice) summed into one unlabelled number. The communication addendum
 // (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md` §1.4) is explicit: "The two lists
@@ -94,7 +94,7 @@ async function openActivityDrawer() {
   return screen.getByTestId("ward-bar-activity-sheet");
 }
 
-describe("WF-10 — the Activity segment count and the Notices heading are never summed", () => {
+describe("the Activity segment count and the Notices heading are never summed", () => {
   // `Sheet`'s open-focus controller schedules work with `requestAnimationFrame` — same polyfill
   // guard `tests/ward-shell-mounted.dom.test.tsx` and `tests/ward-shell-third-edition.dom.test.tsx`
   // already carry for the identical component.

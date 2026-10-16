@@ -1,4 +1,4 @@
-# Fix plan — clinical and legal (WF-01/03/17/30/31/36, bed-board diagnosis) — read-only Opus planner, 16 Sept 2026, base 65aa7c54a6
+# Fix plan — clinical and legal (including bed-board diagnosis) — read-only Opus planner, 16 Sept 2026, base 65aa7c54a6
 
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`.** Kept for history; do not follow. It was the source for that plan.
 
@@ -28,15 +28,15 @@ confirmed from their own text.
   lands on day 0 after day rollover.
 - Task ledger DECISION-05/06 contain unverified legal/policy claims ("Form 4A expires in 7 days",
   "unlawful detention", "WA Health diversity guidelines").
-- WF-17: single examination only; "revoked" is not a psychiatrist's order (s31 revocation is a
+- Repeat examination: single examination only; "revoked" is not a psychiatrist's order (s31 revocation is a
   practitioner's act; s55(1)(a)–(d) four orders incl. further examination).
-- WF-01: WLQ-4 branch at handover_ready/moving keeps bed; Ruling 9 at `moving` would cancel a collected
+- Revoked examination while bed held: WLQ-4 branch at handover_ready/moving keeps bed; Ruling 9 at `moving` would cancel a collected
   job (the defect just fixed in REFER_TO_COMMUNITY_TEAM).
-- WF-30: `genderEligibility` has no caller and refuses unrecorded gender everywhere (contradicts WLQ-35);
+- Gender gate: `genderEligibility` has no caller and refuses unrecorded gender everywhere (contradicts WLQ-35);
   placement reads `movement.sex` (against §8/§9). PT-007 sex "Non-binary", no gender.
-- WF-36: movement-path security gate checks only that locked beds exist (ward-eligibility.ts:160);
+- Security gate: movement-path security gate checks only that locked beds exist (ward-eligibility.ts:160);
   referral path uses `lockedBedsFree` but `allocatableLocked` is never written — both overstate.
-- WF-03: acuity tests cover capacity 1 only; **staffing overrides on pulls are not recorded**; none of
+- High-acuity staffing gate: acuity tests cover capacity 1 only; **staffing overrides on pulls are not recorded**; none of
   the five OVERRIDE_REASONS mentions staffing.
 - Bed board: caption `ward-board.tsx:1882-1883` falsely says the diagnosis came from a referral (a
   Referral cannot carry one; pulls write null); pinned by tests/ward-board-people-panel.dom.test.tsx:58.
@@ -57,13 +57,13 @@ confirmed from their own text.
   3D → "start time not recorded", no alert; mutation control. S.
 - T6 Receipt needs a confirm step and a chosen receipt time (`receivedAt`, refuse future / before
   formedAt; store `legalFormReceiptRecordedAt`). M.
-- T7 WF-03 multi-place and returned-place tests; record staffing overrides on pulls
+- T7 Multi-place and returned-place acuity tests; record staffing overrides on pulls
   (`Override.gate`). M. Stop if ward-facing override readers would render false words.
 - T8 Check the 4A/4C due-time day rollover; if reproduced reuse T4's day select. S.
 - Lanes: T1, T2, T3 parallel now · Lane E: T4 → T5 → T6 → T8 → (T9|T10|T11) → T16 · Lane P: T7 → T17 ·
   Lane X: T12 → T15.
 
-**B. WF-31 branch (owner Q1)**
+**B. Legal clocks branch (owner Q1)**
 
 - T9 (A: Ruling 1 computed clocks) — 9a stop 1A row after receipt, stop 3D alert after examination,
   "Not wired" for extensions; 9b recorded clinical justification from a list on PULL/BOOK (needs Q10;
@@ -74,21 +74,21 @@ confirmed from their own text.
 
 **C. Other owner-dependent**
 
-- T12 WF-01 split: Ruling 9 up to collection (cancel job, release bed/admission, close, notify ward),
+- T12 Revoked-exam split: Ruling 9 up to collection (cancel job, release bed/admission, close, notify ward),
   WLQ-4 after collection. Q2.
-- T13 WF-30 now: capture gender at intake, carry to admission (13a), gates per the gender plan (13b),
+- T13 Gender gate now: capture gender at intake, carry to admission (13a), gates per the gender plan (13b),
   screens (13c). Q3.
 - T14 DECISION-05 option (b) labels. Q4.
-- T15 WF-17 `RECORD_REEXAMINATION` appended records + `currentExaminationDecision()`. Q5.
+- T15 `RECORD_REEXAMINATION` appended records + `currentExaminationDecision()`. Q5.
 - T16 Receipt correction as an appended record. Q6.
-- T17 WF-36 `Admission.bedKind`; secure pulls consume locked beds; refunds restore; override uses open bed.
+- T17 `Admission.bedKind`; secure pulls consume locked beds; refunds restore; override uses open bed.
   Q7.
 
 ## Owner questions (cost-ordered)
 
 Q1 clocks: A computed / B none / **C record the expiry written on the form (rec)**; sub-Qs: which order is
 Form 3D; keep the 24h-after-receipt figure labelled as the owner's. **Get WA legal advice before anyone
-relies on it.** · Q2 WF-01: **Ruling 9 before collection, WLQ-4 after (rec)**; Q2b if WLQ-4 everywhere,
+relies on it.** · Q2 Revoked examination: **Ruling 9 before collection, WLQ-4 after (rec)**; Q2b if WLQ-4 everywhere,
 refuse collection while flagged [yes] · Q3 gender now by recording at intake (rec) — expect many
 refusals/overrides because 258/259 occupants lack gender; Q3b undesignated ward + unrecorded incoming =
 WLQ-36 treatment · Q4 non-binary: **(b) clinician records bed type the person chooses, (a) meanwhile**;

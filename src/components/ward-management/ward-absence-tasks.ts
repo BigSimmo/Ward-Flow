@@ -8,7 +8,7 @@ import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-manag
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { isOnOrder, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 
 /**
  * ABSENT WITHOUT LEAVE ON AN ORDER IS ACT NOW (audit A3-1, 13 Oct 2026).

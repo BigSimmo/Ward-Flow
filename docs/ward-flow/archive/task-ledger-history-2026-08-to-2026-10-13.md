@@ -1314,7 +1314,7 @@ before checking.** **It measured the LABEL and was about to conclude about the C
 
 | Category                            |          Count          | Status Description                                                                                                                                                           |
 | ----------------------------------- | :---------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Canonical Issue Families**        |         **52**          | Unified canonical families (`WF-01` to `WF-52`) across all legacy reviews                                                                                                    |
+| **Canonical Issue Families**        |         **52**          | Unified canonical families (`ISSUE-01` to `ISSUE-52`) across all legacy reviews                                                                                              |
 | — _Reproduced now_                  |           17            | Active code-level bugs re-verified directly in the live pinned worktree                                                                                                      |
 | — _Owner decision or real-use gate_ |           16            | Foundational clinical governance, privacy, statutory, or scoping decisions                                                                                                   |
 | — _Current source-supported_        |            8            | Architectural inconsistencies confirmed by current repository source                                                                                                         |
@@ -1348,20 +1348,20 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-### 2. THE 52 CANONICAL ISSUE FAMILIES (WF-01 TO WF-52)
+### 2. THE 52 CANONICAL ISSUE FAMILIES (ISSUE-01 TO ISSUE-52)
 
 #### EVIDENCE CLASS: REPRODUCED NOW (17 FAMILIES)
 
-##### `WF-01`: Reconcile examination closure with admission, reservation and transport
+##### `ISSUE-01`: Reconcile examination closure with admission, reservation and transport
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P1**                                                             |
-| **Evidence Status**     | `Reproduced now`                                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Owner answers conflict** (see §7.3)      |
-| **PDF Page**            | Page 14                                                            |
-| **Related Master IDs**  | `WF-02, WF-04, WF-06, WF-37, WF-42, WF-43`                         |
-| **Legacy Aliases**      | `CL:WF-01, HM:WF-01, HE:WF-01, PM:WF-01, PC:WF-01, B22:WF-06, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                               |
+| **Evidence Status**     | `Reproduced now`                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Owner answers conflict** (see §7.3)                        |
+| **PDF Page**            | Page 14                                                                              |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-04, ISSUE-06, ISSUE-37, ISSUE-42, ISSUE-43`                         |
+| **Legacy Aliases**      | `CL:ISSUE-01, HM:ISSUE-01, HE:ISSUE-01, PM:ISSUE-01, PC:ISSUE-01, B22:ISSUE-06, ...` |
 
 - **Current Finding**: The fresh native replay reproduced the same orphan on the pinned current reducer. An admission remains capacity-consuming while allocatable stock is refunded. This is a state-accounting inconsistency, not a claim that a real patient has been misplaced. The normal RELEASE_PULL control removes its pulled admission, providing an implemented comparison.
 - **Required Changes & Guardrails**: Before collection, reconcile the actual reserved admission, allocation and job together. After collection or arrival, preserve the physical event and record an owned exception rather than blindly applying a pre-departure inverse. Reject the independent reviewer’s blanket requirement to erase every admission on non-inpatient examination closure. Test each outcome against the real physical milestone, including source correction
@@ -1374,16 +1374,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-02`: Guard operational actions against surviving commitments after stage correction
+##### `ISSUE-02`: Guard operational actions against surviving commitments after stage correction
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P1**                                                          |
-| **Evidence Status**     | `Reproduced now`                                                |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)              |
-| **PDF Page**            | Page 14                                                         |
-| **Related Master IDs**  | `WF-01, WF-04, WF-05, WF-07, WF-09, WF-36, WF-37`               |
-| **Legacy Aliases**      | `CL:WF-02, HM:WF-02, HE:WF-02, PM:WF-02, WB:C01, PC:WF-02, ...` |
+| Property                | Value                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                         |
+| **Evidence Status**     | `Reproduced now`                                                               |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                             |
+| **PDF Page**            | Page 14                                                                        |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-04, ISSUE-05, ISSUE-07, ISSUE-09, ISSUE-36, ISSUE-37`         |
+| **Legacy Aliases**      | `CL:ISSUE-02, HM:ISSUE-02, HE:ISSUE-02, PM:ISSUE-02, WB:C01, PC:ISSUE-02, ...` |
 
 - **Current Finding**: The key failing composition is a valid pull, a record correction, then another operational command. The fresh two-bed fixture produced two admissions for one movement. Corrected withdrawal retained a commitment and corrected post-collection release removed one. An immediate duplicate pull without correction is guarded. E01 is a bounded 48-case matrix, not exhaustive state-space proof.
 - **Required Changes & Guardrails**: Retain the owner-approved distinction between correcting a record and cancelling real work. Do not implement a blanket rule that an earlier displayed stage can never retain a commitment. Instead, identify the live allocation independently and make every later reserve, withdraw, release and arrival command enforce its identity and actual physical state. Test two destinations, retries, already-arrived records and preservation
@@ -1396,16 +1396,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-03`: Verify remaining high-acuity staffing at allocation
+##### `ISSUE-03`: Verify remaining high-acuity staffing at allocation
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P1**                                                             |
-| **Evidence Status**     | `Reproduced now`                                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                 |
-| **PDF Page**            | Page 15                                                            |
-| **Related Master IDs**  | `WF-07, WF-36, WF-38, WF-43`                                       |
-| **Legacy Aliases**      | `CL:WF-03, HM:WF-03, HE:WF-03, PM:WF-03, PC:WF-04, PDF:WF-04, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                               |
+| **Evidence Status**     | `Reproduced now`                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                   |
+| **PDF Page**            | Page 15                                                                              |
+| **Related Master IDs**  | `ISSUE-07, ISSUE-36, ISSUE-38, ISSUE-43`                                             |
+| **Legacy Aliases**      | `CL:ISSUE-03, HM:ISSUE-03, HE:ISSUE-03, PM:ISSUE-03, PC:ISSUE-04, PDF:ISSUE-04, ...` |
 
 - **Current Finding**: The replay isolated high-acuity staffing from ordinary bed availability: one staffed place, one existing consuming high-acuity admission, remaining zero, then another successful high-acuity pull. The admission count became two against staffing one. This is not the older, overbroad claim that specialling capacity is never checked.
 - **Required Changes & Guardrails**: Use the existing remainingHighAcuityCapacity calculation at commitment time, not only a ward’s general capability label. Keep specialling and high-acuity resource definitions distinct. A permitted exception requires the agreed actor, reason and auditable gate bypass. Do not invent or remove an override policy during a technical fix. Include zero, one and multiple capacity, release, actual discharge, unknown staffing and an
@@ -1418,16 +1418,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-04`: Separate cancellation, replacement booking and handover readiness
+##### `ISSUE-04`: Separate cancellation, replacement booking and handover readiness
 
-| Property                | Value                                                         |
-| ----------------------- | ------------------------------------------------------------- |
-| **Priority**            | **P1**                                                        |
-| **Evidence Status**     | `Reproduced now`                                              |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)            |
-| **PDF Page**            | Page 16                                                       |
-| **Related Master IDs**  | `WF-02, WF-05, WF-16, WF-37, WF-42, WF-43`                    |
-| **Legacy Aliases**      | `CL:WF-04, HM:WF-04, HE:WF-04, PM:WF-04, WB:C02, WB:G05, ...` |
+| Property                | Value                                                                     |
+| ----------------------- | ------------------------------------------------------------------------- |
+| **Priority**            | **P1**                                                                    |
+| **Evidence Status**     | `Reproduced now`                                                          |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                        |
+| **PDF Page**            | Page 16                                                                   |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-05, ISSUE-16, ISSUE-37, ISSUE-42, ISSUE-43`              |
+| **Legacy Aliases**      | `CL:ISSUE-04, HM:ISSUE-04, HE:ISSUE-04, PM:ISSUE-04, WB:C02, WB:G05, ...` |
 
 - **Current Finding**: A cancellation at pulled + booked moves to handover_ready and creates a replacement, although HANDOVER_READY never occurred. Acceptance, en-route and collection can then proceed. Existing cancellation tests that first perform handover miss this composition. A failed provider and no alternative provider must also leave a truthful next action, not a fabricated booking.
 - **Required Changes & Guardrails**: Separate three intentions: cancel this job, request a replacement and record readiness. Preserve prior job identity, cancellation reason, times and provider history. Late events for the old job must not progress its replacement. Recompute any “waiting on provider” wording from the active job. Do not describe an in-memory replacement object as a real external transport booking.
@@ -1440,16 +1440,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-06`: Count one physical departure once across admission and bed-release paths
+##### `ISSUE-06`: Count one physical departure once across admission and bed-release paths
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P1**                                                          |
-| **Evidence Status**     | `Reproduced now`                                                |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)               |
-| **PDF Page**            | Page 17                                                         |
-| **Related Master IDs**  | `WF-01, WF-07, WF-18, WF-19, WF-20, WF-25, WF-36, WF-40, WF-47` |
-| **Legacy Aliases**      | `CL:WF-06, HM:WF-06, HE:WF-06, PM:WF-06, WB:C03, PC:WF-03, ...` |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                                     |
+| **Evidence Status**     | `Reproduced now`                                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                          |
+| **PDF Page**            | Page 17                                                                                    |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-07, ISSUE-18, ISSUE-19, ISSUE-20, ISSUE-25, ISSUE-36, ISSUE-40, ISSUE-47` |
+| **Legacy Aliases**      | `CL:ISSUE-06, HM:ISSUE-06, HE:ISSUE-06, PM:ISSUE-06, WB:C03, PC:ISSUE-03, ...`             |
 
 - **Current Finding**: The fresh legacy-departure plus anonymous-release fixture changed empty beds from two to four for one intended physical departure. The model cannot identify whether those two records refer to the same turnover. Two genuinely different departures should credit twice. The newer protected discharge command correctly refused a stale retry, so “all discharge is non-idempotent” is false.
 - **Required Changes & Guardrails**: Introduce a shared privacy-preserving turnover identity or a single authoritative stock mutation, not merely a cap at the ward’s bed total. Separate departure, cleaning/preparation, offerability and physical occupancy. An inter-ward transfer frees the source ward but does not create a statewide net vacancy by itself. Reconcile sex-mix and other occupant-dependent counts as part of the same validated accounting contract.
@@ -1462,16 +1462,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-07`: Validate runtime events and define capacity reconciliation
+##### `ISSUE-07`: Validate runtime events and define capacity reconciliation
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P1**                                                          |
-| **Evidence Status**     | `Reproduced now`                                                |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)               |
-| **PDF Page**            | Page 17                                                         |
-| **Related Master IDs**  | `WF-02, WF-03, WF-06, WF-08, WF-33, WF-36, WF-39`               |
-| **Legacy Aliases**      | `CL:WF-07, HM:WF-07, HE:WF-07, PM:WF-07, WB:G06, PC:WF-02, ...` |
+| Property                | Value                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                         |
+| **Evidence Status**     | `Reproduced now`                                                               |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                              |
+| **PDF Page**            | Page 17                                                                        |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-03, ISSUE-06, ISSUE-08, ISSUE-33, ISSUE-36, ISSUE-39`         |
+| **Legacy Aliases**      | `CL:ISSUE-07, HM:ISSUE-07, HE:ISSUE-07, PM:ISSUE-07, WB:G06, PC:ISSUE-02, ...` |
 
 - **Current Finding**: Native payloads containing -1, 0.5, NaN, Infinity or 99999 were accepted by capacity mutation. An unknown correction stage passed an indexOf-based check. These are reducer-boundary tests, not evidence that the normal form offers those values. Protected discharge commands validate more inputs than ordinary events, so validation is uneven rather than universally absent.
 - **Required Changes & Guardrails**: Validate event discriminant, finite timestamps, enum membership, identifier resolution, required reasons, numeric bounds and coherent resource relationships before mutation. Model gross empty, net offerable, held, blocked and occupied counts explicitly. Do not silently clamp invalid data into apparently valid truth. Define when a batch may intentionally record partial success and when rejection must be atomic. Include unknown
@@ -1484,16 +1484,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-08`: Prevent an old capacity draft overwriting a newer observation
+##### `ISSUE-08`: Prevent an old capacity draft overwriting a newer observation
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P1**                                                             |
-| **Evidence Status**     | `Reproduced now`                                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                  |
-| **PDF Page**            | Page 18                                                            |
-| **Related Master IDs**  | `WF-02, WF-07, WF-33, WF-36, WF-41`                                |
-| **Legacy Aliases**      | `CL:WF-08, HM:WF-08, HE:WF-08, PM:WF-08, PC:WF-17, PDF:WF-17, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                               |
+| **Evidence Status**     | `Reproduced now`                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                    |
+| **PDF Page**            | Page 18                                                                              |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-07, ISSUE-33, ISSUE-36, ISSUE-41`                                   |
+| **Legacy Aliases**      | `CL:ISSUE-08, HM:ISSUE-08, HE:ISSUE-08, PM:ISSUE-08, PC:ISSUE-17, PDF:ISSUE-17, ...` |
 
 - **Current Finding**: The fresh native run reproduced current 1 → pull → 0 → old confirmation 1 while the admission remained. The older CL audit also clicked that sequence in the real ward UI. This turn’s browser pass loaded the ward and its controls but did not repeat the click sequence, so historical UI evidence must not be relabelled as a fresh interaction test.
 - **Required Changes & Guardrails**: Bind edits to a source revision. Refresh clean drafts when the provider changes, preserve dirty edits and show a conflict rather than overwriting. Confirm-nothing-changed must reference the current observation, not a stale mounted value. Verify changes from another actor, route remount, same-value reconfirmation, pending preparation and a legitimate reasoned correction. A test that only checks input rendering cannot close
@@ -1506,16 +1506,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-12`: Complete community decisions and independent referral purposes
+##### `ISSUE-12`: Complete community decisions and independent referral purposes
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P1**                                                          |
-| **Evidence Status**     | `Reproduced now`                                                |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)               |
-| **PDF Page**            | Page 21                                                         |
-| **Related Master IDs**  | `WF-09, WF-10, WF-11, WF-13, WF-15, WF-18, WF-29, WF-42, WF-50` |
-| **Legacy Aliases**      | `CL:WF-12, HM:WF-12, HE:WF-12, PM:WF-12, WB:G03, PC:WF-07, ...` |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                                     |
+| **Evidence Status**     | `Reproduced now`                                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                          |
+| **PDF Page**            | Page 21                                                                                    |
+| **Related Master IDs**  | `ISSUE-09, ISSUE-10, ISSUE-11, ISSUE-13, ISSUE-15, ISSUE-18, ISSUE-29, ISSUE-42, ISSUE-50` |
+| **Legacy Aliases**      | `CL:ISSUE-12, HM:ISSUE-12, HE:ISSUE-12, PM:ISSUE-12, WB:G03, PC:ISSUE-07, ...`             |
 
 - **Current Finding**: The fresh ED-first fixture accepted an ED addressing, retained a queued community addressing and then refused the community answer as already accepted elsewhere. The outer role table permits community decline but excludes community acceptance. The community UI’s blanket statement that neither is permitted is therefore stale. Two acceptance orderings and independent purposes must not be conflated with competing bed offers.
 - **Required Changes & Guardrails**: Agree the purpose-level exclusivity rule first. Close competing placement offers without silently cancelling independent assessment or follow-up requests. Mount only the approved community operations, with team scope, controlled reasons and visible rejection. Do not fix this by indiscriminately widening roles or removing all “already accepted” guards. Existing ED-purpose vocabulary does not by itself prove the full
@@ -1529,16 +1529,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-13`: Make front-door withdrawal terminal for pending decisions
+##### `ISSUE-13`: Make front-door withdrawal terminal for pending decisions
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P1**                                                             |
-| **Evidence Status**     | `Reproduced now`                                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                 |
-| **PDF Page**            | Page 21                                                            |
-| **Related Master IDs**  | `WF-10, WF-11, WF-12, WF-14, WF-29`                                |
-| **Legacy Aliases**      | `CL:WF-13, HM:WF-13, HE:WF-13, PM:WF-13, PC:WF-13, PDF:WF-13, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                               |
+| **Evidence Status**     | `Reproduced now`                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                   |
+| **PDF Page**            | Page 21                                                                              |
+| **Related Master IDs**  | `ISSUE-10, ISSUE-11, ISSUE-12, ISSUE-14, ISSUE-29`                                   |
+| **Legacy Aliases**      | `CL:ISSUE-13, HM:ISSUE-13, HE:ISSUE-13, PM:ISSUE-13, PC:ISSUE-13, PDF:ISSUE-13, ...` |
 
 - **Current Finding**: Withdrawal sets withdrawnAt but leaves state queued. The fresh replay then successfully accepted or declined that addressing while retaining the withdrawal timestamp. Community selectors already exclude withdrawals, but other selectors and command guards do not. Repeat withdrawal itself is guarded. The referrer-withdrawal dispatcher is not generally mounted, limiting the ordinary user-click claim.
 - **Required Changes & Guardrails**: Create a canonical awaiting-answer predicate that includes withdrawal, supersession and terminal decisions, and use it in every role’s selector and reducer guard. Make reinstatement a separate approved action rather than an accidental effect of accepting an old row. Retain original decisions and timestamps. Test mixed declined/withdrawn recipients and failed retries without mutating clinical state.
@@ -1551,16 +1551,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-16`: Complete a no-booked-transport-needed journey
+##### `ISSUE-16`: Complete a no-booked-transport-needed journey
 
-| Property                | Value                                                         |
-| ----------------------- | ------------------------------------------------------------- |
-| **Priority**            | **P1**                                                        |
-| **Evidence Status**     | `Reproduced now`                                              |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)             |
-| **PDF Page**            | Page 23                                                       |
-| **Related Master IDs**  | `WF-04, WF-09, WF-15, WF-31, WF-37, WF-42, WF-43`             |
-| **Legacy Aliases**      | `CL:WF-16, HM:WF-16, HE:WF-16, PM:WF-16, WB:G04, WB:G08, ...` |
+| Property                | Value                                                                     |
+| ----------------------- | ------------------------------------------------------------------------- |
+| **Priority**            | **P1**                                                                    |
+| **Evidence Status**     | `Reproduced now`                                                          |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                         |
+| **PDF Page**            | Page 23                                                                   |
+| **Related Master IDs**  | `ISSUE-04, ISSUE-09, ISSUE-15, ISSUE-31, ISSUE-37, ISSUE-42, ISSUE-43`    |
+| **Legacy Aliases**      | `CL:ISSUE-16, HM:ISSUE-16, HE:ISSUE-16, PM:ISSUE-16, WB:G04, WB:G08, ...` |
 
 - **Current Finding**: The model distinguishes unknown, needed and not needed transport. After needed:false, HANDOVER_READY still requires BOOK_TRANSPORT. The subsequent arrival chain also depends on provider milestones. A no-booked-transport journey therefore dead-ends, even though the negative answer itself is recorded correctly.
 - **Required Changes & Guardrails**: Provide an approved local transfer/no-booked-provider branch with genuine readiness, departure where applicable and receiving responsibility. Do not fabricate a vehicle, escort or provider acceptance to advance it. Keep unknown distinct from no. Test no → yes changes, cancellation without replacement, assistance needed without a vehicle and refusal when an actually required booked service is missing.
@@ -1573,16 +1573,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-23`: Avoid accepted cases appearing as declined by all
+##### `ISSUE-23`: Avoid accepted cases appearing as declined by all
 
-| Property                | Value                                             |
-| ----------------------- | ------------------------------------------------- |
-| **Priority**            | **P2**                                            |
-| **Evidence Status**     | `Reproduced now`                                  |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
-| **PDF Page**            | Page 27                                           |
-| **Related Master IDs**  | `WF-11, WF-12, WF-13, WF-14, WF-22, WF-47`        |
-| **Legacy Aliases**      | `CL:WF-23, HM:WF-23, HE:WF-23, PM:WF-23, P1-16`   |
+| Property                | Value                                                        |
+| ----------------------- | ------------------------------------------------------------ |
+| **Priority**            | **P2**                                                       |
+| **Evidence Status**     | `Reproduced now`                                             |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)            |
+| **PDF Page**            | Page 27                                                      |
+| **Related Master IDs**  | `ISSUE-11, ISSUE-12, ISSUE-13, ISSUE-14, ISSUE-22, ISSUE-47` |
+| **Legacy Aliases**      | `CL:ISSUE-23, HM:ISSUE-23, HE:ISSUE-23, PM:ISSUE-23, P1-16`  |
 
 - **Current Finding**: The fresh fixture retained an old destination decline and then obtained acceptance elsewhere. The derived classification still said declined_by_all. This is a read-model precedence defect, not a claim that every underlying acceptance was lost.
 - **Required Changes & Guardrails**: Compute “all declined” from the current set of relevant active requests and outcomes, not simply historical decline presence or a stale summary flag. Acceptance, withdrawal and supersession must have explicit precedence. Test no destinations, one decline, all competing destinations declined, later acceptance, later withdrawal and independent community-purpose decisions. Correct analytics consuming this classification.
@@ -1595,16 +1595,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-26`: Verify physical consistency of the scarce scenario
+##### `ISSUE-26`: Verify physical consistency of the scarce scenario
 
-| Property                | Value                                             |
-| ----------------------- | ------------------------------------------------- |
-| **Priority**            | **P2**                                            |
-| **Evidence Status**     | `Reproduced now`                                  |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
-| **PDF Page**            | Page 29                                           |
-| **Related Master IDs**  | `WF-07, WF-34, WF-36, WF-44`                      |
-| **Legacy Aliases**      | `CL:WF-26, HM:WF-26, HE:WF-26, PM:WF-26, P0-08`   |
+| Property                | Value                                                       |
+| ----------------------- | ----------------------------------------------------------- |
+| **Priority**            | **P2**                                                      |
+| **Evidence Status**     | `Reproduced now`                                            |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)           |
+| **PDF Page**            | Page 29                                                     |
+| **Related Master IDs**  | `ISSUE-07, ISSUE-34, ISSUE-36, ISSUE-44`                    |
+| **Legacy Aliases**      | `CL:ISSUE-26, HM:ISSUE-26, HE:ISSUE-26, PM:ISSUE-26, P0-08` |
 
 - **Current Finding**: The normal 23-unit seed did not contain an allocatable-greater-than-empty inconsistency in the native check. A specific scarce-capacity fixture did: Graylands Older Adult had allocatable one and empty zero. The evidence therefore supports a scenario-seed defect or explicitly adversarial fixture, not the blanket claim that every ward seed is corrupt.
 - **Required Changes & Guardrails**: Classify each fixture as valid-operational or intentionally inconsistent and assert the distinction. Normal demonstrations must satisfy the chosen stock invariants. Deliberately invalid fixtures should prove safe refusal and must not appear as an ordinary realistic scenario without clear labelling. Check the named scarce scenario rather than editing all service data.
@@ -1617,16 +1617,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-34`: Make tests discriminate real workflow failures and current route behaviour
+##### `ISSUE-34`: Make tests discriminate real workflow failures and current route behaviour
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P1**                                                          |
-| **Evidence Status**     | `Reproduced now`                                                |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)              |
-| **PDF Page**            | Page 33                                                         |
-| **Related Master IDs**  | `WF-07, WF-09, WF-27, WF-28, WF-29, WF-30, WF-35, WF-48, WF-52` |
-| **Legacy Aliases**      | `CL:WF-34, HM:WF-34, HE:WF-34, PM:WF-34, WB:C04, WB:D01, ...`   |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                                     |
+| **Evidence Status**     | `Reproduced now`                                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                         |
+| **PDF Page**            | Page 33                                                                                    |
+| **Related Master IDs**  | `ISSUE-07, ISSUE-09, ISSUE-27, ISSUE-28, ISSUE-29, ISSUE-30, ISSUE-35, ISSUE-48, ISSUE-52` |
+| **Legacy Aliases**      | `CL:ISSUE-34, HM:ISSUE-34, HE:ISSUE-34, PM:ISSUE-34, WB:C04, WB:D01, ...`                  |
 
 - **Current Finding**: The fresh targeted run executed all 12 requested files: 175 tests, 174 passed, one failed, none pending, exit 1. The failure is the D-14 patient-link allowlist assertion. The earlier worktree report identifies coordinator/shortlist-panel.tsx as the unexpected reader. This is a contract/implementation disagreement, not automatic proof of a privacy breach. The Ward runner covers a filename class, not every Ward-impacting test
 - **Required Changes & Guardrails**: Settle the reader contract with Ward Lead, then make the smallest approved projection or use-site change. Do not remove the guard or widen all readers for green CI. Improve the lexical detector with semantic/use-site or projection-contract checks, including destructuring, aliasing and a second disclosure inside an allowed file. Preserve path-exact test reconciliation, enumerate excluded browser/repo guards, remove stale
@@ -1652,16 +1652,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-36`: Require an actually ready resource of the appropriate kind
+##### `ISSUE-36`: Require an actually ready resource of the appropriate kind
 
-| Property                | Value                                                                  |
-| ----------------------- | ---------------------------------------------------------------------- |
-| **Priority**            | **P1**                                                                 |
-| **Evidence Status**     | `Reproduced now`                                                       |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                      |
-| **PDF Page**            | Page 35                                                                |
-| **Related Master IDs**  | `WF-02, WF-03, WF-06, WF-07, WF-08, WF-26, WF-38, WF-40, WF-43, WF-51` |
-| **Legacy Aliases**      | `CL:WF-36, HM:WF-36, HE:WF-36, PM:WF-36, PC:WF-04, B22:WF-02, ...`     |
+| Property                | Value                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Priority**            | **P1**                                                                                               |
+| **Evidence Status**     | `Reproduced now`                                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                                    |
+| **PDF Page**            | Page 35                                                                                              |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-03, ISSUE-06, ISSUE-07, ISSUE-08, ISSUE-26, ISSUE-38, ISSUE-40, ISSUE-43, ISSUE-51` |
+| **Legacy Aliases**      | `CL:ISSUE-36, HM:ISSUE-36, HE:ISSUE-36, PM:ISSUE-36, PC:ISSUE-04, B22:ISSUE-02, ...`                 |
 
 - **Current Finding**: The fresh controlled vacancy matrix includes pulls against positive offerable stock with zero physical vacancy. Those deliberately inconsistent inputs establish a missing commit-time safeguard, not that an ordinary user necessarily produced the state. Independently, source review found movement eligibility can accept a ward’s locked-bed capability while actual free locked stock is exhausted, whereas referral eligibility uses
 - **Required Changes & Guardrails**: At allocation, use one coherent calculation for physical emptiness, offerability, required open/locked kind, held/blocked/preparing stock and remaining staffing. A ward that contains locked beds is not evidence that one is free for this person. Preserve an explicit path to record a real unexpected arrival even when planning data were wrong, without claiming a safe planned allocation. Include last suitable bed, second request,
@@ -1675,16 +1675,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-37`: Reconcile the booked job when releasing its reservation
+##### `ISSUE-37`: Reconcile the booked job when releasing its reservation
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P1**                                                             |
-| **Evidence Status**     | `Reproduced now`                                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                 |
-| **PDF Page**            | Page 35                                                            |
-| **Related Master IDs**  | `WF-01, WF-02, WF-04, WF-05, WF-09, WF-16, WF-36, WF-42, WF-43`    |
-| **Legacy Aliases**      | `CL:WF-37, HM:WF-37, HE:WF-37, PM:WF-37, PC:WF-06, B22:WF-07, ...` |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                                     |
+| **Evidence Status**     | `Reproduced now`                                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                         |
+| **PDF Page**            | Page 35                                                                                    |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-02, ISSUE-04, ISSUE-05, ISSUE-09, ISSUE-16, ISSUE-36, ISSUE-42, ISSUE-43` |
+| **Legacy Aliases**      | `CL:ISSUE-37, HM:ISSUE-37, HE:ISSUE-37, PM:ISSUE-37, PC:ISSUE-06, B22:ISSUE-07, ...`       |
 
 - **Current Finding**: RELEASE_PULL correctly removes the pulled admission but leaves booked transport. In the fresh release → cancel/replacement → arrival composition, the movement reached arrived with no admissionId. A historical seed with no generated admission can have an explicitly tolerated legacy behaviour, which does not justify the same divergence in a newly created normal journey.
 - **Required Changes & Guardrails**: Require explicit booking cancellation/reconciliation when a reservation is released, or refuse the release until that action is complete. Bind job, destination and allocation identities. A late job event must not consume capacity after its reservation was released. Keep a genuine unexpected-arrival exception recordable, but do not silently describe it as a complete normal admission journey.
@@ -1697,16 +1697,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-39`: Treat valid zero timestamps as present
+##### `ISSUE-39`: Treat valid zero timestamps as present
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P2**                                                             |
-| **Evidence Status**     | `Reproduced now`                                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                  |
-| **PDF Page**            | Page 37                                                            |
-| **Related Master IDs**  | `WF-04, WF-07, WF-16, WF-25, WF-34, WF-42, WF-47`                  |
-| **Legacy Aliases**      | `CL:WF-39, HM:WF-39, HE:WF-39, PM:WF-39, PC:WF-18, B22:WF-18, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                               |
+| **Evidence Status**     | `Reproduced now`                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                    |
+| **PDF Page**            | Page 37                                                                              |
+| **Related Master IDs**  | `ISSUE-04, ISSUE-07, ISSUE-16, ISSUE-25, ISSUE-34, ISSUE-42, ISSUE-47`               |
+| **Legacy Aliases**      | `CL:ISSUE-39, HM:ISSUE-39, HE:ISSUE-39, PM:ISSUE-39, PC:ISSUE-18, B22:ISSUE-18, ...` |
 
 - **Current Finding**: Zero is a valid finite Instant in the model. The chronological reanchored fixture accepted transport at zero, refused en-route at one as though acceptance were absent, then allowed another acceptance at two. This is an absence-check defect, not an every-midnight clock failure. The stronger chronological fixture avoids relying on an initially nonmonotonic synthetic setup.
 - **Required Changes & Guardrails**: Use explicit null/undefined presence checks for all milestone instants and validate finite chronological events separately. Preserve the first accepted/en-route/collected/arrived time on retry. Exercise zero for every milestone, negative reanchored demo time where supported, duplicate commands, missing values and malformed non-finite times without changing ordinary positive-timestamp behaviour.
@@ -1720,16 +1720,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-50`: Give community screens a truthful role and task context
+##### `ISSUE-50`: Give community screens a truthful role and task context
 
-| Property                | Value                                             |
-| ----------------------- | ------------------------------------------------- |
-| **Priority**            | **P2**                                            |
-| **Evidence Status**     | `Reproduced now`                                  |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
-| **PDF Page**            | Page 43                                           |
-| **Related Master IDs**  | `WF-10, WF-12, WF-29, WF-34, WF-42`               |
-| **Legacy Aliases**      | `CL:WF-49, WB:G03`                                |
+| Property                | Value                                              |
+| ----------------------- | -------------------------------------------------- |
+| **Priority**            | **P2**                                             |
+| **Evidence Status**     | `Reproduced now`                                   |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)  |
+| **PDF Page**            | Page 43                                            |
+| **Related Master IDs**  | `ISSUE-10, ISSUE-12, ISSUE-29, ISSUE-34, ISSUE-42` |
+| **Legacy Aliases**      | `CL:ISSUE-49, WB:G03`                              |
 
 - **Current Finding**: The current community index rendered “Viewing as Bed coordinator”. The chrome vocabulary omits community and defaults to coordinator, while task actionability follows that chrome role. The source explicitly says this is a display/context hint, not an authorisation boundary. The observation confirms a role/context inconsistency, not a backend privilege escalation.
 - **Required Changes & Guardrails**: Add an approved community context or deliberately neutral context with accurate labels and task affordances. Preserve reducer permissions rather than changing them by accident. Test community index, team and statistics routes, direct navigation, role switching, notices and primary actions. Ensure a non-coordinator context cannot dispatch coordinator-owned task actions under a borrowed display role.
@@ -1748,16 +1748,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 #### EVIDENCE CLASS: OWNER DECISION OR REAL-USE GATE (16 FAMILIES)
 
-##### `WF-05`: Define destination change and diversion after reservation or collection
+##### `ISSUE-05`: Define destination change and diversion after reservation or collection
 
-| Property                | Value                                                             |
-| ----------------------- | ----------------------------------------------------------------- |
-| **Priority**            | **P1**                                                            |
-| **Evidence Status**     | `Owner decision or real-use gate`                                 |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)       |
-| **PDF Page**            | Page 16                                                           |
-| **Related Master IDs**  | `WF-01, WF-02, WF-04, WF-15, WF-36, WF-42, WF-43`                 |
-| **Legacy Aliases**      | `CL:WF-05, HM:WF-05, HE:WF-05, PM:WF-05, PC:WF-06, PC:WF-21, ...` |
+| Property                | Value                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| **Priority**            | **P1**                                                                              |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                   |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)                         |
+| **PDF Page**            | Page 16                                                                             |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-02, ISSUE-04, ISSUE-15, ISSUE-36, ISSUE-42, ISSUE-43`              |
+| **Legacy Aliases**      | `CL:ISSUE-05, HM:ISSUE-05, HE:ISSUE-05, PM:ISSUE-05, PC:ISSUE-06, PC:ISSUE-21, ...` |
 
 - **Current Finding**: Related reservation and transport failures are proven, but this review did not establish one universally correct clinical diversion policy. Pre-departure reallocation and post-collection diversion are different operations. A stage correction is not evidence that a vehicle returned or that a receiving ward relinquished responsibility.
 - **Required Changes & Guardrails**: Obtain a narrow owner decision for cancelling the old reservation, obtaining the new acceptance, amending the transport destination and naming current responsibility. Preserve the current location and prior collection event. Cover receiving-ward closure, medical deterioration, refusal on arrival, return to sender and reroute back to the original destination. No guessed legal authority or automatically inferred voluntary
@@ -1770,16 +1770,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-15`: Represent direct community/ward origins and inter-ward transfers
+##### `ISSUE-15`: Represent direct community/ward origins and inter-ward transfers
 
-| Property                | Value                                                                  |
-| ----------------------- | ---------------------------------------------------------------------- |
-| **Priority**            | **P2**                                                                 |
-| **Evidence Status**     | `Owner decision or real-use gate`                                      |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Owner answers conflict** (see §7.3)          |
-| **PDF Page**            | Page 22                                                                |
-| **Related Master IDs**  | `WF-05, WF-06, WF-09, WF-12, WF-16, WF-19, WF-29, WF-33, WF-42, WF-45` |
-| **Legacy Aliases**      | `CL:WF-15, HM:WF-15, HE:WF-15, PM:WF-15, WB:G01, PC:WF-11, ...`        |
+| Property                | Value                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                                               |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                                    |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Owner answers conflict** (see §7.3)                                        |
+| **PDF Page**            | Page 22                                                                                              |
+| **Related Master IDs**  | `ISSUE-05, ISSUE-06, ISSUE-09, ISSUE-12, ISSUE-16, ISSUE-19, ISSUE-29, ISSUE-33, ISSUE-42, ISSUE-45` |
+| **Legacy Aliases**      | `CL:ISSUE-15, HM:ISSUE-15, HE:ISSUE-15, PM:ISSUE-15, WB:G01, PC:ISSUE-11, ...`                       |
 
 - **Current Finding**: The current movement pathway is centred on an ED origin. Supporting an inter-hospital label in intake or permitting a booking role does not establish direct community admission, ward-to-ward transfer or regional transfer with accurate source occupancy. The need is a truthful sender/receiver contract, not a mandatory expansion into every pathway immediately.
 - **Required Changes & Guardrails**: For each included origin, define the source facility, source admission or community episode, sending role, receiving role and responsibility transition. Preserve source occupancy until actual departure and allow a legitimate destination reservation. Do not create a fictional ED attendance to reuse a convenient reducer path. Explicitly exclude non-built pathways from a pilot until implemented and reviewed.
@@ -1792,16 +1792,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-17`: Allow reassessment and changing clinical decisions
+##### `ISSUE-17`: Allow reassessment and changing clinical decisions
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P2**                                                             |
-| **Evidence Status**     | `Owner decision or real-use gate`                                  |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                  |
-| **PDF Page**            | Page 24                                                            |
-| **Related Master IDs**  | `WF-01, WF-05, WF-14, WF-31, WF-42, WF-43`                         |
-| **Legacy Aliases**      | `CL:WF-17, HM:WF-17, HE:WF-17, PM:WF-17, PC:WF-21, PDF:WF-21, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                               |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                    |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                    |
+| **PDF Page**            | Page 24                                                                              |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-05, ISSUE-14, ISSUE-31, ISSUE-42, ISSUE-43`                         |
+| **Legacy Aliases**      | `CL:ISSUE-17, HM:ISSUE-17, HE:ISSUE-17, PM:ISSUE-17, PC:ISSUE-21, PDF:ISSUE-21, ...` |
 
 - **Current Finding**: A correction to an erroneous historical assessment is different from a new assessment after clinical change. A model that accepts only one examination may not express a genuine later decision, but this review did not validate a complete new-assessment clinical policy. Existing form and outcome vocabulary must not be mistaken for a full reassessment workflow.
 - **Required Changes & Guardrails**: Agree how a new authorised assessment supersedes earlier clinical decisions while retaining their dates, authors and downstream effects. Do not overwrite the earlier record or infer a legal status from a workflow stage. Exercise change before reservation, after handover, during transport and after arrival, including an unchanged clinical decision and a mistaken earlier entry.
@@ -1814,16 +1814,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-21`: Agree reservation expiry and handover snapshot semantics
+##### `ISSUE-21`: Agree reservation expiry and handover snapshot semantics
 
-| Property                | Value                                                       |
-| ----------------------- | ----------------------------------------------------------- |
-| **Priority**            | **P2**                                                      |
-| **Evidence Status**     | `Owner decision or real-use gate`                           |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3) |
-| **PDF Page**            | Page 26                                                     |
-| **Related Master IDs**  | `WF-02, WF-05, WF-10, WF-37, WF-42, WF-43`                  |
-| **Legacy Aliases**      | `CL:WF-21, HM:WF-21, HE:WF-21, PM:WF-21, P1-14, P2-05`      |
+| Property                | Value                                                              |
+| ----------------------- | ------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                             |
+| **Evidence Status**     | `Owner decision or real-use gate`                                  |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)        |
+| **PDF Page**            | Page 26                                                            |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-05, ISSUE-10, ISSUE-37, ISSUE-42, ISSUE-43`       |
+| **Legacy Aliases**      | `CL:ISSUE-21, HM:ISSUE-21, HE:ISSUE-21, PM:ISSUE-21, P1-14, P2-05` |
 
 - **Current Finding**: The current Command view displays an expired bed-pull exception. A countdown or expired flag is not itself a cancellation policy. The historical negative-countdown defect was not established. The unresolved issue is who reviews and renews a held resource, and what is allowed after handover or collection.
 - **Required Changes & Guardrails**: Define review, renewal, escalation and cancellation authority by actual movement milestone. Do not release the bed automatically merely because a clock expired. Preserve a receiving commitment during known travel until the responsible service resolves it. Test overdue, renewed, cancelled, already-collected and stale-expiry notifications, including multiple shifts.
@@ -1836,16 +1836,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-25`: Separate occurrence, recording, update and verification times
+##### `ISSUE-25`: Separate occurrence, recording, update and verification times
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P2**                                                             |
-| **Evidence Status**     | `Owner decision or real-use gate`                                  |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                 |
-| **PDF Page**            | Page 28                                                            |
-| **Related Master IDs**  | `WF-06, WF-18, WF-20, WF-24, WF-39, WF-40, WF-47, WF-49`           |
-| **Legacy Aliases**      | `CL:WF-25, HM:WF-25, HE:WF-25, PM:WF-25, PC:WF-16, B22:WF-20, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                               |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                    |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                   |
+| **PDF Page**            | Page 28                                                                              |
+| **Related Master IDs**  | `ISSUE-06, ISSUE-18, ISSUE-20, ISSUE-24, ISSUE-39, ISSUE-40, ISSUE-47, ISSUE-49`     |
+| **Legacy Aliases**      | `CL:ISSUE-25, HM:ISSUE-25, HE:ISSUE-25, PM:ISSUE-25, PC:ISSUE-16, B22:ISSUE-20, ...` |
 
 - **Current Finding**: A fresh record 39 hours ahead was classified as “tomorrow”. That may be correct for a calendar-day horizon and wrong for a rolling 24-hour horizon. Without the intended contract it is not a proven bug. Separately, occurrence time, record-edit time, observation time and verification time must not be interchangeable.
 - **Required Changes & Guardrails**: Specify calendar-day versus rolling-window semantics and the service timezone before changing thresholds. Keep actual departure recency stable when someone edits preparation notes later. Record true observation freshness rather than treating every screen edit as a whole-ward recheck. Distinguish time since movement opened, time physically in ED and length of inpatient stay. Reconcile overlapping blocker intervals before
@@ -1859,16 +1859,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-29`: Establish privacy and genuine service-scoped authority
+##### `ISSUE-29`: Establish privacy and genuine service-scoped authority
 
-| Property                | Value                                                                  |
-| ----------------------- | ---------------------------------------------------------------------- |
-| **Priority**            | **Gate**                                                               |
-| **Evidence Status**     | `Owner decision or real-use gate`                                      |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Needs outside review** (see §7.3)            |
-| **PDF Page**            | Page 30                                                                |
-| **Related Master IDs**  | `WF-09, WF-10, WF-12, WF-18, WF-30, WF-33, WF-34, WF-38, WF-46, WF-50` |
-| **Legacy Aliases**      | `CL:WF-29, HM:WF-29, HE:WF-29, PM:WF-29, WB:C04, PC:WF-12, ...`        |
+| Property                | Value                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Priority**            | **Gate**                                                                                             |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                                    |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Needs outside review** (see §7.3)                                          |
+| **PDF Page**            | Page 30                                                                                              |
+| **Related Master IDs**  | `ISSUE-09, ISSUE-10, ISSUE-12, ISSUE-18, ISSUE-30, ISSUE-33, ISSUE-34, ISSUE-38, ISSUE-46, ISSUE-50` |
+| **Legacy Aliases**      | `CL:ISSUE-29, HM:ISSUE-29, HE:ISSUE-29, PM:ISSUE-29, WB:C04, PC:ISSUE-12, ...`                       |
 
 - **Current Finding**: Wrong-ward discharge reading and stale generation checks worked in the tested paths. The lexical patient-link guard is currently red, and its detector is not equivalent to backend authorisation. A route filter or client-supplied role cannot prove authenticated data access control. No real patient disclosure or deployed privilege escalation was demonstrated.
 - **Required Changes & Guardrails**: Before real data, define authenticated subject, service/ward scope, field-level projections, read/write/export boundaries and audit retention. Use privacy-preserving record links rather than widening whole-file reader permissions casually. Test print/export, direct URLs, stale cached views, multiple tabs, incorrect place IDs and independent users against the actual storage boundary. Preserve approved single-movement identity
@@ -1881,16 +1881,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-30`: Govern sensitive demographic display and decision use
+##### `ISSUE-30`: Govern sensitive demographic display and decision use
 
-| Property                | Value                                                         |
-| ----------------------- | ------------------------------------------------------------- |
-| **Priority**            | **Gate**                                                      |
-| **Evidence Status**     | `Owner decision or real-use gate`                             |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Owner answers conflict** (see §7.3) |
-| **PDF Page**            | Page 31                                                       |
-| **Related Master IDs**  | `WF-09, WF-29, WF-31, WF-32, WF-34, WF-46`                    |
-| **Legacy Aliases**      | `CL:WF-30, HM:WF-30, HE:WF-30, PM:WF-30, WB:G09, P3-06`       |
+| Property                | Value                                                               |
+| ----------------------- | ------------------------------------------------------------------- |
+| **Priority**            | **Gate**                                                            |
+| **Evidence Status**     | `Owner decision or real-use gate`                                   |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Owner answers conflict** (see §7.3)       |
+| **PDF Page**            | Page 31                                                             |
+| **Related Master IDs**  | `ISSUE-09, ISSUE-29, ISSUE-31, ISSUE-32, ISSUE-34, ISSUE-46`        |
+| **Legacy Aliases**      | `CL:ISSUE-30, HM:ISSUE-30, HE:ISSUE-30, PM:ISSUE-30, WB:G09, P3-06` |
 
 - **Current Finding**: The permitted display purpose matters more than whether a field is visually tidy. Current screens can place identity, origin, legal-form, movement and tentative-category facts near each other. The independent reviewer found an owner-approved single-linked-movement display, so a blanket claim that all identity adjacency is forbidden would be wrong.
 - **Required Changes & Guardrails**: Have the owner approve precisely which fields each audience may see and in what combination. Avoid presenting a tentative broad category as a confirmed ward diagnosis or a geographic attribute as an assessed clinical risk. Verify desktop, phone, print, export, tooltips, empty states and accessible names. Keep aggregate composition separate from identifiable patient history.
@@ -1903,16 +1903,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-31`: Validate legal forms, authority and deadline provenance
+##### `ISSUE-31`: Validate legal forms, authority and deadline provenance
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **Gate**                                                        |
-| **Evidence Status**     | `Owner decision or real-use gate`                               |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)              |
-| **PDF Page**            | Page 32                                                         |
-| **Related Master IDs**  | `WF-01, WF-05, WF-16, WF-17, WF-29, WF-32, WF-42, WF-43, WF-46` |
-| **Legacy Aliases**      | `CL:WF-31, HM:WF-31, HE:WF-31, PM:WF-31, WB:G08, P0-05, ...`    |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **Gate**                                                                                   |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                          |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                         |
+| **PDF Page**            | Page 32                                                                                    |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-05, ISSUE-16, ISSUE-17, ISSUE-29, ISSUE-32, ISSUE-42, ISSUE-43, ISSUE-46` |
+| **Legacy Aliases**      | `CL:ISSUE-31, HM:ISSUE-31, HE:ISSUE-31, PM:ISSUE-31, WB:G08, P0-05, ...`                   |
 
 - **Current Finding**: The project records legal status, form labels, deadlines and transport documentation. That does not make it a verified interpretation of Western Australian law. This consolidation did not recertify forms, authority to detain/transport, or every legal clock against current primary legal materials. Literal synthetic status strings are not, by themselves, defects.
 - **Required Changes & Guardrails**: Require a WA clinical/legal owner to validate each actionable rule, clock origin, extension, expiry and authorised actor before legal reliance. Distinguish recorded status from a machine-inferred legal conclusion, and provider-requested paperwork from statutory authority. Do not infer voluntary status, an escort decision or transport powers from a stage, cancellation or absence of data.
@@ -1925,16 +1925,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-32`: Agree ranking, urgency and waiting-time policy
+##### `ISSUE-32`: Agree ranking, urgency and waiting-time policy
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **Gate**                                                        |
-| **Evidence Status**     | `Owner decision or real-use gate`                               |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)     |
-| **PDF Page**            | Page 32                                                         |
-| **Related Master IDs**  | `WF-09, WF-25, WF-30, WF-31, WF-43, WF-47, WF-49`               |
-| **Legacy Aliases**      | `CL:WF-32, HM:WF-32, HE:WF-32, PM:WF-32, WB:G07, PDF:D-02, ...` |
+| Property                | Value                                                                       |
+| ----------------------- | --------------------------------------------------------------------------- |
+| **Priority**            | **Gate**                                                                    |
+| **Evidence Status**     | `Owner decision or real-use gate`                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)                 |
+| **PDF Page**            | Page 32                                                                     |
+| **Related Master IDs**  | `ISSUE-09, ISSUE-25, ISSUE-30, ISSUE-31, ISSUE-43, ISSUE-47, ISSUE-49`      |
+| **Legacy Aliases**      | `CL:ISSUE-32, HM:ISSUE-32, HE:ISSUE-32, PM:ISSUE-32, WB:G07, PDF:D-02, ...` |
 
 - **Current Finding**: The browser showed a manually flagged Tier 3 movement ahead of Tier 1 movements while displaying their tier labels. That can be an intentional operational-attention rule rather than a clinical-ranking bug. The important questions are whether the distinction is clear and whether the flag has attribution, a reason, review and clearing semantics.
 - **Required Changes & Guardrails**: Document the owner-approved separation between clinical urgency, coordination priority and an attention flag. Capture who applied the flag, why, when, and whether it remains current without silently rewriting the opening tier. Explain the queue ordering and test stable tie-breaking and clearing. Do not invent clinical weights or present an operational score as validated severity.
@@ -1947,16 +1947,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-33`: Provide authoritative persistence, concurrency and recovery
+##### `ISSUE-33`: Provide authoritative persistence, concurrency and recovery
 
-| Property                | Value                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| **Priority**            | **Gate**                                                                      |
-| **Evidence Status**     | `Owner decision or real-use gate`                                             |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Needs outside review** (see §7.3)                   |
-| **PDF Page**            | Page 33                                                                       |
-| **Related Master IDs**  | `WF-02, WF-06, WF-07, WF-08, WF-09, WF-18, WF-29, WF-38, WF-44, WF-46, WF-47` |
-| **Legacy Aliases**      | `CL:WF-33, HM:WF-33, HE:WF-33, PM:WF-33, WB:D05, PC:WF-12, ...`               |
+| Property                | Value                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Priority**            | **Gate**                                                                                                       |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                                              |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Needs outside review** (see §7.3)                                                    |
+| **PDF Page**            | Page 33                                                                                                        |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-06, ISSUE-07, ISSUE-08, ISSUE-09, ISSUE-18, ISSUE-29, ISSUE-38, ISSUE-44, ISSUE-46, ISSUE-47` |
+| **Legacy Aliases**      | `CL:ISSUE-33, HM:ISSUE-33, HE:ISSUE-33, PM:ISSUE-33, WB:D05, PC:ISSUE-12, ...`                                 |
 
 - **Current Finding**: The inspected application is a synthetic local prototype. Some histories are provider-held and survive child-view unmounts, contradicting older blanket claims of immediate history loss. That still does not establish durable storage, real authentication, concurrent multi-user allocation or reconciliation with hospital source systems.
 - **Required Changes & Guardrails**: Before operational use, select the authoritative systems and integration boundary rather than turning the prototype into a second EMR by accident. Use durable transactional commands, idempotency and optimistic concurrency where appropriate, with explicit downtime and recovery. Test two genuinely independent users competing for the last bed, not two calls in one browser state. Preserve migration and rollback plans.
@@ -1971,16 +1971,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-41`: Decide which local ward entries become shared operational facts
+##### `ISSUE-41`: Decide which local ward entries become shared operational facts
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P2**                                                          |
-| **Evidence Status**     | `Owner decision or real-use gate`                               |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)               |
-| **PDF Page**            | Page 38                                                         |
-| **Related Master IDs**  | `WF-07, WF-08, WF-10, WF-25, WF-33, WF-34, WF-40, WF-43`        |
-| **Legacy Aliases**      | `CL:WF-41, HM:WF-41, HE:WF-41, PM:WF-41, WB:G06, PC:WF-20, ...` |
+| Property                | Value                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                           |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                |
+| **PDF Page**            | Page 38                                                                          |
+| **Related Master IDs**  | `ISSUE-07, ISSUE-08, ISSUE-10, ISSUE-25, ISSUE-33, ISSUE-34, ISSUE-40, ISSUE-43` |
+| **Legacy Aliases**      | `CL:ISSUE-41, HM:ISSUE-41, HE:ISSUE-41, PM:ISSUE-41, WB:G06, PC:ISSUE-20, ...`   |
 
 - **Current Finding**: Some ward facts and acknowledgments are intentionally local to a screen, while other observations belong in the shared provider. Honest local labelling is not deceptive persistence. The earlier worktree audit also found displayed blocked capacity without a clear shared producer. This must remain a specific capability/ownership decision rather than a blanket demand to persist every UI field.
 - **Required Changes & Guardrails**: Classify each field as a local demonstrator note, a shared operational observation or externally supplied truth. For included shared facts, provide the authorised writer, timestamp, source revision and cross-view projection. For externally supplied blocked capacity, disclose how it is refreshed rather than offering an inert control. Verify clean versus dirty drafts and acknowledgment after a source change.
@@ -1993,16 +1993,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-43`: Provide change-sensitive readiness and owned exception recovery
+##### `ISSUE-43`: Provide change-sensitive readiness and owned exception recovery
 
-| Property                | Value                                                                                                            |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **Priority**            | **P1**                                                                                                           |
-| **Evidence Status**     | `Owner decision or real-use gate`                                                                                |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                                                |
-| **PDF Page**            | Page 39                                                                                                          |
-| **Related Master IDs**  | `WF-01, WF-03, WF-04, WF-05, WF-12, WF-14, WF-16, WF-17, WF-18, WF-19, WF-20, WF-21, WF-31, WF-36, WF-42, WF-46` |
-| **Legacy Aliases**      | `CL:WF-43, HM:WF-43, HE:WF-43, PM:WF-43, WB:G08, PC:WF-10, ...`                                                  |
+| Property                | Value                                                                                                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Priority**            | **P1**                                                                                                                                                           |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                                                                                                |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                                                                                                |
+| **PDF Page**            | Page 39                                                                                                                                                          |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-03, ISSUE-04, ISSUE-05, ISSUE-12, ISSUE-14, ISSUE-16, ISSUE-17, ISSUE-18, ISSUE-19, ISSUE-20, ISSUE-21, ISSUE-31, ISSUE-36, ISSUE-42, ISSUE-46` |
+| **Legacy Aliases**      | `CL:ISSUE-43, HM:ISSUE-43, HE:ISSUE-43, PM:ISSUE-43, WB:G08, PC:ISSUE-10, ...`                                                                                   |
 
 - **Current Finding**: Readiness is time-dependent: a confirmed destination, staffing, form or transport arrangement can change before the person leaves or arrives. Existing exception and terminal-outcome labels are useful but do not demonstrate a complete owned recovery journey for every combination. This review did not exhaust all these clinical scenarios.
 - **Required Changes & Guardrails**: For each included exception record current location, current responsible team, what changed, next action, due/review time and escalation. Recheck change-sensitive gates at agreed milestones without falsifying already occurred events. Include medical deterioration, lost destination, missing paperwork, no receiving acknowledgment, death/custody/non-return, interrupted handover and failed contact. Prove recovery and visibility,
@@ -2015,16 +2015,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-44`: Maintain a verified service and catchment directory
+##### `ISSUE-44`: Maintain a verified service and catchment directory
 
-| Property                | Value                                                    |
-| ----------------------- | -------------------------------------------------------- |
-| **Priority**            | **Gate**                                                 |
-| **Evidence Status**     | `Owner decision or real-use gate`                        |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)       |
-| **PDF Page**            | Page 39                                                  |
-| **Related Master IDs**  | `WF-09, WF-15, WF-29, WF-33, WF-45, WF-46, WF-47, WF-51` |
-| **Legacy Aliases**      | `CL:WF-44, HM:WF-44, HE:WF-44, PM:WF-44, PDF:D-03`       |
+| Property                | Value                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| **Priority**            | **Gate**                                                                         |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                               |
+| **PDF Page**            | Page 39                                                                          |
+| **Related Master IDs**  | `ISSUE-09, ISSUE-15, ISSUE-29, ISSUE-33, ISSUE-45, ISSUE-46, ISSUE-47, ISSUE-51` |
+| **Legacy Aliases**      | `CL:ISSUE-44, HM:ISSUE-44, HE:ISSUE-44, PM:ISSUE-44, PDF:D-03`                   |
 
 - **Current Finding**: The current community directory explicitly describes unverified recorded names, alias-like groups and placeholder limitations. A successful route lookup does not verify service identity, catchment, after-hours access or current staffed capacity. This review did not recertify the separate ward/community research stream and should not overwrite it with synthetic counts.
 - **Required Changes & Guardrails**: Maintain source, effective date, verification owner, service identifier, alias evidence, catchment scope, uncertainty and escalation contact for operational entries. Do not merge similarly spelled teams automatically or imply that an unflagged spelling is unique. Distinguish commissioned capacity, installed beds, physically empty stock and staffed suitable capacity. Require service confirmation for relied-on uncertain entries.
@@ -2037,16 +2037,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-45`: Scope regional multi-leg transport and repatriation
+##### `ISSUE-45`: Scope regional multi-leg transport and repatriation
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **Later**                                                       |
-| **Evidence Status**     | `Owner decision or real-use gate`                               |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)     |
-| **PDF Page**            | Page 40                                                         |
-| **Related Master IDs**  | `WF-05, WF-09, WF-15, WF-16, WF-33, WF-42, WF-43, WF-44, WF-46` |
-| **Legacy Aliases**      | `CL:WF-45, HM:WF-45, HE:WF-45, PM:WF-45, PDF:D-06`              |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **Later**                                                                                  |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                          |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Waiting on the owner** (see §7.3)                                |
+| **PDF Page**            | Page 40                                                                                    |
+| **Related Master IDs**  | `ISSUE-05, ISSUE-09, ISSUE-15, ISSUE-16, ISSUE-33, ISSUE-42, ISSUE-43, ISSUE-44, ISSUE-46` |
+| **Legacy Aliases**      | `CL:ISSUE-45, HM:ISSUE-45, HE:ISSUE-45, PM:ISSUE-45, PDF:D-06`                             |
 
 - **Current Finding**: Regional retrieval, repatriation and road-air-road transfer are not established by one ED-origin movement and a single transport object. This is later scope unless explicitly included in the intended pilot. It is not a reason to delay repairing the currently reproduced metropolitan resource defects.
 - **Required Changes & Guardrails**: When included, model each leg, sending/receiving facility, responsible service, handover point and connection status. Preserve an owned state through a missed connection, overnight delay, destination change and return to region. Verify real arrangements and escalation channels with the responsible services, rather than copying an old provider page into executable workflow rules.
@@ -2059,16 +2059,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-46`: Establish clinical safety ownership and controlled pilot governance
+##### `ISSUE-46`: Establish clinical safety ownership and controlled pilot governance
 
-| Property                | Value                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| **Priority**            | **Gate**                                                                                    |
-| **Evidence Status**     | `Owner decision or real-use gate`                                                           |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Needs outside review** (see §7.3)                                 |
-| **PDF Page**            | Page 41                                                                                     |
-| **Related Master IDs**  | `WF-01, WF-02, WF-03, WF-04, WF-06, WF-07, WF-09, WF-29, WF-31, WF-33, WF-42, WF-43, WF-44` |
-| **Legacy Aliases**      | `CL:WF-46, HM:WF-46, HE:WF-46, PM:WF-46, WB:D05, PC:WF-22, ...`                             |
+| Property                | Value                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Priority**            | **Gate**                                                                                                                           |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                                                                  |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Needs outside review** (see §7.3)                                                                        |
+| **PDF Page**            | Page 41                                                                                                                            |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-02, ISSUE-03, ISSUE-04, ISSUE-06, ISSUE-07, ISSUE-09, ISSUE-29, ISSUE-31, ISSUE-33, ISSUE-42, ISSUE-43, ISSUE-44` |
+| **Legacy Aliases**      | `CL:ISSUE-46, HM:ISSUE-46, HE:ISSUE-46, PM:ISSUE-46, WB:D05, PC:ISSUE-22, ...`                                                     |
 
 - **Current Finding**: No test count, source review, disclaimer or generated report establishes clinical validation, regulatory classification or deployment approval. The observed “not a medical device” UI wording is an application statement, not a legal conclusion endorsed by this audit. No clinical pilot or real-patient trial was performed.
 - **Required Changes & Guardrails**: Require named clinical safety and operational owners, a hazard log mapped to these failure modes, defined exclusions, human confirmation, privacy/legal assessment, incident response and downtime/rollback drills. Agree measurable entry/exit criteria for a controlled pilot. Obtain a scope-specific human readiness decision after evidence is current. Keep synthetic demonstrations separate from actual care decisions.
@@ -2081,16 +2081,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-47`: Define truthful flow analytics and measure benefit
+##### `ISSUE-47`: Define truthful flow analytics and measure benefit
 
-| Property                | Value                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| **Priority**            | **Later**                                                                     |
-| **Evidence Status**     | `Owner decision or real-use gate`                                             |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                            |
-| **PDF Page**            | Page 41                                                                       |
-| **Related Master IDs**  | `WF-06, WF-09, WF-18, WF-23, WF-25, WF-29, WF-33, WF-38, WF-40, WF-44, WF-49` |
-| **Legacy Aliases**      | `CL:WF-47, HM:WF-47, HE:WF-47, PM:WF-47, WB:D03, PDF:D-11`                    |
+| Property                | Value                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Priority**            | **Later**                                                                                                      |
+| **Evidence Status**     | `Owner decision or real-use gate`                                                                              |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                                             |
+| **PDF Page**            | Page 41                                                                                                        |
+| **Related Master IDs**  | `ISSUE-06, ISSUE-09, ISSUE-18, ISSUE-23, ISSUE-25, ISSUE-29, ISSUE-33, ISSUE-38, ISSUE-40, ISSUE-44, ISSUE-49` |
+| **Legacy Aliases**      | `CL:ISSUE-47, HM:ISSUE-47, HE:ISSUE-47, PM:ISSUE-47, WB:D03, PDF:D-11`                                         |
 
 - **Current Finding**: Wrong admissions, duplicated vacancies, misleading all-declined status and backdated mutable facts can make plausible analytics wrong. The current Discharges page shows anonymous releases and admission records as distinct categories, and their counts must not be combined as the same denominator. This review measured no clinical efficiency benefit.
 - **Required Changes & Guardrails**: Document population, numerator, denominator, event time, recording delay, missingness, correction and overlap rules for each metric. Use canonical episode/turnover identity, union overlapping blocker intervals, and distinguish arranged follow-up from actual meaningful contact. Reconcile event-level examples to ward and statewide totals before evaluating wait reduction, occupancy, out-of-area transfer or benefit.
@@ -2109,16 +2109,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 #### EVIDENCE CLASS: CURRENT SOURCE-SUPPORTED (8 FAMILIES)
 
-##### `WF-09`: Preserve patient/referral provenance and intended-episode uniqueness
+##### `ISSUE-09`: Preserve patient/referral provenance and intended-episode uniqueness
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P1**                                                          |
-| **Evidence Status**     | `Current source-supported`                                      |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)               |
-| **PDF Page**            | Page 19                                                         |
-| **Related Master IDs**  | `WF-02, WF-11, WF-12, WF-15, WF-18, WF-29, WF-33, WF-44, WF-47` |
-| **Legacy Aliases**      | `CL:WF-09, HM:WF-09, HE:WF-09, PM:WF-09, WB:G01, WB:G09, ...`   |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                                     |
+| **Evidence Status**     | `Current source-supported`                                                                 |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                          |
+| **PDF Page**            | Page 19                                                                                    |
+| **Related Master IDs**  | `ISSUE-02, ISSUE-11, ISSUE-12, ISSUE-15, ISSUE-18, ISSUE-29, ISSUE-33, ISSUE-44, ISSUE-47` |
+| **Legacy Aliases**      | `CL:ISSUE-09, HM:ISSUE-09, HE:ISSUE-09, PM:ISSUE-09, WB:G01, WB:G09, ...`                  |
 
 - **Current Finding**: The mounted ED action dispatches a new movement without the selected front-door referral link. Even when the link is supplied, the pull-created admission copies patientId but sets referralId and homeRegion to null. This partly improves the older missing-patient-link claim without completing episode provenance. The independent review also found no uniqueness guard against repeating the same linked source request. These latter
 - **Required Changes & Guardrails**: Create an explicit transition from the selected referral, preserve verified links through movement and admission, and define idempotency for the same intended episode or leg. Do not prohibit legitimate concurrent purposes or source occupancy plus a destination hold. Preserve unknown home region and tentative-diagnosis provenance rather than filling them from assumptions or a non-existent movement diagnosis field. A new
@@ -2131,16 +2131,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-20`: Link leave-bed handling to an admission and leave episode
+##### `ISSUE-20`: Link leave-bed handling to an admission and leave episode
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P2**                                                             |
-| **Evidence Status**     | `Current source-supported`                                         |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                  |
-| **PDF Page**            | Page 25                                                            |
-| **Related Master IDs**  | `WF-06, WF-18, WF-19, WF-21, WF-25, WF-29, WF-40, WF-43`           |
-| **Legacy Aliases**      | `CL:WF-20, HM:WF-20, HE:WF-20, PM:WF-20, PC:WF-21, PDF:WF-21, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                               |
+| **Evidence Status**     | `Current source-supported`                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                    |
+| **PDF Page**            | Page 25                                                                              |
+| **Related Master IDs**  | `ISSUE-06, ISSUE-18, ISSUE-19, ISSUE-21, ISSUE-25, ISSUE-29, ISSUE-40, ISSUE-43`     |
+| **Legacy Aliases**      | `CL:ISSUE-20, HM:ISSUE-20, HE:ISSUE-20, PM:ISSUE-20, PC:ISSUE-21, PDF:ISSUE-21, ...` |
 
 - **Current Finding**: The separate anonymous LeaveBed record is not linked to an admission and END_LEAVE_BED removes it. Return and other leave-ending outcomes are not durably distinguished in that record. This is narrower than claiming all death, custody or non-return concepts are absent from the project: outcome vocabulary exists elsewhere.
 - **Required Changes & Guardrails**: Agree whether this is only an anonymous bed-availability note or a patient leave capability. For the latter, link it through an approved scoped admission reference and preserve the controlled outcome and history. Do not automatically discharge an overdue leave or release its bed on a timer. A confirmed non-return must reconcile through the same departure/turnover accounting as other exits.
@@ -2153,16 +2153,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-24`: Preserve the intended date in time-only inputs
+##### `ISSUE-24`: Preserve the intended date in time-only inputs
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P1**                                                             |
-| **Evidence Status**     | `Current source-supported`                                         |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                  |
-| **PDF Page**            | Page 28                                                            |
-| **Related Master IDs**  | `WF-20, WF-25, WF-34, WF-40`                                       |
-| **Legacy Aliases**      | `CL:WF-24, HM:WF-24, HE:WF-24, PM:WF-24, PC:WF-16, B22:WF-20, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                               |
+| **Evidence Status**     | `Current source-supported`                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                    |
+| **PDF Page**            | Page 28                                                                              |
+| **Related Master IDs**  | `ISSUE-20, ISSUE-25, ISSUE-34, ISSUE-40`                                             |
+| **Legacy Aliases**      | `CL:ISSUE-24, HM:ISSUE-24, HE:ISSUE-24, PM:ISSUE-24, PC:ISSUE-16, B22:ISSUE-20, ...` |
 
 - **Current Finding**: The current ward controls create expected-free and expected-return instants from time-only inputs. The source itself limits those producers to same-day instants while other views display multi-day data. Earlier claims that the entire provider clock drops full days are refuted. The issue is what users can author and how dates are displayed.
 - **Required Changes & Guardrails**: Choose a date-and-time control or explicitly state that future-dated information is external/read-only. Preserve the agreed timezone and operational day. Test yesterday/today/tomorrow, month/year rollover, multiple days ahead, reopening an existing later-date record and local unpinned browser time. Do not silently reinterpret an earlier clock time as a future day without a documented rule.
@@ -2176,16 +2176,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-35`: Align architecture notes and remediation guidance with current code
+##### `ISSUE-35`: Align architecture notes and remediation guidance with current code
 
-| Property                | Value                                             |
-| ----------------------- | ------------------------------------------------- |
-| **Priority**            | **P2**                                            |
-| **Evidence Status**     | `Current source-supported`                        |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
-| **PDF Page**            | Page 34                                           |
-| **Related Master IDs**  | `WF-28, WF-34, WF-48, WF-49, WF-52`               |
-| **Legacy Aliases**      | `CL:WF-35, HM:WF-35, HE:WF-35, PM:WF-35, WB:D02`  |
+| Property                | Value                                                        |
+| ----------------------- | ------------------------------------------------------------ |
+| **Priority**            | **P2**                                                       |
+| **Evidence Status**     | `Current source-supported`                                   |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)            |
+| **PDF Page**            | Page 34                                                      |
+| **Related Master IDs**  | `ISSUE-28, ISSUE-34, ISSUE-48, ISSUE-49, ISSUE-52`           |
+| **Legacy Aliases**      | `CL:ISSUE-35, HM:ISSUE-35, HE:ISSUE-35, PM:ISSUE-35, WB:D02` |
 
 - **Current Finding**: The generated CURRENT state compares a stored drawing hash to the drawing manifest. It does not include the current React/CSS implementation or rendered output. A screen can therefore remain CURRENT after implementation changes. Broad “engine sound” or historical test-count language also exceeds the fresh counterexamples. More detailed acceptance documents already state narrower limits and should not be discarded.
 - **Required Changes & Guardrails**: Publish separate drawing alignment and implementation verification states, with affected source hashes, runtime identity, viewport/theme/state and evidence date. Explicitly supersede older blocked/null checkpoints. Keep the existing authoritative project index rather than creating another competing current-state document. The changed Movement drawing during this review illustrates why a label without an evidence boundary is
@@ -2198,16 +2198,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-42`: Separate transport arrival from receipt and responsibility
+##### `ISSUE-42`: Separate transport arrival from receipt and responsibility
 
-| Property                | Value                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| **Priority**            | **P1**                                                                        |
-| **Evidence Status**     | `Current source-supported`                                                    |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                             |
-| **PDF Page**            | Page 38                                                                       |
-| **Related Master IDs**  | `WF-04, WF-05, WF-09, WF-15, WF-16, WF-18, WF-19, WF-31, WF-36, WF-37, WF-43` |
-| **Legacy Aliases**      | `CL:WF-42, HM:WF-42, HE:WF-42, PM:WF-42, PC:WF-14, PC:WF-15, ...`             |
+| Property                | Value                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Priority**            | **P1**                                                                                                         |
+| **Evidence Status**     | `Current source-supported`                                                                                     |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                                              |
+| **PDF Page**            | Page 38                                                                                                        |
+| **Related Master IDs**  | `ISSUE-04, ISSUE-05, ISSUE-09, ISSUE-15, ISSUE-16, ISSUE-18, ISSUE-19, ISSUE-31, ISSUE-36, ISSUE-37, ISSUE-43` |
+| **Legacy Aliases**      | `CL:ISSUE-42, HM:ISSUE-42, HE:ISSUE-42, PM:ISSUE-42, PC:ISSUE-14, PC:ISSUE-15, ...`                            |
 
 - **Current Finding**: Source review found PATIENT_ARRIVED is officer-only and simultaneously records transport arrival, closes the movement, changes admission occupancy and consumes physical vacancy. There is no independent receiving-ward acknowledgment in that path. The normal arrival control succeeds, but it does not prove who accepted clinical responsibility.
 - **Required Changes & Guardrails**: Agree the relationship between physical arrival, transport completion, ward receipt, clinical responsibility and the start of the inpatient stay. Record distinct facts where they differ. Do not automatically defer every physical occupancy change until acknowledgment without an owner-approved contract, as one reviewer proposed. Test arrived-but-not-received, wrong ward, wrong allocation, local no-provider arrival, delayed
@@ -2220,18 +2220,18 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-48`: Maintain a capability register and staged enhancement backlog
+##### `ISSUE-48`: Maintain a capability register and staged enhancement backlog
 
-| Property                | Value                                                      |
-| ----------------------- | ---------------------------------------------------------- |
-| **Priority**            | **P2**                                                     |
-| **Evidence Status**     | `Current source-supported`                                 |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)         |
-| **PDF Page**            | Page 42                                                    |
-| **Related Master IDs**  | `WF-28, WF-34, WF-35, WF-47, WF-49, WF-50, WF-51, WF-52`   |
-| **Legacy Aliases**      | `CL:WF-48, HM:WF-48, HE:WF-48, PM:WF-48, WB:D02, PDF:D-12` |
+| Property                | Value                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                           |
+| **Evidence Status**     | `Current source-supported`                                                       |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                               |
+| **PDF Page**            | Page 42                                                                          |
+| **Related Master IDs**  | `ISSUE-28, ISSUE-34, ISSUE-35, ISSUE-47, ISSUE-49, ISSUE-50, ISSUE-51, ISSUE-52` |
+| **Legacy Aliases**      | `CL:ISSUE-48, HM:ISSUE-48, HE:ISSUE-48, PM:ISSUE-48, WB:D02, PDF:D-12`           |
 
-- **Current Finding**: The uploaded catalogues mix bugs, incomplete workflows, owner decisions, assurance gaps and future-use gates. HM:WF-49 and CL:WF-49 are different findings. This master preserves both and remaps CL:WF-49/50/51 to master WF-50/51/52. A drawing changed during this review and another drawing appeared, while the 1,902-file agent snapshot remained unchanged.
+- **Current Finding**: The uploaded catalogues mix bugs, incomplete workflows, owner decisions, assurance gaps and future-use gates. HM:ISSUE-49 and CL:ISSUE-49 are different findings. This master preserves both and remaps CL:ISSUE-49/50/51 to master ISSUE-50/51/52. A drawing changed during this review and another drawing appeared, while the 1,902-file agent snapshot remained unchanged.
 - **Required Changes & Guardrails**: Use this file as a single planning handoff, not a second live repository authority. Maintain stable canonical IDs, every source alias, evidence type/date, affected hashes, decision owner and closure criteria in the existing project index when implementation is authorised. Close subfindings individually and supersede old claims explicitly. Do not turn multiple observations of one defect into several incident counts.
 - **Closure Criteria**: Every closed item must point to the specific current revision and a relevant passing regression. A core-source change must invalidate the affected proof, while unrelated visual edits should not erase an unchanged reducer counterexample.
 - **Navigation Anchors**: `None recorded. See evidence limitations in the master report.`
@@ -2243,16 +2243,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-49`: Do not rewrite historical Activity facts from current mutable state
+##### `ISSUE-49`: Do not rewrite historical Activity facts from current mutable state
 
-| Property                | Value                                             |
-| ----------------------- | ------------------------------------------------- |
-| **Priority**            | **P2**                                            |
-| **Evidence Status**     | `Current source-supported`                        |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
-| **PDF Page**            | Page 42                                           |
-| **Related Master IDs**  | `WF-10, WF-25, WF-32, WF-35, WF-47`               |
-| **Legacy Aliases**      | `HM:WF-49, WB:G07`                                |
+| Property                | Value                                              |
+| ----------------------- | -------------------------------------------------- |
+| **Priority**            | **P2**                                             |
+| **Evidence Status**     | `Current source-supported`                         |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)  |
+| **PDF Page**            | Page 42                                            |
+| **Related Master IDs**  | `ISSUE-10, ISSUE-25, ISSUE-32, ISSUE-35, ISSUE-47` |
+| **Legacy Aliases**      | `HM:ISSUE-49, WB:G07`                              |
 
 - **Current Finding**: Command Activity attaches movement.openedAt to text containing the current movement.urgency. A later urgency edit can therefore rewrite the tier attributed to the old opening event. The earlier HM audit reproduced this in the native helper, and the current independent source review confirms the same construction. This turn did not repeat the helper-change sequence through the mounted Activity popover.
 - **Required Changes & Guardrails**: Retain the actual opening tier if its historical provenance exists, or omit it and label a separate current-tier fact. Do not guess the old tier for legacy records. Keep later urgency changes attributable and inspect other occurrence-time/current-value sentences. Stage-change history already provides a counterexample where recorded from/to values are retained. A derived-feed disclaimer alone does not correct misleading
@@ -2266,16 +2266,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-51`: Remove the unproved placement guarantee from aggregate capacity copy
+##### `ISSUE-51`: Remove the unproved placement guarantee from aggregate capacity copy
 
-| Property                | Value                                                             |
-| ----------------------- | ----------------------------------------------------------------- |
-| **Priority**            | **P2**                                                            |
-| **Evidence Status**     | `Current source-supported`                                        |
-| **Owner / Work Status** | `Antigravity` / 6 Oct: **Completed & Verified** (see §7.3, §7.76) |
-| **PDF Page**            | Page 44                                                           |
-| **Related Master IDs**  | `WF-03, WF-07, WF-27, WF-32, WF-36, WF-44, WF-47`                 |
-| **Legacy Aliases**      | `CL:WF-50`                                                        |
+| Property                | Value                                                                  |
+| ----------------------- | ---------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                 |
+| **Evidence Status**     | `Current source-supported`                                             |
+| **Owner / Work Status** | `Antigravity` / 6 Oct: **Completed & Verified** (see §7.3, §7.76)      |
+| **PDF Page**            | Page 44                                                                |
+| **Related Master IDs**  | `ISSUE-03, ISSUE-07, ISSUE-27, ISSUE-32, ISSUE-36, ISSUE-44, ISSUE-47` |
+| **Legacy Aliases**      | `CL:ISSUE-50`                                                          |
 
 - **Resolution (6 October 2026)**: In `src/components/ward-management/capacity/capacity-screen.tsx`, replaced unprovable guarantee copy "nobody goes without today" with truthful operational copy "net available capacity today" in `rowSentence` and `totalsSentence` (lines 1116 and 1127). Verified by new dedicated unit test `tests/ward-capacity-zero-gap-copy.test.ts` (36/36 tests passing across capacity suite).
 - **Navigation Anchors**: `src/components/ward-management/capacity/capacity-screen.tsx:1116, 1127`
@@ -2290,16 +2290,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 #### EVIDENCE CLASS: PARTLY RESOLVED OR NARROWED (6 FAMILIES)
 
-##### `WF-10`: Deliver recipient-scoped notices that survive active-row removal
+##### `ISSUE-10`: Deliver recipient-scoped notices that survive active-row removal
 
-| Property                | Value                                                             |
-| ----------------------- | ----------------------------------------------------------------- |
-| **Priority**            | **P1**                                                            |
-| **Evidence Status**     | `Partly resolved or narrowed`                                     |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                |
-| **PDF Page**            | Page 19                                                           |
-| **Related Master IDs**  | `WF-04, WF-11, WF-13, WF-22, WF-29, WF-38, WF-43, WF-49, WF-50`   |
-| **Legacy Aliases**      | `CL:WF-10, HM:WF-10, HE:WF-10, PM:WF-10, PDF:D-01, PDF:D-07, ...` |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P1**                                                                                     |
+| **Evidence Status**     | `Partly resolved or narrowed`                                                              |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                         |
+| **PDF Page**            | Page 19                                                                                    |
+| **Related Master IDs**  | `ISSUE-04, ISSUE-11, ISSUE-13, ISSUE-22, ISSUE-29, ISSUE-38, ISSUE-43, ISSUE-49, ISSUE-50` |
+| **Legacy Aliases**      | `CL:ISSUE-10, HM:ISSUE-10, HE:ISSUE-10, PM:ISSUE-10, PDF:D-01, PDF:D-07, ...`              |
 
 - **Current Finding**: The broad claim that notices are absent is superseded. Provider-held notices and an Activity consumer exist. That does not prove delivery to each affected recipient, persistence after active-row removal, acknowledgment, or durable server-side communications. This turn did not trigger every notice-producing command.
 - **Required Changes & Guardrails**: Treat notification creation, recipient scoping, presentation and acknowledgment as separate capabilities. Check withdrawal reasons after a row disappears, cancellations of old transport jobs, handover at shift change, retry deduplication and private recipient wording. A prototype notification is not proof of an email, SMS or external provider message. Maintain a route-specific view without showing unrelated patient history.
@@ -2312,16 +2312,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-18`: Complete discharge dependencies and accountable community follow-up
+##### `ISSUE-18`: Complete discharge dependencies and accountable community follow-up
 
-| Property                | Value                                                                  |
-| ----------------------- | ---------------------------------------------------------------------- |
-| **Priority**            | **P2**                                                                 |
-| **Evidence Status**     | `Partly resolved or narrowed`                                          |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                     |
-| **PDF Page**            | Page 24                                                                |
-| **Related Master IDs**  | `WF-06, WF-09, WF-12, WF-19, WF-20, WF-25, WF-33, WF-40, WF-42, WF-47` |
-| **Legacy Aliases**      | `CL:WF-18, HM:WF-18, HE:WF-18, PM:WF-18, WB:G02, WB:D03, ...`          |
+| Property                | Value                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                                               |
+| **Evidence Status**     | `Partly resolved or narrowed`                                                                        |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                                   |
+| **PDF Page**            | Page 24                                                                                              |
+| **Related Master IDs**  | `ISSUE-06, ISSUE-09, ISSUE-12, ISSUE-19, ISSUE-20, ISSUE-25, ISSUE-33, ISSUE-40, ISSUE-42, ISSUE-47` |
+| **Legacy Aliases**      | `CL:ISSUE-18, HM:ISSUE-18, HE:ISSUE-18, PM:ISSUE-18, WB:G02, WB:D03, ...`                            |
 
 - **Current Finding**: Actual discharge and protected ward-scoped commands are implemented. Wrong-ward and stale-generation controls passed fresh native checks, and the focused discharge tests passed. Discharge planning, separate task ownership and actual community contact are not thereby complete. The current page correctly distinguishes anonymous releases from admission records, exposing two different populations rather than one unified stock
 - **Required Changes & Guardrails**: Retain the working discharge path. Define shared writers for discharge dependencies, follow-up ownership, arranged versus completed contact and failed-contact escalation. Keep “not recorded” distinct from “not needed” and do not turn seed nulls into invented clinical facts. Permit a truthful terminal admission outcome while away at ED without forcing a false return first. Count anonymous releases and identified admission
@@ -2338,16 +2338,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-19`: Connect temporary ED attendance to a named location and responsible service
+##### `ISSUE-19`: Connect temporary ED attendance to a named location and responsible service
 
-| Property                | Value                                                           |
-| ----------------------- | --------------------------------------------------------------- |
-| **Priority**            | **P2**                                                          |
-| **Evidence Status**     | `Partly resolved or narrowed`                                   |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)              |
-| **PDF Page**            | Page 25                                                         |
-| **Related Master IDs**  | `WF-06, WF-15, WF-18, WF-20, WF-29, WF-42, WF-43`               |
-| **Legacy Aliases**      | `CL:WF-19, HM:WF-19, HE:WF-19, PM:WF-19, WB:D04, PC:WF-21, ...` |
+| Property                | Value                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                         |
+| **Evidence Status**     | `Partly resolved or narrowed`                                                  |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                             |
+| **PDF Page**            | Page 25                                                                        |
+| **Related Master IDs**  | `ISSUE-06, ISSUE-15, ISSUE-18, ISSUE-20, ISSUE-29, ISSUE-42, ISSUE-43`         |
+| **Legacy Aliases**      | `CL:ISSUE-19, HM:ISSUE-19, HE:ISSUE-19, PM:ISSUE-19, WB:D04, PC:ISSUE-21, ...` |
 
 - **Current Finding**: Temporary ED departure and return exist, are ward-scoped and retain the occupied admission. The browser board showed people marked at ED. The older statement that the entire temporary-ED journey is absent is false. Remaining questions concern live location, which ED, current clinical responsibility, cross-screen consistency and terminal outcomes while away.
 - **Required Changes & Guardrails**: Keep a bed-hold/occupancy contract distinct from physical presence. Test duplicate departure, correct return, wrong ward, wrong admission and terminal transfer/death while at ED. Record the real location and responsible team without creating two incompatible admissions or inventing a return to satisfy a transition guard.
@@ -2360,16 +2360,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-27`: Verify the replacement Capacity and Delays controls
+##### `ISSUE-27`: Verify the replacement Capacity and Delays controls
 
-| Property                | Value                                                     |
-| ----------------------- | --------------------------------------------------------- |
-| **Priority**            | **P2**                                                    |
-| **Evidence Status**     | `Partly resolved or narrowed`                             |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)        |
-| **PDF Page**            | Page 29                                                   |
-| **Related Master IDs**  | `WF-22, WF-23, WF-28, WF-34, WF-51`                       |
-| **Legacy Aliases**      | `CL:WF-27, HM:WF-27, HE:WF-27, PM:WF-27, PDF:D-07, P0-11` |
+| Property                | Value                                                                 |
+| ----------------------- | --------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                |
+| **Evidence Status**     | `Partly resolved or narrowed`                                         |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                    |
+| **PDF Page**            | Page 29                                                               |
+| **Related Master IDs**  | `ISSUE-22, ISSUE-23, ISSUE-28, ISSUE-34, ISSUE-51`                    |
+| **Legacy Aliases**      | `CL:ISSUE-27, HM:ISSUE-27, HE:ISSUE-27, PM:ISSUE-27, PDF:D-07, P0-11` |
 
 - **Current Finding**: Earlier real-browser checks changed the Capacity matching set from 23 to 7 and reset it, including phone width. The fresh browser loaded Capacity at desktop and phone width with no page errors or document-level overflow, but did not click every filter or test every Delays control. Some highlights intentionally preserve network totals and all relevant context.
 - **Required Changes & Guardrails**: Specify which controls filter rows, which highlight them and which alter only sort order. Preserve truthful scope labels and global versus selected totals. Test exact membership rather than counts alone, reset, combined filters, hidden groups, no matches, stale selections and keyboard interaction. Do not label an intentional highlight as a broken filter.
@@ -2384,16 +2384,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-28`: Resolve the Morning route’s frozen-versus-live contract
+##### `ISSUE-28`: Resolve the Morning route’s frozen-versus-live contract
 
-| Property                | Value                                             |
-| ----------------------- | ------------------------------------------------- |
-| **Priority**            | **P2**                                            |
-| **Evidence Status**     | `Partly resolved or narrowed`                     |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
-| **PDF Page**            | Page 30                                           |
-| **Related Master IDs**  | `WF-22, WF-25, WF-27, WF-34, WF-35, WF-48`        |
-| **Legacy Aliases**      | `CL:WF-28, HM:WF-28, HE:WF-28, PM:WF-28, P1-21`   |
+| Property                | Value                                                        |
+| ----------------------- | ------------------------------------------------------------ |
+| **Priority**            | **P2**                                                       |
+| **Evidence Status**     | `Partly resolved or narrowed`                                |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)            |
+| **PDF Page**            | Page 30                                                      |
+| **Related Master IDs**  | `ISSUE-22, ISSUE-25, ISSUE-27, ISSUE-34, ISSUE-35, ISSUE-48` |
+| **Legacy Aliases**      | `CL:ISSUE-28, HM:ISSUE-28, HE:ISSUE-28, PM:ISSUE-28, P1-21`  |
 
 - **Current Finding**: The project has a Morning-to-Capacity redirect. The old dedicated-Morning browser specification still waits for a retired handle and is explicitly parked by a source guard. This is visible technical debt tied to a route/product decision, not an invisible full-suite pass. Current route loading did not include a fresh redirect interaction.
 - **Required Changes & Guardrails**: Resolve whether Morning is intentionally retired or should represent a separately frozen handover view. If retired, assert the redirect’s final URL and the Capacity anchor, repoint the journey and remove the specific exemption. If restored, define the frozen-versus-live semantics before rebuilding. Do not delete unrelated compatibility coverage to obtain green tests.
@@ -2406,16 +2406,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-38`: Retain the reasons for actually applied acceptance/pull overrides
+##### `ISSUE-38`: Retain the reasons for actually applied acceptance/pull overrides
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P2**                                                             |
-| **Evidence Status**     | `Partly resolved or narrowed`                                      |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                 |
-| **PDF Page**            | Page 36                                                            |
-| **Related Master IDs**  | `WF-03, WF-09, WF-10, WF-29, WF-33, WF-34, WF-36, WF-47`           |
-| **Legacy Aliases**      | `CL:WF-38, HM:WF-38, HE:WF-38, PM:WF-38, PC:WF-08, B22:WF-12, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                               |
+| **Evidence Status**     | `Partly resolved or narrowed`                                                        |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                   |
+| **PDF Page**            | Page 36                                                                              |
+| **Related Master IDs**  | `ISSUE-03, ISSUE-09, ISSUE-10, ISSUE-29, ISSUE-33, ISSUE-34, ISSUE-36, ISSUE-47`     |
+| **Legacy Aliases**      | `CL:ISSUE-38, HM:ISSUE-38, HE:ISSUE-38, PM:ISSUE-38, PC:ISSUE-08, B22:ISSUE-12, ...` |
 
 - **Current Finding**: The fresh applied-override check found the reason preserved in the central accepted audit event. The legacy overrides collection was not appended. The broad historical claim that the reason is entirely lost is therefore refuted for this path. The remaining issue is which projections and histories are authoritative and whether they agree.
 - **Required Changes & Guardrails**: Do not add a duplicate shadow audit simply to satisfy an outdated test. Name the canonical applied-override record, preserve gate, destination, actor, reason and timing, and update all approved readers from it. Test acceptance versus pull, relevant versus irrelevant override reasons, remount, changed destination, refused attempts and field scoping. An unused reason must not falsely attest a real bypass.
@@ -2430,16 +2430,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 #### EVIDENCE CLASS: REVERIFICATION REQUIRED (4 FAMILIES)
 
-##### `WF-11`: Make parallel-referral add, replace and withdraw semantics explicit
+##### `ISSUE-11`: Make parallel-referral add, replace and withdraw semantics explicit
 
-| Property                | Value                                                              |
-| ----------------------- | ------------------------------------------------------------------ |
-| **Priority**            | **P2**                                                             |
-| **Evidence Status**     | `Reverification required`                                          |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                 |
-| **PDF Page**            | Page 20                                                            |
-| **Related Master IDs**  | `WF-09, WF-10, WF-12, WF-13, WF-14`                                |
-| **Legacy Aliases**      | `CL:WF-11, HM:WF-11, HE:WF-11, PM:WF-11, PC:WF-09, B22:WF-21, ...` |
+| Property                | Value                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                               |
+| **Evidence Status**     | `Reverification required`                                                            |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                   |
+| **PDF Page**            | Page 20                                                                              |
+| **Related Master IDs**  | `ISSUE-09, ISSUE-10, ISSUE-12, ISSUE-13, ISSUE-14`                                   |
+| **Legacy Aliases**      | `CL:ISSUE-11, HM:ISSUE-11, HE:ISSUE-11, PM:ISSUE-11, PC:ISSUE-09, B22:ISSUE-21, ...` |
 
 - **Current Finding**: Parallel alternative destinations and replacement referrals have different semantics. Earlier reviews identified replacement paths that can remove prior recipients or reset response clocks without a corresponding withdrawal trail. No fresh complete rereferral sequence was run in this turn, so retain the specific requirement rather than declaring every referral update broken.
 - **Required Changes & Guardrails**: Decide whether each action adds an alternative, adds an independent purpose, replaces an unsent draft, withdraws a sent request or begins a new episode. Preserve old destinations, decisions and their original waiting clocks. Record explicit private withdrawals for previously notified services and ensure retries do not create a new clinical request. Test one accepted arm with another still appropriately active.
@@ -2452,16 +2452,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-14`: Provide truthful all-declined and no-admission exits
+##### `ISSUE-14`: Provide truthful all-declined and no-admission exits
 
-| Property                | Value                                                             |
-| ----------------------- | ----------------------------------------------------------------- |
-| **Priority**            | **P2**                                                            |
-| **Evidence Status**     | `Reverification required`                                         |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                |
-| **PDF Page**            | Page 22                                                           |
-| **Related Master IDs**  | `WF-01, WF-05, WF-11, WF-12, WF-13, WF-17, WF-22, WF-23, WF-43`   |
-| **Legacy Aliases**      | `CL:WF-14, HM:WF-14, HE:WF-14, PM:WF-14, PC:WF-10, PC:WF-13, ...` |
+| Property                | Value                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **Priority**            | **P2**                                                                                     |
+| **Evidence Status**     | `Reverification required`                                                                  |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                                         |
+| **PDF Page**            | Page 22                                                                                    |
+| **Related Master IDs**  | `ISSUE-01, ISSUE-05, ISSUE-11, ISSUE-12, ISSUE-13, ISSUE-17, ISSUE-22, ISSUE-23, ISSUE-43` |
+| **Legacy Aliases**      | `CL:ISSUE-14, HM:ISSUE-14, HE:ISSUE-14, PM:ISSUE-14, PC:ISSUE-10, PC:ISSUE-13, ...`        |
 
 - **Current Finding**: A broad label such as “awaiting response” must not survive when the last permissible destination has declined. More importantly, no suitable destination and no admission now required are different outcomes. A controlled no-option escalation is not the same as a clinically authorised exit. This turn did not rerun every final-decline or terminal-close path.
 - **Required Changes & Guardrails**: Keep an owned review state when a bed is still required but unavailable, with next action, review time and escalation. Provide truthful closure when an authorised clinician decides admission is unnecessary. Do not invent an examination result to escape the workflow, erase earlier declines, or auto-release an in-transit commitment. Preserve direct referrals with no ward yet asked as a distinct absence state.
@@ -2474,16 +2474,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-22`: Render or clear a closed coordinator selection coherently
+##### `ISSUE-22`: Render or clear a closed coordinator selection coherently
 
-| Property                | Value                                                     |
-| ----------------------- | --------------------------------------------------------- |
-| **Priority**            | **P2**                                                    |
-| **Evidence Status**     | `Reverification required`                                 |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)        |
-| **PDF Page**            | Page 27                                                   |
-| **Related Master IDs**  | `WF-10, WF-13, WF-14, WF-23, WF-27, WF-28, WF-34`         |
-| **Legacy Aliases**      | `CL:WF-22, HM:WF-22, HE:WF-22, PM:WF-22, PDF:D-07, P1-10` |
+| Property                | Value                                                                  |
+| ----------------------- | ---------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                 |
+| **Evidence Status**     | `Reverification required`                                              |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Partly done** (see §7.3)                     |
+| **PDF Page**            | Page 27                                                                |
+| **Related Master IDs**  | `ISSUE-10, ISSUE-13, ISSUE-14, ISSUE-23, ISSUE-27, ISSUE-28, ISSUE-34` |
+| **Legacy Aliases**      | `CL:ISSUE-22, HM:ISSUE-22, HE:ISSUE-22, PM:ISSUE-22, PDF:D-07, P1-10`  |
 
 - **Current Finding**: Closure, withdrawal, filtering and route navigation can invalidate a selected row or leave a drawer showing a record that no longer belongs to the active worklist. This review loaded the main routes but did not exercise every selected-record removal and keyboard/focus sequence. Keep this as a targeted verification task, not a proven universal dead end.
 - **Required Changes & Guardrails**: Decide whether completed records remain open as read-only history or selection moves to a clearly announced alternative. Never silently retarget a destructive action to the next patient. Cover closure from another view, empty list, filtered-out selection, deep link to a completed record, back navigation and focus restoration.
@@ -2496,16 +2496,16 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 ---
 
-##### `WF-40`: Tie preparation to a current turnover identity
+##### `ISSUE-40`: Tie preparation to a current turnover identity
 
-| Property                | Value                                                             |
-| ----------------------- | ----------------------------------------------------------------- |
-| **Priority**            | **P2**                                                            |
-| **Evidence Status**     | `Reverification required`                                         |
-| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                 |
-| **PDF Page**            | Page 37                                                           |
-| **Related Master IDs**  | `WF-06, WF-07, WF-24, WF-25, WF-36, WF-41, WF-47`                 |
-| **Legacy Aliases**      | `CL:WF-40, HM:WF-40, HE:WF-40, PM:WF-40, PC:WF-03, PC:WF-19, ...` |
+| Property                | Value                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| **Priority**            | **P2**                                                                              |
+| **Evidence Status**     | `Reverification required`                                                           |
+| **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3)                                   |
+| **PDF Page**            | Page 37                                                                             |
+| **Related Master IDs**  | `ISSUE-06, ISSUE-07, ISSUE-24, ISSUE-25, ISSUE-36, ISSUE-41, ISSUE-47`              |
+| **Legacy Aliases**      | `CL:ISSUE-40, HM:ISSUE-40, HE:ISSUE-40, PM:ISSUE-40, PC:ISSUE-03, PC:ISSUE-19, ...` |
 
 - **Current Finding**: Preparation belongs to a specific vacancy cycle, not just a ward and an editable time label. Earlier findings describe stale preparation records affecting a later bed cycle or a bookkeeping edit renewing apparent departure recency. These exact compositions were not replayed fresh in this turn.
 - **Required Changes & Guardrails**: Link preparation to the canonical turnover identity, retain start/update/completion history, and ensure only the active cycle affects offerability. Do not automatically expire a genuine unresolved preparation merely because it is old. Test departure before/after preparation creation, correction of an old record, second turnover on the same resource and delayed feed reconciliation.
@@ -2520,7 +2520,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 #### EVIDENCE CLASS: NOT REPRODUCED NOW (1 FAMILIES)
 
-##### `WF-52`: Stabilise local server/cache verification without disturbing other sessions
+##### `ISSUE-52`: Stabilise local server/cache verification without disturbing other sessions
 
 | Property                | Value                                             |
 | ----------------------- | ------------------------------------------------- |
@@ -2528,8 +2528,8 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 | **Evidence Status**     | `Not reproduced now`                              |
 | **Owner / Work Status** | `Unassigned` / 16 Sept: **Still open** (see §7.3) |
 | **PDF Page**            | Page 44                                           |
-| **Related Master IDs**  | `WF-28, WF-34, WF-35, WF-48`                      |
-| **Legacy Aliases**      | `CL:WF-51, WB:C05`                                |
+| **Related Master IDs**  | `ISSUE-28, ISSUE-34, ISSUE-35, ISSUE-48`          |
+| **Legacy Aliases**      | `CL:ISSUE-51, WB:C05`                             |
 
 - **Current Finding**: The older ordinary-dev-server/cache failure was not reproduced now. The existing ensure-managed port 3605 served all ten planned browser observations: eight desktop route views and two phone views, all HTTP 200, no page errors and no document-level horizontal overflow. This does not prove cold-start reliability, every interaction, full visual parity or recovery from all chunk errors.
 - **Required Changes & Guardrails**: Do not retain “the local app cannot render” as a current blanket blocker. Keep the historical cache/chunk incident as an environment follow-up if it recurs, with server identity, mode, logs and a reproducible case. Do not delete another session’s cache or terminate its server to obtain green output. Cold/warm startup, repeated navigation and deliberate recovery remain separate unrun checks.
@@ -2556,7 +2556,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 > answer, the owner answer wins; read `docs/ward-flow-ledger.md` §B alongside this section for the
 > decision register's own record of what was actually decided.
 
-#### DECISION-01 (WF-05): Vehicle Diversion and Acute Mid-Transit Deterioration Policy
+#### DECISION-01 (ISSUE-05): Vehicle Diversion and Acute Mid-Transit Deterioration Policy
 
 | Aspect                          | Details                                                                                                                                                                                                                                                                                                                                               |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2568,7 +2568,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-02 (WF-16): Ambulatory / Self-Transport / No-Booked-Transport Pathway
+#### DECISION-02 (ISSUE-16): Ambulatory / Self-Transport / No-Booked-Transport Pathway
 
 | Aspect                          | Details                                                                                                                                                                                                                                                          |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2580,7 +2580,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-03 (WF-15 / Issue 79): Non-ED Origin Modeling (Direct Community & Inter-Ward Transfers)
+#### DECISION-03 (ISSUE-15 / Issue 79): Non-ED Origin Modeling (Direct Community & Inter-Ward Transfers)
 
 | Aspect | Details |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
@@ -2592,7 +2592,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-04 (WF-29 / Issue 1): D-14 Default-Deny Coordinator Patient Link Read
+#### DECISION-04 (ISSUE-29 / Issue 1): D-14 Default-Deny Coordinator Patient Link Read
 
 | Aspect                          | Details                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2605,7 +2605,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-05 (WF-30 / Issue 78): Non-Binary & Gender-Diverse Bed Placement (`PT-007`)
+#### DECISION-05 (ISSUE-30 / Issue 78): Non-Binary & Gender-Diverse Bed Placement (`PT-007`)
 
 | Aspect | Details |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -2617,7 +2617,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-06 (WF-31): WA Mental Health Act 2014 Statutory Deadline Enforcement
+#### DECISION-06 (ISSUE-31): WA Mental Health Act 2014 Statutory Deadline Enforcement
 
 | Aspect                          | Details                                                                                                                                                                                                                                                                                                                    |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2629,7 +2629,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-07 (WF-32): Coordinator Queue Ranking: ATS Triage vs ED 4-Hour Rule (WEAT)
+#### DECISION-07 (ISSUE-32): Coordinator Queue Ranking: ATS Triage vs ED 4-Hour Rule (WEAT)
 
 | Aspect                          | Details                                                                                                                                                                                                                         |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2641,7 +2641,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-08 (WF-21): Bed Reservation Expiry Horizon (TTL)
+#### DECISION-08 (ISSUE-21): Bed Reservation Expiry Horizon (TTL)
 
 | Aspect                          | Details                                                                                                                                                                                                                                              |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2653,7 +2653,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-09 (WF-25): Rolling 24-Hour vs Calendar-Day Projections
+#### DECISION-09 (ISSUE-25): Rolling 24-Hour vs Calendar-Day Projections
 
 | Aspect                          | Details                                                                                                                                                                                                               |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2665,7 +2665,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-10 (WF-33 / Issues 76, 77): Durable State Persistence & Optimistic Locking
+#### DECISION-10 (ISSUE-33 / Issues 76, 77): Durable State Persistence & Optimistic Locking
 
 | Aspect                          | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -2678,7 +2678,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-11 (WF-44): Catchment Directory Authority & Cross-Boundary Protocol
+#### DECISION-11 (ISSUE-44): Catchment Directory Authority & Cross-Boundary Protocol
 
 | Aspect                          | Details                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2691,7 +2691,7 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 ---
 
-#### DECISION-12 (WF-46): Clinical Safety Officer (CSO) & DCB0129 / DCB0160 Compliance
+#### DECISION-12 (ISSUE-46): Clinical Safety Officer (CSO) & DCB0129 / DCB0160 Compliance
 
 | Aspect                          | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2708,68 +2708,68 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 All 483 legacy review identifiers from independent audits (CL, HM, HE, PM, PC, WB, B22, E22, PDF:D, P0–P3) are reconciled to the canonical families below (re-verified 6 October 2026 across PRs #1–#78 on `origin/main` at `5861826`):
 
-| Master ID | Priority | Evidence Status              | Canonical Title                                                                | Reconciled Source Aliases                                                                                   |
-| --------- | :------: | ---------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `WF-01`   |    P1    | `Completed & Verified`       | Reconcile examination closure with admission, reservation and transport        | `CL:WF-01, HM:WF-01, HE:WF-01, PM:WF-01, PC:WF-01, B22:WF-06, PDF:WF-01, E22:WF-06, ...`                    |
-| `WF-02`   |    P1    | `Completed & Verified`       | Guard operational actions against surviving commitments after stage correction | `CL:WF-02, HM:WF-02, HE:WF-02, PM:WF-02, WB:C01, PC:WF-02, PC:WF-13, B22:WF-04, ...`                        |
-| `WF-03`   |    P1    | `Completed & Verified`       | Verify remaining high-acuity staffing at allocation                            | `CL:WF-03, HM:WF-03, HE:WF-03, PM:WF-03, PC:WF-04, PDF:WF-04, P0-06, J-01 High-acuity staffing`             |
-| `WF-04`   |    P1    | `Completed & Verified`       | Separate cancellation, replacement booking and handover readiness              | `CL:WF-04, HM:WF-04, HE:WF-04, PM:WF-04, WB:C02, WB:G05, PC:WF-05, B22:WF-07, ...`                          |
-| `WF-05`   |    P1    | `Completed & Verified`       | Define destination change and diversion after reservation or collection        | `CL:WF-05, HM:WF-05, HE:WF-05, PM:WF-05, PC:WF-06, PC:WF-21, PDF:WF-06, PDF:WF-21, ...`                     |
-| `WF-06`   |    P1    | `Completed & Verified`       | Count one physical departure once across admission and bed-release paths       | `CL:WF-06, HM:WF-06, HE:WF-06, PM:WF-06, WB:C03, PC:WF-03, PC:WF-19, B22:WF-01, ...`                        |
-| `WF-07`   |    P1    | `Completed & Verified`       | Validate runtime events and define capacity reconciliation                     | `CL:WF-07, HM:WF-07, HE:WF-07, PM:WF-07, WB:G06, PC:WF-02, PC:WF-04, PC:WF-17, ...`                         |
-| `WF-08`   |    P1    | `Completed & Verified`       | Prevent an old capacity draft overwriting a newer observation                  | `CL:WF-08, HM:WF-08, HE:WF-08, PM:WF-08, PC:WF-17, PDF:WF-17, P1-12`                                        |
-| `WF-09`   |    P1    | `Completed & Verified`       | Preserve patient/referral provenance and intended-episode uniqueness           | `CL:WF-09, HM:WF-09, HE:WF-09, PM:WF-09, WB:G01, WB:G09, PC:WF-11, B22:WF-09, ...`                          |
-| `WF-10`   |    P1    | `Completed & Verified`       | Deliver recipient-scoped notices that survive active-row removal               | `CL:WF-10, HM:WF-10, HE:WF-10, PM:WF-10, PDF:D-01, PDF:D-07, PDF:D-08, P0-03, ...`                          |
-| `WF-11`   |    P2    | `Completed & Verified`       | Make parallel-referral add, replace and withdraw semantics explicit            | `CL:WF-11, HM:WF-11, HE:WF-11, PM:WF-11, PC:WF-09, B22:WF-21, PDF:WF-09, E22:WF-21, ...`                    |
-| `WF-12`   |    P1    | `Completed & Verified`       | Complete community decisions and independent referral purposes                 | `CL:WF-12, HM:WF-12, HE:WF-12, PM:WF-12, WB:G03, PC:WF-07, PC:WF-15, B22:WF-08, ...`                        |
-| `WF-13`   |    P1    | `Completed & Verified`       | Make front-door withdrawal terminal for pending decisions                      | `CL:WF-13, HM:WF-13, HE:WF-13, PM:WF-13, PC:WF-13, PDF:WF-13, J-08 Acceptance after referrer withdrawal`    |
-| `WF-14`   |    P2    | `Completed & Verified`       | Provide truthful all-declined and no-admission exits                           | `CL:WF-14, HM:WF-14, HE:WF-14, PM:WF-14, PC:WF-10, PC:WF-13, B22:WF-13, B22:WF-16, ...`                     |
-| `WF-15`   |    P2    | `Resolved / Deferred (D-30)` | Represent direct community/ward origins and inter-ward transfers               | `CL:WF-15, HM:WF-15, HE:WF-15, PM:WF-15, WB:G01, PC:WF-11, PC:WF-12, B22:WF-09, ...`                        |
-| `WF-16`   |    P1    | `Completed & Verified`       | Complete a no-booked-transport-needed journey                                  | `CL:WF-16, HM:WF-16, HE:WF-16, PM:WF-16, WB:G04, WB:G08, PC:WF-13, PC:WF-14, ...`                           |
-| `WF-17`   |    P2    | `Completed & Verified`       | Allow reassessment and changing clinical decisions                             | `CL:WF-17, HM:WF-17, HE:WF-17, PM:WF-17, PC:WF-21, PDF:WF-21, P0-05, P1-17, ...`                            |
-| `WF-18`   |    P2    | `Completed & Verified`       | Complete discharge dependencies and accountable community follow-up            | `CL:WF-18, HM:WF-18, HE:WF-18, PM:WF-18, WB:G02, WB:D03, WB:D04, PC:WF-15, ...`                             |
-| `WF-19`   |    P2    | `Completed & Verified`       | Connect temporary ED attendance to a named location and responsible service    | `CL:WF-19, HM:WF-19, HE:WF-19, PM:WF-19, WB:D04, PC:WF-21, PDF:WF-21, P2-13, ...`                           |
-| `WF-20`   |    P2    | `Completed & Verified`       | Link leave-bed handling to an admission and leave episode                      | `CL:WF-20, HM:WF-20, HE:WF-20, PM:WF-20, PC:WF-21, PDF:WF-21, P1-15, J-G05 Leave/non-return / temporary ED` |
-| `WF-21`   |    P2    | `Completed & Verified`       | Agree reservation expiry and handover snapshot semantics                       | `CL:WF-21, HM:WF-21, HE:WF-21, PM:WF-21, P1-14, P2-05`                                                      |
-| `WF-22`   |    P2    | `Completed & Verified`       | Render or clear a closed coordinator selection coherently                      | `CL:WF-22, HM:WF-22, HE:WF-22, PM:WF-22, PDF:D-07, P1-10`                                                   |
-| `WF-23`   |    P2    | `Completed & Verified`       | Avoid accepted cases appearing as declined by all                              | `CL:WF-23, HM:WF-23, HE:WF-23, PM:WF-23, P1-16`                                                             |
-| `WF-24`   |    P1    | `Completed & Verified`       | Preserve the intended date in time-only inputs                                 | `CL:WF-24, HM:WF-24, HE:WF-24, PM:WF-24, PC:WF-16, B22:WF-20, PDF:WF-16, E22:WF-20, ...`                    |
-| `WF-25`   |    P2    | `Completed & Verified`       | Separate occurrence, recording, update and verification times                  | `CL:WF-25, HM:WF-25, HE:WF-25, PM:WF-25, PC:WF-16, B22:WF-20, PDF:WF-16, PDF:D-11, ...`                     |
-| `WF-26`   |    P2    | `Completed & Verified`       | Verify physical consistency of the scarce scenario                             | `CL:WF-26, HM:WF-26, HE:WF-26, PM:WF-26, P0-08`                                                             |
-| `WF-27`   |    P2    | `Completed & Verified`       | Verify the replacement Capacity and Delays controls                            | `CL:WF-27, HM:WF-27, HE:WF-27, PM:WF-27, PDF:D-07, P0-11`                                                   |
-| `WF-28`   |    P2    | `Completed & Verified`       | Resolve the Morning route’s frozen-versus-live contract                        | `CL:WF-28, HM:WF-28, HE:WF-28, PM:WF-28, P1-21`                                                             |
-| `WF-29`   |   Gate   | `Parked Outside Gate`        | Establish privacy and genuine service-scoped authority                         | `CL:WF-29, HM:WF-29, HE:WF-29, PM:WF-29, WB:C04, PC:WF-12, PC:WF-22, B22:WF-15, ...`                        |
-| `WF-30`   |   Gate   | `Resolved / Deferred (D-31)` | Govern sensitive demographic display and decision use                          | `CL:WF-30, HM:WF-30, HE:WF-30, PM:WF-30, WB:G09, P3-06`                                                     |
-| `WF-31`   |   Gate   | `Parked Outside Gate`        | Validate legal forms, authority and deadline provenance                        | `CL:WF-31, HM:WF-31, HE:WF-31, PM:WF-31, WB:G08, P0-05, P0-07, P0-12, ...`                                  |
-| `WF-32`   |   Gate   | `Resolved / Deferred (D-32)` | Agree ranking, urgency and waiting-time policy                                 | `CL:WF-32, HM:WF-32, HE:WF-32, PM:WF-32, WB:G07, PDF:D-02, P0-13, P1-20, ...`                               |
-| `WF-33`   |   Gate   | `Parked Outside Gate`        | Provide authoritative persistence, concurrency and recovery                    | `CL:WF-33, HM:WF-33, HE:WF-33, PM:WF-33, WB:D05, PC:WF-12, PC:WF-22, B22:WF-22, ...`                        |
-| `WF-34`   |    P1    | `Completed & Verified`       | Make tests discriminate real workflow failures and current route behaviour     | `CL:WF-34, HM:WF-34, HE:WF-34, PM:WF-34, WB:C04, WB:D01, PC:WF-23, PDF:WF-23, ...`                          |
-| `WF-35`   |    P2    | `Completed & Verified`       | Align architecture notes and remediation guidance with current code            | `CL:WF-35, HM:WF-35, HE:WF-35, PM:WF-35, WB:D02`                                                            |
-| `WF-36`   |    P1    | `Completed & Verified`       | Require an actually ready resource of the appropriate kind                     | `CL:WF-36, HM:WF-36, HE:WF-36, PM:WF-36, PC:WF-04, B22:WF-02, B22:WF-03, PDF:WF-04, ...`                    |
-| `WF-37`   |    P1    | `Completed & Verified`       | Reconcile the booked job when releasing its reservation                        | `CL:WF-37, HM:WF-37, HE:WF-37, PM:WF-37, PC:WF-06, B22:WF-07, PDF:WF-06, E22:WF-07`                         |
-| `WF-38`   |    P2    | `Completed & Verified`       | Retain the reasons for actually applied acceptance/pull overrides              | `CL:WF-38, HM:WF-38, HE:WF-38, PM:WF-38, PC:WF-08, B22:WF-12, PDF:WF-08, PDF:D-08, ...`                     |
-| `WF-39`   |    P2    | `Completed & Verified`       | Treat valid zero timestamps as present                                         | `CL:WF-39, HM:WF-39, HE:WF-39, PM:WF-39, PC:WF-18, B22:WF-18, PDF:WF-18, E22:WF-18`                         |
-| `WF-40`   |    P2    | `Completed & Verified`       | Tie preparation to a current turnover identity                                 | `CL:WF-40, HM:WF-40, HE:WF-40, PM:WF-40, PC:WF-03, PC:WF-19, PDF:WF-03, PDF:WF-19, ...`                     |
-| `WF-41`   |    P2    | `Resolved / Deferred (D-33)` | Decide which local ward entries become shared operational facts                | `CL:WF-41, HM:WF-41, HE:WF-41, PM:WF-41, WB:G06, PC:WF-20, PDF:WF-20, PDF:D-07`                             |
-| `WF-42`   |    P1    | `Completed & Verified`       | Separate transport arrival from receipt and responsibility                     | `CL:WF-42, HM:WF-42, HE:WF-42, PM:WF-42, PC:WF-14, PC:WF-15, PDF:WF-14, PDF:WF-15`                          |
-| `WF-43`   |    P1    | `Resolved / Deferred (D-34)` | Provide change-sensitive readiness and owned exception recovery                | `CL:WF-43, HM:WF-43, HE:WF-43, PM:WF-43, WB:G08, PC:WF-10, PC:WF-21, PDF:WF-10, ...`                        |
-| `WF-44`   |   Gate   | `Parked Outside Gate`        | Maintain a verified service and catchment directory                            | `CL:WF-44, HM:WF-44, HE:WF-44, PM:WF-44, PDF:D-03`                                                          |
-| `WF-45`   |  Later   | `Resolved / Deferred (D-35)` | Scope regional multi-leg transport and repatriation                            | `CL:WF-45, HM:WF-45, HE:WF-45, PM:WF-45, PDF:D-06`                                                          |
-| `WF-46`   |   Gate   | `Parked Outside Gate`        | Establish clinical safety ownership and controlled pilot governance            | `CL:WF-46, HM:WF-46, HE:WF-46, PM:WF-46, WB:D05, PC:WF-22, PDF:WF-22, PDF:D-09`                             |
-| `WF-47`   |  Later   | `Completed & Verified`       | Define truthful flow analytics and measure benefit                             | `CL:WF-47, HM:WF-47, HE:WF-47, PM:WF-47, WB:D03, PDF:D-11`                                                  |
-| `WF-48`   |    P2    | `Completed & Verified`       | Maintain a capability register and staged enhancement backlog                  | `CL:WF-48, HM:WF-48, HE:WF-48, PM:WF-48, WB:D02, PDF:D-12`                                                  |
-| `WF-49`   |    P2    | `Completed & Verified`       | Do not rewrite historical Activity facts from current mutable state            | `HM:WF-49, WB:G07`                                                                                          |
-| `WF-50`   |    P2    | `Completed & Verified`       | Give community screens a truthful role and task context                        | `CL:WF-49, WB:G03`                                                                                          |
-| `WF-51`   |    P2    | `Completed & Verified`       | Remove the unproved placement guarantee from aggregate capacity copy           | `CL:WF-50, D-29, tests/ward-capacity-zero-gap-copy.test.ts`                                                 |
-| `WF-52`   |    P2    | `Completed & Verified`       | Stabilise local server/cache verification without disturbing other sessions    | `CL:WF-51, WB:C05`                                                                                          |
-| `WF-53`   |   Gate   | `Parked Outside Gate`        | Aboriginal cultural safety review (item 63)                                    | `R-2026-09-04-I, WLQ-9, Ruling 15, item 63, D-36`                                                           |
-| `WF-54`   |   Gate   | `Parked Outside Gate`        | Medical device (TGA / SaMD) classification status (item 63)                    | `WLQ-8, item 63, D-36`                                                                                      |
-| `WF-55`   |   Gate   | `Parked Outside Gate`        | External privacy review (item 63)                                              | `item 63, D-36`                                                                                             |
-| `WF-56`   |   Gate   | `Parked Outside Gate`        | WA legal advice on forms and statutory time limits (item 63)                   | `item 1, item 63, D-36`                                                                                     |
-| `WF-57`   |   Gate   | `Parked Outside Gate`        | Post-incident review scope (item 63)                                           | `R-B-17, item 63, D-36`                                                                                     |
-| `WF-58`   |  Later   | `Completed & Verified`       | Deferred 17 Sept items resolved or tracked across estate PRs                   | `Round-two housekeeping, items 1-7`                                                                         |
-| `WF-59`   |    P2    | `Completed & Verified`       | Patient record 7-stage journey stepper & timeline (PR #69)                     | `PR #69, patient-now-screen.tsx, usePatientNow`                                                             |
-| `WF-60`   |  Later   | `Completed & Verified`       | Guided ten-minute demo script for WA Health demonstrations                     | `docs/ward-flow/DEMO-SCRIPT.md, PR #49, #50, #54, §7.76`                                                    |
+| Master ID  | Priority | Evidence Status              | Canonical Title                                                                | Reconciled Source Aliases                                                                                                     |
+| ---------- | :------: | ---------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `ISSUE-01` |    P1    | `Completed & Verified`       | Reconcile examination closure with admission, reservation and transport        | `CL:ISSUE-01, HM:ISSUE-01, HE:ISSUE-01, PM:ISSUE-01, PC:ISSUE-01, B22:ISSUE-06, PDF:ISSUE-01, E22:ISSUE-06, ...`              |
+| `ISSUE-02` |    P1    | `Completed & Verified`       | Guard operational actions against surviving commitments after stage correction | `CL:ISSUE-02, HM:ISSUE-02, HE:ISSUE-02, PM:ISSUE-02, WB:C01, PC:ISSUE-02, PC:ISSUE-13, B22:ISSUE-04, ...`                     |
+| `ISSUE-03` |    P1    | `Completed & Verified`       | Verify remaining high-acuity staffing at allocation                            | `CL:ISSUE-03, HM:ISSUE-03, HE:ISSUE-03, PM:ISSUE-03, PC:ISSUE-04, PDF:ISSUE-04, P0-06, J-01 High-acuity staffing`             |
+| `ISSUE-04` |    P1    | `Completed & Verified`       | Separate cancellation, replacement booking and handover readiness              | `CL:ISSUE-04, HM:ISSUE-04, HE:ISSUE-04, PM:ISSUE-04, WB:C02, WB:G05, PC:ISSUE-05, B22:ISSUE-07, ...`                          |
+| `ISSUE-05` |    P1    | `Completed & Verified`       | Define destination change and diversion after reservation or collection        | `CL:ISSUE-05, HM:ISSUE-05, HE:ISSUE-05, PM:ISSUE-05, PC:ISSUE-06, PC:ISSUE-21, PDF:ISSUE-06, PDF:ISSUE-21, ...`               |
+| `ISSUE-06` |    P1    | `Completed & Verified`       | Count one physical departure once across admission and bed-release paths       | `CL:ISSUE-06, HM:ISSUE-06, HE:ISSUE-06, PM:ISSUE-06, WB:C03, PC:ISSUE-03, PC:ISSUE-19, B22:ISSUE-01, ...`                     |
+| `ISSUE-07` |    P1    | `Completed & Verified`       | Validate runtime events and define capacity reconciliation                     | `CL:ISSUE-07, HM:ISSUE-07, HE:ISSUE-07, PM:ISSUE-07, WB:G06, PC:ISSUE-02, PC:ISSUE-04, PC:ISSUE-17, ...`                      |
+| `ISSUE-08` |    P1    | `Completed & Verified`       | Prevent an old capacity draft overwriting a newer observation                  | `CL:ISSUE-08, HM:ISSUE-08, HE:ISSUE-08, PM:ISSUE-08, PC:ISSUE-17, PDF:ISSUE-17, P1-12`                                        |
+| `ISSUE-09` |    P1    | `Completed & Verified`       | Preserve patient/referral provenance and intended-episode uniqueness           | `CL:ISSUE-09, HM:ISSUE-09, HE:ISSUE-09, PM:ISSUE-09, WB:G01, WB:G09, PC:ISSUE-11, B22:ISSUE-09, ...`                          |
+| `ISSUE-10` |    P1    | `Completed & Verified`       | Deliver recipient-scoped notices that survive active-row removal               | `CL:ISSUE-10, HM:ISSUE-10, HE:ISSUE-10, PM:ISSUE-10, PDF:D-01, PDF:D-07, PDF:D-08, P0-03, ...`                                |
+| `ISSUE-11` |    P2    | `Completed & Verified`       | Make parallel-referral add, replace and withdraw semantics explicit            | `CL:ISSUE-11, HM:ISSUE-11, HE:ISSUE-11, PM:ISSUE-11, PC:ISSUE-09, B22:ISSUE-21, PDF:ISSUE-09, E22:ISSUE-21, ...`              |
+| `ISSUE-12` |    P1    | `Completed & Verified`       | Complete community decisions and independent referral purposes                 | `CL:ISSUE-12, HM:ISSUE-12, HE:ISSUE-12, PM:ISSUE-12, WB:G03, PC:ISSUE-07, PC:ISSUE-15, B22:ISSUE-08, ...`                     |
+| `ISSUE-13` |    P1    | `Completed & Verified`       | Make front-door withdrawal terminal for pending decisions                      | `CL:ISSUE-13, HM:ISSUE-13, HE:ISSUE-13, PM:ISSUE-13, PC:ISSUE-13, PDF:ISSUE-13, J-08 Acceptance after referrer withdrawal`    |
+| `ISSUE-14` |    P2    | `Completed & Verified`       | Provide truthful all-declined and no-admission exits                           | `CL:ISSUE-14, HM:ISSUE-14, HE:ISSUE-14, PM:ISSUE-14, PC:ISSUE-10, PC:ISSUE-13, B22:ISSUE-13, B22:ISSUE-16, ...`               |
+| `ISSUE-15` |    P2    | `Resolved / Deferred (D-30)` | Represent direct community/ward origins and inter-ward transfers               | `CL:ISSUE-15, HM:ISSUE-15, HE:ISSUE-15, PM:ISSUE-15, WB:G01, PC:ISSUE-11, PC:ISSUE-12, B22:ISSUE-09, ...`                     |
+| `ISSUE-16` |    P1    | `Completed & Verified`       | Complete a no-booked-transport-needed journey                                  | `CL:ISSUE-16, HM:ISSUE-16, HE:ISSUE-16, PM:ISSUE-16, WB:G04, WB:G08, PC:ISSUE-13, PC:ISSUE-14, ...`                           |
+| `ISSUE-17` |    P2    | `Completed & Verified`       | Allow reassessment and changing clinical decisions                             | `CL:ISSUE-17, HM:ISSUE-17, HE:ISSUE-17, PM:ISSUE-17, PC:ISSUE-21, PDF:ISSUE-21, P0-05, P1-17, ...`                            |
+| `ISSUE-18` |    P2    | `Completed & Verified`       | Complete discharge dependencies and accountable community follow-up            | `CL:ISSUE-18, HM:ISSUE-18, HE:ISSUE-18, PM:ISSUE-18, WB:G02, WB:D03, WB:D04, PC:ISSUE-15, ...`                                |
+| `ISSUE-19` |    P2    | `Completed & Verified`       | Connect temporary ED attendance to a named location and responsible service    | `CL:ISSUE-19, HM:ISSUE-19, HE:ISSUE-19, PM:ISSUE-19, WB:D04, PC:ISSUE-21, PDF:ISSUE-21, P2-13, ...`                           |
+| `ISSUE-20` |    P2    | `Completed & Verified`       | Link leave-bed handling to an admission and leave episode                      | `CL:ISSUE-20, HM:ISSUE-20, HE:ISSUE-20, PM:ISSUE-20, PC:ISSUE-21, PDF:ISSUE-21, P1-15, J-G05 Leave/non-return / temporary ED` |
+| `ISSUE-21` |    P2    | `Completed & Verified`       | Agree reservation expiry and handover snapshot semantics                       | `CL:ISSUE-21, HM:ISSUE-21, HE:ISSUE-21, PM:ISSUE-21, P1-14, P2-05`                                                            |
+| `ISSUE-22` |    P2    | `Completed & Verified`       | Render or clear a closed coordinator selection coherently                      | `CL:ISSUE-22, HM:ISSUE-22, HE:ISSUE-22, PM:ISSUE-22, PDF:D-07, P1-10`                                                         |
+| `ISSUE-23` |    P2    | `Completed & Verified`       | Avoid accepted cases appearing as declined by all                              | `CL:ISSUE-23, HM:ISSUE-23, HE:ISSUE-23, PM:ISSUE-23, P1-16`                                                                   |
+| `ISSUE-24` |    P1    | `Completed & Verified`       | Preserve the intended date in time-only inputs                                 | `CL:ISSUE-24, HM:ISSUE-24, HE:ISSUE-24, PM:ISSUE-24, PC:ISSUE-16, B22:ISSUE-20, PDF:ISSUE-16, E22:ISSUE-20, ...`              |
+| `ISSUE-25` |    P2    | `Completed & Verified`       | Separate occurrence, recording, update and verification times                  | `CL:ISSUE-25, HM:ISSUE-25, HE:ISSUE-25, PM:ISSUE-25, PC:ISSUE-16, B22:ISSUE-20, PDF:ISSUE-16, PDF:D-11, ...`                  |
+| `ISSUE-26` |    P2    | `Completed & Verified`       | Verify physical consistency of the scarce scenario                             | `CL:ISSUE-26, HM:ISSUE-26, HE:ISSUE-26, PM:ISSUE-26, P0-08`                                                                   |
+| `ISSUE-27` |    P2    | `Completed & Verified`       | Verify the replacement Capacity and Delays controls                            | `CL:ISSUE-27, HM:ISSUE-27, HE:ISSUE-27, PM:ISSUE-27, PDF:D-07, P0-11`                                                         |
+| `ISSUE-28` |    P2    | `Completed & Verified`       | Resolve the Morning route’s frozen-versus-live contract                        | `CL:ISSUE-28, HM:ISSUE-28, HE:ISSUE-28, PM:ISSUE-28, P1-21`                                                                   |
+| `ISSUE-29` |   Gate   | `Parked Outside Gate`        | Establish privacy and genuine service-scoped authority                         | `CL:ISSUE-29, HM:ISSUE-29, HE:ISSUE-29, PM:ISSUE-29, WB:C04, PC:ISSUE-12, PC:ISSUE-22, B22:ISSUE-15, ...`                     |
+| `ISSUE-30` |   Gate   | `Resolved / Deferred (D-31)` | Govern sensitive demographic display and decision use                          | `CL:ISSUE-30, HM:ISSUE-30, HE:ISSUE-30, PM:ISSUE-30, WB:G09, P3-06`                                                           |
+| `ISSUE-31` |   Gate   | `Parked Outside Gate`        | Validate legal forms, authority and deadline provenance                        | `CL:ISSUE-31, HM:ISSUE-31, HE:ISSUE-31, PM:ISSUE-31, WB:G08, P0-05, P0-07, P0-12, ...`                                        |
+| `ISSUE-32` |   Gate   | `Resolved / Deferred (D-32)` | Agree ranking, urgency and waiting-time policy                                 | `CL:ISSUE-32, HM:ISSUE-32, HE:ISSUE-32, PM:ISSUE-32, WB:G07, PDF:D-02, P0-13, P1-20, ...`                                     |
+| `ISSUE-33` |   Gate   | `Parked Outside Gate`        | Provide authoritative persistence, concurrency and recovery                    | `CL:ISSUE-33, HM:ISSUE-33, HE:ISSUE-33, PM:ISSUE-33, WB:D05, PC:ISSUE-12, PC:ISSUE-22, B22:ISSUE-22, ...`                     |
+| `ISSUE-34` |    P1    | `Completed & Verified`       | Make tests discriminate real workflow failures and current route behaviour     | `CL:ISSUE-34, HM:ISSUE-34, HE:ISSUE-34, PM:ISSUE-34, WB:C04, WB:D01, PC:ISSUE-23, PDF:ISSUE-23, ...`                          |
+| `ISSUE-35` |    P2    | `Completed & Verified`       | Align architecture notes and remediation guidance with current code            | `CL:ISSUE-35, HM:ISSUE-35, HE:ISSUE-35, PM:ISSUE-35, WB:D02`                                                                  |
+| `ISSUE-36` |    P1    | `Completed & Verified`       | Require an actually ready resource of the appropriate kind                     | `CL:ISSUE-36, HM:ISSUE-36, HE:ISSUE-36, PM:ISSUE-36, PC:ISSUE-04, B22:ISSUE-02, B22:ISSUE-03, PDF:ISSUE-04, ...`              |
+| `ISSUE-37` |    P1    | `Completed & Verified`       | Reconcile the booked job when releasing its reservation                        | `CL:ISSUE-37, HM:ISSUE-37, HE:ISSUE-37, PM:ISSUE-37, PC:ISSUE-06, B22:ISSUE-07, PDF:ISSUE-06, E22:ISSUE-07`                   |
+| `ISSUE-38` |    P2    | `Completed & Verified`       | Retain the reasons for actually applied acceptance/pull overrides              | `CL:ISSUE-38, HM:ISSUE-38, HE:ISSUE-38, PM:ISSUE-38, PC:ISSUE-08, B22:ISSUE-12, PDF:ISSUE-08, PDF:D-08, ...`                  |
+| `ISSUE-39` |    P2    | `Completed & Verified`       | Treat valid zero timestamps as present                                         | `CL:ISSUE-39, HM:ISSUE-39, HE:ISSUE-39, PM:ISSUE-39, PC:ISSUE-18, B22:ISSUE-18, PDF:ISSUE-18, E22:ISSUE-18`                   |
+| `ISSUE-40` |    P2    | `Completed & Verified`       | Tie preparation to a current turnover identity                                 | `CL:ISSUE-40, HM:ISSUE-40, HE:ISSUE-40, PM:ISSUE-40, PC:ISSUE-03, PC:ISSUE-19, PDF:ISSUE-03, PDF:ISSUE-19, ...`               |
+| `ISSUE-41` |    P2    | `Resolved / Deferred (D-33)` | Decide which local ward entries become shared operational facts                | `CL:ISSUE-41, HM:ISSUE-41, HE:ISSUE-41, PM:ISSUE-41, WB:G06, PC:ISSUE-20, PDF:ISSUE-20, PDF:D-07`                             |
+| `ISSUE-42` |    P1    | `Completed & Verified`       | Separate transport arrival from receipt and responsibility                     | `CL:ISSUE-42, HM:ISSUE-42, HE:ISSUE-42, PM:ISSUE-42, PC:ISSUE-14, PC:ISSUE-15, PDF:ISSUE-14, PDF:ISSUE-15`                    |
+| `ISSUE-43` |    P1    | `Resolved / Deferred (D-34)` | Provide change-sensitive readiness and owned exception recovery                | `CL:ISSUE-43, HM:ISSUE-43, HE:ISSUE-43, PM:ISSUE-43, WB:G08, PC:ISSUE-10, PC:ISSUE-21, PDF:ISSUE-10, ...`                     |
+| `ISSUE-44` |   Gate   | `Parked Outside Gate`        | Maintain a verified service and catchment directory                            | `CL:ISSUE-44, HM:ISSUE-44, HE:ISSUE-44, PM:ISSUE-44, PDF:D-03`                                                                |
+| `ISSUE-45` |  Later   | `Resolved / Deferred (D-35)` | Scope regional multi-leg transport and repatriation                            | `CL:ISSUE-45, HM:ISSUE-45, HE:ISSUE-45, PM:ISSUE-45, PDF:D-06`                                                                |
+| `ISSUE-46` |   Gate   | `Parked Outside Gate`        | Establish clinical safety ownership and controlled pilot governance            | `CL:ISSUE-46, HM:ISSUE-46, HE:ISSUE-46, PM:ISSUE-46, WB:D05, PC:ISSUE-22, PDF:ISSUE-22, PDF:D-09`                             |
+| `ISSUE-47` |  Later   | `Completed & Verified`       | Define truthful flow analytics and measure benefit                             | `CL:ISSUE-47, HM:ISSUE-47, HE:ISSUE-47, PM:ISSUE-47, WB:D03, PDF:D-11`                                                        |
+| `ISSUE-48` |    P2    | `Completed & Verified`       | Maintain a capability register and staged enhancement backlog                  | `CL:ISSUE-48, HM:ISSUE-48, HE:ISSUE-48, PM:ISSUE-48, WB:D02, PDF:D-12`                                                        |
+| `ISSUE-49` |    P2    | `Completed & Verified`       | Do not rewrite historical Activity facts from current mutable state            | `HM:ISSUE-49, WB:G07`                                                                                                         |
+| `ISSUE-50` |    P2    | `Completed & Verified`       | Give community screens a truthful role and task context                        | `CL:ISSUE-49, WB:G03`                                                                                                         |
+| `ISSUE-51` |    P2    | `Completed & Verified`       | Remove the unproved placement guarantee from aggregate capacity copy           | `CL:ISSUE-50, D-29, tests/ward-capacity-zero-gap-copy.test.ts`                                                                |
+| `ISSUE-52` |    P2    | `Completed & Verified`       | Stabilise local server/cache verification without disturbing other sessions    | `CL:ISSUE-51, WB:C05`                                                                                                         |
+| `ISSUE-53` |   Gate   | `Parked Outside Gate`        | Aboriginal cultural safety review (item 63)                                    | `R-2026-09-04-I, WLQ-9, Ruling 15, item 63, D-36`                                                                             |
+| `ISSUE-54` |   Gate   | `Parked Outside Gate`        | Medical device (TGA / SaMD) classification status (item 63)                    | `WLQ-8, item 63, D-36`                                                                                                        |
+| `ISSUE-55` |   Gate   | `Parked Outside Gate`        | External privacy review (item 63)                                              | `item 63, D-36`                                                                                                               |
+| `ISSUE-56` |   Gate   | `Parked Outside Gate`        | WA legal advice on forms and statutory time limits (item 63)                   | `item 1, item 63, D-36`                                                                                                       |
+| `ISSUE-57` |   Gate   | `Parked Outside Gate`        | Post-incident review scope (item 63)                                           | `R-B-17, item 63, D-36`                                                                                                       |
+| `ISSUE-58` |  Later   | `Completed & Verified`       | Deferred 17 Sept items resolved or tracked across estate PRs                   | `Round-two housekeeping, items 1-7`                                                                                           |
+| `ISSUE-59` |    P2    | `Completed & Verified`       | Patient record 7-stage journey stepper & timeline (PR #69)                     | `PR #69, patient-now-screen.tsx, usePatientNow`                                                                               |
+| `ISSUE-60` |  Later   | `Completed & Verified`       | Guided ten-minute demo script for WA Health demonstrations                     | `docs/ward-flow/DEMO-SCRIPT.md, PR #49, #50, #54, §7.76`                                                                      |
 
 ---
 
@@ -2783,36 +2783,36 @@ All 28 request JSON files have been relocated to `docs/outstanding-issues-inbox/
 
 ### 5.1 INBOX MIGRATION AUDIT LEDGER
 
-| #   | Request UUID                           | Action | Pri |   Target   | Summary / Subject                                                       | Reconciled Master Issue | Applied Audit Path        |
-| --- | -------------------------------------- | :----: | :-: | :--------: | ----------------------------------------------------------------------- | ----------------------- | ------------------------- |
-| 1   | `017b63bd-be6d-44fa-9e4b-d7b0a17375f4` |  ADD   | P1  |     -      | MHA authorisation is an overridable gate in mockup and engine           | `ISSUE-P1-63` (`WF-31`) | `applied/017b63bd...json` |
-| 2   | `01fb8e5a-e992-4a71-9941-bd45bd0fe418` |  ADD   | P1  |     -      | Command prototype & reducer disagree on prior decline finality          | `ISSUE-P1-64` (`WF-11`) | `applied/01fb8e5a...json` |
-| 3   | `03f090b7-60ef-4824-b4fc-b82c676c37da` |  ADD   | P2  |     -      | Ward mockups suite: 15 assertion failures (Draft 1)                     | `ISSUE-P2-65` (`WF-34`) | `applied/03f090b7...json` |
-| 4   | `07fe22b0-2203-41be-a4aa-d53c93779874` |  ADD   | P2  |     -      | Four screens have no drawing anyone can open                            | `ISSUE-P2-66` (`WF-35`) | `applied/07fe22b0...json` |
-| 5   | `11f4c62b-b7a4-4f67-92c5-dc0b7fac1869` |  ADD   | P3  |     -      | Provenance guards: residual holes in statistics helper                  | `ISSUE-P3-67` (`WF-09`) | `applied/11f4c62b...json` |
-| 6   | `17d836f9-b3f0-4465-859d-f768162c1995` | CANCEL |  -  | `ea9138f6` | Cancel community-team statistics page request (already built)           | `ISSUE-P2-78` (`WF-50`) | `applied/17d836f9...json` |
-| 7   | `297e9dcf-26ef-48b7-94fc-f50158fac22d` |  ADD   | P2  |     -      | Ward mockups suite: 15 failures; 641px column overflow (Authoritative)  | `ISSUE-P2-68` (`WF-34`) | `applied/297e9dcf...json` |
-| 8   | `43847026-36f7-422a-8185-c14d5a7b252b` |  ADD   | P2  |     -      | Ward Flow suite runs in NEITHER verify:ui project                       | `ISSUE-P2-69` (`WF-34`) | `applied/43847026...json` |
-| 9   | `463c6f11-b408-424e-b642-d2b7ce8def86` |  ADD   | P2  |     -      | Ten absence sentences never rendered by any instrument                  | `ISSUE-P2-70` (`WF-47`) | `applied/463c6f11...json` |
-| 10  | `4caf5df3-ee9c-4d2e-a9ba-b828792ef9a5` | CANCEL |  -  | `c8a3914a` | Cancel 641px column overflow measurement (superseded by `297e9dcf`)     | `ISSUE-P2-76` (`WF-34`) | `applied/4caf5df3...json` |
-| 11  | `4d821d93-1bd6-4095-a41d-96c17be490bf` |  ADD   | P2  |     -      | Invented-figures guard accepts sentence denying own disclosure          | `ISSUE-P2-71` (`WF-09`) | `applied/4d821d93...json` |
-| 12  | `60375367-49c7-4eaa-ab54-c7502fb63044` | CANCEL |  -  | `7235af08` | Cancel mockups suite draft 2 (superseded by `297e9dcf`)                 | `ISSUE-P2-73` (`WF-34`) | `applied/60375367...json` |
-| 13  | `65dc4224-d20c-4e71-8899-d9e5e7fa5b1d` |  DONE  |  -  | `#Q6WD1M`  | Close judgement gate refusal proof with `ward-pull-judgement-gate.test` | `ISSUE-P1-80` (`WF-34`) | `applied/65dc4224...json` |
-| 14  | `66de38d8-436a-4d80-874e-6590c5947652` |  ADD   | P2  |     -      | Standard says 23 wards across 17 sites, reference has 16 across 9       | `ISSUE-P2-72` (`WF-44`) | `applied/66de38d8...json` |
-| 15  | `69c170cf-6f0f-485a-bf52-f8385e9095b1` | UPDATE |  -  | `#BAY1TY`  | Re-measure sex vs gender in movement intake in code                     | `ISSUE-P2-81` (`WF-30`) | `applied/69c170cf...json` |
-| 16  | `7235af08-d774-4657-9e90-1a57072a3c0e` |  ADD   | P2  |     -      | Ward mockups suite: 15 assertion failures (Draft 2)                     | `ISSUE-P2-73` (`WF-34`) | `applied/7235af08...json` |
-| 17  | `858ff1bd-b74f-480a-9660-099cbefc4f0c` |  ADD   | P2  |     -      | Link Movements and Delays in both directions — per-row route            | `ISSUE-P2-74` (`WF-19`) | `applied/858ff1bd...json` |
-| 18  | `9e8c841b-73e0-4bce-b27d-be3b15cf72fe` | UPDATE |  -  | `#6DT5K7`  | Reconcile 'it suggests nothing' reversal status against rulings         | `ISSUE-P2-82` (`WF-35`) | `applied/9e8c841b...json` |
-| 19  | `9ec65f78-bf59-4518-a744-4fd046cd9728` | CANCEL |  -  | `03f090b7` | Cancel mockups suite draft 1 (superseded by `297e9dcf`)                 | `ISSUE-P2-65` (`WF-34`) | `applied/9ec65f78...json` |
-| 20  | `a38f282d-3416-4b37-aff6-edfc7ba5cd31` | CANCEL |  -  | `c8a3914a` | Cancel false causal claim in 641px overflow request                     | `ISSUE-P2-76` (`WF-34`) | `applied/a38f282d...json` |
-| 21  | `af1cc99d-4847-4298-ae62-d6b640a5761f` |  ADD   | P3  |     -      | ED hub has two rival drawings and no written spec                       | `ISSUE-P3-75` (`WF-35`) | `applied/af1cc99d...json` |
-| 22  | `bdf5f079-d1bc-4ff0-b240-a1936f4b1182` | CANCEL |  -  | `c8a3914a` | Cancel mockups suite draft 3 (superseded by `297e9dcf`)                 | `ISSUE-P2-76` (`WF-34`) | `applied/bdf5f079...json` |
-| 23  | `c04f2d2e-3363-4d7b-9d6d-91c39a2fd37f` | UPDATE |  -  | `#Q6WD1M`  | Update on eligibilityRefusal proof requirement                          | `ISSUE-P1-80` (`WF-34`) | `applied/c04f2d2e...json` |
-| 24  | `c8a3914a-eb0c-4b47-9e0a-a31645a8f700` |  ADD   | P2  |     -      | Ward mockups suite: 15 assertion failures (Draft 3)                     | `ISSUE-P2-76` (`WF-34`) | `applied/c8a3914a...json` |
-| 25  | `e957c538-6fdb-433c-af15-e4867e0418d9` |  ADD   | P2  |     -      | Mockup placement gates and engine have drifted (10 vs 13)               | `ISSUE-P2-77` (`WF-07`) | `applied/e957c538...json` |
-| 26  | `ea9138f6-c977-46a4-ba7e-4bbcd46b0364` |  ADD   | P2  |     -      | Community-team statistics page drawn but never built                    | `ISSUE-P2-78` (`WF-50`) | `applied/ea9138f6...json` |
-| 27  | `eeea3b50-ad11-46c8-83da-11e12135ffc4` | UPDATE |  -  | `#Q6WD1M`  | Closed-pending-reconcile with `tests/ward-pull-judgement-gate.test.ts`  | `ISSUE-P1-80` (`WF-34`) | `applied/eeea3b50...json` |
-| 28  | `f7d773dc-b6eb-4c63-9799-e63eed616b3e` |  ADD   | P2  |     -      | Chrome header: `ui-ward-chrome-header.spec.ts` covers 3 of 8 faults     | `ISSUE-P2-79` (`WF-34`) | `applied/f7d773dc...json` |
+| #   | Request UUID                           | Action | Pri |   Target   | Summary / Subject                                                       | Reconciled Master Issue    | Applied Audit Path        |
+| --- | -------------------------------------- | :----: | :-: | :--------: | ----------------------------------------------------------------------- | -------------------------- | ------------------------- |
+| 1   | `017b63bd-be6d-44fa-9e4b-d7b0a17375f4` |  ADD   | P1  |     -      | MHA authorisation is an overridable gate in mockup and engine           | `ISSUE-P1-63` (`ISSUE-31`) | `applied/017b63bd...json` |
+| 2   | `01fb8e5a-e992-4a71-9941-bd45bd0fe418` |  ADD   | P1  |     -      | Command prototype & reducer disagree on prior decline finality          | `ISSUE-P1-64` (`ISSUE-11`) | `applied/01fb8e5a...json` |
+| 3   | `03f090b7-60ef-4824-b4fc-b82c676c37da` |  ADD   | P2  |     -      | Ward mockups suite: 15 assertion failures (Draft 1)                     | `ISSUE-P2-65` (`ISSUE-34`) | `applied/03f090b7...json` |
+| 4   | `07fe22b0-2203-41be-a4aa-d53c93779874` |  ADD   | P2  |     -      | Four screens have no drawing anyone can open                            | `ISSUE-P2-66` (`ISSUE-35`) | `applied/07fe22b0...json` |
+| 5   | `11f4c62b-b7a4-4f67-92c5-dc0b7fac1869` |  ADD   | P3  |     -      | Provenance guards: residual holes in statistics helper                  | `ISSUE-P3-67` (`ISSUE-09`) | `applied/11f4c62b...json` |
+| 6   | `17d836f9-b3f0-4465-859d-f768162c1995` | CANCEL |  -  | `ea9138f6` | Cancel community-team statistics page request (already built)           | `ISSUE-P2-78` (`ISSUE-50`) | `applied/17d836f9...json` |
+| 7   | `297e9dcf-26ef-48b7-94fc-f50158fac22d` |  ADD   | P2  |     -      | Ward mockups suite: 15 failures; 641px column overflow (Authoritative)  | `ISSUE-P2-68` (`ISSUE-34`) | `applied/297e9dcf...json` |
+| 8   | `43847026-36f7-422a-8185-c14d5a7b252b` |  ADD   | P2  |     -      | Ward Flow suite runs in NEITHER verify:ui project                       | `ISSUE-P2-69` (`ISSUE-34`) | `applied/43847026...json` |
+| 9   | `463c6f11-b408-424e-b642-d2b7ce8def86` |  ADD   | P2  |     -      | Ten absence sentences never rendered by any instrument                  | `ISSUE-P2-70` (`ISSUE-47`) | `applied/463c6f11...json` |
+| 10  | `4caf5df3-ee9c-4d2e-a9ba-b828792ef9a5` | CANCEL |  -  | `c8a3914a` | Cancel 641px column overflow measurement (superseded by `297e9dcf`)     | `ISSUE-P2-76` (`ISSUE-34`) | `applied/4caf5df3...json` |
+| 11  | `4d821d93-1bd6-4095-a41d-96c17be490bf` |  ADD   | P2  |     -      | Invented-figures guard accepts sentence denying own disclosure          | `ISSUE-P2-71` (`ISSUE-09`) | `applied/4d821d93...json` |
+| 12  | `60375367-49c7-4eaa-ab54-c7502fb63044` | CANCEL |  -  | `7235af08` | Cancel mockups suite draft 2 (superseded by `297e9dcf`)                 | `ISSUE-P2-73` (`ISSUE-34`) | `applied/60375367...json` |
+| 13  | `65dc4224-d20c-4e71-8899-d9e5e7fa5b1d` |  DONE  |  -  | `#Q6WD1M`  | Close judgement gate refusal proof with `ward-pull-judgement-gate.test` | `ISSUE-P1-80` (`ISSUE-34`) | `applied/65dc4224...json` |
+| 14  | `66de38d8-436a-4d80-874e-6590c5947652` |  ADD   | P2  |     -      | Standard says 23 wards across 17 sites, reference has 16 across 9       | `ISSUE-P2-72` (`ISSUE-44`) | `applied/66de38d8...json` |
+| 15  | `69c170cf-6f0f-485a-bf52-f8385e9095b1` | UPDATE |  -  | `#BAY1TY`  | Re-measure sex vs gender in movement intake in code                     | `ISSUE-P2-81` (`ISSUE-30`) | `applied/69c170cf...json` |
+| 16  | `7235af08-d774-4657-9e90-1a57072a3c0e` |  ADD   | P2  |     -      | Ward mockups suite: 15 assertion failures (Draft 2)                     | `ISSUE-P2-73` (`ISSUE-34`) | `applied/7235af08...json` |
+| 17  | `858ff1bd-b74f-480a-9660-099cbefc4f0c` |  ADD   | P2  |     -      | Link Movements and Delays in both directions — per-row route            | `ISSUE-P2-74` (`ISSUE-19`) | `applied/858ff1bd...json` |
+| 18  | `9e8c841b-73e0-4bce-b27d-be3b15cf72fe` | UPDATE |  -  | `#6DT5K7`  | Reconcile 'it suggests nothing' reversal status against rulings         | `ISSUE-P2-82` (`ISSUE-35`) | `applied/9e8c841b...json` |
+| 19  | `9ec65f78-bf59-4518-a744-4fd046cd9728` | CANCEL |  -  | `03f090b7` | Cancel mockups suite draft 1 (superseded by `297e9dcf`)                 | `ISSUE-P2-65` (`ISSUE-34`) | `applied/9ec65f78...json` |
+| 20  | `a38f282d-3416-4b37-aff6-edfc7ba5cd31` | CANCEL |  -  | `c8a3914a` | Cancel false causal claim in 641px overflow request                     | `ISSUE-P2-76` (`ISSUE-34`) | `applied/a38f282d...json` |
+| 21  | `af1cc99d-4847-4298-ae62-d6b640a5761f` |  ADD   | P3  |     -      | ED hub has two rival drawings and no written spec                       | `ISSUE-P3-75` (`ISSUE-35`) | `applied/af1cc99d...json` |
+| 22  | `bdf5f079-d1bc-4ff0-b240-a1936f4b1182` | CANCEL |  -  | `c8a3914a` | Cancel mockups suite draft 3 (superseded by `297e9dcf`)                 | `ISSUE-P2-76` (`ISSUE-34`) | `applied/bdf5f079...json` |
+| 23  | `c04f2d2e-3363-4d7b-9d6d-91c39a2fd37f` | UPDATE |  -  | `#Q6WD1M`  | Update on eligibilityRefusal proof requirement                          | `ISSUE-P1-80` (`ISSUE-34`) | `applied/c04f2d2e...json` |
+| 24  | `c8a3914a-eb0c-4b47-9e0a-a31645a8f700` |  ADD   | P2  |     -      | Ward mockups suite: 15 assertion failures (Draft 3)                     | `ISSUE-P2-76` (`ISSUE-34`) | `applied/c8a3914a...json` |
+| 25  | `e957c538-6fdb-433c-af15-e4867e0418d9` |  ADD   | P2  |     -      | Mockup placement gates and engine have drifted (10 vs 13)               | `ISSUE-P2-77` (`ISSUE-07`) | `applied/e957c538...json` |
+| 26  | `ea9138f6-c977-46a4-ba7e-4bbcd46b0364` |  ADD   | P2  |     -      | Community-team statistics page drawn but never built                    | `ISSUE-P2-78` (`ISSUE-50`) | `applied/ea9138f6...json` |
+| 27  | `eeea3b50-ad11-46c8-83da-11e12135ffc4` | UPDATE |  -  | `#Q6WD1M`  | Closed-pending-reconcile with `tests/ward-pull-judgement-gate.test.ts`  | `ISSUE-P1-80` (`ISSUE-34`) | `applied/eeea3b50...json` |
+| 28  | `f7d773dc-b6eb-4c63-9799-e63eed616b3e` |  ADD   | P2  |     -      | Chrome header: `ui-ward-chrome-header.spec.ts` covers 3 of 8 faults     | `ISSUE-P2-79` (`ISSUE-34`) | `applied/f7d773dc...json` |
 
 ### 5.2 RECONCILIATION SUMMARY
 
@@ -2897,7 +2897,7 @@ All 28 request JSON files have been relocated to `docs/outstanding-issues-inbox/
 6. **Local Repository & Push Safeguards:**
    - Enforced Ward Flow local repository boundary in `scripts/guard-push.mjs` and `tests/guard-push.test.ts`.
    - Guaranteed Ward Flow commits cannot be accidentally pushed to `origin/main` or remote repositories.
-7. **Prototype Demo State Persistence (`DECISION-10 / WF-33`):**
+7. **Prototype Demo State Persistence (`DECISION-10 / ISSUE-33`):**
    - Implemented `sessionStorage` demo state persistence in `WardFlowProvider` (`src/components/ward-management/ward-flow-provider.tsx`) with `resetDemoState()`.
    - Enabled demo multi-step workflows to survive page reloads without resetting.
    - Full DOM test suite in `tests/ward-flow-provider.dom.test.tsx` (13/13 tests passing).
@@ -2947,85 +2947,85 @@ in §2 now points here.
 
 ### 7.2 At a glance
 
-| Status on 6 October 2026          | Families | What it means                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --------------------------------- | :------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Completed & Verified**          |  **46**  | Implemented in codebase, verified by passing unit/DOM/journey tests, and guarded against regressions on `main` (PRs #1–#78). Includes WF-01–WF-14, WF-16–WF-28, WF-34–WF-40, WF-42, WF-47–WF-52, WF-58, WF-59, WF-60.                                                                                                                                                                                                                                          |
-| **Resolved / Deferred Decisions** |  **6**   | Clinical/operational policy formally resolved or deferred in `docs/ward-flow/decisions.md`: WF-15 (D-30: inter-ward transfers), WF-30 (D-31: gender-diverse placement), WF-32 (D-32: FIFO/ATS ranking), WF-41 (D-33: ward notes privacy), WF-43 (D-34: deterioration protocol), WF-45 (D-35: regional transport).                                                                                                                                              |
-| **Parked Outside Gates**          |  **8**   | External governance reviews formally affirmed in D-36 and operational postures ratified in D-37: WF-29 (RBAC spec), WF-31/56 (MHA advisory notice standard), WF-33 (cloud DB deferral), WF-44 (advisory directory override), WF-46 (clinical safety case baseline), WF-53 (Aboriginal cultural charter), WF-54 (TGA CDSS exemption), WF-55 (synthetic boundary & minimisation), WF-57 (PIR telemetry). Pre-pilot execution scheduled before real patient data. |
-| **Open Code Fix**                 |  **0**   | Zero open code defects remaining (WF-51 completed & verified in `capacity-screen.tsx`).                                                                                                                                                                                                                                                                                                                                                                        |
-| **Unblocked / Ready**             |  **0**   | Zero unblocked authoring tasks remaining (WF-60 completed & verified in `docs/ward-flow/DEMO-SCRIPT.md`).                                                                                                                                                                                                                                                                                                                                                      |
+| Status on 6 October 2026          | Families | What it means                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------------- | :------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completed & Verified**          |  **46**  | Implemented in codebase, verified by passing unit/DOM/journey tests, and guarded against regressions on `main` (PRs #1–#78). Includes ISSUE-01–ISSUE-14, ISSUE-16–ISSUE-28, ISSUE-34–ISSUE-40, ISSUE-42, ISSUE-47–ISSUE-52, ISSUE-58, ISSUE-59, ISSUE-60.                                                                                                                                                                                                                                 |
+| **Resolved / Deferred Decisions** |  **6**   | Clinical/operational policy formally resolved or deferred in `docs/ward-flow/decisions.md`: ISSUE-15 (D-30: inter-ward transfers), ISSUE-30 (D-31: gender-diverse placement), ISSUE-32 (D-32: FIFO/ATS ranking), ISSUE-41 (D-33: ward notes privacy), ISSUE-43 (D-34: deterioration protocol), ISSUE-45 (D-35: regional transport).                                                                                                                                                       |
+| **Parked Outside Gates**          |  **8**   | External governance reviews formally affirmed in D-36 and operational postures ratified in D-37: ISSUE-29 (RBAC spec), ISSUE-31/56 (MHA advisory notice standard), ISSUE-33 (cloud DB deferral), ISSUE-44 (advisory directory override), ISSUE-46 (clinical safety case baseline), ISSUE-53 (Aboriginal cultural charter), ISSUE-54 (TGA CDSS exemption), ISSUE-55 (synthetic boundary & minimisation), ISSUE-57 (PIR telemetry). Pre-pilot execution scheduled before real patient data. |
+| **Open Code Fix**                 |  **0**   | Zero open code defects remaining (ISSUE-51 completed & verified in `capacity-screen.tsx`).                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Unblocked / Ready**             |  **0**   | Zero unblocked authoring tasks remaining (ISSUE-60 completed & verified in `docs/ward-flow/DEMO-SCRIPT.md`).                                                                                                                                                                                                                                                                                                                                                                              |
 
 **Verified across all 80 PRs on `origin/main` at `1695b40` (PR #79 / #80), with over 10,400 tests passing across five balanced shards.**
 
-### 7.3 The 52 families (and estate extensions WF-53–WF-60)
+### 7.3 The 52 families (and estate extensions ISSUE-53–ISSUE-60)
 
-| Family  | Priority | Title                                                                          | Status, 6 Oct 2026       | Where it stands                                                                                                                                                                                                                                    |
-| ------- | -------- | ------------------------------------------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WF-01` | P1       | Reconcile examination closure with admission, reservation and transport        | **Completed & Verified** | Pulled-bed orphan fixed (`3956761b1f`, `ward-flow-reducer.test.ts:1001`). After transport is booked, WLQ-4 preserved; Unified Patient Now flight deck (#69) integrates examination, admission, and transport lifecycle.                            |
-| `WF-02` | P1       | Guard operational actions against surviving commitments after stage correction | **Completed & Verified** | Step-back bed preservation fully implemented and proven across starting stages, repeated commands, and destination resets (`ward-audit-engine-fixes-2026-09-16.test.ts`, 47 tests passed).                                                         |
-| `WF-03` | P1       | Verify remaining high-acuity staffing at allocation                            | **Completed & Verified** | Bed pull feasibility strictly enforces `remainingHighAcuityCapacity` limits with recorded clinician overrides (`ward-acuity-gate.test.ts`).                                                                                                        |
-| `WF-04` | P1       | Separate cancellation, replacement booking and handover readiness              | **Completed & Verified** | Cancelling at pulled stage decouples handover readiness, replacement job preserves `bookedBy`, and transport-readiness decoupling is fully guarded (Invariant `I-04`).                                                                             |
-| `WF-05` | P1       | Define destination change and diversion after reservation or collection        | **Completed & Verified** | Implemented `RECORD_DIVERSION` and `RELEASE_DIVERTED_BED` events in reducer; active journey reroutes to new destination and cleans up prior bed hold. DECISION-01 resolved.                                                                        |
-| `WF-06` | P1       | Count one physical departure once across admission and bed-release paths       | **Completed & Verified** | Single physical departure invariant (`I-05`) enforced; `departAdmission` and `RELEASE_BED` turnover paths linked to prevent duplicate turnover credits.                                                                                            |
-| `WF-07` | P1       | Validate runtime events and define capacity reconciliation                     | **Completed & Verified** | Integer, non-negative, and bounded range runtime validation enforced on `CONFIRM_CAPACITY` events in reducer.                                                                                                                                      |
-| `WF-08` | P1       | Prevent an old capacity draft overwriting a newer observation                  | **Completed & Verified** | Optimistic concurrency checking enforces `expectedRevision` on capacity confirmation events, rejecting stale drafts.                                                                                                                               |
-| `WF-09` | P1       | Preserve patient/referral provenance and intended-episode uniqueness           | **Completed & Verified** | Episode identity monotonicity (`I-01`) preserved; `referralId` and `homeRegion` retained through bed pull and admission transitions.                                                                                                               |
-| `WF-10` | P1       | Deliver recipient-scoped notices that survive active-row removal               | **Completed & Verified** | Persistent notices stored in immutable Activity timeline; mark-read tracking and severity filtering integrated in Activity and Tasks drawers (PR #70).                                                                                             |
-| `WF-11` | P2       | Make parallel-referral add, replace and withdraw semantics explicit            | **Completed & Verified** | Additive parallel referrals supported across independent services without cross-ward leak; withdrawal and decline semantics verified.                                                                                                              |
-| `WF-12` | P1       | Complete community decisions and independent referral purposes                 | **Completed & Verified** | Community teams have autonomous decision authority to accept or decline referrals (`ward-flow-events.ts`, PR #24, PR #49); Invariant `I-08` verified.                                                                                              |
-| `WF-13` | P1       | Make front-door withdrawal terminal for pending decisions                      | **Completed & Verified** | Front-door self-withdrawal terminates pending allocation across both movement and referral reducers (`WITHDRAW_REFERRAL`, PR #49); Invariant `I-07` verified.                                                                                      |
-| `WF-14` | P2       | Provide truthful all-declined and no-admission exits                           | **Completed & Verified** | All-declined referrals return truth-tracked to coordinator queue with explicit non-admission status (`ward-referral-drawer.tsx`, PR #49, PR #70).                                                                                                  |
-| `WF-15` | P2       | Represent direct community/ward origins and inter-ward transfers               | **Resolved / Deferred**  | Resolved in Decision D-30: Inter-ward bed transfers require central bed coordinator approval and visibility; direct community clinic referrals deferred to Phase 2.                                                                                |
-| `WF-16` | P1       | Complete a no-booked-transport-needed journey                                  | **Completed & Verified** | Direct arrival supported when no transport is required; `HANDOVER_READY` allows progression without external transport booking (DECISION-02 resolved).                                                                                             |
-| `WF-17` | P2       | Allow reassessment and changing clinical decisions                             | **Completed & Verified** | Reassessment and changing decisions supported with explicit audit provenance; medical clearance can be re-evaluated (PR #69).                                                                                                                      |
-| `WF-18` | P2       | Complete discharge dependencies and accountable community follow-up            | **Completed & Verified** | Discharges board overhaul (PR #45, #66) tracks discharge blockers and links accountable community follow-up teams.                                                                                                                                 |
-| `WF-19` | P2       | Connect temporary ED attendance to a named location and responsible service    | **Completed & Verified** | Away-at-ED events name responsible service and department location; individual ED psychiatry screen polished (PR #71).                                                                                                                             |
-| `WF-20` | P2       | Link leave-bed handling to an admission and leave episode                      | **Completed & Verified** | Leave beds explicitly linked to active admission episode; leave return preserves bed reservation.                                                                                                                                                  |
-| `WF-21` | P2       | Agree reservation expiry and handover snapshot semantics                       | **Completed & Verified** | `pullExpiresAt` TTL expiration and renewal semantics implemented (DECISION-08 resolved).                                                                                                                                                           |
-| `WF-22` | P2       | Render or clear a closed coordinator selection coherently                      | **Completed & Verified** | Selection re-resolution coherently drops closed records across all views, deep links, and drawers (PR #70).                                                                                                                                        |
-| `WF-23` | P2       | Avoid accepted cases appearing as declined by all                              | **Completed & Verified** | `handoverSnapshot` precedence logic verified; accepted status overrides prior preliminary declines.                                                                                                                                                |
-| `WF-24` | P1       | Preserve the intended date in time-only inputs                                 | **Completed & Verified** | Date context preserved across all time-entry controls and bed-release workflows.                                                                                                                                                                   |
-| `WF-25` | P2       | Separate occurrence, recording, update and verification times                  | **Completed & Verified** | Invariant `I-09` verified; separate timestamps recorded for clinical occurrence, event dispatch, and state update; 24h rolling release windows standardized.                                                                                       |
-| `WF-26` | P2       | Verify physical consistency of the scarce scenario                             | **Completed & Verified** | Scarce scenario bed allocations reconciled against physical bed definitions and verified by automated seed tests.                                                                                                                                  |
-| `WF-27` | P2       | Verify the replacement Capacity and Delays controls                            | **Completed & Verified** | Capacity and Delays controls overhauled with accessible fold states, action runway, and 3 visual analytics views (PR #47, #54, #67, #68).                                                                                                          |
-| `WF-28` | P2       | Resolve the Morning route’s frozen-versus-live contract                        | **Completed & Verified** | Morning bed-meeting sheet (PR #54) provides clean printable 09:30 snapshot; Tomorrow's beds forecast (PR #55, #61) delivers rolling 24h prediction.                                                                                                |
-| `WF-29` | Gate     | Establish privacy and genuine service-scoped authority                         | **Parked Outside Gate**  | D-14 default-deny privacy barrier verified (16 allowlisted files, zero typed patient names in URLs); operational 4-tier RBAC posture ratified in D-37; live Entra ID auth and cloud tenancy parked for hospital commissioning per D-36.            |
-| `WF-30` | Gate     | Govern sensitive demographic display and decision use                          | **Resolved / Deferred**  | Resolved in Decision D-31: Algorithmic automatic placement deferred; gender eligibility checks preserved in `ward-eligibility.ts` with explicit clinician review and override safety required.                                                     |
-| `WF-31` | Gate     | Validate legal forms, authority and deadline provenance                        | **Parked Outside Gate**  | MHA statutory deadlines strictly isolated to synthetic demo (`act-periods-demo.ts`, PR #52); Advisory Notice Only doctrine ratified in D-37 (zero auto-detention); compliance dossier pre-authored; Crown Law review scheduled pre-pilot per D-36. |
-| `WF-32` | Gate     | Agree ranking, urgency and waiting-time policy                                 | **Resolved / Deferred**  | Resolved in Decision D-32: FIFO chronological waiting time default with prominent ATS triage badges (1–5) and clinical urgency flags; black-box automated urgency re-ordering deferred.                                                            |
-| `WF-33` | Gate     | Provide authoritative persistence, concurrency and recovery                    | **Parked Outside Gate**  | Backend persistence and optimistic concurrency code-complete (24 tests passing); local JSON scenario save/load active (PR #50); cloud database deferral standard ratified in D-37; live cloud DB parked until pilot funding per D-18/D-36.         |
-| `WF-34` | P1       | Make tests discriminate real workflow failures and current route behaviour     | **Completed & Verified** | Test suites discriminate real workflow failures; shard rebalancing and contract checks green across five parallel CI shards (PR #78).                                                                                                              |
-| `WF-35` | P2       | Align architecture notes and remediation guidance with current code            | **Completed & Verified** | Screen verification manifests and code maps reconciled and synchronized with current components.                                                                                                                                                   |
-| `WF-36` | P1       | Require an actually ready resource of the appropriate kind                     | **Completed & Verified** | System-wide bed taxonomy standardized across all screens to four mutually exclusive states: Ready, Pulled, Closed, Occupied (PR #58).                                                                                                              |
-| `WF-37` | P1       | Reconcile the booked job when releasing its reservation                        | **Completed & Verified** | Reservation release cleans up associated uncollected transport jobs across all movement paths.                                                                                                                                                     |
-| `WF-38` | P2       | Retain the reasons for actually applied acceptance/pull overrides              | **Completed & Verified** | Placement override reasons retained in audit logs and displayed on explainable placement shortlist (PR #58).                                                                                                                                       |
-| `WF-39` | P2       | Treat valid zero timestamps as present                                         | **Completed & Verified** | Invariant `I-12` verified; epoch-zero timestamps handled robustly across all reducers without false absence.                                                                                                                                       |
-| `WF-40` | P2       | Tie preparation to a current turnover identity                                 | **Completed & Verified** | Bed preparation explicitly associated with current turnover record and departing admission identity.                                                                                                                                               |
-| `WF-41` | P2       | Decide which local ward entries become shared operational facts                | **Resolved / Deferred**  | Resolved in Decision D-33: Local nursing and medical shift notes confined strictly to local ward view; only standardized operational transfer telemetry publishes statewide.                                                                       |
-| `WF-42` | P1       | Separate transport arrival from receipt and responsibility                     | **Completed & Verified** | Transport arrival decoupled from clinical handover receipt; Handover Command Horizon (PR #42, #72) provides dedicated nurse handover verification.                                                                                                 |
-| `WF-43` | P1       | Provide change-sensitive readiness and owned exception recovery                | **Resolved / Deferred**  | Resolved in Decision D-34: Acute medical deterioration bed release and cancellation protocol formalised; bed immediately released with audit tag "Medical Deterioration - ED Resuscitation Required".                                              |
-| `WF-44` | Gate     | Maintain a verified service and catchment directory                            | **Parked Outside Gate**  | Public WA Health directory live for demonstration; Advisory Directory with Coordinator Override standard ratified in D-37; clinic-by-clinic phone audit parked until site onboarding per D-36.                                                     |
-| `WF-45` | Later    | Scope regional multi-leg transport and repatriation                            | **Resolved / Deferred**  | Formally deferred in Decision D-35: Regional aeromedical multi-leg patient journeys (RFDS + secondary road ambulance) deferred to post-pilot regional expansion phase.                                                                             |
-| `WF-46` | Gate     | Establish clinical safety ownership and controlled pilot governance            | **Parked Outside Gate**  | Clinical Safety Case baseline ratified in D-37 (`CLINICAL-SAFETY-CASE.md`, HAZ-01–05 mitigated); Lead Psychiatrist governance active; external accredited CSO appointment scheduled pre-pilot per D-36.                                            |
-| `WF-47` | Later    | Define truthful flow analytics and measure benefit                             | **Completed & Verified** | All seven Statistics dashboard screens polished with unified occupancy math and days/hours formatting (PR #74).                                                                                                                                    |
-| `WF-48` | P2       | Maintain a capability register and staged enhancement backlog                  | **Completed & Verified** | Staged enhancement backlog maintained; task ledger reconciled across PRs #1–#78.                                                                                                                                                                   |
-| `WF-49` | P2       | Do not rewrite historical Activity facts from current mutable state            | **Completed & Verified** | Invariant `I-14` verified; immutable Activity timeline notices preserved with original event provenance (PR #70).                                                                                                                                  |
-| `WF-50` | P2       | Give community screens a truthful role and task context                        | **Completed & Verified** | `WardChromeRole` sets explicit "community" role context; community directory and gateway screens aligned (PR #24, PR #66).                                                                                                                         |
-| `WF-51` | P2       | Remove the unproved placement guarantee from aggregate capacity copy           | **Completed & Verified** | Replaced unprovable guarantee copy "nobody goes without today" with "net available capacity today" in `capacity-screen.tsx:1116, 1127`. Verified by `tests/ward-capacity-zero-gap-copy.test.ts` (36/36 tests passing).                             |
-| `WF-52` | P2       | Stabilise local server/cache verification without disturbing other sessions    | **Completed & Verified** | `npm run ensure` isolates local dev server ports and prevents session crosstalk.                                                                                                                                                                   |
+| Family     | Priority | Title                                                                          | Status, 6 Oct 2026       | Where it stands                                                                                                                                                                                                                                    |
+| ---------- | -------- | ------------------------------------------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ISSUE-01` | P1       | Reconcile examination closure with admission, reservation and transport        | **Completed & Verified** | Pulled-bed orphan fixed (`3956761b1f`, `ward-flow-reducer.test.ts:1001`). After transport is booked, WLQ-4 preserved; Unified Patient Now flight deck (#69) integrates examination, admission, and transport lifecycle.                            |
+| `ISSUE-02` | P1       | Guard operational actions against surviving commitments after stage correction | **Completed & Verified** | Step-back bed preservation fully implemented and proven across starting stages, repeated commands, and destination resets (`ward-audit-engine-fixes-2026-09-16.test.ts`, 47 tests passed).                                                         |
+| `ISSUE-03` | P1       | Verify remaining high-acuity staffing at allocation                            | **Completed & Verified** | Bed pull feasibility strictly enforces `remainingHighAcuityCapacity` limits with recorded clinician overrides (`ward-acuity-gate.test.ts`).                                                                                                        |
+| `ISSUE-04` | P1       | Separate cancellation, replacement booking and handover readiness              | **Completed & Verified** | Cancelling at pulled stage decouples handover readiness, replacement job preserves `bookedBy`, and transport-readiness decoupling is fully guarded (Invariant `I-04`).                                                                             |
+| `ISSUE-05` | P1       | Define destination change and diversion after reservation or collection        | **Completed & Verified** | Implemented `RECORD_DIVERSION` and `RELEASE_DIVERTED_BED` events in reducer; active journey reroutes to new destination and cleans up prior bed hold. DECISION-01 resolved.                                                                        |
+| `ISSUE-06` | P1       | Count one physical departure once across admission and bed-release paths       | **Completed & Verified** | Single physical departure invariant (`I-05`) enforced; `departAdmission` and `RELEASE_BED` turnover paths linked to prevent duplicate turnover credits.                                                                                            |
+| `ISSUE-07` | P1       | Validate runtime events and define capacity reconciliation                     | **Completed & Verified** | Integer, non-negative, and bounded range runtime validation enforced on `CONFIRM_CAPACITY` events in reducer.                                                                                                                                      |
+| `ISSUE-08` | P1       | Prevent an old capacity draft overwriting a newer observation                  | **Completed & Verified** | Optimistic concurrency checking enforces `expectedRevision` on capacity confirmation events, rejecting stale drafts.                                                                                                                               |
+| `ISSUE-09` | P1       | Preserve patient/referral provenance and intended-episode uniqueness           | **Completed & Verified** | Episode identity monotonicity (`I-01`) preserved; `referralId` and `homeRegion` retained through bed pull and admission transitions.                                                                                                               |
+| `ISSUE-10` | P1       | Deliver recipient-scoped notices that survive active-row removal               | **Completed & Verified** | Persistent notices stored in immutable Activity timeline; mark-read tracking and severity filtering integrated in Activity and Tasks drawers (PR #70).                                                                                             |
+| `ISSUE-11` | P2       | Make parallel-referral add, replace and withdraw semantics explicit            | **Completed & Verified** | Additive parallel referrals supported across independent services without cross-ward leak; withdrawal and decline semantics verified.                                                                                                              |
+| `ISSUE-12` | P1       | Complete community decisions and independent referral purposes                 | **Completed & Verified** | Community teams have autonomous decision authority to accept or decline referrals (`ward-flow-events.ts`, PR #24, PR #49); Invariant `I-08` verified.                                                                                              |
+| `ISSUE-13` | P1       | Make front-door withdrawal terminal for pending decisions                      | **Completed & Verified** | Front-door self-withdrawal terminates pending allocation across both movement and referral reducers (`WITHDRAW_REFERRAL`, PR #49); Invariant `I-07` verified.                                                                                      |
+| `ISSUE-14` | P2       | Provide truthful all-declined and no-admission exits                           | **Completed & Verified** | All-declined referrals return truth-tracked to coordinator queue with explicit non-admission status (`ward-referral-drawer.tsx`, PR #49, PR #70).                                                                                                  |
+| `ISSUE-15` | P2       | Represent direct community/ward origins and inter-ward transfers               | **Resolved / Deferred**  | Resolved in Decision D-30: Inter-ward bed transfers require central bed coordinator approval and visibility; direct community clinic referrals deferred to Phase 2.                                                                                |
+| `ISSUE-16` | P1       | Complete a no-booked-transport-needed journey                                  | **Completed & Verified** | Direct arrival supported when no transport is required; `HANDOVER_READY` allows progression without external transport booking (DECISION-02 resolved).                                                                                             |
+| `ISSUE-17` | P2       | Allow reassessment and changing clinical decisions                             | **Completed & Verified** | Reassessment and changing decisions supported with explicit audit provenance; medical clearance can be re-evaluated (PR #69).                                                                                                                      |
+| `ISSUE-18` | P2       | Complete discharge dependencies and accountable community follow-up            | **Completed & Verified** | Discharges board overhaul (PR #45, #66) tracks discharge blockers and links accountable community follow-up teams.                                                                                                                                 |
+| `ISSUE-19` | P2       | Connect temporary ED attendance to a named location and responsible service    | **Completed & Verified** | Away-at-ED events name responsible service and department location; individual ED psychiatry screen polished (PR #71).                                                                                                                             |
+| `ISSUE-20` | P2       | Link leave-bed handling to an admission and leave episode                      | **Completed & Verified** | Leave beds explicitly linked to active admission episode; leave return preserves bed reservation.                                                                                                                                                  |
+| `ISSUE-21` | P2       | Agree reservation expiry and handover snapshot semantics                       | **Completed & Verified** | `pullExpiresAt` TTL expiration and renewal semantics implemented (DECISION-08 resolved).                                                                                                                                                           |
+| `ISSUE-22` | P2       | Render or clear a closed coordinator selection coherently                      | **Completed & Verified** | Selection re-resolution coherently drops closed records across all views, deep links, and drawers (PR #70).                                                                                                                                        |
+| `ISSUE-23` | P2       | Avoid accepted cases appearing as declined by all                              | **Completed & Verified** | `handoverSnapshot` precedence logic verified; accepted status overrides prior preliminary declines.                                                                                                                                                |
+| `ISSUE-24` | P1       | Preserve the intended date in time-only inputs                                 | **Completed & Verified** | Date context preserved across all time-entry controls and bed-release workflows.                                                                                                                                                                   |
+| `ISSUE-25` | P2       | Separate occurrence, recording, update and verification times                  | **Completed & Verified** | Invariant `I-09` verified; separate timestamps recorded for clinical occurrence, event dispatch, and state update; 24h rolling release windows standardized.                                                                                       |
+| `ISSUE-26` | P2       | Verify physical consistency of the scarce scenario                             | **Completed & Verified** | Scarce scenario bed allocations reconciled against physical bed definitions and verified by automated seed tests.                                                                                                                                  |
+| `ISSUE-27` | P2       | Verify the replacement Capacity and Delays controls                            | **Completed & Verified** | Capacity and Delays controls overhauled with accessible fold states, action runway, and 3 visual analytics views (PR #47, #54, #67, #68).                                                                                                          |
+| `ISSUE-28` | P2       | Resolve the Morning route’s frozen-versus-live contract                        | **Completed & Verified** | Morning bed-meeting sheet (PR #54) provides clean printable 09:30 snapshot; Tomorrow's beds forecast (PR #55, #61) delivers rolling 24h prediction.                                                                                                |
+| `ISSUE-29` | Gate     | Establish privacy and genuine service-scoped authority                         | **Parked Outside Gate**  | D-14 default-deny privacy barrier verified (16 allowlisted files, zero typed patient names in URLs); operational 4-tier RBAC posture ratified in D-37; live Entra ID auth and cloud tenancy parked for hospital commissioning per D-36.            |
+| `ISSUE-30` | Gate     | Govern sensitive demographic display and decision use                          | **Resolved / Deferred**  | Resolved in Decision D-31: Algorithmic automatic placement deferred; gender eligibility checks preserved in `ward-eligibility.ts` with explicit clinician review and override safety required.                                                     |
+| `ISSUE-31` | Gate     | Validate legal forms, authority and deadline provenance                        | **Parked Outside Gate**  | MHA statutory deadlines strictly isolated to synthetic demo (`act-periods-demo.ts`, PR #52); Advisory Notice Only doctrine ratified in D-37 (zero auto-detention); compliance dossier pre-authored; Crown Law review scheduled pre-pilot per D-36. |
+| `ISSUE-32` | Gate     | Agree ranking, urgency and waiting-time policy                                 | **Resolved / Deferred**  | Resolved in Decision D-32: FIFO chronological waiting time default with prominent ATS triage badges (1–5) and clinical urgency flags; black-box automated urgency re-ordering deferred.                                                            |
+| `ISSUE-33` | Gate     | Provide authoritative persistence, concurrency and recovery                    | **Parked Outside Gate**  | Backend persistence and optimistic concurrency code-complete (24 tests passing); local JSON scenario save/load active (PR #50); cloud database deferral standard ratified in D-37; live cloud DB parked until pilot funding per D-18/D-36.         |
+| `ISSUE-34` | P1       | Make tests discriminate real workflow failures and current route behaviour     | **Completed & Verified** | Test suites discriminate real workflow failures; shard rebalancing and contract checks green across five parallel CI shards (PR #78).                                                                                                              |
+| `ISSUE-35` | P2       | Align architecture notes and remediation guidance with current code            | **Completed & Verified** | Screen verification manifests and code maps reconciled and synchronized with current components.                                                                                                                                                   |
+| `ISSUE-36` | P1       | Require an actually ready resource of the appropriate kind                     | **Completed & Verified** | System-wide bed taxonomy standardized across all screens to four mutually exclusive states: Ready, Pulled, Closed, Occupied (PR #58).                                                                                                              |
+| `ISSUE-37` | P1       | Reconcile the booked job when releasing its reservation                        | **Completed & Verified** | Reservation release cleans up associated uncollected transport jobs across all movement paths.                                                                                                                                                     |
+| `ISSUE-38` | P2       | Retain the reasons for actually applied acceptance/pull overrides              | **Completed & Verified** | Placement override reasons retained in audit logs and displayed on explainable placement shortlist (PR #58).                                                                                                                                       |
+| `ISSUE-39` | P2       | Treat valid zero timestamps as present                                         | **Completed & Verified** | Invariant `I-12` verified; epoch-zero timestamps handled robustly across all reducers without false absence.                                                                                                                                       |
+| `ISSUE-40` | P2       | Tie preparation to a current turnover identity                                 | **Completed & Verified** | Bed preparation explicitly associated with current turnover record and departing admission identity.                                                                                                                                               |
+| `ISSUE-41` | P2       | Decide which local ward entries become shared operational facts                | **Resolved / Deferred**  | Resolved in Decision D-33: Local nursing and medical shift notes confined strictly to local ward view; only standardized operational transfer telemetry publishes statewide.                                                                       |
+| `ISSUE-42` | P1       | Separate transport arrival from receipt and responsibility                     | **Completed & Verified** | Transport arrival decoupled from clinical handover receipt; Handover Command Horizon (PR #42, #72) provides dedicated nurse handover verification.                                                                                                 |
+| `ISSUE-43` | P1       | Provide change-sensitive readiness and owned exception recovery                | **Resolved / Deferred**  | Resolved in Decision D-34: Acute medical deterioration bed release and cancellation protocol formalised; bed immediately released with audit tag "Medical Deterioration - ED Resuscitation Required".                                              |
+| `ISSUE-44` | Gate     | Maintain a verified service and catchment directory                            | **Parked Outside Gate**  | Public WA Health directory live for demonstration; Advisory Directory with Coordinator Override standard ratified in D-37; clinic-by-clinic phone audit parked until site onboarding per D-36.                                                     |
+| `ISSUE-45` | Later    | Scope regional multi-leg transport and repatriation                            | **Resolved / Deferred**  | Formally deferred in Decision D-35: Regional aeromedical multi-leg patient journeys (RFDS + secondary road ambulance) deferred to post-pilot regional expansion phase.                                                                             |
+| `ISSUE-46` | Gate     | Establish clinical safety ownership and controlled pilot governance            | **Parked Outside Gate**  | Clinical Safety Case baseline ratified in D-37 (`CLINICAL-SAFETY-CASE.md`, HAZ-01–05 mitigated); Lead Psychiatrist governance active; external accredited CSO appointment scheduled pre-pilot per D-36.                                            |
+| `ISSUE-47` | Later    | Define truthful flow analytics and measure benefit                             | **Completed & Verified** | All seven Statistics dashboard screens polished with unified occupancy math and days/hours formatting (PR #74).                                                                                                                                    |
+| `ISSUE-48` | P2       | Maintain a capability register and staged enhancement backlog                  | **Completed & Verified** | Staged enhancement backlog maintained; task ledger reconciled across PRs #1–#78.                                                                                                                                                                   |
+| `ISSUE-49` | P2       | Do not rewrite historical Activity facts from current mutable state            | **Completed & Verified** | Invariant `I-14` verified; immutable Activity timeline notices preserved with original event provenance (PR #70).                                                                                                                                  |
+| `ISSUE-50` | P2       | Give community screens a truthful role and task context                        | **Completed & Verified** | `WardChromeRole` sets explicit "community" role context; community directory and gateway screens aligned (PR #24, PR #66).                                                                                                                         |
+| `ISSUE-51` | P2       | Remove the unproved placement guarantee from aggregate capacity copy           | **Completed & Verified** | Replaced unprovable guarantee copy "nobody goes without today" with "net available capacity today" in `capacity-screen.tsx:1116, 1127`. Verified by `tests/ward-capacity-zero-gap-copy.test.ts` (36/36 tests passing).                             |
+| `ISSUE-52` | P2       | Stabilise local server/cache verification without disturbing other sessions    | **Completed & Verified** | `npm run ensure` isolates local dev server ports and prevents session crosstalk.                                                                                                                                                                   |
 
-#### Estate extensions (WF-53–WF-60)
+#### Estate extensions (ISSUE-53–ISSUE-60)
 
-| Family  | Priority | Title                                                             | Status, 6 Oct 2026       | Where it stands                                                                                                                                                                                                                |
-| ------- | -------- | ----------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `WF-53` | Gate     | Aboriginal cultural safety review                                 | **Parked Outside Gate**  | Aboriginal Cultural Safety Charter ratified in D-37 (`ABORIGINAL-CULTURAL-SAFETY-CHARTER.md`); 4 consultative partners specified; owner arranges independent external review directly before real-patient deployment per D-36. |
-| `WF-54` | Gate     | Medical device (TGA / SaMD) classification status                 | **Parked Outside Gate**  | TGA Clinical Decision Support Software (CDSS) exemption position ratified in D-37 (Therapeutic Goods Regs Sch 4 Pt 2 exempt; no auto-allocation); formal regulatory registration parked per D-36.                              |
-| `WF-55` | Gate     | Privacy review (external assessment)                              | **Parked Outside Gate**  | Privacy Architecture Standard ratified in D-37 (100% synthetic isolation, data minimisation on public boards, role-scoped details); external legal PIA scheduled during hospital IT onboarding per D-36.                       |
-| `WF-56` | Gate     | WA legal advice on forms and statutory time limits                | **Parked Outside Gate**  | Advisory Notice Only doctrine ratified in D-37; warning-only display adheres to recorded clinician dates without synthetic clocks; formal Crown Law legal review scheduled pre-pilot per D-36.                                 |
-| `WF-57` | Gate     | Post-incident review scope                                        | **Parked Outside Gate**  | PIR Immutable Telemetry Specification ratified in D-37 (Invariants I-01–I-14 append-only event ledger; single-click PIR chronology export standard); forensic legal audit standard scheduled pre-pilot per D-36.               |
-| `WF-58` | Later    | Deferred 17 Sept items resolved or tracked across estate PRs      | **Completed & Verified** | All seven deferred items resolved across PRs #5, #42, #50, #54, #66, #72.                                                                                                                                                      |
-| `WF-59` | P2       | Patient record 7-stage journey stepper & timeline alignment       | **Completed & Verified** | Fully implemented and merged in PR #69 (`patient-now-screen.tsx`, `usePatientNow`, `patient-tracker-facts.tsx`).                                                                                                               |
-| `WF-60` | Later    | Guided ten-minute "day in the life" demo script on synthetic data | **Completed & Verified** | Authored comprehensive 10-minute guided demonstration script in `docs/ward-flow/DEMO-SCRIPT.md` covering all 5 clinical acts across WA Health facilities on 100% synthetic data (§7.76).                                       |
+| Family     | Priority | Title                                                             | Status, 6 Oct 2026       | Where it stands                                                                                                                                                                                                                |
+| ---------- | -------- | ----------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ISSUE-53` | Gate     | Aboriginal cultural safety review                                 | **Parked Outside Gate**  | Aboriginal Cultural Safety Charter ratified in D-37 (`ABORIGINAL-CULTURAL-SAFETY-CHARTER.md`); 4 consultative partners specified; owner arranges independent external review directly before real-patient deployment per D-36. |
+| `ISSUE-54` | Gate     | Medical device (TGA / SaMD) classification status                 | **Parked Outside Gate**  | TGA Clinical Decision Support Software (CDSS) exemption position ratified in D-37 (Therapeutic Goods Regs Sch 4 Pt 2 exempt; no auto-allocation); formal regulatory registration parked per D-36.                              |
+| `ISSUE-55` | Gate     | Privacy review (external assessment)                              | **Parked Outside Gate**  | Privacy Architecture Standard ratified in D-37 (100% synthetic isolation, data minimisation on public boards, role-scoped details); external legal PIA scheduled during hospital IT onboarding per D-36.                       |
+| `ISSUE-56` | Gate     | WA legal advice on forms and statutory time limits                | **Parked Outside Gate**  | Advisory Notice Only doctrine ratified in D-37; warning-only display adheres to recorded clinician dates without synthetic clocks; formal Crown Law legal review scheduled pre-pilot per D-36.                                 |
+| `ISSUE-57` | Gate     | Post-incident review scope                                        | **Parked Outside Gate**  | PIR Immutable Telemetry Specification ratified in D-37 (Invariants I-01–I-14 append-only event ledger; single-click PIR chronology export standard); forensic legal audit standard scheduled pre-pilot per D-36.               |
+| `ISSUE-58` | Later    | Deferred 17 Sept items resolved or tracked across estate PRs      | **Completed & Verified** | All seven deferred items resolved across PRs #5, #42, #50, #54, #66, #72.                                                                                                                                                      |
+| `ISSUE-59` | P2       | Patient record 7-stage journey stepper & timeline alignment       | **Completed & Verified** | Fully implemented and merged in PR #69 (`patient-now-screen.tsx`, `usePatientNow`, `patient-tracker-facts.tsx`).                                                                                                               |
+| `ISSUE-60` | Later    | Guided ten-minute "day in the life" demo script on synthetic data | **Completed & Verified** | Authored comprehensive 10-minute guided demonstration script in `docs/ward-flow/DEMO-SCRIPT.md` covering all 5 clinical acts across WA Health facilities on 100% synthetic data (§7.76).                                       |
 
 ### 7.4 The twelve questions in §3, and the four rulings in §6.1
 
@@ -3034,24 +3034,24 @@ text the owner wrote himself counts as an answer. Owner answers are in
 `docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-15.md` (WLQ answers) and
 `docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-16-rulings.md` (Rulings 1–16).
 
-| Question                                                         | Status, 16 Sept                         | The owner's own words, or what is missing                                                                                                                                                                                                                                                                                       |
-| ---------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DECISION-01 (WF-05) diversion in transit                         | **Never put to the owner**              | No owner text found. The engine has no diversion event.                                                                                                                                                                                                                                                                         |
-| DECISION-02 (WF-16) journey with no booked transport             | **Never put to the owner**              | No owner text found. §2 already treats this as an ordinary engine defect, so it may not need a ruling.                                                                                                                                                                                                                          |
-| DECISION-03 (WF-15) origins other than ED                        | **Never put to the owner**              | No owner text found.                                                                                                                                                                                                                                                                                                            |
-| DECISION-04 (WF-29) coordinator shortlist reads patient identity | **Answered, and built**                 | WLQ-30: _"Keep As you recommend"_. This ratifies the allowlist bounded by `tests/ward-patient-link-default-deny.test.ts`.                                                                                                                                                                                                       |
-| DECISION-05 (WF-30) non-binary patient PT-007                    | **Asked 10 Sept, not answered**         | The 10 September question offered three options and no recommendation. Ruling 5 (16 Sept) is written in binary terms and does not answer it. Today's audit also names a WLQ-6 vs Ruling 5 conflict on gender and bed matching.                                                                                                  |
-| DECISION-06 (WF-31) Mental Health Act clocks                     | **Answered; built incorrectly**         | Ruling 1: _"When a 1A is written you start a 72 hour clock … once received … the 24 hour clock starts … For a 3D … a 72 hour clock"_. See the §6 correction note.                                                                                                                                                               |
-| DECISION-07 (WF-32) queue ranking, ATS vs WEAT                   | **Never put to the owner**              | No owner text found. An AI planning transcript on a different topic must not be read as an answer.                                                                                                                                                                                                                              |
-| DECISION-08 (WF-21) reservation expiry                           | **Never put to the owner**              | No owner text found. The engine has no reservation time limit.                                                                                                                                                                                                                                                                  |
-| DECISION-09 (WF-25) rolling 24 hours vs calendar day             | **Never put to the owner in this form** | `WB-DB-7` (29 Aug) prefers rolling 24 hours on one screen. That is a narrower, earlier ruling, recorded as a paraphrase.                                                                                                                                                                                                        |
-| DECISION-10 (WF-33) persistence and locking                      | **Answered, and closed 2026-09-17**     | `Q-8` (2026-09-02): reload wipes the demonstration, leave it this phase. `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` item 36 supersedes for demo state: "Demo remembers itself after reload but stops saving once anyone types free text." No durable-store / optimistic-locking build was ever asked for. |
-| DECISION-11 (WF-44) catchment enforcement                        | **Deferred by the owner**               | WLQ-29: _"Defer As you recommend"_. Catchment stays a note, so the enforcement idea waits with it.                                                                                                                                                                                                                              |
-| DECISION-12 (WF-46) clinical safety officer and hazard log       | **Deferred by the owner**               | WLQ-8: _"Leave it for now"_, recorded as still a gate before any real clinical use.                                                                                                                                                                                                                                             |
-| Ruling 1 (Form 1A/3D clocks)                                     | **Answered; partly built**              | See the §6 correction note.                                                                                                                                                                                                                                                                                                     |
-| Ruling 4 (high-acuity gate)                                      | **Answered; built**                     | _"4. Option B… extra staffed can be rostered also when needed"_. The pull is blocked at zero capacity and a coordinator can override with a reason.                                                                                                                                                                             |
-| Ruling 6 (explicit arrival)                                      | **Answered; built**                     | _"A button for the wards and for ED to be pressed when they are aware that a patient has explicitly arrived."_ The one gap, a ward arrival with no acting unit skipping the scope check, was fixed today (`9236393fe1`).                                                                                                        |
-| Ruling 16 (ED referral to a community team)                      | **Answered; not delivered**             | _"I want you to build this behaviour and functional now ASAP as ED to CMHT referrals are very common."_ The button closes the ED movement, but no referral reaches the community team.                                                                                                                                          |
+| Question                                                            | Status, 16 Sept                         | The owner's own words, or what is missing                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DECISION-01 (ISSUE-05) diversion in transit                         | **Never put to the owner**              | No owner text found. The engine has no diversion event.                                                                                                                                                                                                                                                                         |
+| DECISION-02 (ISSUE-16) journey with no booked transport             | **Never put to the owner**              | No owner text found. §2 already treats this as an ordinary engine defect, so it may not need a ruling.                                                                                                                                                                                                                          |
+| DECISION-03 (ISSUE-15) origins other than ED                        | **Never put to the owner**              | No owner text found.                                                                                                                                                                                                                                                                                                            |
+| DECISION-04 (ISSUE-29) coordinator shortlist reads patient identity | **Answered, and built**                 | WLQ-30: _"Keep As you recommend"_. This ratifies the allowlist bounded by `tests/ward-patient-link-default-deny.test.ts`.                                                                                                                                                                                                       |
+| DECISION-05 (ISSUE-30) non-binary patient PT-007                    | **Asked 10 Sept, not answered**         | The 10 September question offered three options and no recommendation. Ruling 5 (16 Sept) is written in binary terms and does not answer it. Today's audit also names a WLQ-6 vs Ruling 5 conflict on gender and bed matching.                                                                                                  |
+| DECISION-06 (ISSUE-31) Mental Health Act clocks                     | **Answered; built incorrectly**         | Ruling 1: _"When a 1A is written you start a 72 hour clock … once received … the 24 hour clock starts … For a 3D … a 72 hour clock"_. See the §6 correction note.                                                                                                                                                               |
+| DECISION-07 (ISSUE-32) queue ranking, ATS vs WEAT                   | **Never put to the owner**              | No owner text found. An AI planning transcript on a different topic must not be read as an answer.                                                                                                                                                                                                                              |
+| DECISION-08 (ISSUE-21) reservation expiry                           | **Never put to the owner**              | No owner text found. The engine has no reservation time limit.                                                                                                                                                                                                                                                                  |
+| DECISION-09 (ISSUE-25) rolling 24 hours vs calendar day             | **Never put to the owner in this form** | `WB-DB-7` (29 Aug) prefers rolling 24 hours on one screen. That is a narrower, earlier ruling, recorded as a paraphrase.                                                                                                                                                                                                        |
+| DECISION-10 (ISSUE-33) persistence and locking                      | **Answered, and closed 2026-09-17**     | `Q-8` (2026-09-02): reload wipes the demonstration, leave it this phase. `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` item 36 supersedes for demo state: "Demo remembers itself after reload but stops saving once anyone types free text." No durable-store / optimistic-locking build was ever asked for. |
+| DECISION-11 (ISSUE-44) catchment enforcement                        | **Deferred by the owner**               | WLQ-29: _"Defer As you recommend"_. Catchment stays a note, so the enforcement idea waits with it.                                                                                                                                                                                                                              |
+| DECISION-12 (ISSUE-46) clinical safety officer and hazard log       | **Deferred by the owner**               | WLQ-8: _"Leave it for now"_, recorded as still a gate before any real clinical use.                                                                                                                                                                                                                                             |
+| Ruling 1 (Form 1A/3D clocks)                                        | **Answered; partly built**              | See the §6 correction note.                                                                                                                                                                                                                                                                                                     |
+| Ruling 4 (high-acuity gate)                                         | **Answered; built**                     | _"4. Option B… extra staffed can be rostered also when needed"_. The pull is blocked at zero capacity and a coordinator can override with a reason.                                                                                                                                                                             |
+| Ruling 6 (explicit arrival)                                         | **Answered; built**                     | _"A button for the wards and for ED to be pressed when they are aware that a patient has explicitly arrived."_ The one gap, a ward arrival with no acting unit skipping the scope check, was fixed today (`9236393fe1`).                                                                                                        |
+| Ruling 16 (ED referral to a community team)                         | **Answered; not delivered**             | _"I want you to build this behaviour and functional now ASAP as ED to CMHT referrals are very common."_ The button closes the ED movement, but no referral reaches the community team.                                                                                                                                          |
 
 **What this means for the owner's list:** eight of the twelve §3 questions still need to be asked. The
 question about PT-007 was asked on 10 September and is still unanswered. Per the house rule, route
@@ -3060,11 +3060,11 @@ owner questions through Ward Lead; send the framing, not the question.
 ### 7.5 What the owner needs to settle, in one place
 
 1. **Three pairs of owner answers disagree.** The build cannot close these until one answer stands:
-   - **WF-01**, examination revoked after transport is booked. WLQ-4 says don't release the bed;
+   - **ISSUE-01**, examination revoked after transport is booked. WLQ-4 says don't release the bed;
      Ruling 9 says clean up and refund. The code follows WLQ-4.
-   - **WF-15**, ED referral straight to a community team. WLQ-19 says revisit later; Ruling 16 says
+   - **ISSUE-15**, ED referral straight to a community team. WLQ-19 says revisit later; Ruling 16 says
      build now. A partial build exists.
-   - **WF-30**, gender and bed matching. WLQ-6 says wire it once beds link to people; Ruling 5 says
+   - **ISSUE-30**, gender and bed matching. WLQ-6 says wire it once beds link to people; Ruling 5 says
      gender decides the bed now. The check has no caller.
 2. **Four more places where today's audit (§1) says the code or an answer is waiting on the owner.**
    - WLQ-5 and restyle answer D5 (no durations, no section numbers) vs Ruling 1's clocks. **CLOSED
@@ -3093,11 +3093,11 @@ owner questions through Ward Lead; send the framing, not the question.
 3. **Eight §3 questions have never been put to the owner** (§7.4), and the PT-007 question from
    10 September is still unanswered.
 4. **One stale reference.** The parked Morning spec cites "owner ruling D9". The only D-9 in
-   `docs/ward-flow/OWNER-RULINGS.md` is about the security gate (WF-28).
+   `docs/ward-flow/OWNER-RULINGS.md` is about the security gate (ISSUE-28).
 
 ### 7.6 Numbering note
 
-"Issue 63" in §2 (under `WF-01`, the `admissions` key and state-accounting inconsistency) is **not**
+"Issue 63" in §2 (under `ISSUE-01`, the `admissions` key and state-accounting inconsistency) is **not**
 `ISSUE-P1-63` in `docs/ward-flow/PROJECT-ISSUES.md` (MHA authorisation as an overridable gate). Same
 number, different issues. Cite the full identifier.
 
@@ -3148,19 +3148,19 @@ before treating either commit as folded for any task that depends on it.
 
 **Family status changes since §7.2–§7.4 (16 September):**
 
-| Family                        | 16 Sept status                  | 17 Sept, round 2                                                                                                                                                                                         |
-| ----------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WF-01`                       | Owner answers conflict          | Still conflicting (WLQ-4 vs Ruling 9); not touched this round.                                                                                                                                           |
-| `WF-15`                       | Owner answers conflict          | Still conflicting on the general question, but the ED-to-community pathway itself is now built (`d2e6eb0433` family, pre-round-2) and gated on a recorded examination per owner answer 1 (`2276378987`). |
-| `WF-30` / `WF-36`             | Owner answers conflict          | Narrowed: non-binary placement (PT-007) is now answered and built (R2-2, `35ed967a7b`, `2a199ac14f`). The broader gender-in-bed-matching conflict (WLQ-6 vs Ruling 5) is untouched.                      |
-| `WF-05` (diversions)          | Waiting on the owner            | Still waiting; explicitly deferred again this round (owner: "remove anything deferrable", T4a/T4b).                                                                                                      |
-| `WF-32` (urgent-flag reasons) | Waiting on the owner            | Drafted this round but not yet put to the owner — see `docs/ward-flow/STATUS.md` "Needs the owner" item 2.                                                                                               |
-| `WF-58`                       | Deferred by the owner (7 items) | Unchanged; still deferred, listed in full in `docs/ward-flow/STATUS.md` "Deferred".                                                                                                                      |
-| `WF-53` (Aboriginal review)   | Deferred by the owner           | Reconfirmed, second round, verbatim ("Stop asking and add to ledger... i have deferred"); do not raise it with him again.                                                                                |
+| Family                           | 16 Sept status                  | 17 Sept, round 2                                                                                                                                                                                         |
+| -------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ISSUE-01`                       | Owner answers conflict          | Still conflicting (WLQ-4 vs Ruling 9); not touched this round.                                                                                                                                           |
+| `ISSUE-15`                       | Owner answers conflict          | Still conflicting on the general question, but the ED-to-community pathway itself is now built (`d2e6eb0433` family, pre-round-2) and gated on a recorded examination per owner answer 1 (`2276378987`). |
+| `ISSUE-30` / `ISSUE-36`          | Owner answers conflict          | Narrowed: non-binary placement (PT-007) is now answered and built (R2-2, `35ed967a7b`, `2a199ac14f`). The broader gender-in-bed-matching conflict (WLQ-6 vs Ruling 5) is untouched.                      |
+| `ISSUE-05` (diversions)          | Waiting on the owner            | Still waiting; explicitly deferred again this round (owner: "remove anything deferrable", T4a/T4b).                                                                                                      |
+| `ISSUE-32` (urgent-flag reasons) | Waiting on the owner            | Drafted this round but not yet put to the owner — see `docs/ward-flow/STATUS.md` "Needs the owner" item 2.                                                                                               |
+| `ISSUE-58`                       | Deferred by the owner (7 items) | Unchanged; still deferred, listed in full in `docs/ward-flow/STATUS.md` "Deferred".                                                                                                                      |
+| `ISSUE-53` (Aboriginal review)   | Deferred by the owner           | Reconfirmed, second round, verbatim ("Stop asking and add to ledger... i have deferred"); do not raise it with him again.                                                                                |
 
 Nothing else in §7.3's 52-family table changed state this round — the round-2 work landed as gate,
 labelling, gender-placement and transport fixes named in `docs/ward-flow/STATUS.md`, not as closures of
-the still-open engineering families (`WF-06` through `WF-52` besides those listed above).
+the still-open engineering families (`ISSUE-06` through `ISSUE-52` besides those listed above).
 
 **What round 2 actually built**, by the git facts in `docs/ward-flow/STATUS.md` "What is built": legal
 discharge/collection gates (owner answers 1 and 5), form labels from the register (T5), the Form 3A/3D
@@ -3237,8 +3237,8 @@ While the automated DOM test suites are completely green (95+ passing tests, 0 t
 
 ### 3. Confirmed Owner Deferrals (Do Not Raise Again)
 
-- **`WF-53` (Cultural Safety Review)**: Formally deferred by owner as a pre-live deployment gate, not an active development sprint task ("Stop asking and add to ledger... i have deferred").
-- **`WF-05` (Diversions)**: Explicitly deferred by owner ("remove anything deferrable").
+- **`ISSUE-53` (Cultural Safety Review)**: Formally deferred by owner as a pre-live deployment gate, not an active development sprint task ("Stop asking and add to ledger... i have deferred").
+- **`ISSUE-05` (Diversions)**: Explicitly deferred by owner ("remove anything deferrable").
 - **Demonstration Hospital Expansion (9 to 17 sites)**: Deep backlog, deferred until core UI is visually locked.
 
 ## §7.11 · Emergency Department Completion & Prioritized Handover Recommendations (17 Sept 2026, Session Closeout)
@@ -3447,27 +3447,27 @@ _All 232 tests across the affected test suites pass locally._
 
 ### 2. Recommended Clinical & Workflow Logic Priorities for Next Session
 
-1. **`WF-16` (Priority 1): Allow No-Booked-Transport Patient Transfers to Complete Handover**:
+1. **`ISSUE-16` (Priority 1): Allow No-Booked-Transport Patient Transfers to Complete Handover**:
    - _Problem_: In mental health transfers where transport is marked "not needed" (e.g., walking escort or family transport), `HANDOVER_READY` still requires a `BOOK_TRANSPORT` event. The journey dead-ends at the handover step.
    - _Recommendation_: Update the handover readiness check so that `transport.needed === false` satisfies the transport booking prerequisite, enabling direct progression to departure and arrival.
 
-2. **`WF-01` / `WF-10` (Priority 1): Enforce Physical Vacancy on Locked Bed Eligibility Checks**:
+2. **`ISSUE-01` / `ISSUE-10` (Priority 1): Enforce Physical Vacancy on Locked Bed Eligibility Checks**:
    - _Problem_: When matching involuntary referrals requiring locked beds, the system checks whether the ward has locked beds in general, rather than checking if any locked beds are currently physically vacant.
    - _Recommendation_: Require `unoccupiedLockedBeds > 0` before presenting a locked bed ward as eligible for an involuntary referral.
 
-3. **`WF-13` (Priority 1): Make Referral Withdrawal a Terminal State**:
+3. **`ISSUE-13` (Priority 1): Make Referral Withdrawal a Terminal State**:
    - _Problem_: Dispatching `WITHDRAW_REFERRAL` records the cancellation timestamp but leaves the referral in the active queue, allowing receiving doctors to mistakenly accept or decline cancelled referrals.
    - _Recommendation_: Make withdrawal a terminal status that clears the referral from active triage queues and rejects any subsequent decision events.
 
-4. **`WF-37` (Priority 1): Reconcile Linked Transport Jobs on Bed Reservation Release**:
+4. **`ISSUE-37` (Priority 1): Reconcile Linked Transport Jobs on Bed Reservation Release**:
    - _Problem_: Releasing a bed reservation (`RELEASE_PULL`) cancels the bed allocation but leaves any booked transport dispatch job active.
    - _Recommendation_: Link the bed reservation lifecycle to the transport job, requiring or automating transport cancellation when a reservation is released.
 
-5. **`WF-08` (Priority 1): Prevent Concurrent Edits Overwriting Newer Bed Observations**:
+5. **`ISSUE-08` (Priority 1): Prevent Concurrent Edits Overwriting Newer Bed Observations**:
    - _Problem_: Bed capacity updates lack optimistic lock fingerprints; an older open screen submitted later can silently overwrite a newer bed count.
    - _Recommendation_: Add a revision fingerprint check on save to warn the user if bed numbers changed while their form was open.
 
-6. **`WF-50` (Priority 2): Provide Contextual Viewing Role on Community Screens**:
+6. **`ISSUE-50` (Priority 2): Provide Contextual Viewing Role on Community Screens**:
    - _Problem_: Community team screens default to displaying "Viewing as Bed coordinator" in the top chrome bar.
    - _Recommendation_: Display a dedicated Community team perspective when browsing community routes.
 
@@ -3548,18 +3548,18 @@ _All 232 tests across the affected test suites pass locally._
    - The engine supports community place transport booking and cancellation (`BOOK_TRANSPORT`, `CANCEL_TRANSPORT` with `actingPlaceId`), but the community screen's "bed pulled" list is currently `Admission`-based with no direct `movementId`.
    - Requires an architectural decision on linking `Admission` to `Movement` before wiring the screen button.
 
-3. **Clinical Workflow: Non-Transport Handover Progression (`WF-16`)**:
+3. **Clinical Workflow: Non-Transport Handover Progression (`ISSUE-16`)**:
    - When mental health transfers do not require transport vehicles (e.g. family transport or walking escort), `HANDOVER_READY` currently dead-ends because it still requires an artificial transport booking.
    - Update handover readiness check so that `transport.needed === false` satisfies the departure prerequisite.
 
-4. **Clinical Workflow: Involuntary Bed Matching Vacancy Check (`WF-01` / `WF-10`)**:
+4. **Clinical Workflow: Involuntary Bed Matching Vacancy Check (`ISSUE-01` / `ISSUE-10`)**:
    - Involuntary referral matching currently evaluates whether a ward has locked beds in principle, rather than whether any locked beds are currently physically vacant.
    - Require `unoccupiedLockedBeds > 0` before presenting a locked bed ward as eligible.
 
-5. **Clinical Workflow: Terminal State on Referral Withdrawal (`WF-13`)**:
+5. **Clinical Workflow: Terminal State on Referral Withdrawal (`ISSUE-13`)**:
    - Make `WITHDRAW_REFERRAL` a terminal state that clears the referral from active triage queues and prevents subsequent decision events from acting on it.
 
-6. **Clinical Workflow: Reconcile Linked Transport on Bed Release (`WF-37`)**:
+6. **Clinical Workflow: Reconcile Linked Transport on Bed Release (`ISSUE-37`)**:
    - Ensure releasing a bed reservation (`RELEASE_PULL`) automatically cancels or prompts cancellation of any associated booked transport jobs.
 
 7. **Design System Specification Re-baseline**:
@@ -4260,17 +4260,17 @@ the `Q-12` citation into the test whatever the answer.
 
 ### 1. The 18 Rulings and Operational Decisions
 
-1. **Ruling 1 (`WF-16`) — Non-Transport Handover Progression [APPROVED]**:
+1. **Ruling 1 (`ISSUE-16`) — Non-Transport Handover Progression [APPROVED]**:
    - _Ruling_: **Yes** — non-transport handover progression.
    - _Clinical Rationale_: Transfers not requiring transport vehicles (e.g. family transport, walking escorts between adjacent facilities, internal campus movements) must not require an artificial transport booking. `HANDOVER_READY` readiness checks are satisfied when `transport.needed === false`, progressing directly to ward arrival.
    - _Status_: **Unblocked / Ready to Build**.
 
-2. **Ruling 2 (`WF-37`) — Reconcile Booked Transport on Bed Cancellation [APPROVED]**:
+2. **Ruling 2 (`ISSUE-37`) — Reconcile Booked Transport on Bed Cancellation [APPROVED]**:
    - _Ruling_: **Yes** — bed cancellation automatically cancels or prompts cancellation of linked booked transport.
    - _Clinical Rationale_: Releasing or cancelling a bed reservation (`RELEASE_PULL`) must automatically cancel or prompt the cancellation of any linked booked transport job, preventing wasted ambulance/crew journeys and avoiding patient arrival at a ward with zero capacity.
    - _Status_: **Unblocked / Ready to Build**.
 
-3. **Ruling 3 (`WF-01`, `WF-10`) — Involuntary Bed Matching & Zero Vacant Locked Bed Handling [CRITICAL CLINICAL RULING]**:
+3. **Ruling 3 (`ISSUE-01`, `ISSUE-10`) — Involuntary Bed Matching & Zero Vacant Locked Bed Handling [CRITICAL CLINICAL RULING]**:
    - _Ruling_: **NO to rejecting wards with 0 vacant locked beds. Patients often need to be waitlisted!**
    - _Clinical Rationale_: Rejecting or hiding wards from referral matching simply because they have zero currently unoccupied locked beds is clinically incorrect. Patients requiring secure/locked care frequently need to be waitlisted for a bed in their home catchment rather than immediately diverted out of catchment or rejected. Full wards must remain selectable so coordinators can queue referrals, hold priority candidates, and manage bed flow as discharges occur.
    - _Prioritisation Hierarchy_:
@@ -4279,7 +4279,7 @@ the `Q-12` citation into the test whatever the answer.
      3. **3rd: In catchment with no beds** — Wards in the patient's home catchment with zero current vacancies (waitlist queue / hold placement).
    - _Status_: **Architectural & Clinical Baseline Updated**. Overrides prior proposals to auto-reject 0-vacancy wards.
 
-4. **Ruling 4 (`WF-13`, `P3-WD`) — Terminal State on Referral Withdrawal [APPROVED]**:
+4. **Ruling 4 (`ISSUE-13`, `P3-WD`) — Terminal State on Referral Withdrawal [APPROVED]**:
    - _Ruling_: **Yes** — terminal state on referral withdrawal.
    - _Clinical Rationale_: `WITHDRAW_REFERRAL` must be a definitive terminal state that removes the referral from active triage queues and prevents subsequent operational events. On post-acceptance withdrawals (`P3-WD`), the engine must cleanly reset `acceptedUnitId` (or void the accepted assignment) so withdrawn records do not display an accepted ward name or retain residual allocations.
    - _Status_: **Unblocked / Ready to Build**.
@@ -4372,10 +4372,10 @@ the `Q-12` citation into the test whatever the answer.
 
 | Task / Item ID                  | Description                                        | Prior Status         | Ruling (18 Sept 2026)                        | New Status                               |
 | ------------------------------- | -------------------------------------------------- | -------------------- | -------------------------------------------- | ---------------------------------------- |
-| **`WF-16`**                     | Non-transport handover progression                 | Paused / Blocked     | Ruling 1: Yes                                | **Unblocked / Ready to Build**           |
-| **`WF-37`**                     | Reconcile transport on bed cancellation            | Paused / Open        | Ruling 2: Yes                                | **Unblocked / Ready to Build**           |
-| **`WF-01` / `WF-10`**           | Involuntary bed matching & zero vacant locked beds | Proposed reject rule | Ruling 3: NO to rejecting; waitlist priority | **Re-baselined (3-Tier Prioritisation)** |
-| **`WF-13` / `P3-WD`**           | Terminal state on referral withdrawal & clear unit | Open Bug             | Ruling 4: Yes (terminal & reset unit)        | **Unblocked / Ready to Build**           |
+| **`ISSUE-16`**                  | Non-transport handover progression                 | Paused / Blocked     | Ruling 1: Yes                                | **Unblocked / Ready to Build**           |
+| **`ISSUE-37`**                  | Reconcile transport on bed cancellation            | Paused / Open        | Ruling 2: Yes                                | **Unblocked / Ready to Build**           |
+| **`ISSUE-01` / `ISSUE-10`**     | Involuntary bed matching & zero vacant locked beds | Proposed reject rule | Ruling 3: NO to rejecting; waitlist priority | **Re-baselined (3-Tier Prioritisation)** |
+| **`ISSUE-13` / `P3-WD`**        | Terminal state on referral withdrawal & clear unit | Open Bug             | Ruling 4: Yes (terminal & reset unit)        | **Unblocked / Ready to Build**           |
 | **`D-14`**                      | Network-wide search privacy allowlists             | Pending Gate         | Ruling 5: Leave for now                      | **Deferred to Production Auth**          |
 | **`ISSUE-P2-88`**               | Community screen transport booking affordance      | Open Architecture    | Ruling 6: Yes (link Admission to Movement)   | **Unblocked / Ready to Build**           |
 | **`DRAWER-RESPONSIVE-SHEET`**   | Mobile drawer sheet adaptation                     | Open Defect          | Ruling 7: Approved                           | **Approved for Implementation**          |
@@ -4800,7 +4800,7 @@ examination" | "Involuntary inpatient"`. **There is no `"Involuntary"`**, so tha
 true and `isInvoluntary` collapses to the security check. Its only consumer is the `.sort()` at
 `:1000`, which applies tier ordering — tier 1 in-catchment with a bed, tier 2 out-of-catchment with
 a bed, **tier 3 in-catchment with NO bed, kept on the list as a waitlist option rather than dropped**,
-tier 4 the rest. WF-01's own comment says that tier 3 behaviour exists _for involuntary placements_.
+tier 4 the rest. ISSUE-01's own comment says that tier 3 behaviour exists _for involuntary placements_.
 
 ⚠️ **So the feature's stated purpose — keep a detained patient's home ward visible even when it has
 no bed today — currently never applies to anyone who is not separately flagged as needing a secure
@@ -6915,11 +6915,11 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 - **Machine Report:** `.audit-reports/adversarial-audit-report.json`
 - **Screenshot Catalog:** 60 screenshots archived in `.audit-reports/screenshots/`
 - **Scheduled Remediations:**
-  - `WF-AUDIT-01`: ED Route Slug Normalization & Hospital Code Mapping.
-  - `WF-AUDIT-02`: Bed Board Header Metric Overlap & Mobile Occlusion Fix.
-  - `WF-AUDIT-03`: Mobile 5-Header Collapse & Keyboard Badge Removal.
-  - `WF-AUDIT-04`: Movements Timeline Spacing & Text Ellipsis Refinement.
-  - `WF-AUDIT-05`: Dark Theme WCAG 2.1 AA Contrast Enhancement.
+  - `AUDIT-01`: ED Route Slug Normalization & Hospital Code Mapping.
+  - `AUDIT-02`: Bed Board Header Metric Overlap & Mobile Occlusion Fix.
+  - `AUDIT-03`: Mobile 5-Header Collapse & Keyboard Badge Removal.
+  - `AUDIT-04`: Movements Timeline Spacing & Text Ellipsis Refinement.
+  - `AUDIT-05`: Dark Theme WCAG 2.1 AA Contrast Enhancement.
 
 ---
 
@@ -7559,15 +7559,15 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ### Issues Added to Ledger
 
-1. **WF-FIX-01 · P2 · High-DPI Zoom Scale & Virtual Keyboard Viewport Dynamic Resizing:**
+1. **FIX-01 · P2 · High-DPI Zoom Scale & Virtual Keyboard Viewport Dynamic Resizing:**
    - _Observation:_ The `clamp(32rem, calc(100dvh - 16rem), 54rem)` formulas rely on dynamic viewport units (`100dvh`). On mobile devices when the software keyboard opens, some mobile browsers reduce `100dvh` or reposition sticky headers.
    - _Required action:_ Verify and enhance with `window.visualViewport` listeners or CSS `interactive-widget=resizes-content` viewport meta if mobile keyboard entry causes viewport compression on form fields within clamped workspaces.
 
-2. **WF-FIX-02 · P3 · Keyboard Focus Ring Scrollport Auto-Centering Margin:**
+2. **FIX-02 · P3 · Keyboard Focus Ring Scrollport Auto-Centering Margin:**
    - _Observation:_ Inside fixed scrollable containers (`.panelBody`, `.attentionWrap`, `.lstWrap`), when a keyboard-only user tabs sequentially through dozens of items, the browser natively scrolls the focused element into view. In some desktop zoom configurations (>150%), the focused row's bottom border or ring can touch the scrollport container edge.
    - _Required action:_ Add `scroll-padding: 0.5rem` to internal scroll containers to provide a comfortable breathing margin around focused elements.
 
-3. **WF-FIX-03 · P3 · Sticky Header Scroll-Activated Elevation Indicator:**
+3. **FIX-03 · P3 · Sticky Header Scroll-Activated Elevation Indicator:**
    - _Observation:_ Pinned panel headers (`.ph`, `.tabbar`, table `thead th`) remain fixed at the top while content scrolls beneath them. A subtle shadow or divider state that activates only while the scrollport is scrolled (`data-scrolled="true"`) could further clarify depth during mid-scroll interactions.
    - _Required action:_ Add a lightweight scroll-driven CSS animation (`animation-timeline: scroll()`) or attribute toggle to enhance elevation depth when scrolling starts.
 
@@ -8118,7 +8118,7 @@ Automated verification summary:
 
 ---
 
-## §7.71 · WF-FLIGHT-DECK-20261005 (WF-59) — Unified Patient Now Flight Deck, 7-Stage Live Journey Stepper & 5-Tab Dossier (PR #69)
+## §7.71 · WF-FLIGHT-DECK-20261005 (ISSUE-59) — Unified Patient Now Flight Deck, 7-Stage Live Journey Stepper & 5-Tab Dossier (PR #69)
 
 Completed implementation of the Unified Patient Now Flight Deck and Governed Dossier architecture, consolidating `/people/[patientId]` and `/movements/[movementId]` onto a unified clinical workflow cockpit. Task branch `codex/unified-patient-flight-deck` merged to `main` in PR #69 (`7c5b4ec`), based on verified main `5f6c8e1`.
 
@@ -8287,7 +8287,7 @@ Automated verification summary:
 
 ---
 
-## §7.75 · WF-CI-PERF-20261005 — Unit Test Shard Rebalancing from CI Durations, Next.js Build Cache, Playwright Cache & Full-Tree Linting (PR #37, PR #75, PR #76, PR #77, PR #78)
+## §7.75 · CI-PERF-20261005 — Unit Test Shard Rebalancing from CI Durations, Next.js Build Cache, Playwright Cache & Full-Tree Linting (PR #37, PR #75, PR #76, PR #77, PR #78)
 
 Completed comprehensive performance optimization, caching architecture, and verification hardening across the GitHub Actions CI pipeline (`.github/workflows/ward-flow.yml`), reducing PR check wall-clock duration from ~17 minutes to under 4 minutes. Bundles PRs #37, #75, #76, #77, and #78.
 
@@ -8332,18 +8332,18 @@ Automated verification summary:
 
 ---
 
-### §7.76 WF-ESTATE-PERFECTION-20261006: Audit Resolution, WF-51 Zero-Gap Copy Fix, WF-60 Guided 10-Minute Demo Script & Clinical Decisions D-30–D-36
+### §7.76 ESTATE-PERFECTION-20261006: Audit Resolution, ISSUE-51 Zero-Gap Copy Fix, ISSUE-60 Guided 10-Minute Demo Script & Clinical Decisions D-30–D-36
 
 - **Date:** 6 October 2026
 - **Status:** **Completed & Verified**
 - **Trigger:** Full estate audit resolution across Category 1 (Code Defect), Category 2 (Demonstration Narrative), Category 3 (Clinical Policy Rulings), and Category 4 (External Governance Gates).
 - **Scope & Deliverables:**
-  1. **WF-51 — Capacity Screen Zero-Gap Guarantee Copy Fix:**
+  1. **ISSUE-51 — Capacity Screen Zero-Gap Guarantee Copy Fix:**
      - Removed unprovable guarantee copy `"nobody goes without today"` from `src/components/ward-management/capacity/capacity-screen.tsx` (lines 1116 and 1127).
      - Replaced with truthful operational wording: `"net available capacity today"`.
      - Added dedicated unit test `tests/ward-capacity-zero-gap-copy.test.ts` asserting that `"nobody goes without today"` is absent and that `"net available capacity today"` renders when `gap === 0`.
      - Verification: 36/36 capacity tests passed (26 DOM tests + 7 fold tests + 3 copy tests).
-  2. **WF-60 — Guided 10-Minute Demonstration Script Authoring:**
+  2. **ISSUE-60 — Guided 10-Minute Demonstration Script Authoring:**
      - Authored comprehensive clinical demonstration script in `docs/ward-flow/DEMO-SCRIPT.md` titled _"A Day in the Life: Western Australia Psychiatric Bed Flow Demonstration Script"_.
      - Structured across 5 clinical acts on 100% synthetic data:
        - Act 1 (09:00 - 09:12): The 09:00 Morning Bed Meeting & Statewide Bed Coordination (`/capacity` & Bed-Meeting Sheet).
@@ -8354,14 +8354,14 @@ Automated verification summary:
      - Includes presenter click-by-click instructions, verbatim clinical dialogue, and an Executive Q&A addressing WebPAS/PSOLIS, CAD feeds, and clinical override safety.
   3. **Decisions D-30 to D-36 — Clinical Policies & Formal Deferrals:**
      - Recorded in `docs/ward-flow/decisions.md`:
-       - **D-30 (WF-15 / DECISION-03):** Central coordinator approval mandatory for inter-ward bed transfers; direct community clinic referrals deferred to Phase 2.
-       - **D-31 (WF-30 / DECISION-05):** Algorithmic automatic placement deferred; gender eligibility checks preserved in `ward-eligibility.ts` with explicit clinician review and override safety required.
-       - **D-32 (WF-32 / DECISION-07):** FIFO chronological waiting time default with prominent ATS triage badges (1–5) and clinical urgency flags; black-box automated urgency re-ordering deferred.
-       - **D-33 (WF-41 / DECISION-06):** Local nursing and medical shift notes confined strictly to local ward view; only standardized operational transfer telemetry publishes statewide.
-       - **D-34 (WF-43):** Acute medical deterioration bed release and cancellation protocol formalised; bed immediately released with audit tag `"Medical Deterioration - ED Resuscitation Required"`.
-       - **D-35 (WF-45):** Regional aeromedical multi-leg patient journeys (RFDS + secondary road ambulance) deferred to post-pilot regional expansion phase.
+       - **D-30 (ISSUE-15 / DECISION-03):** Central coordinator approval mandatory for inter-ward bed transfers; direct community clinic referrals deferred to Phase 2.
+       - **D-31 (ISSUE-30 / DECISION-05):** Algorithmic automatic placement deferred; gender eligibility checks preserved in `ward-eligibility.ts` with explicit clinician review and override safety required.
+       - **D-32 (ISSUE-32 / DECISION-07):** FIFO chronological waiting time default with prominent ATS triage badges (1–5) and clinical urgency flags; black-box automated urgency re-ordering deferred.
+       - **D-33 (ISSUE-41 / DECISION-06):** Local nursing and medical shift notes confined strictly to local ward view; only standardized operational transfer telemetry publishes statewide.
+       - **D-34 (ISSUE-43):** Acute medical deterioration bed release and cancellation protocol formalised; bed immediately released with audit tag `"Medical Deterioration - ED Resuscitation Required"`.
+       - **D-35 (ISSUE-45):** Regional aeromedical multi-leg patient journeys (RFDS + secondary road ambulance) deferred to post-pilot regional expansion phase.
        - **D-36 (Category 4 Gates):** Affirmation of 10 external governance and safety hard gates per Item 63 ruling of 17 September 2026.
-       - **D-37 (Category 4 Governance Postures):** Formal ratification of operational postures, clinical standards, and resolution roadmaps across all 10 parked external governance gates (WF-29 RBAC, WF-31/56 MHA advisory notices, WF-33 cloud DB deferral, WF-44 directory override, WF-46 clinical safety case baseline, WF-53 Aboriginal cultural safety charter, WF-54 TGA CDSS exemption, WF-55 privacy architecture, WF-57 PIR immutable telemetry).
+       - **D-37 (Category 4 Governance Postures):** Formal ratification of operational postures, clinical standards, and resolution roadmaps across all 10 parked external governance gates (ISSUE-29 RBAC, ISSUE-31/56 MHA advisory notices, ISSUE-33 cloud DB deferral, ISSUE-44 directory override, ISSUE-46 clinical safety case baseline, ISSUE-53 Aboriginal cultural safety charter, ISSUE-54 TGA CDSS exemption, ISSUE-55 privacy architecture, ISSUE-57 PIR immutable telemetry).
 - **Verification Summary:**
   - `tests/ward-capacity-zero-gap-copy.test.ts` (3/3 passed)
   - `tests/ward-capacity-screen.dom.test.tsx` (26/26 passed)
@@ -8369,12 +8369,12 @@ Automated verification summary:
   - Full TypeScript typecheck: 0 errors
   - ESLint & Prettier: 100% clean
 
-## WF-REFERRAL-DRAWER-2026-10-07 — four-tab referral flow
+## REFERRAL-DRAWER-2026-10-07 — four-tab referral flow
 
 Status: Implementation complete; local verification recorded. Owner: Codex interactive session. Base: `20105cf` (`origin/main`), branch `codex/referral-drawer`, isolated worktree `/workspace/ward-referral-drawer`.
 Scope: approved Patient → Referral → Documentation → Locations drawer, contact confirmation, shared-engine submission and recipient routing. Preserve existing shell and clinical placement gates. Synthetic data only; no hosted service calls or deployment. Implementation complete. Verification in progress: focused engine/DOM tests, changed-file ESLint, source typecheck, diff integrity, color-token/privacy/override/re-anchor guards and actual desktop/mobile browser send journey passed. Full offline unit population is being rechecked after integration repairs. Named recipients preserve existing placement gates; ward inbox has normal acceptance only, coordinator review retains exceptional-placement reason controls. No publication or deployment. The isolated single-session cloud worktree has no shared Windows sign-out log; local commit uses the documented explicit single-session sign-out exception, retaining lint/typecheck/content hooks.
 
-Verification close-out for WF-REFERRAL-DRAWER-2026-10-07:
+Verification close-out for REFERRAL-DRAWER-2026-10-07:
 
 - Implementation commit: `8b92295`, isolated `codex/referral-drawer`; main and hosted services untouched.
 - Full offline Vitest run: `Test Files 2 failed | 897 passed | 9 skipped (908)`; `Tests 2 failed | 10461 passed | 146 skipped (10609)`. The drawer test had loaded before its Clinical Dossier assertion repair; the other failure was the statistics caption's outdated accepted spelling. Both failing assertions were repaired and rerun; do not quote this as a single zero-failure full run.
@@ -8423,7 +8423,7 @@ with no page errors. Updated screenshots and `.local/tasks-polish/result.json`; 
 `.local/tasks-polish/build.log`. Publication to a task-branch PR is now explicitly requested;
 merge/deployment are not part of this task.
 
-## WF-33 / WF-29 / WF-57 — coordinator Azure implementation, 7 October 2026
+## ISSUE-33 / ISSUE-29 / ISSUE-57 — coordinator Azure implementation, 7 October 2026
 
 Owner: Codex interactive session. Isolated branch `codex/coordinator-azure-database-20261007`, base `9778c48a17eba6f7e5e97bd0d1c5feaf3b26c98a`. The owner now authorises preparing and connecting a shared synthetic Azure database, initially with one full-workspace coordinator role and named Entra accounts. This supersedes the technical deferral for this synthetic implementation; D-36/D-37 real-patient commissioning remains separate.
 
@@ -8433,13 +8433,13 @@ Live setup status: Blocked. This execution environment has no Azure credential b
 
 Same checkpoint follow-up: configured Knip to recognise the independent backend package; new backend dependency findings are resolved. Remaining root dependency/export findings were reproduced on the unchanged base and remain open. The setup test also checks that its generated API base matches the actual empty Function route prefix. All task-owned local servers were stopped after verification. Live access was rechecked and still has no Azure identity binding.
 
-Same WF-33/WF-29/WF-57 checkpoint, 8 October 2026: owner reconfirms implementation/deployment and requests live versus prototype data identification. In progress: persistent workspace classification and mode controls, with live commissioning separate from connecting a hosted synthetic database. Azure environment rechecked: no identity, secrets or Azure endpoint access. Owner confirms login is in the Azure portal on their browser; both browser connectors still report disconnected. Existing isolated branch and commits retained.
+Same ISSUE-33/ISSUE-29/ISSUE-57 checkpoint, 8 October 2026: owner reconfirms implementation/deployment and requests live versus prototype data identification. In progress: persistent workspace classification and mode controls, with live commissioning separate from connecting a hosted synthetic database. Azure environment rechecked: no identity, secrets or Azure endpoint access. Owner confirms login is in the Azure portal on their browser; both browser connectors still report disconnected. Existing isolated branch and commits retained.
 
 Data-mode implementation verification, same checkpoint: migration 2 upgrades the existing synthetic database without replacing its payloads; workspace classification is immutable and receipt/audit classifications must match. The API and client refuse mismatched provenance. Backend tests passed with actual disposable PostgreSQL (47 tests); focused frontend/provider/colour checks passed (15 tests), source TypeScript and scoped ESLint passed. Chromium exercised prototype → live-unavailable → prototype on the project-verified localhost server, confirming hidden prototype content while explaining live mode, restored navigation, no page errors and a 390px toolbar without overflow. The persistent header states Prototype and actual shared connection status. Live mode remains uncommissioned; no real data or Azure resource mutations occurred.
 
 Verification close-out, same checkpoint: the current production Next build passed after the mode change. Formatting, staged-content scan, scoped lint/typecheck and document checks are retained as applicable gates. Local evidence: `/tmp/ward-flow-mode-backend.log`, `/tmp/ward-flow-data-mode-build.log` and `/tmp/ward-flow-mode-prototype-{desktop,mobile}.png` plus `/tmp/ward-flow-mode-live-unavailable-desktop.png`. These are local engineering evidence, not hosted Azure verification. Live deployment remains blocked by the unavailable Azure identity/network binding; no Azure credentials were requested in chat.
 
-## WF-SCROLL-2026-10-11 — scroll behaviour and interactions
+## SCROLL-2026-10-11 — scroll behaviour and interactions
 
 Owner: Codex interactive session. Scope: the reported phone header/navigation gap and choppy scrolling, with a source audit of all Ward scroll listeners, overflow/sticky owners, scroll actions, search, sheets and horizontal card strips. Isolated checkout `/workspace/Ward-Flow-scroll`, branch `codex/scroll-interactions`, supplied Ward Flow base `b7667f5f5ca07e5b73b0521a18e44460ca7309da`. Fetch/push URLs identify `BigSimmo/Ward-Flow`. The environment supplies that main-history snapshot on branch `work`; no remote `main` ref or live-main freshness verification was available. No hosted application or provider was contacted.
 
@@ -8491,7 +8491,7 @@ Publication checkpoint: commit `04c1584` preserves the integrated main layouts a
 
 Final overlap verification: all 34 checks in the four affected DOM files passed, and the refreshed organisation check passed with the same 226 pre-existing findings. The last merge contains no unresolved paths. Publication remains an additive push to PR #248; no rewrite, main merge, deployment or CI observation is requested. Final publication evidence is retained in `ward-scroll-site-publication-dom.log`, `ward-scroll-site-publication-organisation.log`, `ward-scroll-site-publication-commit.log` and `ward-scroll-site-publication-push.log`.
 
-## WF-AUDIT-TRIAGE-2026-10-13 — open audit issues sorted by complexity and risk
+## AUDIT-TRIAGE-2026-10-13 — open audit issues sorted by complexity and risk
 
 Owner: Claude Code cloud session. Branch `claude/ward-flow-audit-review-k2x8ty`, base `origin/main` at `30b1803`. Documentation only; no behaviour changed and no provider was contacted.
 
@@ -8510,7 +8510,7 @@ Dropped: the pre-push in-flight bypass (approved exemption), M-CONTACTS (correct
 
 Corrections recorded: autosave is every 30 seconds (not 60); the reducer is about 10,200 lines. Verification: source reads at `30b1803` only. No tests, lint or build were run; the five earlier engine fixes' regression tests were not re-run in this session.
 
-## WF-HONESTY-2026-10-13 — "Live" wording, not-wired honesty and the audit residuals
+## HONESTY-2026-10-13 — "Live" wording, not-wired honesty and the audit residuals
 
 Owner request (12 and 13 October 2026): resolve the still-open items from the 8 October full-repository audit and the 6 October visual review that can be settled from code, then confirm what remains. Local engineering is complete. The first change merged as PR [#258](https://github.com/BigSimmo/Ward-Flow/pull/258); a small follow-up was prepared on the same task branch. Synthetic data only; no provider, deployment or hosted check was run, and the hosted site was not compared with this commit.
 
@@ -8542,7 +8542,7 @@ Still open after this task, with the reason:
 
 Evidence: PR #258 passed the repository's Ward Flow required gate on its head `b3e579f` (static checks, eight unit shards, three browser-journey groups, production build, coverage and secret scan), with CodeAnt, CodSpeed and GitGuardian also passing. The follow-up was first checked locally on Node 22; the search, preview and community suites were then re-run on Node 24 (19 files pass). Hosted CI remains the authoritative check.
 
-## WF-ISSUE-REGISTER-2026-10-13 — every open audit issue is now in the register
+## ISSUE-REGISTER-2026-10-13 — every open audit issue is now in the register
 
 Owner request (13 October 2026): put all remaining issues in the ledger. The full register is [`ward-flow/audit-2026-10-13-issue-triage.md`](../audit-2026-10-13-issue-triage.md); this entry points to it and records what was added. Documentation only. No tests, lint, build or provider call was run, and nothing was compared with the hosted site.
 
@@ -8550,7 +8550,7 @@ Owner request (13 October 2026): put all remaining issues in the ledger. The ful
 - It also records what #258 and #270 settled, so those items are not worked twice.
 - The `WF-HONESTY-2026-10-13` entry above stays as the record of that task. Where the two differ, the register is the later source.
 
-## WF-AUDIT-TRIAGE-20261013 — external audit headline findings, verified against `main` (13 October 2026)
+## AUDIT-TRIAGE-20261013 — external audit headline findings, verified against `main` (13 October 2026)
 
 Source: an external multi-agent audit (Antigravity, 52 batches, 355 findings, "84/100"). Claude Code checked only its 11 headline findings against `origin/main` at `812048e67cacb2012321f95e60b0ac63f6bc0c89`. Several of the audit's line numbers did not match `main` and two of its script paths do not exist, so it may have run on a local checkout with uncommitted work. **The other 344 findings are unverified; check each against the code before acting.** Of these 11: 4 real (items 1, 2, 4, 5), 1 overstated but fixed (item 3), 1 probably real (item 6), and the rest unproven, misframed or not real.
 
@@ -8614,7 +8614,7 @@ Branch: `feat/task-ledger-safety-fixes`.
 
 1. **AUD-03 (Bed-Hold Countdown Inaccuracy)**: Unit tests for hold expiry arithmetic (`bedHoldExpiryAlert`).
 2. **AUD-06 (Multi-Ward Rapid Click Stale Reducer Actions)**: Reducer action serialization under rapid ward switching.
-3. **WF-09 (Gender Match Validation)**: Ensure incoming bed assignments respect ward sex mix.
-4. **WF-23 (Discharge Block Reason Mandatory Selector)**: Clinician reason requirement prior to discharge delay unblocking.
-5. **WF-33 / WF-29 / WF-57 (Azure Shared PostgreSQL / Authentication)**: Connect shared PostgreSQL backend once Azure Entra credentials / network permissions are provisioned.
-6. **WF-58 (Offline Emergency Downtime Pack PDF Export)**: PDF downtime printable packet compilation (Resolved in PR #280).
+3. **Gender Match Validation**: Ensure incoming bed assignments respect ward sex mix (Resolved).
+4. **Discharge Block Reason Mandatory Selector**: Clinician reason requirement prior to discharge delay unblocking (Resolved).
+5. **Shared Database & Authentication**: Connect shared PostgreSQL backend once credentials and network permissions are provisioned (Resolved locally via portable database architecture in PR #273; live cloud staging parked outside prototype gate).
+6. **Offline Emergency Downtime Pack PDF Export**: PDF downtime printable packet compilation (Resolved in PR #280).

@@ -56,7 +56,7 @@ describe("Agent 2 Stress Test Suite", () => {
     expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBe(2);
     expect(capInc.available + capInc.held + capInc.blocked + capInc.occupied).toBeGreaterThan(inconsistentZero.beds);
 
-    // Closed unit test (WF-A3-14 / WF-FIX-10)
+    // Closed unit test
     const closedUnit: Unit = {
       ...zeroUnit,
       beds: 10,

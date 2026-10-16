@@ -1053,7 +1053,7 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
         tier = 4;
       }
 
-      // 3-Tier Involuntary Waitlist Priority Hierarchy (WF-01):
+      // 3-Tier Involuntary Waitlist Priority Hierarchy:
       // For involuntary placements, in-catchment wards with 0 vacant locked beds are never
       // rejected/disqualified; surfaced via tier 3 and waitlist properties.
 
@@ -1480,7 +1480,7 @@ export function buildActionInbox(
  *   already carry an earlier decline from a ward that said no first. Read without the
  *   `acceptedUnitId` check, an accepted movement with one prior decline satisfied the same two
  *   conditions `case "DECLINE"` produces and was reported as refused by every ward on the network
- *   — WF-23. `case "DECLINE"` only ever removes a unit from `referredUnitIds` in the same update
+ *   — `case "DECLINE"` only ever removes a unit from `referredUnitIds` in the same update
  *   that adds the matching `declines` entry, so "every unit this movement was ever referred to
  *   has since said no, and none of them are still deciding" is what `referredUnitIds.length ===
  *   0 && declines.length > 0` meant ONLY before a movement could also reach empty
@@ -1892,7 +1892,7 @@ export function searchPatients(
   if (movementFilterSet) return movementHalf;
 
   const referralHalf: PatientSearchResult[] = referralList
-    // ⚠️ WF-13: `referralState` alone stays "queued" for a referral whose only destination was
+    // ⚠️ `referralState` alone stays "queued" for a referral whose only destination was
     // withdrawn (`RECORD_REFERRER_WITHDRAWAL` never touches `state`, O-17.11). The added
     // `some(isAwaitingAnswer)` excludes a referral with nothing left genuinely awaiting an
     // answer — the referrer took it back, so it is no longer a patient search can act on.
