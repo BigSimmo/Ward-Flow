@@ -142,3 +142,35 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   return entries.filter((entry): entry is AuditEvent => entry !== undefined);
 }
+
+/** How many records of each kind the seeded entries take their subjects from (see above). */
+const SEEDED_SUBJECT_POSITIONS = 3;
+
+/** The list with one record moved to each position a seeded entry may take its subject from. */
+function placements<T extends { readonly id: string }>(records: readonly T[], id: string): T[][] {
+  const record = records.find((candidate) => candidate.id === id);
+  if (!record) return [];
+  const rest = records.filter((candidate) => candidate !== record);
+  return Array.from({ length: SEEDED_SUBJECT_POSITIONS }, (_, at) => [...rest.slice(0, at), record, ...rest.slice(at)]);
+}
+
+/**
+ * The seeded entry with this id, about whichever record its id names. A shared desk derives seeded
+ * entries from its own part of the workspace, so their subjects need not be the first records of the
+ * whole one. The entry is rebuilt with that record in its subject's place, so the whole workspace
+ * finds every entry a desk's screens show.
+ */
+export function seededGovernanceAuditEntry(state: WardFlowState, id: unknown): AuditEvent | undefined {
+  if (typeof id !== "string" || !id.startsWith("audit-seed-") || !id.includes(":")) return undefined;
+  const subjectId = id.slice(id.indexOf(":") + 1);
+  const worlds: WardFlowState[] = [
+    ...placements(state.referrals, subjectId).map((referrals) => ({ ...state, referrals })),
+    ...placements(state.movements, subjectId).map((movements) => ({ ...state, movements })),
+    ...placements(state.admissions, subjectId).map((admissions) => ({ ...state, admissions })),
+  ];
+  for (const world of worlds) {
+    const entry = syntheticGovernanceAuditEvents(world).find((candidate) => candidate.id === id);
+    if (entry) return entry;
+  }
+  return undefined;
+}

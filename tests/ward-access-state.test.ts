@@ -7,6 +7,7 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
+import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { INBOX_CATEGORIES } from "../src/components/ward-management/ward-inbox-reducer";
 import { syntheticGovernanceAuditEvents } from "../src/components/ward-management/ward-governance-seed";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "../src/components/ward-management/ward-role-access";
@@ -386,6 +387,19 @@ describe("a command from a desk", () => {
     // Two desks show the same kind of entry about different records, so it has two ids.
     const legal = shownBy.map((shown) => [...shown].find((id) => id.startsWith("audit-seed-legal-status:")));
     expect(new Set(legal.filter(Boolean)).size).toBeGreaterThan(1);
+    // The whole workspace accepts a review of every entry a desk shows, not only its own first records.
+    for (const eventId of shownBy.flatMap((shown) => [...shown])) {
+      const reviewed = wardFlowReducer(state, {
+        type: "REVIEW_AUDIT_EVENT",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        eventId,
+        expectedGeneration: state.worldGeneration,
+        expectedReviewCount: 0,
+        decision: "reviewed",
+      } as WardFlowEvent);
+      expect(reviewed.auditReviews.map((review) => review.eventId)).toEqual([eventId]);
+    }
     desks.forEach((access, desk) => {
       const sent = scopeWardFlowState(world, access, options).state.auditReviews;
       // A desk is sent a review only when its own screens show that entry, never another desk's
