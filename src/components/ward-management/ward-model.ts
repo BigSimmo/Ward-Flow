@@ -3150,8 +3150,8 @@ export type Referral = {
     cleared: boolean;
     at: Instant;
   };
-  readonly reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>;
-  readonly reassessmentNote?: string;
+  readonly [key: `reassessmentHistory${string}`]: ReadonlyArray<ClinicalReassessmentEntry> | undefined;
+  readonly [key: `reassessmentNote${string}`]: string | undefined;
 };
 
 /**

@@ -220,7 +220,7 @@ export function RecordFormSheet({
       onClose={dismiss}
       initialFocusRef={typeRef}
       title="Record a form"
-      description="Attach an MHA 2014 form to an open movement and record the time written on the paper"
+      description="Attach a form to an open movement and record the time written on the paper"
       portal={false}
       testId="ward-legal-record"
       footer={

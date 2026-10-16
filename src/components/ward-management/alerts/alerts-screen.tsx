@@ -618,7 +618,8 @@ function AlertsWorkspace() {
           ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
           refused: "Escalation was not accepted.",
         });
-        dispatch({
+        const sendEvent = dispatch;
+        sendEvent({
           type: "RECORD_ESCALATION",
           role: "coordinator",
           now: clockNow,
