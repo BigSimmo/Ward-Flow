@@ -118,12 +118,81 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
   });
 
-  it("steps through patients with J and K and closes with Escape", () => {
+  it("steps through patients with J and K while focus is in the handover and closes with Escape", () => {
     renderHandover();
+    firstPatientRow().focus();
     fireEvent.keyDown(window, { key: "j" });
     expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
     expect(firstPatientRow()).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(window, { key: "j" });
+    expect(firstPatientRow()).toHaveAttribute("aria-selected", "false");
+    fireEvent.keyDown(window, { key: "k" });
+    expect(firstPatientRow()).toHaveAttribute("aria-selected", "true");
     fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+  });
+
+  it("keeps the J shortcut working when nothing is focused, as after a fresh load", () => {
+    renderHandover();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    fireEvent.keyDown(window, { key: "j" });
+    expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
+  });
+
+  it.each(["j", "p", "m"])("ignores the %s shortcut when focus is outside the handover", async (key) => {
+    const user = userEvent.setup();
+    renderHandover();
+    render(<button type="button">Elsewhere in the shell</button>);
+    await user.click(screen.getByRole("button", { name: "Elsewhere in the shell" }));
+    await user.keyboard(key);
+
+    expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-handover-print-sheet")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start meeting" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("can disable single-key shortcuts by keyboard, keep Escape, and enable navigation again", async () => {
+    const user = userEvent.setup();
+    renderHandover();
+    const help = screen.getByRole("button", { name: "Keyboard shortcuts" });
+    help.focus();
+    await user.keyboard("{Enter}");
+    const enabled = screen.getByRole("checkbox", { name: "Enable single-key shortcuts" });
+    expect(enabled).toBeChecked();
+    expect(enabled).toHaveFocus();
+    await user.keyboard(" ");
+    expect(enabled).not.toBeChecked();
+    await user.keyboard("{Escape}");
+
+    firstPatientRow().focus();
+    for (const key of ["j", "p", "m", "k", "s"]) {
+      await user.keyboard(key);
+      expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("ward-handover-print-sheet")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Start meeting" })).toHaveAttribute("aria-pressed", "false");
+    }
+    await user.click(firstPatientRow());
+    expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+
+    help.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("checkbox", { name: "Enable single-key shortcuts" })).not.toBeChecked();
+    await user.keyboard(" ");
+    await user.keyboard("{Escape}");
+    firstPatientRow().focus();
+    await user.keyboard("j");
+    expect(firstPatientRow()).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
+  });
+
+  it("keeps letter shortcuts inactive while choosing a handover filter", () => {
+    renderHandover();
+    const filter = screen.getByRole("combobox", { name: "Filter the sheet" });
+    filter.focus();
+    fireEvent.keyDown(filter, { key: "j" });
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
   });
 
@@ -134,6 +203,7 @@ describe("Handover page", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: /^Present$/ }));
     const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
     scroll.mockClear();
+    firstPatientRow().focus();
     fireEvent.keyDown(window, { key: "j" });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();

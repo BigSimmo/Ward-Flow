@@ -189,6 +189,11 @@ export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
       ) : (
         <p className={styles.empty}>No ward has a free bed that fits. Try Any for bed type or home service.</p>
       )}
+      {matches.length > 6 ? (
+        <p className={styles.note}>
+          Showing 6 of {matches.length} matching wards. Narrow the filters to see other wards.
+        </p>
+      ) : null}
       <p className={styles.note}>Quick filter only. The referral still checks every rule before a bed is offered.</p>
     </div>
   );
