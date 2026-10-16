@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import {
+  admissionCriteriaEligibility,
+  admissionLegalStatus,
+  seedWardFlowState,
+  wardFlowReducer,
+} from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -9,6 +14,8 @@ import {
   CRITERIA_STATUS_NOT_RECORDED,
   CRITERIA_VOLUNTARY_ONLY,
   criteriaEligibility,
+  criteriaLedDepartureNote,
+  criteriaLedTileChip,
   dischargeCriteriaStatus,
   isDischargeCriteriaRecord,
   nextDischargeCriteria,
@@ -245,5 +252,64 @@ describe("SET_DISCHARGE_CRITERIA in the reducer", () => {
       setCriteria(id, NOW_ANCHOR, { actingUnitId: "scgh-adult-open" } as Partial<WardFlowEvent>),
     );
     expect(lastRejection(state, wrongWard)).toBe("Discharge criteria can only be set by the patient's own ward.");
+  });
+});
+
+describe("criteria led discharge on boards and at departure (D-64)", () => {
+  it("gives each status a short tile chip and a departure note", () => {
+    const setAt = NOW_ANCHOR - 60;
+    const partWay = dischargeCriteriaStatus(
+      {
+        setAt,
+        items: [
+          { criterion: "Accommodation confirmed", metAt: setAt },
+          { criterion: "Transport home arranged", metAt: null },
+        ],
+      },
+      "voluntary",
+      NOW_ANCHOR,
+    );
+    expect(criteriaLedTileChip(partWay)).toMatchObject({ label: "CLD 1/2", tone: "neutral" });
+    expect(criteriaLedDepartureNote(partWay)).toBe(
+      "Criteria led discharge: 1 of 2 met. Ask for a medical review before they leave.",
+    );
+    expect(criteriaLedTileChip({ kind: "all_met", total: 2, lapsesAt: NOW_ANCHOR })).toMatchObject({
+      label: "CLD ready",
+      tone: "success",
+    });
+    expect(criteriaLedTileChip({ kind: "lapsed", met: 2, total: 2 })).toMatchObject({ label: "CLD review" });
+    expect(criteriaLedDepartureNote({ kind: "lapsed", met: 2, total: 2 })).toMatch(/has lapsed/);
+    expect(criteriaLedTileChip({ kind: "paused" })).toMatchObject({ label: "CLD paused", tone: "warning" });
+    expect(criteriaLedTileChip({ kind: "none" })).toBeNull();
+    expect(criteriaLedDepartureNote({ kind: "none" })).toBeNull();
+  });
+
+  it("seeds one Dabakarn patient part way and one with every criterion met", () => {
+    const seeded = seedWardFlowState();
+    const kinds = seeded.admissions
+      .filter((a) => a.unitId === UNIT && a.state === "occupied" && a.dischargeCriteria)
+      .map((a) => {
+        expect(isDischargeCriteriaRecord(a.dischargeCriteria)).toBe(true);
+        return dischargeCriteriaStatus(a.dischargeCriteria, admissionCriteriaEligibility(seeded, a), NOW_ANCHOR).kind;
+      })
+      .sort();
+    expect(kinds).toEqual(["all_met", "in_progress"]);
+  });
+
+  it("shows the legal status the eligibility rule reads, so the Legal tile and the card agree", () => {
+    const seeded = seedWardFlowState();
+    const occupied = seeded.admissions.filter((a) => a.state === "occupied");
+    let voluntary = 0;
+    for (const admission of occupied) {
+      const eligibility = admissionCriteriaEligibility(seeded, admission);
+      const shown = admissionLegalStatus(seeded, admission);
+      if (eligibility === "voluntary") {
+        voluntary += 1;
+        expect(shown, admission.id).toMatch(/^voluntary\b/i);
+      } else if (eligibility === "involuntary") {
+        expect(shown, admission.id).not.toMatch(/^voluntary\b/i);
+      }
+    }
+    expect(voluntary).toBeGreaterThan(0);
   });
 });

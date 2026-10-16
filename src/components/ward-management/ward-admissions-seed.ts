@@ -6,6 +6,7 @@ import type {
   PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { DischargeCriterion } from "@/components/ward-management/ward-discharge-criteria";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { HomeRegion, MovementId, ReferralGender, Sex } from "@/components/ward-management/ward-model";
@@ -229,6 +230,15 @@ type OccupantExtras = {
    * "no seeded referral names this patient" against that exact index.
    */
   readonly patientId?: PatientId;
+  /**
+   * D-64: criteria led discharge for a voluntary occupant, so a demo opens with one patient part way
+   * and one ready. Hours before the anchor the list was set, and each criterion with the hours
+   * before the anchor it was ticked met (`null` for not yet). Synthetic, like everything here.
+   */
+  readonly criteria?: {
+    readonly setHoursAgo: number;
+    readonly items: readonly (readonly [DischargeCriterion, number | null])[];
+  };
 };
 
 /**
@@ -340,6 +350,17 @@ function unitOccupants(
       leavingDestination: null,
       leftAt: null,
       followUp: null,
+      ...(extras?.criteria
+        ? {
+            dischargeCriteria: {
+              setAt: WARD_ADMISSIONS_ANCHOR - extras.criteria.setHoursAgo * 60,
+              items: extras.criteria.items.map(([criterion, metHoursAgo]) => ({
+                criterion,
+                metAt: metHoursAgo === null ? null : WARD_ADMISSIONS_ANCHOR - metHoursAgo * 60,
+              })),
+            },
+          }
+        : {}),
     };
   });
 }
@@ -505,10 +526,47 @@ const occupiedBeds: Admission[] = [
     ["Female", "Perth Metropolitan", 5, 9, { patientId: "PT-035" }],
     ["Male", "Perth Metropolitan", 20, 2, { patientId: "PT-034" }],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-RPHS-10" }],
-    ["Male", "Perth Metropolitan", 2, null, { patientId: "PT-036" }],
+    [
+      "Male",
+      "Perth Metropolitan",
+      2,
+      null,
+      {
+        patientId: "PT-036",
+        criteria: {
+          setHoursAgo: 3,
+          items: [
+            ["Mental state unchanged since the psychiatrist's last review", 1],
+            ["No new risk concerns raised by the treating team", 1],
+            ["Accommodation confirmed", null],
+            ["Community follow up booked within 7 days", null],
+          ],
+        },
+      },
+    ],
     ["Female", "Wheatbelt", 95, 3, { patientId: "PT-G-AD-RPHS-12" }],
     ["Male", "Gascoyne", 33, 5, { patientId: "PT-G-AD-RPHS-13" }],
-    ["Female", "Perth Metropolitan", 6, -3, { referralId: "RF-RPHS-14", movementId: null, patientId: "PT-003" }],
+    [
+      "Female",
+      "Perth Metropolitan",
+      6,
+      -3,
+      {
+        referralId: "RF-RPHS-14",
+        movementId: null,
+        patientId: "PT-003",
+        criteria: {
+          setHoursAgo: 6,
+          items: [
+            ["Mental state unchanged since the psychiatrist's last review", 2],
+            ["Accommodation confirmed", 4],
+            ["Community follow up booked within 7 days", 3],
+            ["Safety plan reviewed with the patient", 2],
+            ["Observations done and reviewed in the last 24 hours", 1],
+          ],
+        },
+      },
+    ],
     ["Male", "Great Southern", 210, 10, { blockReason: "Awaiting clean", patientId: "PT-G-AD-RPHS-15" }],
     ["Female", "Mid West", null, 4, { patientId: "PT-G-AD-RPHS-16" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-RPHS-17" }],

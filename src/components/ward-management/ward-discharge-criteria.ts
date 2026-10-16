@@ -96,6 +96,56 @@ export function dischargeCriteriaStatus(
   return met === total ? { kind: "all_met", total, lapsesAt } : { kind: "in_progress", met, total, lapsesAt };
 }
 
+/**
+ * The short chip a bed tile shows for its criteria, or null when none are set. The WACHS Criteria
+ * Led Discharge Guideline (16 Apr 2026, s 2.4 and 2.5) asks for a patient's criteria led discharge
+ * status to be noted on journey boards, whiteboards and handover, not only in the record.
+ */
+export function criteriaLedTileChip(
+  status: DischargeCriteriaStatus,
+): { label: string; tone: "success" | "warning" | "neutral"; phrase: string } | null {
+  switch (status.kind) {
+    case "none":
+      return null;
+    case "all_met":
+      return { label: "CLD ready", tone: "success", phrase: "Criteria led discharge, all criteria met" };
+    case "in_progress":
+      return {
+        label: `CLD ${status.met}/${status.total}`,
+        tone: "neutral",
+        phrase: `Criteria led discharge, ${status.met} of ${status.total} criteria met`,
+      };
+    case "lapsed":
+      return { label: "CLD review", tone: "warning", phrase: "Criteria led discharge lapsed, review needed" };
+    case "paused":
+      return {
+        label: "CLD paused",
+        tone: "warning",
+        phrase: "Criteria led discharge paused, not recorded as voluntary",
+      };
+  }
+}
+
+/**
+ * What the bed panel says beside "Record that they have left", or null when no criteria are set.
+ * It warns and never blocks. The WACHS guideline (s 3) asks the clinician facilitating the
+ * discharge to instigate a medical review when any criterion is unmet or there is a concern.
+ */
+export function criteriaLedDepartureNote(status: DischargeCriteriaStatus): string | null {
+  switch (status.kind) {
+    case "none":
+      return null;
+    case "all_met":
+      return "Criteria led discharge: all criteria met.";
+    case "in_progress":
+      return `Criteria led discharge: ${status.met} of ${status.total} met. Ask for a medical review before they leave.`;
+    case "lapsed":
+      return "Criteria led discharge has lapsed. Ask the treating psychiatrist for a review before they leave.";
+    case "paused":
+      return "Criteria led discharge is paused because the patient is no longer recorded as voluntary.";
+  }
+}
+
 export type DischargeCriteriaChange = {
   criteria: readonly unknown[] | null;
   met: readonly unknown[];

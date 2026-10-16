@@ -21,7 +21,11 @@ import { stalePreparingReleases } from "@/components/ward-management/ward-bed-av
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { WardDischargeCriteriaCard, type DischargeCriteriaUpdate } from "./ward-discharge-criteria-card";
-import type { CriteriaEligibility } from "@/components/ward-management/ward-discharge-criteria";
+import {
+  criteriaLedDepartureNote,
+  dischargeCriteriaStatus,
+  type CriteriaEligibility,
+} from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -317,6 +321,12 @@ export function WardBedDossierDrawer({
         onChange={onSetCriteria ? (update) => onSetCriteria(admission.id, update) : undefined}
       />
     ) : null;
+  // D-64: the criteria state beside "Record that they have left". It warns and never blocks.
+  const criteriaRecord = criteriaCard && admission ? admission.dischargeCriteria : null;
+  const criteriaDepartureNote =
+    criteriaRecord && criteriaEligibility !== undefined
+      ? criteriaLedDepartureNote(dischargeCriteriaStatus(criteriaRecord, criteriaEligibility, now))
+      : null;
   const admittedAt = admission?.arrivedAt ?? admission?.pulledAt ?? null;
 
   // Only what the stay itself recorded, newest first. Nothing here is inferred.
@@ -343,6 +353,12 @@ export function WardBedDossierDrawer({
         tone: "success",
         label: `Discharge confirmed${admission.dischargeConfirmedBy ? ` by ${admission.dischargeConfirmedBy}` : ""}`,
       });
+    if (criteriaRecord && criteriaRecord.items.length > 0) {
+      timeline.push({ at: criteriaRecord.setAt, tone: "neutral", label: "Discharge criteria set or reviewed" });
+      const metTimes = criteriaRecord.items.map((item) => item.metAt);
+      if (metTimes.every((at): at is number => at !== null))
+        timeline.push({ at: Math.max(...metTimes), tone: "success", label: "All discharge criteria met" });
+    }
     timeline.sort((left, right) => right.at - left.at);
   }
 
@@ -775,11 +791,24 @@ export function WardBedDossierDrawer({
                       </button>
                     ) : null}
                   </p>
+                  {criteriaDepartureNote ? (
+                    <p
+                      className={styles.footCriteria}
+                      id="drawer-leaving-criteria"
+                      data-testid="ward-drawer-leaving-criteria"
+                    >
+                      {criteriaDepartureNote}
+                    </p>
+                  ) : null}
                   <Button
                     variant="pri"
                     size="lg"
                     className={styles.pill}
-                    aria-describedby="drawer-leaving-summary"
+                    aria-describedby={
+                      criteriaDepartureNote
+                        ? "drawer-leaving-summary drawer-leaving-criteria"
+                        : "drawer-leaving-summary"
+                    }
                     onClick={() => {
                       if (bedItem.admissionId)
                         onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);

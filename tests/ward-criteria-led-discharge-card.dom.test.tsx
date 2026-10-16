@@ -30,6 +30,9 @@ describe("criteria led discharge card", () => {
     const save = screen.getByRole("button", { name: "Save criteria" });
     expect(save).toBeDisabled();
     fireEvent.click(screen.getByRole("checkbox", { name: "Set by the treating psychiatrist" }));
+    // D-64: the patient must also have been told (WACHS CLD guideline s 2.2).
+    expect(save).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Patient told they are on criteria led discharge" }));
     fireEvent.click(save);
     expect(onChange).toHaveBeenCalledWith({
       criteria: ["Accommodation confirmed"],
@@ -44,6 +47,9 @@ describe("criteria led discharge card", () => {
       <WardDischargeCriteriaCard record={RECORD} eligibility="voluntary" now={NOW} onChange={onChange} />,
     );
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(/^1 of 2 met\. Review needed after/);
+    // D-64: when each tick was made, and what to do if a criterion cannot be met.
+    expect(screen.getAllByText(/^Ticked /)).toHaveLength(1);
+    expect(screen.getByTestId("ward-drawer-criteria-escalate")).toHaveTextContent(/ask for a medical review/);
     fireEvent.click(screen.getByRole("checkbox", { name: "Transport home arranged" }));
     expect(onChange).toHaveBeenCalledWith({
       criteria: ["Accommodation confirmed", "Transport home arranged"],
@@ -63,6 +69,9 @@ describe("criteria led discharge card", () => {
     render(<WardDischargeCriteriaCard record={RECORD} eligibility="voluntary" now={later} onChange={vi.fn()} />);
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(/have lapsed/);
     expect(screen.queryByRole("checkbox")).toBeNull();
+    // D-64: a tick from before the lapse no longer reads as a current, green "Met".
+    expect(screen.getByText("Met before it lapsed")).toBeInTheDocument();
+    expect(screen.queryByText("Met")).toBeNull();
     expect(screen.getByRole("button", { name: "Review criteria" })).toBeInTheDocument();
   });
 

@@ -18,6 +18,7 @@ import dynamic from "next/dynamic";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -86,6 +87,7 @@ import {
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
   admissionCriteriaEligibility,
+  admissionLegalStatus,
   HIGH_ACUITY_STAFFING_REFUSAL,
   OVERRIDE_REASON_REQUIRED,
 } from "@/components/ward-management/ward-flow-reducer";
@@ -1384,7 +1386,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission?.specialling === true;
 
-    const patientLegalStatus = linkedMovement?.legalStatus;
+    // The same records the criteria led discharge card reads, so the Legal tile and the card agree.
+    const patientLegalStatus =
+      (admission ? admissionLegalStatus({ movements, patients }, admission) : undefined) ?? linkedMovement?.legalStatus;
+    const criteriaLedChip =
+      criteriaLedOn && admission?.state === "occupied"
+        ? criteriaLedTileChip(
+            dischargeCriteriaStatus(
+              admission.dischargeCriteria,
+              admissionCriteriaEligibility({ movements, patients }, admission),
+              now,
+            ),
+          )
+        : null;
     const patientLegalForm = linkedMovement?.legalForm;
     const legalStatusLabel = patientLegalForm
       ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
@@ -1444,6 +1458,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       legalStatus: patientLegalStatus,
       legalForm: patientLegalForm,
       legalStatusLabel,
+      criteriaLedChip,
       admissionId: admission?.id,
       stayAdmissionId:
         admission?.id ??
