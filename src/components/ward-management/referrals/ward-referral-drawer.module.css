@@ -1071,6 +1071,12 @@
   color: var(--wf-ink-3);
 }
 
+@media (pointer: coarse) {
+  .notOnWardSelect {
+    min-height: 48px;
+  }
+}
+
 .fieldInput:hover,
 .fieldSelect:hover,
 .clinicalTextarea:hover {

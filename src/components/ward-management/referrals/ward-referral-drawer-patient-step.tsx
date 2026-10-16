@@ -418,7 +418,7 @@ export function ReferralPatientStep({
                   <SelectBox>
                     <select
                       id={`${sectionId}-not-on-ward`}
-                      className={styles.fieldSelect}
+                      className={`${styles.fieldSelect} ${styles.notOnWardSelect}`}
                       value={notOnWardReason}
                       onChange={(e) => setNotOnWardReason(e.target.value as NotOnSendingWardReason | "")}
                     >
