@@ -22,14 +22,15 @@ import "./search/global-search-preview.module.css";
 const loadSearch = () => import("./ward-global-search");
 const SearchLoaded = dynamic(() => loadSearch().then((m) => m.WardGlobalSearch));
 
-type Loaded = { Search: ComponentType<WardGlobalSearchProps>; query: string; focused: boolean };
-
 export function WardGlobalSearch(props: WardGlobalSearchProps) {
   const phone = useIsPhone();
   // Settled by the first render (the server's phone guess), so resizing a window never swaps a
   // working search back to the placeholder.
   const [deferred] = useState(phone);
-  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const [Loaded, setLoaded] = useState<ComponentType<WardGlobalSearchProps> | null>(null);
+  // What the placeholder field holds, kept to the last keystroke so none is lost in the swap.
+  const [draft, setDraft] = useState("");
+  const [focused, setFocused] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const fieldRef = useRef<HTMLInputElement>(null);
@@ -40,12 +41,13 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
     loadSearch().then(
       (module) => {
         if (!live) return;
+        // Also covers a tap or typing before the page was ready, which raised no React events.
         const field = fieldRef.current;
-        setLoaded({
-          Search: module.WardGlobalSearch,
-          query: field?.value ?? "",
-          focused: field !== null && document.activeElement === field,
-        });
+        if (field) {
+          setDraft(field.value);
+          if (document.activeElement === field) setFocused(true);
+        }
+        setLoaded(() => module.WardGlobalSearch);
       },
       () => {
         // Offline before the code arrived: try again when the field is next tapped.
@@ -58,18 +60,21 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
   }, [deferred, attempt]);
 
   if (!deferred) return <SearchLoaded {...props} />;
-  if (loaded) return <loaded.Search {...props} initialQuery={loaded.query} takeFocus={loaded.focused} />;
+  if (Loaded) return <Loaded {...props} initialQuery={draft} takeFocus={focused} />;
   return (
     <SearchField
       fieldRef={fieldRef}
       label={props.label ?? "Search"}
       placeholder={props.placeholder ?? "Search people and movements…"}
       scope={props.scope}
+      onChange={setDraft}
       onFocus={() => {
+        setFocused(true);
         if (!failed) return;
         setFailed(false);
         setAttempt((count) => count + 1);
       }}
+      onBlur={() => setFocused(false)}
     />
   );
 }
@@ -80,13 +85,17 @@ function SearchField({
   label,
   placeholder,
   scope,
+  onChange,
   onFocus,
+  onBlur,
 }: {
   fieldRef: RefObject<HTMLInputElement | null>;
   label: string;
   placeholder: string;
   scope: ReactNode;
+  onChange: (value: string) => void;
   onFocus: () => void;
+  onBlur: () => void;
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
@@ -114,7 +123,9 @@ function SearchField({
           spellCheck={false}
           aria-describedby={hintId}
           placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
           onFocus={onFocus}
+          onBlur={onBlur}
           data-testid="ward-global-search-input"
         />
         <kbd aria-hidden="true" className={styles.shortcut} data-ward-search-shortcut>
