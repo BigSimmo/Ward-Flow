@@ -30,7 +30,11 @@ import {
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -83,6 +87,7 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
+import { WardFormTimes } from "../tools/ward-form-times";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
@@ -135,10 +140,21 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
 }
 
 export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: string } = {}) {
+  const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
   const { movements, referrals, patients, admissions, units, supportNotifications, dispatch, dayZero, rejections } =
-    useWardFlow();
+    useWardFlowSelect(
+      "movements",
+      "referrals",
+      "patients",
+      "admissions",
+      "units",
+      "supportNotifications",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
   const now = useWardFlowClock();
   const gate = useRoleGate();
   // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
@@ -181,10 +197,10 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
-  const reminders = legalExpiryReminderSummary(movements, now);
+  const reminders = legalExpiryReminderSummary(movements, now, thresholds);
   const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
   const upcoming = withDeadline.length - passed;
-  const actNow = withDeadline.filter((movement) => isActNow(clockStanding(movement, now))).length;
+  const actNow = withDeadline.filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
 
   const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
   const nameOf = (movement: Movement) => patientOf(movement).formalName;
@@ -201,7 +217,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     hasGap(movement, gap) && (gap !== "written" || isOwnedLegalFormCode(movement.legalForm?.code));
   const matches = (movement: Movement): boolean => {
     if (highlight === null) return false;
-    const standing = clockStanding(movement, now);
+    const standing = clockStanding(movement, now, thresholds);
     if (highlight.kind === "act") return isActNow(standing);
     if (highlight.kind === "soon") return standing === "soon";
     if (highlight.kind === "none") return currentLegalDueAt(movement) === undefined;
@@ -312,7 +328,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     label: `Form ${entry.code}`,
   }));
   const next = withDeadline[0];
-  const nextStanding = next ? clockStanding(next, now) : "none";
+  const nextStanding = next ? clockStanding(next, now, thresholds) : "none";
   const closedWithForms = movements
     .filter((movement) => !isOpen(movement) && movement.legalForm !== undefined)
     .sort((a, b) => (b.closure?.at ?? b.openedAt) - (a.closure?.at ?? a.openedAt));
@@ -627,6 +643,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           </ul>
         </CardBody>
       </Card>
+      {/* Form times (Tools review, 15 Oct 2026): typed times only, rule D5. Also in Tools. */}
+      <Card aria-label="Check a form time" className={styles.formTimesCard}>
+        <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
+        <CardBody>
+          <WardFormTimes />
+        </CardBody>
+      </Card>
     </div>
   );
 
@@ -917,7 +940,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                 {view === "clocks" ? (
                   <section
                     className={styles.groups}
-                    role="region"
                     aria-label="Legal forms and deadlines"
                     data-testid="ward-legal-forms-groups"
                   >
@@ -1039,7 +1061,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
           now={now}
           onSaveForm={({ movementId, formCode, writtenAt }) => {
-            if (!isOwnedLegalFormCode(formCode)) return false;
+            if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
+            if (!openMovements.some((movement) => movement.id === movementId)) return false;
             runStep(
               {
                 type: "RECORD_LEGAL_FORM_WRITTEN",
@@ -1067,6 +1090,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           now={now}
           onClose={() => setExtendId(null)}
           onExtendForm={(movement, dueAt) => {
+            if (!openMovements.some((candidate) => candidate.id === movement.id)) return false;
             runStep(
               {
                 type: "RECORD_LEGAL_FORM_EXPIRY",
@@ -1140,12 +1164,13 @@ function FormRow({
   onSelect,
   onAddTime,
 }: FormRowProps) {
+  const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm;
   if (!legalForm) {
     throw new Error(`FormRow rendered for movement ${movement.id}, which carries no legal form`);
   }
-  const classification = legalFormRowClassification(movement, now);
-  const standing = clockStanding(movement, now);
+  const classification = legalFormRowClassification(movement, now, thresholds);
+  const standing = clockStanding(movement, now, thresholds);
   const reason = legalDeadlineText(movement, now);
   const facts = recordedFacts(movement);
   const done = facts.filter((fact) => fact.at !== undefined).length;
@@ -1206,7 +1231,7 @@ function FormRow({
             <span className={styles.leftLine}>
               <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
               <strong className={styles.leftValue}>{leftText(movement, now)}</strong>
-              <span className={styles.sub}>{standingWord(standing)}</span>
+              <span className={styles.sub}>{standingWord(standing, thresholds)}</span>
             </span>
             <span className={styles.progress} data-tone={STANDING_TONE[standing]} aria-hidden="true">
               <span style={{ width: `${Math.round(elapsedFraction(movement, now) * 100)}%` }} />
@@ -1267,8 +1292,9 @@ function FormRow({
  * by colour only.
  */
 function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onSelect }: FormRowProps) {
+  const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm!;
-  const standing = clockStanding(movement, now);
+  const standing = clockStanding(movement, now, thresholds);
   const facts = recordedFacts(movement);
   const missing = facts.filter((fact) => fact.at === undefined).length;
   const where = wardName ? `${edName} to ${wardName}` : edName;

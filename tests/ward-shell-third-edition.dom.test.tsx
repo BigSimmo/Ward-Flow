@@ -54,6 +54,7 @@ import {
   type WardPrimaryAction,
 } from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 /** Dispatches a raw Tab keydown the same way `tests/sheet-focus.dom.test.tsx` already does —
  *  `<Sheet>`'s focus trap computes the next focusable element itself and calls
@@ -169,7 +170,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
   });
 
   it.each([
-    ["/mockups/ward-flow/movements/WF-001", "/mockups/ward-flow/movements"],
+    [movementHref("WF-001"), "/mockups/ward-flow/movements"],
     ["/mockups/ward-flow/statistics/ward/rph-adult-secure", "/mockups/ward-flow/statistics"],
     ["/mockups/ward-flow/referrals/new", "/mockups/ward-flow/referrals/new"],
   ])("highlights only the owning destination for %s", (pathname, href) => {
@@ -457,7 +458,7 @@ describe("task movement navigation", () => {
     const task = await screen.findByTestId("ward-task-bed-pull-WF-004");
     await user.click(task);
 
-    expect(mockRouterPush).toHaveBeenCalledWith("/mockups/ward-flow/movements/WF-004");
+    expect(mockRouterPush).toHaveBeenCalledWith(movementHref("WF-004"));
     expect(screen.queryByTestId("ward-bar-tasks-sheet")).not.toBeInTheDocument();
   });
 });
@@ -706,7 +707,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps scenario controls and the role switcher under Shift desk while account utilities stay out", async () => {
+  it("keeps the one Demo panel and the role switcher in the Tools sheet while account utilities stay out", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -714,14 +715,15 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    expect(withinDialog.queryByRole("button", { name: /^Demo$/ })).toBeNull();
-    await user.click(withinDialog.getByRole("button", { name: /^Shift desk$/ }));
-    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeVisible();
+    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top and
+    // the scenario controls sit in the Demo row at the foot.
+    expect(withinDialog.queryByRole("button", { name: /^Shift desk$/ })).toBeNull();
+    expect(await withinDialog.findByRole("button", { name: /^Change view/ }, { timeout: 15_000 })).toBeVisible();
+    await user.click(withinDialog.getByTestId("ward-tools-toggle-demo"));
+    expect(withinDialog.getByTestId("ward-tools-demo-panel")).toBeVisible();
+    expect(withinDialog.getByRole("region", { name: "Demo" })).toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
-    // The role switcher renders its own labelled control — asserting the heading it sits under
-    // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Scenario controls")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {
@@ -772,7 +774,7 @@ describe("assertion 6 — no text below 12px in the shell's CSS modules", () => 
   // parsed as neither a literal length nor been checked against the token pattern at all. Fixed to
   // require the token form outright and to fail if the file set carries no declarations to check.
   // 7 October 2026: the v6 rail restyle moved `ward-rail.module.css` onto the global v6 type scale
-  // (`--wf-fs-N` in `src/app/ward-flow-v6-tokens.css`, where N is the pixel size). The 12px floor
+  // (`--wf-fs-N` in `src/app/ward-flow-v9-tokens.css`, where N is the pixel size). The 12px floor
   // still holds: a v6 step is accepted only at 12 or above, so `--wf-fs-11` fails here.
   it("every font-size declaration across the shell's CSS modules is a --t-N or a 12px-or-larger --wf-fs-N token", () => {
     let totalDeclarations = 0;

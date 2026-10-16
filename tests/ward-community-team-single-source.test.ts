@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 import { COMMUNITY_TEAM_PAGES } from "../src/components/ward-management/community/community-derivations";
+import { COMMUNITY_SCREEN_FILES } from "./helpers/community-screen-sources";
 
 /**
  * ⚠️ **A GOVERNANCE SENTENCE HELD TRUE BY AN ACTIVE EXCLUSION, AND NOTHING ELSE.**
@@ -33,7 +34,8 @@ const OPTIONS_FILE = "src/components/ward-management/referrals/referral-destinat
 const HUB_FILES = [
   "src/components/ward-management/community/community-derivations.ts",
   "src/components/ward-management/community/community-index.tsx",
-  "src/components/ward-management/community/community-screen.tsx",
+  // The team screen and every file it was split into on 15 Oct 2026 (fix list 2.5 and 9.6).
+  ...COMMUNITY_SCREEN_FILES,
 ];
 
 /** The rival list the hub's rendered paragraph depends on NOT being read. */

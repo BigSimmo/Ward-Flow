@@ -6,7 +6,12 @@ import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-m
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -45,15 +50,17 @@ function readAliasFromLocation() {
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
+  const thresholds = useDueSoonThresholds();
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
   const showSevere = useSyncExternalStore(subscribeToLocation, readSevereFromLocation, () => false);
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
-  const { movements: liveMovements, units, configuration, dispatch } = useWardFlow();
+  const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
 
   const allMovements = movementsOverride ?? liveMovements;
   const movements =
@@ -81,14 +88,14 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   const open = movements.filter(isOpen);
   const openNetworkWide = allMovements.filter(isOpen);
-  const groups = delayGroups(movements, units, now);
+  const groups = delayGroups(movements, units, now, thresholds);
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
   // never dropped.
   const escalated = openNetworkWide.filter((movement) => movement.escalation !== undefined);
   // Q-12: "Attention" is never dropped. The severe causes across the whole network, plus any urgent
   // movement outside the chosen service, each marked rather than hidden.
-  const networkGroups = delayGroups(allMovements, units, now);
+  const networkGroups = delayGroups(allMovements, units, now, thresholds);
   const severeRows = networkGroups
     .filter((group) => SEVERE_CAUSES.includes(group.cause))
     .flatMap((group) => group.movements.map((movement) => ({ movement, title: group.title as string | undefined })));
@@ -113,10 +120,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     service !== null && !movementBelongsToService(movement, service, units);
 
   const escalate = (movement: Movement) => {
-    dispatch({
-      type: "RECORD_ESCALATION",
-      role: "coordinator",
-      now,
+    raise("RECORD_ESCALATION", {
       movementId: movement.id,
       triedUnitIds: movement.declines.map((decline) => decline.unitId),
       // The fixed escalation vocabulary's entry (ward-change-reasons.ts), as the coordinator picker records it.

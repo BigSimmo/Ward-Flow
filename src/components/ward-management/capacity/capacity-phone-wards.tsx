@@ -4,7 +4,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { getHealthServiceDotStyle } from "@/components/ward-management/ward-service-colors";
@@ -63,7 +63,7 @@ export function CapacityPhoneWards({
   now: Instant;
   isFresh: (unit: Unit) => boolean;
 }) {
-  const { dispatch } = useWardFlow();
+  const { dispatch } = useWardFlowSelect("dispatch");
   const router = useRouter();
   const [region, setRegion] = useState<string>("all");
   const [openId, setOpenId] = useState<string | null>(null);

@@ -41,7 +41,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
  * helper that renders `" · sent by "` for a value it did not expect is worse than one that renders
  * nothing.
  */
-export function sendingTeamFragment(referral: Referral): string | undefined {
+export function sendingTeamFragment(referral: Pick<Referral, "sendingTeamName">): string | undefined {
   const name = referral.sendingTeamName?.trim();
   return name === undefined || name === "" ? undefined : `sent by ${name}`;
 }
@@ -54,7 +54,7 @@ export function sendingTeamFragment(referral: Referral): string | undefined {
  * queue and the search preview use `" · "`, and a caller with different punctuation must not have
  * to choose between this helper and its own house style.
  */
-export function withSendingTeam(line: string, referral: Referral, separator = " · "): string {
+export function withSendingTeam(line: string, referral: Pick<Referral, "sendingTeamName">, separator = " · "): string {
   const fragment = sendingTeamFragment(referral);
   return fragment === undefined ? line : `${line}${separator}${fragment}`;
 }

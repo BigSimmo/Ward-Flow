@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { WARD_SHELL_ROLE, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
+import { useAccessShellRole } from "./ward-access-store";
 
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 
 import {
@@ -26,7 +27,7 @@ import {
 export function WardActNowNotifier() {
   const router = useRouter();
   // Same gate as the Tasks drawer (shell/ward-bar.tsx): the signed-in person's list, on every page.
-  const actionable = wardTasksAreActionableForRole(WARD_SHELL_ROLE);
+  const actionable = wardTasksAreActionableForRole(useAccessShellRole(WARD_SHELL_ROLE));
   const {
     movements,
     units,
@@ -38,7 +39,18 @@ export function WardActNowNotifier() {
     admissions,
     patients,
     referrals,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "configuration",
+    "inboxSnoozes",
+    "sessionAdopted",
+    "worldGeneration",
+    "leaveBeds",
+    "admissions",
+    "patients",
+    "referrals",
+  );
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
   // The baseline belongs to one adopted world: the seed shown before a saved session is restored,

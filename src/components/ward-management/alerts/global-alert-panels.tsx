@@ -1,10 +1,14 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Siren, X } from "lucide-react";
 import { Button, StatusGlyph } from "@/components/wf";
-import { WardFlowContext, useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useOptionalWardFlowSelect,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement, Rejection } from "@/components/ward-management/ward-model";
@@ -87,7 +91,7 @@ export function ReplyBoardList({
 
 /** One live Pull now on the Alerts page: who, which ward, answer time, replies, stand down. */
 export function PullNowCard({ alert, onStandDown }: { alert: BroadcastAlert; onStandDown: (id: string) => void }) {
-  const { units, movements, patients, referrals } = useWardFlow();
+  const { units, movements, patients, referrals } = useWardFlowSelect("units", "movements", "patients", "referrals");
   const now = useWardFlowClock();
   const movement = movements.find((m) => m.id === alert.movementId);
   const subject = resolveAlertSubject(movement, alert.movementId, { patients, referrals, movements }, units);
@@ -126,11 +130,17 @@ export function PullNowCard({ alert, onStandDown }: { alert: BroadcastAlert; onS
  */
 export function PullNowButton({ movement }: { movement: Movement }) {
   // Screens rendered outside the provider (isolated tests, previews) show no button.
-  return useContext(WardFlowContext) ? <PullNowControl movement={movement} /> : null;
+  return useOptionalWardFlowSelect() ? <PullNowControl movement={movement} /> : null;
 }
 
 function PullNowControl({ movement }: { movement: Movement }) {
-  const { broadcastAlerts, movements, dispatch, rejections, units } = useWardFlow();
+  const { broadcastAlerts, movements, dispatch, rejections, units } = useWardFlowSelect(
+    "broadcastAlerts",
+    "movements",
+    "dispatch",
+    "rejections",
+    "units",
+  );
   const now = useWardFlowClock();
   const [refusalFrom, setRefusalFrom] = useState<number | null>(null);
   // Greyed with a reason on any other desk, never hidden (role limits, PR #206).

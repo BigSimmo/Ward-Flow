@@ -38,12 +38,15 @@ import {
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
 
-function parseWrittenInstant(value: string, now: Instant): Instant {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return now;
+function parseWrittenInstant(value: string, now: Instant): Instant | null {
+  const trimmed = value.trim();
+  if (!trimmed) return now;
+  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
   if (
@@ -54,7 +57,7 @@ function parseWrittenInstant(value: string, now: Instant): Instant {
     minutes < 0 ||
     minutes > 59
   ) {
-    return now;
+    return null;
   }
   const dayOffset = ((now % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   const startOfDay = now - dayOffset;
@@ -191,13 +194,16 @@ export function RecordFormSheet({
   const [formKey, setFormKey] = useState(0);
   const [timeOnForm, setTimeOnForm] = useState("");
   const typeRef = useRef<HTMLSelectElement | null>(null);
+  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
   const saveBlockReason = !draft.movement
     ? "Choose a movement first."
     : !draft.form
       ? "Choose a form type first."
       : !isOwnedLegalFormCode(draft.form)
         ? `Form ${draft.form} written time is not recorded on this sheet.`
-        : undefined;
+        : parsedWrittenAt === null
+          ? "Enter a valid 24-hour time (HH:MM)."
+          : undefined;
   return (
     <Sheet
       open={open}
@@ -226,10 +232,9 @@ export function RecordFormSheet({
             disabledReason={saveBlockReason}
             title={saveBlockReason}
             onClick={() => {
-              if (saveBlockReason) return;
-              const writtenAt = parseWrittenInstant(timeOnForm, now);
+              if (saveBlockReason || parsedWrittenAt === null) return;
               const accepted = onSaveForm
-                ? onSaveForm({ movementId: draft.movement, formCode: draft.form, writtenAt })
+                ? onSaveForm({ movementId: draft.movement, formCode: draft.form, writtenAt: parsedWrittenAt })
                 : true;
               if (accepted) {
                 setTimeOnForm("");
@@ -268,7 +273,7 @@ export function RecordFormSheet({
         </Field>
         <div className={styles.fieldPair}>
           <Field label="Clinician" id="legal-forms-new-clinician">
-            <TextInput placeholder="Name and role" autoComplete="off" />
+            <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
           </Field>
           <Field label="Time on form" id="legal-forms-new-time">
             <TextInput
@@ -283,9 +288,11 @@ export function RecordFormSheet({
         </div>
         <Field label="Notes" id="legal-forms-new-notes">
           <Textarea
+            readOnly
+            disabled
             maxLength={280}
             rows={2}
-            placeholder="Grounds as written on the form"
+            placeholder="Free-text grounds are not stored in prototype (D6)"
             data-gramm="false"
             data-enable-grammarly="false"
             spellCheck={false}
@@ -311,7 +318,8 @@ export function ExtendSheet({
   onClose: () => void;
   onExtendForm?: (movement: Movement, dueAt: Instant) => boolean;
 }) {
-  const standing = target ? clockStanding(target, now) : "none";
+  const thresholds = useDueSoonThresholds();
+  const standing = target ? clockStanding(target, now, thresholds) : "none";
   const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
   const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
   const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
@@ -353,7 +361,7 @@ export function ExtendSheet({
         <div className={styles.extendBody}>
           {target.legalForm?.dueAt !== undefined ? (
             <div className={styles.dueLine}>
-              <Badge tone={STANDING_TONE[standing]}>{standingWord(standing)}</Badge>
+              <Badge tone={STANDING_TONE[standing]}>{standingWord(standing, thresholds)}</Badge>
               <Timer
                 at={target.legalForm.dueAt * MS_PER_MINUTE}
                 now={now * MS_PER_MINUTE}
@@ -368,7 +376,7 @@ export function ExtendSheet({
           </Field>
           <div className={styles.fieldPair}>
             <Field label="Authorising specialist" id="legal-forms-renew-specialist">
-              <TextInput placeholder="Specialist name and role" autoComplete="off" />
+              <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
             </Field>
             <Field label="New expiry time" id="legal-forms-renew-expiry">
               <TextInput
@@ -384,9 +392,11 @@ export function ExtendSheet({
           </div>
           <Field label="Justification" id="legal-forms-renew-justification">
             <Textarea
+              readOnly
+              disabled
               maxLength={280}
               rows={3}
-              placeholder="Clinical justification for the recorded extension"
+              placeholder="Free-text justification is not stored in prototype (D6)"
               data-gramm="false"
               data-enable-grammarly="false"
               spellCheck={false}

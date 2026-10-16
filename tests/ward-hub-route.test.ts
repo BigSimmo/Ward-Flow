@@ -33,7 +33,7 @@ import { communityTeamById } from "@/components/ward-management/community/commun
 
 import { hubEntries, type HubKind } from "@/components/ward-management/hub/hub-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR, allUnits, edById, unitById } from "@/components/ward-management/ward-sites";
+import { allUnits, edById, NOW_ANCHOR, unitById, wardSites } from "@/components/ward-management/ward-sites";
 
 const ROUTE_FILE = "src/app/mockups/ward-flow/hub/page.tsx";
 
@@ -145,7 +145,7 @@ describe("Ward Flow hub — every destination it offers resolves to a route on d
     community: "teamId",
   };
 
-  const entries = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR });
+  const entries = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites });
 
   it("floors the population: the hub offers destinations of all three kinds, so this test has something to discriminate", () => {
     const kinds = new Set(entries.map((entry) => entry.kind));
@@ -244,6 +244,7 @@ describe("Ward Flow hub — every destination it offers resolves to a route on d
       units: allUnits(),
       bedReleases: seedWardFlowState().bedReleases,
       now: NOW_ANCHOR,
+      sites: wardSites,
     });
     // Same entries, same destinations — only the figures may differ.
     expect(withReleases.map((entry) => `${entry.kind}:${entry.id}:${entry.href}`)).toEqual(

@@ -149,11 +149,11 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
 async function ensureToolsOpen(page: Page) {
   const trigger = page.getByTestId("ward-bar-tools-trigger");
   if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click();
+  // Tools review (15 Oct 2026): one sheet, Change view at its top, so no tab to pick.
   await page
     .getByRole("dialog", { name: "Tools" })
-    .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Shift desk", exact: true })
-    .click();
+    .getByRole("button", { name: /^Change view/ })
+    .waitFor();
 }
 
 async function ensureToolsClosed(page: Page) {

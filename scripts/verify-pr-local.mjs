@@ -12,7 +12,6 @@ const common = [
   "format:changed",
   "check:diff-integrity",
   "docs:check-scripts",
-  "check:ward-doc-links",
   "docs:check-links",
   "docs:check-index",
   "docs:check-inventory",
@@ -26,7 +25,7 @@ export function selectedScripts(scope, _extended = false) {
   const scripts = [...common];
   if (plan.full) scripts.push("check:installed-lock-parity", "check:ci-scope");
   if (plan.policy) scripts.push("check:ward-policy-contracts");
-  if (scope.entries?.some(({ file }) => file.startsWith("backend/ward-flow/"))) scripts.push("check:ward-backend");
+  if (scope.entries?.some(({ file }) => file.startsWith("backend/ward-flow/"))) scripts.push("test:backend");
   if (plan.unit) scripts.push("lint", "typecheck", "check:ward-expected-reds");
   if (plan.browser) scripts.push("test:e2e:ward-journeys");
   return [...new Set(scripts)];

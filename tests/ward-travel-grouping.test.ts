@@ -1039,10 +1039,20 @@ describe("the counts a band group heading carries", () => {
   it("is the only place the match view decides what accepting means", () => {
     // One exported function, not two files agreeing. If the screen spells the verdict itself again,
     // a heading and the rows beneath it can drift apart without either looking wrong.
-    const source = readFileSync(
-      join(resolve(process.cwd(), "src"), "components", "ward-management", "referrals", "referral-match.tsx"),
-      "utf8",
-    );
+    // The match view was split into sibling files (15 Oct 2026); every one of them is read.
+    const source = [
+      "referral-match.tsx",
+      "referral-match-model.ts",
+      "referral-match-not-a-bed.tsx",
+      "referral-match-rows.tsx",
+      "referral-match-tiers.tsx",
+      "referral-history-corrections.tsx",
+      "use-referral-match-state.tsx",
+    ]
+      .map((file) =>
+        readFileSync(join(resolve(process.cwd(), "src"), "components", "ward-management", "referrals", file), "utf8"),
+      )
+      .join("\n");
     expect(source).toContain("candidateAccepts");
     expect(source).not.toMatch(/verdict\.eligible/);
   });

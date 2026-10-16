@@ -22,7 +22,8 @@ import {
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -104,8 +105,18 @@ function declineReasonLabel(reason: DeclineReason): string {
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
-    useWardFlow();
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "bedReleases",
+      "leaveBeds",
+      "admissions",
+      "dispatch",
+      "rejections",
+      "resolvePatientIdentity",
+    );
   const now = useWardFlowClock();
+  const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
 
   const [answerIndex, setAnswerIndex] = useState(0);
@@ -130,8 +141,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // Modal & interactive state
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [holdDuration, setHoldDuration] = useState("120");
-  const [numEndorsement, setNumEndorsement] = useState<string | null>(null);
-  const [askedQuestions, setAskedQuestions] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -274,10 +283,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!declineReason) return;
-    dispatch({
-      type: "DECLINE",
-      role: "ward",
-      now,
+    raise("DECLINE", {
       movementId,
       unitId: currentUnit.id,
       actingUnitId: currentUnit.id,
@@ -296,10 +302,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       return;
     }
     setDeclineNudge(false);
-    dispatch({
-      type: "DECLINE",
-      role: "ward",
-      now,
+    raise("DECLINE", {
       movementId,
       unitId: currentUnit.id,
       actingUnitId: currentUnit.id,
@@ -343,20 +346,14 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     setPriorRejectionCount(rejections.length);
 
     if (attempted === "ACCEPT_IN_PRINCIPLE") {
-      dispatch({
-        type: "ACCEPT_IN_PRINCIPLE",
-        role: "ward",
-        now,
+      raise("ACCEPT_IN_PRINCIPLE", {
         movementId,
         unitId: currentUnit.id,
         actingUnitId: currentUnit.id,
         overrideReason,
       });
     } else {
-      dispatch({
-        type: "PULL_PATIENT",
-        role: "ward",
-        now,
+      raise("PULL_PATIENT", {
         movementId,
         unitId: currentUnit.id,
         actingUnitId: currentUnit.id,
@@ -372,10 +369,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     event.preventDefault();
     const parsed = Number(capacityValue);
     if (!Number.isFinite(parsed) || parsed < 0) return;
-    dispatch({
-      type: "CONFIRM_CAPACITY",
-      role: "ward",
-      now,
+    raise("CONFIRM_CAPACITY", {
       unitId: currentUnit.id,
       actingUnitId: currentUnit.id,
       value: Math.floor(parsed),
@@ -1117,12 +1111,11 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                 <input
                                   type="text"
                                   className={styles.phoneSheetInput}
-                                  value={numEndorsement ?? `NUM ${unit.name}`}
-                                  onChange={(e) => setNumEndorsement(e.target.value)}
+                                  defaultValue={`NUM ${unit.name}`}
                                 />
                               </label>
                               <p className={styles.phoneSheetNote}>
-                                {`Bed hold (${holdDuration}m) and nurse unit manager endorsement are recorded with this acceptance.`}
+                                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
                               </p>
                               <p className={styles.phoneSheetNote}>
                                 <StatusGlyph tone="neutral" size={8} />
@@ -1141,7 +1134,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           data-testid={`ward-decline-form-${activeMovement.id}`}
                         >
                           <fieldset className={styles.declineFieldset}>
-                            <legend className={styles.declineLegend}>Decline reason for {activeMovement.id}</legend>
+                            <legend className={styles.declineLegend}>Decline reason for this patient</legend>
                             {DECLINE_REASONS.map((reason) => (
                               <label key={reason} className={styles.declineOption}>
                                 <input
@@ -1170,13 +1163,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         <button
                           type="button"
                           className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.askButton}`}
-                          aria-pressed={Boolean(askedQuestions[activeMovement.id])}
-                          onClick={() => {
-                            setAskedQuestions((prev) => ({ ...prev, [activeMovement.id]: true }));
-                            triggerToast("Clarification request logged for referring ED clinician.");
-                          }}
+                          onClick={() => triggerToast("Not wired in this prototype.")}
                         >
-                          {askedQuestions[activeMovement.id] ? "Question logged" : "Ask a question"}
+                          Ask a question
                         </button>
                         <button
                           type="button"
@@ -1455,7 +1444,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   type="text"
                   className={styles.formInput}
                   id="ward-answer-allocating-movement"
-                  value={`${activeMovement.id} (${activeMovement.cohort})`}
+                  // No identity before acceptance (owner, 26 Sept 2026), so the tier and referral time tell
+                  // two waiting requests from the same cohort apart (D-39).
+                  value={`Incoming patient (${activeMovement.cohort}), Tier ${activeMovement.urgency}${activeMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(activeMovement.referredAt, now)}`}`}
                   readOnly
                 />
               </div>
@@ -1493,12 +1484,11 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   id="num-endorsement-input"
                   type="text"
                   className={styles.formInput}
-                  value={numEndorsement ?? `NUM ${unit.name}`}
-                  onChange={(e) => setNumEndorsement(e.target.value)}
+                  defaultValue={`NUM ${unit.name}`}
                 />
               </div>
               <p className={styles.formNote}>
-                {`Bed hold (${holdDuration}m) and nurse unit manager endorsement are recorded with this acceptance.`}
+                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
               </p>
             </div>
             <div className={styles.modalFoot}>

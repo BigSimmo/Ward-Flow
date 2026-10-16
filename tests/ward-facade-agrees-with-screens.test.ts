@@ -92,6 +92,10 @@ const world = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock("@/components/ward-management/ward-flow-provider", () => ({
   WardFlowProvider: ({ children }: { children: ReactNode }) => children,
   useWardFlow: () => world.current,
+  useWardFlowSelect: () => world.current,
+  useOptionalWardFlowSelect: () => world.current,
+  useDueSoonThresholds: () => dueSoonThresholdsOf((world.current as { configuration?: object } | null)?.configuration),
+  useWardNetwork: () => activeWardNetwork(),
   // Screens read the ticking clock separately from the world snapshot; the mock world carries
   // `now` on the same object `useWardFlow` returns, so the clock hook reads it from there.
   useWardFlowClock: () => (world.current as { now: number } | null)?.now ?? 0,
@@ -122,19 +126,20 @@ import {
   wardBoardHref,
   wardStatisticsHref,
 } from "@/components/ward-management/shell/ward-facade";
-import { demoDayZero } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, demoDayZero, dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
   type WardFlowState,
 } from "@/components/ward-management/ward-flow-reducer";
 import { referralState } from "@/components/ward-management/ward-referrals";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
-import { WardTasksPanel } from "@/components/ward-management/ward-tasks-panel";
+import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
 // jsdom is already the installed test environment; use only its document API here.
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
@@ -313,6 +318,8 @@ function facadeFigures(state: WardFlowState) {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     now: NOW,
+    sites: wardSites,
+    thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     plannedAdmissions: state.plannedAdmissions,
   });
 }
@@ -445,19 +452,35 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     read: (markup) => [...markup.matchAll(/data-testid="ward-referral-board-row-[^"]+"/gu)].length,
   },
   /**
-   * The tasks control in the header bar — the surface `layout.tsx` actually mounts, which is
-   * `WardChromeHeader` rather than the unmounted `WardTasksPanel` beside it. The count is the digit
-   * in the control, not the length of a list this test computed.
+   * The live tasks drawer (`WardTasksDrawer`) mounted by `shell/ward-bar.tsx`.
    */
   tasks: {
-    screen: "the header bar's Tasks control",
-    component: WardTasksPanel,
+    screen: "the Tasks drawer",
+    component: function TasksDrawerSurface() {
+      const current = world.current as ReturnType<typeof contextFor>;
+      const items = buildActionInbox(
+        current.movements.filter(isOpen),
+        current.now,
+        current.units,
+        current.plannedAdmissions ? { plannedAdmissions: current.plannedAdmissions } : undefined,
+      );
+      return createElement(WardTasksDrawer, {
+        items,
+        acknowledgements: current.inboxAcknowledgements,
+        completions: current.inboxCompletions,
+        role: "coordinator",
+        now: current.now,
+        dispatch: current.dispatch,
+        onClose: () => {},
+        onSelectMovement: () => {},
+      });
+    },
     read: (markup) =>
       Number(
         oneNumber(
           markup,
-          /data-testid="ward-tasks-opener"[^>]*>Tasks<span[^>]*>(\d+)<\/span>/gu,
-          "the header bar's Tasks count",
+          /<strong[^>]*>\d+<\/strong> of (\d+) <span class="sr-only">invented <\/span>tasks/gu,
+          "the Tasks drawer's total count",
         ),
       ),
   },
@@ -501,32 +524,22 @@ describe("the shell facade agrees with the screens that own its figures", () => 
 
   /**
    * IMPORTANT 1's OWN GUARD — the facade states `TASKS_NOUN` rather than deriving it. Reading the
-   * noun back out of the same tasks control markup assertion 1 already renders is what makes the
+   * noun back out of the same tasks drawer markup assertion 1 already renders is what makes the
    * next divergence redden instead of being described.
    */
-  it("the tasks noun matches the words the header control renders beside its count", () => {
+  it("the tasks noun matches the words the tasks drawer renders beside its count", () => {
     const state = seed();
-    const markup = markupOf(state, WardTasksPanel);
+    const markup = markupOf(state, READERS.tasks.component);
     const match = markup.match(
-      /data-testid="ward-tasks-opener"[^>]*>Tasks<span[^>]*>\d+<\/span><span[^>]*>(?:items\s+)?([^<]+)<\/span>/u,
+      /<strong[^>]*>\d+<\/strong> of \d+ <span class="sr-only">invented <\/span>([^<]+)<\/span>/u,
     );
-    expect(match, "the header's Tasks control markup did not match the expected shape at all").not.toBeNull();
-    const renderedNoun = match![1];
+    expect(match, "the Tasks drawer status markup did not match the expected shape at all").not.toBeNull();
+    const renderedNoun = match![1].trim();
     const figure = facadeFigures(state).tasks;
-    // ⚠️ **PINNED AWAY FROM 1, DELIBERATELY.** The header switches to the singular "needs attention"
-    // at exactly one task (`ward-chrome-header.tsx:158`); `TASKS_NOUN`'s own doc comment in
-    // `ward-facade.ts` names that single-count mismatch as the accepted cost of one flat noun, not a
-    // bug. Nothing else in this file kept the seeded fixture away from 1, so this floor is what stops
-    // a future fixture edit from reddening this test on correct, already-accepted behaviour.
-    expect(
-      figure.value,
-      "the seeded fixture holds the tasks figure at exactly 1, where the header renders the singular " +
-        `"needs attention" and the facade still states the plural "${figure.noun}" by design — that is ` +
-        "not a divergence this test should catch. Choose a fixture whose tasks count is not exactly 1.",
-    ).toBeGreaterThan(1);
+    expect(figure.value).toBeGreaterThan(1);
     expect(
       figure.noun,
-      `the facade states the tasks noun as "${figure.noun}" and the header control renders ` +
+      `the facade states the tasks noun as "${figure.noun}" and the tasks drawer renders ` +
         `"${renderedNoun}" beside the same count — a lane concatenating value and noun would show two ` +
         "different sentences.",
     ).toBe(renderedNoun);
@@ -688,8 +701,11 @@ describe("every href the facade builds lands on a route that exists", () => {
        * than leaving it as a redirect stub.)
        */
       const pageSource = readFileSync(pageFile, "utf8");
+      // D-39 (15 Oct 2026): a record page may redirect an OLD raw-id link to its coded address, but
+      // it must still render a screen itself. A stub that only forwards renders nothing.
+      const rendersAScreen = /return\s*\(?\s*</u.test(pageSource);
       expect(
-        pageSource.includes("redirect("),
+        pageSource.includes("redirect(") && !rendersAScreen,
         `${entry.name} points at ${entry.route}, whose page redirects rather than rendering`,
       ).toBe(false);
     },
@@ -717,12 +733,18 @@ function stripComments(source: string): string {
  * doc comment) and writes no return line of its own, so it has nothing to name here.
  */
 const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: string }[] = [
-  { name: "patientHref", line: "return `/mockups/ward-flow/people/${encodeURIComponent(patientId)}`;" },
+  {
+    name: "patientHref",
+    line: "return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;",
+  },
   { name: "unitHref", line: "return `/mockups/ward-flow/ward/${encodeURIComponent(unitId)}`;" },
   { name: "wardBoardHref", line: "return `/mockups/ward-flow/board/${encodeURIComponent(unitId)}`;" },
   { name: "teamHref", line: "return `/mockups/ward-flow/community/${encodeURIComponent(teamId)}`;" },
   { name: "edHref", line: "return `/mockups/ward-flow/ed/${encodeURIComponent(edId)}`;" },
-  { name: "movementHref", line: "return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;" },
+  {
+    name: "movementHref",
+    line: "return `/mockups/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;",
+  },
   { name: "handoverHref", line: 'return "/mockups/ward-flow/handover";' },
   { name: "settingsHref", line: 'return "/mockups/ward-flow/settings";' },
   { name: "patientSearchHref", line: 'return "/mockups/ward-flow/search";' },
@@ -749,7 +771,7 @@ const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: s
   { name: "raiseReferralHref", line: "return `/mockups/ward-flow/referrals/new?${query.toString()}`;" },
   {
     name: "dischargeHref",
-    line: "return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;",
+    line: "return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;",
   },
 ] as const;
 

@@ -89,9 +89,6 @@ function walk(dir: string): string[] {
  * more time: a registry that looks exhaustive because every entry it has is correct.
  */
 const PINNED: Record<string, string | readonly string[] | null> = {
-  // Published Showcase table, added 2026-10-03. Pins its declared threshold;
-  // this source check does not establish the table's intrinsic browser width.
-  "sovereign/sovereign-showcase.module.css": "40rem",
   "discharges/discharges.module.css": "30rem",
   /* Q004 replaces the separate Unit column with a fluid three-column register. Its identity,
    * timing and stage cells return to table cells for print; that composition is guarded below
@@ -99,14 +96,8 @@ const PINNED: Record<string, string | readonly string[] | null> = {
   "discharges/discharges-third-edition.module.css": null,
   "ed/ed.module.css": ["11rem", "9rem"],
   // escalation/escalation.module.css left on 15 Oct 2026, deleted with its unreachable board.
-  "governance/governance.module.css": "37.5rem",
   "governance-third-edition.module.css": "37.5rem",
   "handover/handover.module.css": null,
-  /* Q004's served drawing intends all six columns to fit the desktop sheet. The reviewed
-   * handover-final-light-1440.png shows them within its ~608px body at 38rem; restoring 48rem
-   * would force sideways scrolling there. This is sampled visual proof, not an intrinsic-width
-   * measurement. Narrower screens retain the scroll wrapper and print releases the floor. */
-  "handover/handover-third-edition.module.css": "38rem",
   /* The five-column ED directory uses its existing scroll wrapper and now carries a 46rem source
    * floor so hospital names remain readable. This pins the authored value; it is not a browser
    * intrinsic-width measurement. */
@@ -118,11 +109,6 @@ const PINNED: Record<string, string | readonly string[] | null> = {
   // separate ED table is gone (EPIC and ED liaison lines are rows of the directory).
   "on-call/on-call.module.css": "40rem",
   "out-of-area/out-of-area.module.css": "30rem",
-  /* The out-of-area register inspector redesign (PR #25) makes the ledger a fluid, fixed-layout
-   * table that fits its panel at every desktop width; the narrow-screen case is handled by the
-   * card list, not by sideways scrolling, so the retired identity/status/timing column floors
-   * (9.5rem, 6.5rem, 8.5rem) are intentionally released, as for the discharges register. */
-  "out-of-area/out-of-area-third-edition.module.css": null,
   /* 40rem until 2026-09-05, when it was measured at the narrowest width this table is used at
      (641px viewport, 499px scroller) and found to put `Sex` and `Home region` outside the queued
      table and `Waited` and `Decided` outside the decided one. 30rem fit that box exactly and

@@ -3,7 +3,7 @@
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import { Field, Select, TextInput } from "@/components/wf";
+import { Field, Select, TextInput, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -48,7 +48,8 @@ import { DAY_SHIFT_END_MINUTE, pullHoldRemainingLabel } from "@/components/ward-
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import type {
   BedRelease,
@@ -63,7 +64,7 @@ import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-mornin
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import { wardSites } from "@/components/ward-management/ward-sites";
+
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
@@ -71,7 +72,6 @@ import { parseReleaseDayInstant } from "@/components/ward-management/ward/releas
 import { asAtStamp, WardDailySheet } from "./ward-daily-sheet";
 import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./board.module.css";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -180,22 +180,26 @@ type FlowTab = (typeof FLOW_TABS)[number];
 /**
  * Where a unit's own record lives.
  *
- * ⚠️ **The UNIT comes from live state; only the SITE comes from `wardSites`.** That split is the
- * whole fix for the board disagreeing with the ward screen. A unit's capacity fields are mutated by
- * the reducer on a structural clone (`PULL_PATIENT`, `RECORD_ARRIVAL`, `CONFIRM_CAPACITY`), and
- * `wardSites` is the un-mutated seed that no reducer path ever writes — so reading the unit from
- * there produced a permanently seed-valued `held` while the ward screen moved.
+ * ⚠️ **The UNIT comes from live state; only the SITE comes from the network's sites
+ * (`useWardNetwork().sites`).** That split is the whole fix for the board disagreeing with the
+ * ward screen. A unit's capacity fields are mutated by the reducer on a structural clone (`PULL_PATIENT`, `RECORD_ARRIVAL`, `CONFIRM_CAPACITY`), and
+ * the network's sites are the un-mutated seed that no reducer path ever writes — so reading the
+ * unit from there produced a permanently seed-valued `held` while the ward screen moved.
  *
  * The site is different in kind: name and code are static reference data, not state, and no event
- * changes them. It is still resolved by walking `wardSites` rather than through `unitById`, which
- * `tests/ward-flow-single-source.test.ts` restricts to three named fixture files.
+ * changes them. It is still resolved by walking the network's sites rather than through
+ * `unitById`, which `tests/ward-flow-single-source.test.ts` restricts to three named fixture files.
  *
  * Returns `undefined` for an unknown id and never falls back to a different ward.
  */
-function findUnit(unitId: string, liveUnits: readonly Unit[]): { unit: Unit; site: Site } | undefined {
+function findUnit(
+  unitId: string,
+  liveUnits: readonly Unit[],
+  sites: readonly Site[],
+): { unit: Unit; site: Site } | undefined {
   const unit = liveUnits.find((candidate) => candidate.id === unitId);
   if (unit === undefined) return undefined;
-  for (const site of wardSites) {
+  for (const site of sites) {
     if (site.units.some((candidate) => candidate.id === unitId)) return { unit, site };
   }
   return undefined;
@@ -956,11 +960,11 @@ export function WardBoard({
   // Live state, on the same terms as every other screen. Named `liveUnits` only because `unit`
   // below is the one this board is about; `now` and `admissions` keep their names so every
   // derivation beneath reads unchanged.
+  const network = useWardNetwork();
   const {
     units: liveUnits,
     admissions,
     leaveBeds,
-    dispatch,
     recordWardDeparture,
     movements,
     bedReleases: liveBedReleases,
@@ -971,8 +975,20 @@ export function WardBoard({
     resolvePatientIdentity,
     rejections,
     dayZero,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "leaveBeds",
+    "recordWardDeparture",
+    "movements",
+    "bedReleases",
+    "patients",
+    "resolvePatientIdentity",
+    "rejections",
+    "dayZero",
+  );
   const now = useWardFlowClock();
+  const raise = useWardRaise("ward");
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);
   // Audit r1 item 4: an arrival with no transport leg and fit to travel open, waiting on a reason.
@@ -983,8 +999,6 @@ export function WardBoard({
     item?: ShiftTileItem;
     admissionId?: string;
   } | null>(null);
-  // Neither dialog joins the sheet stack, so each holds the page still itself (phone, 12 Oct 2026).
-  useWardPageScrollLock(blockerDialogItem !== null || pendingConfirm !== null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
   const blockerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -993,72 +1007,33 @@ export function WardBoard({
 
   const closeConfirmDialog = useCallback(() => {
     setPendingConfirm(null);
-    setTimeout(() => {
-      dialogTriggerRef.current?.focus();
-    }, 0);
   }, []);
-
-  useEffect(() => {
-    if (pendingConfirm) {
-      confirmCloseBtnRef.current?.focus();
-    }
-  }, [pendingConfirm]);
-
-  useEffect(() => {
-    if (!pendingConfirm) return;
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        closeConfirmDialog();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pendingConfirm, closeConfirmDialog]);
 
   const closeBlockerDialog = useCallback(() => {
     setBlockerDialogItem(null);
-    setTimeout(() => {
-      dialogTriggerRef.current?.focus();
-    }, 0);
   }, []);
 
-  useEffect(() => {
-    if (blockerDialogItem) {
-      blockerCloseBtnRef.current?.focus();
-    }
-  }, [blockerDialogItem]);
-
-  const trapDialogFocus = (e: React.KeyboardEvent<HTMLElement>, container: HTMLElement | null) => {
-    if (e.key !== "Tab" || !container) return;
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
-  useEffect(() => {
-    if (!blockerDialogItem) return;
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        if (blockerDialogItem) closeBlockerDialog();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [blockerDialogItem, closeBlockerDialog]);
+  // Both dialogs follow the shared modal contract: the page behind is inert and held still, focus
+  // starts on the close button, Tab wraps inside, Escape closes only the dialog (handled first, so
+  // the board's own Escape for the slide-out never also fires), and focus returns to the trigger.
+  useModalFocus({
+    open: pendingConfirm !== null,
+    onClose: closeConfirmDialog,
+    panelRef: confirmDialogRef,
+    initialFocusRef: confirmCloseBtnRef,
+    returnFocusRef: dialogTriggerRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
+  useModalFocus({
+    open: blockerDialogItem !== null,
+    onClose: closeBlockerDialog,
+    panelRef: blockerDialogRef,
+    initialFocusRef: blockerCloseBtnRef,
+    returnFocusRef: dialogTriggerRef,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   // Item 44, build plan task G2 (§2 "Bed board, ward page and all seven statistics screens: a
   // sentence only."). A hook, so it is read unconditionally, before the "unknown unit" early
   // return further down.
@@ -1154,10 +1129,7 @@ export function WardBoard({
     const movement = movements.find((candidate) => candidate.id === movementId);
     dispatchAndReport(
       () =>
-        dispatch({
-          type: "PATIENT_ARRIVED",
-          role: "ward",
-          now,
+        raise("PATIENT_ARRIVED", {
           movementId,
           actingUnitId: unit.id,
           ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
@@ -1224,7 +1196,7 @@ export function WardBoard({
     [closeDetail],
   );
 
-  const found = findUnit(unitId, liveUnits);
+  const found = findUnit(unitId, liveUnits, network.sites);
   if (found === undefined) {
     // Task A: a "Ward not found" page with no per-screen navigation mount was a dead end — there
     // was no way back to anything else in Ward Flow from it. Every other dynamic-route screen
@@ -1603,10 +1575,7 @@ export function WardBoard({
         () =>
           recordWardDeparture
             ? recordWardDeparture(admissionId, unit.id, leavingDestination)
-            : dispatch({
-                type: "RECORD_LEAVING",
-                role: "ward",
-                now,
+            : raise("RECORD_LEAVING", {
                 admissionId: admissionId,
                 actingUnitId: unit.id,
                 leavingDestination,
@@ -1620,10 +1589,7 @@ export function WardBoard({
     } else if (pendingConfirm.kind === "away_at_ed" && pendingConfirm.admissionId) {
       dispatchAndReport(
         () =>
-          dispatch({
-            type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-            role: "ward",
-            now,
+          raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
             admissionId: pendingConfirm.admissionId!,
             actingUnitId: unit.id,
           }),
@@ -1641,10 +1607,7 @@ export function WardBoard({
           () =>
             recordWardDeparture
               ? recordWardDeparture(item.selectableKey!, unit.id, leavingDestination)
-              : dispatch({
-                  type: "RECORD_LEAVING",
-                  role: "ward",
-                  now,
+              : raise("RECORD_LEAVING", {
                   admissionId: item.selectableKey!,
                   actingUnitId: unit.id,
                   leavingDestination,
@@ -1700,19 +1663,13 @@ export function WardBoard({
       dispatchAndReport(
         () => {
           if (matchingLeave) {
-            dispatch({
-              type: "END_LEAVE_BED",
-              role: "ward",
-              now,
+            raise("END_LEAVE_BED", {
               leaveBedId: matchingLeave.id,
               actingUnitId: unit.id,
             });
           }
           if (isAwayAtEd) {
-            dispatch({
-              type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-              role: "ward",
-              now,
+            raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
               admissionId: item.selectableKey!,
               actingUnitId: unit.id,
             });
@@ -2067,6 +2024,7 @@ export function WardBoard({
          * at all and it falls into the flow directly beneath the grid, which is the same arrangement
          * without the overlay a phone sheet would impose.
          */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
         <div
           className={`${styles.zones}${selectedTile !== null ? ` ${styles.zonesOpen}` : ""}`}
           onKeyDown={onZoneKeyDown}
@@ -2490,6 +2448,7 @@ export function WardBoard({
 
                 ⚠️ **The board's other lists are a different matter and were left alone** — the
                 destinations and people lists ARE ordered and say so in visible prose. */}
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it */}
             <ul className={styles.beds} data-testid="ward-board-beds" aria-label="Beds on this ward" tabIndex={0}>
               {orderedTiles.map((tile) => {
                 const index = tileIndexMap.get(tile) ?? tiles.indexOf(tile);
@@ -2693,6 +2652,7 @@ export function WardBoard({
             aria-labelledby="ward-board-detail-heading"
             data-testid="ward-board-detail"
             data-detail-kind={selectedTile?.kind ?? "none"}
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
             tabIndex={0}
           >
             <div className={styles.detailBar}>
@@ -2783,10 +2743,7 @@ export function WardBoard({
                                   () =>
                                     recordWardDeparture
                                       ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
-                                      : dispatch({
-                                          type: "RECORD_LEAVING",
-                                          role: "ward",
-                                          now,
+                                      : raise("RECORD_LEAVING", {
                                           admissionId: selectedTile.key,
                                           actingUnitId: unit.id,
                                           leavingDestination,
@@ -2860,11 +2817,8 @@ export function WardBoard({
                                     : today;
                                 dispatchAndReport(
                                   () =>
-                                    dispatch({
-                                      type: "UPDATE_EXPECTED_DISCHARGE",
-                                      role: "ward",
+                                    raise("UPDATE_EXPECTED_DISCHARGE", {
                                       actingUnitId: unit.id,
-                                      now,
                                       admissionId: admission.id,
                                       expectedDischargeAt,
                                     }),
@@ -2938,10 +2892,7 @@ export function WardBoard({
                                   const executeAway = () => {
                                     dispatchAndReport(
                                       () =>
-                                        dispatch({
-                                          type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-                                          role: "ward",
-                                          now,
+                                        raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
                                           admissionId: selectedTile.key,
                                           actingUnitId: unit.id,
                                         }),
@@ -2973,10 +2924,7 @@ export function WardBoard({
                                 data-tone="good"
                                 data-testid="ward-board-record-returned-submit"
                                 onClick={() =>
-                                  dispatch({
-                                    type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-                                    role: "ward",
-                                    now,
+                                  raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
                                     admissionId: selectedTile.key,
                                     actingUnitId: unit.id,
                                   })
@@ -2997,10 +2945,7 @@ export function WardBoard({
                               data-tone={selectedOccupant.stepDownCandidate ? "good" : undefined}
                               data-testid="ward-board-stepdown-toggle"
                               onClick={() => {
-                                dispatch({
-                                  type: "SET_STEP_DOWN_CANDIDATE",
-                                  role: "ward",
-                                  now,
+                                raise("SET_STEP_DOWN_CANDIDATE", {
                                   actingUnitId: unit.id,
                                   admissionId: selectedOccupant.key,
                                   stepDownCandidate: !selectedOccupant.stepDownCandidate,
@@ -3038,10 +2983,7 @@ export function WardBoard({
                                   value={selectedOccupant.dischargeBarrier ?? "None"}
                                   onChange={(e) => {
                                     const val = e.target.value;
-                                    dispatch({
-                                      type: "SET_DISCHARGE_BARRIER",
-                                      role: "ward",
-                                      now,
+                                    raise("SET_DISCHARGE_BARRIER", {
                                       actingUnitId: unit.id,
                                       admissionId: selectedOccupant.key,
                                       barrier: val === "None" ? null : (val as DischargeBarrier),
@@ -3177,6 +3119,7 @@ export function WardBoard({
                 </button>
               ) : null}
               {blockerDialogItem ? (
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
                 <div
                   ref={blockerDialogRef}
                   role="dialog"
@@ -3187,14 +3130,6 @@ export function WardBoard({
                   tabIndex={-1}
                   onClick={(e) => {
                     if (e.target === e.currentTarget) closeBlockerDialog();
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      e.stopPropagation();
-                      closeBlockerDialog();
-                    } else {
-                      trapDialogFocus(e, blockerDialogRef.current);
-                    }
                   }}
                   style={{
                     position: "fixed",
@@ -3301,7 +3236,7 @@ export function WardBoard({
                               fontVariantNumeric: "tabular-nums",
                               fontSize: "0.8rem",
                               padding: "0.125rem 0.5rem",
-                              borderRadius: "999px",
+                              borderRadius: "var(--wf-r-tag)",
                               border: "1px solid var(--line-strong)",
                               background: "var(--surface)",
                               color: "var(--ink)",
@@ -3422,10 +3357,7 @@ export function WardBoard({
                           } else {
                             dispatchAndReport(
                               () =>
-                                dispatch({
-                                  type: "BLOCK_BED_RELEASE",
-                                  role: "ward",
-                                  now,
+                                raise("BLOCK_BED_RELEASE", {
                                   releaseId: ownRelease.id,
                                   actingUnitId: unit.id,
                                   blocker: selectedBlocker,
@@ -3603,6 +3535,7 @@ export function WardBoard({
         </p>
 
         {pendingConfirm ? (
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
           <div
             ref={confirmDialogRef}
             role="dialog"
@@ -3613,14 +3546,6 @@ export function WardBoard({
             tabIndex={-1}
             onClick={(e) => {
               if (e.target === e.currentTarget) closeConfirmDialog();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                e.stopPropagation();
-                closeConfirmDialog();
-              } else {
-                trapDialogFocus(e, confirmDialogRef.current);
-              }
             }}
             style={{
               position: "fixed",

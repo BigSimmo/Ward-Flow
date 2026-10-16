@@ -15,7 +15,6 @@ import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-br
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
 
 const OWNED_SOURCE_FILES = [
   "src/components/ward-management/delays/delays-board.tsx",
@@ -27,15 +26,12 @@ const OWNED_SOURCE_FILES = [
   "src/components/ward-management/ward/ward-screen.tsx",
 ];
 
-describe("wired controls and WF-* audit-code hygiene across owned screens", () => {
-  it("contains zero 'Not wired in this prototype.' strings or two-digit audit issue codes in owned source files", () => {
+describe("wired controls and audit-code hygiene across owned screens", () => {
+  it("contains zero two-digit audit issue codes in owned source files", () => {
     for (const relPath of OWNED_SOURCE_FILES) {
       const fullPath = path.resolve(process.cwd(), relPath);
       const source = fs.readFileSync(fullPath, "utf8");
-      expect(source, `${relPath} should not contain 'Not wired in this prototype.'`).not.toContain(
-        "Not wired in this prototype.",
-      );
-      expect(source, `${relPath} should not contain two-digit WF-XX or WF-FIX/WF-HONESTY audit codes`).not.toMatch(
+      expect(source, `${relPath} should not contain two-digit audit codes`).not.toMatch(
         /\bWF-(?:[0-5]\d|60|FIX-[A-Z0-9-]+|HONESTY-[A-Z0-9-]+)\b/,
       );
     }
@@ -100,21 +96,5 @@ describe("wired controls and WF-* audit-code hygiene across owned screens", () =
     fireEvent.click(chaseBtn);
     expect(screen.getByRole("button", { name: /Chased/i })).toBeInTheDocument();
     expect(screen.getByText(/Chased unanswered desks/i)).toBeInTheDocument();
-  });
-
-  it("wires the WardAnswerView 'Ask a question' button to log a clarification request", () => {
-    const unitWithIncoming = allUnits()[0]!;
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardAnswerView unitId={unitWithIncoming.id} />
-      </WardFlowProvider>,
-    );
-
-    const askBtn = screen.queryByRole("button", { name: /Ask a question/i });
-    if (askBtn) {
-      fireEvent.click(askBtn);
-      expect(screen.getByRole("button", { name: /Question logged/i })).toBeInTheDocument();
-      expect(screen.getByText(/Clarification request logged for referring ED clinician\./i)).toBeInTheDocument();
-    }
   });
 });

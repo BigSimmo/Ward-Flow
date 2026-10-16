@@ -73,12 +73,16 @@ export function broadcastScopeCount(units: readonly Unit[], scope: BroadcastTarg
   return parts.length > 0 ? parts.join(" and ") : "no desks";
 }
 
-/** A directive's acknowledgements against the desks it asked, so nine wards read "of 9". */
+/**
+ * A directive's acknowledgements against the desks it asked, so nine wards read "of 9". A scoped desk
+ * passes `inScope` and counts against its own desks only.
+ */
 export function directiveAcknowledgements(
   alert: BroadcastAlert,
   units: readonly Unit[],
+  inScope: (deskId: string) => boolean = () => true,
 ): { acknowledged: number; of: number } {
-  const asked = new Set(directiveDesks(alert, units));
+  const asked = new Set(directiveDesks(alert, units).filter(inScope));
   return { acknowledged: alert.acknowledgedUnits.filter((id) => asked.has(id)).length, of: asked.size };
 }
 

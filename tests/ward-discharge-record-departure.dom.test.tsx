@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { ToastProvider } from "@/components/ui/toast";
+import { ToastProvider } from "@/components/wf/toast-provider";
 
 /*
  * A4-21 (audit 13 Oct 2026): a confirmed release records the departure from the Discharges sheet,

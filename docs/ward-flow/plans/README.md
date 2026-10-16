@@ -24,7 +24,7 @@ Current commissioned work is established by the owner's task scope, current sour
 - [WF-DOCS-20261008 documentation repair](2026-10-08-documentation-repair.md): reviewed current-guidance corrections and maintained documentation gates; same task checkpoint and evidence.
 - [Owner answers, second round](../archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs come from Ward Lead.
 - [Retiring PsychSift from the Ward Flow folder](2026-09-25-psychsift-retirement.md): what Ward Flow uses, what is safe to remove now, what must be untangled first, and the Railway leftovers.
-- [Removing the rest of PsychSift, plan v1](2026-09-25-psychsift-removal-plan-v1.md): where the retirement stands after batch 3a, why the shared building blocks stay put, the few files that drag PsychSift in, the mixed tests, and the single removal pass.
+- Removing the rest of PsychSift, plan v1 (`docs/ward-flow/plans/2026-09-25-psychsift-removal-plan-v1.md`, removed in the 15 Oct 2026 docs trim): where the retirement stands after batch 3a, why the shared building blocks stay put, the few files that drag PsychSift in, the mixed tests, and the single removal pass.
 
 ## Folded & Completed (Round 2)
 
@@ -52,7 +52,7 @@ Round 2 folded into the canonical ward line (`codex/task-ward-flow-live-state-20
 
 Older research, lane and census files (`2026-09-11-*`, `2026-09-12-*`, `2026-09-1x-lane-*`, `2026-09-1x-communication-addendum.md`, the
 `research-2026-09-10/` and records folders, and `REQUEST-QUEUE.md`) are historical inputs, not
-task-status sources.
+task-status sources. Many of the plans named in this section were removed in the 15 Oct 2026 docs trim. `../ARCHIVE-NOTE.md` lists what went and how to restore it.
 
 ## Adding a plan
 

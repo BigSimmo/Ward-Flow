@@ -127,7 +127,6 @@ export const TOOLING_TESTS = [
   "tests/ward-expected-reds-comparison.test.ts",
   "tests/ward-expected-reds-manifest.test.ts",
   "tests/ward-expected-reds-summary.test.ts",
-  "tests/ward-flow-chat-control.test.ts",
   "tests/ward-full-gate-recheck.test.ts",
   "tests/ward-gate-build-flag.test.ts",
   "tests/ward-mutation-harness-reachable.test.ts",

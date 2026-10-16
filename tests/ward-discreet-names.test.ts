@@ -36,7 +36,7 @@ describe("discreet patient names", () => {
   });
 
   it("leaves a name with no recorded UMRN as the resolver gave it", () => {
-    expect(discreetPatientName("Unknown Patient", "UMRN not recorded")).toBe("Unknown Patient");
+    expect(discreetPatientName("Name not recorded", "UMRN not recorded")).toBe("Name not recorded");
     expect(discreetPatientName("Initials TH", undefined)).toBe("Initials TH");
   });
 });

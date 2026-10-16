@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -20,6 +21,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Referral } from "@/components/ward-management/ward-model";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
 const TEAM_NAME = "Mead Centre (Armadale)";
 const TEAM_ID = communityTeamSlug(TEAM_NAME);
@@ -74,7 +76,10 @@ function start(props: { referrals?: Referral[]; teamId?: string } = {}) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Probe />
-      <CommunityScreen teamId={props.teamId ?? TEAM_ID} referrals={props.referrals} />
+      <CommunityScreen
+        teamId={props.teamId ?? TEAM_ID}
+        referrals={props.referrals && communityScopedReferrals(props.referrals)}
+      />
     </WardFlowProvider>,
   );
 }
@@ -85,7 +90,11 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     (medicalClearance) => {
       start({ referrals: [fixture({ medicalClearance })] });
       openReferral("dossier-test");
-      const dossier = screen.getByRole("dialog", { name: "Referral Triage: dossier-test" });
+      // D-39: the dialog names the person by name and UMRN, never by the referral number.
+      const dossier = screen.getByRole("dialog", {
+        name: `Referral Triage: ${patientIdentityLine(resolveSubjectPatient(fixture({}), seed))}`,
+      });
+      expect(screen.queryByRole("dialog", { name: /dossier-test/ })).toBeNull();
       expect(dossier).toHaveTextContent("History not recorded");
       expect(dossier).toHaveTextContent(
         medicalClearance
@@ -107,6 +116,32 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     expect(dossier).toHaveTextContent("No patient or clinical information has been inferred");
     expect(within(dossier).getByRole("button", { name: "Accept referral" })).toBeDisabled();
     expect(dossier).not.toHaveTextContent(/PT-4409|RF-8824|clear pathology/);
+  });
+
+  it("does not open another community team's referral in this team's drawer", () => {
+    start({
+      referrals: [
+        fixture({
+          id: "other-team-referral",
+          destinations: [{ destination: { kind: "community_team", teamName: "Bentley" }, state: "queued" }],
+        }),
+      ],
+    });
+    openReferral("other-team-referral");
+    expect(screen.getByRole("dialog", { name: "Referral unavailable" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Referral Triage: other-team-referral" })).not.toBeInTheDocument();
+  });
+
+  it("still reads a broken referral link as a gap, not as an empty team", () => {
+    // The page holds only community-scoped referrals (FD-23). A referral id that matches nothing in
+    // the full record must still make the list not computable rather than measured empty.
+    const admission = { ...seed.admissions[0]!, referralId: "no-such-referral" };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CommunityScreen teamId={TEAM_ID} admissions={[admission]} referrals={[]} />
+      </WardFlowProvider>,
+    );
+    expect(document.body).toHaveTextContent("A bed carries no link back to the referral that named this team");
   });
 
   it("keeps a withdrawn dossier current and does not report successful acceptance", () => {
@@ -135,9 +170,9 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.click(screen.getByRole("button", { name: "Log team contact" }));
     expect(document.getElementById("actionToastMsg")).toHaveTextContent("does not record patient or referral contact");
     fireEvent.click(screen.getByRole("button", { name: "Review" }));
-    expect(
-      screen.getByRole("dialog", { name: `Referral Triage: ${screen.getByTestId("referral-id").textContent}` }),
-    ).toBeInTheDocument();
+    const referralId = screen.getByTestId("referral-id").textContent!;
+    expect(screen.getByRole("dialog", { name: /^Referral Triage: / })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: new RegExp(referralId) })).toBeNull();
   });
 
   it("discloses the unsupported dossier editor and unavailable patient follow-up", () => {

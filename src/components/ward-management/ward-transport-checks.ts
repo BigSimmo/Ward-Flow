@@ -193,6 +193,25 @@ export function instantFromEstimatedTimeInputs(
   return startOfToday + (day === "tomorrow" ? MINUTES_PER_DAY : 0) + minuteOfDay;
 }
 
+/**
+ * The patient page's free-text arrival estimate. Up to three digits is minutes from now ("45",
+ * "~45m", "+30", "45 min"). Anything else is a clock time read by the same rule as every other
+ * time box on the site, with "tomorrow" and "AWST" allowed around it ("0930", "9:30 tomorrow").
+ * Returns undefined rather than guessing.
+ */
+export function instantFromEtaText(value: string, now: Instant): number | undefined {
+  const clean = value.trim();
+  if (!clean) return undefined;
+  const relative = /^[~+]?\s*(\d{1,3})\s*(?:m|min|mins|minutes)?$/i.exec(clean);
+  if (relative) return now + Number(relative[1]);
+  const day = /tomorrow/i.test(clean) ? "tomorrow" : "today";
+  const clockText = clean
+    .replace(/\s*tomorrow\s*/i, " ")
+    .replace(/\s*AWST\s*/i, " ")
+    .trim();
+  return instantFromEstimatedTimeInputs(clockText, day, now);
+}
+
 /** The answers a transport booking popup collects. `undefined` and `""` mean not yet answered. */
 export type TransportBookingAnswers = {
   provider: TransportProvider | undefined;

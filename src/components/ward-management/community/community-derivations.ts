@@ -7,6 +7,18 @@ import {
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
+import type { CommunityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
+
+/**
+ * The full record (the coordinator's statistics) or the community-scoped projection (the team page,
+ * FD-23). Every derivation here reads only a referral's id and its community addressing, which both
+ * shapes carry, so one function serves both without the team page ever holding the full record.
+ */
+export type TeamReferral = Referral | CommunityScopedReferral;
+
+function communityArmsOf(referral: TeamReferral): readonly { destination: { kind: string; teamName?: string } }[] {
+  return "destinations" in referral ? referral.destinations : [referral.addressing];
+}
 
 /**
  * THE COMMUNITY HUB'S DERIVATIONS — who a community team can see, and, more importantly, who it
@@ -120,12 +132,12 @@ export function communityTeamById(teamId: string): CommunityTeam | null {
 export function admissionBelongsToTeam(
   admission: Admission,
   team: CommunityTeam,
-  referrals: readonly Referral[],
+  referrals: readonly TeamReferral[],
 ): boolean {
   if (admission.referralId === null) return false;
   const referral = referrals.find((candidate) => candidate.id === admission.referralId);
   if (referral === undefined) return false;
-  return referral.destinations.some(
+  return communityArmsOf(referral).some(
     (addressed) => addressed.destination.kind === "community_team" && addressed.destination.teamName === team.name,
   );
 }
@@ -259,7 +271,7 @@ export type CommunityHubLists = {
 export function communityHubLists(
   admissions: readonly Admission[],
   team: CommunityTeam,
-  referrals: readonly Referral[],
+  referrals: readonly TeamReferral[],
 ): CommunityHubLists {
   const ours = admissions.filter((admission) => admissionBelongsToTeam(admission, team, referrals));
   const currentlyAdmitted = ours.filter(bedIsOccupied);
@@ -302,7 +314,7 @@ export function communityHubLists(
  */
 export function admissionsWithNoCommunityTeam(
   admissions: readonly Admission[],
-  referrals: readonly Referral[],
+  referrals: readonly TeamReferral[],
 ): Admission[] {
   return admissions.filter(
     (admission) => !COMMUNITY_TEAM_PAGES.some((team) => admissionBelongsToTeam(admission, team, referrals)),
@@ -371,7 +383,7 @@ export type CommunityMembershipResolution =
 /** Admissions whose `referralId` is set and resolves to no referral the hub was handed. */
 export function admissionsWithUnresolvableReferral(
   admissions: readonly Admission[],
-  referrals: readonly Referral[],
+  referrals: readonly TeamReferral[],
 ): Admission[] {
   return admissions.filter(
     (admission) => admission.referralId !== null && !referrals.some((referral) => referral.id === admission.referralId),
@@ -381,7 +393,7 @@ export function admissionsWithUnresolvableReferral(
 export function communityMembershipResolution(
   admissions: readonly Admission[],
   team: CommunityTeam,
-  referrals: readonly Referral[],
+  referrals: readonly TeamReferral[],
 ): CommunityMembershipResolution {
   const ours = admissions.filter((admission) => admissionBelongsToTeam(admission, team, referrals));
   if (ours.length > 0) return { state: "members" };
@@ -416,6 +428,8 @@ export function communityMembershipResolution(
  * `state === "queued" && withdrawnAt === undefined` check a second time — the one home for that
  * rule, so a future reader who tightens or loosens it moves every caller, this one included.
  */
-export function isAwaitingTeamAnswer(addressing: ReferralAddressing | undefined): boolean {
+export function isAwaitingTeamAnswer(
+  addressing: Pick<ReferralAddressing, "state" | "withdrawnAt"> | undefined,
+): boolean {
   return addressing !== undefined && isAwaitingAnswer(addressing);
 }

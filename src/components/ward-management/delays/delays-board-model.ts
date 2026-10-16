@@ -7,7 +7,7 @@
  * here invents a time limit or a status. The 8, 12 and 24 hour bands are the same named waits the
  * rest of the screen uses (see `delays-view-model.ts`), not new clinical limits.
  */
-import { currentDueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import {
@@ -127,17 +127,17 @@ export function bandCounts(rows: readonly BoardRow[]): BandCounts {
 }
 
 /** Legal tone from the recorded due time and the configured warnings (1h and 3h by default). */
-export function dueTone(dueIn: number | undefined): "danger" | "warning" | undefined {
+export function dueTone(dueIn: number | undefined, thresholds: DueSoonThresholds): "danger" | "warning" | undefined {
   if (dueIn === undefined) return undefined;
-  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  const { urgentMinutes, soonMinutes } = thresholds;
   if (dueIn <= urgentMinutes) return "danger";
   if (dueIn <= soonMinutes) return "warning";
   return undefined;
 }
 
 /** One shape per person on the spread chart: act now, at risk or waiting. */
-export function rowTone(row: BoardRow): "danger" | "warning" | "neutral" {
-  const legal = dueTone(row.dueIn);
+export function rowTone(row: BoardRow, thresholds: DueSoonThresholds): "danger" | "warning" | "neutral" {
+  const legal = dueTone(row.dueIn, thresholds);
   if (row.waited >= OVER_24H || legal === "danger") return "danger";
   if (row.waited >= OVER_8H || legal === "warning") return "warning";
   return "neutral";
@@ -252,8 +252,8 @@ export function hasFilters(filters: BoardFilters): boolean {
   );
 }
 
-export function isDueSoon(row: BoardRow): boolean {
-  return row.dueIn !== undefined && row.dueIn >= 0 && row.dueIn <= currentDueSoonThresholds().urgentMinutes;
+export function isDueSoon(row: BoardRow, thresholds: DueSoonThresholds): boolean {
+  return row.dueIn !== undefined && row.dueIn >= 0 && row.dueIn <= thresholds.urgentMinutes;
 }
 
 export function isBreached(row: BoardRow): boolean {
@@ -270,6 +270,7 @@ function rowMatchesFilters(
   filters: BoardFilters,
   bins: readonly RunwayBin[],
   nameOf: (movement: Movement) => string,
+  thresholds: DueSoonThresholds,
 ): boolean {
   const binIds = filters.bin === null ? null : (bins[filters.bin]?.ids ?? new Set<string>());
   const needle = filters.search.trim().toLowerCase();
@@ -280,7 +281,7 @@ function rowMatchesFilters(
     row.waited >= WAIT_THRESHOLDS[filters.threshold] &&
     (!filters.locked || row.locked) &&
     (!filters.silent || row.silent) &&
-    (!filters.dueSoon || isDueSoon(row)) &&
+    (!filters.dueSoon || isDueSoon(row, thresholds)) &&
     (!filters.breached || isBreached(row)) &&
     (!filters.severe || row.severe) &&
     (binIds === null || binIds.has(row.movement.id)) &&
@@ -296,8 +297,9 @@ export function filterRows(
   filters: BoardFilters,
   bins: readonly RunwayBin[],
   nameOf: (movement: Movement) => string,
+  thresholds: DueSoonThresholds,
 ): BoardRow[] {
-  return rows.filter((row) => rowMatchesFilters(row, filters, bins, nameOf));
+  return rows.filter((row) => rowMatchesFilters(row, filters, bins, nameOf, thresholds));
 }
 
 /* ---------- next four hours ---------- */
@@ -550,6 +552,6 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
 }
 
 /** Rows whose recorded legal time is pinned above the rest in the Longest wait view. */
-export function isPinned(row: BoardRow): boolean {
-  return row.dueIn !== undefined && row.dueIn <= currentDueSoonThresholds().soonMinutes;
+export function isPinned(row: BoardRow, thresholds: DueSoonThresholds): boolean {
+  return row.dueIn !== undefined && row.dueIn <= thresholds.soonMinutes;
 }

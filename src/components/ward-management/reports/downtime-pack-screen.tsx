@@ -28,7 +28,7 @@ import {
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
@@ -140,9 +140,16 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  * own layout: a compact hero, a four-way segmented control and rows that open a sheet of facts.
  */
 export function DowntimePackScreen() {
-  const world = useWardFlow();
   const now = useWardFlowClock();
-  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = world;
+  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
+    "dayZero",
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "movements",
+    "worldGeneration",
+  );
   const patientOf = usePatientOf();
   const isPhone = useIsPhone();
   const role = useRouteRole();

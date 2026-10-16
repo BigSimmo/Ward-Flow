@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -31,7 +32,12 @@ import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-manag
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+  isClockBreached,
+} from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -39,7 +45,7 @@ import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-rol
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { HEALTH_SERVICES, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -48,7 +54,6 @@ import { allEmergencyDepartments, edById } from "@/components/ward-management/wa
 import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { referralForMovement } from "@/components/ward-management/ward-derivations";
-import { clockState } from "@/components/ward-management/ward-clock";
 import {
   Button,
   Card,
@@ -119,6 +124,8 @@ import {
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, type SignOffCheck } from "./handover-panels";
 import { HandoverBeds } from "./handover-beds";
+import { LongStaySummary } from "./long-stay-summary";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
 import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
@@ -220,7 +227,7 @@ function recordHandoverSignOff(
 export function movementIsUrgent(movement: Movement, now: Instant): boolean {
   if (movement.flaggedUrgent) return true;
   const dueAt = movement.legalForm?.dueAt;
-  return dueAt !== undefined && clockState(dueAt, now) === "breached";
+  return dueAt !== undefined && isClockBreached(dueAt, now);
 }
 
 /** THE WHOLE OF CONDITION 3, AS ONE FUNCTION */
@@ -358,8 +365,22 @@ export function HandoverPage() {
     rejections,
     configuration,
     inboxSnoozes,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "admissions",
+    "bedReleases",
+    "dispatch",
+    "dayZero",
+    "handoverSignOffs",
+    "rejections",
+    "configuration",
+    "inboxSnoozes",
+  );
   const now = useWardFlowClock();
+  const longStayOn = useWardFeatureFlag("top25-long-stay-dossier");
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
@@ -1395,6 +1416,15 @@ export function HandoverPage() {
             pick(id);
           }}
         />
+        {longStayOn ? (
+          <LongStaySummary
+            admissions={admissions.filter((admission) => wards.some((ward) => ward.id === admission.unitId))}
+            bedReleases={bedReleases}
+            now={now}
+            nameFor={(admission) => resolveAdmissionPatient(admission, patients, referrals).name}
+            wardFor={(unitId) => wardOf(unitId)?.name ?? "Ward not recorded"}
+          />
+        ) : null}
       </TabPanel>
     );
   } else if (tab === "hist") {
@@ -1562,12 +1592,13 @@ export function HandoverScopeControl({
   const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const sortedEds = useMemo(() => [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name)), []);
   const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
+  const scopeId = useId();
 
   return (
-    <label htmlFor="ward-handover-scope" className={styles.barSelect} data-print-hide>
+    <label htmlFor={scopeId} className={styles.barSelect} data-print-hide>
       <SrOnly>Filter the sheet</SrOnly>
       <Select
-        id="ward-handover-scope"
+        id={scopeId}
         aria-label="Filter the sheet"
         data-testid="ward-handover-scope-select"
         boxClassName={styles.barSelect}

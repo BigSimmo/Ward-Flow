@@ -16,6 +16,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { isPublicWardFlowCheckout, signOutConflicts, unsignedWardFiles } from "../pre-commit-checks.mjs";
+import { wardSignOutFile } from "./logs-root.mjs";
 
 export function validateClaimPaths(root, files) {
   if (!files.length || new Set(files).size !== files.length) throw new Error("Name unique exact files");
@@ -106,7 +107,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
           branch,
           files,
           owner: "Codex exact-file claim",
-          log: process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md",
+          log: wardSignOutFile(),
         }),
       ),
     );

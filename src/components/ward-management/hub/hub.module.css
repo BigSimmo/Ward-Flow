@@ -419,7 +419,7 @@
   margin-left: var(--wf-s-2);
   padding: 0 var(--wf-s-2);
   border: 0;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   color: var(--wf-accent-ink, var(--wf-ink-1));
   font: inherit;
@@ -1193,7 +1193,7 @@
   flex: 1 1 auto;
   min-width: 0;
   height: var(--wf-touch);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .phoneSortButton {
@@ -1204,7 +1204,7 @@
   min-height: var(--wf-touch);
   padding: 0 var(--wf-s-4);
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);

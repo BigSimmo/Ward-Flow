@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { DischargeBoard, groupDischarges } from "@/components/ward-management/discharges/discharge-board";
-import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { bedReleases } from "@/components/ward-management/ward-movements";
@@ -73,7 +73,7 @@ function renderCapacity() {
 function renderDischarges({ controls = false }: { controls?: boolean } = {}) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      {controls ? <WardDemoControls /> : null}
+      {controls ? <WardDemoPanel /> : null}
       <DischargeBoard />
     </WardFlowProvider>,
   );
@@ -141,8 +141,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     openInesRecord();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100003");
 
-    fireEvent.click(screen.getByTestId("ward-demo-controls-trigger"));
-    fireEvent.click(screen.getByTestId("ward-demo-reset"));
+    fireEvent.click(screen.getByRole("button", { name: "Reset demo" }));
 
     expect(screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u })).toHaveAttribute(
       "aria-pressed",
@@ -202,7 +201,8 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
     openInesRecord();
     const details = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(details).toHaveTextContent("AD-RPHS-14");
+    // D-39: the admission number is no longer shown beside the person.
+    expect(details).not.toHaveTextContent("AD-RPHS-14");
     expect(details).toHaveTextContent("UMRN UM100003");
 
     fireEvent.change(screen.getByRole("combobox", { name: "Patient link" }), {

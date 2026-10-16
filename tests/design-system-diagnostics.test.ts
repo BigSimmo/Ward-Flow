@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createBoundedDiagnosticRecorder } from "@/components/ui/design-system-diagnostics";
+import { createBoundedDiagnosticRecorder } from "@/components/wf/design-system-diagnostics";
 
 describe("bounded design-system diagnostics", () => {
   it("deduplicates recent keys and evicts the oldest key at the cap", () => {

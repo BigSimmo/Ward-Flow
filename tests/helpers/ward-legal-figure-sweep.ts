@@ -1190,6 +1190,7 @@ export function candidateEvents(
         unitIds.map((unitId) => ({ type, role, now, alertId: alert.id, unitId })),
       );
     case "STAND_DOWN_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
       return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id }));
     // Global alerts (10 Oct 2026): a Pull now for every movement, then each ward answering every
     // live alert. Read from live state, like the broadcast trio above.
@@ -1604,22 +1605,6 @@ export function applyFirstAccepted(
 }
 
 /**
- * Drives the reducer repeatedly against movements carrying `code`. Sweeping rather than following
- * a hand-written script means the clinical pathway's ordering (PULL_PATIENT must precede
- * HANDOVER_READY, which must precede TRANSPORT_ACCEPTED) is discovered rather than assumed, so a
- * reordering of the pathway cannot silently drop a branch from coverage.
- *
- * Each round ROTATES the order the event types are tried in. A fixed order is itself an
- * assumption, and a wrong one: with the role table's natural order, ACCEPT_IN_PRINCIPLE always
- * ran before DECLINE and consumed the only live referral, so DECLINE was never once accepted
- * against a Form 1A — the coverage assertion below caught that while this fix was being written.
- * Rotating over at least as many rounds as there are event types tries every relative ordering.
- *
- * `supplyDueAt` (T2r fix round, finding 3, 2026-09-17): threaded straight to `applyFirstAccepted`
- * and, through it, to `candidateEvents` — see that function's own doc comment for what `false`
- * proves and why it was missing.
- */
-/**
  * Everything a step undo must restore: the state without the append-only audit log, refusals,
  * undo bookkeeping, id counters and unit revisions, which move forward by design.
  */
@@ -1664,6 +1649,22 @@ export function undoOf(
   return state.rejections.length === applied.rejections.length ? { type: undoType, state } : undefined;
 }
 
+/**
+ * Drives the reducer repeatedly against movements carrying `code`. Sweeping rather than following
+ * a hand-written script means the clinical pathway's ordering (PULL_PATIENT must precede
+ * HANDOVER_READY, which must precede TRANSPORT_ACCEPTED) is discovered rather than assumed, so a
+ * reordering of the pathway cannot silently drop a branch from coverage.
+ *
+ * Each round ROTATES the order the event types are tried in. A fixed order is itself an
+ * assumption, and a wrong one: with the role table's natural order, ACCEPT_IN_PRINCIPLE always
+ * ran before DECLINE and consumed the only live referral, so DECLINE was never once accepted
+ * against a Form 1A — the coverage assertion below caught that while this fix was being written.
+ * Rotating over at least as many rounds as there are event types tries every relative ordering.
+ *
+ * `supplyDueAt` (T2r fix round, finding 3, 2026-09-17): threaded straight to `applyFirstAccepted`
+ * and, through it, to `candidateEvents` — see that function's own doc comment for what `false`
+ * proves and why it was missing.
+ */
 export function driveEveryEventAgainst(
   code: string,
   supplyDueAt = true,

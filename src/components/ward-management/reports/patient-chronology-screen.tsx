@@ -40,7 +40,7 @@ import {
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 
 import {
@@ -137,7 +137,16 @@ const clockOrMissing = (instant: Instant | null) => (instant === null ? NOT_RECO
  * record view) and the count line always equals the rows shown. Phone is its own layout.
  */
 export function PatientChronologyScreen({ initialPatientId }: { initialPatientId?: string }) {
-  const { patients, movements, referrals, admissions, units, eventLog, readAuditEvents, dayZero } = useWardFlow();
+  const { patients, movements, referrals, admissions, units, eventLog, readAuditEvents, dayZero } = useWardFlowSelect(
+    "patients",
+    "movements",
+    "referrals",
+    "admissions",
+    "units",
+    "eventLog",
+    "readAuditEvents",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   const baseId = useId();
   const isPhone = useIsPhone();

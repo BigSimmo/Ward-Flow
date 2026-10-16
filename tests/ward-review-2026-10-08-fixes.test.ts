@@ -254,7 +254,7 @@ describe("S1-2: a journey raised from a referral must be for that referral's pat
       patientId: other.id,
       draft,
     });
-    expect(refusal).toMatch(/is for patient/);
+    expect(refusal).toMatch(/different patient from the one this referral is for/);
     expect(h.state.movements).toHaveLength(before);
   });
 

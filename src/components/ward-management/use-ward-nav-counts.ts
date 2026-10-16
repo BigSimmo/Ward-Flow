@@ -2,8 +2,14 @@
 
 import { usePathname } from "next/navigation";
 
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 
@@ -26,9 +32,9 @@ import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
  * both trees recomputes rather than shares. That is the cheap half of the trade; the expensive half
  * would be a context whose absence yields a plausible answer silently.
  *
- * ⚠️ **`placeId` IS ADDED HERE FOR THE SAME REASON `role` ALREADY IS.** `WardSidebarAttention`
- * (`ward-sidebar-content.tsx`) needs to scope its list to the ward or emergency department the
- * reader is on, and `usePathname` is the one source both the role and the id must read — computing
+ * ⚠️ **`placeId` IS ADDED HERE FOR THE SAME REASON `role` ALREADY IS.** `shell/ward-bar.tsx`
+ * needs to scope its figures to the ward or emergency department the reader is on (the old
+ * `WardSidebarAttention` list that first needed it was removed on 15 Oct 2026), and `usePathname` is the one source both the role and the id must read — computing
  * the id separately in the panel would be a second place for the two to disagree about which route
  * they are on. See `wardPlaceIdFor` in `ward-place.ts`: it is a bare id, `undefined` on any route
  * that does not name one, never a resolved or validated place.
@@ -41,12 +47,32 @@ export function useWardNavCounts(): {
   placeId: string | undefined;
 } {
   const pathname = usePathname() ?? "";
-  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
+  const thresholds = useDueSoonThresholds();
+  const network = useWardNetwork();
+  const routeRole = wardChromeRole(pathname);
+  // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
+  const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
   return {
-    role: wardChromeRole(pathname),
-    shellRole: WARD_SHELL_ROLE,
-    counts: wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
+    role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
+    shellRole: deskRole,
+    counts: wardNavCounts({
+      movements,
+      units,
+      sites: network.sites,
+      referrals,
+      bedReleases,
+      leaveBeds,
+      now,
+      thresholds,
+    }),
     placeId: wardPlaceIdFor(pathname),
   };
 }

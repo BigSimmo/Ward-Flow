@@ -4,6 +4,7 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { claimFiles, validateClaimPaths } from "../scripts/ward-flow/claim-files.mjs";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 describe("exact-file claim administration", () => {
   it.each([
@@ -73,7 +74,8 @@ describe("exact-file claim administration", () => {
       rmSync(folder, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
-  it("never turns an active peer claim into a takeover", () => {
+  it("never turns an active peer claim into a takeover", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
     const branch = "codex/claim-fixture"; // CI checks out a detached HEAD, so the branch is injected.
     const folder = mkdtempSync(path.join(tmpdir(), "ward-claim-proof-"));
@@ -96,7 +98,8 @@ describe("exact-file claim administration", () => {
       rmSync(folder, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
-  it("appends exact claims once and reuses the same owner without another inspection", () => {
+  it("appends exact claims once and reuses the same owner without another inspection", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
     const branch = "codex/claim-fixture"; // CI checks out a detached HEAD, so the branch is injected.
     const folder = mkdtempSync(path.join(tmpdir(), "ward-claim-proof-"));

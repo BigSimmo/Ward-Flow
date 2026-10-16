@@ -1,7 +1,7 @@
 // tests/ward-derivations.test.ts
 import { describe, expect, it } from "vitest";
 
-import { clockState } from "../src/components/ward-management/ward-clock";
+import { isClockBreached } from "../src/components/ward-management/ward-clock";
 import {
   buildActionInbox,
   destinationNoLongerLawful,
@@ -54,8 +54,7 @@ describe("buildActionInbox", () => {
   it("emits no legal-timing item for the real fixture, which carries no past-due deadline", () => {
     const expectedIds = wardMovements
       .filter(
-        (movement) =>
-          movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, NOW_ANCHOR) === "breached",
+        (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, NOW_ANCHOR),
       )
       .map((movement) => `legal-${movement.id}`)
       .sort();
@@ -259,8 +258,7 @@ describe("buildActionInbox", () => {
    */
   it("counts every inbox category, and goes red if a new one appears uncounted", () => {
     const legalCount = wardMovements.filter(
-      (movement) =>
-        movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, NOW_ANCHOR) === "breached",
+      (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, NOW_ANCHOR),
     ).length;
     const declineCount = wardMovements.filter((movement) => movement.declines.length >= PARALLEL_REFERRAL_CAP).length;
     const transportCount = wardMovements.filter(

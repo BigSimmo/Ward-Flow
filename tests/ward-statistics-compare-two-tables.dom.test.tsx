@@ -174,6 +174,11 @@ describe("the comparisons page sets wards beside wards and departments beside de
     ).toBe(true);
   });
 
+  // Retired 15 Oct 2026: "scopes the right-alignment rule to a table selector, because an
+  // unscoped one is outranked". It read statistics-third-edition.module.css, which the Compare
+  // screen stopped importing in the v6 rebuild (it uses statistics-compare, -detail and -v6), so
+  // it checked a sheet nothing loads. The sheet was deleted (fix list 2.4).
+
   /**
    * A raw average reached the page as `44.33680555555556 days` and no assertion here minded. A
    * figure a clinician cannot read at a glance is not a rendering nit on a comparison table — the
@@ -425,9 +430,17 @@ describe("the comparisons page sets wards beside wards and departments beside de
    * column count from the render — and both are checked against what was recorded when the
    * measurement was taken. **Change either without re-measuring and this goes red naming both.**
    */
-  // `.wardTable` (40rem, 5 columns) and `.edTable` (35rem, 4 columns) in `statistics-compare.module.css`
-  // hold the live horizontal-scroll thresholds for the two Compare tables.
+  // 40rem/27.5rem → 47.5rem/36rem, 17 Sept 2026: re-measured in Playwright chromium by the
+  // browser-journeys lane (`tests/ui-ward-table-thresholds.spec.ts`, 1440x900, `clearedMinWidth` =
+  // 0px, sentinel 1234px) — see the stylesheet's own comment on `.compareWardTable` in
+  // `statistics-third-edition.module.css` for the full run: min-content/max-content had both risen
+  // past the old pins (679/744px and 498/555px respectively), so both were inert; raised to sit
+  // clear of today's max-content again. Column counts are unchanged (5 and 4), so this is a value
+  // change and nothing else.
   it.each([
+    // Re-pointed 15 Oct 2026 to the v6 sheet the screen imports (statistics-compare.module.css,
+    // `.wardTable` and `.edTable`, passed as minWidthClass). Its pins were measured on 7 Oct 2026
+    // and raised by the CI sweep, as that sheet's own comment records.
     { table: WARD_TABLE, selector: ".wardTable", pin: "40rem", columnsWhenMeasured: 5 },
     { table: WARD_TABLE, selector: ".edTable", pin: "35rem", columnsWhenMeasured: 4, use: ED_TABLE },
   ])("$selector was measured at $pin against $columnsWhenMeasured columns, and still has them", (entry) => {

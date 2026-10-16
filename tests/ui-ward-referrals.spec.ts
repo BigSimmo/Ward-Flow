@@ -611,7 +611,7 @@ async function goToBoardViaPhoneRail(page: Page) {
   // Command/Movement/Capacity (`NARROW_CORE_ENTRY_IDS`) plus the current route's own entry stay
   // inline below 1000px; everything else — Referral Board included — sits behind "More pages"
   // until that sheet is opened.
-  // The sheet portals to `document.body` by default (`components/ui/sheet.tsx`'s `Sheet`), so its
+  // The sheet portals to `document.body` by default (`components/wf/sheet.tsx`'s `Sheet`), so its
   // content sits outside `rail`'s own DOM subtree once open — the target link is looked up from
   // `page`, unscoped, rather than from `rail`.
   // Device audit option A (11 Oct 2026): the coordinator's phone dock carries Referrals on every
@@ -1175,7 +1175,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // (2026-09-13, `shell/ward-rail.tsx`'s `RAIL_GROUPS`), which is not inline below 1000px — see
     // `goToBoardViaPhoneRail`'s own comment on the same drift. Open "More pages" first if it is
     // there to open.
-    // The sheet portals to `document.body` (`components/ui/sheet.tsx`'s `Sheet`, default
+    // The sheet portals to `document.body` (`components/wf/sheet.tsx`'s `Sheet`, default
     // `portal={true}`), so its content sits outside `ledgerRail`'s own DOM subtree once open —
     // looked up from `page`, unscoped, once that is the case.
     if (await openRailSheetIfNeeded(page, ledgerRail)) {

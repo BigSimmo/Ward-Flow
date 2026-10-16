@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 import { BarChart3, OctagonAlert } from "lucide-react";
 import { Button, Card } from "@/components/wf";
 import styles from "./discharge-flow-charts.module.css";
@@ -39,6 +40,7 @@ export function DischargeDayChart({
   onClear: () => void;
 }) {
   const totals = days.map((day) => day.expected + day.blocked);
+  const headingId = useId();
   const ahead = days.filter((day) => day.key !== "past");
   const mean = ahead.length ? ahead.reduce((sum, day) => sum + day.expected + day.blocked, 0) / ahead.length : 0;
   // Headroom above the tallest column leaves space for its value label.
@@ -46,9 +48,9 @@ export function DischargeDayChart({
   const top = step * GRID_LINES;
   const pct = (value: number) => `${(value / top) * 100}%`;
   return (
-    <Card className={styles.card} aria-labelledby="discharge-day-chart-heading" data-testid="ward-discharge-day-chart">
+    <Card className={styles.card} aria-labelledby={headingId} data-testid="ward-discharge-day-chart">
       <header className={styles.head}>
-        <h2 id="discharge-day-chart-heading" className={styles.title}>
+        <h2 id={headingId} className={styles.title}>
           <BarChart3 size={16} aria-hidden="true" />
           Expected discharges per day
         </h2>
@@ -140,17 +142,14 @@ export function DischargeBarrierBars({
   onSelect: (id: string) => void;
   onClear: () => void;
 }) {
+  const headingId = useId();
   const shown = barriers.filter((barrier) => barrier.count > 0);
   const total = shown.reduce((sum, barrier) => sum + barrier.count, 0);
   const max = Math.max(1, ...shown.map((barrier) => barrier.count));
   return (
-    <Card
-      className={styles.card}
-      aria-labelledby="discharge-barrier-bars-heading"
-      data-testid="ward-discharge-barrier-bars"
-    >
+    <Card className={styles.card} aria-labelledby={headingId} data-testid="ward-discharge-barrier-bars">
       <header className={styles.head}>
-        <h2 id="discharge-barrier-bars-heading" className={styles.title}>
+        <h2 id={headingId} className={styles.title}>
           <OctagonAlert size={16} aria-hidden="true" />
           Blocked by barrier
         </h2>

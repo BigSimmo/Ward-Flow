@@ -46,7 +46,6 @@ const MAY_ASSERT_TODAY = new Map([
   // ✅ SWEPT 2026-09-07 (Task 5): `exception-drawer.tsx` now takes a `now` prop (threaded through
   // for `OverrideRegister`/`DeclineRegister`), so its refusal row renders
   // `formatInstantWithDay(rejection.at, now)` — the expiry condition this entry itself named.
-  ["movement.transport.acceptedAt as Instant", "STILL TO SWEEP - transport accepted yesterday reads as today"],
   ["referral.localBedSought.at", "referral surface, owned by another session"],
   [
     "record.estimatedAt",

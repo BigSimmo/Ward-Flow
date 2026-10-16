@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fragment,
-  useContext,
   useEffect,
   useId,
   useMemo,
@@ -22,8 +21,13 @@ import { buildActionInbox, destinationUnit, isOpen, stageCopy } from "@/componen
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import {
+  patientIdentityLine,
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+} from "@/components/ward-management/ward-patient-resolver";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
 export type WardChromeSearchProps = {
   movements?: Movement[];
@@ -79,7 +83,7 @@ export function WardChromeSearch({
 }: WardChromeSearchProps = {}) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const context = useContext(WardFlowContext);
+  const context = useOptionalWardFlowSelect("movements", "patients", "units", "referrals", "plannedAdmissions");
 
   // Memoised so the empty-array fallback keeps one identity across renders (the search memos below
   // depend on these).
@@ -87,6 +91,8 @@ export function WardChromeSearch({
   const patients = useMemo(() => propsPatients ?? context?.patients ?? [], [propsPatients, context?.patients]);
   const units = useMemo(() => propsUnits ?? context?.units ?? [], [propsUnits, context?.units]);
   const referrals = useMemo(() => propsReferrals ?? context?.referrals ?? [], [propsReferrals, context?.referrals]);
+  // D-39: results name a person by name and UMRN, never by a journey number.
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
 
   const role = wardChromeRole(pathname);
   const scope = propsScope ?? CHROME_ROLE_LABELS[role];
@@ -173,7 +179,7 @@ export function WardChromeSearch({
             kind: "movement",
             kindLabel: "Movement",
             id: m.id,
-            title: m.id,
+            title: patientIdentityLine(resolveSubjectPatient(m, umrnLookup)),
             meta: `${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
             href: movementHref(m.id),
           };
@@ -266,14 +272,14 @@ export function WardChromeSearch({
           kindLabel: "Task",
           id: t.task.id,
           title: t.task.title,
-          meta: t.task.detail,
+          meta: withUmrnInPlaceOfMovementIds(t.task.detail, umrnLookup),
           href: t.href,
         })),
       });
     }
 
     return g;
-  }, [smartResults, units]);
+  }, [smartResults, units, umrnLookup]);
 
   const options = useMemo(() => (searchPending ? [] : groups.flatMap((g) => g.items)), [groups, searchPending]);
   const showPopup = open && trimmed.length > 0;

@@ -392,6 +392,20 @@ export const OVERRIDE_REASONS = [
 ] as const;
 export type OverrideReason = (typeof OVERRIDE_REASONS)[number];
 
+/**
+ * ⚠️ PLACEHOLDER VALUES, Top 25 item 2 (`top25-referral-cap`, owner ruling 15 Oct 2026): "cap at
+ * three wards asked at once". Asking one more ward than the cap is a safety check, so it warns and
+ * asks for a reason rather than refusing. The wording of each reason is NOT chosen or seen by the
+ * owner, the same warning `OVERRIDE_REASONS` above carries. Written as complete sentences the
+ * coordinator reads back, like `OVERRIDE_REASONS`, so no label map is needed.
+ */
+export const REFERRAL_CAP_REASONS = [
+  "No answer yet from the wards already asked",
+  "Clinical urgency needs a wider search",
+  "The wards already asked are unlikely to have a bed soon",
+] as const;
+export type ReferralCapReason = (typeof REFERRAL_CAP_REASONS)[number];
+
 export const BED_PREPARATION_NOTES = ["Being cleaned", "Awaiting maintenance or repair"] as const;
 export type BedPreparationNote = (typeof BED_PREPARATION_NOTES)[number];
 

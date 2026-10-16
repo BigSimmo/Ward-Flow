@@ -399,6 +399,14 @@ export function reduceRecordedFactEvent(
         acceptedUnitId: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          ...withdrawnLiveRequests.map((referral) => ({
+            unitId: referral.unitId,
+            at: referral.at,
+            answer: "withdrawn" as const,
+          })),
+        ],
         edOutcome: event.outcome,
         // A booked-but-uncollected job is cancelled in the same update that closes the movement.
         transport:
@@ -728,6 +736,14 @@ export function reduceRecordedFactEvent(
         acceptedUnitId: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
+        referralAnswerHistory: [
+          ...(movement.referralAnswerHistory ?? []),
+          ...withdrawnLiveRequests.map((referral) => ({
+            unitId: referral.unitId,
+            at: referral.at,
+            answer: "withdrawn" as const,
+          })),
+        ],
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
       const outcomeNotices: Notice[] = [];
@@ -1336,7 +1352,7 @@ export function reduceRecordedFactEvent(
             "community_referral_withdrawn",
             { role: "community", placeId: communityTeamSlug(teamName) },
             { referralId: referral.id },
-            `The referrer withdrew this referral's request to your team; referral ${referral.id}.`,
+            "The referrer withdrew this referral's request to your team.",
           ),
         ]);
       }
@@ -1507,23 +1523,23 @@ export function reduceRecordedFactEvent(
       if (movement.closure) {
         return reject(state, event, `cannot divert a closed movement (${movement.closure.reason})`);
       }
-      if (!movement.transport && movement.stage !== "moving") {
+      if (!movement.transport) {
         return reject(state, event, `movement ${movement.id} has no transport job to divert`);
       }
-      if (movement.transport?.collectedAt === undefined && movement.stage !== "moving") {
+      if (movement.transport.collectedAt === undefined) {
         return reject(
           state,
           event,
           `movement ${movement.id}'s transport has not been collected yet; diversion is only for a journey already under way`,
         );
       }
-      if (movement.transport?.arrivedAt !== undefined) {
+      if (movement.transport.arrivedAt !== undefined) {
         return reject(state, event, `movement ${movement.id}'s patient has already arrived`);
       }
-      if (movement.transport?.stoppedAt !== undefined || movement.transport?.cancelledAt !== undefined) {
+      if (movement.transport.stoppedAt !== undefined || movement.transport.cancelledAt !== undefined) {
         return reject(state, event, `movement ${movement.id}'s transport was already stopped or cancelled`);
       }
-      if (movement.transport?.diversion) {
+      if (movement.transport.diversion) {
         return reject(state, event, `movement ${movement.id} was already diverted`);
       }
       if (!DIVERSION_REASONS.includes(event.reason)) {
@@ -1533,20 +1549,11 @@ export function reduceRecordedFactEvent(
         return reject(state, event, `RECORD_DIVERSION place must be chosen from TRANSPORT_WHEREABOUTS`);
       }
 
-      const baseTransport = movement.transport ?? {
-        id: `${movement.id}-transport`,
-        provider: "Ambulance service" as const,
-        escortRequired: false,
-        cadNumber: "SYN-DIVERT",
-        transportLegalStatus: movement.legalStatus === "Voluntary" ? ("voluntary" as const) : ("involuntary" as const),
-        estimatedAt: event.now,
-        collectedAt: event.now,
-      };
       const diverted: Movement = {
         ...movement,
         transport: {
-          ...baseTransport,
-          collectedAt: baseTransport.collectedAt ?? event.now,
+          ...movement.transport,
+          collectedAt: movement.transport.collectedAt,
           diversion: {
             at: event.now,
             by: event.role,

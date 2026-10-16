@@ -1,6 +1,11 @@
 import { demoNetwork, type DemoNetwork, type DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { activateWardNetwork, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+import {
+  activateWardNetwork,
+  STANDARD_WARD_SITES,
+  type WardNetwork,
+  wardNetworkOf,
+} from "@/components/ward-management/ward-sites";
 
 export type WardScenario =
   "standard" | "scarce" | "emhs-demo" | "emhs-surge" | "quiet-day" | "winter-surge" | "ed-crisis";
@@ -66,6 +71,11 @@ export function scenarioNetwork(scenario: WardScenario): DemoNetwork | undefined
  */
 export function activateScenarioNetwork(scenario: WardScenario): void {
   activateWardNetwork(scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES);
+}
+
+/** The scenario's wards, as an input a screen passes on (`useWardNetwork()`). */
+export function scenarioWardNetwork(scenario: WardScenario): WardNetwork {
+  return wardNetworkOf(scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES);
 }
 
 /**

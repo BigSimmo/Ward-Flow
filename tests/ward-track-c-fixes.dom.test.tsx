@@ -221,7 +221,9 @@ describe("Track C Referral Board fixes", () => {
     // Table row select button exists for decided referral RF-006
     const decidedRowButton = screen.getByTestId("ward-referral-board-select-decided-RF-006");
     expect(decidedRowButton).toBeInTheDocument();
-    expect(decidedRowButton).toHaveTextContent("RF-006");
+    // D-39: the button names the person by UMRN, never by the referral number.
+    expect(decidedRowButton).not.toHaveTextContent("RF-006");
+    expect(decidedRowButton).toHaveTextContent(/UM\d{6}|UMRN not recorded/);
 
     // Mobile card select button exists for RF-006
     const decidedCardButton = screen.getByTestId("ward-referral-board-select-decided-card-RF-006");

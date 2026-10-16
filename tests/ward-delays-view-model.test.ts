@@ -12,6 +12,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const arrivalOnly: Movement = {
   ...wardMovements[0],
   openedAt: NOW_ANCHOR - 480,
@@ -63,7 +64,7 @@ describe("delay timeline measurements", () => {
 
 describe("delay graph population and boundaries", () => {
   const state = seedWardFlowState();
-  const rows = delayGroups(state.movements, state.units, NOW_ANCHOR).flatMap((group) =>
+  const rows = delayGroups(state.movements, state.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).flatMap((group) =>
     group.movements.map((movement) => ({ movement, cause: group.cause })),
   );
   it("counts every origin once despite cross-service referral or destination membership", () => {

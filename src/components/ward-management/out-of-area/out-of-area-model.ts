@@ -16,7 +16,7 @@ import type {
 } from "@/components/ward-management/ward-model";
 import { BED_MEETING_MINUTES, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
-import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 
@@ -128,7 +128,7 @@ export const PLAN_ANSWER_COUNT = 7;
 /** The answers still needed, in plan order. None is filled in for the coordinator. */
 export function missingAnswers(draft: RepatDraft, now: Instant): string[] {
   const missing: string[] = [];
-  if (!wardSites.some((site) => site.code === draft.homeHospital)) missing.push("receiving hospital");
+  if (!siteDirectory.some((site) => site.code === draft.homeHospital)) missing.push("receiving hospital");
   if (draft.receivingWardAgreed === undefined) missing.push("ward agreement");
   if (draft.mode !== "road" && draft.mode !== "flight") missing.push("road or flight");
   if (draft.provider === undefined) missing.push("provider");
@@ -248,7 +248,7 @@ export function homeRegionBeds(entries: OutOfAreaEntry[], units: Unit[], now: In
     .sort((a, b) => b[1] - a[1])
     .map(([region, away]) => {
       // Asked of `travelBand` site by site: only ward-distance.ts reads the band fixture.
-      const recorded = wardSites
+      const recorded = siteDirectory
         .map((site): [string, TravelBand | undefined] => [site.code, travelBand(region, site.code)])
         .filter((pair): pair is [string, TravelBand] => pair[1] !== undefined);
       // The shortest road band recorded, or the air only sites when a region has no road band.

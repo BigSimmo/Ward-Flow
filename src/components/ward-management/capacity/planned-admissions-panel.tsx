@@ -33,7 +33,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   COHORTS,
   HEALTH_SERVICES,
@@ -81,7 +81,16 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     dispatch,
     rejections,
     plannedAdmissions: plannedFromContext,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "units",
+    "patients",
+    "admissions",
+    "movements",
+    "dayZero",
+    "dispatch",
+    "rejections",
+    "plannedAdmissions",
+  );
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);

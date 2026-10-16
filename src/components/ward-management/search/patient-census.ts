@@ -27,7 +27,13 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { dayOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  MINUTES_PER_DAY,
+} from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
@@ -190,6 +196,7 @@ export function buildCensus(state: {
   admissions: readonly Admission[];
   plannedAdmissions?: readonly PlannedAdmission[];
   now: Instant;
+  thresholds: DueSoonThresholds;
   dayZero: Date;
 }): Census {
   const { movements, referrals, units, patients, admissions, plannedAdmissions = [], now, dayZero } = state;
@@ -197,7 +204,7 @@ export function buildCensus(state: {
   const unitOf = new Map(units.map((unit) => [unit.id, unit]));
   const today = new Date(dayZero.getTime() + Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY * 60_000);
   const causeById = new Map<string, DelayCause>();
-  for (const group of delayGroups(movements, units, now)) {
+  for (const group of delayGroups(movements, units, now, state.thresholds)) {
     for (const movement of group.movements) causeById.set(movement.id, group.cause);
   }
 

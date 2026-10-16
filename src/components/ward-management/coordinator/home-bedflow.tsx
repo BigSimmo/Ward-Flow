@@ -42,6 +42,7 @@ import { hubStatusText } from "./flow-diagram";
 import { fitGroups } from "./home-fit";
 import styles from "./home.module.css";
 
+import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 const LEGEND: LegendItem[] = [
   { id: "ready", label: "Ready", fill: "ready" },
   { id: "pulled", label: "Pulled", hatch: true },
@@ -103,6 +104,7 @@ export function HomeBedflow({
   dischargesHeldUp,
   service,
 }: HomeBedflowProps) {
+  const network = useWardNetwork();
   const patientOf = usePatientOf();
   const shortlist = useMemo(
     () => (movement ? eligibleCandidatesAmong(movement, units, now, parallelReferralCap) : []),
@@ -131,8 +133,8 @@ export function HomeBedflow({
   const reviewCount = fitGroupsForMovement?.review.length ?? 0;
 
   const occupancy = useMemo(
-    () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now, undefined, admissions),
-    [units, bedReleases, movements, now, admissions],
+    () => deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, undefined, admissions),
+    [units, bedReleases, network.sites, movements, now, admissions],
   );
   const occupancyByService = new Map(occupancy.services.map((row) => [row.shortName, row.occupancyPercent]));
 

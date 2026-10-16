@@ -46,7 +46,7 @@ describe("ward Tasks & Buzzes names linked patients", () => {
       </WardFlowProvider>,
     );
     expect(screen.getAllByText(new RegExp(patient.familyName)).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/Unknown Patient/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Name not recorded/)).not.toBeInTheDocument();
   });
 });
 

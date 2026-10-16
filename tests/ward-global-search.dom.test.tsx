@@ -53,6 +53,7 @@ import {
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 
 const units = allUnits();
 
@@ -145,7 +146,7 @@ describe("WardGlobalSearch", () => {
 
     const row = screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`);
     expect(row.tagName).toBe("A");
-    expect(row).toHaveAttribute("href", `/mockups/ward-flow/people/${targetPatient.id}`);
+    expect(row).toHaveAttribute("href", patientHref(targetPatient.id));
     expect(row).toHaveTextContent(patientListName(targetPatient));
     expect(row).toHaveTextContent(targetPatient.umrn);
     expect(row).toHaveTextContent(formatDateOfBirth(targetPatient.dateOfBirth));
@@ -159,8 +160,10 @@ describe("WardGlobalSearch", () => {
 
     const row = screen.getByTestId(`ward-global-search-result-movement-${targetMovement.id}`);
     expect(row.tagName).toBe("A");
-    expect(row).toHaveAttribute("href", `/mockups/ward-flow/movements/${targetMovement.id}`);
+    expect(row).toHaveAttribute("href", movementHref(targetMovement.id));
     expect(row).toHaveTextContent("Movement");
+    // D-39: the result names the person, never the journey number.
+    expect(row).not.toHaveTextContent(targetMovement.id);
   });
 
   it("groups only the kinds that actually matched — no empty People group under a movement-only query", () => {
@@ -273,7 +276,7 @@ describe("WardGlobalSearch", () => {
     const row = screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`);
     fireEvent.click(row, { button: 0 });
 
-    expect(onNavigate).toHaveBeenCalledWith(`/mockups/ward-flow/people/${targetPatient.id}`);
+    expect(onNavigate).toHaveBeenCalledWith(patientHref(targetPatient.id));
   });
 
   it("requires a fresh selection when a new query still has results", () => {
@@ -371,7 +374,7 @@ describe("WardGlobalSearch", () => {
 
     fireEvent.keyDown(input, { key: "Enter" });
 
-    expect(onNavigate).toHaveBeenCalledWith(`/mockups/ward-flow/movements/${targetMovement.id}`);
+    expect(onNavigate).toHaveBeenCalledWith(movementHref(targetMovement.id));
     // Selecting closes the popup and clears the active row — the next Enter must be inert again.
     expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
   });
@@ -510,7 +513,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(group).toHaveTextContent("Needs you now");
     const rows = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(rows.length).toBe(Math.min(3, inbox.length));
-    expect(rows[0]).toHaveAttribute("href", `/mockups/ward-flow/movements/${inbox[0].movementId}`);
+    expect(rows[0]).toHaveAttribute("href", movementHref(inbox[0].movementId));
   });
 
   it("says how many tasks a cut Needs you now list holds, names the patient and offers See all tasks (shell-4)", () => {
@@ -554,7 +557,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(preview).toHaveTextContent(targetPatient.umrn);
     expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/people/${targetPatient.id}`,
+      patientHref(targetPatient.id),
     );
   });
 
@@ -571,7 +574,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(preview).not.toHaveTextContent(targetMovement.id);
     expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
       "href",
-      `/mockups/ward-flow/movements/${targetMovement.id}`,
+      movementHref(targetMovement.id),
     );
   });
 
@@ -627,7 +630,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     const { input, onNavigate } = renderPalette();
     fireEvent.change(input, { target: { value: personQuery } });
     fireEvent.click(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`), { button: 0 });
-    expect(onNavigate).toHaveBeenCalledWith(`/mockups/ward-flow/people/${targetPatient.id}`);
+    expect(onNavigate).toHaveBeenCalledWith(patientHref(targetPatient.id));
 
     fireEvent.change(input, { target: { value: "" } });
     expect(screen.getByTestId("ward-global-search-group-recent")).toHaveTextContent("Recent");
