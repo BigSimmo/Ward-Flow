@@ -48,9 +48,12 @@ export function wardChromeRole(pathname: string): WardChromeRole {
   return "coordinator";
 }
 
-/** The ward a `/ward/<unitId>` or `/board/<unitId>` route belongs to, if any. */
+/**
+ * The ward a `/ward/<unitId>` or `/board/<unitId>` desk route belongs to, if any. Anchored to the
+ * app root, so a page about a ward (`/statistics/ward/<unitId>`) never names a sending ward.
+ */
 export function wardRouteUnitId(pathname: string): string | undefined {
-  const match = /\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
+  const match = /^(?:\/mockups\/ward-flow)?\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
   if (!match?.[1]) return undefined;
   try {
     return decodeURIComponent(match[1]);

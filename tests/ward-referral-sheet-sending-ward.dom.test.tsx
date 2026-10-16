@@ -43,8 +43,13 @@ afterEach(() => {
   forgetReferrerContact();
 });
 
-const DESTINATION = "rph-adult-secure";
-const sendingWard = seedWardFlowState().units.find((unit) => unit.id !== DESTINATION)!;
+const seed = seedWardFlowState();
+const SENDING = "rph-adult-secure";
+const sendingWard = seed.units.find((unit) => unit.id === SENDING)!;
+const otherWard = seed.units.find((unit) => unit.id !== SENDING)!;
+/** A synthetic patient in a bed on the sending ward, and one on no ward at all. */
+const ON_WARD_UMRN = "UM100028";
+const OFF_WARD_UMRN = "UM100023";
 
 function Probe() {
   const { referrals, rejections } = useWardFlow();
@@ -66,23 +71,40 @@ function next(name: string) {
   fireEvent.click(screen.getAllByRole("button", { name }).at(-1)!);
 }
 
-/** Walks the sheet to Confirm and send, with no From details chosen: a ward page has none. */
-async function walkToConfirm() {
+/** Opens the sheet, chooses the person and confirms their catchment, ready for Next, referral. */
+function startReferral(umrn: string) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardReferralDrawer onClose={vi.fn()} />
       <Probe />
     </WardFlowProvider>,
   );
-  chooseSampleReferralPerson();
+  chooseSampleReferralPerson(umrn);
   fireEvent.click(screen.getByRole("button", { name: "Change" }));
   fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
   fireEvent.change(screen.getByLabelText("Search catchment"), { target: { value: "Inner City Clinic" } });
   fireEvent.change(screen.getByLabelText("Home region"), { target: { value: "Perth Metropolitan" } });
   fireEvent.change(screen.getByLabelText("Service area"), { target: { value: "East Metro" } });
   fireEvent.click(screen.getByRole("button", { name: "Confirm catchment" }));
+  const ageBand = screen.queryByLabelText("Age band");
+  if (ageBand instanceof HTMLSelectElement && !ageBand.value) fireEvent.change(ageBand, { target: { value: "Adult" } });
+}
+
+/** Walks the sheet to Confirm and send, with no From details chosen: a ward sender has none. */
+async function walkToConfirm() {
+  startReferral(ON_WARD_UMRN);
   next("Next, referral");
   fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic ward to ward story" } });
+  const urgent = screen.getAllByRole("radio").find((radio) => radio.getAttribute("name")?.endsWith("-urgency"));
+  if (
+    urgent &&
+    !screen
+      .getAllByRole("radio")
+      .some((r) => r.getAttribute("name")?.endsWith("-urgency") && (r as HTMLInputElement).checked)
+  )
+    fireEvent.click(urgent);
+  // The sending ward is a secure ward, so a secure bed request would list it if it were offered.
+  fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByLabelText("Secure"));
   next("Next, clearance");
   answer("Has the patient been medically cleared?", "No");
   fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
@@ -99,8 +121,11 @@ async function walkToConfirm() {
     timeout: 10_000,
   });
   next("Next, wards");
-  const locations = screen.getByRole("list", { name: "Placement Destination Options" });
-  fireEvent.click(within(locations).getByRole("checkbox", { name: new RegExp(DESTINATION) }));
+  const list = screen.getByRole("list", { name: "Placement Destination Options" });
+  // A ward never refers to itself, so the sending ward is not offered.
+  expect(within(list).queryByRole("checkbox", { name: new RegExp(SENDING) })).toBeNull();
+  const offered = within(list).getAllByRole("checkbox");
+  fireEvent.click(offered[0]!);
   fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
   expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
   fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Demo Sender" } });
@@ -110,53 +135,65 @@ async function walkToConfirm() {
   fireEvent.change(screen.getByLabelText("Location or service"), { target: { value: "Synthetic ward" } });
 }
 
+async function sendAndExpectFromSendingWard() {
+  fireEvent.submit(document.getElementById("referralConfirmForm")!);
+  await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
+  expect(screen.getByTestId("errors")).toBeEmptyDOMElement();
+  expect(JSON.parse(screen.getByTestId("sent").textContent!)).toEqual([
+    { source: "psychiatric_ward", originUnitId: SENDING },
+  ]);
+}
+
+/** The From card names why the sheet cannot send, in place of the ED or community choice. */
+function expectNoSendingWard() {
+  next("Next, referral");
+  expect(screen.getByTestId("ward-referral-drawer-no-sending-ward")).toHaveTextContent(NO_SENDING_WARD);
+  expect(screen.queryByRole("button", { name: "Emergency" })).not.toBeInTheDocument();
+}
+
 describe("the New referral sheet on a ward page", () => {
   it("sends in the ward's own name, with no ED or community choice", async () => {
-    route.pathname = `/mockups/ward-flow/ward/${sendingWard.id}`;
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
     await walkToConfirm();
-    fireEvent.submit(document.getElementById("referralConfirmForm")!);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
-    expect(screen.getByTestId("errors")).toBeEmptyDOMElement();
-    expect(JSON.parse(screen.getByTestId("sent").textContent!)).toEqual([
-      { source: "psychiatric_ward", originUnitId: sendingWard.id },
-    ]);
+    await sendAndExpectFromSendingWard();
   }, 60_000);
 
-  it("says why it cannot send from a ward page that names no ward", async () => {
+  it("asks for a patient on the ward, because a ward refers its own patients", () => {
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    startReferral(OFF_WARD_UMRN);
+    next("Next, referral");
+    expect(screen.getByRole("alert")).toHaveTextContent(`Choose a patient on ${sendingWard.name}`);
+  });
+
+  it("says why it cannot send from a ward page that names no ward", () => {
     route.pathname = "/mockups/ward-flow/ward/not-a-ward";
-    await walkToConfirm();
-    const send = screen.getByRole("button", { name: "Confirm and send" });
-    expect(send).toHaveAttribute("aria-disabled", "true");
-    expect(send).toHaveAccessibleDescription(NO_SENDING_WARD);
-    fireEvent.click(send);
-    expect(screen.getByTestId("sent")).toHaveTextContent("[]");
-  }, 60_000);
+    startReferral(ON_WARD_UMRN);
+    expectNoSendingWard();
+  });
+
+  it("never sends from the ward a statistics page is about", () => {
+    route.pathname = `/mockups/ward-flow/statistics/ward/${SENDING}`;
+    startReferral(ON_WARD_UMRN);
+    expectNoSendingWard();
+  });
 
   it("off a ward page, a ward desk with one ward sends from that ward", async () => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
-      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [sendingWard.id] } });
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [SENDING] } });
     });
     route.pathname = "/mockups/ward-flow/referrals/new";
     await walkToConfirm();
-    fireEvent.submit(document.getElementById("referralConfirmForm")!);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
-    expect(screen.getByTestId("errors")).toBeEmptyDOMElement();
-    expect(JSON.parse(screen.getByTestId("sent").textContent!)).toEqual([
-      { source: "psychiatric_ward", originUnitId: sendingWard.id },
-    ]);
+    await sendAndExpectFromSendingWard();
   }, 60_000);
 
-  it("off a ward page, a desk covering two wards is asked to send from the ward's page", async () => {
-    const other = seedWardFlowState().units.find((unit) => unit.id !== DESTINATION && unit.id !== sendingWard.id)!;
+  it("off a ward page, a desk covering two wards is asked to send from the ward's page", () => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
-      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [sendingWard.id, other.id] } });
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [SENDING, otherWard.id] } });
     });
     route.pathname = "/mockups/ward-flow/referrals/new";
-    await walkToConfirm();
-    const send = screen.getByRole("button", { name: "Confirm and send" });
-    expect(send).toHaveAttribute("aria-disabled", "true");
-    expect(send).toHaveAccessibleDescription(NO_SENDING_WARD);
-  }, 60_000);
+    startReferral(ON_WARD_UMRN);
+    expectNoSendingWard();
+  });
 });

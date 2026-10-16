@@ -23,7 +23,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientInBedOnUnit, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { type Gender } from "@/components/ward-management/ward-patients";
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
@@ -102,14 +102,14 @@ function useSheetSender(
   units: readonly Unit[],
   pathname: string,
   baseId: string,
-): { sendGate: RoleGate; sendingWard: Unit | undefined } {
+): { sendGate: RoleGate; sendingWard: Unit | undefined; senderMissing: boolean } {
   const routeRole = useRouteRole();
   const access = useEffectiveWardAccess();
   const roleSendGate = gate("RECEIVE_REFERRAL");
   const deskUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
   const sendingUnitId = wardRouteUnitId(pathname) ?? (deskUnitIds.length === 1 ? deskUnitIds[0] : undefined);
   const sendingWard = routeRole === "ward" ? units.find((unit) => unit.id === sendingUnitId) : undefined;
-  if (routeRole !== "ward" || sendingWard) return { sendGate: roleSendGate, sendingWard };
+  if (routeRole !== "ward" || sendingWard) return { sendGate: roleSendGate, sendingWard, senderMissing: false };
   const id = `${baseId}-no-sending-ward`;
   return {
     sendGate: {
@@ -119,6 +119,7 @@ function useSheetSender(
       note: null,
     },
     sendingWard,
+    senderMissing: true,
   };
 }
 
@@ -178,7 +179,7 @@ export function useWardReferralDrawerState({
     "units",
   );
   const now = useWardFlowClock();
-  const { sendGate, sendingWard } = useSheetSender(gate, units, pathname, searchId);
+  const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
 
   const urlPrefill = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -685,7 +686,10 @@ export function useWardReferralDrawerState({
   // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
   const realTimeMatch = (() => {
     const patientCohort = movementCohort ?? ageBand;
-    const matchingRecords = capacityRecords.filter((r) => r.cohort === patientCohort && r.security === security);
+    // A ward never refers to itself (Qodo's review), so the sending ward is not offered.
+    const matchingRecords = capacityRecords.filter(
+      (r) => r.cohort === patientCohort && r.security === security && r.unitId !== sendingWard?.id,
+    );
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
     // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this:
@@ -733,7 +737,13 @@ export function useWardReferralDrawerState({
         ? [destType === "community" ? selectedRecipient : (edById(selectedRecipient)?.name ?? selectedRecipient)]
         : [];
 
+  // A ward refers only someone currently in one of its beds, the stay the transfer moves
+  // (`movementSourceAdmission` in the reducer) (CodeAnt's review).
+  const patientOnSendingWard =
+    !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
   function patientError() {
+    if (sendingWard && !patientOnSendingWard)
+      return `Choose a patient on ${sendingWard.name}. A ward refers its own patients.`;
     if (!patientRecord && unidentified === null)
       return 'Find a registered patient, add a new patient, or choose "Not yet identified".';
     if (!patientRecord && !unidentified?.trim()) return "Describe the unidentified person.";
@@ -743,6 +753,7 @@ export function useWardReferralDrawerState({
     return null;
   }
   function referralError() {
+    if (senderMissing) return NO_SENDING_WARD;
     if (
       !sendingWard &&
       (!originSiteCode ||
@@ -758,14 +769,15 @@ export function useWardReferralDrawerState({
   }
   const originValid =
     !!sendingWard ||
-    (!!originSiteCode &&
+    (!senderMissing &&
+      !!originSiteCode &&
       siteDirectory.some(
         (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
       ));
-  const needsSendingTeam = !sendingWard && sourceKind === "community";
+  const needsSendingTeam = !sendingWard && !senderMissing && sourceKind === "community";
   const needed: Record<DrawerSection, number> = {
     patient: [
-      !patientRecord && !unidentified?.trim(),
+      (!patientRecord && !unidentified?.trim()) || (!!sendingWard && !patientOnSendingWard),
       !effectiveCohort,
       !catchmentConfirmed || !catchmentTeam.trim(),
       !homeRegion,
@@ -1199,6 +1211,7 @@ export function useWardReferralDrawerState({
     gate,
     sendGate,
     sendingWard,
+    senderMissing,
     addPatientGate,
     movements,
     patients,
