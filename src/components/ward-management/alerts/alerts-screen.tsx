@@ -1709,6 +1709,7 @@ function AlertsWorkspace() {
                           <Button
                             size="sm"
                             icon={Clock}
+                            disabledReason="Broadcast extension is not wired to a persisted event"
                             onClick={() => {
                               setExtendedBroadcastMinutes((prev) => ({
                                 ...prev,
@@ -1722,14 +1723,8 @@ function AlertsWorkspace() {
                           <Button
                             size="sm"
                             icon={Smartphone}
-                            disabledReason={
-                              pushedBroadcastIds[activeBroadcast.id] ? "Already pushed to shift phones" : undefined
-                            }
+                            disabledReason="Phone push is not wired to a delivery action"
                             reasonDisplay="tooltip"
-                            onClick={() => {
-                              setPushedBroadcastIds((prev) => ({ ...prev, [activeBroadcast.id]: true }));
-                              setBroadcastSuccessNotice(`Pushed "${activeBroadcast.title}" to on-shift phones.`);
-                            }}
                           >
                             {pushedBroadcastIds[activeBroadcast.id] ? "Pushed to phones" : "Push to phones"}
                           </Button>
@@ -1738,7 +1733,7 @@ function AlertsWorkspace() {
                       <div className={styles.directiveRing}>
                         <TimeRing
                           from={activeBroadcast.dispatchedAt}
-                          until={activeBroadcast.expiresAt + (extendedBroadcastMinutes[activeBroadcast.id] ?? 0)}
+                          until={activeBroadcast.expiresAt}
                           now={now}
                           size={96}
                         />
@@ -2116,6 +2111,21 @@ function AlertsWorkspace() {
                     !broadcastTitle.trim() ||
                     !broadcastMessage.trim() ||
                     (!!broadcastRequest && !broadcastResult)
+                  }
+                  onClick={handleDispatchBroadcast}
+                >
+                  Dispatch
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+      <WardPrototypeFooter testId="ward-alerts-governance" />
+    </div>
+  );
+}
+                   (!!broadcastRequest && !broadcastResult)
                   }
                   onClick={handleDispatchBroadcast}
                 >

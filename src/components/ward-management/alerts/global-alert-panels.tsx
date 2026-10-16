@@ -39,8 +39,7 @@ export function ReplyBoardList({
   units: readonly { id: string; name: string }[];
   now: Instant;
 }) {
-  const [chasedAlertId, setChasedAlertId] = useState<string | null>(null);
-  const chased = chasedAlertId === alert.id;
+  const chased = false;
   const board = replyBoard(alert, units);
   if (board.rows.length === 0) return null;
   const waiting = board.rows.length - board.answered;
@@ -61,9 +60,10 @@ export function ReplyBoardList({
           }
           reasonDisplay="tooltip"
           count={waiting}
-          onClick={() => setChasedAlertId(alert.id)}
+          disabledReason="Chase is not wired to a follow-up action"
+          reasonDisplay="tooltip"
         >
-          {chased ? "Chased" : "Chase"}
+          Chase
         </Button>
       </div>
       <ul className={styles.rows}>
