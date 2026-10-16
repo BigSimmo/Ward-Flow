@@ -633,7 +633,8 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: "one shared timestamp that later release actions overwrite",
     claim:
       "`BedRelease` carries a single `confirmedAt` that every readiness act overwrites, not one instant per act. " +
-      "Only cleared discharge blockers keep their own instants, in `clearedBlockHistory`.",
+      "Only cleared discharge blockers keep their own instants: on the release in `clearedBlockHistory`, or on the " +
+      "admission in `stayBlockClearances` when no release is linked.",
     sourceFile: WARD_MODEL,
     evidence: BED_RELEASE_BODY,
     falsifiedBy: {
