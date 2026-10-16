@@ -158,8 +158,11 @@ export class SharedWorkspaceClient {
       return new Error("Access denied");
     };
     const gate = (update: Partial<SharedView>) => {
-      this.pending = null;
-      this.queue = [];
+      // An independent write must not discard a workspace command that is waiting for retry.
+      if (!body || path === "/v1/workspace/commands") {
+        this.pending = null;
+        this.queue = [];
+      }
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
       return new Error("Waiting on the person");
     };
@@ -168,7 +171,7 @@ export class SharedWorkspaceClient {
       // The role this tab was working as has ended or been removed. Forget it and ask again on reads;
       // never re-send a write under whichever remaining role the server would pick by default.
       this.options.workingAs?.set(null);
-      if (body) {
+      if (body && path === "/v1/workspace/commands") {
         this.pending = null;
         this.queue = [];
         this.needsRefresh = true;
@@ -251,6 +254,10 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
+      if (!this.disposed && this.needsRefresh) {
+        this.needsRefresh = false;
+        void this.refresh();
+      }
       if (this.queue.length && this.view.status === "ready") void this.drain();
     }
   }
