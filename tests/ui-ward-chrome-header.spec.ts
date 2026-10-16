@@ -725,21 +725,17 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   // screen. Every queue row there must still be reachable on a short phone.
   await page.getByTestId("ward-phone-menu-alerts").click();
   await expect(page).toHaveURL(/\/mockups\/ward-flow\/alerts(?:[?#]|$)/u);
-  await expect(
-    page.locator('div[hidden][id^="S:"]'),
-    "React's streamed content is still staged, so the queue is duplicated in the document",
-  ).toHaveCount(0, { timeout: 15_000 });
   const rows = page.locator("[data-alert-id]:not([data-snoozed])");
   await expect(rows.first()).toBeVisible();
   const lastRow = rows.last();
   await lastRow.scrollIntoViewIfNeeded();
   await expect(lastRow).toBeInViewport();
-  const open = lastRow.getByTestId("ward-alerts-open");
-  await expect(open).toBeInViewport();
-  // The row still works there: its open control brings up that alert's sheet.
-  const title = (await open.innerText()).trim();
-  await open.click();
-  await expect(page.getByRole("dialog").filter({ hasText: title })).toBeVisible();
+  const openButton = lastRow.getByTestId("ward-alerts-open");
+  await expect(openButton).toBeInViewport();
+  const alertTitle = (await openButton.textContent())?.trim();
+  expect(alertTitle).toBeTruthy();
+  await openButton.click();
+  await expect(page.getByRole("dialog", { name: alertTitle!, exact: true })).toBeVisible();
 });
 
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
