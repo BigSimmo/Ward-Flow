@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 
-import { ToastProvider, WfServerPhoneProvider, guessPhoneFromRequest } from "@/components/wf";
+import { ToastProvider, WfServerPhoneProvider, guessPhoneFromRequest, guessTabletFromRequest } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
@@ -115,9 +115,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   // A1-17 (audit 13 Oct 2026): draw the phone layout first on a phone, so slow signal does not show
   // a different, desktop-shaped page for many seconds before the code loads.
-  const phone = guessPhoneFromRequest(requestHeaders.get("user-agent"), requestHeaders.get("sec-ch-ua-mobile"));
+  const userAgent = requestHeaders.get("user-agent");
+  const clientHintMobile = requestHeaders.get("sec-ch-ua-mobile");
+  const phone = guessPhoneFromRequest(userAgent, clientHintMobile);
+  const tablet = guessTabletFromRequest(userAgent, clientHintMobile);
   return (
-    <WfServerPhoneProvider phone={phone}>
+    <WfServerPhoneProvider phone={phone} tablet={tablet}>
       <WardFlowProvider>
         {/* Remembers a header tap made before the app is ready, for the header to press once it is
           (ward-early-tap.ts). It sits ahead of the header so it runs before the header is drawn. */}
