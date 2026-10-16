@@ -16,8 +16,10 @@ permissions:
   contents: read
 
 # Runs for one commit queue rather than race, so a re-run never sees a tag the other run is creating.
+# The triggering event is part of the key: GitHub keeps only one pending run per group, so a
+# scheduled or manual CI completion for the same commit must not replace the push run that tags it.
 concurrency:
-  group: release-tag-${{ github.event.workflow_run.head_sha }}
+  group: release-tag-${{ github.event.workflow_run.event }}-${{ github.event.workflow_run.head_sha }}
   cancel-in-progress: false
 
 jobs:
