@@ -170,18 +170,24 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
 
+/**
+ * One shape per tone for a bed, shared by the Every bed tile and the bed drawer badge so the two
+ * always agree: act now only for a held-up discharge, at risk for a bed past its date, away at an
+ * ED or with a discharge barrier, moving for a bed on its way in or out, waiting for leave, done
+ * for a free bed.
+ */
 export function bedGlyphTone(bed: BedItem): WfTone | null {
-  if (bed.isClosed) return "neutral";
-  if (bed.status === "vacant") return bed.preparing ? "warning" : "success";
-  if (bed.status === "reserved") return "info";
-  if (bed.isPulled) return "danger";
-  if (bed.pastDate) return "danger";
-  if (bed.isHdu) return "danger";
-  if (bed.isSpecialling) return "warning";
-  if (bed.status === "leave") return "info";
-  if (bed.dischargeConfirmed) return "success";
-  if (bed.blockReason) return "warning";
-  return "neutral";
+  if (bed.status === "ready") return bed.preparing ? "neutral" : "success";
+  if (bed.status === "closed") return "closed";
+  // Audit A3-1 (13 Oct 2026): a missing person is act now, never a neutral "On leave".
+  if (bed.status === "leave" && bed.statusText === "Absent without leave") return "danger";
+  if (bed.blockReason) return "danger";
+  if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
+  const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);
+  if (bed.status === "incoming" && bed.bedHold?.state === "lapsed") return "danger";
+  if (bed.status === "incoming" && bed.bedHold?.state === "at-risk") return "warning";
+  if (leaving || bed.status === "incoming") return "info";
+  return bed.status === "leave" ? "neutral" : null;
 }
 
 interface WardBedCardProps {
@@ -460,10 +466,9 @@ export function WardBedsMatrix({
     for (const bed of bedsList) {
       const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber);
       if (!Number.isFinite(bedNumber) || bedNumber <= 0) continue;
-      const isDueOut =
-        bed.pastDate === true ||
-        (typeof bed.expectedDays === "number" && bed.expectedDays <= 0) ||
-        bed.dischargeConfirmed === true;
+      // Due out means the discharge date has arrived or passed. A discharge confirmed for a later day is
+      // not "needs you this shift" yet, matching the ward board's own due-out list.
+      const isDueOut = bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays <= 0);
 
       if (bed.awayAtEdHours != null || bed.status === "leave") {
         const atEd = bed.awayAtEdHours != null;
@@ -502,19 +507,10 @@ export function WardBedsMatrix({
           typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
         const confirmed = bed.dischargeConfirmed === true;
         const isOverdue = Boolean(overdueDays) || bed.pastDate === true;
-        const isDueToday = bed.expectedDays === 0;
-        const badge = overdueDays
-          ? `${overdueDays}d overdue`
-          : bed.pastDate
-            ? "Past date"
-            : isDueToday || !confirmed
-              ? "Due today"
-              : "Confirmed";
+        const badge = overdueDays ? `${overdueDays}d overdue` : bed.pastDate ? "Past date" : "Due today";
         const statusPhrase = isOverdue
           ? `${confirmed ? "Confirmed" : "Expected"} discharge overdue`
-          : isDueToday || !confirmed
-            ? `${confirmed ? "Confirmed" : "Expected"} out today`
-            : "Confirmed discharge";
+          : `${confirmed ? "Confirmed" : "Expected"} out today`;
         items.push({
           key: `shift-due-${bed.bedLabel}-${bedNumber}`,
           group: "due-out",
@@ -774,7 +770,10 @@ export function WardBedsMatrix({
           </div>
         ) : (
           bays.map((bay, idx) => (
-            <div key={idx} className={`${styles.bayContainer} ${selectedPod === "all" ? styles.compactBay : ""}`}>
+            <div
+              key={bay.beds[0] ? `bay-${bay.beds[0].bedNumber}` : `bay-empty-${idx}`}
+              className={`${styles.bayContainer} ${selectedPod === "all" ? styles.compactBay : ""}`}
+            >
               {selectedPod !== "all" ? (
                 <div className={styles.bayHeader}>
                   <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
