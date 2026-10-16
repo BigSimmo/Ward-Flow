@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CircleAlert } from "lucide-react";
 
@@ -10,9 +10,9 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 // These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx.
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
+// reset after, so no flag change re-renders a tree that is being torn down.
 beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
-afterEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", null));
 
 /**
  * Stream A, 9 Oct 2026: take ownership, snooze with a reason and a return time, the Snoozed

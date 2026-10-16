@@ -7,9 +7,9 @@ import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer"
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 // These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx.
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
+// reset after, so no flag change re-renders a tree that is being torn down.
 beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
-afterEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", null));
 
 const openers: HTMLButtonElement[] = [];
 afterEach(() => {

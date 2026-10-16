@@ -9,9 +9,9 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx.
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
+// reset after, so no flag change re-renders a tree that is being torn down.
 beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
-afterEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", null));
 
 /**
  * The catcher for phase-1.1 of the third-edition build plan (`docs/ward-flow/plans/2026-09-10-
