@@ -734,7 +734,12 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   const lastRow = rows.last();
   await lastRow.scrollIntoViewIfNeeded();
   await expect(lastRow).toBeInViewport();
-  await expect(lastRow.getByTestId("ward-alerts-open")).toBeInViewport();
+  const open = lastRow.getByTestId("ward-alerts-open");
+  await expect(open).toBeInViewport();
+  // The row still works there: its open control brings up that alert's sheet.
+  const title = (await open.innerText()).trim();
+  await open.click();
+  await expect(page.getByRole("dialog").filter({ hasText: title })).toBeVisible();
 });
 
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
