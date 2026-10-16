@@ -1492,7 +1492,7 @@ export function patientRecordIsInvoluntary(legalStatus: string | undefined): boo
 }
 
 /** A previous stay must never decide this admission's discharge or transport state. */
-export function dischargeMovement(state: WardFlowState, admission: Admission): Movement | undefined {
+export function dischargeMovement(state: Pick<WardFlowState, "movements">, admission: Admission): Movement | undefined {
   return (
     state.movements.find((movement) => movement.admissionId === admission.id) ??
     state.movements.find(
