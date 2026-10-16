@@ -1,4 +1,4 @@
-// Usage (from the repository root): node docs/ward-flow/mockups/third-edition-kit/check-shell.mjs <command.html> <fontcss:platinum|premium>
+// Usage (from the repository root): node design/third-edition-mockups/third-edition-kit/check-shell.mjs <command.html> <fontcss:platinum|premium>
 //
 // Drives the shell's behaviours in a real browser and fails on the ones a screenshot cannot show:
 // Escape never clears the service, a search pick never widens it and offers the way back, a drawer
@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-const file = process.argv[2] || "docs/ward-flow/mockups/command-third-edition.html",
+const file = process.argv[2] || "design/third-edition-mockups/command-third-edition.html",
   css = process.argv[3] || "platinum";
 const launchOptions = () => {
   const exe = process.env.WARD_FLOW_CHROMIUM || "/opt/pw-browsers/chromium";
