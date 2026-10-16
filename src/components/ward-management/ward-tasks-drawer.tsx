@@ -274,6 +274,13 @@ export function WardTasksDrawer({
   const [contact, setContact] = useState("");
   const toast = useOptionalToast();
 
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!withBackdrop && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+      openerRef.current = document.activeElement;
+    }
+  }, [withBackdrop]);
+
   function handleEscape() {
     if (escalating !== null) {
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
@@ -292,7 +299,14 @@ export function WardTasksDrawer({
       trigger?.focus();
       return;
     }
+    const opener = !withBackdrop
+      ? (openerRef.current ??
+        document.querySelector<HTMLElement>(
+          '[data-testid="ward-tasks-opener"], button[aria-controls*="tasks"], button[aria-label*="Tasks"]',
+        ))
+      : null;
     onClose();
+    if (opener && opener.isConnected) opener.focus();
   }
 
   useWardModalFocus(withBackdrop, drawerRef, handleEscape);
@@ -308,6 +322,8 @@ export function WardTasksDrawer({
     if (withBackdrop || !drawer) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // Let nested popovers/dialogs (such as the Snooze popover) handle Escape first:
+      if (event.target instanceof Element && event.target.closest('[role="dialog"]') !== null) return;
       event.stopPropagation();
       handleEscapeRef.current();
     };
