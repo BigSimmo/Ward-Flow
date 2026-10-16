@@ -46,6 +46,7 @@ const SLICE_PATHS = [
   "ward-flow-placement-events.ts",
   "ward-flow-transport-events.ts",
   "ward-flow-bed-events.ts",
+  "ward-flow-undo-events.ts",
 ].map((file) => fileURLToPath(new URL(`../src/components/ward-management/${file}`, import.meta.url)));
 const ACCEPTING_UNIT = "fre-adult-open";
 const OTHER_UNIT = "rph-adult-secure";
