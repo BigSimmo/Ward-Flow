@@ -41,9 +41,9 @@ import styles from "./legal-forms.module.css";
 const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
 
-function parseWrittenInstant(value: string, now: Instant): Instant {
+function parseWrittenInstant(value: string, now: Instant): Instant | undefined {
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return now;
+  if (!match) return undefined;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
   if (
@@ -191,6 +191,7 @@ export function RecordFormSheet({
   const [formKey, setFormKey] = useState(0);
   const [timeOnForm, setTimeOnForm] = useState("");
   const typeRef = useRef<HTMLSelectElement | null>(null);
+  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
   const saveBlockReason = !draft.movement
     ? "Choose a movement first."
     : !draft.form
@@ -227,7 +228,8 @@ export function RecordFormSheet({
             title={saveBlockReason}
             onClick={() => {
               if (saveBlockReason) return;
-              const writtenAt = parseWrittenInstant(timeOnForm, now);
+              const writtenAt = parsedWrittenAt;
+              if (writtenAt === undefined) return;
               const accepted = onSaveForm
                 ? onSaveForm({ movementId: draft.movement, formCode: draft.form, writtenAt })
                 : true;
@@ -493,5 +495,8 @@ export function TellSheet({
 
 /** The label a movement carries in pickers: name, UMRN and its form. */
 export function movementPickerLabel(name: string, umrn: string, movement: Movement): string {
+  return `${name} (${umrn}), ${movement.legalForm ? `Form ${movement.legalForm.code}` : "Voluntary"}`;
+}
+d string {
   return `${name} (${umrn}), ${movement.legalForm ? `Form ${movement.legalForm.code}` : "Voluntary"}`;
 }
