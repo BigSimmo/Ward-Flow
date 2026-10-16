@@ -216,12 +216,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const subject = typeof claims?.sub === "string" ? claims.sub.toLowerCase() : "";
     // Free checks first: nothing below runs, and nothing leaves this server, for a token that is
     // malformed, expired or from another project.
-    if (
-      !jwt ||
-      !validTokenTimes(claims, now()) ||
-      claims.iss !== ISSUER ||
-      !UUID.test(subject)
-    )
+    if (!jwt || !validTokenTimes(claims, now()) || claims.iss !== ISSUER || !UUID.test(subject))
       throw new InvalidCredentialError("Unauthorised");
     const algorithm = ALGORITHMS[jwt.header.alg];
     if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {
@@ -273,7 +268,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       throw new VerifierUnavailableError("Token verifier unavailable");
     }
     // The server-returned account must be the token's own subject.
-    if (!userId || userId !== subject || !validTokenTimes(claims, now())) throw new InvalidCredentialError("Unauthorised");
+    if (!userId || userId !== subject || !validTokenTimes(claims, now()))
+      throw new InvalidCredentialError("Unauthorised");
     if (confirmed.size >= CONFIRMED_MAX) confirmed.delete(confirmed.keys().next().value);
     confirmed.set(tokenKey, { userId, until: Math.min(now() + CONFIRMED_TTL_MS, claims.exp * 1000) });
     return userId;
