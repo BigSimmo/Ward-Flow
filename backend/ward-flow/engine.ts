@@ -1,5 +1,11 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
-import { wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import {
+  managesAccess as managesAccessRule,
+  scopeNamesPlace,
+  scopeWithinScope,
+  type AccessPlaces,
+} from "../../src/components/ward-management/ward-access-admin";
 import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
 import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
@@ -239,50 +245,28 @@ export function commandRefusal(
 
 /** Who may grant, approve and remove roles: the access admin, and the statewide coordinator. */
 export function managesAccess(access: WardAccess): boolean {
-  return access.role === "admin" || accessIsWholeNetwork(access);
+  return managesAccessRule(access);
+}
+
+/** The place answers the access admin's rules need, read from this workspace's wards. */
+export function accessPlaces(world: SharedWorld): AccessPlaces {
+  return wardAccessPlaces(world.state.units);
 }
 
 /**
  * Whether a place names something in this workspace, so a grant never points at a ward, ED or
- * site that does not exist. A team is any name: one with no patients simply shows nobody.
+ * site that does not exist (`scopeNamesPlace`, shared with the Access admin screen).
  */
 export function scopeExists(world: SharedWorld, scope: WardAccessScope): boolean {
-  const places = wardPlaceLookup(world.state.units);
-  switch (scope.kind) {
-    case "site":
-      return world.state.units.some((unit) => places.unitSiteCode(unit.id) === scope.siteCode);
-    case "ward":
-      return scope.unitIds.every((id) => places.unitSiteCode(id) !== undefined);
-    case "ed":
-      return places.edSiteCode(scope.edId) !== undefined;
-    default:
-      return true;
-  }
+  return scopeNamesPlace(scope, accessPlaces(world));
 }
 
 /**
  * Whether `inner` lies wholly inside `outer`, so an access admin never grants, approves or removes
- * a role wider than their own. A service admin covers that service's sites, wards and EDs only;
- * statewide, team and jobs scopes need a statewide admin.
+ * a role wider than their own (`scopeWithinScope`, shared with the Access admin screen).
  */
 export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: WardAccessScope): boolean {
-  if (outer.kind === "statewide") return true;
-  if (outer.kind !== "service") return false;
-  const places = wardPlaceLookup(world.state.units);
-  switch (inner.kind) {
-    case "service":
-      return inner.service === outer.service;
-    case "site": {
-      const units = world.state.units.filter((unit) => places.unitSiteCode(unit.id) === inner.siteCode);
-      return units.length > 0 && units.every((unit) => places.unitService(unit.id) === outer.service);
-    }
-    case "ward":
-      return inner.unitIds.every((id) => places.unitService(id) === outer.service);
-    case "ed":
-      return places.edService(inner.edId) === outer.service;
-    default:
-      return false;
-  }
+  return scopeWithinScope(inner, outer, accessPlaces(world));
 }
 
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
