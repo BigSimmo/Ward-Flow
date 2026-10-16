@@ -87,6 +87,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     sectionId,
     selectedUnitIds,
     setSelectedUnitIds,
+    sendingWard,
     selectedRecipient,
     setSelectedRecipient,
     previewOpen,
@@ -164,7 +165,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <span>Waitlist</span>
             </div>
             <div role="list" aria-label="Placement Destination Options">
-              {realTimeMatch.sortedUnits.map((unit) => {
+              {realTimeMatch.sortedUnits.filter((unit) => unit.unitId !== sendingWard?.id).map((unit) => {
                 const selected = selectedUnitIds.includes(unit.unitId);
                 const inCatchment =
                   catchmentConfirmed && catchmentService ? unit.healthService === catchmentService : null;

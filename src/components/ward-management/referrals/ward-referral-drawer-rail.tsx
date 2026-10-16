@@ -12,7 +12,7 @@ import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
 export function ReferralPhoneChecklistToggle({ s }: { s: WardReferralDrawerState }) {
-  const { sectionId, summaryOpen, setSummaryOpen, itemsTotal, itemsReady } = s;
+  const { sectionId, summaryOpen, setSummaryOpen, itemsTotal, itemsReady, unresolvedWardRoute } = s;
   return (
     <button
       type="button"
@@ -60,6 +60,7 @@ export function ReferralSummaryRail({
     itemsLeft,
     itemsReady,
     readyRows,
+    unresolvedWardRoute,
   } = s;
   return (
     <aside
@@ -81,7 +82,7 @@ export function ReferralSummaryRail({
         <>
           <section className={styles.railCard}>
             <div className={styles.railHead}>
-              <h3 className={styles.cardTitle}>Ready to send</h3>
+              <h3 className={styles.cardTitle}>{unresolvedWardRoute ? "Cannot send" : "Ready to send"}</h3>
               <Frac
                 done={itemsReady}
                 total={itemsTotal}

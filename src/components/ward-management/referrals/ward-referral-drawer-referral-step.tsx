@@ -24,7 +24,7 @@ import {
   yesNo,
 } from "./ward-referral-drawer-model";
 import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-fields";
-import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
+import { NO_SENDING_WARD, type WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** Step 2, Referral: where it comes from, legal status and urgency, the presentation and the destination's needs. */
 export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
@@ -70,6 +70,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     toggleRisk,
     originValid,
     sendingWard,
+    unresolvedWardRoute,
   } = s;
   return (
     <div
@@ -87,6 +88,10 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
           {sendingWard ? (
             <p className={styles.asideText} data-testid="ward-referral-drawer-sending-ward">
               Sent from {sendingWard.name}, in this ward&apos;s own name.
+            </p>
+          ) : unresolvedWardRoute ? (
+            <p className={styles.asideText} role="alert" data-testid="ward-referral-drawer-no-sending-ward">
+              {NO_SENDING_WARD}
             </p>
           ) : (
             <div className={styles.fieldGrid}>
