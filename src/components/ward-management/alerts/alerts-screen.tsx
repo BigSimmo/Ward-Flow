@@ -33,6 +33,7 @@ import {
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -198,6 +199,7 @@ function AlertsWorkspace() {
   } = state;
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
   const live = usePageLive();
   const now = live.now;
   // Top 25 item 12: name a stuck handover once the transport booked target has passed.
@@ -618,18 +620,13 @@ function AlertsWorkspace() {
           ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
           refused: "Escalation was not accepted.",
         });
-        const sendEvent = dispatch;
-        sendEvent({
-          type: "RECORD_ESCALATION",
-          role: "coordinator",
-          now: clockNow,
+        raise("RECORD_ESCALATION", {
           movementId: item.movementId,
           triedUnitIds: movement?.declines.map((decline) => decline.unitId) ?? [],
           contact: ESCALATION_CONTACTS[0],
         });
-      } else {
-        setBroadcastSuccessNotice(`Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`);
       }
+      // An alert with no movement has nothing to escalate: the button is disabled, so no notice is made.
     },
   };
   const queueHandlers: QueueHandlers = {
@@ -1703,12 +1700,7 @@ function AlertsWorkspace() {
                                 ok: `Extended "${activeBroadcast.title}".`,
                                 refused: "Extension was not accepted.",
                               });
-                              dispatch({
-                                type: "EXTEND_BROADCAST_ALERT",
-                                role: "coordinator",
-                                now: clockNow,
-                                alertId: activeBroadcast.id,
-                              });
+                              raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id });
                             }}
                           >
                             Extend

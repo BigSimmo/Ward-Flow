@@ -5386,24 +5386,14 @@ export function reduceClinicalEvent(
         );
       }
 
+      // History starts at the first recorded reassessment; an older loose note is never given an
+      // invented author or time.
       const appendReassessment = (
         existing: ReadonlyArray<ClinicalReassessmentEntry> | undefined,
-        seedNote: string | undefined,
-        seedAt: Instant,
       ): ReadonlyArray<ClinicalReassessmentEntry> | undefined =>
-        reassessmentEntry === undefined
-          ? existing
-          : [...(existing ?? (seedNote ? [{ at: seedAt, by: event.role, note: seedNote }] : [])), reassessmentEntry];
-      const nextAddressingReassessmentHistory = appendReassessment(
-        addressing.reassessmentHistory,
-        addressing.reassessmentNote,
-        addressing.decidedAt ?? referral.raisedAt,
-      );
-      const nextReferralHistory = appendReassessment(
-        referral.reassessmentHistory,
-        referral.reassessmentNote,
-        referral.raisedAt,
-      );
+        reassessmentEntry === undefined ? existing : [...(existing ?? []), reassessmentEntry];
+      const nextAddressingReassessmentHistory = appendReassessment(addressing.reassessmentHistory);
+      const nextReferralHistory = appendReassessment(referral.reassessmentHistory);
       const latestNotePatch =
         reassessmentEntry?.note !== undefined
           ? { reassessmentNote: reassessmentEntry.note }
