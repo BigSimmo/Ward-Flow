@@ -980,7 +980,12 @@ export function reduceTransportEvent(
       if (movement.closure) {
         return reject(state, event, "cannot update arrival details on closed movement");
       }
-      if (event.role === "ward" && event.actingUnitId !== undefined && event.actingUnitId !== movement.acceptedUnitId) {
+      // A ward must name itself, so the shared backend can check that desk is the receiving ward
+      // and not the sending one (review on PR #365).
+      if (
+        event.role === "ward" &&
+        (event.actingUnitId === undefined || event.actingUnitId !== movement.acceptedUnitId)
+      ) {
         return reject(
           state,
           event,

@@ -560,6 +560,25 @@ describe("a command from a desk", () => {
     };
     expect(validOnTheWire(malformed)).toBe(false);
   });
+  it("accepts a repatriation agreed after it was first logged", () => {
+    const logged = {
+      admissionId: occupied.id,
+      at: NOW_ANCHOR - 20,
+      by: "ward" as const,
+      homeHospital: "Synthetic home hospital",
+      receivingWardAgreed: true,
+      mode: "road" as const,
+      provider: "Ambulance service" as const,
+      cadNumber: "",
+      transportLegalStatus: "voluntary" as const,
+      estimatedAt: NOW_ANCHOR + 60,
+    };
+    const agreed = { ...logged, agreedAt: NOW_ANCHOR - 5, agreedBy: "coordinator" as const };
+    expect(validOnTheWire({ ...state, repatriations: [logged] })).toBe(true);
+    expect(validOnTheWire({ ...state, repatriations: [agreed] })).toBe(true);
+    expect(validOnTheWire({ ...state, repatriations: [{ ...agreed, agreedBy: "nobody" as never }] })).toBe(false);
+  });
+
   it("keeps a receiving ward's arrival notifications from the sending ward", () => {
     const ownService = places.unitService(ownUnit);
     const otherUnit = state.units.find((unit) => places.unitService(unit.id) !== ownService)!;

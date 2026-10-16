@@ -282,7 +282,10 @@ describe("heldBedNumber is cleared when acceptance is unwound or overwritten", (
     ]);
     expect(deteriorated.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBeUndefined();
   });
-  it("frees the bed the linked referral arm held when RELEASE_AND_REOPEN_SEARCH releases it", () => {
+  it.each([
+    ["RELEASE_AND_REOPEN_SEARCH", "RELEASE_AND_REOPEN_SEARCH"],
+    ["RECORD_ED_OUTCOME", "RECORD_ED_OUTCOME"],
+  ] as const)("frees the bed the linked referral arm held when %s releases it", (_name, release) => {
     const seeded = seedWardFlowState();
     const unitId = "scgh-adult-open";
     const bed = freeBedNumber(seeded, unitId);
@@ -326,15 +329,18 @@ describe("heldBedNumber is cleared when acceptance is unwound or overwritten", (
     expect(heldBedRefusal(linked, unit, bed)).not.toBeNull();
 
     const reopened = walk(linked, [
-      {
-        type: "RELEASE_AND_REOPEN_SEARCH",
-        role: "coordinator",
-        now: ++t,
-        movementId: "WF-001",
-        actingUnitId: unitId,
-        reason: RELEASE_PULL_REASONS[0],
-      },
+      release === "RELEASE_AND_REOPEN_SEARCH"
+        ? {
+            type: "RELEASE_AND_REOPEN_SEARCH",
+            role: "coordinator",
+            now: ++t,
+            movementId: "WF-001",
+            actingUnitId: unitId,
+            reason: RELEASE_PULL_REASONS[0],
+          }
+        : { type: "RECORD_ED_OUTCOME", role: "ed", now: ++t, movementId: "WF-001", outcome: "for_community_follow_up" },
     ]);
+    expect(reopened.rejections).toHaveLength(linked.rejections.length);
     expect(reopened.referrals.find((r) => r.id === "RF-0991")?.destinations[0]?.heldBedNumber).toBeUndefined();
     expect(heldBedRefusal(reopened, unit, bed)).toBeNull();
   });

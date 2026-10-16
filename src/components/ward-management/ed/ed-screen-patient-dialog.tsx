@@ -196,8 +196,9 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                   data-testid={`ward-ed-drawer-arrival-plan-toggle-${selectedPatient.id}`}
                   className={styles.acceptButton}
                   onClick={() => {
-                    // Keep this dialog mounted so the arrival modal can restore focus to its
-                    // trigger when it closes.
+                    // This native modal dialog makes everything outside it inert, so it closes
+                    // first and reopens when the arrival modal closes (review on PR #365).
+                    setSelectedPatientId(null);
                     setArrivalPlanOpenFor(selectedPatient.id);
                   }}
                 >

@@ -1938,6 +1938,34 @@ export function heldBedRefusal(
 }
 
 /**
+ * A released bed is free again only once the accepted referral arm that held it lets go too:
+ * `heldBedRefusal` reads both the movement's and the arm's `heldBedNumber` (review on PR #365).
+ */
+export function withoutReferralBedHold(state: WardFlowState, movement: Movement): WardFlowState {
+  const unitId = movement.acceptedUnitId;
+  if (movement.referralId === undefined || unitId === undefined) return state;
+  let changed = false;
+  const referrals = state.referrals.map((referral) => {
+    if (referral.id !== movement.referralId) return referral;
+    const destinations = referral.destinations.map((arm) => {
+      if (
+        arm.state !== "accepted" ||
+        arm.heldBedNumber === undefined ||
+        arm.destination.kind !== "psychiatric_ward" ||
+        (arm.acceptedUnitId ?? arm.destination.unitId) !== unitId
+      )
+        return arm;
+      changed = true;
+      const { heldBedNumber: _heldBed, ...released } = arm;
+      void _heldBed;
+      return released;
+    });
+    return changed ? { ...referral, destinations } : referral;
+  });
+  return changed ? { ...state, referrals } : state;
+}
+
+/**
  * v10 pass 2: after an ACCEPTED `ACCEPT_REFERRAL` or `DECLINE_REFERRAL`, keeps what it changed so
  * `UNDO_REFERRAL_DECISION` can restore it exactly. A refused decision changes nothing to undo.
  */
@@ -2669,6 +2697,7 @@ const RECORDED_FACT_EVENT_HELPERS: RecordedFactEventHelpers = {
   referralReferrer,
   reject,
   releasePulledBedAndAdmission,
+  withoutReferralBedHold,
   replaceAdmission,
   replaceMovement,
   replaceReferral,
@@ -2748,6 +2777,7 @@ const PLACEMENT_EVENT_HELPERS = {
   pullOverrides,
   reject,
   releasePulledBedAndAdmission,
+  withoutReferralBedHold,
   replaceMovement,
   replaceUnit,
   wardActingMovementRefusal,

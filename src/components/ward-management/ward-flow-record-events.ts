@@ -24,6 +24,7 @@ import type {
   reject,
   releasePulledBedAndAdmission,
   RepatriationRecord,
+  withoutReferralBedHold,
   replaceAdmission,
   replaceMovement,
   replaceReferral,
@@ -145,6 +146,7 @@ export type RecordedFactEventHelpers = {
   referralReferrer: typeof referralReferrer;
   reject: typeof reject;
   releasePulledBedAndAdmission: typeof releasePulledBedAndAdmission;
+  withoutReferralBedHold: typeof withoutReferralBedHold;
   replaceAdmission: typeof replaceAdmission;
   replaceMovement: typeof replaceMovement;
   replaceReferral: typeof replaceReferral;
@@ -179,6 +181,7 @@ export function reduceRecordedFactEvent(
     referralReferrer,
     reject,
     releasePulledBedAndAdmission,
+    withoutReferralBedHold,
     replaceAdmission,
     replaceMovement,
     replaceReferral,
@@ -385,7 +388,10 @@ export function reduceRecordedFactEvent(
         );
       }
       // Gives back a pulled bed and its admission, or does nothing; safe to call unconditionally.
-      const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPulledBed = withoutReferralBedHold(
+        releasePulledBedAndAdmission(state, movement, event.now),
+        movement,
+      );
       // Truthful cause: the department recorded an outcome that ends the bed search, not the
       // referrer withdrawing (`WithdrawalReason.ed_outcome_recorded`, `ward-change-reasons.ts`).
       const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
@@ -720,7 +726,10 @@ export function reduceRecordedFactEvent(
       // would have released (including after a step-back, WFA-004). S1-5: check whether a bed was
       // held so the notice does not falsely claim a release.
       const bedWasHeld = movementHoldsBedByStage(movement);
-      const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPulledBed = withoutReferralBedHold(
+        releasePulledBedAndAdmission(state, movement, event.now),
+        movement,
+      );
       const acceptingUnitId = movement.acceptedUnitId;
       const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
       const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
@@ -1645,7 +1654,7 @@ export function reduceRecordedFactEvent(
       const hadPull =
         movement.admissionId !== undefined || movement.stage === "pulled" || movement.stage === "handover_ready";
       const liveJob = movement.transport && movement.transport.cancelledAt === undefined;
-      const withoutHold = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutHold = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       const updated: Movement = {
         ...movement,
         stage: "placement_requested",

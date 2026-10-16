@@ -32,7 +32,10 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
       !row ||
       typeof row !== "object" ||
       Object.getPrototypeOf(row) !== Object.prototype ||
-      Object.keys(row).length !== 10 ||
+      // A plan agreed after it was first logged also carries `agreedAt` and `agreedBy`.
+      Object.keys(row).length !== (Object.hasOwn(row, "agreedAt") ? 12 : 10) ||
+      (Object.hasOwn(row, "agreedAt") &&
+        (!Number.isFinite(row.agreedAt) || !Object.hasOwn(WARD_FLOW_ROLE_LABELS, row.agreedBy as string))) ||
       typeof row.admissionId !== "string" ||
       !admissionIds.has(row.admissionId) ||
       !Number.isFinite(row.at) ||

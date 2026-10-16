@@ -55,6 +55,7 @@ export function reducePlacementEvent(
     replaceMovement,
     replaceUnit,
     wardActingMovementRefusal,
+    withoutReferralBedHold,
   } = helpers;
   switch (event.type) {
     case "PULL_PATIENT": {
@@ -768,32 +769,4 @@ export function reducePlacementEvent(
       return appendNotices(next, notices);
     }
   }
-}
-
-/**
- * A released bed is free again only once the accepted referral arm that held it lets go too:
- * `heldBedRefusal` reads both the movement's and the arm's `heldBedNumber` (review on PR #365).
- */
-function withoutReferralBedHold(state: WardFlowState, movement: Movement): WardFlowState {
-  const unitId = movement.acceptedUnitId;
-  if (movement.referralId === undefined || unitId === undefined) return state;
-  let changed = false;
-  const referrals = state.referrals.map((referral) => {
-    if (referral.id !== movement.referralId) return referral;
-    const destinations = referral.destinations.map((arm) => {
-      if (
-        arm.state !== "accepted" ||
-        arm.heldBedNumber === undefined ||
-        arm.destination.kind !== "psychiatric_ward" ||
-        (arm.acceptedUnitId ?? arm.destination.unitId) !== unitId
-      )
-        return arm;
-      changed = true;
-      const { heldBedNumber: _heldBed, ...released } = arm;
-      void _heldBed;
-      return released;
-    });
-    return changed ? { ...referral, destinations } : referral;
-  });
-  return changed ? { ...state, referrals } : state;
 }

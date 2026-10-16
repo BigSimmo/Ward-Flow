@@ -474,7 +474,11 @@ export function EdScreen({ edId }: EdScreenProps) {
       {arrivalPlanMovement ? (
         <ArrivalTimeModal
           isOpen
-          onClose={() => setArrivalPlanOpenFor(undefined)}
+          onClose={() => {
+            setArrivalPlanOpenFor(undefined);
+            // Back to the patient the plan was opened from.
+            setSelectedPatientId(arrivalPlanMovement.id);
+          }}
           movement={arrivalPlanMovement}
           role="ed"
         />
