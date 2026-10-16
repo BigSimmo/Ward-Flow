@@ -22,7 +22,7 @@ All public metro EDs in the register (10 public EDs in `ward-sites.ts`, includin
 plus Graylands, Bentley, Fremantle, Mount Lawley and Cockburn; site↔site among acute. Private
 Hollywood and SJOG Murdoch EDs included in the 12-ED reference register. Runtime `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) models **10 public EDs** and **13 runtime inpatient units (266 operational beds)** vs **279 reference-pack beds** (which include the 13-bed `SCGH-MHOA` observation area).
 
-Cockburn has no emergency department (WF-20), so it appears only as a destination — there are
+Cockburn has no emergency department, so it appears only as a destination — there are
 no `ed-cock__*` pairs and their absence is correct, not a gap.
 
 ## What changed on 18 September

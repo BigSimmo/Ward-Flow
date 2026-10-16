@@ -39,7 +39,7 @@ decided again.
 **The Aboriginal cultural safety review is never listed here as a question.** It is deferred by the
 owner, second round, his own verbatim words: _"Stop asking and add to ledger... i have deferred."_ He
 arranges it himself; it stays a hard gate before any real-patient use. Recorded at
-`docs/ward-flow-task-ledger.md` (`WF-53`) and `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` ("Second
+`docs/ward-flow-task-ledger.md` and `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` ("Second
 round," answer 6). Do not raise it with him again, in this file or anywhere else.
 
 ---
@@ -164,7 +164,7 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
   the lesson-note control bytes — **already fixed and committed** (`685a730d82`) before the defer
   instruction reached the session, kept here only because the owner's list named it; (7) the
   print-only ward panel, which waits until printing is tested. Trigger: whenever this sweep, or a
-  later one, is asked to pick these back up. Detail: `docs/ward-flow-task-ledger.md` (`WF-58`).
+  later one, is asked to pick these back up. Detail: `docs/ward-flow-task-ledger.md`.
 
 ---
 

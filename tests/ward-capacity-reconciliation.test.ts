@@ -53,7 +53,7 @@ describe("unit bed-state reconciliation", () => {
 });
 
 /**
- * WF-26 (2026-09-17): the same identity, pinned for the scarce scenario. `unitCapacity`'s
+ * audit rule (2026-09-17): the same identity, pinned for the scarce scenario. `unitCapacity`'s
  * `available` was already computed as `Math.min(unit.allocatable.value, unit.empty.value)`, so
  * this identity held even while the scarce scenario over-advertised `allocatable` above `empty`
  * on `gry-older-adult` — this test does not catch that bug (`tests/ward-scenarios.test.ts`'s

@@ -239,7 +239,7 @@ Scope: storage validation, persistence classification, scenario file, `shell/war
 - **A2-6. A failed save leaves an older snapshot that reload silently restores** (`ward-flow-provider.tsx:840`).
 - **A2-7. "Clear transient cache" is undone within 30 seconds** (`settings/settings-screen.tsx:708`). The save effect rewrites the world on the next tick.
 - **A2-8. Backend returns 503 instead of 409 on racing first saves** (`backend/ward-flow/database.mjs:224`). Azure answers 409 to `if-none-match: *`; only 412 is handled. The fake storage in `backend.test.mjs` returns 412, so the test cannot catch it. Based on Azure's documented codes; not run.
-- **A2-9. Cloud vault bypasses all save/load protections** (`src/lib/cloud-scenario-vault.ts:22`). No version or validation on load; uploads ignore the typed-text lock. Not yet wired (waits on WF-29).
+- **A2-9. Cloud vault bypasses all save/load protections** (`src/lib/cloud-scenario-vault.ts:22`). No version or validation on load; uploads ignore the typed-text lock. Not yet wired (waits on external privacy and Entra ID isolation).
 - **A2-10. "Since last look" survives reset and file load** (`coordinator/since-last-look.ts:15`). Reused ids are treated as already seen; unrelated records show as new.
 - **A2-11. Whole world serialised to storage every 30 seconds with no change** (`ward-flow-provider.tsx:829`). Performance.
 - **A2-12. A new BroadcastChannel per dispatch re-renders every other tab** (`:674`). Tabs share no state, so this is wasted work.

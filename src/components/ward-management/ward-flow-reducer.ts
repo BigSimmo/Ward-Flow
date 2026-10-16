@@ -397,6 +397,8 @@ export type RepatriationRecord = {
   by: WardFlowRole;
   homeHospital: string;
   receivingWardAgreed: boolean;
+  agreedAt?: Instant;
+  agreedBy?: WardFlowRole;
   mode: RepatriationMode;
   provider: TransportProvider;
   cadNumber: string;
@@ -1933,6 +1935,11 @@ function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, eve
   const before = findReferral(state, event.referralId);
   const after = findReferral(next, event.referralId);
   if (!before || !after || before === after) return next;
+  // A reassessment on an arm already accepted decides nothing, so it must not replace the
+  // acceptance's undo record (Undo would then take back only the note). The acceptance then reads
+  // as changed since the decision, so its Undo is refused rather than erasing the reassessment.
+  const decisionUnchanged = before.destinations.every((arm, index) => arm.state === after.destinations[index]?.state);
+  if (event.type === "ACCEPT_REFERRAL" && decisionUnchanged) return next;
   return {
     ...next,
     undoRecords: withUndoRecord(next.undoRecords, {

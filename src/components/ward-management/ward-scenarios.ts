@@ -94,7 +94,7 @@ export function scenarioUnits(scenario: WardScenario): Unit[] {
     // fails the sex_mix gate unless the ward already holds same-sex occupants, which is exactly
     // the squeeze a real scarce night produces.
     //
-    // WF-26: clamped to `unit.empty.value` — a unit with zero physically empty beds (e.g.
+    // clamped to `unit.empty.value` — a unit with zero physically empty beds (e.g.
     // `gry-older-adult`) must never be handed an allocatable bed that does not exist, regardless
     // of where its index falls in the every-third pattern above.
     //
@@ -106,7 +106,7 @@ export function scenarioUnits(scenario: WardScenario): Unit[] {
     return {
       ...unit,
       allocatable: { ...unit.allocatable, value: allocatable },
-      // WF-26: the standard night's `allocatableLocked` is a count of the unit's own allocatable
+      // the standard night's `allocatableLocked` is a count of the unit's own allocatable
       // beds that are locked, so it can never legitimately exceed `allocatable` — but this map
       // used to leave it untouched while zeroing `allocatable` above, which left units like
       // `fsh-adult-secure` and `rgh-adult-secure` advertising locked beds their own total said did

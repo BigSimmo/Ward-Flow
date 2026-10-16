@@ -17,7 +17,7 @@ type GoneWrongKind = "escalated" | "declined_by_all" | "acceptance_withdrawn";
  * predicate used to be `movement.referredUnitIds.length === 0 && movement.declines.length > 0 &&
  * movement.acceptedUnitId === undefined` — letter-for-letter the same three clauses
  * `handoverSnapshot` computes with. A test built that way can never catch a defect IN that exact
- * expression, because the same defect is copied into the assertion: WF-23 (`ACCEPT_IN_PRINCIPLE`
+ * expression, because the same defect is copied into the assertion: audit rule (`ACCEPT_IN_PRINCIPLE`
  * emptying `referredUnitIds` on a movement with an earlier decline) reproduced itself here, and so
  * did item 20's later bug (`WITHDRAW_ACCEPTANCE` doing the same to `acceptedUnitId` without a
  * fresh decline). Both were caught only by fixture-pinned assertions further down this file, never
