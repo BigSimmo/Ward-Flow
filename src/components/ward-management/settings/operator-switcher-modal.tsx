@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -44,6 +44,7 @@ import {
   useWardAccessSnapshot,
 } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
@@ -119,6 +120,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   // Role access plan PR 1: with the flag on, opening a desk takes that desk's access.
   const accessOn = useWardFeatureFlag("role-access");
   const { access: currentAccess } = useWardAccessSnapshot();
+  // Signed in to the shared workspace, the role comes from the server, never from this drawer: a
+  // desk here only opens its screens (a coordinator can still preview, read only).
+  const shared = useContext(SharedAccessContext) !== null;
   const [previewOnly, setPreviewOnly] = useState(false);
   const now = useWardFlowClock();
   const router = useRouter();
@@ -169,7 +173,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   function takeAccess(access: WardAccess) {
     if (!accessOn) return;
     if (previewOnly && currentAccess.role === "coordinator") startAccessPreview(access);
-    else setWardAccess(access);
+    else if (!shared) setWardAccess(access);
   }
 
   /** Desks the old drawer only previewed: bed manager per hospital, executive, service coordinator, admin. */
@@ -455,6 +459,12 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
           />{" "}
           Preview only, then come back to the coordinator desk in one tap
         </label>
+      ) : null}
+      {accessOn && shared && !searching ? (
+        <p className={styles.empty} role="note" data-testid="workstation-shared-role-note">
+          In the shared workspace your role comes from your sign-in. Opening a desk here shows its screens only. To work
+          as another of your roles, use Switch role.
+        </p>
       ) : null}
       {previewNote && !searching ? (
         <p className={styles.empty} role="status">
