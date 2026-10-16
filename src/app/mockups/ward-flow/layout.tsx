@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 
-import { ToastProvider, WfServerPhoneProvider, guessPhoneFromRequest } from "@/components/wf";
+import { ToastProvider, WfServerPhoneProvider, guessPhoneFromRequest, guessTabletFromRequest } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
@@ -125,11 +125,14 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   // A1-17 (audit 13 Oct 2026): draw the phone layout first on a phone, so slow signal does not show
   // a different, desktop-shaped page for many seconds before the code loads.
-  const phone = guessPhoneFromRequest(requestHeaders.get("user-agent"), requestHeaders.get("sec-ch-ua-mobile"));
+  const userAgent = requestHeaders.get("user-agent");
+  const clientHintMobile = requestHeaders.get("sec-ch-ua-mobile");
+  const phone = guessPhoneFromRequest(userAgent, clientHintMobile);
+  const tablet = guessTabletFromRequest(userAgent, clientHintMobile);
   // Serialize the calendar origin with the HTML so hydration does not choose a different Perth day.
   const initialDayZero = demoDayZero(new Date()).getTime();
   return (
-    <WfServerPhoneProvider phone={phone}>
+    <WfServerPhoneProvider phone={phone} tablet={tablet}>
       <WardFlowProvider initialDayZero={initialDayZero}>
         {/* Role access plan PR 1: everything below reads the workspace scoped to the desk's role and
           place, chrome included. Does nothing while the role-access flag is off (shell/ward-access.tsx). */}
@@ -164,15 +167,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
                   Loading, not live yet. Taps work once this goes.
                 </p>
-                <div
-                  style={{
-                    position: "sticky",
-                    top: "var(--wf-header-height, 3.75rem)",
-                    zIndex: 25,
-                    contain: "layout style",
-                    minHeight: 0,
-                  }}
-                >
+                <div className={styles.bannerHolder}>
                   <WardBroadcastBanner />
                   <WardOfflineBanner />
                   <WardDemoNotSavedNote />

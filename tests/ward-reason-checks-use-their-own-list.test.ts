@@ -78,6 +78,7 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   PlannedAdmissionCancelReason: "PLANNED_ADMISSION_CANCEL_REASONS",
   // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's closed snooze-reason list.
   InboxSnoozeReason: "SNOOZE_REASON_IDS",
+  DischargeDelayClearReason: "DISCHARGE_DELAY_CLEAR_REASONS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */

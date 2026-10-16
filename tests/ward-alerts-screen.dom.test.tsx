@@ -4,8 +4,13 @@ import { buttonClass } from "@/components/wf";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { alertKindOf } from "@/components/ward-management/alerts/alerts-model";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { alertKindOf, escalationAppliesTo } from "@/components/ward-management/alerts/alerts-model";
+import {
+  buildActionInbox,
+  eligibleCandidatesAmong,
+  isOpen,
+  type InboxItem,
+} from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { activeTaskItems, taskItems } from "@/components/ward-management/ward-act-now-items";
 import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
@@ -294,5 +299,50 @@ describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () =>
     const open = Number(/^(\d+) open/u.exec(meta?.textContent ?? "")?.[1]);
     expect(open).toBe(active.length);
     expect(screen.getByRole("tab", { name: /^Now/u }).textContent).toContain(String(open));
+  });
+});
+
+describe("Escalate only applies to a bed search that is really exhausted (PR #349 review)", () => {
+  const units = allUnits();
+  const open = wardMovements.filter(isOpen);
+  const rowFor = (prefix: string, movementId: string) => ({ id: `${prefix}${movementId}` }) as InboxItem;
+  const declinesRow = (id: string) => rowFor(INBOX_CATEGORIES.destinations_declined.idPrefix, id);
+  const unsuitableRow = (id: string) => rowFor(INBOX_CATEGORIES.destination_unlawful.idPrefix, id);
+  const noBedRow = (id: string) => rowFor(INBOX_CATEGORIES.no_eligible_bed.idPrefix, id);
+  const wf009 = open.find((movement) => movement.id === "WF-009")!;
+  const wf308 = open.find((movement) => movement.id === "WF-308")!;
+
+  it("is offered for the seed's declined-by-all and no-eligible-bed movements", () => {
+    expect(escalationAppliesTo(declinesRow(wf009.id), wf009, units, NOW)).toBe(true);
+    expect(escalationAppliesTo(noBedRow(wf308.id), wf308, units, NOW)).toBe(true);
+  });
+
+  it("is refused when a ward has already accepted, whichever placement alert is showing", () => {
+    const accepted = { ...wf009, acceptedUnitId: units[0]!.id };
+    expect(escalationAppliesTo(unsuitableRow(accepted.id), accepted, units, NOW)).toBe(false);
+    expect(escalationAppliesTo(declinesRow(accepted.id), accepted, units, NOW)).toBe(false);
+  });
+
+  it("is refused for an unsuitable-destination alert even with no ward accepted on the record", () => {
+    expect(escalationAppliesTo(unsuitableRow(wf009.id), wf009, units, NOW)).toBe(false);
+  });
+
+  it("is refused for three declines while another ward is still eligible", () => {
+    const threeDeclines = wf009.declines.slice(0, 3);
+    const widenable = open
+      .filter((movement) => movement.acceptedUnitId === undefined)
+      .map((movement) => ({ ...movement, declines: threeDeclines, escalation: undefined }))
+      .find((movement) =>
+        eligibleCandidatesAmong(movement, units, NOW, units.length).some((candidate) => candidate.verdict.eligible),
+      );
+    expect(widenable, "the seed has an open movement with an eligible ward").toBeDefined();
+    expect(escalationAppliesTo(declinesRow(widenable!.id), widenable, units, NOW)).toBe(false);
+  });
+
+  it("is refused for an alert about something else and for a missing movement", () => {
+    const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold")!;
+    const lapsedMovement = open.find((movement) => movement.id === lapsed.movementId);
+    expect(escalationAppliesTo(lapsed, lapsedMovement, units, NOW)).toBe(false);
+    expect(escalationAppliesTo(noBedRow(wf308.id), undefined, units, NOW)).toBe(false);
   });
 });

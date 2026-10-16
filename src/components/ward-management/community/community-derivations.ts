@@ -424,7 +424,7 @@ export function communityMembershipResolution(
  * it reads a withdrawn referral as still awaiting this team's answer, which is what FD-5 exists to
  * stop.
  *
- * WF-13: delegates to `isAwaitingAnswer` (`ward-referrals.ts`) rather than repeating the same
+ * delegates to `isAwaitingAnswer` (`ward-referrals.ts`) rather than repeating the same
  * `state === "queued" && withdrawnAt === undefined` check a second time — the one home for that
  * rule, so a future reader who tightens or loosens it moves every caller, this one included.
  */

@@ -18,6 +18,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -52,11 +53,13 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import {
-  isValidStoredWardFlowState,
-  migrateStoredWardFlowState,
-  WARD_FLOW_STORED_STATE_VERSION,
-  withInboxStreamADefaults,
-} from "./ward-flow-storage-validation";
+  clearWardFlowDemoState,
+  STORAGE_UNAVAILABLE,
+  tryReadDemoState,
+  tryWriteDemoState,
+  WARD_FLOW_DEMO_STORAGE_KEY,
+  WARD_FLOW_DEMO_STORAGE_VERSION,
+} from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -99,7 +102,11 @@ import {
   type ScenarioFileBuild,
 } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
-import { broadcastDispatchEvent, nextOpenRequestSequence } from "./ward-flow-provider-helpers";
+import {
+  broadcastDispatchEvent,
+  getOrCreateBroadcastInstanceId,
+  nextOpenRequestSequence,
+} from "./ward-flow-provider-helpers";
 
 /**
  * The provider owns reducer state, session recovery and the shared connection. Public hooks
@@ -213,6 +220,12 @@ type WardFlowContextValue = {
   loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
+  /** Shared workspace connection status and error for forms that must await shared save completion. */
+  shared?: {
+    enabled: boolean;
+    status: WardSharedConnection["status"];
+    error: string | null;
+  };
   /** False when the shared workspace has switched demo controls off. Optional for test contexts. */
   demoControlsAvailable?: boolean;
 };
@@ -278,6 +291,7 @@ const WARD_FLOW_KEY_SET = {
   loadScenarioFile: true,
   savingOnDevice: true,
   demoControlsAvailable: true,
+  shared: true,
 } as const satisfies Record<WardFlowKey, true>;
 const WARD_FLOW_KEYS = Object.keys(WARD_FLOW_KEY_SET) as WardFlowKey[];
 
@@ -385,66 +399,7 @@ type WardFlowProviderProps = {
   initialDayZero?: number;
 };
 
-export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
-
-/**
- * ⚠️ **BUMP THIS WHENEVER THE STORED SHAPE CHANGES**, not only the key. Audit finding ISSUE-P1-83
- * (2026-09-16, defect 3): the version used to live only in the storage KEY's own "-v1" suffix, which
- * nothing ever read back — a shape change would have restored a stale-shaped object straight into
- * `useReducer` with no check at all. It now travels INSIDE the payload and is checked on every read
- * (`isValidDemoPayload`), so a version bump discards an old-shaped save rather than trusting it.
- *
- * 🔴 **BUMPED 2 → 3, 2026-09-17, Y4 privacy remediation.** Two independent shape changes land in the
- * same pass: the payload no longer carries `anchorOffsetMinutes` at all (see `tryReadDemoState`'s own
- * comment for why comparing it was the defect, not the fix), and `state.configuration` is now
- * validated on restore (`isValidStoredWardFlowState`) rather than trusted unchecked. A v2 save read
- * by this build would either be missing the fields the new checks require or carry an unvalidated
- * configuration — discarding it rather than reading either the old shape or an invented default is
- * this project's ordinary conservative-degradation rule, applied here as everywhere else.
- */
-// v4 stores the synthetic clock and validates nested recovery records. v5 (2026-09-25): a bed
-// release now names the admission it belongs to (`BedRelease.admissionId`, owner decision
-// 2026-09-25) — a v4 save has no such field and no honest migration exists, so it is refused
-// exactly like every other version mismatch above, never guessed or backfilled.
-// v6 (2026-10-08): explicit deterioration/pause, recorded ATS and corroborated
-// arrival/capacity conflicts; reciprocal runtime admission links are validated.
-// Old automatic saves are refused rather than silently migrating clinical facts.
-// v7 (2026-10-09, stream D): planned admissions and their id sequence are part of the state.
-// A v6 save is the one exception to refusal (Josh, 9 Oct 2026): it gains an empty booking list
-// (`migrateStoredWardFlowState`) and is then validated exactly as a v7 save.
-const WARD_FLOW_DEMO_STORAGE_VERSION = WARD_FLOW_STORED_STATE_VERSION;
-
-/**
- * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
- * only inside it, so a restore can refuse a save that no longer describes THIS world before it ever
- * touches the reducer — see `tryReadDemoState`'s own comment for why a mismatch here means discard,
- * never a silent timestamp shift.
- */
-type WardFlowDemoPayload = {
-  version: number;
-  /** `dayZero.getTime()` at save — a calendar day, not a duration; compared for exact equality. */
-  dayZero: number;
-  /** Redundant with `state.worldGeneration`, and deliberately so: a payload where the two disagree
-   *  is corrupt in a way a shape check alone would not catch, and is discarded rather than trusted. */
-  worldGeneration: number;
-  now: Instant;
-  savedAtAbsolute: number;
-  state: WardFlowState;
-};
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isValidDemoPayload(value: unknown): value is WardFlowDemoPayload {
-  if (!isPlainObject(value)) return false;
-  if (typeof value.version !== "number") return false;
-  if (typeof value.dayZero !== "number") return false;
-  if (typeof value.worldGeneration !== "number") return false;
-  if (!Number.isFinite(value.now) || !Number.isFinite(value.savedAtAbsolute)) return false;
-  return isValidStoredWardFlowState(value.state);
-}
-
+export { clearWardFlowDemoState, WARD_FLOW_DEMO_STORAGE_KEY };
 export { WARD_FLOW_TEXT_SAFE_EVENT_TYPES, WARD_FLOW_TYPED_TEXT_EVENT_TYPES, findWardFlowEventTypeCoverageGaps };
 export type { AssertNever, UnreviewedStringOrUnknownKeys };
 
@@ -487,12 +442,21 @@ type AdoptSessionAction = {
  *  (`ward-flow-scenario-file.ts`) never reaches the reducer, the event log or a role check. */
 type LoadScenarioFileAction = { type: "LOAD_SCENARIO_FILE_INTERNAL"; world: WardFlowState; restoredElapsed: number };
 
+function syncWorldGlobals(world: WardFlowState): void {
+  activateScenarioNetwork(world.scenario);
+}
+
 function wardFlowContainerReducer(
   container: WardFlowContainer,
   action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction,
 ): WardFlowContainer {
-  if (ADOPT_SESSION in action) return action[ADOPT_SESSION](container);
-  if (action.type === "LOAD_SCENARIO_FILE_INTERNAL")
+  if (ADOPT_SESSION in action) {
+    const adopted = action[ADOPT_SESSION](container);
+    syncWorldGlobals(adopted.world);
+    return adopted;
+  }
+  if (action.type === "LOAD_SCENARIO_FILE_INTERNAL") {
+    syncWorldGlobals(action.world);
     // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
     // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
     // It also counts as adopted, so a late browser restore can never replace it.
@@ -506,7 +470,9 @@ function wardFlowContainerReducer(
       sessionAdopted: true,
       preAdoptionEvents: undefined,
     };
+  }
   const next = trackWardFlowTypedTextDispatch(container, action);
+  syncWorldGlobals(next.world);
   if (container.sessionAdopted) return next;
   return { ...next, preAdoptionEvents: [...(container.preAdoptionEvents ?? []), action] };
 }
@@ -578,85 +544,6 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
   const typedTextSeen =
     container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
   return { ...container, world: nextWorld, typedTextSeen, eventLog };
-}
-
-const STORAGE_UNAVAILABLE =
-  "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
-const SAVE_REJECTED =
-  "The saved demonstration could not be restored safely. A fresh synthetic demonstration has started.";
-
-type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
-
-/** A parsed save brought to this build's version when a migration exists (v6 only); any other
- *  version is returned unchanged, so the version check below still refuses it. */
-function upgradeDemoPayload(value: unknown): unknown {
-  if (!isPlainObject(value) || value.version === WARD_FLOW_DEMO_STORAGE_VERSION) return value;
-  const state = migrateStoredWardFlowState(value.state, value.version);
-  return state === null ? value : { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION, state };
-}
-
-/** Same-day reload includes time away. A different day or backward clock starts a fresh demo;
- * no saved event or entered time is shifted or reconstructed. Storage access is entirely guarded. */
-function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
-  if (typeof window === "undefined") return {};
-  try {
-    const storage = window.sessionStorage;
-    const raw = storage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
-    if (!raw) return {};
-    let stored: unknown;
-    try {
-      stored = JSON.parse(raw);
-    } catch {
-      return { recoveryNotice: SAVE_REJECTED };
-    }
-    const parsed = upgradeDemoPayload(stored);
-    if (
-      !isValidDemoPayload(parsed) ||
-      parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||
-      parsed.dayZero !== dayZero.getTime() ||
-      parsed.worldGeneration !== parsed.state.worldGeneration ||
-      parsed.savedAtAbsolute > mountedAtAbsolute ||
-      parsed.now < NOW_ANCHOR + parsed.state.clockOffsetMinutes ||
-      parsed.state.auditEvents.some((event) => event.at !== null && event.at > parsed.now)
-    )
-      return { recoveryNotice: SAVE_REJECTED };
-    return { saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) } };
-  } catch {
-    // Do not repeat stored content or an exception message in the recovery notice.
-    return { recoveryNotice: STORAGE_UNAVAILABLE };
-  }
-}
-
-function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, savedAtAbsolute: number): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const payload: WardFlowDemoPayload = {
-      version: WARD_FLOW_DEMO_STORAGE_VERSION,
-      dayZero: dayZero.getTime(),
-      worldGeneration: state.worldGeneration,
-
-      now,
-      savedAtAbsolute,
-      // Refusal records are never stored (Josh, D-18, 25 Sept 2026): a refusal can quote a
-      // caller-supplied id back in `reason`/`id`, so a saved day keeps its work but not its refusals.
-      state: { ...state, rejections: [] },
-    };
-    window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, JSON.stringify(payload));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function clearWardFlowDemoState(): boolean {
-  clearWardFlowDraftCaches();
-  if (typeof window === "undefined") return false;
-  try {
-    window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -870,15 +757,23 @@ function WardFlowWorld({
     wardFlowContainerReducer,
     anchorOffsetMinutes,
     // A pinned `now` never reads a saved session, so it starts adopted and holds no replay queue.
-    (offset): WardFlowContainer => ({
-      world: seedWardFlowStateAt(offset),
-      typedTextSeen: false,
-      restoredElapsed: 0,
-      sessionAdopted: initialNow !== undefined,
-    }),
+    (offset): WardFlowContainer => {
+      const world = seedWardFlowStateAt(offset);
+      syncWorldGlobals(world);
+      return {
+        world,
+        typedTextSeen: false,
+        restoredElapsed: 0,
+        sessionAdopted: initialNow !== undefined,
+      };
+    },
   );
   const state = container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
+  const broadcastInstanceIdRef = useRef("");
+  const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
+  // A remote snapshot must not replace edits made locally since the last sync.
+  const localEditsSinceBroadcastRef = useRef(false);
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
@@ -896,14 +791,17 @@ function WardFlowWorld({
       // so a toast pushed straight after this dispatch does not claim the action was saved.
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
+      localEditsSinceBroadcastRef.current = true;
       dispatchContainer(event);
-      broadcastDispatchEvent(event.type);
+      broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
     },
     [dispatchContainer, sharedEnabled, dispatchShared],
   );
-  // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
-  // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
-  activateScenarioNetwork(state.scenario);
+  // Every ward lookup follows the scenario on screen (`ward-scenarios.ts`). Synchronised in
+  // `useLayoutEffect` (as well as reducer state transitions) so the component render body stays pure.
+  useLayoutEffect(() => {
+    syncWorldGlobals(state);
+  }, [state]);
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -1022,10 +920,57 @@ function WardFlowWorld({
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
+    const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
+        if (
+          initialNow !== undefined ||
+          messageEvent.data?.type !== "WARD_FLOW_DISPATCH" ||
+          !messageEvent.data.payload
+        ) {
+          return;
+        }
         if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
+          if (messageEvent.data.senderId && messageEvent.data.senderId === instanceId) {
+            return;
+          }
+          if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
+            const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
+            const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
+            const { saved } = tryReadDemoState(dayZero, referenceAbsolute, rawPayload);
+            if (saved) {
+              openRequestSequence.current = Math.max(
+                openRequestSequence.current,
+                nextOpenRequestSequence(saved.state.auditEvents),
+              );
+              lastAdoptedBroadcastWorldRef.current = saved.state;
+              localEditsSinceBroadcastRef.current = false;
+              dispatchContainer({
+                type: "ADOPT_SAVED_SESSION",
+                [ADOPT_SESSION]: (current) => {
+                  if (current.typedTextSeen || !current.sessionAdopted) return current;
+                  const baseMounted = mountedAtAbsolute ?? saved.savedAtAbsolute;
+                  const restoredElapsed =
+                    saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + baseMounted - saved.savedAtAbsolute;
+                  const isSameWorld =
+                    JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
+                  if (isSameWorld) {
+                    return current;
+                  }
+                  return {
+                    ...current,
+                    world: saved.state,
+                    restoredElapsed,
+                    sessionAdopted: true,
+                    // As an ordinary restore does, so screens keyed on the seed day start from this world.
+                    sessionRestored: true,
+                    preAdoptionEvents: undefined,
+                  };
+                },
+              });
+            }
+          }
           setTick((tick) => tick + 1);
         }
       };
@@ -1035,7 +980,7 @@ function WardFlowWorld({
     } catch {
       return undefined;
     }
-  }, []);
+  }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
   // storage fails. Shared mode does not save actions on this device.
@@ -1058,7 +1003,7 @@ function WardFlowWorld({
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [shared.enabled, savingOnDevice, container.typedTextSeen]);
+  }, [savingOnDevice, container.typedTextSeen, shared.enabled]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1134,8 +1079,19 @@ function WardFlowWorld({
       return;
     }
     if (storageUnavailable) return;
-    if (!tryWriteDemoState(state, dayZero, nowRef.current, mountedAtAbsolute + Math.max(0, elapsedRef.current))) {
+    const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
+    if (
+      !tryWriteDemoState(
+        state,
+        dayZero,
+        nowRef.current,
+        mountedAtAbsolute + Math.max(0, elapsedRef.current),
+        isFromRemoteBroadcast ? undefined : getOrCreateBroadcastInstanceId(broadcastInstanceIdRef),
+      )
+    ) {
       setStorageUnavailable(true);
+    } else {
+      localEditsSinceBroadcastRef.current = false;
     }
   }, [
     state,
@@ -1153,6 +1109,7 @@ function WardFlowWorld({
   // memo on every render regardless of whether anything the memo actually reads had changed.
   const resetDemoState = useCallback(() => {
     if (!shared.enabled) clearWardFlowDemoState();
+    localEditsSinceBroadcastRef.current = false;
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, shared.enabled]);
 
@@ -1194,6 +1151,16 @@ function WardFlowWorld({
       return { ok: true };
     },
     [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+  );
+
+  const sharedConnection = useMemo(
+    () =>
+      shared.enabled && container.sharedRevision === undefined
+        ? { ...shared, snapshot: null }
+        : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+          ? { ...shared, status: "saving" as const }
+          : shared,
+    [shared, container.sharedRevision],
   );
 
   // The readers and the two record actions close over `state`, so they are rebuilt when it changes,
@@ -1264,6 +1231,12 @@ function WardFlowWorld({
     [state, dispatch],
   );
 
+  // One object per change of status, so readers of `shared` do not wake on every clock tick.
+  const sharedStatus = useMemo(
+    () => ({ enabled: sharedConnection.enabled, status: sharedConnection.status, error: sharedConnection.error }),
+    [sharedConnection.enabled, sharedConnection.status, sharedConnection.error],
+  );
+
   const value = useMemo<WardFlowContextValue>(
     () => ({
       worldGeneration: state.worldGeneration,
@@ -1302,6 +1275,7 @@ function WardFlowWorld({
       saveScenarioFile,
       loadScenarioFile,
       savingOnDevice: initialNow !== undefined ? !container.typedTextSeen && !storageUnavailable : savingOnDevice,
+      shared: sharedStatus,
       demoControlsAvailable,
     }),
     [
@@ -1322,6 +1296,7 @@ function WardFlowWorld({
       container.eventLog,
       shared.enabled,
       shared.eventLog,
+      sharedStatus,
       demoControlsAvailable,
       dayZero,
       dispatch,
@@ -1334,16 +1309,6 @@ function WardFlowWorld({
       initialNow,
       now,
     ],
-  );
-
-  const sharedConnection = useMemo(
-    () =>
-      shared.enabled && container.sharedRevision === undefined
-        ? { ...shared, snapshot: null }
-        : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-          ? { ...shared, status: "saving" as const }
-          : shared,
-    [shared, container.sharedRevision],
   );
 
   return (

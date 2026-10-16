@@ -10,6 +10,13 @@ import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
+import {
+  giveCover,
+  readWardAccessSnapshot,
+  setWardAccess,
+  resetWardAccessStoreForTests,
+} from "../src/components/ward-management/shell/ward-access-store";
+import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
 
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
@@ -164,6 +171,45 @@ describe("shared provider boundary", () => {
     fireEvent.click(screen.getByRole("button", { name: "Return to prototype" }));
     expect(screen.getByRole("textbox")).toBe(draft);
     expect(draft).toHaveValue("keep prototype draft");
+  });
+  it("takes the desk from the server's role, and offers a switch only after a choice", () => {
+    const access = { role: "ed", scope: { kind: "ed", edId: allEmergencyDepartments()[0]!.id } };
+    fake.connection = { ...fake.connection!, access, workingAs: "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d" };
+    const tree = () => (
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    expect(
+      screen.getByText(
+        `ED mental health clinician, ${allEmergencyDepartments()[0]!.name} · shared synthetic workspace`,
+      ),
+    ).toBeInTheDocument();
+    expect(readWardAccessSnapshot().desk).toEqual(access);
+    expect(screen.queryByRole("button", { name: "Switch role" })).toBeNull();
+    const switchRole = vi.fn();
+    fake.connection = { ...fake.connection!, canSwitch: true, switchRole };
+    rerender(tree());
+    fireEvent.click(screen.getByRole("button", { name: "Switch role" }));
+    expect(switchRole).toHaveBeenCalledOnce();
+    resetWardAccessStoreForTests();
+  });
+  it("drops the local demo's covers once the server's role is taken, so they never widen it", () => {
+    const [unitA, unitB] = seedWardFlowStateAt(0).units.map((unit) => unit.id);
+    const access = { role: "ward", scope: { kind: "ward", unitIds: [unitA!] } } as const;
+    setWardAccess(access);
+    giveCover({ recipient: access, scope: { kind: "ward", unitIds: [unitB!] }, now: 0, until: 10_000 });
+    expect(readWardAccessSnapshot().access.scope).toEqual({ kind: "ward", unitIds: [unitA, unitB] });
+    fake.connection = { ...fake.connection!, access };
+    render(
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    expect(readWardAccessSnapshot().covers).toEqual([]);
+    expect(readWardAccessSnapshot().access).toEqual(access);
+    resetWardAccessStoreForTests();
   });
   it("adopts server state without reading or writing browser demo storage", () => {
     const read = vi.spyOn(Storage.prototype, "getItem");

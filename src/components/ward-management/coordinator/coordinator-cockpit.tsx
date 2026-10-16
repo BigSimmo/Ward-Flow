@@ -12,7 +12,7 @@ export interface CoordinatorCockpitProps {
 }
 
 /**
- * CoordinatorCockpit (WF-A1-15)
+ * CoordinatorCockpit
  *
  * Operational cockpit for the psychiatric bed flow coordinator.
  * Wraps CoordinatorScreen and ensures all dispatches use `role: 'coordinator'`

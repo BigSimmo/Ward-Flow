@@ -108,7 +108,7 @@ function pulledAndBookedMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACI
 }
 
 // The no-bed shape under test: a movement at `accepted_awaiting_bed` with a booked job still standing.
-// Under WF-37 / Ruling 2, `RELEASE_PULL` clears linked transport immediately. To test CANCEL_TRANSPORT
+// Under Ruling 2, `RELEASE_PULL` clears linked transport immediately. To test CANCEL_TRANSPORT
 // on a movement at `accepted_awaiting_bed` where transport was booked, we use `steppedBackNoBed`.
 function releasedNoBed(movementId = CAPACITY_MOVEMENT, unitId = CAPACITY_UNIT) {
   return steppedBackNoBed(movementId, unitId);
@@ -278,7 +278,7 @@ describe("CANCEL_TRANSPORT when no bed is held", () => {
     }
   });
 
-  it("WF-37 / Ruling 2: RELEASE_PULL clears linked transport immediately so re-allocation is never blocked", () => {
+  it("Ruling 2: RELEASE_PULL clears linked transport immediately so re-allocation is never blocked", () => {
     // Owner ruling 2026-09-25: RELEASE_PULL refuses while a transport job is booked ("...has a
     // transport job booked; cancel it (CANCEL_TRANSPORT) before releasing the pull") — until this
     // ruling RELEASE_PULL cleared a linked job automatically. Cancel first; the release still lands

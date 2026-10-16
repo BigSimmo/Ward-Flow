@@ -1,25 +1,25 @@
-# Fix plan — referral model (WF-09/11/12/14/15/23, STILL-04, intake role) — read-only Opus planner, 16 Sept 2026, base 65aa7c54a6
+# Fix plan — referral model (STILL-04, intake role) — read-only Opus planner, 16 Sept 2026, base 65aa7c54a6
 
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md`.** Kept for history; do not follow. It was the source for that plan; its R-numbers are still cited.
 
 ## Key findings (verified unless marked)
 
-- WF-09: the ED raise form never sends a referralId; no uniqueness guard (a second open movement, or a
+- Referral-movement link: the ED raise form never sends a referralId; no uniqueness guard (a second open movement, or a
   withdrawn/declined ED addressing, is not refused). PULL_PATIENT writes `referralId: null` and
   `homeRegion: null` on the admission, so `admissionBelongsToTeam` is false for every runtime admission —
   a community team never sees its referred patient admitted. Tripwire: statistics-claims-register.ts
   :1211-1260 pins that null. **Intake referrals to an ED carry `purpose: "bed"` and appear on no ED list.**
-- WF-11: REFER_TO_UNITS replaces the live list (dropped wards get no withdrawal entry), resets referredAt
+- Re-referral behaviour: REFER_TO_UNITS replaces the live list (dropped wards get no withdrawal entry), resets referredAt
   (rewrites ED "since referral" and ward "At …"), cap checked on the event list only; shortlist selection
   starts empty so any re-refer drops live wards.
-- WF-12: community can decline but not accept; after any ward/ED acceptance the community arm can never
+- Community referral answering: community can decline but not accept; after any ward/ED acceptance the community arm can never
   answer (guards :3995, :4303) and referrer withdrawal is refused (:4394); referral-match shows nothing for
   the community arm of a mixed referral.
-- WF-14: all exits close as did_not_proceed + free reason; no "admission not required" or "left before
+- ED exit dispositions: all exits close as did_not_proceed + free reason; no "admission not required" or "left before
   review" event; ED "For discharge" chip always reads none; REFER_TO_COMMUNITY_TEAM has free-text `reason`.
-- WF-23: handover "declined by all" ignores acceptance (ward-derivations.ts:1232-1235), feeding handover
+- Declined-by-all precedence: handover "declined by all" ignores acceptance (ward-derivations.ts:1232-1235), feeding handover
   and statistics; inbox "destinations declined" (:1057) same; test oracle re-implements the defect.
-- WF-15: WLQ-19 later vs Ruling 16 now (Ruling 16 recorded by another tool; owner words verbatim).
+- ED-to-community referral: WLQ-19 later vs Ruling 16 now (Ruling 16 recorded by another tool; owner words verbatim).
   RECEIVE_REFERRAL with source ed_medical + community arm already creates a referral the team sees.
   **Do not filter teams by catchment** (Ruling Q-2 "catchment is information, never a filter").
 - STILL-04: ACCEPT_REFERRAL creates no movement but tells the ward it "is now expected to receive the
@@ -52,7 +52,7 @@ ward's request (Q6) · R14+R15 closure kind + ED dispositions (Q7) · R16 bed-pu
 
 ## Owner questions
 
-Q1 WF-15 Ruling 16 now, routed through the intake form [rec] · Q2 involuntary patient referred to a
+Q1 Ruling 16 now, routed through the intake form [rec] · Q2 involuntary patient referred to a
 community team: show legal status, no block [rec] · Q3 community team may accept (follow-up only) [yes] ·
 Q4 referrer may withdraw only the community arm after a ward accepts [yes] · Q5 accepting a front-door
 referral creates no movement; ship R3 wording [yes] · Q6 re-referring adds; replacing is an explicit

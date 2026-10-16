@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { rowSentence, totalsSentence } from "@/components/ward-management/capacity/capacity-screen";
 import type { BedKindGap } from "@/components/ward-management/capacity/capacity-derivations";
 
-describe("WF-51 zero-gap copy in capacity-screen", () => {
+describe("audit rule zero-gap copy in capacity-screen", () => {
   it("does NOT contain 'nobody goes without today' in capacity-screen.tsx source", () => {
     const sourcePath = join(process.cwd(), "src/components/ward-management/capacity/capacity-screen.tsx");
     const source = readFileSync(sourcePath, "utf-8");

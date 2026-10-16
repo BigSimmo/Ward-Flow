@@ -226,6 +226,20 @@ describe("useModalFocus", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.getByRole("dialog", { name: "Sticky" })).toBeInTheDocument();
   });
+
+  it("in the capture phase, a layer that ignores Escape still keeps it from the screen behind", () => {
+    const screenShortcut = vi.fn();
+    window.addEventListener("keydown", screenShortcut);
+    try {
+      render(<Layer name="Locked" focusOnOpen="immediate" keyPhase="capture" closeOnEscape={false} />);
+      openLayer("Locked");
+      fireEvent.keyDown(screen.getByRole("button", { name: "Locked first" }), { key: "Escape" });
+      expect(screen.getByRole("dialog", { name: "Locked" })).toBeInTheDocument();
+      expect(screenShortcut).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("keydown", screenShortcut);
+    }
+  });
 });
 
 describe("hand-built Ward modals on the shared contract", () => {

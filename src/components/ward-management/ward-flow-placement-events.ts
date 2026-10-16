@@ -55,6 +55,7 @@ export function reducePlacementEvent(
     replaceMovement,
     replaceUnit,
     wardActingMovementRefusal,
+    withoutReferralBedHold,
   } = helpers;
   switch (event.type) {
     case "PULL_PATIENT": {
@@ -526,10 +527,11 @@ export function reducePlacementEvent(
           `RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
         );
       }
-      const withoutHeldBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutHeldBed = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       const released: Movement = {
         ...movement,
         admissionId: undefined,
+        heldBedNumber: undefined,
         ...(isRevokedExamHold || awaitingRelease
           ? {
               acceptedUnitId: undefined,
@@ -580,11 +582,12 @@ export function reducePlacementEvent(
           `RELEASE_DIVERTED_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
         );
       }
-      const withoutHeldBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutHeldBed = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       const diversionReason = movement.transport.diversion.reason;
       const released: Movement = {
         ...movement,
         admissionId: undefined,
+        heldBedNumber: undefined,
         transport: {
           ...movement.transport,
           cancelledAt: event.now,
@@ -698,7 +701,7 @@ export function reducePlacementEvent(
           `RELEASE_AND_REOPEN_SEARCH was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is at ${movement.acceptedUnitId}`,
         );
       }
-      const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPhantom = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       // A stepped-back movement keeps its bed and admission at `accepted_awaiting_bed` (same rule
       // as `releasePulledBedAndAdmission`).
       const heldBed = movement.stage === "pulled" || movement.admissionId !== undefined;
@@ -708,6 +711,7 @@ export function reducePlacementEvent(
         stage: "placement_requested",
         acceptedUnitId: undefined,
         acceptedAt: undefined,
+        heldBedNumber: undefined,
         admissionId: undefined,
         allocatedBed: undefined,
         pullExpiresAt: undefined,

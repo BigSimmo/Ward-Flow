@@ -1,7 +1,7 @@
 -- Undo migration 008. Run as the migration administrator in one transaction, for example
 -- psql "$WARD_SUPABASE_MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f infra/rollback-008-role-access.sql
 -- Removes every membership and break glass record, so only the WARD_COORDINATOR_USER_IDS accounts
--- can sign in afterwards. The backend accepts versions 5 to 8, so it keeps working for them.
+-- can sign in afterwards. The backend accepts versions 5 to 9, so it keeps working for them.
 -- Refuses unless the database is at exactly 8, and refuses once any audit row names a role other
 -- than coordinator or a place narrower than statewide, because dropping actor_scope would erase it
 -- and audit rows are never deleted or changed.

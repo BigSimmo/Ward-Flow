@@ -516,7 +516,7 @@
   white-space: nowrap;
 }
 
-.btn:hover:not(:disabled) {
+.btn:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--sunk);
 }
 
@@ -537,7 +537,7 @@
   border-color: var(--accent);
 }
 
-.btnPrimary:hover:not(:disabled) {
+.btnPrimary:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--accent-ink);
 }
 
@@ -547,7 +547,7 @@
   border-color: var(--good);
 }
 
-.btnGood:hover:not(:disabled) {
+.btnGood:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--good);
   opacity: 0.92;
 }
@@ -558,7 +558,7 @@
   border-color: var(--danger);
 }
 
-.btnDanger:hover:not(:disabled) {
+.btnDanger:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--danger);
   opacity: 0.92;
 }

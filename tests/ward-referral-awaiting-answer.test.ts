@@ -14,7 +14,7 @@ import type { Referral, ReferralAddressing } from "@/components/ward-management/
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * WF-13 — THE READERS THAT IGNORED `withdrawnAt`.
+ * THE READERS THAT IGNORED `withdrawnAt`.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that
  * moment and deliberately leaves `state` untouched (O-17.11). Every reader that decides "is this
@@ -91,7 +91,7 @@ describe("isAwaitingAnswer — one rule, at the destination level", () => {
   });
 });
 
-describe("WF-13 — a withdrawn referral leaves the ED hub's live lists", () => {
+describe("a withdrawn referral leaves the ED hub's live lists", () => {
   it("baseline: before withdrawal, the expect sits in edExpectsFor, edReferralsFor and referralQueueOrder", () => {
     const seed = seedWardFlowState();
     expect(
@@ -135,7 +135,7 @@ describe("WF-13 — a withdrawn referral leaves the ED hub's live lists", () => 
   });
 });
 
-describe("WF-13 — a sibling addressing that already answered is untouched", () => {
+describe("a sibling addressing that already answered is untouched", () => {
   /**
    * `RF-011` carries a ward destination and an `fsh-ed` destination, both seeded `queued`. Here the
    * ward destination is set `declined` BEFORE the withdrawal is recorded — mirroring the reducer's
@@ -190,7 +190,7 @@ describe("WF-13 — a sibling addressing that already answered is untouched", ()
   });
 });
 
-describe("WF-13 — an accepted control is unchanged", () => {
+describe("an accepted control is unchanged", () => {
   /**
    * `RF-012` is already `accepted` at `fsh-ed`, and nothing in this test withdraws it — an
    * unrelated referral (`RF-014`) is withdrawn instead. This proves the rewritten `edArrivedFor`

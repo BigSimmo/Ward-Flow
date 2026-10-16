@@ -51,6 +51,7 @@ export type ScopableWorkspace = {
   readonly admissions: readonly Admission[];
   readonly notices: readonly Notice[];
   readonly units: readonly Unit[];
+  readonly edDepartments?: readonly { readonly id: string; readonly siteCode: string }[];
 };
 
 /** A break glass grant: one patient, read only, until a time. */
@@ -113,6 +114,27 @@ function referralDestinationUnitIds(
     if (addressing.acceptedUnitId) ids.push(addressing.acceptedUnitId);
     return ids;
   });
+}
+
+function referralSentByWard(referral: Referral, unitIn: (unitId: string) => boolean): boolean {
+  return referral.source === "psychiatric_ward" && referral.originUnitId !== undefined && unitIn(referral.originUnitId);
+}
+
+function referralIsOpen(referral: Referral): boolean {
+  return referral.destinations.some(
+    (addressing) => addressing.state === "queued" && addressing.withdrawnAt === undefined,
+  );
+}
+
+function referralClosedAt(referral: Referral): Instant {
+  return Math.max(
+    referral.raisedAt,
+    ...referral.destinations.map((addressing) => addressing.decidedAt ?? addressing.withdrawnAt ?? referral.raisedAt),
+  );
+}
+
+function withinHandoffWindow(closedAt: Instant, now: Instant, window: number): boolean {
+  return now - closedAt <= window;
 }
 
 /** Keep only the destination lines a predicate allows. A referral left with none is not this role's. */
@@ -332,6 +354,19 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   const scope = access.scope;
   const unitIn = (unitId: string) => unitInScope(scope, unitId, places);
   const edIn = (edId: string) => edInScope(scope, edId, places);
+  const siteCodesInScope = new Set<string>();
+  for (const unit of workspace.units) if (unitIn(unit.id)) siteCodesInScope.add(unit.siteCode);
+  for (const ed of workspace.edDepartments ?? []) if (edIn(ed.id)) siteCodesInScope.add(ed.siteCode);
+  if (scope.kind === "site") siteCodesInScope.add(scope.siteCode);
+  if (scope.kind === "ed") {
+    const edSite = places.edSiteCode(scope.edId);
+    if (edSite) siteCodesInScope.add(edSite);
+  }
+  // A service desk also owns sites with only an ED (no ward to read the service from), so the
+  // registry names their service (review on PR #365).
+  const siteIn = (siteCode: string | undefined) =>
+    siteCode !== undefined &&
+    (siteCodesInScope.has(siteCode) || (scope.kind === "service" && places.siteService?.(siteCode) === scope.service));
   const edWindow = CLINICAL_VALUES.edHandoffWindow.value * MINUTES_PER_HOUR;
   const wardWindow = CLINICAL_VALUES.wardHandoffWindow.value * MINUTES_PER_DAY;
 
@@ -347,15 +382,24 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     case "executive": {
       // A service coordinator or executive: everything that touches the service. An item with no
       // resolvable place is the coordinator's only when statewide, which was handled above.
-      movements = workspace.movements.filter(
-        (movement) => edIn(movement.originEdId) || movementUnitIds(movement).some(unitIn),
-      );
       admissions = workspace.admissions.filter((admission) => unitIn(admission.unitId));
+      const ownAdmissionIds = new Set(admissions.map((admission) => admission.id));
       referrals = workspace.referrals.filter(
         (referral) =>
           referral.destinations.some(
             (addressing) => addressing.destination.kind === "emergency_department" && edIn(addressing.destination.edId),
-          ) || referralDestinationUnitIds(referral).some(unitIn),
+          ) ||
+          referralDestinationUnitIds(referral).some(unitIn) ||
+          referralSentByWard(referral, unitIn) ||
+          (referral.source === "ed_medical" && siteIn(referral.originSiteCode)),
+      );
+      const ownReferralIds = new Set(referrals.map((referral) => referral.id));
+      movements = workspace.movements.filter(
+        (movement) =>
+          edIn(movement.originEdId) ||
+          movementUnitIds(movement).some(unitIn) ||
+          (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+          (movement.referralId !== undefined && ownReferralIds.has(movement.referralId)),
       );
       if (access.role === "executive") {
         // Statewide executives count the whole network; names never reach them.
@@ -375,12 +419,37 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       break;
     }
     case "bed_manager": {
-      movements = workspace.movements
-        .filter((movement) => edIn(movement.originEdId) || movementUnitIds(movement).some(unitIn))
-        .map((movement) => ownReferredUnits(movement, unitIn));
       admissions = workspace.admissions.filter((admission) => unitIn(admission.unitId));
+      const ownAdmissionIds = new Set(admissions.map((admission) => admission.id));
+      const sentReferralIds = new Set(
+        workspace.referrals
+          .filter(
+            (referral) =>
+              referralSentByWard(referral, unitIn) ||
+              (referral.source === "ed_medical" && siteIn(referral.originSiteCode)),
+          )
+          .map((referral) => referral.id),
+      );
+      movements = workspace.movements
+        .filter(
+          (movement) =>
+            edIn(movement.originEdId) ||
+            movementUnitIds(movement).some(unitIn) ||
+            (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+            (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
+        )
+        .map((movement) => ownReferredUnits(movement, unitIn));
       const referralIds = new Set(movements.map((movement) => movement.referralId).filter(Boolean));
       referrals = workspace.referrals.flatMap((referral) => {
+        if (
+          (referralSentByWard(referral, unitIn) ||
+            (referral.source === "ed_medical" && siteIn(referral.originSiteCode))) &&
+          (referralIds.has(referral.id) ||
+            referralIsOpen(referral) ||
+            withinHandoffWindow(referralClosedAt(referral), now, wardWindow))
+        ) {
+          return [referral];
+        }
         const linked = referralIds.has(referral.id) || referralDestinationUnitIds(referral).some(unitIn);
         if (!linked) return [];
         // Own site's lines only (plan section 5).
@@ -396,15 +465,23 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       break;
     }
     case "ward": {
+      admissions = workspace.admissions.filter(
+        (admission) => unitIn(admission.unitId) && (admission.leftAt === null || now - admission.leftAt <= wardWindow),
+      );
+      const ownAdmissionIds = new Set(admissions.map((admission) => admission.id));
+      const sentReferralIds = new Set(
+        workspace.referrals.filter((referral) => referralSentByWard(referral, unitIn)).map((referral) => referral.id),
+      );
       movements = workspace.movements.filter((movement) => {
-        if (!movementUnitIds(movement).some(unitIn)) return false;
+        const touchesWard =
+          movementUnitIds(movement).some(unitIn) ||
+          (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+          (movement.referralId !== undefined && sentReferralIds.has(movement.referralId));
+        if (!touchesWard) return false;
         const ended = movementEndedAt(movement);
         return ended === undefined || now - ended <= wardWindow;
       });
       movements = movements.map((movement) => ownReferredUnits(movement, unitIn));
-      admissions = workspace.admissions.filter(
-        (admission) => unitIn(admission.unitId) && (admission.leftAt === null || now - admission.leftAt <= wardWindow),
-      );
       const referralIds = new Set(
         [
           ...movements.map((movement) => movement.referralId),
@@ -412,6 +489,14 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         ].filter((id): id is string => typeof id === "string"),
       );
       referrals = workspace.referrals.flatMap((referral) => {
+        if (
+          referralSentByWard(referral, unitIn) &&
+          (referralIds.has(referral.id) ||
+            referralIsOpen(referral) ||
+            withinHandoffWindow(referralClosedAt(referral), now, wardWindow))
+        ) {
+          return [referral];
+        }
         const current = (addressing: Addressing) => lineIsCurrent(referral, addressing, now, wardWindow);
         if (!referralIds.has(referral.id) && !referralDestinationUnitIds(referral, current).some(unitIn)) return [];
         // Only this ward's own lines: a parallel referral never tells it which other wards were asked
@@ -435,10 +520,20 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         return ended === undefined || now - ended <= edWindow;
       });
       const referralIds = new Set(movements.map((movement) => movement.referralId).filter(Boolean));
+      const ownEdSiteCodes = new Set<string>();
+      for (const ed of workspace.edDepartments ?? []) if (edIn(ed.id)) ownEdSiteCodes.add(ed.siteCode);
+      if (scope.kind === "ed") {
+        const edSite = places.edSiteCode(scope.edId);
+        if (edSite) ownEdSiteCodes.add(edSite);
+      }
       // An ED sees its own referrals whole: it sent them, so it knows where they went.
       referrals = workspace.referrals.filter(
         (referral) =>
           referralIds.has(referral.id) ||
+          (referral.source === "ed_medical" &&
+            referral.originSiteCode !== undefined &&
+            ownEdSiteCodes.has(referral.originSiteCode) &&
+            (referralIsOpen(referral) || withinHandoffWindow(referralClosedAt(referral), now, edWindow))) ||
           referral.destinations.some(
             (addressing) =>
               addressing.destination.kind === "emergency_department" &&
@@ -452,6 +547,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       const teamKey = communityTeamKey(scope.kind === "team" ? scope.teamName : undefined);
       const ownTeam = (name: string | undefined) => teamKey !== "" && communityTeamKey(name) === teamKey;
       referrals = workspace.referrals.flatMap((referral) => {
+        // Only a community referral is the team's own: another source's typed team name grants nothing.
+        if (referral.source === "community" && ownTeam(referral.sendingTeamName)) return [referral];
         const trimmed = trimReferral(
           referral,
           (addressing) => addressing.destination.kind === "community_team" && ownTeam(addressing.destination.teamName),
@@ -459,6 +556,18 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         return trimmed ? [trimmed] : [];
       });
       const referralIds = new Set(referrals.map((referral) => referral.id));
+      // Referrals asked of this team. A referral the team only sent shows its stay as ward and
+      // dates only, never the receiving ward's record (review on PR #365).
+      const askedOfTeam = new Set(
+        referrals
+          .filter((referral) =>
+            referral.destinations.some(
+              (addressing) =>
+                addressing.destination.kind === "community_team" && ownTeam(addressing.destination.teamName),
+            ),
+          )
+          .map((referral) => referral.id),
+      );
       movements = workspace.movements.filter(
         (movement) => movement.referralId !== undefined && referralIds.has(movement.referralId),
       );
@@ -467,9 +576,23 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       const catchment = new Set(
         workspace.patients.filter((patient) => ownTeam(patient.catchmentCommunityTeam)).map((patient) => patient.id),
       );
+      const askedMovementIds = new Set(
+        movements
+          .filter((movement) => movement.referralId !== undefined && askedOfTeam.has(movement.referralId))
+          .map((movement) => movement.id),
+      );
+      const movementIds = new Set(movements.map((movement) => movement.id));
       admissions = workspace.admissions.flatMap((admission) => {
-        if (admission.referralId !== null && referralIds.has(admission.referralId)) return [admission];
-        if (admission.patientId !== null && catchment.has(admission.patientId)) {
+        if (
+          (admission.referralId !== null && askedOfTeam.has(admission.referralId)) ||
+          (admission.movementId !== null && askedMovementIds.has(admission.movementId))
+        )
+          return [admission];
+        if (
+          (admission.referralId !== null && referralIds.has(admission.referralId)) ||
+          (admission.movementId !== null && movementIds.has(admission.movementId)) ||
+          (admission.patientId !== null && catchment.has(admission.patientId))
+        ) {
           datesOnlyAdmissionIds.add(admission.id);
           return [datesOnlyAdmission(admission)];
         }
@@ -496,10 +619,27 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 
   // Patients the desk sees in its own right, before any grant.
   const ownPatientIds = new Set<string>();
-  for (const item of [...movements, ...admissions, ...referrals]) if (item.patientId) ownPatientIds.add(item.patientId);
+  for (const item of [
+    ...movements,
+    ...admissions.filter((admission) => !datesOnlyAdmissionIds.has(admission.id)),
+    ...referrals,
+  ])
+    if (item.patientId) ownPatientIds.add(item.patientId);
 
   // Break glass: one patient's own records, read only, for the granted time.
   if (grantIds.size > 0) {
+    const fullAdmissionsById = new Map(workspace.admissions.map((admission) => [admission.id, admission]));
+    admissions = admissions.map((admission) => {
+      if (
+        datesOnlyAdmissionIds.has(admission.id) &&
+        admission.patientId !== null &&
+        grantIds.has(admission.patientId)
+      ) {
+        datesOnlyAdmissionIds.delete(admission.id);
+        return fullAdmissionsById.get(admission.id) ?? admission;
+      }
+      return admission;
+    });
     const have = {
       movements: new Set(movements.map((movement) => movement.id)),
       admissions: new Set(admissions.map((admission) => admission.id)),

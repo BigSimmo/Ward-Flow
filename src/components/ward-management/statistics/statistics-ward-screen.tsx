@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   BedDouble,
@@ -116,12 +116,87 @@ export function StatisticsWardScreen({
   const isPhone = useIsPhone();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
-  const unit = units.find((candidate) => candidate.id === unitId);
+  const unit = useMemo(() => units.find((candidate) => candidate.id === unitId), [units, unitId]);
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
 
-  if (!unit) {
+  const site = useMemo(() => (unit ? siteByCode(unit.siteCode) : undefined), [unit]);
+  const statistics = useMemo(() => (unit ? wardStatistics(unit.id, admissions, now) : null), [unit, admissions, now]);
+  const capacity = useMemo(() => (unit ? unitCapacity(unit, bedReleases) : null), [unit, bedReleases]);
+  const pendingPreparation = useMemo(
+    () => (unit ? bedsPendingPreparation(unit.id, bedReleases) : 0),
+    [unit, bedReleases],
+  );
+  const openBeds = useMemo(() => (unit ? openBedsNow(unit, bedReleases) : 0), [unit, bedReleases]);
+  const states = useMemo(
+    () => (unit ? bedStates(unit, admissions, bedReleases, leaveBeds) : null),
+    [unit, admissions, bedReleases, leaveBeds],
+  );
+  const bedMap = useMemo(
+    () => (unit ? bedMapCells(unit, admissions, bedReleases, leaveBeds, now) : null),
+    [unit, admissions, bedReleases, leaveBeds, now],
+  );
+  const wardOccupancy = useMemo(
+    () => (unit ? occupiedBeds([unit], admissions, bedReleases, leaveBeds) : null),
+    [unit, admissions, bedReleases, leaveBeds],
+  );
+  const occupancyPct = useMemo(() => (wardOccupancy ? occupancyPercent(wardOccupancy) : 0), [wardOccupancy]);
+  const referrals = useMemo(() => (unit ? wardReferralTally(movements, unit.id) : null), [movements, unit]);
+  const readyResult = useMemo(() => {
+    if (!unit) return { ready: null as ReadyNotYetGone | null, blockedByReasonError: null as string | null };
+    try {
+      return { ready: readyNotYetGone(admissions, unit.id), blockedByReasonError: null };
+    } catch (error) {
+      return {
+        ready: null,
+        blockedByReasonError: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }, [admissions, unit]);
+  const dischargeDates = useMemo(
+    () =>
+      unit
+        ? dischargeDateCoverage(
+            admissions.filter((admission) => admission.state !== "pulled"),
+            unit.id,
+          )
+        : null,
+    [admissions, unit],
+  );
+  const current = useMemo(
+    () =>
+      unit ? admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed") : [],
+    [admissions, unit],
+  );
+  const today = dayOf(now);
+  const dueByDay = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, offset) => ({
+        offset,
+        count: current.filter(
+          (admission) =>
+            admission.state !== "pulled" &&
+            admission.expectedDischargeAt !== null &&
+            admission.expectedDischargeAt >= now &&
+            dayOf(admission.expectedDischargeAt) === today + offset,
+        ).length,
+      })),
+    [current, now, today],
+  );
+  const dueThisWeek = useMemo(() => dueByDay.reduce((sum, day) => sum + day.count, 0), [dueByDay]);
+  const oldestPulled = useMemo(
+    () =>
+      current
+        .filter((admission) => admission.state === "pulled" && admission.pulledAt !== null && admission.pulledAt <= now)
+        .reduce<number | null>((oldest, admission) => {
+          const waited = now - (admission.pulledAt ?? now);
+          return oldest === null || waited > oldest ? waited : oldest;
+        }, null),
+    [current, now],
+  );
+
+  if (!unit || !statistics || !capacity || !states || !bedMap || !wardOccupancy || !referrals || !dischargeDates) {
     return (
       <StatisticsPage
         section={section}
@@ -152,53 +227,8 @@ export function StatisticsWardScreen({
     );
   }
 
-  const site = siteByCode(unit.siteCode);
-  const statistics = wardStatistics(unit.id, admissions, now);
-  const capacity = unitCapacity(unit, bedReleases);
-  const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-  const openBeds = openBedsNow(unit, bedReleases);
-  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-  const bedMap = bedMapCells(unit, admissions, bedReleases, leaveBeds, now);
-  const wardOccupancy = occupiedBeds([unit], admissions, bedReleases, leaveBeds);
-  // L1: the percentage is the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`).
-  const occupancyPct = occupancyPercent(wardOccupancy);
-  const referrals = wardReferralTally(movements, unit.id);
-
-  let ready: ReadyNotYetGone | null = null;
-  let blockedByReasonError: string | null = null;
-  try {
-    ready = readyNotYetGone(admissions, unit.id);
-  } catch (error) {
-    blockedByReasonError = error instanceof Error ? error.message : String(error);
-  }
+  const { ready, blockedByReasonError } = readyResult;
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
-
-  // Someone a bed has been pulled for is not on the ward yet, so is not one of its patients.
-  const dischargeDates = dischargeDateCoverage(
-    admissions.filter((admission) => admission.state !== "pulled"),
-    unit.id,
-  );
-
-  const current = admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed");
-  const today = dayOf(now);
-  const dueByDay = Array.from({ length: 7 }, (_, offset) => ({
-    offset,
-    count: current.filter(
-      (admission) =>
-        admission.state !== "pulled" &&
-        admission.expectedDischargeAt !== null &&
-        admission.expectedDischargeAt >= now &&
-        dayOf(admission.expectedDischargeAt) === today + offset,
-    ).length,
-  }));
-  const dueThisWeek = dueByDay.reduce((sum, day) => sum + day.count, 0);
-
-  const oldestPulled = current
-    .filter((admission) => admission.state === "pulled" && admission.pulledAt !== null && admission.pulledAt <= now)
-    .reduce<number | null>((oldest, admission) => {
-      const waited = now - (admission.pulledAt ?? now);
-      return oldest === null || waited > oldest ? waited : oldest;
-    }, null);
 
   const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult secure" : "Adult open") : unit.cohort;
   const averageStay = statistics.averageLengthOfStayDays;

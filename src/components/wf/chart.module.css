@@ -334,3 +334,18 @@
     border-color: CanvasText;
   }
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). Compounded so a caller's className or a
+   containing screen's rule cannot reintroduce a figure margin the inline style used to remove. */
+.chart.chartFlush {
+  margin: 0;
+}
+
+.axisRow.axisRowTop {
+  grid-row: 1;
+}
+
+/* Each bar row's wrapper drops out of layout so its cells sit straight in the bar grid. */
+.barGrid > .rowContents {
+  display: contents;
+}

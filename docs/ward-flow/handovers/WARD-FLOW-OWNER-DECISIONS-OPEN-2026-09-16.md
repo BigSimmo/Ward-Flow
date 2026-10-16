@@ -12,7 +12,7 @@ not rulings. Supersedes the quick list in `WARD-FLOW-PROGRESS-2026-09-16-NIGHT.m
    3D 72h; vs 23–24 Aug "just start a clock on arrival / avoid hard rules"; vs D5 no time limits).
    CONSULT. Options: (a) Ruling 1 limits as warnings that never block; (b) simple count-up from ED
    arrival; (c) Ruling 1 limits shown only after legal confirmation. **Rec (a), no section numbers,
-   figures confirmed before anyone outside sees them.** Blocks WF-31, ED clocks, legal-forms drawing,
+   figures confirmed before anyone outside sees them.** Blocks legal-forms tracking, ED clocks, legal-forms drawing,
    Settings Form 1A row. Sources: owner-decisions-2026-09-16-rulings.md:14,35-49;
    owner-decisions-2026-09-15.md:55-59; plans/2026-09-16-drawings-new-look-with-rules.md:49,59;
    ward-model.ts:257-262; PROJECT-ISSUES.md:207-218 (wrongly filed as answered).
@@ -153,7 +153,7 @@ not rulings. Supersedes the quick list in `WARD-FLOW-PROGRESS-2026-09-16-NIGHT.m
 32. Aboriginal cultural safety review; medical device / TGA status; clinical safety officer and hazard
     log (the AI cited NHS DCB0129/0160 — use Australian advice); statutory authority on legal-status
     changes (WLQ-28); real catchment data (WLQ-29, CM-4); post-incident review scope (R-B-17); regional
-    multi-leg transport (WF-45). All CONSULT.
+    multi-leg transport. All CONSULT.
     ✅ **MOSTLY ANSWERED — owner-answers-2026-09-17.md item 63** parks the outside reviews (cultural
     safety, TGA, clinical safety officer, privacy, WA legal advice, real catchment data, post-incident
     review scope) and logs them as high priority, each due before real patient data or a real

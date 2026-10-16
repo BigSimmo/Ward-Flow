@@ -64,7 +64,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
           {isDemoMode ? (
             <>
               <div className={styles.filterToolbar}>
-                <div className={styles.filterChipsGroup} style={{ marginBottom: "0.75rem" }}>
+                <div className={`${styles.filterChipsGroup} ${styles.chipsSpaced}`}>
                   <button
                     type="button"
                     className={styles.chipFilterBtn}
@@ -110,16 +110,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                     </span>
                   </button>
                 </div>
-                <p
-                  id="inpatientSummaryNote"
-                  className={styles.count}
-                  style={{
-                    fontSize: "var(--t-0)",
-                    color: "var(--muted)",
-                    fontFamily: "var(--mono)",
-                    margin: "0.25rem 0 0.75rem",
-                  }}
-                >
+                <p id="inpatientSummaryNote" className={`${styles.count} ${styles.summaryNote}`}>
                   14 Admitted Across 4 Hospital Sites
                 </p>
               </div>
@@ -156,9 +147,9 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                         setSelectedPatientId(inp.patientId);
                         setActiveDrawer("pxDrawer");
                       }}
-                      style={{ cursor: "pointer" }}
+                      className={styles.clickable}
                     >
-                      <td style={{ whiteSpace: "nowrap" }}>
+                      <td className={styles.cellNowrap}>
                         <b className={styles.patientIdWrap}>{demoUmrnOf(inp.patientId)}</b> ({inp.patientDetails})
                       </td>
                       <td>
@@ -267,7 +258,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                       const stayDays = daysInBed(admission, now);
                       return (
                         <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
-                          <td style={{ whiteSpace: "nowrap" }}>
+                          <td className={styles.cellNowrap}>
                             <b className={styles.patientIdWrap}>{identityOf(admission)}</b>
                             {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
                           </td>

@@ -56,7 +56,7 @@ so nothing here says whether a screen matches its drawing.
   `ward-network-stage-filter` "expected 70 to be 53"). Mostly mechanical, but some vacuity checks
   ("this fixture must carry more than one…") need a person to decide.
 - **Engine behaviour changed against a pinned ruling** (about 25). Examples: RELEASE_PULL no longer
-  clears linked transport (`ward-cancel-transport-*`, WF-37 / Ruling 2); DECLINE now raises
+  clears linked transport (`ward-cancel-transport-*`, Ruling 2); DECLINE now raises
   "waitlisted" instead of "declined" (`ward-notices`); an ED role can raise a `psychiatric_ward`
   referral (`ward-referral-ed-medical-source`, R9); Ruling 16 test fails
   (`ward-owner-decisions-2026-09-16`); `Referral.originUnitId` has no producer. Each needs a decision:

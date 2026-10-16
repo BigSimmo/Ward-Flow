@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
+import {
+  BED_RELEASE_BLOCKERS,
+  DISCHARGE_DELAY_CLEAR_REASONS,
+} from "../src/components/ward-management/ward-change-reasons";
 import { EVENT_ROLE } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import type { WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
@@ -66,6 +69,37 @@ describe("a stay-level discharge blocker, recorded before any bed release exists
     const back = cleared(record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]));
     expect(find(back, person.id).blockReason).toBeNull();
     expect(back.rejections.length).toBe(state.rejections.length);
+  });
+
+  it("keeps the clearance on the stay when no bed release exists to hold it", () => {
+    const state = seedWardFlowState();
+    const person = state.admissions.find(
+      (a) => a.state === "occupied" && a.blockReason === null && !state.bedReleases.some((r) => r.admissionId === a.id),
+    );
+    if (!person) throw new Error("the seed has nobody in a bed without a bed release");
+    const blocked = record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]);
+    expect(blocked.bedReleases.some((r) => r.admissionId === person.id)).toBe(false);
+    const clear = (s: WardFlowState, reason?: (typeof DISCHARGE_DELAY_CLEAR_REASONS)[number]) =>
+      wardFlowReducer(s, {
+        type: "CLEAR_STAY_DISCHARGE_BLOCKER",
+        role: "coordinator",
+        now: NOW + 5,
+        admissionId: person.id,
+        actingUnitId: person.unitId,
+        ...(reason === undefined ? {} : { reason }),
+      });
+
+    const withReason = clear(blocked, DISCHARGE_DELAY_CLEAR_REASONS[0]);
+    expect(find(withReason, person.id).stayBlockClearances).toEqual([
+      { at: NOW + 5, by: "coordinator", reason: DISCHARGE_DELAY_CLEAR_REASONS[0], blocker: BED_RELEASE_BLOCKERS[0] },
+    ]);
+    expect(withReason.bedReleases).toEqual(blocked.bedReleases);
+
+    // A second clearance appends, and an omitted reason stays omitted rather than defaulted.
+    const again = clear(record(withReason, person.id, person.unitId, BED_RELEASE_BLOCKERS[1]));
+    const history = find(again, person.id).stayBlockClearances ?? [];
+    expect(history).toHaveLength(2);
+    expect(history[1]).toEqual({ at: NOW + 5, by: "coordinator", blocker: BED_RELEASE_BLOCKERS[1] });
   });
 
   it("refuses a reason that is not on the chosen list, so typed text can never be stored", () => {

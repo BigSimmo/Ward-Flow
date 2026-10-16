@@ -586,14 +586,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
      */
     "ward-standing-strip.module.css",
     "ward-tasks-drawer.module.css",
-    /*
-     * ⚠️ **`.bar` — the single header row, added when the owner asked for the figures toggle to sit
-     * in the top of the header rather than in a bar of its own.** Same category as the four above
-     * and as `ward-shell`/`ward-sidebar`: its first rule is a chrome component that page content
-     * scrolls UNDER, so a transparent one renders text through text. Not a page root; the file
-     * contains no `.screen` or `.modeShell` equivalent.
-     */
-    "ward-chrome-header.module.css",
     // ⚠️ ADDED — Task 2, fourth-edition statistics language port (wise-singing-thunder). Same
     // shape again: this file's first declared rule is `.band` (the figure-band primitive), which
     // legitimately paints `--ward-canvas` the same way `.panel` does two rows above it. The file

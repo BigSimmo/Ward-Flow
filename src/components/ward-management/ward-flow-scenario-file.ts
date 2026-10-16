@@ -1,5 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
@@ -73,6 +74,14 @@ export function buildScenarioFile(
       reason:
         "This scenario includes a carer, PSP or MHAS notification record, which cannot be saved to a file yet. Nothing was saved.",
     };
+  // Scan exactly what will be written: refusals are dropped from the file below, so a refusal that
+  // quoted a caller-supplied identifier must not block saving an otherwise safe scenario.
+  const syntheticCheck = checkSyntheticPayload({ ...state, rejections: [] });
+  if (!syntheticCheck.safe)
+    return {
+      ok: false,
+      reason: "This scenario contains potential non-synthetic data. Nothing was saved.",
+    };
   const file: ScenarioFile = {
     format: WARD_FLOW_SCENARIO_FILE_FORMAT,
     version: WARD_FLOW_SCENARIO_FILE_VERSION,
@@ -110,6 +119,9 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
   const file = parsed as Record<string, unknown>;
   if (file.format !== WARD_FLOW_SCENARIO_FILE_FORMAT) return { ok: false, reason: NOT_A_SCENARIO };
   if (file.version !== WARD_FLOW_SCENARIO_FILE_VERSION) return { ok: false, reason: WRONG_VERSION };
+  const syntheticCheck = checkSyntheticPayload(parsed);
+  if (!syntheticCheck.safe) return { ok: false, reason: DAMAGED };
+
   // The same v6 -> v7 migration as a browser restore, and only into the version this build writes.
   const stored =
     file.stateVersion === stateVersion

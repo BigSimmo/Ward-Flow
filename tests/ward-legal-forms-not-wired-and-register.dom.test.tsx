@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
+import { ExtendSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -35,25 +37,45 @@ function renderScreen() {
   );
 }
 
-describe("Legal forms — unwired confirm controls (F2.1)", () => {
-  it("both confirm buttons are aria-disabled, carry the exact D4 wording, and dispatch nothing", () => {
+describe("Legal forms — wired confirm controls (F2.1)", () => {
+  it("gates both confirm buttons until required fields are provided, then dispatches and closes", () => {
     renderScreen();
 
     fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
     const registerConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
     expect(registerConfirm).toHaveAttribute("aria-disabled", "true");
     expect(registerConfirm).not.toBeDisabled();
-    expect(registerConfirm).toHaveAttribute("title", "Not wired in this prototype.");
+    expect(registerConfirm).toHaveAttribute("title", "Choose a movement first.");
     fireEvent.click(registerConfirm);
     expect(screen.queryByText("Statutory Form registered successfully in registry.")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
+
+    const movementSelect = document.getElementById("legal-forms-new-movement") as HTMLSelectElement;
+    const firstOption = Array.from(movementSelect.options).find((opt) => opt.value !== "");
+    expect(firstOption).toBeDefined();
+    fireEvent.change(movementSelect, { target: { value: firstOption!.value } });
+    // A blank, malformed or future time is refused rather than replaced with the save moment.
+    const timeInput = document.getElementById("legal-forms-new-time") as HTMLInputElement;
+    const timeBlockedConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
+    expect(timeBlockedConfirm).toHaveAttribute("aria-disabled", "true");
+    expect(timeBlockedConfirm).toHaveAttribute(
+      "title",
+      "Enter the time written on the form as HH:MM, no later than now.",
+    );
+    for (const bad of ["25:00", "0930", "23:59"]) {
+      fireEvent.change(timeInput, { target: { value: bad } });
+      expect(screen.getByTestId("ward-legal-forms-register-confirm")).toHaveAttribute("aria-disabled", "true");
+    }
+    fireEvent.change(timeInput, { target: { value: "00:00" } });
+    const enabledRegisterConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
+    expect(enabledRegisterConfirm).not.toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(enabledRegisterConfirm);
+    expect(screen.queryByTestId("ward-legal-record")).not.toBeInTheDocument();
 
     // Trigger the renew modal via a breached order if one exists on this fixture; otherwise open
     // it is unreachable and this half of the test would prove nothing — fail loudly instead.
     const rows = legalFormGroupRows(wardMovements, NOW, "with-deadline");
     const breached = rows.some((m) => m.legalForm?.dueAt !== undefined && m.legalForm.dueAt <= NOW);
     if (breached) {
-      fireEvent.click(screen.getByRole("button", { name: "Close" }));
       // Forms (9 Oct 2026): extension is offered in the selected patient's panel.
       const target = rows.find((m) => m.legalForm?.dueAt !== undefined && m.legalForm.dueAt <= NOW)!;
       const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
@@ -62,10 +84,33 @@ describe("Legal forms — unwired confirm controls (F2.1)", () => {
       const renewConfirm = screen.getByTestId("ward-legal-forms-renew-confirm");
       expect(renewConfirm).toHaveAttribute("aria-disabled", "true");
       expect(renewConfirm).not.toBeDisabled();
-      expect(renewConfirm).toHaveAttribute("title", "Not wired in this prototype.");
+      expect(renewConfirm).toHaveAttribute("title", "Enter the new expiry time written on the form.");
       fireEvent.click(renewConfirm);
       expect(screen.queryByText(/re-authorised under MHA 2014/i)).not.toBeInTheDocument();
+
+      const expiryInput = screen.getByTestId("ward-legal-forms-renew-expiry");
+      fireEvent.change(expiryInput, { target: { value: "23:30" } });
+      const enabledRenewConfirm = screen.getByTestId("ward-legal-forms-renew-confirm");
+      expect(enabledRenewConfirm).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(enabledRenewConfirm);
+      expect(screen.queryByTestId("ward-legal-extend")).not.toBeInTheDocument();
     }
+  });
+});
+
+describe("Legal forms — extension shows the day it will record", () => {
+  it("names the resolved day before Confirm, since the field takes a time only", () => {
+    const base = wardMovements.find((m) => m.legalForm !== undefined)!;
+    const dueAt = NOW + 60;
+    const target = { ...base, legalForm: { ...base.legalForm!, dueAt } };
+    render(<ExtendSheet target={target} label="Synthetic movement" now={NOW} onClose={() => {}} />);
+    expect(screen.queryByTestId("ward-legal-forms-renew-resolved")).not.toBeInTheDocument();
+    // A time earlier in the day than the current expiry rolls to the next day, and the sheet says so.
+    const earlier = formatInstant(dueAt - 30);
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: earlier } });
+    expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent(
+      `Records the new expiry as ${earlier} tomorrow.`,
+    );
   });
 });
 

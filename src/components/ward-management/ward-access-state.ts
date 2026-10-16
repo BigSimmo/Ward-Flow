@@ -17,7 +17,9 @@ import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/a
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
+import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
+import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
   bookingPersonShown,
   scopeBroadcastAlerts,
@@ -98,6 +100,38 @@ function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boo
   return scope.kind === "team" && (teamId === scope.teamName || teamId === places.teamSlug(scope.teamName));
 }
 
+/**
+ * An admission or transfer notification belongs to the ward the person arrived on. A sending ward
+ * still sees its outbound move, but never the receiving ward's notes about it (review on PR #365).
+ */
+function notifiesOnArrival(
+  context: Pick<Context, "coordinator" | "unitIn">,
+  movement: { acceptedUnitId?: string | null },
+): boolean {
+  // A service coordinator sees notes only from wards in its own service, as a ward desk does.
+  return typeof movement.acceptedUnitId === "string" ? context.unitIn(movement.acceptedUnitId) : context.coordinator;
+}
+
+/**
+ * The support notifications one desk sees: a discharge note only for a stay it is sent in full, an
+ * arrival note only from a ward it covers. The scoped state and the browser shell share this rule.
+ */
+export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string }>(
+  records: readonly R[] | undefined,
+  desk: Pick<Context, "coordinator" | "unitIn"> & {
+    readonly role: WardAccess["role"];
+    readonly movements: readonly { id: string; acceptedUnitId?: string | null }[];
+    readonly wholeStay: (admissionId: string) => boolean;
+  },
+): R[] {
+  if (!desk.coordinator && desk.role !== "ward") return [];
+  return (records ?? []).filter((record) =>
+    record.occasion === "discharge"
+      ? desk.wholeStay(record.subjectId)
+      : desk.movements.some((movement) => movement.id === record.subjectId && notifiesOnArrival(desk, movement)),
+  );
+}
+
 /** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
 function wholeStay(context: Context, admissionId: string): boolean {
   return context.admissionIds.has(admissionId) && !context.scoped.datesOnlyAdmissionIds.has(admissionId);
@@ -175,9 +209,13 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   plannedAdmissions: (context) =>
     context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
   supportNotifications: (context) =>
-    context.coordinator
-      ? (context.state.supportNotifications ?? []).filter((record) => context.inboxSubjectIds.has(record.subjectId))
-      : [],
+    supportNotificationsForDesk(context.state.supportNotifications, {
+      coordinator: context.coordinator,
+      unitIn: context.unitIn,
+      role: context.access.role,
+      movements: context.scoped.movements,
+      wholeStay: (admissionId) => wholeStay(context, admissionId),
+    }),
   // Whole before and after records: the statewide desk's only.
   undoRecords: () => [],
 };
@@ -196,8 +234,19 @@ export function scopeWardFlowState(
   state: WardFlowState,
   access: WardAccess,
   options: StateScopeOptions,
-): { state: WardFlowState; breakGlassPatientIds: ReadonlySet<string> } {
-  if (accessIsWholeNetwork(access)) return { state, breakGlassPatientIds: new Set() };
+): {
+  state: WardFlowState;
+  breakGlassPatientIds: ReadonlySet<string>;
+  scoped: ReturnType<typeof scopeWorkspace<WardFlowState>>;
+} {
+  if (accessIsWholeNetwork(access)) {
+    const emptyGrants = new Set<string>();
+    return {
+      state,
+      breakGlassPatientIds: emptyGrants,
+      scoped: { ...state, breakGlassPatientIds: emptyGrants, datesOnlyAdmissionIds: emptyGrants },
+    };
+  }
   const { places } = options;
   const scoped = scopeWorkspace(state, access, { now: options.now, places, grants: options.grants });
   const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
@@ -231,7 +280,39 @@ export function scopeWardFlowState(
   // An optional field the saved state never had stays absent, as the stored-state check expects.
   if (state.supportNotifications === undefined) delete next.supportNotifications;
   if (state.undoRecords === undefined) delete next.undoRecords;
-  return { state: closeReferences(next as WardFlowState), breakGlassPatientIds: scoped.breakGlassPatientIds };
+  return {
+    state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state),
+    breakGlassPatientIds: scoped.breakGlassPatientIds,
+    scoped,
+  };
+}
+
+/**
+ * A ward over its beds lists each arrival that took it over (`arrivalCapacityConflicts`), and the
+ * saved-state check allows one occupant over `beds` per listed arrival. When the desk is not sent
+ * an arrival's movement, its entry is cut, so the counts would break that check. The authoritative
+ * counts are kept whenever they still fit. Otherwise each cut arrival is taken out of the bucket of
+ * its own recorded sex (the bucket its arrival added to), never a guessed one, until they fit. The
+ * server still checks every placement against the whole workspace.
+ */
+function withinArrivalAllowance(
+  unit: Unit,
+  kept: readonly { movementId: string }[] | undefined,
+  sexOfArrival: (movementId: string) => Sex | undefined,
+): Unit["sexMix"] {
+  let excess = unit.sexMix.Female + unit.sexMix.Male - (unit.beds + (kept?.length ?? 0));
+  if (excess <= 0) return unit.sexMix;
+  const keptIds = new Set((kept ?? []).map((conflict) => conflict.movementId));
+  let mix = unit.sexMix;
+  for (const conflict of unit.arrivalCapacityConflicts ?? []) {
+    if (excess <= 0) break;
+    if (keptIds.has(conflict.movementId)) continue;
+    const sex = sexOfArrival(conflict.movementId);
+    if (sex === undefined || mix[sex] <= 0) continue;
+    mix = adjustSexMix(mix, sex, -1);
+    excess -= 1;
+  }
+  return mix;
 }
 
 /** A copy without the optional link fields that point at a record the desk is not sent. */
@@ -249,10 +330,24 @@ function withoutLinks<T extends object>(record: T, links: readonly (keyof T)[], 
  * browser refuses a workspace whose links dangle, so they are cut here. The desk loses nothing it
  * could have opened.
  */
-function closeReferences(scoped: WardFlowState): WardFlowState {
+function closeReferences(
+  scoped: WardFlowState,
+  datesOnlyAdmissionIds: ReadonlySet<string>,
+  whole: WardFlowState,
+): WardFlowState {
+  const wholeMovements = new Map<string, WardFlowState["movements"][number]>(
+    whole.movements.map((movement) => [movement.id, movement]),
+  );
+  const sexOfArrival = (movementId: string) => {
+    const movement = wholeMovements.get(movementId);
+    return movement ? mixSexOf(movement.gender, movement.sex) : undefined;
+  };
   const ids = (items: readonly { id: string }[]) => new Set(items.map((item) => item.id));
   const movements = ids(scoped.movements);
   const admissions = ids(scoped.admissions);
+  const fullAdmissions = new Set(
+    scoped.admissions.filter((admission) => !datesOnlyAdmissionIds.has(admission.id)).map((admission) => admission.id),
+  );
   const referrals = ids(scoped.referrals);
   const patients = ids(scoped.patients);
   const has = (set: ReadonlySet<string>) => (id: string) => set.has(id);
@@ -264,10 +359,13 @@ function closeReferences(scoped: WardFlowState): WardFlowState {
       const own = <C extends { movementId: string; admissionId?: string }>(conflicts: readonly C[] | undefined) =>
         conflicts
           ?.filter((conflict) => movements.has(conflict.movementId))
-          .map((conflict) => withoutLinks(conflict, ["admissionId"], has(admissions)));
+          .map((conflict) => withoutLinks(conflict, ["admissionId"], has(fullAdmissions)));
+      const keptArrivalConflicts = own(unit.arrivalCapacityConflicts);
+      const sexMix = withinArrivalAllowance(unit, keptArrivalConflicts, sexOfArrival);
       return {
         ...unit,
-        ...(unit.arrivalCapacityConflicts && { arrivalCapacityConflicts: own(unit.arrivalCapacityConflicts) }),
+        sexMix,
+        ...(unit.arrivalCapacityConflicts && { arrivalCapacityConflicts: keptArrivalConflicts }),
         ...(unit.reservationReleaseCapacityConflicts && {
           reservationReleaseCapacityConflicts: own(unit.reservationReleaseCapacityConflicts),
         }),
@@ -275,7 +373,11 @@ function closeReferences(scoped: WardFlowState): WardFlowState {
     }),
     movements: scoped.movements.map((movement) =>
       withoutLinks(
-        withoutLinks(movement, ["admissionId", "sourceAdmissionId"], has(admissions)),
+        withoutLinks(
+          withoutLinks(movement, ["admissionId"], has(fullAdmissions)),
+          ["sourceAdmissionId"],
+          has(admissions),
+        ),
         ["referralId"],
         has(referrals),
       ),
@@ -344,20 +446,37 @@ export function commandScopeRefusal(
   if (accessIsWholeNetwork(access)) return null;
   const outside = "This change names a record outside your role's place.";
   const { places } = options;
-  const { state: scoped, breakGlassPatientIds } = scopeWardFlowState(state, access, options);
+  const { state: scopedWithoutGrants } = scopeWardFlowState(state, access, { ...options, grants: undefined });
+  const { breakGlassPatientIds } = options.grants?.length
+    ? scopeWardFlowState(state, access, options)
+    : { breakGlassPatientIds: new Set<string>() };
   const glass = (item: { patientId?: string | null }) => seenThroughBreakGlass(item, breakGlassPatientIds);
   const writable = recordIds({
-    ...scoped,
-    patients: scoped.patients.filter((patient) => !breakGlassPatientIds.has(patient.id)),
-    movements: scoped.movements.filter((movement) => !glass(movement)),
-    admissions: scoped.admissions.filter((admission) => !glass(admission)),
-    referrals: scoped.referrals.filter((referral) => !glass(referral)),
+    ...scopedWithoutGrants,
+    patients: scopedWithoutGrants.patients.filter((patient) => !breakGlassPatientIds.has(patient.id)),
+    movements: scopedWithoutGrants.movements.filter((movement) => !glass(movement)),
+    admissions: scopedWithoutGrants.admissions.filter((admission) => !glass(admission)),
+    referrals: scopedWithoutGrants.referrals.filter((referral) => !glass(referral)),
   });
   const all = recordIds(state);
   // A seeded governance entry can be reviewed, and the whole workspace finds one about any record
   // (`governanceAuditEntry`), so every seeded id counts as a record. A coordinator may name only the
   // ones its own screens show.
-  if (access.role === "coordinator") for (const id of seededAuditIds(scoped, state)) writable.add(id);
+  if (access.role === "coordinator") for (const id of seededAuditIds(scopedWithoutGrants, state)) writable.add(id);
+  if (
+    (access.role === "ward" || access.role === "coordinator") &&
+    (command.type === "RECORD_SUPPORT_NOTIFICATION" || command.type === "UNDO_SUPPORT_NOTIFICATION") &&
+    typeof command.movementId === "string"
+  ) {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (
+      movement &&
+      (typeof movement.acceptedUnitId === "string"
+        ? !unitInScope(access.scope, movement.acceptedUnitId, places)
+        : access.role === "ward")
+    )
+      return outside;
+  }
   for (const text of commandStrings(command)) {
     if ((all.has(text) || text.startsWith("audit-seed-")) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));

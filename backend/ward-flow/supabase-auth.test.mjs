@@ -512,3 +512,30 @@ test("nonfinite numeric JWT dates are refused even with a valid signature", asyn
     await assert.rejects(verify(`Bearer ${data}.${signature.toString("base64url")}`), /Unauthorised/);
   }
 });
+
+test("a verified token reports when the account last signed in, for the step-up check", async () => {
+  const { verify } = setup();
+  const signedIn = Math.floor(Date.now() / 1000) - 120;
+  const session = {};
+  const token = signed(
+    "ES256",
+    "ec-1",
+    claims({
+      aal: "aal1",
+      amr: [
+        { method: "password", timestamp: signedIn - 600 },
+        { method: "password", timestamp: signedIn },
+      ],
+    }),
+  );
+  assert.equal(await verify(token, { session }), coordinator);
+  assert.deepEqual(session, { signedInAt: signedIn * 1000, aal: "aal1" });
+  // A token with no sign-in record leaves the time unknown, so step-up asks again.
+  const unknown = {};
+  await verify(signed("ES256", "ec-1"), { session: unknown });
+  assert.equal(unknown.signedInAt, undefined);
+  // A refused token fills nothing.
+  const refused = {};
+  await assert.rejects(verify(`${token}x`, { session: refused }));
+  assert.deepEqual(refused, {});
+});

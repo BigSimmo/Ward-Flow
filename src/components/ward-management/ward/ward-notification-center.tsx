@@ -194,16 +194,27 @@ export function WardNotificationCenter({
   const showNotices = activeTab === "all" || activeTab === "notices";
 
   return (
-    // The panel stays a polite live region, so new notifications are still heard. Each count it
-    // announces carries a screen-reader-only "sample records" in the same run, so a count is never
-    // read out bare (expected red #1, announced figures carry their marker). No visible change.
+    // Only the short summary below is a live region, so a change to the counts or filter is heard
+    // once rather than as the whole panel re-read. The summary carries a screen-reader-only
+    // "sample records" in the same run, so a count is never read out bare (expected red #1,
+    // announced figures carry their marker). No visible change.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape bubbling up from the focused control inside
     <section
       className={`${styles.panel} ${hasUrgentBuzz ? styles.urgentBuzzPulse : ""}`}
       aria-label={`Ward notification and buzzer centre for ${unitName}`}
-      aria-live="polite"
       data-testid="ward-notification-center"
       data-urgent-buzz={hasUrgentBuzz ? "true" : "false"}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && onClose) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
     >
+      <span className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-notification-live-summary">
+        {`${totalUnreadAlerts} unread notification${totalUnreadAlerts === 1 ? "" : "s"}, ${activeTab} filter active, sample records`}
+      </span>
       {/* a) Telemetry & Action Strip */}
       <div className={styles.telemetryStrip}>
         <div className={styles.titleArea}>

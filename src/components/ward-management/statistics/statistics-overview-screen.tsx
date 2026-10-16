@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Clock, Network, Activity, Filter, X } from "lucide-react";
 
@@ -129,59 +129,85 @@ export function StatisticsOverviewScreen() {
   const [stagesView, setStagesView] = useState<"chart" | "data">("chart");
   const isPhone = useIsPhone();
 
-  const stageTallies = admissionStageTallies(admissions);
-  const declinesReadout = readDeclinesByReason(movements);
-  const preparingCount = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
-  const openNow = units.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0);
-  const refused = refusedAndNothingPending(movements, units, now);
-  const capacity = networkCapacity(units, bedReleases);
+  const stageTallies = useMemo(() => admissionStageTallies(admissions), [admissions]);
+  const declinesReadout = useMemo(() => readDeclinesByReason(movements), [movements]);
+  const preparingCount = useMemo(
+    () => units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
+    [units, bedReleases],
+  );
+  const openNow = useMemo(
+    () => units.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0),
+    [units, bedReleases],
+  );
+  const refused = useMemo(() => refusedAndNothingPending(movements, units, now), [movements, units, now]);
+  const capacity = useMemo(() => networkCapacity(units, bedReleases), [units, bedReleases]);
   // Executive: the stage and decline parts add up to a total on the same card, so they hide together.
   const stagesShown = parts(stageTallies.map((stage) => stage.count));
   const declinesShown = declinesReadout.ok ? parts(declinesReadout.value.tallies.map((tally) => tally.count)) : [];
   const declinesTotal = declinesReadout.ok ? small(declinesReadout.value.totalCount) : 0;
 
-  const occupancy = occupiedBeds(units, admissions, bedReleases, leaveBeds);
-  const totalBeds = units.reduce((sum, unit) => sum + unit.beds, 0);
+  const occupancy = useMemo(
+    () => occupiedBeds(units, admissions, bedReleases, leaveBeds),
+    [units, admissions, bedReleases, leaveBeds],
+  );
+  const totalBeds = useMemo(() => units.reduce((sum, unit) => sum + unit.beds, 0), [units]);
   // L1 (site review, 12 Oct 2026): the one statewide occupancy figure Home's ring prints
   // (`wardOccupancy`, Occupied + Pulled), so this page reads 85.2% where it read 79.6%.
-  const occupiedShare = wardOccupancy(units, admissions, bedReleases).percent ?? 0;
+  const occupiedShare = useMemo(
+    () => wardOccupancy(units, admissions, bedReleases).percent ?? 0,
+    [units, admissions, bedReleases],
+  );
 
-  const unitRows = units.map((unit) => {
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-    const rate = unit.beds > 0 ? Math.round(((states.occupied + states.pulled) / unit.beds) * 100) : 0;
-    return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
-  });
-  const wardsOverLine = unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length;
-  const closedTotal = unitRows.reduce((sum, row) => sum + row.states.closed, 0);
+  const unitRows = useMemo(
+    () =>
+      units.map((unit) => {
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        const rate = unit.beds > 0 ? Math.round(((states.occupied + states.pulled) / unit.beds) * 100) : 0;
+        return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
+      }),
+    [units, admissions, bedReleases, leaveBeds],
+  );
+  const wardsOverLine = useMemo(
+    () => unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
+    [unitRows],
+  );
+  const closedTotal = useMemo(() => unitRows.reduce((sum, row) => sum + row.states.closed, 0), [unitRows]);
   // A blocked discharge: a current admission carrying a block reason (the Wards page's own count).
-  const blockedTotal = admissions.filter(
-    (admission) => admissionStagePosition(admission) !== "ended" && admission.blockReason !== null,
-  ).length;
+  const blockedTotal = useMemo(
+    () =>
+      admissions.filter((admission) => admissionStagePosition(admission) !== "ended" && admission.blockReason !== null)
+        .length,
+    [admissions],
+  );
 
-  const services = OVERVIEW_SERVICES.map((entry) => {
-    const rows = unitRows.filter((row) => row.service === entry.service);
-    const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
-    const beds = sum((row) => row.unit.beds);
-    const occupied = sum((row) => row.states.occupied);
-    const inUse = sum((row) => row.states.occupied + row.states.pulled);
-    const ready = sum((row) => row.states.ready);
-    const closed = sum((row) => row.states.closed);
-    const sites = Array.from(
-      new Set(rows.map((row) => shortSite(siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode))),
-    );
-    return {
-      ...entry,
-      beds,
-      occupied,
-      ready,
-      pulled: sum((row) => row.states.pulled),
-      closed,
-      headroom: ready + closed,
-      over: rows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
-      share: beds > 0 ? inUse / beds : 0,
-      hospitals: sites.length > 0 ? sites.join(", ") : "Regional units",
-    };
-  });
+  const services = useMemo(
+    () =>
+      OVERVIEW_SERVICES.map((entry) => {
+        const rows = unitRows.filter((row) => row.service === entry.service);
+        const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
+        const beds = sum((row) => row.unit.beds);
+        const occupied = sum((row) => row.states.occupied);
+        const inUse = sum((row) => row.states.occupied + row.states.pulled);
+        const ready = sum((row) => row.states.ready);
+        const closed = sum((row) => row.states.closed);
+        const sites = Array.from(
+          new Set(rows.map((row) => shortSite(siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode))),
+        );
+        return {
+          ...entry,
+          beds,
+          occupied,
+          ready,
+          pulled: sum((row) => row.states.pulled),
+          closed,
+          headroom: ready + closed,
+          over: rows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
+          share: beds > 0 ? inUse / beds : 0,
+          hospitals: sites.length > 0 ? sites.join(", ") : "Regional units",
+        };
+      }),
+    [unitRows],
+  );
 
   return (
     <StatisticsPage

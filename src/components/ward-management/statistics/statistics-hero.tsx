@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { Download, type LucideIcon } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, useIsPhone } from "@/components/wf";
@@ -43,11 +43,18 @@ export function useStatisticsLive() {
   const state = useWardFlow();
   const now = useWardFlowClock();
   const [held, setHeld] = useState<{ state: typeof state; now: Instant } | null>(null);
+  const lastUnpausedSnapshotRef = useRef({ state, now });
+  useEffect(() => {
+    if (held === null) {
+      lastUnpausedSnapshotRef.current = { state, now };
+    }
+  }, [state, now, held]);
+  const togglePause = useCallback(() => setHeld((current) => (current ? null : lastUnpausedSnapshotRef.current)), []);
   return {
     state: held ? held.state : state,
     now: held ? held.now : now,
     paused: held !== null,
-    togglePause: () => setHeld((current) => (current ? null : { state, now })),
+    togglePause,
   };
 }
 
@@ -72,6 +79,7 @@ export function StatisticsHero({
   title,
   titleAction,
   stats,
+  now: nowProp,
   paused,
   onTogglePause,
   navTestId,
@@ -88,6 +96,7 @@ export function StatisticsHero({
   /** A control beside the title, such as "Change ward". */
   titleAction?: ReactNode;
   stats?: ReactNode;
+  now?: Instant;
   paused: boolean;
   onTogglePause: () => void;
   navTestId?: string;
@@ -104,7 +113,8 @@ export function StatisticsHero({
   phone?: StatisticsPhoneHero;
 }) {
   const wardCount = useWardFlowSelect("units").units.length;
-  const now = useWardFlowClock();
+  const liveNow = useWardFlowClock();
+  const now = nowProp ?? liveNow;
   const isPhone = useIsPhone();
   // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads
   // the band's tool row, so it never adds a row of its own under the figures.
@@ -307,6 +317,7 @@ export function StatisticsPage({
           title={title}
           titleAction={titleAction}
           stats={stats}
+          now={now}
           paused={paused}
           onTogglePause={onTogglePause}
           tools={tools}

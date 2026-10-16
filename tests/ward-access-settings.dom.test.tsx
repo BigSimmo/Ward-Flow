@@ -1,0 +1,299 @@
+import "@testing-library/jest-dom/vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...props }: { children: ReactNode; href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow/settings",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+}));
+
+import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
+import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import {
+  readWardAccessSnapshot,
+  resetWardAccessStoreForTests,
+  setWardAccess,
+} from "@/components/ward-management/shell/ward-access-store";
+import { resetLocalAccessAdminForTests } from "@/components/ward-management/shell/ward-access-admin-store";
+import {
+  StepUpReauthContext,
+  forgetStepUp,
+  useStepUp,
+  type StepUpResult,
+} from "@/components/ward-management/shell/ward-step-up";
+import {
+  SharedAccessContext,
+  type SharedAccessApi,
+} from "@/components/ward-management/shell/ward-shared-access-context";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+/**
+ * The Settings Access tab (role access plan, later pass): an Access admin desk gives, approves and
+ * removes roles, a nurse in charge gives cover, and each change asks to confirm it is you first.
+ * Made-up demonstration staff only.
+ */
+afterEach(() => {
+  cleanup();
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", null);
+    resetWardAccessStoreForTests();
+    resetLocalAccessAdminForTests();
+  });
+  forgetStepUp();
+});
+
+function settings() {
+  return render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
+  );
+}
+
+function AdvanceClock() {
+  const { dispatch, now } = useWardFlow();
+  return (
+    <button
+      type="button"
+      data-testid="test-advance-clock"
+      onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 120 })}
+    >
+      advance clock
+    </button>
+  );
+}
+
+function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string) => Promise<void>) {
+  return render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AdvanceClock />
+        <StepUpReauthContext.Provider value={reauthenticate}>
+          <SharedAccessContext.Provider value={{ api, actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4" }}>
+            <SettingsScreen />
+          </SharedAccessContext.Provider>
+        </StepUpReauthContext.Provider>
+      </WardFlowProvider>
+    </ToastProvider>,
+  );
+}
+
+function confirmStepUp() {
+  const dialog = screen.getByTestId("ward-step-up");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm and carry on" }));
+}
+
+describe("the Access tab", () => {
+  it("is not offered with the role-access flag off", () => {
+    settings();
+    expect(screen.queryByRole("radio", { name: /^Access/ })).not.toBeInTheDocument();
+  });
+
+  it("gives a statewide coordinator both cover and the roles lists", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
+    });
+    settings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    expect(screen.getByTestId("ward-access-cover")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-access-roles")).toBeInTheDocument();
+    expect(screen.getByText(/As a statewide coordinator you also give and remove roles/u)).toBeInTheDocument();
+  });
+
+  it("opens an Access admin desk on the roles list, and gives a role after a fresh confirm", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    settings();
+    expect(screen.getByRole("radio", { name: /^Access/ })).toBeChecked();
+    expect(screen.getByTestId("ward-access-requests")).toHaveTextContent("2 open requests");
+    expect(screen.getByTestId("ward-access-waiting")).toHaveTextContent("Demo staff D");
+
+    fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
+    await act(async () => confirmStepUp());
+    expect(await screen.findByTestId("ward-access-result")).toHaveTextContent("Given: Demo access admin 2");
+
+    // One confirm lasts the step-up window, so approving straight after asks nothing.
+    const waiting = screen.getByTestId("ward-access-waiting");
+    await act(async () => fireEvent.click(within(waiting).getByRole("button", { name: "Approve" })));
+    expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Approved: Flow coordinator, South Metro.");
+    expect(screen.queryByTestId("ward-access-waiting")).not.toBeInTheDocument();
+  });
+
+  it("changes nothing when the confirm is cancelled", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    settings();
+    const rows = screen.getAllByTestId("ward-access-role-row").length;
+    fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
+    await act(async () =>
+      fireEvent.click(within(screen.getByTestId("ward-step-up")).getByRole("button", { name: "Cancel" })),
+    );
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cancelled. Nothing was changed.");
+    expect(screen.getAllByTestId("ward-access-role-row")).toHaveLength(rows);
+  });
+
+  it("lets a nurse in charge give cover of their own ward, and end it", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
+    });
+    settings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    fireEvent.click(screen.getByTestId("ward-access-cover-submit"));
+    await act(async () => confirmStepUp());
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover given");
+    expect(readWardAccessSnapshot().covers).toHaveLength(1);
+    const list = screen.getByTestId("ward-access-cover-list");
+    // A statewide coordinator sees cover given by a ward inside its place, and may end it.
+    act(() => setWardAccess({ role: "coordinator", scope: { kind: "statewide" } }));
+    expect(
+      within(screen.getByTestId("ward-access-cover-list")).getByRole("button", { name: "End cover" }),
+    ).toBeInTheDocument();
+    act(() => setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } }));
+    // Ending it goes through the same confirm, still fresh here, so it asks nothing more.
+    await act(async () => fireEvent.click(within(list).getByRole("button", { name: "End cover" })));
+    expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
+    expect(readWardAccessSnapshot().covers).toHaveLength(0);
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover ended.");
+  });
+
+  it("in the shared workspace reads roles from the server and asks for the password when it says step-up", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const grants = ["step-up", null];
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({
+        memberships: [
+          {
+            id: "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d",
+            actorId: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            role: "executive",
+            scope: { kind: "statewide" },
+            kind: "role" as const,
+            grantedBy: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4",
+            approved: true,
+            approvedBy: null,
+            minutes: { granted: -60, expires: 1440, lastUsed: -5 },
+          },
+        ],
+        requests: [],
+      })),
+      listCovers: vi.fn(async () => []),
+      grantAccess: vi.fn(async () => grants.shift() ?? null),
+      approveAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
+    };
+    const reauthenticate = vi.fn(async () => {});
+    sharedSettings(api, reauthenticate);
+    const roles = await screen.findByTestId("ward-access-role-row");
+    expect(roles).toHaveTextContent("Account 1a2b3c4d");
+    expect(roles).toHaveTextContent("Ends in 1 day. Last used 5 minutes ago.");
+    // The server's times are placed once, when the list arrives, so they age with the demo clock.
+    act(() => fireEvent.click(screen.getByTestId("test-advance-clock")));
+    expect(screen.getByTestId("ward-access-role-row")).not.toHaveTextContent("Last used 5 minutes ago.");
+    const grant = screen.getByTestId("ward-access-grant");
+    fireEvent.change(within(grant).getByLabelText("Account id"), {
+      target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
+    });
+    fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
+    const dialog = await screen.findByTestId("ward-step-up");
+    fireEvent.change(within(dialog).getByLabelText("Password"), { target: { value: "synthetic-password" } });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and carry on" }));
+    });
+    expect(reauthenticate).toHaveBeenCalledWith("synthetic-password");
+    expect(api.grantAccess).toHaveBeenCalledTimes(2);
+    expect(await screen.findByTestId("ward-access-result")).toHaveTextContent("Given: Account 1a2b3c4d");
+    // A change reads the list again.
+    expect(api.listAccess).toHaveBeenCalledTimes(2);
+  });
+
+  it("makes no change when the password dialog is cancelled while the sign-in is still running", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({ memberships: [], requests: [] })),
+      listCovers: vi.fn(async () => []),
+      grantAccess: vi.fn(async () => "step-up" as const),
+      approveAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
+    };
+    let signedIn = () => {};
+    const reauthenticate = vi.fn(() => new Promise<void>((resolve) => (signedIn = resolve)));
+    sharedSettings(api, reauthenticate);
+    const grant = await screen.findByTestId("ward-access-grant");
+    fireEvent.change(within(grant).getByLabelText("Account id"), {
+      target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
+    });
+    fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
+    const dialog = await screen.findByTestId("ward-step-up");
+    fireEvent.change(within(dialog).getByLabelText("Password"), { target: { value: "synthetic-password" } });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and carry on" }));
+    });
+    await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" })));
+    await act(async () => signedIn());
+    expect(api.grantAccess).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cancelled. Nothing was changed.");
+  });
+
+  it("tells a step waiting for the password that it was cancelled when a second step asks", async () => {
+    const results: StepUpResult[] = [];
+    function TwoSteps() {
+      const { guard, dialog } = useStepUp();
+      const ask = (name: string) => () =>
+        void guard(async () => "step-up" as const).then((result) => results.push(`${name}: ${result}`));
+      return (
+        <>
+          <button type="button" onClick={ask("first")}>
+            first
+          </button>
+          <button type="button" onClick={ask("second")}>
+            second
+          </button>
+          {dialog}
+        </>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StepUpReauthContext.Provider value={async () => {}}>
+          <TwoSteps />
+        </StepUpReauthContext.Provider>
+      </WardFlowProvider>,
+    );
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "first" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "second" })));
+    expect(results).toEqual(["first: Cancelled. Nothing was changed."]);
+    expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
+  });
+});
