@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useContext, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -117,6 +117,7 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+  const baseId = useId();
   const network = useWardNetwork();
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
   const { movements, units, bedReleases, admissions, leaveBeds, focusMovementId, configuration } =
@@ -382,7 +383,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             type="button"
             className={styles.hereHead}
             aria-expanded={hereOpen}
-            aria-controls="workstation-here-can"
+            aria-controls={`${baseId}-workstation-here-can`}
             onClick={() => setHereOpen((value) => !value)}
           >
             <span className={styles.roleIcon}>
@@ -396,7 +397,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             <Icon icon={ChevronDown} size={14} className={styles.chev} />
           </button>
           {hereOpen ? (
-            <div id="workstation-here-can" className={styles.hereBody}>
+            <div id={`${baseId}-workstation-here-can`} className={styles.hereBody}>
               <p className={styles.eyebrow}>You can here</p>
               <CanList role={here.role} />
             </div>

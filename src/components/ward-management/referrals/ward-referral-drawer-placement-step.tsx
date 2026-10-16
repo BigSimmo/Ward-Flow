@@ -372,11 +372,11 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
           </CardHead>
           <div className={styles.cardBody}>
             <div className={styles.fieldGrid} data-layout="three">
-              <Field label="Transport" htmlFor="refTransportSelect">
+              <Field label="Transport" htmlFor={`${sectionId}-refTransportSelect`}>
                 <SelectBox>
                   <select
                     className={styles.fieldSelect}
-                    id="refTransportSelect"
+                    id={`${sectionId}-refTransportSelect`}
                     value={transport}
                     onChange={(e) => setTransport(e.target.value)}
                   >
@@ -396,11 +396,11 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                   onChange={(e) => setArrivalEta(e.target.value)}
                 />
               </Field>
-              <Field label="Dispatch ref" htmlFor="refTransitInput">
+              <Field label="Dispatch ref" htmlFor={`${sectionId}-refTransitInput`}>
                 <input
                   type="text"
                   className={styles.fieldInput}
-                  id="refTransitInput"
+                  id={`${sectionId}-refTransitInput`}
                   placeholder="Dispatch or staging bay"
                   value={transitNote}
                   onChange={(e) => setTransitNote(e.target.value)}

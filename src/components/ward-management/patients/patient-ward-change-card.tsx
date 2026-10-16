@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
 import { Button, Card, CardHead, Sheet, StatusGlyph, useIsPhone } from "@/components/wf";
 import {
@@ -101,6 +101,7 @@ export function PatientWardChangeCard({
   // "Other time" opens the typed day and time.
   const [presetId, setPresetId] = useState<string | null>(null);
   const [customTime, setCustomTime] = useState(false);
+  const baseId = useId();
   const futurePresets = LEAVE_PRESETS.filter((preset) => {
     const at = typedTimeToInstant(preset.time, preset.day, now);
     return at !== undefined && at > now;
@@ -166,7 +167,7 @@ export function PatientWardChangeCard({
 
   const formElement = (
     <form
-      id="pn-ward-change-form"
+      id={`${baseId}-pn-ward-change-form`}
       className={isPhone ? styles.phSheetForm : styles.changeForm}
       aria-label={form === "leave" ? "Start leave" : "Set discharge date"}
       onSubmit={(event) => {
@@ -201,8 +202,8 @@ export function PatientWardChangeCard({
       ) : null}
       {phonePresets ? (
         <>
-          <div className={styles.phPresetGroup} role="group" aria-labelledby="pn-leave-back">
-            <span id="pn-leave-back" className={styles.phFieldLabel}>
+          <div className={styles.phPresetGroup} role="group" aria-labelledby={`${baseId}-pn-leave-back`}>
+            <span id={`${baseId}-pn-leave-back`} className={styles.phFieldLabel}>
               Expected back
             </span>
             <div className={styles.phPresets}>
@@ -285,7 +286,13 @@ export function PatientWardChangeCard({
               <Button className={styles.tap} onClick={() => onFormChange("none")}>
                 Cancel
               </Button>
-              <Button className={styles.tap} type="submit" form="pn-ward-change-form" variant="pri" disabled={!future}>
+              <Button
+                className={styles.tap}
+                type="submit"
+                form={`${baseId}-pn-ward-change-form`}
+                variant="pri"
+                disabled={!future}
+              >
                 {form === "leave" ? "Record leave" : "Save date"}
               </Button>
             </div>

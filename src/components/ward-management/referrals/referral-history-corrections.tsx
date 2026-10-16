@@ -118,7 +118,7 @@ export function ReferralHistoryAndCorrections({
               className={styles.addCorrectionBtn}
               data-testid="ward-referral-add-correction"
               aria-disabled={trimmedNote.length === 0 ? "true" : undefined}
-              aria-describedby={trimmedNote.length === 0 ? "ward-referral-correction-blocked" : undefined}
+              aria-describedby={trimmedNote.length === 0 ? `${noteId}-ward-referral-correction-blocked` : undefined}
               title={trimmedNote.length === 0 ? "Write a note before adding a correction." : undefined}
               onClick={trimmedNote.length === 0 ? ignoreUnavailableActivation : handleAddCorrection}
             >
@@ -129,7 +129,7 @@ export function ReferralHistoryAndCorrections({
             </span>
           </div>
           {trimmedNote.length === 0 ? (
-            <span id="ward-referral-correction-blocked" className="sr-only">
+            <span id={`${noteId}-ward-referral-correction-blocked`} className="sr-only">
               Write a note before adding a correction.
             </span>
           ) : null}

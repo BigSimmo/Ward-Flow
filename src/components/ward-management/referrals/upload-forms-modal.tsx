@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { type Movement } from "@/components/ward-management/ward-model";
@@ -31,6 +31,7 @@ export function UploadFormsModal(props: UploadFormsModalProps) {
 function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModalProps) {
   const { dispatch } = useWardFlowSelect("dispatch");
   const now = useWardFlowClock();
+  const baseId = useId();
 
   const [formName, setFormName] = useState<string>(FORM_TYPE_OPTIONS[0]);
   const [fileName, setFileName] = useState<string>("");
@@ -89,7 +90,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="upload-modal-title"
+        aria-labelledby={`${baseId}-upload-modal-title`}
         style={{
           backgroundColor: "var(--ward-card, #ffffff)",
           color: "var(--ward-text, #0f172a)",
@@ -112,7 +113,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
         >
           <div className={styles.titleGroup}>
             <FileUp aria-hidden="true" size={20} style={{ color: "var(--ward-accent, #0284c7)" }} />
-            <h2 id="upload-modal-title" className={styles.title}>
+            <h2 id={`${baseId}-upload-modal-title`} className={styles.title}>
               Record document details
             </h2>
           </div>
@@ -171,7 +172,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
 
           {/* Dropzone / Upload Area */}
           <div className={styles.dropField}>
-            <label htmlFor="ward-document-metadata-file" className={styles.fieldLabel}>
+            <label htmlFor={`${baseId}-ward-document-metadata-file`} className={styles.fieldLabel}>
               Select a file to record its details
             </label>
             <div
@@ -190,7 +191,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               }}
             >
               <input
-                id="ward-document-metadata-file"
+                id={`${baseId}-ward-document-metadata-file`}
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg"
                 onChange={handleFileSelect}
@@ -206,7 +207,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               />
               <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>
               <div
-                id="upload-forms-file-requirement"
+                id={`${baseId}-upload-forms-file-requirement`}
                 style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}
               >
                 {fileAttached
@@ -239,7 +240,9 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               type="submit"
               aria-disabled={!fileAttached || simulatedSize <= 0 ? "true" : undefined}
               onClick={!fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
-              aria-describedby={!fileAttached || simulatedSize <= 0 ? "upload-forms-file-requirement" : undefined}
+              aria-describedby={
+                !fileAttached || simulatedSize <= 0 ? `${baseId}-upload-forms-file-requirement` : undefined
+              }
               title={
                 !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
               }
