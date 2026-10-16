@@ -165,6 +165,19 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     routeRole: useRouteRole(),
     onMessage: setRepatNotice,
   });
+  // The panel notice is written at once, so a refusal of that step (for example a shared workspace
+  // recording the stay as gone first) replaces it with the engine's reason and restores the draft.
+  const repatCheckRef = useRef<{ prior: number; admissionId: string; draft?: RepatDraft } | null>(null);
+  useEffect(() => {
+    const check = repatCheckRef.current;
+    if (!check || rejections.length <= check.prior) return;
+    const refused = rejections.slice(check.prior).find((rejection) => rejection.movementId === check.admissionId);
+    if (!refused) return;
+    repatCheckRef.current = null;
+    const { admissionId, draft } = check;
+    if (draft) setDrafts((current) => ({ ...current, [admissionId]: draft }));
+    setRepatNotice(`Not recorded: ${refused.reason}. Nothing was changed.`);
+  }, [rejections]);
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -341,6 +354,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ? " Return transfer movement queued for bed placement at home health service."
       : " Return movement pending receiving ward agreement.";
     const recorded = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, draft };
     runStep(
       {
         type: "RECORD_REPATRIATION",
@@ -390,6 +404,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         ? "Return transfer movement queued for bed placement at home health service."
         : "Return movement pending receiving ward agreement."
     }`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, draft };
     runStep(
       {
         type: "RECORD_REPATRIATION",
@@ -424,6 +439,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (!existing || existing.receivingWardAgreed) return;
     const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
     const agreedNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
+    repatCheckRef.current = { prior: rejections.length, admissionId };
     runStep(
       {
         type: "RECORD_REPATRIATION",
@@ -442,7 +458,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       {
         success: agreedNotice,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
-        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+        // Undo takes back only the agreement: the sent plan stays, awaiting the receiving ward.
+        undone: `Ward agreement undone for ${patientOf(entry).displayName}. The return plan is back to awaiting the receiving ward.`,
       },
     );
     setRepatNotice(agreedNotice);

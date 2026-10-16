@@ -87,5 +87,18 @@ describe("out-of-area repatriation — return plan gate and reducer transitions"
     expect(agreedRecord?.by).toBe(pendingRecord!.by);
     expect(agreedRecord?.homeHospital).toBe(pendingRecord!.homeHospital);
     expect(afterAgree.movements).toHaveLength(movementsBefore + 1);
+
+    // Undoing the agreement returns the plan to awaiting the ward; the sent plan itself stays.
+    const afterUndo = wardFlowReducer(afterAgree, {
+      type: "UNDO_REPATRIATION",
+      role: "coordinator",
+      now: NOW_ANCHOR + 1,
+      admissionId,
+    });
+    expect(afterUndo.rejections).toHaveLength(afterAgree.rejections.length);
+    const restored = afterUndo.repatriations?.filter((rec) => rec.admissionId === admissionId) ?? [];
+    expect(restored).toHaveLength(1);
+    expect(restored[0]?.receivingWardAgreed).toBe(false);
+    expect(afterUndo.movements).toHaveLength(movementsBefore);
   });
 });
