@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -11,8 +12,19 @@ import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./settings/access-shared-source";
-import { WardAskForAccess, WardRolePicker, sharedDeskLabel } from "./ward-shared-role-gate";
+import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
+
+// The role picker and Ask for access show only in the shared workspace, before the board opens,
+// so a first load skips their code.
+const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
+  ssr: false,
+  loading: () => null,
+});
+const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardAskForAccess), {
+  ssr: false,
+  loading: () => null,
+});
 
 /** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
 export type WardSharedAccessApi = SharedAccessApi & Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess">;

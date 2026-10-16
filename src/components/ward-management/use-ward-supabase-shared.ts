@@ -18,7 +18,7 @@ export type WardCredentialForm = {
 };
 const emptyView: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
 /** Which of this account's roles this tab works as: a membership id or "bootstrap", nothing else. */
-export const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
+const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
 const workingAs = {
   get: () => {
     try {

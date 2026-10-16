@@ -5,13 +5,19 @@
  * loading the app shell.
  */
 import {
+  ACCESS_ROLE_LABELS,
   ROLE_SCOPE_KINDS,
   type WardAccess,
   type WardAccessRole,
   type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import {
+  STANDARD_WARD_SITES,
+  allEmergencyDepartments,
+  edById,
+  siteByCode,
+} from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
 
 /** Where the desk is, in words: "Ward 6B", "Fiona Stanley ED", "South Metro". */
@@ -33,6 +39,14 @@ export function accessPlaceLabel(access: WardAccess, units: readonly Unit[]): st
     case "jobs":
       return "Assigned transport jobs";
   }
+}
+
+/** The standard network's wards, for naming places before the shared board is read. */
+export const SEED_UNITS: readonly Unit[] = STANDARD_WARD_SITES.flatMap((site) => site.units);
+
+/** A role and place in words on the standard network, for the shared workspace's status line. */
+export function sharedDeskLabel(access: WardAccess): string {
+  return `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, SEED_UNITS)}`;
 }
 
 /** Every place a role may hold, in words. Built from the workspace, never a literal list of wards. */

@@ -67,7 +67,7 @@ export function showsAccessTab(desk: WardAccess): boolean {
 }
 
 /** Where the roles list comes from: the local demo's made-up staff, or the shared server. */
-export type AccessAdminSource = {
+type AccessAdminSource = {
   readonly memberships: readonly AccessMembership[];
   readonly requests: readonly AccessRequest[];
   /** Who can be picked to grant to. `null` in the shared workspace, where an account id is typed. */
@@ -89,7 +89,7 @@ function plural(n: number, word: string): string {
 }
 
 /** "in 10 days", "3 hours ago": the demo clock's minutes, in words. */
-export function whenText(at: Instant, now: Instant): string {
+function whenText(at: Instant, now: Instant): string {
   const minutes = Math.abs(at - now);
   const amount =
     minutes >= MINUTES_PER_DAY
@@ -106,8 +106,6 @@ const STATUS: Record<MembershipStatus, { label: string; tone: WfTone }> = {
   unused: { label: "Switched off, not used", tone: "closed" },
   ended: { label: "Ended", tone: "neutral" },
 };
-
-export { placeOptions };
 
 function useLocalAdminSource(desk: WardAccess, now: Instant, places: AccessPlaces): AccessAdminSource {
   const { memberships, requests } = useLocalAccessAdmin(now);

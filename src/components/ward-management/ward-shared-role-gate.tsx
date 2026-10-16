@@ -13,18 +13,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ACCESS_ROLE_LABELS, WARD_ACCESS_ROLES, type WardAccess, type WardAccessRole } from "./ward-role-access";
 import type { SharedAccessRequest, SharedChangeResult, SharedRoleChoice } from "./ward-shared-client";
-import { STANDARD_WARD_SITES } from "./ward-sites";
 import { parseStoredAccess } from "./shell/ward-access-store";
-import { accessPlaceLabel, placeOptions } from "./shell/ward-access-labels";
+import { SEED_UNITS, placeOptions, sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
-
-/** The standard network's wards, for naming places before the board is read. */
-const SEED_UNITS = STANDARD_WARD_SITES.flatMap((site) => site.units);
-
-/** A role and place in words, for the status line and the picker. */
-export function sharedDeskLabel(access: WardAccess): string {
-  return `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, SEED_UNITS)}`;
-}
 
 export function WardRolePicker({
   choices,

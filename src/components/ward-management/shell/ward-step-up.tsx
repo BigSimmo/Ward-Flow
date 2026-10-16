@@ -23,12 +23,12 @@ import { StepUpReauthContext } from "./ward-step-up-context";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 /** What an action returns when the server wants a fresh sign-in first. */
-export const STEP_UP_NEEDED = "step-up";
+const STEP_UP_NEEDED = "step-up";
 
 /** What an action returns: why it was refused, `null` when it was done, or `STEP_UP_NEEDED`. */
 export type StepUpResult = string | null;
 
-export { StepUpReauthContext, type StepUpReauthenticate } from "./ward-step-up-context";
+export { StepUpReauthContext } from "./ward-step-up-context";
 
 /** The local demo's last confirm, for one desk, on the demo clock. Memory only. */
 let confirmed: { desk: WardAccess; at: Instant } | null = null;

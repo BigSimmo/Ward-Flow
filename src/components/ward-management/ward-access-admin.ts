@@ -29,7 +29,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 
 /** Roles that wait for a second person's approval before they work (plan decision 6). */
-export const SECOND_APPROVER_ROLES: readonly WardAccessRole[] = ["coordinator", "admin"];
+const SECOND_APPROVER_ROLES: readonly WardAccessRole[] = ["coordinator", "admin"];
 
 /** Cover lasts one shift at most (synthetic). */
 export const COVER_MAX_MINUTES = CLINICAL_VALUES.coverLength.value * 60;
@@ -47,7 +47,7 @@ export const ACCESS_UNUSED_MINUTES = CLINICAL_VALUES.accessUnused.value * MINUTE
  */
 export const PUSH_ROLES: readonly WardAccessRole[] = ["coordinator", "bed_manager", "ward", "ed"];
 
-export type AccessMembershipKind = "role" | "cover";
+type AccessMembershipKind = "role" | "cover";
 
 /** One person's role at one place, as the access admin sees it. */
 export type AccessMembership = {
@@ -145,7 +145,7 @@ export function grantRefusal(input: {
 }
 
 /** Whether the role waits for a second person before it works. */
-export function needsSecondApprover(membership: Pick<AccessMembership, "access" | "kind">): boolean {
+function needsSecondApprover(membership: Pick<AccessMembership, "access" | "kind">): boolean {
   return membership.kind === "role" && SECOND_APPROVER_ROLES.includes(membership.access.role);
 }
 

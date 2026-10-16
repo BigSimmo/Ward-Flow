@@ -35,7 +35,7 @@ export const SharedAccessContext = createContext<{ api: SharedAccessApi; actorId
 const NOT_REACHED = "The server was not reached. Nothing was confirmed.";
 
 /** An account in words: "You", or the start of its id. Names are not held by Ward Flow. */
-export function accountLabel(actorId: string, self: string | null): string {
+function accountLabel(actorId: string, self: string | null): string {
   return actorId === self ? "You" : `Account ${actorId.slice(0, 8)}`;
 }
 
@@ -146,7 +146,7 @@ export function useSharedAdminSource(
 }
 
 /** One cover from the server, on the demo clock. */
-export type SharedCover = {
+type SharedCover = {
   readonly id: string;
   readonly actorId: string;
   readonly grantedBy: string;
