@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Badge, Button, Checkbox } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   criteriaEligibilityRefusal,
   DISCHARGE_CRITERIA,
   dischargeCriteriaStatus,
+  OBSERVATIONS_CRITERION,
   type CriteriaEligibility,
   type DischargeCriteriaRecord,
   type DischargeCriterion,
@@ -45,7 +46,10 @@ export function WardDischargeCriteriaCard({
   const status = dischargeCriteriaStatus(record, eligibility, now);
   const ineligible = criteriaEligibilityRefusal(eligibility);
   const items = record?.items ?? [];
-  const metList = items.filter((item) => item.metAt !== null).map((item) => item.criterion);
+  const isMet = (item: DischargeCriteriaRecord["items"][number]) =>
+    item.metAt !== null &&
+    (item.criterion !== OBSERVATIONS_CRITERION || dayOf(item.metAt) === dayOf(now));
+  const metList = items.filter(isMet).map((item) => item.criterion);
 
   const openEditor = () => {
     setChosen(items.map((item) => item.criterion));
@@ -104,14 +108,14 @@ export function WardDischargeCriteriaCard({
                   <Checkbox
                     label={item.criterion}
                     className={styles.touchTarget}
-                    checked={item.metAt !== null}
+                    checked={isMet(item)}
                     onChange={(event) => toggleMet(item.criterion, event.target.checked)}
                   />
                 ) : (
                   <span className={styles.readOnly}>
                     {item.criterion}{" "}
-                    <Badge size="sm" tone={item.metAt !== null ? "success" : "neutral"}>
-                      {item.metAt !== null ? "Met" : "Not met"}
+                    <Badge size="sm" tone={isMet(item) ? "success" : "neutral"}>
+                      {isMet(item) ? "Met" : "Not met"}
                     </Badge>
                   </span>
                 )}
