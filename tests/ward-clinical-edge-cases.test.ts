@@ -94,6 +94,26 @@ describe("Clinical state-machine edge cases", () => {
         (record) => record.kind === "referral-decision" && record.referralId === queuedReferral!.id,
       );
     expect(decisionRecords(afterSecondReassessment)).toEqual(decisionRecords(afterFirstReassessment));
+    // Inside the undo window, Undo is then refused, so a recorded reassessment is never erased.
+    const quickReassessment = wardFlowReducer(afterFirstReassessment, {
+      type: "ACCEPT_REFERRAL",
+      role: "ed",
+      now: NOW + 21,
+      referralId: queuedReferral!.id,
+      destinationKind: "emergency_department",
+      reassessment: true,
+      reassessmentNote: "Quick reassessment.",
+    });
+    const undone = wardFlowReducer(quickReassessment, {
+      type: "UNDO_REFERRAL_DECISION",
+      role: "ed",
+      now: NOW + 22,
+      referralId: queuedReferral!.id,
+    });
+    expect(undone.rejections.at(-1)?.reason).toBe(
+      "This referral has changed since the decision, so it cannot be undone",
+    );
+    expect(undone.referrals).toEqual(quickReassessment.referrals);
   });
 
   it("validates and records the clearance reason when clearing a bed release or stay discharge blocker", () => {
