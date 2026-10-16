@@ -854,12 +854,13 @@ export function createWorkspaceStore(
      * otherwise the full snapshot, as `read` does.
      */
     async poll(actorId, knownRevision, view) {
-      // A break glass record just opened or ended changes what this desk may see without a new
-      // revision, so the whole scoped workspace goes back until it has settled.
-      // A clinical revision does not identify a membership's view: cover can start or end
-      // without a workflow change. Without a client view token, member polls need the current
-      // scoped snapshot. Bootstrap whole-network polls keep the smaller unchanged reply.
-      if (view?.membershipId || view?.recentGrant) return { notModified: false, snapshot: await read(actorId, view) };
+      // Re-resolve scoped access immediately before reading. A role or one of its covers may have
+      // ended since the HTTP handler resolved the view; never use that stale scope for a snapshot.
+      if (view?.membershipId || view?.recentGrant) {
+        const current = await viewer(actorId, { workingAs: view.membershipId });
+        if (current.status !== "ok") throw new Error("role-ended");
+        return { notModified: false, snapshot: await read(actorId, current) };
+      }
       const at = clock();
       const { rows } = await pool.query(
         "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
