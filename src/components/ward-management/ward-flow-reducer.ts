@@ -1264,7 +1264,7 @@ export function makeNotice(
 export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
   const notifiable = notices.filter((notice) => notice.to.role !== "demo");
   if (notifiable.length === 0) return state;
-  return { ...state, notices: [...state.notices, ...notifiable].slice(-500) };
+  return { ...state, notices: [...state.notices, ...notifiable] };
 }
 
 /**

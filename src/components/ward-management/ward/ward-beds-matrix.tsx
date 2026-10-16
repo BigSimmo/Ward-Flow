@@ -452,40 +452,23 @@ export function WardBedsMatrix({
         (typeof bed.expectedDays === "number" && bed.expectedDays <= 0) ||
         bed.dischargeConfirmed === true;
 
-      if (isDueOut && bed.status !== "ready" && bed.status !== "closed") {
-        const overdueDays =
-          typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
-        const confirmed = bed.dischargeConfirmed === true;
-        items.push({
-          key: `shift-due-${bed.bedLabel}-${bedNumber}`,
-          group: "due-out",
-          bedNumber,
-          title: confirmed ? "Confirmed discharge" : "Expected discharge",
-          badge: overdueDays ? `${overdueDays}d overdue` : bed.pastDate ? "Past date" : "Due today",
-          badgeTone: confirmed ? "warn" : "danger",
-          tag: "Discharge",
-          desc: `${confirmed ? "Confirmed" : "Expected"} out today, still here.${bed.blockReason ? ` ${bed.blockReason}.` : ""}`,
-          actions: [
-            { label: "They have left", primary: false },
-            { label: bed.blockReason ? "Update blocker" : "Record a blocker", primary: false },
-          ],
-          borderTone: confirmed ? "warn" : "danger",
-        });
-      } else if (bed.awayAtEdHours != null || bed.status === "leave") {
+      if (bed.awayAtEdHours != null || bed.status === "leave") {
         const atEd = bed.awayAtEdHours != null;
+        const isAwol = !atEd && bed.statusText === "Absent without leave";
+        const tone = isAwol ? "danger" : "info";
         items.push({
           key: `shift-off-${bed.bedLabel}-${bedNumber}`,
           group: "off-ward",
           bedNumber,
-          title: atEd ? "Away at an ED" : "On leave",
+          title: atEd ? "Away at an ED" : isAwol ? "Absent without leave" : "On leave",
           badge: atEd ? (bed.awayAtEdHours! >= 4 ? "Still at ED" : "Away at ED") : bed.statusText || "On leave",
-          badgeTone: "info",
+          badgeTone: tone,
           tag: atEd && bed.awayAtEdHours! >= 4 ? "Left earlier" : "Just left",
           desc: atEd
             ? "Patient at ED. Bed still held for them."
             : `${bed.patientAlias ?? "Patient"} away from ${unit.name}. Bed still held for them.`,
           actions: [{ label: "Mark them back", primary: false }],
-          borderTone: "info",
+          borderTone: tone,
         });
       } else if (bed.status === "incoming" || bed.isPulled === true || Boolean(bed.heldFor)) {
         const person = bed.heldFor ?? bed.patientAlias ?? "incoming transfer";
@@ -500,6 +483,26 @@ export function WardBedsMatrix({
           desc: `Pulled for ${person}; taken, not yet arrived.`,
           actions: [{ label: "See the move", primary: false }],
           borderTone: "purple",
+        });
+      } else if (isDueOut && bed.status !== "ready" && bed.status !== "closed") {
+        const overdueDays =
+          typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
+        const confirmed = bed.dischargeConfirmed === true;
+        const isOverdue = Boolean(overdueDays) || bed.pastDate === true;
+        items.push({
+          key: `shift-due-${bed.bedLabel}-${bedNumber}`,
+          group: "due-out",
+          bedNumber,
+          title: confirmed ? "Confirmed discharge" : "Expected discharge",
+          badge: overdueDays ? `${overdueDays}d overdue` : bed.pastDate ? "Past date" : "Due today",
+          badgeTone: confirmed ? "warn" : "danger",
+          tag: "Discharge",
+          desc: `${confirmed ? "Confirmed" : "Expected"} ${isOverdue ? "discharge overdue" : "out today"}, still here.${bed.blockReason ? ` ${bed.blockReason}.` : ""}`,
+          actions: [
+            { label: "They have left", primary: false },
+            { label: bed.blockReason ? "Update blocker" : "Record a blocker", primary: false },
+          ],
+          borderTone: confirmed ? "warn" : "danger",
         });
       }
     }

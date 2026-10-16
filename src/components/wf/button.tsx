@@ -85,15 +85,17 @@ export function Button(props: ButtonProps) {
     onClick,
     type = "button",
     disabled,
+    "aria-disabled": ariaDisabled,
     "aria-describedby": describedBy,
     ...rest
   } = props;
   const reasonId = useId();
   const off = Boolean(disabledReason);
+  const isAriaDisabled = off || ariaDisabled === true || ariaDisabled === "true";
   const iconSize = size === "lg" ? 16 : size === "sm" ? 14 : 16;
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (off || loading) {
+    if (isAriaDisabled || loading) {
       event.preventDefault();
       return;
     }
@@ -102,14 +104,14 @@ export function Button(props: ButtonProps) {
 
   const button = (
     <button
+      {...rest}
       type={type}
       className={buttonClass({ variant, size, iconOnly: Boolean(iconOnly), className })}
       disabled={off ? undefined : disabled}
-      aria-disabled={off || undefined}
+      aria-disabled={isAriaDisabled || undefined}
       aria-busy={loading || undefined}
       aria-describedby={cx(describedBy, off && reasonId) || undefined}
       onClick={handleClick}
-      {...rest}
     >
       {loading ? <Spinner /> : icon ? <Icon icon={icon} size={iconSize} /> : null}
       {iconOnly ? null : <span className={styles.label}>{children}</span>}

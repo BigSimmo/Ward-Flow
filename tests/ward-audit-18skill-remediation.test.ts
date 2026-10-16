@@ -55,4 +55,13 @@ describe("18-skill audit remediation invariants", () => {
     expect(projectRes.headers.get("Cache-Control")).toBe("no-store");
     expect(projectRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
+
+  it("preserves monotonic notice counts in appendNotices and D-38 AWOL danger tone in ward-beds-matrix", () => {
+    const reducerSource = readRepoFile("src/components/ward-management/ward-flow-reducer.ts");
+    expect(reducerSource).toContain("return { ...state, notices: [...state.notices, ...notifiable] };");
+
+    const bedsMatrixSource = readRepoFile("src/components/ward-management/ward/ward-beds-matrix.tsx");
+    expect(bedsMatrixSource).toContain('const isAwol = !atEd && bed.statusText === "Absent without leave"');
+    expect(bedsMatrixSource).toContain('const tone = isAwol ? "danger" : "info"');
+  });
 });

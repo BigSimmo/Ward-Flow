@@ -7,13 +7,12 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { UserPlus } from "lucide-react";
 
-import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx, useIsPhone } from "@/components/wf";
+import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx, useMediaQuery } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -1354,24 +1353,9 @@ export function PatientSearchPage() {
 
 const PHONE_QUERY = "(max-width: 40rem)";
 
-function subscribePhone(onChange: () => void) {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const list = window.matchMedia(PHONE_QUERY);
-  list.addEventListener("change", onChange);
-  return () => list.removeEventListener("change", onChange);
-}
-
 /** Phone is its own design (Josh, 9 Oct 2026): below 40rem the census renders its phone layout. */
 function usePhoneLayout(): boolean {
-  const serverPhone = useIsPhone();
-  return useSyncExternalStore(
-    subscribePhone,
-    () =>
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia(PHONE_QUERY).matches,
-    () => serverPhone,
-  );
+  return useMediaQuery(PHONE_QUERY);
 }
 
 function highlightTest(highlight: CensusHighlight | null): (row: CensusRow) => boolean {

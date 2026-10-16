@@ -125,10 +125,15 @@ const TIME_KEY = /^at$|At$|Minutes$/;
 function isReferralIntakeCandidate(value: unknown): value is ReferralIntakeDetails {
   return (
     object(value) &&
-    typeof value.referrerName === "string" &&
-    typeof value.referrerRole === "string" &&
-    typeof value.referrerContact === "string" &&
-    typeof value.presentingSummary === "string"
+    object(value.catchment) &&
+    typeof value.reasonForReferral === "string" &&
+    typeof value.legalStatus === "string" &&
+    Array.isArray(value.riskFlags) &&
+    object(value.medicalClearance) &&
+    typeof value.triageAndRampCompleted === "boolean" &&
+    Array.isArray(value.charts) &&
+    typeof value.additionalDocuments === "boolean" &&
+    object(value.referrer)
   );
 }
 

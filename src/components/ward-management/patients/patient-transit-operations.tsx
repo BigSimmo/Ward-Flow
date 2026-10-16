@@ -221,7 +221,7 @@ export function PatientTransitOperations({
           <button
             type="button"
             className={styles.primary}
-            aria-disabled={!overrideReason || undefined}
+            disabled={!overrideReason}
             title={!overrideReason ? "Choose an override reason first" : undefined}
             onClick={() => {
               if (!overrideReason || !lastActionRejection) return;
@@ -928,7 +928,7 @@ export function PatientTransitOperations({
                 <button
                   type="button"
                   className={styles.secondary}
-                  aria-disabled={!confirmWithdraw || movement.referredUnitIds.length === 0 || undefined}
+                  disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
                   title={
                     !confirmWithdraw
                       ? "Tick confirmation before withdrawing referral"
