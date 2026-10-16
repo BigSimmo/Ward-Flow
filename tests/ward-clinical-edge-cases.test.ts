@@ -90,7 +90,9 @@ describe("Clinical state-machine edge cases", () => {
 
     // The second reassessment decided nothing new, so the acceptance keeps its own undo record.
     const decisionRecords = (state: typeof initial) =>
-      state.undoRecords.filter((record) => record.kind === "referral-decision" && record.referralId === queuedReferral!.id);
+      (state.undoRecords ?? []).filter(
+        (record) => record.kind === "referral-decision" && record.referralId === queuedReferral!.id,
+      );
     expect(decisionRecords(afterSecondReassessment)).toEqual(decisionRecords(afterFirstReassessment));
   });
 

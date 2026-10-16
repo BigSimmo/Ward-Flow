@@ -11,7 +11,7 @@
  * hands back, over a base fixture and three mutated ones.
  *
  * ⚠️ **NOTHING HERE COMPUTES A CLINICAL FIGURE.** Every figure below wraps a derivation that already
- * exists and is already tested — `wardNavCounts` for the rail's counts, `buildActionInbox` for the
+ * exists and is already tested — `wardNavCounts` for the rail's counts, `taskItems` for the
  * task list. A second formula for a figure that already has one is the exact drift this file was
  * created to stop, so re-deriving anything here would defeat its own purpose. If a lane needs a
  * number this module does not carry, the derivation is added where the derivation lives and wrapped
@@ -48,7 +48,8 @@ import type {
   Unit,
 } from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { taskItems, type TaskSource } from "@/components/ward-management/ward-act-now-items";
+import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
@@ -128,10 +129,19 @@ export type ShellFigureInput = {
   readonly now: Instant;
   readonly thresholds: DueSoonThresholds;
   readonly plannedAdmissions?: readonly PlannedAdmission[];
+  /**
+   * The rest of what the one task list (`taskItems`) reads, as the Tasks badge and drawer pass it.
+   * Omitted records simply contribute no rows; an omitted configuration is the default one.
+   */
+  readonly configuration?: TaskSource["configuration"];
+  readonly inboxSnoozes?: TaskSource["inboxSnoozes"];
+  readonly admissions?: TaskSource["admissions"];
+  readonly patients?: TaskSource["patients"];
+  readonly supportNotifications?: TaskSource["supportNotifications"];
 };
 
 /**
- * The words for the one figure not carried by `wardNavCounts`. `buildActionInbox` returns rows, not
+ * The words for the one figure not carried by `wardNavCounts`. `taskItems` returns rows, not
  * a labelled count, so the noun is stated here.
  *
  * `WardTasksDrawer` — the tasks surface `shell/ward-bar.tsx` actually mounts — renders `"tasks"`
@@ -178,12 +188,23 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     openMovements: required("movements"),
     delaysNeedingAttention: required("delays"),
     referralsWaiting: required("referrals"),
+    // The same list the Tasks badge, drawer, Alerts and Home read (`taskItems`), so absence and
+    // decision-target rows count here too.
     tasks: {
-      value: buildActionInbox(
-        input.movements.filter(isOpen),
+      value: taskItems(
+        {
+          movements: input.movements,
+          units: input.units,
+          configuration: input.configuration ?? defaultWardConfiguration(),
+          inboxSnoozes: input.inboxSnoozes ?? {},
+          admissions: input.admissions,
+          patients: input.patients,
+          referrals: input.referrals,
+          supportNotifications: input.supportNotifications,
+          plannedAdmissions: input.plannedAdmissions,
+          leaveBeds: [...input.leaveBeds],
+        },
         input.now,
-        input.units,
-        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
       ).length,
       noun: TASKS_NOUN,
     },

@@ -45,8 +45,8 @@ import { describe, expect, it, vi } from "vitest";
  *                              read on both sides.
  *     referralsWaiting         referralState(referral) === "queued" — the SAME PREDICATE read on
  *                              both sides.
- *     tasks                    buildActionInbox(movements.filter(isOpen), now, units) — a
- *                              BYTE-IDENTICAL call on both sides.
+ *     tasks                    taskItems(records, now), the one task list the Tasks badge and
+ *                              drawer read — a BYTE-IDENTICAL call on both sides.
  *
  * So `bedsAvailable` is the one figure this file cross-derives against a genuinely different
  * computation today; the other four read the same predicate the owning screen already reads,
@@ -138,7 +138,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
 // jsdom is already the installed test environment; use only its document API here.
@@ -321,6 +321,11 @@ function facadeFigures(state: WardFlowState) {
     sites: wardSites,
     thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     plannedAdmissions: state.plannedAdmissions,
+    configuration: state.configuration,
+    inboxSnoozes: state.inboxSnoozes,
+    admissions: state.admissions,
+    patients: state.patients,
+    supportNotifications: state.supportNotifications,
   });
 }
 
@@ -458,11 +463,21 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     screen: "the Tasks drawer",
     component: function TasksDrawerSurface() {
       const current = world.current as ReturnType<typeof contextFor>;
-      const items = buildActionInbox(
-        current.movements.filter(isOpen),
+      // The rows `shell/ward-bar.tsx` hands the mounted drawer: the one task list, `taskItems`.
+      const items = taskItems(
+        {
+          movements: current.movements,
+          units: current.units,
+          configuration: current.configuration,
+          inboxSnoozes: current.inboxSnoozes,
+          admissions: current.admissions,
+          patients: current.patients,
+          referrals: current.referrals,
+          supportNotifications: current.supportNotifications,
+          plannedAdmissions: current.plannedAdmissions,
+          leaveBeds: current.leaveBeds,
+        },
         current.now,
-        current.units,
-        current.plannedAdmissions ? { plannedAdmissions: current.plannedAdmissions } : undefined,
       );
       return createElement(WardTasksDrawer, {
         items,

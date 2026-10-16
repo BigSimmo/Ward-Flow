@@ -4539,10 +4539,7 @@ export function reduceClinicalEvent(
         blocker: null,
         blockedBy: null,
         lastClearedBlockReason: clearedReason,
-        clearedBlockHistory: [
-          ...(linkedRelease.clearedBlockHistory ?? []),
-          clearance,
-        ],
+        clearedBlockHistory: [...(linkedRelease.clearedBlockHistory ?? []), clearance],
       });
     }
 
