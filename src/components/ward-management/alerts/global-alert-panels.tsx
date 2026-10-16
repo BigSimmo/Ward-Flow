@@ -33,7 +33,7 @@ function answerText(reply: BroadcastReply, now: Instant): string {
   return label;
 }
 
-/** Who was asked and what each desk said, unanswered first. */
+/** Who was asked and what each desk said, unanswered first. Chase is Preview until messaging exists. */
 export function ReplyBoardList({
   alert,
   units,
@@ -43,8 +43,6 @@ export function ReplyBoardList({
   units: readonly { id: string; name: string }[];
   now: Instant;
 }) {
-  const [chasedAlertId, setChasedAlertId] = useState<string | null>(null);
-  const chased = chasedAlertId === alert.id;
   const board = replyBoard(alert, units);
   if (board.rows.length === 0) return null;
   const waiting = board.rows.length - board.answered;
@@ -55,19 +53,15 @@ export function ReplyBoardList({
         <span className={styles.quiet}>
           {board.answered} of {board.rows.length} answered
           {broadcastKind(alert) === "bed_call" ? `, ${board.bedsOffered} beds offered` : ""}
-          {chased ? " · Chased unanswered desks" : ""}
         </span>
         <Button
           size="sm"
           className={styles.push}
-          disabledReason={
-            waiting === 0 ? "All units have answered" : chased ? "Unanswered units already chased" : undefined
-          }
+          disabledReason="Not wired in this prototype."
           reasonDisplay="tooltip"
           count={waiting}
-          onClick={() => setChasedAlertId(alert.id)}
         >
-          {chased ? "Chased" : "Chase"}
+          Chase
         </Button>
       </div>
       <ul className={styles.rows}>

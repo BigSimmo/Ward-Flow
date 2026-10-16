@@ -51,6 +51,19 @@ describe("Legal forms — wired confirm controls (F2.1)", () => {
     const firstOption = Array.from(movementSelect.options).find((opt) => opt.value !== "");
     expect(firstOption).toBeDefined();
     fireEvent.change(movementSelect, { target: { value: firstOption!.value } });
+    // A blank, malformed or future time is refused rather than replaced with the save moment.
+    const timeInput = document.getElementById("legal-forms-new-time") as HTMLInputElement;
+    const timeBlockedConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
+    expect(timeBlockedConfirm).toHaveAttribute("aria-disabled", "true");
+    expect(timeBlockedConfirm).toHaveAttribute(
+      "title",
+      "Enter the time written on the form as HH:MM, no later than now.",
+    );
+    for (const bad of ["25:00", "0930", "23:59"]) {
+      fireEvent.change(timeInput, { target: { value: bad } });
+      expect(screen.getByTestId("ward-legal-forms-register-confirm")).toHaveAttribute("aria-disabled", "true");
+    }
+    fireEvent.change(timeInput, { target: { value: "00:00" } });
     const enabledRegisterConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
     expect(enabledRegisterConfirm).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(enabledRegisterConfirm);

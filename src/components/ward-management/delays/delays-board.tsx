@@ -160,7 +160,7 @@ export type DelaysBoardProps = {
   service: string | null;
   isOutsideService: (movement: Movement) => boolean;
   onEscalate: (movement: Movement) => void;
-  onNotWired?: () => void;
+  onNotWired: () => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
   /** shell-9: the Menu's Delays row opens the board filtered to the severe causes. */
@@ -430,7 +430,6 @@ function PersonPanel({
   onClose,
   onEscalate,
   panelRef,
-  holdRecorded = false,
 }: {
   row: BoardRow;
   units: Unit[];
@@ -438,7 +437,6 @@ function PersonPanel({
   onClose: () => void;
   onEscalate: (movement: Movement) => void;
   panelRef: RefObject<HTMLElement | null>;
-  holdRecorded?: boolean;
 }) {
   const thresholds = useDueSoonThresholds();
   const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
@@ -762,28 +760,20 @@ function PersonPanel({
       </div>
       {/* Q-12: delays with no named person are never dropped, so the note stays while a person is open. */}
       <section aria-label="Delays with no named person" className={styles.personSystem}>
-        <NoStatewideDelays holdRecorded={holdRecorded} />
+        <NoStatewideDelays />
       </section>
     </section>
   );
 }
 
-function NoStatewideDelays({ holdRecorded = false }: { holdRecorded?: boolean }) {
-  if (holdRecorded) {
-    return (
-      <p className={styles.empty} role="status">
-        <Glyph tone="warning" />
-        <span>
-          <b>Service-wide hold recorded.</b> Held on this board for the current session.
-        </span>
-      </p>
-    );
-  }
+function NoStatewideDelays() {
   return (
     <p className={styles.empty}>
       <Glyph tone="success" />
       <span>
-        <b>No statewide delays recorded.</b> This model records delays against patient movements and service-wide holds.
+        <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
+        transport outages are not represented as patient movements yet, and recording one is not wired in this
+        prototype.
       </span>
     </p>
   );
@@ -835,8 +825,7 @@ function Registers({
   silentPressed,
   onSilent,
   onPick,
-  holdRecorded = false,
-  onRecordHold,
+  onNotWired,
   part = "all",
 }: {
   /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
@@ -852,8 +841,7 @@ function Registers({
   silentPressed: boolean;
   onSilent: () => void;
   onPick: (id: string) => void;
-  holdRecorded?: boolean;
-  onRecordHold: () => void;
+  onNotWired: () => void;
 }) {
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<"escalated" | "attention" | "resolved" | "system">("escalated");
@@ -862,7 +850,7 @@ function Registers({
     { id: "escalated", label: "Escalated", count: escalated.length },
     { id: "attention", label: "Attention", count: attention.length },
     { id: "resolved", label: "Resolved", count: closedToday.length },
-    { id: "system", label: "System", count: holdRecorded ? 1 : 0 },
+    { id: "system", label: "System", count: 0 },
   ] as const;
   // Device audit (11 Oct 2026): the "Waiting on you" group already lists its own people beside this
   // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
@@ -1051,15 +1039,15 @@ function Registers({
           className={styles.regList}
         >
           <section aria-label="Delays with no named person" className={styles.system} data-ward-primitive="panel">
-            <NoStatewideDelays holdRecorded={holdRecorded} />
+            <NoStatewideDelays />
             <button
               type="button"
               className={styles.chip}
-              onClick={onRecordHold}
-              aria-pressed={holdRecorded}
-              aria-label="Record a service-wide or facility delay"
+              onClick={onNotWired}
+              aria-label="Record a service-wide or facility delay. Not wired in this prototype."
+              title="Not wired in this prototype."
             >
-              {holdRecorded ? "Hold recorded" : "Record hold"}
+              Record hold (not wired)
             </button>
           </section>
         </div>
@@ -1120,6 +1108,7 @@ export function DelaysBoard({
   service,
   isOutsideService,
   onEscalate,
+  onNotWired,
   banner,
   empty,
   initialSevere = false,
@@ -1155,10 +1144,6 @@ export function DelaysBoard({
   const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [holdRecorded, setHoldRecorded] = useState(false);
-  const recordHold = useCallback(() => {
-    setHoldRecorded(true);
-  }, []);
   const tableRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const sheet = useSheetLayout();
@@ -1615,8 +1600,7 @@ export function DelaysBoard({
         set({ silent: !filters.silent });
       }}
       onPick={reveal}
-      holdRecorded={holdRecorded}
-      onRecordHold={recordHold}
+      onNotWired={onNotWired}
     />
   );
   const portraitRow = (row: BoardRow) => {
@@ -1680,8 +1664,7 @@ export function DelaysBoard({
           setRailOpen(false);
           reveal(id);
         }}
-        holdRecorded={holdRecorded}
-        onRecordHold={recordHold}
+        onNotWired={onNotWired}
       />
     </PortraitRail>
   ) : null;
@@ -2034,7 +2017,6 @@ export function DelaysBoard({
                   onClose={close}
                   onEscalate={onEscalate}
                   panelRef={panelRef}
-                  holdRecorded={holdRecorded}
                 />
               </>
             ) : isPhone || portrait ? null : (
@@ -2072,21 +2054,19 @@ export function DelaysBoard({
                 <ChevronRight size={16} aria-hidden="true" className={styles.phCardIcon} />
               </button>
               <div className={styles.phCard}>
-                <Glyph tone={holdRecorded ? "warning" : "success"} />
+                <Glyph tone="success" />
                 <span className={styles.phCardText}>
                   <span className={styles.phCardTitle}>Delays with no named person</span>
-                  <span className={styles.phCardMeta}>
-                    {holdRecorded ? "Service-wide hold recorded" : "None recorded statewide"}
-                  </span>
+                  <span className={styles.phCardMeta}>None recorded statewide</span>
                 </span>
                 <button
                   type="button"
                   className={styles.phCardAction}
-                  onClick={recordHold}
-                  aria-pressed={holdRecorded}
-                  aria-label="Record a service-wide or facility delay"
+                  onClick={onNotWired}
+                  aria-label="Record a service-wide or facility delay. Not wired in this prototype."
+                  title="Not wired in this prototype."
                 >
-                  {holdRecorded ? "Hold recorded" : "Record hold"}
+                  Record (not wired)
                 </button>
               </div>
               <PhoneSheet
@@ -2118,8 +2098,7 @@ export function DelaysBoard({
                     setPhoneSheet(null);
                     reveal(id);
                   }}
-                  holdRecorded={holdRecorded}
-                  onRecordHold={recordHold}
+                  onNotWired={onNotWired}
                   part={phoneSheet === "quiet" ? "quiet" : "registers"}
                 />
               </PhoneSheet>

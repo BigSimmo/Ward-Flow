@@ -37,7 +37,7 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
     }
   });
 
-  it("wires the Delays system 'Record hold' button to record a service-wide hold", () => {
+  it("keeps the Delays system 'Record hold' control honest: it says it is not wired and records nothing", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
@@ -48,14 +48,13 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
     fireEvent.click(systemTab);
 
     const recordBtn = screen.getByRole("button", { name: /Record a service-wide or facility delay/i });
-    expect(recordBtn).toHaveTextContent("Record hold");
+    expect(recordBtn).toHaveAccessibleName(/Not wired in this prototype\./);
 
     fireEvent.click(recordBtn);
-    expect(recordBtn).toHaveTextContent("Hold recorded");
-    expect(screen.getAllByText(/Service-wide hold recorded\./i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Service-wide hold recorded/i)).not.toBeInTheDocument();
   });
 
-  it("wires the Alerts Escalate button and ReplyBoardList Chase button", () => {
+  it("wires the Alerts Escalate button", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AlertsScreen />
@@ -69,7 +68,7 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
     expect(within(panel).getByRole("button", { name: /Escalated/i })).toHaveTextContent("Escalated");
   });
 
-  it("wires the ReplyBoardList Chase button for unanswered units", () => {
+  it("keeps the ReplyBoardList Chase button unavailable until a follow-up action exists", () => {
     const units = allUnits().slice(0, 3);
     const alert: BroadcastAlert = {
       id: "BC-TEST-1",
@@ -92,9 +91,8 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
 
     render(<ReplyBoardList alert={alert} units={units} now={NOW_ANCHOR} />);
     const chaseBtn = screen.getByRole("button", { name: /Chase/i });
-    expect(chaseBtn).not.toBeDisabled();
+    expect(chaseBtn).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(chaseBtn);
-    expect(screen.getByRole("button", { name: /Chased/i })).toBeInTheDocument();
-    expect(screen.getByText(/Chased unanswered desks/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Chased unanswered desks/i)).not.toBeInTheDocument();
   });
 });

@@ -1695,13 +1695,19 @@ function AlertsWorkspace() {
                             size="sm"
                             icon={Clock}
                             onClick={() => {
+                              // The notice reads the reducer's verdict from the event log, as every
+                              // other act on this page does, so a refused extension is not reported.
+                              track({
+                                type: "EXTEND_BROADCAST_ALERT",
+                                ok: `Extended "${activeBroadcast.title}".`,
+                                refused: "Extension was not accepted.",
+                              });
                               dispatch({
                                 type: "EXTEND_BROADCAST_ALERT",
                                 role: "coordinator",
                                 now: clockNow,
                                 alertId: activeBroadcast.id,
                               });
-                              setBroadcastSuccessNotice(`Extended "${activeBroadcast.title}".`);
                             }}
                           >
                             Extend

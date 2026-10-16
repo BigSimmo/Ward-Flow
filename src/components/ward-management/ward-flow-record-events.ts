@@ -1553,7 +1553,6 @@ export function reduceRecordedFactEvent(
         ...movement,
         transport: {
           ...movement.transport,
-          collectedAt: movement.transport.collectedAt,
           diversion: {
             at: event.now,
             by: event.role,
@@ -1990,11 +1989,14 @@ export function reduceRecordedFactEvent(
       }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
+      // One home hospital for the record and for the return movement: an agreement that arrives
+      // naming a different site never moves the one the plan was sent to.
+      const homeHospital = existingRecord?.homeHospital ?? event.homeHospital;
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
         at: existingRecord?.at ?? event.now,
         by: existingRecord?.by ?? event.role,
-        homeHospital: existingRecord?.homeHospital ?? event.homeHospital,
+        homeHospital,
         receivingWardAgreed: event.receivingWardAgreed,
         ...(event.receivingWardAgreed && existingRecord ? { agreedAt: event.now, agreedBy: event.role } : {}),
         mode: event.mode,
@@ -2019,7 +2021,7 @@ export function reduceRecordedFactEvent(
           allEmergencyDepartments().find((ed) => ed.siteCode === currentSite?.code)?.id ??
           allEmergencyDepartments()[0]?.id ??
           "rph-ed";
-        const targetSite = siteByCode(event.homeHospital);
+        const targetSite = siteByCode(homeHospital);
         const targetHealthService = targetSite?.service ?? "North Metro";
 
         const returnMovement: Movement = {
@@ -2047,7 +2049,7 @@ export function reduceRecordedFactEvent(
           owner: currentSite?.name ?? "Outside Hospital",
           referredUnitIds: [],
           declines: [],
-          blocker: `Repatriation to ${targetSite?.name ?? event.homeHospital} (${targetHealthService}) agreed; awaiting destination bed placement`,
+          blocker: `Repatriation to ${targetSite?.name ?? homeHospital} (${targetHealthService}) agreed; awaiting destination bed placement`,
           withdrawnReferrals: [],
           unwinds: [],
           stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],

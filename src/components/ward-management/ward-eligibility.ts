@@ -20,7 +20,7 @@ import type {
 } from "@/components/ward-management/ward-model";
 import type { OverrideReason } from "@/components/ward-management/ward-change-reasons";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import type { GenderPlacement } from "@/components/ward-management/ward-model";
+import { genderReviewNeeded, type GenderPlacement } from "@/components/ward-management/ward-model";
 
 /**
  * ⚠️ **EVERY GATE NAME EITHER ELIGIBILITY FUNCTION CAN EMIT — the single source of truth, and it
@@ -892,11 +892,8 @@ export function genderEligibility(
   // line may ever consult it, and `void` here is what lets the parameter exist without an
   // unused-variable warning inviting somebody to "clean up" the inert third argument into use.
   void _attemptedOverrideReason;
-  const unitId = (unit as { readonly id?: string }).id;
   const coveredByCoordinatorPlacement =
-    unitId !== undefined &&
-    Array.isArray(genderPlacements) &&
-    genderPlacements.some((record) => record.unitIds.includes(unitId));
+    Array.isArray(genderPlacements) && genderPlacements.some((record) => record.unitIds.includes(unit.id));
   if (patient.gender === undefined) {
     // WLQ-35 (owner ruling, 2026-09-15, docs/ward-flow/owner-decisions-2026-09-15.md): "a person
     // with no recorded gender may be placed on a ward that takes either gender, and is refused on
@@ -909,6 +906,15 @@ export function genderEligibility(
         gate: "gender",
         pass: true,
         detail: `Gender is not yet recorded, but ${unit.name} is undesignated and takes either gender`,
+      };
+    }
+    // R7: an unrecorded gender is handled exactly like a gender that is not female or male, so a
+    // coordinator's recorded placement for this unit clears it here as it does in the referral gate.
+    if (coveredByCoordinatorPlacement) {
+      return {
+        gate: "gender",
+        pass: true,
+        detail: `Coordinator gender placement recorded for ${unit.name}`,
       };
     }
     return {
@@ -967,12 +973,30 @@ export type GenderPlacementValidation = {
 export function validateGenderPlacement(
   request: {
     readonly gender?: Patient["gender"];
-    readonly sex?: Sex;
+    /** The recorded sex; when given, the same review rule the reducer applies on acceptance. */
+    readonly sex?: RecordedSex;
     readonly genderPlacements?: ReadonlyArray<GenderPlacement>;
   },
   unit: Pick<Unit, "id" | "name" | "sexDesignation">,
 ): GenderPlacementValidation {
   const result = genderEligibility({ gender: request.gender }, unit, undefined, request.genderPlacements);
+  // ACCEPT_REFERRAL asks for a coordinator's placement on ANY ward when the recorded sex and gender
+  // are not both female or male (`genderReviewNeeded`), so a ward that "takes either gender" does
+  // not make the placement eligible on its own.
+  const placementRecorded = (request.genderPlacements ?? []).some((record) => record.unitIds.includes(unit.id));
+  if (
+    result.pass &&
+    request.sex !== undefined &&
+    genderReviewNeeded(request.gender, request.sex) &&
+    !placementRecorded
+  ) {
+    return {
+      eligible: false,
+      conflictWarning: `${unit.name} needs a recorded coordinator gender placement: the recorded sex and gender are not both female or male.`,
+      requiresCoordinatorReview: true,
+      detail: result.detail,
+    };
+  }
   if (result.pass) {
     return {
       eligible: true,

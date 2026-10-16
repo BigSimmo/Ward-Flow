@@ -61,13 +61,8 @@ describe("out-of-area repatriation — return plan gate and reducer transitions"
     expect(pendingRecord?.receivingWardAgreed).toBe(false);
     expect(afterSend.movements).toHaveLength(movementsBefore);
 
-    const cleared = wardFlowReducer(afterSend, {
-      type: "UNDO_REPATRIATION",
-      role: "coordinator",
-      now: pendingRecord!.at,
-      admissionId,
-    });
-    const afterAgree = wardFlowReducer(cleared, {
+    // The board upgrades the sent plan in place; there is no undo step in between.
+    const afterAgree = wardFlowReducer(afterSend, {
       type: "RECORD_REPATRIATION",
       role: "coordinator",
       now: NOW_ANCHOR,
@@ -81,8 +76,16 @@ describe("out-of-area repatriation — return plan gate and reducer transitions"
       estimatedAt: pendingRecord!.estimatedAt,
     });
 
-    const agreedRecord = afterAgree.repatriations?.find((rec) => rec.admissionId === admissionId);
+    const agreedRecords = afterAgree.repatriations?.filter((rec) => rec.admissionId === admissionId) ?? [];
+    expect(agreedRecords).toHaveLength(1);
+    const agreedRecord = agreedRecords[0];
     expect(agreedRecord?.receivingWardAgreed).toBe(true);
+    expect(agreedRecord?.agreedAt).toBe(NOW_ANCHOR);
+    expect(agreedRecord?.agreedBy).toBe("coordinator");
+    // The original send keeps its time, sender and hospital.
+    expect(agreedRecord?.at).toBe(pendingRecord!.at);
+    expect(agreedRecord?.by).toBe(pendingRecord!.by);
+    expect(agreedRecord?.homeHospital).toBe(pendingRecord!.homeHospital);
     expect(afterAgree.movements).toHaveLength(movementsBefore + 1);
   });
 });

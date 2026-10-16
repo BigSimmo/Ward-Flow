@@ -383,7 +383,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return;
     }
     const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
-    const sentNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return movement pending receiving ward agreement.`;
+    // An explicit "Agreed" answer is kept: sending the plan never records it as still pending.
+    const wardAgreed = draft.receivingWardAgreed === true;
+    const sentNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. ${
+      wardAgreed
+        ? "Return transfer movement queued for bed placement at home health service."
+        : "Return movement pending receiving ward agreement."
+    }`;
     runStep(
       {
         type: "RECORD_REPATRIATION",
@@ -391,7 +397,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         now,
         admissionId,
         homeHospital: draft.homeHospital,
-        receivingWardAgreed: false,
+        receivingWardAgreed: wardAgreed,
         mode: draft.mode,
         provider: draft.provider,
         cadNumber: draft.cadNumber.trim(),
@@ -430,7 +436,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         provider: existing.provider,
         cadNumber: existing.cadNumber,
         transportLegalStatus: existing.transportLegalStatus,
-        estimatedAt: Math.max(existing.estimatedAt, now),
+        // The recorded departure estimate stands; agreeing the return never moves it.
+        estimatedAt: existing.estimatedAt,
       },
       {
         success: agreedNotice,

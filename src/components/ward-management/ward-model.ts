@@ -2005,7 +2005,8 @@ export type BedRelease = {
   clearedBlockHistory?: ReadonlyArray<{
     readonly at: Instant;
     readonly by: WardFlowRole;
-    readonly reason: DischargeDelayClearReason;
+    /** Absent when the clearing event named no reason; never defaulted. */
+    readonly reason?: DischargeDelayClearReason;
     readonly blocker?: BedReleaseBlocker | null;
   }>;
 };

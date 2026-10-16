@@ -177,4 +177,40 @@ describe("Clinical state-machine edge cases", () => {
     ]);
     expect(gateWithClearance.pass).toBe(true);
   });
+
+  it("a coordinator placement clears an unrecorded gender but never a binary mismatch, and the recorded sex is reviewed on any ward", () => {
+    const femaleOnly = { id: "unit-female-only", name: "Female Subacute Ward", sexDesignation: "Female only" as const };
+    const undesignated = { id: "unit-open", name: "Open Ward", sexDesignation: "Undesignated" as const };
+    const placement = (unitId: string) => [
+      {
+        at: NOW,
+        by: "coordinator" as const,
+        unitIds: [unitId],
+        reason: "A single room is available on this ward" as const,
+        wardChecked: true as const,
+      },
+    ];
+
+    // A male patient at a female-only ward stays refused even with a placement for that ward.
+    const binaryMismatch = validateGenderPlacement(
+      { gender: "Male", sex: "Male", genderPlacements: placement(femaleOnly.id) },
+      femaleOnly,
+    );
+    expect(binaryMismatch.eligible).toBe(false);
+
+    // An unrecorded gender is refused without a placement and passes once one covers the ward.
+    expect(genderEligibility({ gender: undefined }, femaleOnly).pass).toBe(false);
+    expect(genderEligibility({ gender: undefined }, femaleOnly, undefined, placement(femaleOnly.id)).pass).toBe(true);
+
+    // The reducer asks for a placement on ANY ward when recorded sex and gender are not both
+    // female or male, so an undesignated ward is not enough on its own.
+    const needsPlacement = validateGenderPlacement({ gender: "Female", sex: "Another term" }, undesignated);
+    expect(needsPlacement.eligible).toBe(false);
+    expect(needsPlacement.requiresCoordinatorReview).toBe(true);
+    const placed = validateGenderPlacement(
+      { gender: "Female", sex: "Another term", genderPlacements: placement(undesignated.id) },
+      undesignated,
+    );
+    expect(placed.eligible).toBe(true);
+  });
 });

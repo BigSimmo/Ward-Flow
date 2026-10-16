@@ -42,9 +42,14 @@ import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-pro
 const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
 
+/**
+ * The time typed from the paper form, today. A blank, malformed, out-of-range or future time is
+ * refused (null): Ward Flow records only times a person typed, never the save moment standing in
+ * for one, and a form cannot have been written after now.
+ */
 function parseWrittenInstant(value: string, now: Instant): Instant | null {
   const trimmed = value.trim();
-  if (!trimmed) return now;
+  if (!trimmed) return null;
   const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
   if (!match) return null;
   const hours = Number(match[1]);
@@ -62,7 +67,7 @@ function parseWrittenInstant(value: string, now: Instant): Instant | null {
   const dayOffset = ((now % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   const startOfDay = now - dayOffset;
   const candidate = startOfDay + hours * 60 + minutes;
-  return candidate > now ? now : candidate;
+  return candidate > now ? null : candidate;
 }
 
 function parseExtensionExpiry(value: string, now: Instant, currentDue?: Instant): Instant | null {
@@ -195,6 +200,11 @@ export function RecordFormSheet({
   const [timeOnForm, setTimeOnForm] = useState("");
   const typeRef = useRef<HTMLSelectElement | null>(null);
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
+  // Dismissing without saving drops the typed time, so it never greets the next patient's form.
+  const dismiss = () => {
+    setTimeOnForm("");
+    onClose();
+  };
   const saveBlockReason = !draft.movement
     ? "Choose a movement first."
     : !draft.form
@@ -202,12 +212,12 @@ export function RecordFormSheet({
       : !isOwnedLegalFormCode(draft.form)
         ? `Form ${draft.form} written time is not recorded on this sheet.`
         : parsedWrittenAt === null
-          ? "Enter a valid 24-hour time (HH:MM)."
+          ? "Enter the time written on the form as HH:MM, no later than now."
           : undefined;
   return (
     <Sheet
       open={open}
-      onClose={onClose}
+      onClose={dismiss}
       initialFocusRef={typeRef}
       title="Record a form"
       description="Attach an MHA 2014 form to an open movement and record the time written on the paper"
@@ -281,6 +291,7 @@ export function RecordFormSheet({
               placeholder="HH:MM"
               inputMode="numeric"
               autoComplete="off"
+              aria-required="true"
               value={timeOnForm}
               onChange={(event) => setTimeOnForm(event.target.value)}
             />
@@ -324,17 +335,22 @@ export function ExtendSheet({
   const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
   const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
   const extendBlockReason = parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined;
+  // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
+  const dismiss = () => {
+    setExpiryState(null);
+    onClose();
+  };
   return (
     <Sheet
       open={target !== null}
-      onClose={onClose}
+      onClose={dismiss}
       title="Extend recorded form"
       description="Extension is recorded, not legally checked"
       portal={false}
       testId="ward-legal-extend"
       footer={
         <div className={styles.sheetFoot}>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={dismiss}>
             Cancel
           </Button>
           <span className={styles.footSpacer} />
@@ -385,6 +401,7 @@ export function ExtendSheet({
                 placeholder="HH:MM"
                 inputMode="numeric"
                 autoComplete="off"
+                aria-required="true"
                 value={expiryValue}
                 onChange={(event) => setExpiryState({ targetId: target.id, value: event.target.value })}
               />
