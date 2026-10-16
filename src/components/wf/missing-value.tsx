@@ -26,7 +26,7 @@ import { createBoundedDiagnosticRecorder } from "./design-system-diagnostics";
  *                            still has no redaction phrase.
  */
 
-export type MissingValueReason =
+type MissingValueReason =
   | "not_recorded"
   | "not_applicable"
   | "unknown"
