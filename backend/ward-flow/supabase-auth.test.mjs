@@ -383,14 +383,18 @@ test("a failed first read is tried again soon, so a brief outage does not hold r
   assert.equal(reads, 2);
 });
 
-test("a stalled role read never holds a sign-in check past the verifier's deadline", async () => {
+test("a stalled role read never holds a sign-in check past the verifier's deadline, and is replaced", async () => {
+  let at = 1_000_000;
   let reads = 0;
   const subject = randomUUID();
+  let finishFirst;
   const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
     timeoutMs: 20,
     roleHolders: () => {
       reads += 1;
-      return new Promise(() => {});
+      if (reads === 1) return new Promise((resolve) => (finishFirst = resolve));
+      return Promise.resolve([subject]);
     },
     fetch: async () => Response.json({ id: subject }),
   });
@@ -400,6 +404,16 @@ test("a stalled role read never holds a sign-in check past the verifier's deadli
   // The stalled read is shared, not repeated.
   await verify(legacy(claims({ sub: subject, jti: "again" })), { clientAddress: "203.0.113.86" });
   assert.equal(reads, 1);
+  // After a whole refresh period it is abandoned and a new read starts.
+  at += ROLE_HOLDERS_REFRESH_MS;
+  await verify(legacy(claims({ sub: subject, jti: "later" })), { clientAddress: "203.0.113.86" });
+  assert.equal(reads, 2);
+  // The abandoned read ending late does not replace the newer list.
+  finishFirst([]);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  at += 1;
+  await verify(legacy(claims({ sub: subject, jti: "after" })), { clientAddress: "203.0.113.86" });
+  assert.equal(reads, 2);
 });
 
 test("without a role list, only the bootstrap coordinator list counts as having a role", async () => {

@@ -400,6 +400,24 @@ describe("a command from a desk", () => {
       } as WardFlowEvent);
       expect(reviewed.auditReviews.map((review) => review.eventId)).toEqual([eventId]);
     }
+    // A desk may name only the entries its own screens show, never another desk's.
+    desks.forEach((access, desk) => {
+      for (const eventId of shownBy.flatMap((shown) => [...shown]).filter((id) => !shownBy[desk].has(id)))
+        expect(
+          commandScopeRefusal(state, access, { type: "REVIEW_AUDIT_EVENT", role: "coordinator", eventId }, options),
+        ).toMatch(/outside/);
+    });
+    // An entry no desk can show is not found: a record never sits further forward in a desk's part.
+    const invented = wardFlowReducer(state, {
+      type: "REVIEW_AUDIT_EVENT",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      eventId: `audit-seed-refer-to-units:${state.movements[0].id}`,
+      expectedGeneration: state.worldGeneration,
+      expectedReviewCount: 0,
+      decision: "reviewed",
+    } as WardFlowEvent);
+    expect(invented.auditReviews).toEqual([]);
     desks.forEach((access, desk) => {
       const sent = scopeWardFlowState(world, access, options).state.auditReviews;
       // A desk is sent a review only when its own screens show that entry, never another desk's

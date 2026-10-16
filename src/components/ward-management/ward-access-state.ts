@@ -354,12 +354,12 @@ export function commandScopeRefusal(
     referrals: scoped.referrals.filter((referral) => !glass(referral)),
   });
   const all = recordIds(state);
-  // A seeded governance entry can be reviewed, so its id counts as a record too. A coordinator may
-  // name only the ones its own screens show.
-  for (const event of syntheticGovernanceAuditEvents(state)) all.add(event.id);
+  // A seeded governance entry can be reviewed, and the whole workspace finds one about any record
+  // (`governanceAuditEntry`), so every seeded id counts as a record. A coordinator may name only the
+  // ones its own screens show.
   if (access.role === "coordinator") for (const id of seededAuditIds(scoped, state)) writable.add(id);
   for (const text of commandStrings(command)) {
-    if (all.has(text) && !writable.has(text)) return outside;
+    if ((all.has(text) || text.startsWith("audit-seed-")) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));
     const subject = category ? text.slice(category.idPrefix.length) : undefined;
     if (subject !== undefined && all.has(subject) && !writable.has(subject)) return outside;
