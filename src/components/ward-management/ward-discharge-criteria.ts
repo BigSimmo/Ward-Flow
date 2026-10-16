@@ -63,9 +63,12 @@ export function isDischargeCriteriaRecord(value: unknown): value is DischargeCri
   if (typeof value !== "object" || value === null) return false;
   const record = value as { setAt?: unknown; items?: unknown };
   if (typeof record.setAt !== "number" || !Number.isFinite(record.setAt) || !Array.isArray(record.items)) return false;
+  // Closed shape: an extra key could carry typed text.
+  if (Object.keys(record).some((key) => key !== "setAt" && key !== "items")) return false;
   const seen = new Set<string>();
   return record.items.every((item: unknown) => {
     if (typeof item !== "object" || item === null) return false;
+    if (Object.keys(item).some((key) => key !== "criterion" && key !== "metAt")) return false;
     const { criterion, metAt } = item as { criterion?: unknown; metAt?: unknown };
     if (!isDischargeCriterion(criterion) || seen.has(criterion)) return false;
     seen.add(criterion);
