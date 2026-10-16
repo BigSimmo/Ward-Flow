@@ -945,6 +945,17 @@
   .closeButton {
     min-width: 3rem;
   }
+
+  /* The footer quick jumps are inline styled links about 18px tall, so reach them by their hook. */
+  .drawer [data-testid="ward-tasks-quick-jumps"] {
+    align-items: center;
+  }
+
+  .drawer [data-testid^="ward-tasks-jump-"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
