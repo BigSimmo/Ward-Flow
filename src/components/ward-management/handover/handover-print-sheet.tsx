@@ -6,7 +6,7 @@
  * from the shared handover columns so the board and the paper never disagree. Patients are named
  * by record and UMRN only; the journey id is a key and a callback argument, never shown.
  */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { ChevronLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
@@ -255,6 +255,7 @@ export function HandoverPrintSheet({
   takenAt,
   now,
 }: HandoverPrintSheetProps) {
+  const baseId = useId();
   const landscape = options.orientation === "landscape";
   const paper = PAPER[options.orientation];
 
@@ -603,8 +604,8 @@ export function HandoverPrintSheet({
           <p className={styles.sub}>The sheet follows the board. Printing freezes a copy with the time it was taken.</p>
         </div>
         <div className={styles.controls}>{controls}</div>
-        <section className={styles.opt} aria-labelledby="wf-print-include">
-          <h3 id="wf-print-include" className={styles.lab}>
+        <section className={styles.opt} aria-labelledby={`${baseId}-wf-print-include`}>
+          <h3 id={`${baseId}-wf-print-include`} className={styles.lab}>
             Include
           </h3>
           {INCLUDE.map((item) => (
@@ -617,8 +618,8 @@ export function HandoverPrintSheet({
             />
           ))}
         </section>
-        <section className={styles.opt} aria-labelledby="wf-print-paper">
-          <h3 id="wf-print-paper" className={styles.lab}>
+        <section className={styles.opt} aria-labelledby={`${baseId}-wf-print-paper`}>
+          <h3 id={`${baseId}-wf-print-paper`} className={styles.lab}>
             Paper
           </h3>
           <Segmented
@@ -632,8 +633,8 @@ export function HandoverPrintSheet({
           />
           <span className={styles.sub}>{pageWord(totalPages)}. Save as PDF from the print dialog.</span>
         </section>
-        <section className={styles.opt} aria-labelledby="wf-print-highlight">
-          <h3 id="wf-print-highlight" className={styles.lab}>
+        <section className={styles.opt} aria-labelledby={`${baseId}-wf-print-highlight`}>
+          <h3 id={`${baseId}-wf-print-highlight`} className={styles.lab}>
             Highlight
           </h3>
           {highlightControls}

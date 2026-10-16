@@ -181,11 +181,11 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         </CardHead>
         <div className={styles.cardBody}>
           <div className={styles.fieldGrid} data-layout="wide-narrow">
-            <Field label="Legal status" htmlFor="refLegalSelect" required>
+            <Field label="Legal status" htmlFor={`${sectionId}-refLegalSelect`} required>
               <SelectBox>
                 <select
                   className={styles.fieldSelect}
-                  id="refLegalSelect"
+                  id={`${sectionId}-refLegalSelect`}
                   value={legalStatus}
                   onChange={(e) => setLegalStatus(e.target.value)}
                 >
@@ -283,11 +283,11 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         <CardHead icon={Activity} title="Clinical presentation" />
         <div className={styles.cardBody}>
           <div className={styles.fieldGrid}>
-            <Field label="Provisional diagnosis" htmlFor="refDiagSelect" hint="optional">
+            <Field label="Provisional diagnosis" htmlFor={`${sectionId}-refDiagSelect`} hint="optional">
               <SelectBox>
                 <select
                   className={styles.fieldSelect}
-                  id="refDiagSelect"
+                  id={`${sectionId}-refDiagSelect`}
                   value={provisionalDiag}
                   onChange={(e) => setProvisionalDiag(e.target.value)}
                 >
@@ -330,10 +330,15 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 autoComplete="off"
               />
             </Field>
-            <Field label="Patient story" htmlFor="refSummaryText" hint={`${clinicalSummary.length}/10000`} wide>
+            <Field
+              label="Patient story"
+              htmlFor={`${sectionId}-refSummaryText`}
+              hint={`${clinicalSummary.length}/10000`}
+              wide
+            >
               <textarea
                 className={styles.clinicalTextarea}
-                id="refSummaryText"
+                id={`${sectionId}-refSummaryText`}
                 maxLength={10000}
                 rows={2}
                 placeholder="What changed today, history, current treatment"

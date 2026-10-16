@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
@@ -170,6 +171,7 @@ function safeSummary() {
     ...Object.fromEntries(roleFields.map((field) => [field, true])),
   };
 }
+/** @param {Record<string, unknown>} [row] */
 function summaryPool(row = safeSummary()) {
   return {
     query: async (sql, args) => {
@@ -409,7 +411,7 @@ test("Supabase verifier separates denied credentials from outages and malformed 
     const verify = createSupabaseAuthenticator(config, { fetch: async () => response });
     await assert.rejects(
       verify(legacyToken(config)),
-      (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+      (/** @type {Error} */ error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
     );
   }
   for (const fetch of [

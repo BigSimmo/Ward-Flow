@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useContext, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
 import {
   setWardAccess,
@@ -117,13 +117,14 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+  const baseId = useId();
   const network = useWardNetwork();
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
   const { movements, units, bedReleases, admissions, leaveBeds, focusMovementId, configuration } =
     useUnscopedWardFlow();
   // The patient in focus is named from the desk's own scoped workspace (review on PR #330), so a
   // restricted desk never sees the UMRN of someone outside its care here.
-  const scoped = useWardFlow();
+  const scoped = useWardFlowSelect("movements", "patients", "referrals");
   // Role access plan PR 1: with the flag on, opening a desk takes that desk's access.
   const accessOn = useWardFeatureFlag("role-access");
   const { access: currentAccess } = useWardAccessSnapshot();
@@ -382,7 +383,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             type="button"
             className={styles.hereHead}
             aria-expanded={hereOpen}
-            aria-controls="workstation-here-can"
+            aria-controls={`${baseId}-workstation-here-can`}
             onClick={() => setHereOpen((value) => !value)}
           >
             <span className={styles.roleIcon}>
@@ -396,7 +397,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             <Icon icon={ChevronDown} size={14} className={styles.chev} />
           </button>
           {hereOpen ? (
-            <div id="workstation-here-can" className={styles.hereBody}>
+            <div id={`${baseId}-workstation-here-can`} className={styles.hereBody}>
               <p className={styles.eyebrow}>You can here</p>
               <CanList role={here.role} />
             </div>

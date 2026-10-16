@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
 import {
   SUPPORT_SERVICE_TYPES,
@@ -31,9 +32,19 @@ export function WardDischargeNotices({
   dueSoonHours: number | null;
   onClose: () => void;
 }) {
+  const baseId = useId();
   return (
-    <Card className={styles.card} aria-labelledby="ward-discharge-notices-title" data-testid="ward-discharge-notices">
-      <CardHead id="ward-discharge-notices-title" title="Discharge support notices" meta={bedLabel} level={3} />
+    <Card
+      className={styles.card}
+      aria-labelledby={`${baseId}-ward-discharge-notices-title`}
+      data-testid="ward-discharge-notices"
+    >
+      <CardHead
+        id={`${baseId}-ward-discharge-notices-title`}
+        title="Discharge support notices"
+        meta={bedLabel}
+        level={3}
+      />
       <CardBody>
         <p className={styles.lead}>
           Discharge confirmed for {bedLabel}.
@@ -43,10 +54,10 @@ export function WardDischargeNotices({
           {SUPPORT_SERVICE_TYPES.map((service) => (
             <li key={service} className={styles.row}>
               <span className={styles.service}>{SERVICE_LABELS[service]}</span>
-              <Button variant="sec" size="sm" disabled aria-describedby={`ward-discharge-notice-${service}`}>
+              <Button variant="sec" size="sm" disabled aria-describedby={`${baseId}-ward-discharge-notice-${service}`}>
                 Send notice
               </Button>
-              <span id={`ward-discharge-notice-${service}`} className={styles.note}>
+              <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>
                 {NOT_WIRED}
               </span>
             </li>
