@@ -163,7 +163,8 @@ describe("ADD_REFERRAL_CORRECTION — RB7, build plan item 27 (2026-09-17)", () 
      * specifically becoming a second way to overwrite an EXISTING referral's own `history`.
      */
     it("the ADD_REFERRAL_CORRECTION case body contains no history: assignment", () => {
-      const source = readFileSync("src/components/ward-management/ward-flow-reducer.ts", "utf8");
+      // The case moved out of the reducer unchanged into the referral send slice (16 October 2026).
+      const source = readFileSync("src/components/ward-management/ward-flow-referral-send-events.ts", "utf8");
       const caseStart = source.indexOf('case "ADD_REFERRAL_CORRECTION": {');
       expect(caseStart, "ADD_REFERRAL_CORRECTION case body not found in the reducer").toBeGreaterThan(-1);
 
@@ -179,7 +180,8 @@ describe("ADD_REFERRAL_CORRECTION — RB7, build plan item 27 (2026-09-17)", () 
     });
 
     it("RECEIVE_REFERRAL is still the one place a referral's history is freshly authored from a caller's own typed text", () => {
-      const source = readFileSync("src/components/ward-management/ward-flow-reducer.ts", "utf8");
+      // The case moved out of the reducer unchanged into the referral answer slice (16 October 2026).
+      const source = readFileSync("src/components/ward-management/ward-flow-referral-answer-events.ts", "utf8");
       // The BODY, not merely the label: `case "RECEIVE_REFERRAL":` alone also matches a
       // fall-through case label earlier in the same switch (shared preamble validation with other
       // event types), which carries no body of its own and would truncate this scan almost
