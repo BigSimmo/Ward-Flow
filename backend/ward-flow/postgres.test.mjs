@@ -779,7 +779,7 @@ test(
           // The cached version still says 8 for one request, which fails; the next reads it again.
           await assert.rejects(store.viewer(actor), /does not exist/);
           assert.deepEqual(await store.viewer(actor), { status: "none" });
-          assert.equal(await store.hasRole(actor), false);
+          assert.equal((await store.roleHolders()).includes(actor), false);
           // The access routes say roles need 008 rather than failing on the missing table.
           assert.equal((await store.listAccess(await store.viewer(actor, { bootstrap: true }))).status, 409);
         }
@@ -869,7 +869,7 @@ test(
       assert.deepEqual(leadView.access, engine.STATEWIDE);
       const secondView = await store.viewer(second, { bootstrap: true });
       assert.deepEqual(await store.viewer(nurse), { status: "none" });
-      assert.equal(await store.hasRole(nurse), false);
+      assert.equal((await store.roleHolders()).includes(nurse), false);
 
       const full = await store.read(lead, leadView);
       const world = full.payload;
@@ -922,7 +922,7 @@ test(
       // The nurse's desk is the ward, and everything sent back is that ward's part only.
       const nurseView = await store.viewer(nurse);
       assert.equal(nurseView.status, "ok");
-      assert.equal(await store.hasRole(nurse), true);
+      assert.equal((await store.roleHolders()).includes(nurse), true);
       assert.deepEqual(nurseView.access, { role: "ward", scope: ward });
       const scoped = await store.read(nurse, nurseView);
       assert.ok(engine.validWorld(JSON.parse(JSON.stringify(scoped.payload))));
@@ -989,7 +989,7 @@ test(
       assert.equal(pending.body.membership.approved, false);
       assert.deepEqual(await store.viewer(admin), { status: "none" });
       // A role still waiting for its second approver counts for the sign-in allowance.
-      assert.equal(await store.hasRole(admin), true);
+      assert.equal((await store.roleHolders()).includes(admin), true);
       assert.equal((await store.approveAccess(leadView, pending.body.membership.id)).status, 422);
       assert.equal((await store.approveAccess(nurseView, pending.body.membership.id)).status, 403);
       assert.equal((await store.approveAccess(secondView, pending.body.membership.id)).status, 200);

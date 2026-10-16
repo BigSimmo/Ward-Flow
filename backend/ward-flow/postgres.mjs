@@ -567,22 +567,22 @@ export function createWorkspaceStore(
     },
     viewer,
     /**
-     * Whether an account holds any current role here, waiting approval included. The sign-in
-     * check asks this before it calls Supabase, so made-up accounts get only a small allowance.
-     * Before migration 8 there are no roles to hold.
+     * The accounts holding any current role here, waiting approval included. The sign-in check
+     * reads this list now and then (cached) before it calls Supabase, so made-up accounts get only a
+     * small allowance. Before migration 8 there are no roles to hold.
      */
-    async hasRole(actorId) {
-      if ((await schemaVersion()) < ROLE_ACCESS_MIGRATION) return false;
-      const { rowCount } = await pool
+    async roleHolders() {
+      if ((await schemaVersion()) < ROLE_ACCESS_MIGRATION) return [];
+      const { rows } = await pool
         .query(
-          "SELECT 1 FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 LIMIT 1",
-          [workspaceId, actorId, clock()],
+          "SELECT DISTINCT actor_id FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND expires_at > $2",
+          [workspaceId, clock()],
         )
         .catch((error) => {
           forgetVersionOnMissing(error);
           throw error;
         });
-      return rowCount > 0;
+      return rows.map((row) => String(row.actor_id));
     },
     /**
      * The newest audit rows. The statewide coordinator reads them all, break glass included. An

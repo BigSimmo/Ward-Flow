@@ -7,6 +7,7 @@ import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-con
 import {
   REMOTE_CHECKS_PER_ADDRESS,
   REMOTE_CHECKS_UNKNOWN_TOTAL,
+  ROLE_HOLDERS_REFRESH_MS,
   createSupabaseAuthenticator,
 } from "./supabase-auth.mjs";
 
@@ -239,12 +240,12 @@ test("one coordinator's checks cannot use up the allowance for the others", asyn
 
 test("made-up accounts share one small allowance, so they never use up the checks real desks need", async () => {
   const nurse = randomUUID();
-  const lookups = [];
+  let reads = 0;
   const calls = [];
   const verify = createSupabaseAuthenticator(config, {
-    knownSubject: async (subject) => {
-      lookups.push(subject);
-      return subject === nurse;
+    roleHolders: async () => {
+      reads += 1;
+      return [nurse];
     },
     fetch: async (url, init) => {
       calls.push(url);
@@ -264,56 +265,66 @@ test("made-up accounts share one small allowance, so they never use up the check
   // A bootstrap coordinator and an account with a role still get through.
   assert.equal(await verify(legacy(), { clientAddress: "203.0.113.71" }), coordinator);
   assert.equal(await verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.72" }), nurse);
-  assert.equal(lookups.length, REMOTE_CHECKS_UNKNOWN_TOTAL + 2);
+  // The role holders were read once, not once per token.
+  assert.equal(reads, 1);
 });
 
-test("the account lookup is skipped for an address over its limit, and a failed lookup counts as no role", async () => {
-  const nurse = randomUUID();
-  let lookups = 0;
+test("forged tokens never cause a database read per request, from one address or many", async () => {
+  let at = 1_000_000;
+  let reads = 0;
   const verify = createSupabaseAuthenticator(config, {
-    knownSubject: async () => {
-      lookups += 1;
-      throw new Error("database unavailable");
-    },
-    fetch: async () => Response.json({ id: nurse }),
-  });
-  for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS; index += 1)
-    await verify(legacy(claims({ sub: nurse, jti: String(index) })), { clientAddress: "203.0.113.80" });
-  assert.equal(lookups, REMOTE_CHECKS_PER_ADDRESS);
-  await assert.rejects(
-    verify(legacy(claims({ sub: nurse, jti: "over" })), { clientAddress: "203.0.113.80" }),
-    VerifierRateLimitedError,
-  );
-  assert.equal(lookups, REMOTE_CHECKS_PER_ADDRESS);
-  // Every lookup failed, so those checks came from the no-role allowance, which is now spent.
-  await assert.rejects(
-    verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.81" }),
-    VerifierRateLimitedError,
-  );
-});
-
-test("refused checks still count against the address, so one address cannot cause endless lookups", async () => {
-  let lookups = 0;
-  const verify = createSupabaseAuthenticator(config, {
-    knownSubject: async () => {
-      lookups += 1;
-      return false;
+    now: () => at,
+    roleHolders: async () => {
+      reads += 1;
+      return [];
     },
     fetch: async () => Response.json({ id: randomUUID() }),
   });
-  // Spend the no-role allowance from other addresses first.
-  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
-    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` }).catch(() => {});
-  lookups = 0;
+  // One address is charged before the role check, refused or not, so it stops at its own limit.
   for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS * 3; index += 1)
-    await assert.rejects(
-      verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.90" }),
-      VerifierRateLimitedError,
-    );
-  assert.equal(lookups, REMOTE_CHECKS_PER_ADDRESS);
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.90" }).catch(() => {});
+  // Many addresses, each with a new account, share the one cached read.
+  for (let index = 0; index < 200; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `10.0.${index}.1` }).catch(() => {});
+  assert.equal(reads, 1);
+  at += ROLE_HOLDERS_REFRESH_MS;
+  await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "10.1.0.1" }).catch(() => {});
+  assert.equal(reads, 2);
 });
 
-test("without a lookup, only the bootstrap coordinator list counts as having a role", async () => {
+test("a role granted after the last read is recognised at the next refresh, and a failed read keeps the last list", async () => {
+  let at = 1_000_000;
+  const nurse = randomUUID();
+  let holders = [];
+  let failing = false;
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    roleHolders: async () => {
+      if (failing) throw new Error("database unavailable");
+      return holders;
+    },
+    fetch: async (_url, init) => {
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      return Response.json({ id: JSON.parse(Buffer.from(token, "base64url").toString()).sub });
+    },
+  });
+  // Spend the no-role allowance, which the nurse also draws on before the grant is seen.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` });
+  holders = [nurse];
+  await assert.rejects(
+    verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.80" }),
+    VerifierRateLimitedError,
+  );
+  at += ROLE_HOLDERS_REFRESH_MS;
+  assert.equal(await verify(legacy(claims({ sub: nurse, jti: "a" })), { clientAddress: "203.0.113.80" }), nurse);
+  // A failed read is retried only after the refresh period, and the nurse's role is kept meanwhile.
+  failing = true;
+  at += ROLE_HOLDERS_REFRESH_MS;
+  assert.equal(await verify(legacy(claims({ sub: nurse, jti: "b" })), { clientAddress: "203.0.113.80" }), nurse);
+});
+
+test("without a role list, only the bootstrap coordinator list counts as having a role", async () => {
   const { verify } = setup({ user: { id: coordinator } });
   for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
     await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `192.0.2.${index}` }).catch(() => {});

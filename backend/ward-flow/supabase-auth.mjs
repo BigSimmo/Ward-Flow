@@ -28,6 +28,11 @@ export const REMOTE_CHECKS_TOTAL = 300;
  * up only this, never the checks real desks need.
  */
 export const REMOTE_CHECKS_UNKNOWN_TOTAL = 30;
+/**
+ * How long the list of accounts holding a role here is reused. At most one database read per
+ * period, however many tokens arrive, and a new grant is recognised within this time.
+ */
+export const ROLE_HOLDERS_REFRESH_MS = 30_000;
 const LIMIT_WINDOW_MS = 60_000;
 const LIMIT_ADDRESSES_MAX = 10_000;
 
@@ -70,7 +75,7 @@ function decodeJwt(token) {
  * the current list is refused here. Every other token without a usable published key (a legacy
  * shared-secret token, no key ID, an unsupported or unreadable key, or the key list cannot be read)
  * is sent to /auth/v1/user, behind per-address, per-account and total limits. Before that call the
- * account is looked up (`knownSubject`, a membership or the bootstrap list): an account with no role
+ * account is checked against the cached role holders (`roleHolders`) and the bootstrap list: an account with no role
  * here draws on its own small allowance, so made-up accounts cannot crowd out real desks. Junk tokens
  * never reach Supabase. A token verified locally stays valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
@@ -82,8 +87,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   const now = dependencies.now ?? Date.now;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
   const coordinatorIds = new Set(config.coordinatorIds ?? []);
-  /** Whether an account outside the bootstrap list holds a role here. A failed lookup counts as no role. */
-  const knownSubject = dependencies.knownSubject ?? (async () => false);
+  /** The accounts outside the bootstrap list that hold a role here. A failed read keeps the last list. */
+  const loadRoleHolders = dependencies.roleHolders ?? (async () => []);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
 
   /** One bounded GET to the approved project. Covers the body read too, not just the headers. */
@@ -181,6 +186,26 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
+  const holders = { ids: new Set(), refreshedAt: -Infinity, pending: null };
+  /** Read the role holders at most once per refresh period, shared by every request waiting on it. */
+  async function holdsRole(subject) {
+    if (coordinatorIds.has(subject)) return true;
+    if (now() - holders.refreshedAt >= ROLE_HOLDERS_REFRESH_MS)
+      holders.pending ??= Promise.resolve()
+        .then(() => loadRoleHolders())
+        .then(
+          (ids) => {
+            holders.ids = new Set(Array.isArray(ids) ? ids : []);
+          },
+          () => {},
+        )
+        .finally(() => {
+          holders.refreshedAt = now();
+          holders.pending = null;
+        });
+    if (holders.pending) await holders.pending;
+    return holders.ids.has(subject);
+  }
   const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map(), subjects: new Map() };
   function startWindow() {
     const at = now();
@@ -290,13 +315,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
     if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
-    const hasRole =
-      coordinatorIds.has(subject) ||
-      (await Promise.resolve()
-        .then(() => knownSubject(subject))
-        .then((value) => value === true)
-        .catch(() => false));
-    if (!allowRemoteCheck(subject, hasRole)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(subject, await holdsRole(subject)))
+      throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);
