@@ -228,10 +228,8 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
  * the other. Today's ids are plain slugs, which is precisely why this would go unnoticed if it were
  * wrong.
  */
-export function patientHref(patientId: string): string {
-  // D-39: the address carries a code, never the person's record number.
-  return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
-}
+// Defined beside the task list's imports so that list can link a person without a cycle back here.
+export { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 
 /**
  * A ward's own screen. See `patientHref` — same two reasons.
