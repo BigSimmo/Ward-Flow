@@ -656,10 +656,13 @@ type PhoneReference = Extract<ReferenceTab, "defaults" | "clinical">;
 /** The clinical values on a phone: the desktop table's rows as a list, grouped the same way. */
 // D-56 signs values for the prototype only; D-54 still needs clinical governance sign-off for real use.
 function ClinicalValuesNote() {
+  const unsigned = unsignedClinicalValueCount();
   return (
     <p className={styles.cardNote} data-tone="accent">
-      {unsignedClinicalValueCount()} of {CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for
-      the prototype only. Every value still needs clinical governance sign-off before real patient use.
+      {unsigned === 0
+        ? `All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`
+        : `${unsigned} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only.`}{" "}
+      Every value still needs clinical governance sign-off before real patient use.
     </p>
   );
 }
