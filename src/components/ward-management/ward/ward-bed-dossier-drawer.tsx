@@ -445,6 +445,9 @@ export function WardBedDossierDrawer({
         aria-modal="true"
         tabIndex={-1}
         onKeyDown={(event) => {
+          if (event.key === "Escape" && event.target instanceof HTMLElement && event.target.tagName === "SELECT") {
+            return;
+          }
           onKeyDown(event);
           if (event.key === "Escape") {
             event.preventDefault();

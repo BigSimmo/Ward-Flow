@@ -25,7 +25,8 @@ export function guessPhoneFromRequest(userAgent: string | null, clientHintMobile
 export function guessTabletFromUserAgent(userAgent: string | null): boolean {
   const ua = userAgent ?? "";
   if (!ua || guessPhoneFromUserAgent(ua)) return false;
-  return /iPad|Tablet|PlayBook|Silk|(?:Android(?!.*Mobile))/iu.test(ua);
+  if (/Silk-Accelerated|Android TV|CrKey|\bAFT[A-Z0-9]+\b/iu.test(ua)) return false;
+  return /iPad|Tablet|PlayBook|\bSilk\b|(?:Android(?!.*Mobile))/iu.test(ua);
 }
 
 /**

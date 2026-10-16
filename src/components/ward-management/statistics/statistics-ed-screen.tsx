@@ -23,7 +23,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
@@ -40,6 +40,7 @@ import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-man
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
+import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
@@ -86,7 +87,8 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
-  const small = useSmallNumber();
+  // The executive desk sees counts only: small counts worded, lists of people left out.
+  const { countsOnly, small, parts } = useStatisticsCounts();
   const { movements: liveMovements, units } = live.state;
   const isPhone = useIsPhone();
   const now = live.now;
@@ -132,6 +134,8 @@ export function StatisticsEdScreen({
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
+  // The bands add up to the Waiting figure in the hero, so a hidden band hides a second one with it.
+  const bandShown = parts(bands.map((band) => band.count));
   // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
   // WF- journey id (D-39). A person waiting in ED has no admission yet, so the row says so and
   // links to the live movement, where the name is shown.
@@ -179,6 +183,8 @@ export function StatisticsEdScreen({
   const notSuitableDeclineCount = declinesReadout.ok
     ? declinesReadout.value.totalCount - noFreeBedDeclineCount
     : undefined;
+  const noFreeBedShown = small(noFreeBedDeclineCount);
+  const notSuitableShown = notSuitableDeclineCount === undefined ? undefined : small(notSuitableDeclineCount);
 
   const longHours = LONG_WAIT_MINUTES / 60;
   const veryLongHours = VERY_LONG_WAIT_MINUTES / 60;
@@ -285,7 +291,11 @@ export function StatisticsEdScreen({
         </>
       }
     >
-      {isPhone ? (
+      {isPhone && countsOnly ? (
+        <PhoneBody testId="ward-statistics-ed-phone">
+          <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />
+        </PhoneBody>
+      ) : isPhone ? (
         <EdPhone
           waiting={waitingMovements}
           nameOf={nameOf}
@@ -304,6 +314,8 @@ export function StatisticsEdScreen({
                 over24h={over24h}
                 over48h={over48h}
                 onTheList={onTheList}
+                waitingText={small(onTheList)}
+                countsOnly={countsOnly}
                 longestName={longestWait ? nameOf(longestWait.movement) : ""}
                 longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
               />
@@ -311,7 +323,9 @@ export function StatisticsEdScreen({
             <FlushStack>
               <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
                 <CardBody className={styles.bodyStack}>
-                  {nextToCross.length === 0 ? (
+                  {countsOnly ? (
+                    <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />
+                  ) : nextToCross.length === 0 ? (
                     <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
                   ) : (
                     <ul className={detail.crossList}>
@@ -347,15 +361,15 @@ export function StatisticsEdScreen({
                     columns={bands.map((band, index) => ({
                       id: band.label,
                       label: bandShortLabel(index),
-                      value: band.count,
+                      ...withheldBar(band.count, bandShown[index]!),
                     }))}
                   />
                   <ul className={styles.srOnly}>
-                    {bands.map((band) => (
+                    {bands.map((band, index) => (
                       <li key={band.label} data-testid={`ward-statistics-ed-band-${slug(band.label)}`}>
                         {band.label},{" "}
                         <span data-testid={`ward-statistics-ed-band-count-${slug(band.label)}`}>
-                          {band.count === 0 ? "none" : band.count}
+                          {bandShown[index] === 0 ? "none" : bandShown[index]}
                         </span>
                       </li>
                     ))}
@@ -371,24 +385,24 @@ export function StatisticsEdScreen({
                         <span className={styles.tileLabel}>
                           <StatusGlyph tone="closed" size={9} /> Declined, no bed
                         </span>
-                        <span className={styles.tileValue}>{noFreeBedDeclineCount}</span>
+                        <span className={styles.tileValue}>{noFreeBedShown}</span>
                       </div>
                       <div className={styles.tile}>
                         <span className={styles.tileLabel}>
                           <StatusGlyph tone="closed" size={9} /> Declined, other
                         </span>
-                        <span className={styles.tileValue}>{notSuitableDeclineCount ?? "none"}</span>
+                        <span className={styles.tileValue}>{notSuitableShown ?? "none"}</span>
                       </div>
                     </div>
                     <SrOnly>
                       <p data-testid="ward-stat-ed-declined-no-free-bed">
-                        {noFreeBedDeclineCount} {noFreeBedDeclineCount === 1 ? "decline names" : "declines name"} a ward
-                        that had no free bed.
+                        {noFreeBedShown} {noFreeBedShown === 1 ? "decline names" : "declines name"} a ward that had no
+                        free bed.
                       </p>
                       {declinesReadout.ok ? (
                         <p data-testid="ward-stat-ed-declined-not-suitable">
-                          {notSuitableDeclineCount} {notSuitableDeclineCount === 1 ? "decline gave" : "declines gave"} a
-                          reason other than having no free bed.
+                          {notSuitableShown} {notSuitableShown === 1 ? "decline gave" : "declines gave"} a reason other
+                          than having no free bed.
                         </p>
                       ) : null}
                     </SrOnly>
@@ -406,20 +420,27 @@ export function StatisticsEdScreen({
           <StatCard
             icon={Activity}
             title="Everyone waiting, by ED"
-            aside="One mark per person"
+            aside={countsOnly ? undefined : "One mark per person"}
             id="ed-everyone"
             data-testid="ward-statistics-ed-everyone"
           >
             <CardBody className={styles.bodyStack}>
-              <StatisticsEdSwarm
-                rows={swarmRows}
-                labelWidth={176}
-                label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
-              />
-              <p className={detail.note}>
-                {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines
-                are your defaults, not legal limits.
-              </p>
+              {/* One mark per person is a list of people, so the executive desk gets the note instead. */}
+              {countsOnly ? (
+                <PeopleNotListed testId="ward-statistics-ed-everyone-not-listed" />
+              ) : (
+                <>
+                  <StatisticsEdSwarm
+                    rows={swarmRows}
+                    labelWidth={176}
+                    label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
+                  />
+                  <p className={detail.note}>
+                    {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h
+                    lines are your defaults, not legal limits.
+                  </p>
+                </>
+              )}
             </CardBody>
           </StatCard>
 
@@ -475,7 +496,7 @@ export function StatisticsEdScreen({
                           className={figures.onTheList === 0 ? `${styles.num} ${styles.muted}` : styles.num}
                           data-testid={`ward-stat-ed-comparison-waiting-${each.id}`}
                         >
-                          {figures.onTheList}
+                          {small(figures.onTheList)}
                         </td>
                         <td
                           className={figures.longestWait ? styles.num : `${styles.num} ${styles.muted}`}
@@ -487,13 +508,13 @@ export function StatisticsEdScreen({
                           className={breached === 0 ? `${styles.num} ${styles.muted}` : styles.num}
                           data-testid={`ward-stat-ed-comparison-breached-${each.id}`}
                         >
-                          {breached}
+                          {small(breached)}
                         </td>
                         <td
                           className={figures.over24h === 0 ? `${styles.num} ${styles.muted}` : styles.num}
                           data-testid={`ward-stat-ed-comparison-over24h-${each.id}`}
                         >
-                          {figures.over24h}
+                          {small(figures.over24h)}
                         </td>
                       </tr>
                     );
@@ -693,6 +714,8 @@ function Waits({
   over24h,
   over48h,
   onTheList,
+  waitingText,
+  countsOnly,
   longestName,
   longestText,
 }: {
@@ -701,6 +724,10 @@ function Waits({
   over24h: number;
   over48h: number;
   onTheList: number;
+  /** The card's waiting count as the desk shows it ("fewer than 5" on the executive desk). */
+  waitingText: number | string;
+  /** The executive desk: keep the card and its title, leave the people out. */
+  countsOnly: boolean;
   longestName: string;
   longestText: string;
 }) {
@@ -730,7 +757,7 @@ function Waits({
     <StatCard
       icon={Clock}
       title="Open placement waits"
-      aside={onTheList === 0 ? undefined : `${onTheList} waiting`}
+      aside={onTheList === 0 ? undefined : `${waitingText} waiting`}
       id="ed-waiting"
       data-testid="ward-statistics-ed-wait"
     >
@@ -739,6 +766,10 @@ function Waits({
           <p className={styles.muted} data-testid="ward-stat-ed-wait-empty">
             Nobody from this department has an open placement
           </p>
+        </CardBody>
+      ) : countsOnly ? (
+        <CardBody>
+          <PeopleNotListed testId="ward-statistics-ed-wait-not-listed" />
         </CardBody>
       ) : (
         <div className={ed.waitBody}>

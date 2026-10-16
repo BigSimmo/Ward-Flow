@@ -20,7 +20,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionStagePosition,
@@ -55,6 +55,7 @@ import {
   phoneBodyStyles as phone,
 } from "./statistics-phone-parts";
 import { ServiceDot } from "./statistics-services-index";
+import { withheldBar } from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
@@ -116,7 +117,7 @@ const wardsWord = (n: number) => (n === 1 ? "ward" : "wards");
  */
 export function StatisticsOverviewScreen() {
   usePrintableDisclosures();
-  const small = useSmallNumber();
+  const { small, parts } = useStatisticsCounts();
   const section = statisticsSectionById("overview");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
@@ -140,6 +141,10 @@ export function StatisticsOverviewScreen() {
   );
   const refused = useMemo(() => refusedAndNothingPending(movements, units, now), [movements, units, now]);
   const capacity = useMemo(() => networkCapacity(units, bedReleases), [units, bedReleases]);
+  // Executive: the stage and decline parts add up to a total on the same card, so they hide together.
+  const stagesShown = parts(stageTallies.map((stage) => stage.count));
+  const declinesShown = declinesReadout.ok ? parts(declinesReadout.value.tallies.map((tally) => tally.count)) : [];
+  const declinesTotal = declinesReadout.ok ? small(declinesReadout.value.totalCount) : 0;
 
   const occupancy = useMemo(
     () => occupiedBeds(units, admissions, bedReleases, leaveBeds),
@@ -276,18 +281,19 @@ export function StatisticsOverviewScreen() {
             closed: closedTotal,
             preparing: preparingCount,
           }}
-          stages={stageTallies}
+          stages={stageTallies.map((stage, index) => ({ ...stage, shown: stagesShown[index]! }))}
           decisions={{
             open: refused.openMovementCount,
-            refused: refused.count,
-            escalated: refused.escalatedCount,
+            refused: small(refused.count),
+            escalated: small(refused.escalatedCount),
           }}
           declines={
             declinesReadout.ok
-              ? declinesReadout.value.tallies.map((tally) => ({
+              ? declinesReadout.value.tallies.map((tally, index) => ({
                   id: tally.reason,
                   label: sentenceCase(tally.reason),
                   count: tally.count,
+                  shown: declinesShown[index]!,
                 }))
               : null
           }
@@ -452,12 +458,14 @@ export function StatisticsOverviewScreen() {
                     <BarList
                       label="Admissions by stage"
                       axis
-                      max={axisMax(stageTallies.map((stage) => stage.count))}
+                      max={axisMax(
+                        stageTallies.map((stage, index) => withheldBar(stage.count, stagesShown[index]!).value),
+                      )}
                       labelWidth="10.5rem"
-                      rows={stageTallies.map((stage) => ({
+                      rows={stageTallies.map((stage, index) => ({
                         id: stage.position,
                         label: stage.label,
-                        value: stage.count,
+                        ...withheldBar(stage.count, stagesShown[index]!),
                       }))}
                     />
                   </CardBody>
@@ -477,11 +485,11 @@ export function StatisticsOverviewScreen() {
                         </tr>
                       </thead>
                       <tbody>
-                        {stageTallies.map((tally) => (
+                        {stageTallies.map((tally, index) => (
                           <tr key={tally.position}>
                             <th scope="row">{tally.label}</th>
                             <td className={styles.num} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
-                              {tally.count}
+                              {stagesShown[index]}
                             </td>
                           </tr>
                         ))}
@@ -489,7 +497,7 @@ export function StatisticsOverviewScreen() {
                       <tfoot>
                         <tr>
                           <th scope="row">All stages</th>
-                          <td className={styles.num}>{admissions.length}</td>
+                          <td className={styles.num}>{small(admissions.length)}</td>
                         </tr>
                       </tfoot>
                     </table>
@@ -520,8 +528,7 @@ export function StatisticsOverviewScreen() {
                 aside={
                   declinesReadout.ok ? (
                     <span className={styles.muted}>
-                      {declinesReadout.value.totalCount}{" "}
-                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"}
+                      {declinesTotal} {declinesTotal === 1 ? "decline" : "declines"}
                     </span>
                   ) : (
                     <span className={styles.muted}>Unavailable</span>
@@ -536,19 +543,17 @@ export function StatisticsOverviewScreen() {
                   ) : (
                     <div data-testid="ward-statistics-overview-declines-table">
                       <p className={styles.srOnly} data-testid="ward-statistics-overview-declines-population">
-                        <span data-testid="ward-statistics-overview-declines-total">
-                          {declinesReadout.value.totalCount}
-                        </span>{" "}
-                        {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
+                        <span data-testid="ward-statistics-overview-declines-total">{declinesTotal}</span>{" "}
+                        {declinesTotal === 1 ? "decline" : "declines"} on record, from{" "}
                         <span data-testid="ward-statistics-overview-declines-movements-with">
-                          {declinesReadout.value.movementsWithDeclinesCount}
+                          {small(declinesReadout.value.movementsWithDeclinesCount)}
                         </span>{" "}
                         of the{" "}
                         <span data-testid="ward-statistics-overview-declines-movements">
-                          {declinesReadout.value.movementCount}
+                          {small(declinesReadout.value.movementCount)}
                         </span>{" "}
-                        {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined,
-                        across{" "}
+                        {small(declinesReadout.value.movementCount) === 1 ? "movement" : "movements"} this page
+                        examined, across{" "}
                         <span data-testid="ward-statistics-overview-declines-vocabulary-size">
                           {declinesReadout.value.vocabularySize}
                         </span>{" "}
@@ -557,20 +562,27 @@ export function StatisticsOverviewScreen() {
                       <BarList
                         label="Declines by reason across the network"
                         axis
-                        max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
+                        max={axisMax(
+                          declinesReadout.value.tallies.map(
+                            (tally, index) => withheldBar(tally.count, declinesShown[index]!).value,
+                          ),
+                        )}
                         labelWidth="10.5rem"
+                        // A mean times the reason count is the total, so a worded total draws no mean.
                         mean={
-                          declinesReadout.value.vocabularySize > 0
-                            ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
-                            : 0
+                          typeof declinesTotal === "string"
+                            ? undefined
+                            : declinesReadout.value.vocabularySize > 0
+                              ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
+                              : 0
                         }
-                        rows={declinesReadout.value.tallies.map((tally) => ({
+                        rows={declinesReadout.value.tallies.map((tally, index) => ({
                           id: tally.reason,
                           label: sentenceCase(tally.reason),
-                          value: tally.count,
+                          ...withheldBar(tally.count, declinesShown[index]!),
                           display: (
                             <span data-testid={`ward-statistics-overview-decline-${tally.reason}`}>
-                              {tally.count === 0 ? "none" : tally.count}
+                              {declinesShown[index] === 0 ? "none" : declinesShown[index]}
                             </span>
                           ),
                         }))}
@@ -589,9 +601,9 @@ export function StatisticsOverviewScreen() {
                   <span className={styles.muted}>
                     of{" "}
                     <span data-testid="ward-statistics-overview-refused-so-far-open-count">
-                      {refused.openMovementCount}
+                      {small(refused.openMovementCount)}
                     </span>{" "}
-                    open {refused.openMovementCount === 1 ? "movement" : "movements"}
+                    open {small(refused.openMovementCount) === 1 ? "movement" : "movements"}
                   </span>
                 }
               >
@@ -600,7 +612,7 @@ export function StatisticsOverviewScreen() {
                     <div className={styles.tile} data-testid="ward-statistics-overview-refused-so-far-count">
                       <dt className={styles.tileLabel}>All refused</dt>
                       <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-value">
-                        {refused.count}
+                        {small(refused.count)}
                       </dd>
                     </div>
                     <div className={styles.tile} data-testid="ward-statistics-overview-preparing-count">
@@ -618,7 +630,7 @@ export function StatisticsOverviewScreen() {
                         Escalated
                       </dt>
                       <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-escalated">
-                        {refused.escalatedCount}
+                        {small(refused.escalatedCount)}
                       </dd>
                     </div>
                     <div className={styles.tile}>
@@ -672,13 +684,16 @@ function OverviewPhone({
   serviceFilter: string | null;
   onServiceFilter: (service: string | null) => void;
   capacity: { empty: number; allocatable: number; open: number; ready: number; closed: number; preparing: number };
-  stages: { position: AdmissionStagePosition; label: string; count: number }[];
-  decisions: { open: number; refused: number; escalated: number };
-  declines: { id: string; label: string; count: number }[] | null;
+  /** `shown` is the count as this desk may see it ("fewer than 5" for an executive). */
+  stages: { position: AdmissionStagePosition; label: string; count: number; shown: number | string }[];
+  /** Refused and escalated arrive worded for an executive; the open count is worded here. */
+  decisions: { open: number; refused: number | string; escalated: number | string };
+  declines: { id: string; label: string; count: number; shown: number | string }[] | null;
 }) {
+  const { small } = useStatisticsCounts();
   const [showAll, setShowAll] = useState(false);
   const sorted = [...wards].sort((a, b) => b.rate - a.rate || a.name.localeCompare(b.name));
-  const inBed = stages.find((stage) => stage.position === "in-the-bed")?.count ?? 0;
+  const inBed = stages.find((stage) => stage.position === "in-the-bed")?.shown ?? 0;
   return (
     <PhoneBody testId="ward-statistics-overview-phone">
       <ScrollRow aria-label="Highlight a service's wards">
@@ -746,17 +761,17 @@ function OverviewPhone({
       <PhoneSheetRow
         icon={Activity}
         title="Admission stages and decisions"
-        sub={`${inBed} in a bed · ${decisions.open} open ${decisions.open === 1 ? "movement" : "movements"}`}
+        sub={`${inBed} in a bed · ${small(decisions.open)} open ${small(decisions.open) === 1 ? "movement" : "movements"}`}
         testId="ward-statistics-overview-phone-stages"
       >
         <PhoneFacts
           label="Admissions by stage"
-          facts={stages.map((stage) => ({ id: stage.position, label: stage.label, value: stage.count }))}
+          facts={stages.map((stage) => ({ id: stage.position, label: stage.label, value: stage.shown }))}
         />
         <PhoneFacts
           label="Awaiting a decision"
           facts={[
-            { id: "open", label: "Open movements", value: decisions.open },
+            { id: "open", label: "Open movements", value: small(decisions.open) },
             { id: "refused", label: "All refused", value: decisions.refused },
             { id: "escalated", label: "Escalated", value: decisions.escalated },
             { id: "placeable", label: "Placeable", value: capacity.open },
@@ -769,7 +784,7 @@ function OverviewPhone({
                 key={decline.id}
                 as="li"
                 name={decline.label}
-                value={decline.count === 0 ? "none" : decline.count}
+                value={decline.shown === 0 ? "none" : decline.shown}
               />
             ))}
           </PhoneList>

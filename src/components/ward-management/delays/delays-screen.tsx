@@ -44,11 +44,11 @@ function ensureLocationHistoryPatched() {
   const origReplaceState = window.history.replaceState.bind(window.history);
   window.history.pushState = function patchedPushState(...args) {
     origPushState(...args);
-    window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT));
+    queueMicrotask(() => window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT)));
   };
   window.history.replaceState = function patchedReplaceState(...args) {
     origReplaceState(...args);
-    window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT));
+    queueMicrotask(() => window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT)));
   };
 }
 

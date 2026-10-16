@@ -19,5 +19,5 @@
       "project": ["*.mjs", "*.ts"]
     }
   },
-  "ignoreDependencies": ["@axe-core/playwright", "playwright-core", "tsx"]
+  "ignoreDependencies": ["@axe-core/playwright", "playwright-core", "rimraf", "tsx"]
 }

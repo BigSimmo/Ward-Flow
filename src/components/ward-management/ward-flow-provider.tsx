@@ -945,6 +945,7 @@ function WardFlowWorld({
                 nextOpenRequestSequence(saved.state.auditEvents),
               );
               lastAdoptedBroadcastWorldRef.current = saved.state;
+              localEditsSinceBroadcastRef.current = false;
               dispatchContainer({
                 type: "ADOPT_SAVED_SESSION",
                 [ADOPT_SESSION]: (current) => {
@@ -1089,6 +1090,8 @@ function WardFlowWorld({
       )
     ) {
       setStorageUnavailable(true);
+    } else {
+      localEditsSinceBroadcastRef.current = false;
     }
   }, [
     state,
@@ -1106,6 +1109,7 @@ function WardFlowWorld({
   // memo on every render regardless of whether anything the memo actually reads had changed.
   const resetDemoState = useCallback(() => {
     if (!shared.enabled) clearWardFlowDemoState();
+    localEditsSinceBroadcastRef.current = false;
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, shared.enabled]);
 

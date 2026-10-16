@@ -157,6 +157,7 @@ export function useModalFocus({
         if (!closeOnEscapeRef.current) return;
         // In the bubble phase a menu or field inside the panel that handled Escape has said so.
         if (event.defaultPrevented) return;
+        if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
         event.preventDefault();
         if (capture) event.stopImmediatePropagation();
         onCloseRef.current();

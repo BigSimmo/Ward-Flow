@@ -370,6 +370,11 @@ export function Popover({ label, trigger, children, align = "start", className, 
             const target = event.target as HTMLElement | null;
             if (target?.closest?.("a[href]")) {
               skipReturnFocusRef.current = true;
+              queueMicrotask(() => {
+                if (panelRef.current) {
+                  skipReturnFocusRef.current = false;
+                }
+              });
             }
           }}
           onBlur={(event) => {
@@ -382,6 +387,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
+              skipReturnFocusRef.current = false;
               closeAndReturn({ restoreFocus: true });
             } else if (event.key === "Tab") {
               const panel = panelRef.current;

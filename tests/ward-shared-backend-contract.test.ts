@@ -7,8 +7,16 @@ import {
 } from "../src/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { applyCommand, seedWorld, validCommand, worldNow, type SharedWorld } from "../backend/ward-flow/engine";
-import { createSharedHandler } from "../backend/ward-flow/shared-http.mjs";
-import { bootstrapViewer } from "../backend/ward-flow/viewer.test-support.mjs";
+const sharedHttpModulePath = "../backend/ward-flow/shared-http.mjs";
+const { createSharedHandler } = (await import(sharedHttpModulePath)) as {
+  createSharedHandler: (
+    opts: Record<string, unknown>,
+  ) => (req: Request, meta?: Record<string, unknown>) => Promise<Response>;
+};
+const viewerTestSupportPath = "../backend/ward-flow/viewer.test-support.mjs";
+const { bootstrapViewer } = (await import(viewerTestSupportPath)) as {
+  bootstrapViewer: (actorId: string, config: Record<string, unknown>) => Promise<unknown>;
+};
 
 const COORDINATOR_A = "11111111-1111-4111-8111-111111111111";
 const COORDINATOR_B = "22222222-2222-4222-8222-222222222222";

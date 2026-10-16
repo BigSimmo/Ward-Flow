@@ -20,7 +20,8 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
@@ -59,6 +60,7 @@ import {
   PhoneSheetRow,
   phoneBodyStyles as phone,
 } from "./statistics-phone-parts";
+import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
@@ -106,7 +108,7 @@ function referralOriginService(referral: Referral): HealthService | undefined {
  */
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const live = useStatisticsLive();
-  const small = useSmallNumber();
+  const { countsOnly, small, parts } = useStatisticsCounts();
   const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements } = live.state;
   const now = live.now;
   const isPhone = useIsPhone();
@@ -253,6 +255,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     placedElsewhereByService,
   } = referralDemand;
   const { outOfAreaEntries, outOfAreaNotBanded, bandCounts } = outOfAreaSummary;
+  // Executive: the bands add up to the far-from-home count beside them, so they hide together.
+  const bandsShown = parts(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0));
 
   return (
     <StatisticsPage
@@ -378,6 +382,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           }))}
           edWaiting={small(edWaiting)}
           outOfArea={outOfAreaEntries}
+          countsOnly={countsOnly}
         />
       ) : (
         <>
@@ -430,7 +435,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <dl className={styles.figures}>
                     <div className={styles.figure}>
                       <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
-                        {outOfAreaEntries.length}
+                        {small(outOfAreaEntries.length)}
                       </dd>
                       <dt className={styles.figureLabel}>Far from home</dt>
                     </div>
@@ -439,7 +444,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                         className={styles.figureValue}
                         data-testid="ward-statistics-service-out-of-area-not-banded-value"
                       >
-                        {outOfAreaNotBanded}
+                        {small(outOfAreaNotBanded)}
                       </dd>
                       <dt className={styles.figureLabel}>Not banded</dt>
                     </div>
@@ -447,21 +452,25 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <BarList
                     label="Patients far from home by travel band"
                     axis
-                    max={countAxisMax(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0))}
+                    max={countAxisMax(
+                      OUT_OF_AREA_BANDS.map(
+                        (band, index) => withheldBar(bandCounts.get(band) ?? 0, bandsShown[index]!).value,
+                      ),
+                    )}
                     labelWidth="13rem"
-                    rows={OUT_OF_AREA_BANDS.map((band) => ({
+                    rows={OUT_OF_AREA_BANDS.map((band, index) => ({
                       id: band,
                       label: TRAVEL_BAND_LABELS[band],
-                      value: bandCounts.get(band) ?? 0,
-                      display: String(bandCounts.get(band) ?? 0),
+                      ...withheldBar(bandCounts.get(band) ?? 0, bandsShown[index]!),
+                      display: String(bandsShown[index]),
                     }))}
                   />
                   <ul className={styles.srOnly} data-testid="ward-statistics-service-out-of-area-bands">
-                    {OUT_OF_AREA_BANDS.map((band) => (
+                    {OUT_OF_AREA_BANDS.map((band, index) => (
                       <li key={band} data-testid={`ward-statistics-service-out-of-area-band-${band}`}>
                         {TRAVEL_BAND_LABELS[band]},{" "}
                         <span data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}>
-                          {bandCounts.get(band) ?? 0}
+                          {bandsShown[index]}
                         </span>
                       </li>
                     ))}
@@ -482,6 +491,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <CardBody className={detail.swarmBody}>
               {edSwarmRows.length === 0 ? (
                 <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
+              ) : countsOnly ? (
+                <PeopleNotListed testId="ward-statistics-service-ed-swarm-not-listed" />
               ) : (
                 <StatisticsEdSwarm
                   rows={edSwarmRows}
@@ -501,50 +512,56 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             aside="In this service's beds"
             data-testid="ward-statistics-service-repatriation"
           >
-            <div
-              className={styles.tableWrap}
-              tabIndex={0}
-              role="region"
-              aria-label="Service ward comparison, scrollable table"
-            >
-              <table className={`${tableClasses.table} ${styles.table}`}>
-                <caption className={styles.srOnly}>Admissions in this service far from home</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Admission</th>
-                    <th scope="col">Home</th>
-                    <th scope="col">Travel</th>
-                    <th scope="col" className={styles.num}>
-                      Since arrival
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {outOfAreaEntries.length === 0 ? (
+            {countsOnly ? (
+              <CardBody>
+                <PeopleNotListed testId="ward-statistics-service-repatriation-not-listed" />
+              </CardBody>
+            ) : (
+              <div
+                className={styles.tableWrap}
+                tabIndex={0}
+                role="region"
+                aria-label="Service ward comparison, scrollable table"
+              >
+                <table className={`${tableClasses.table} ${styles.table}`}>
+                  <caption className={styles.srOnly}>Admissions in this service far from home</caption>
+                  <thead>
                     <tr>
-                      <td colSpan={4} className={styles.muted}>
-                        Nobody in this service&apos;s beds is far from home
-                      </td>
-                    </tr>
-                  ) : null}
-                  {outOfAreaEntries.map((entry) => (
-                    <tr key={entry.admission.id}>
-                      <th scope="row">
-                        <span className={detail.primary}>{entry.admission.id}</span>
-                        <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
-                          {entry.unit.name}
-                        </Link>
+                      <th scope="col">Admission</th>
+                      <th scope="col">Home</th>
+                      <th scope="col">Travel</th>
+                      <th scope="col" className={styles.num}>
+                        Since arrival
                       </th>
-                      <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
-                        {entry.admission.homeRegion ?? "Not recorded"}
-                      </td>
-                      <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
-                      <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {outOfAreaEntries.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className={styles.muted}>
+                          Nobody in this service&apos;s beds is far from home
+                        </td>
+                      </tr>
+                    ) : null}
+                    {outOfAreaEntries.map((entry) => (
+                      <tr key={entry.admission.id}>
+                        <th scope="row">
+                          <span className={detail.primary}>{entry.admission.id}</span>
+                          <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
+                            {entry.unit.name}
+                          </Link>
+                        </th>
+                        <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
+                          {entry.admission.homeRegion ?? "Not recorded"}
+                        </td>
+                        <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
+                        <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <CardFoot meta="Repatriation is arranged on the out-of-area board">
               <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
                 Open out of area
@@ -581,6 +598,7 @@ function ServicePhone({
   eds,
   edWaiting,
   outOfArea,
+  countsOnly,
 }: {
   states: { unit: Unit; states: ReturnType<typeof bedStates> }[];
   pendingPreparation: number;
@@ -588,7 +606,11 @@ function ServicePhone({
   /** Worded as "fewer than 5" for an executive, like the hero. */
   edWaiting: number | string;
   outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
+  /** The executive desk: the people far from home are counted, not listed. */
+  countsOnly: boolean;
 }) {
+  const { small, parts } = useStatisticsCounts();
+  const outOfAreaShown = small(outOfArea.length);
   const sum = (pick: (entry: (typeof states)[number]) => number) =>
     states.reduce((total, entry) => total + pick(entry), 0);
   const wards = states
@@ -599,8 +621,20 @@ function ServicePhone({
         entry.unit.beds > 0 ? Math.round(((entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100) : 0,
     }))
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
-  const busiest = [...eds].sort((a, b) => b.figures.onTheList - a.figures.onTheList || a.name.localeCompare(b.name));
+  // On the executive desk a department worded as fewer than 5 sorts as nought, so the order cannot
+  // rank the hidden ones (review on PR #354).
+  const sortValue = (count: number) => {
+    const shown = small(count);
+    return typeof shown === "number" ? shown : 0;
+  };
+  const busiest = [...eds].sort(
+    (a, b) => sortValue(b.figures.onTheList) - sortValue(a.figures.onTheList) || a.name.localeCompare(b.name),
+  );
+  // Executive: the departments add up to the "waiting" total above them, so they hide together.
+  const waitingShown = parts(busiest.map((entry) => entry.figures.onTheList));
   const bedDays = outOfArea.reduce((total, entry) => total + Math.max(0, entry.sinceArrival), 0) / MINUTES_PER_DAY;
+  // Bed days add up each person's stay, so beside a worded count they would give the people back.
+  const bedDaysText = typeof outOfAreaShown === "string" ? "bed days not shown" : `${bedDays.toFixed(1)} bed days`;
   return (
     <PhoneBody testId="ward-statistics-service-phone">
       <PhoneFacts
@@ -641,7 +675,7 @@ function ServicePhone({
           <p className={phone.note}>No emergency department is recorded for this service.</p>
         ) : (
           <PhoneList label="Emergency departments, busiest first">
-            {busiest.map((entry) => {
+            {busiest.map((entry, index) => {
               const median = waitMedian(entry.figures.waitingMovements.map((wait) => wait.waitMinutes));
               return (
                 <PhoneListRow
@@ -651,9 +685,9 @@ function ServicePhone({
                   meta={
                     entry.figures.onTheList === 0
                       ? "No one waiting"
-                      : `${entry.figures.unplaced} no ward yet · median ${median === null ? "none" : durMinutes(Math.round(median))}`
+                      : `${small(entry.figures.unplaced)} no ward yet · median ${median === null ? "none" : durMinutes(Math.round(median))}`
                   }
-                  value={entry.figures.onTheList}
+                  value={waitingShown[index]}
                   time={`longest ${entry.figures.longestWait ? durMinutes(entry.figures.longestWait.waitMinutes) : "none"}`}
                   href={edStatisticsHref(entry.id)}
                 />
@@ -665,11 +699,13 @@ function ServicePhone({
       <PhoneSheetRow
         icon={MapPin}
         title="Far from home and out of area"
-        sub={`${outOfArea.length} ${outOfArea.length === 1 ? "person" : "people"} out of area · ${bedDays.toFixed(1)} bed days`}
+        sub={`${outOfAreaShown} ${outOfAreaShown === 1 ? "person" : "people"} out of area · ${bedDaysText}`}
         testId="ward-statistics-service-phone-out-of-area"
       >
         {outOfArea.length === 0 ? (
           <p className={phone.note}>Nobody in this service&apos;s beds is far from home.</p>
+        ) : countsOnly ? (
+          <PeopleNotListed testId="ward-statistics-service-phone-out-of-area-not-listed" />
         ) : (
           <PhoneList label="Far from home">
             {outOfArea.map((entry) => {
@@ -853,10 +889,30 @@ function Placement({
   byService: Map<HealthService, number>;
 }) {
   const [view, setView] = useState<"chart" | "data">("chart");
+  const { small, parts } = useStatisticsCounts();
+  // Executive: every part adds up to Raised, so the parts hide together. Elsewhere is the sum of the
+  // services, so it hides too when one of them is hidden.
+  const elsewhereCounts = [...byService];
+  const shown = parts([within, ...elsewhereCounts.map(([, count]) => count), notYet, unresolved]);
+  const withinShown = shown[0]!;
+  const byServiceShown = shown.slice(1, 1 + elsewhereCounts.length);
+  const notYetShown = shown[1 + elsewhereCounts.length]!;
+  const unresolvedShown = shown[2 + elsewhereCounts.length]!;
+  const elsewhereWorded = small(elsewhere);
+  const elsewhereShown = byServiceShown.some((part) => typeof part === "string")
+    ? typeof elsewhereWorded === "string"
+      ? elsewhereWorded
+      : SMALL_NUMBER_NOT_SHOWN
+    : elsewhereWorded;
   const rows = [
-    { id: "own", label: service, value: within },
-    ...[...byService].map(([name, count]) => ({ id: name, label: name, value: count })),
-    { id: "not-yet", label: "Not yet", value: notYet },
+    { id: "own", label: service, value: within, shown: withinShown },
+    ...elsewhereCounts.map(([name, count], index) => ({
+      id: name,
+      label: name,
+      value: count,
+      shown: byServiceShown[index]!,
+    })),
+    { id: "not-yet", label: "Not yet", value: notYet, shown: notYetShown },
   ];
   return (
     <StatCard
@@ -885,25 +941,25 @@ function Placement({
         <dl className={styles.figures}>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-raised">
-              {raised}
+              {small(raised)}
             </dd>
             <dt className={styles.figureLabel}>Raised</dt>
           </div>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-within">
-              {within}
+              {withinShown}
             </dd>
             <dt className={styles.figureLabel}>Within</dt>
           </div>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-elsewhere">
-              {elsewhere}
+              {elsewhereShown}
             </dd>
             <dt className={styles.figureLabel}>Elsewhere</dt>
           </div>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-not-yet">
-              {notYet}
+              {notYetShown}
             </dd>
             <dt className={styles.figureLabel}>Not yet</dt>
           </div>
@@ -912,9 +968,14 @@ function Placement({
           <BarList
             label="Referrals raised here, by the service whose ward accepted"
             axis
-            max={countAxisMax(rows.map((row) => row.value))}
+            max={countAxisMax(rows.map((row) => withheldBar(row.value, row.shown).value))}
             labelWidth="8rem"
-            rows={rows.map((row) => ({ ...row, display: String(row.value) }))}
+            rows={rows.map((row) => ({
+              id: row.id,
+              label: row.label,
+              ...withheldBar(row.value, row.shown),
+              display: String(row.shown),
+            }))}
           />
         ) : (
           <div
@@ -937,7 +998,7 @@ function Placement({
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <th scope="row">{row.label}</th>
-                    <td className={row.value === 0 ? `${styles.num} ${styles.muted}` : styles.num}>{row.value}</td>
+                    <td className={row.value === 0 ? `${styles.num} ${styles.muted}` : styles.num}>{row.shown}</td>
                   </tr>
                 ))}
               </tbody>
@@ -945,18 +1006,20 @@ function Placement({
           </div>
         )}
         <ul className={styles.srOnly} data-testid="ward-statistics-service-placement-elsewhere-list">
-          {[...byService].map(([destination, count]) => (
+          {elsewhereCounts.map(([destination], index) => (
             <li key={destination} data-testid={`ward-statistics-service-placement-to-${destination}`}>
               Accepted at a {destination} ward,{" "}
-              <span data-testid={`ward-statistics-service-placement-to-${destination}-count`}>{count}</span>
+              <span data-testid={`ward-statistics-service-placement-to-${destination}-count`}>
+                {byServiceShown[index]}
+              </span>
             </li>
           ))}
         </ul>
         {unresolved > 0 ? (
           <p className={detail.note} data-testid="ward-statistics-service-placement-unresolved">
-            <span data-testid="ward-statistics-service-placement-unresolved-count">{unresolved}</span>{" "}
-            {unresolved === 1 ? "referral names" : "referrals name"} an accepting ward this prototype cannot place at
-            any hospital, so it is counted neither within {service} nor elsewhere.
+            <span data-testid="ward-statistics-service-placement-unresolved-count">{unresolvedShown}</span>{" "}
+            {unresolvedShown === 1 ? "referral names" : "referrals name"} an accepting ward this prototype cannot place
+            at any hospital, so it is counted neither within {service} nor elsewhere.
           </p>
         ) : null}
       </CardBody>

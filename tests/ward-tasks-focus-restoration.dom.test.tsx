@@ -73,7 +73,7 @@ it("registers the open drawer on the sheet stack and stops Escape from reaching 
   };
   window.addEventListener("keydown", onWindowKeyDown);
   try {
-    render(<Harness />);
+    const { unmount } = render(<Harness />);
     expect(hasOpenSheet()).toBe(true);
     const closeBtn = screen.getByRole("button", { name: "Close tasks panel" });
     fireEvent.keyDown(closeBtn, { key: "Escape" });
@@ -81,6 +81,15 @@ it("registers the open drawer on the sheet stack and stops Escape from reaching 
     expect(hasOpenSheet()).toBe(false);
     expect(boardEscapeSpy).not.toHaveBeenCalled();
     expect(previous).toHaveFocus();
+    unmount();
+
+    // Also verify Escape dispatched on document.body exercises useWardModalFocus's window capture listener directly
+    render(<Harness />);
+    expect(hasOpenSheet()).toBe(true);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+    expect(hasOpenSheet()).toBe(false);
+    expect(boardEscapeSpy).not.toHaveBeenCalled();
   } finally {
     window.removeEventListener("keydown", onWindowKeyDown);
   }
