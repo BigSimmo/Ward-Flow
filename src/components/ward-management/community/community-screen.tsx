@@ -480,7 +480,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setActiveDrawer(null);
     }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "/" || e.key === "[") {
+      if (e.key === "/") {
         // An open sheet or dialog keeps the keys: the shortcut must not reach the page behind it.
         if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || hasOpenSheet()) return;
         const target = e.target;
@@ -491,18 +491,13 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
             target.tagName === "SELECT" ||
             target.isContentEditable);
         if (inEditable) return;
-        if (e.key === "/") {
-          e.preventDefault();
-          // Claimed here, on the document, before the shared header's window listener takes it
-          // for the global search (as `community-index.tsx` does).
-          e.stopPropagation();
-          // The hero's search popover opens from its own trigger and focuses its input itself.
-          if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
-          document.getElementById("q")?.focus();
-        } else {
-          const current = document.documentElement.getAttribute("data-rail");
-          document.documentElement.setAttribute("data-rail", current === "closed" ? "open" : "closed");
-        }
+        e.preventDefault();
+        // Claimed here, on the document, before the shared header's window listener takes it
+        // for the global search (as `community-index.tsx` does). WardRail owns the bracket shortcut.
+        e.stopPropagation();
+        // The hero's search popover opens from its own trigger and focuses its input itself.
+        if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
+        document.getElementById("q")?.focus();
       }
     }
     window.addEventListener("keydown", handleEscape);
