@@ -11,6 +11,10 @@
  * No names, no typed text. Break glass grants and their reasons are held in memory only, because a
  * reason can be typed (`CLAUDE.md`: no typed text in browser storage). The shared workspace will
  * take its access from the server instead (plan PR 2).
+ *
+ * Cover (feature 2): a coordinator or a nurse in charge gives another ward's desk cover of a ward
+ * until the end of the shift. While it runs, that desk's access holds both wards (`withCover`). Held
+ * in memory only, like break glass, and ended by `endDueCovers` when its time passes.
  */
 import { useSyncExternalStore } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -21,8 +25,10 @@ import {
   accessIsValid,
   type BreakGlassReasonId,
   type WardAccess,
+  type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 import type { BreakGlassGrant } from "@/components/ward-management/ward-access-scope";
+import { withCover } from "@/components/ward-management/ward-access-admin";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
@@ -49,20 +55,55 @@ export type BreakGlassRecord = BreakGlassGrant & {
   readonly otherText?: string;
 };
 
+/** Cover of one ward or ED given to another desk until a set time (feature 2). Memory only. */
+export type CoverRecord = {
+  readonly id: number;
+  /** The desk holding the cover: a nurse in charge's ward desk, or an ED desk. */
+  readonly recipient: WardAccess;
+  /** The ward or ED it covers. */
+  readonly scope: WardAccessScope;
+  readonly givenBy: WardAccess;
+  readonly givenAt: Instant;
+  readonly until: Instant;
+};
+
 type Snapshot = {
+  /** The desk's own access, with any cover it holds joined in (`withCover`). */
   readonly access: WardAccess;
+  /** The desk as picked, before cover. */
+  readonly desk: WardAccess;
   readonly records: readonly BreakGlassRecord[];
   /** The coordinator previewing another role: the coordinator's own access to return to. */
   readonly previewOf: WardAccess | null;
+  readonly covers: readonly CoverRecord[];
 };
 
-let snapshot: Snapshot = { access: STATEWIDE_COORDINATOR, records: [], previewOf: null };
+const EMPTY: Snapshot = {
+  access: STATEWIDE_COORDINATOR,
+  desk: STATEWIDE_COORDINATOR,
+  records: [],
+  previewOf: null,
+  covers: [],
+};
+let snapshot: Snapshot = EMPTY;
 let loaded = false;
 let sequence = 1;
 const listeners = new Set<() => void>();
 
-function emit(next: Snapshot): void {
-  snapshot = next;
+/** One desk is its role at its place. */
+export function sameDesk(a: WardAccess, b: WardAccess): boolean {
+  return a.role === b.role && JSON.stringify(a.scope) === JSON.stringify(b.scope);
+}
+
+/** The desk's access with the cover it holds now joined in. Ended cover is already gone. */
+function covered(desk: WardAccess, covers: readonly CoverRecord[]): WardAccess {
+  const held = covers.filter((cover) => sameDesk(cover.recipient, desk)).map((cover) => cover.scope);
+  return held.length ? withCover(desk, held) : desk;
+}
+
+function emit(next: Omit<Snapshot, "access">): void {
+  const access = covered(next.desk, next.covers);
+  snapshot = { ...next, access: sameDesk(access, snapshot.access) ? snapshot.access : access };
   for (const listener of listeners) listener();
 }
 
@@ -120,7 +161,7 @@ function load(): void {
   loaded = true;
   try {
     const stored = parseStoredAccess(window.sessionStorage.getItem(WARD_ACCESS_STORAGE_KEY));
-    if (stored) snapshot = { ...snapshot, access: stored };
+    if (stored) snapshot = { ...snapshot, access: covered(stored, snapshot.covers), desk: stored };
   } catch {
     // Storage blocked: the desk lasts until the tab reloads.
   }
@@ -158,7 +199,7 @@ function getSnapshot(): Snapshot {
   return snapshot;
 }
 
-const SERVER_SNAPSHOT: Snapshot = { access: STATEWIDE_COORDINATOR, records: [], previewOf: null };
+const SERVER_SNAPSHOT: Snapshot = EMPTY;
 
 export function useWardAccessSnapshot(): Snapshot {
   return useSyncExternalStore(subscribe, getSnapshot, () => SERVER_SNAPSHOT);
@@ -192,19 +233,57 @@ export function setWardAccess(access: WardAccess): void {
   load();
   persist(access);
   clearPersonalKeys();
-  emit({ access, records: expireGrants(snapshot.records), previewOf: null });
+  emit({ desk: access, records: expireGrants(snapshot.records), previewOf: null, covers: snapshot.covers });
 }
 
 /** The coordinator previews another role, read only, and can return in one tap (feature 4). */
 export function startAccessPreview(access: WardAccess): void {
   load();
   if (snapshot.access.role !== "coordinator" || !accessIsValid(access)) return;
-  emit({ ...snapshot, access, previewOf: snapshot.access });
+  emit({ ...snapshot, desk: access, previewOf: snapshot.desk });
 }
 
 export function endAccessPreview(): void {
   if (!snapshot.previewOf) return;
-  emit({ ...snapshot, access: snapshot.previewOf, previewOf: null });
+  emit({ ...snapshot, desk: snapshot.previewOf, previewOf: null });
+}
+
+/**
+ * Give another desk cover of one ward or ED until `until` (feature 2). The rules (who may give it,
+ * for how long) are checked by the caller with `coverRefusal`. A preview gives nothing, because a
+ * preview is read only.
+ */
+export function giveCover(input: {
+  recipient: WardAccess;
+  scope: WardAccessScope;
+  now: Instant;
+  until: Instant;
+}): CoverRecord | null {
+  load();
+  if (snapshot.previewOf !== null || !accessIsValid(input.recipient) || !(input.until > input.now)) return null;
+  const record: CoverRecord = {
+    id: sequence++,
+    recipient: input.recipient,
+    scope: input.scope,
+    givenBy: snapshot.desk,
+    givenAt: input.now,
+    until: input.until,
+  };
+  emit({ ...snapshot, covers: [...snapshot.covers, record] });
+  return record;
+}
+
+/** End one cover now. */
+export function endCover(id: number): void {
+  load();
+  if (!snapshot.covers.some((cover) => cover.id === id)) return;
+  emit({ ...snapshot, covers: snapshot.covers.filter((cover) => cover.id !== id) });
+}
+
+/** Cover whose time has passed ends by itself. The scoped layout calls this as the clock moves. */
+export function endDueCovers(now: Instant): void {
+  if (!snapshot.covers.some((cover) => cover.until <= now)) return;
+  emit({ ...snapshot, covers: snapshot.covers.filter((cover) => cover.until > now) });
 }
 
 /**
@@ -257,6 +336,6 @@ export function readWardAccessSnapshot(): Snapshot {
 export function resetWardAccessStoreForTests(): void {
   loaded = false;
   sequence = 1;
-  snapshot = { access: STATEWIDE_COORDINATOR, records: [], previewOf: null };
+  snapshot = EMPTY;
   for (const listener of listeners) listener();
 }

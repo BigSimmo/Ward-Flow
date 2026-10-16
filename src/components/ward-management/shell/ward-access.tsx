@@ -59,6 +59,7 @@ import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import {
   breakGlass,
   endAccessPreview,
+  endDueCovers,
   lockWardDesk,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
@@ -191,6 +192,8 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
   const { records, previewOf } = useWardAccessSnapshot();
   const previewing = previewOf !== null;
   const now = context.now;
+  // Cover ends by itself at its time, on the demo clock (feature 2).
+  useEffect(() => endDueCovers(now), [now]);
   const activeGrants = useMemo(
     () => records.filter((record) => record.role === access.role && record.until > now),
     [records, access.role, now],
