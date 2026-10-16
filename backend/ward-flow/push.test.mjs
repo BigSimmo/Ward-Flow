@@ -14,6 +14,7 @@ import { readConfig } from "./config.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
 import { createHandler, sweepPush } from "./server.mjs";
+import { bootstrapViewer } from "./viewer.test-support.mjs";
 
 // Invented keys generated for this test run only; never a deployed key.
 function vapidKeys() {
@@ -235,12 +236,19 @@ test("the real web-push library accepts the configuration and encrypts the paylo
 
 const coordinator = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
-function routes({ actor = coordinator, push = readPushConfig(env), limit = false, outcome = null } = {}) {
+function routes({
+  actor = coordinator,
+  push = readPushConfig(env),
+  limit = false,
+  outcome = null,
+  viewer = bootstrapViewer,
+} = {}) {
   const calls = [];
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: null, push },
     store: {},
     sharedStore: {
+      viewer,
       read: async () => ({ revision: 1, dataMode: "prototype" }),
       subscribe: async (...args) => {
         calls.push(["subscribe", ...args]);
@@ -325,6 +333,36 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
   const refused = await full.handler(call("push-subscribe", { subscription }));
   assert.equal(refused.status, 409);
   assert.equal((await refused.json()).code, "limit");
+  // A desk other than the statewide coordinator gets no phone alerts in this prototype.
+  const ward = routes({
+    actor: other,
+    viewer: async () => ({
+      status: "ok",
+      actorId: other,
+      membershipId: "55555555-5555-4555-8555-555555555555",
+      access: { role: "ward", scope: { kind: "ward", unitIds: ["unit-a"] } },
+      grants: [],
+    }),
+  });
+  const notYours = await ward.handler(call("push-subscribe", { subscription }));
+  assert.equal(notYours.status, 422);
+  assert.equal((await notYours.json()).code, "role");
+  assert.equal(ward.calls.length, 0);
+  // A statewide coordinator by membership is not on the delivery list, so it is not subscribed either.
+  const member = routes({
+    actor: other,
+    viewer: async () => ({
+      status: "ok",
+      actorId: other,
+      membershipId: "55555555-5555-4555-8555-555555555555",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    }),
+  });
+  const unwired = await member.handler(call("push-subscribe", { subscription }));
+  assert.equal(unwired.status, 422);
+  assert.match((await unwired.json()).error, /not wired in this prototype/);
+  assert.equal(member.calls.length, 0);
 });
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {

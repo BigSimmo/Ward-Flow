@@ -12,7 +12,14 @@ const ROUTES = new Map([
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
   ["/v1/workspace/push-status", "push_status"],
+  ["/v1/workspace/access", "access_list"],
+  ["/v1/workspace/access/grant", "access_grant"],
+  ["/v1/workspace/access/approve", "access_approve"],
+  ["/v1/workspace/access/revoke", "access_revoke"],
+  ["/v1/workspace/break-glass", "break_glass"],
 ]);
+/** Names one of the account's roles when it holds more than one: a membership ID or "bootstrap". */
+const WORKING_AS = "x-ward-working-as";
 /** Messages the pg pool and the workspace store use when the database, not the code, failed. */
 const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
@@ -110,7 +117,7 @@ export function createSharedHandler({
         headers: {
           ...headers,
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "Authorization, Content-Type",
+          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As",
           "access-control-max-age": "600",
         },
       });
@@ -127,26 +134,107 @@ export function createSharedHandler({
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
         : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
     }
-    // One application role, explicit named accounts. Tenant membership and client role fields
-    // never grant coordinator access. These accounts can read the complete synthetic workspace.
-    if (!config.coordinatorIds.includes(actorId))
-      return reply(403, { error: "Coordinator access is not assigned to this account" }, "auth_denied");
+    const workingAs = request.headers.get(WORKING_AS)?.toLowerCase() ?? null;
+    if (workingAs !== null && workingAs !== "bootstrap" && !UUID.test(workingAs))
+      return reply(400, { error: "Working as names one of this account's roles" });
+    // A JSON body, or the reply that refuses it.
+    const json = async () => {
+      if (request.method !== "POST") return { refusal: reply(405, { error: "Method not allowed" }) };
+      if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
+        return { refusal: reply(415, { error: "JSON required" }) };
+      try {
+        return { body: await readBody(request) };
+      } catch (error) {
+        return { refusal: reply(error.message === "too_large" ? 413 : 400, { error: "Invalid request" }) };
+      }
+    };
     try {
       if (config.dataMode && config.dataMode !== "prototype")
         return reply(503, { error: "Live data mode is not commissioned" });
+      // The role and place come from the server's own record on every request, never from the
+      // browser or the sign-in token. Accounts in WARD_COORDINATOR_USER_IDS are the bootstrap
+      // statewide coordinators; everyone else needs an active membership.
+      const view = await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId), workingAs });
+      if (view.status === "choose")
+        return reply(
+          409,
+          {
+            code: "choose-role",
+            error: "This account holds more than one role. Say which one to work as.",
+            choices: view.choices,
+          },
+          "auth_denied",
+        );
+      if (view.status !== "ok")
+        return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
+      const whole = view.access.role === "coordinator" && view.access.scope.kind === "statewide";
       if (path === "/v1/workspace" && request.method === "GET") {
-        const snapshot = await store.read(actorId);
-        if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
-        return reply(200, {
-          role: "coordinator",
+        const workspace = {
+          role: view.access.role,
+          access: view.access,
+          workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
-          data: { mode: snapshot.dataMode, source: "synthetic", liveAvailable: false },
-          snapshot,
-        });
+        };
+        const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
+        // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
+        const since = Number(new URL(request.url).searchParams.get("since"));
+        if (Number.isSafeInteger(since) && since >= 1 && store.poll) {
+          const polled = await store.poll(actorId, since, view);
+          if (polled.notModified) {
+            if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+            return reply(200, { ...workspace, data, notModified: true, revision: polled.revision, now: polled.now });
+          }
+          if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+          return reply(200, { ...workspace, data, snapshot: polled.snapshot });
+        }
+        const snapshot = await store.read(actorId, view);
+        if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+        return reply(200, { ...workspace, data, snapshot });
       }
-      if (path === "/v1/workspace/audit" && request.method === "GET")
-        return reply(200, { events: await store.audit() });
+      if (path === "/v1/workspace/audit" && request.method === "GET") {
+        // Change facts name records across the network, so only the statewide coordinator reads
+        // them all; the access admin reads role changes only. Nobody else reads the audit.
+        if (!whole && view.access.role !== "admin")
+          return reply(403, { error: "The audit record is not part of your role" }, "role_denied");
+        return reply(200, { events: await store.audit(view) });
+      }
+      if (path === "/v1/workspace/access" && request.method === "GET") {
+        const result = await store.listAccess(view);
+        return reply(result.status, result.body);
+      }
+      if (path.startsWith("/v1/workspace/access/") || path === "/v1/workspace/break-glass") {
+        const { body, refusal } = await json();
+        if (refusal) return refusal;
+        let result;
+        if (path === "/v1/workspace/break-glass") {
+          if (typeof body?.patientId !== "string" || body.patientId.length > 100)
+            return reply(400, { error: "A patient is required" });
+          result = await store.breakGlass(view, body.patientId, body.reason);
+        } else if (path === "/v1/workspace/access/grant") {
+          const expiresAt = typeof body?.expiresAt === "string" ? new Date(body.expiresAt) : null;
+          if (
+            !UUID.test(body?.actorId ?? "") ||
+            !expiresAt ||
+            !Number.isFinite(expiresAt.getTime()) ||
+            JSON.stringify(body?.scope ?? null).length > 4096
+          )
+            return reply(400, { error: "A person, a role, a place and an end date are required" });
+          result = await store.grantAccess(view, {
+            actorId: body.actorId.toLowerCase(),
+            role: body.role,
+            scope: body.scope,
+            expiresAt,
+          });
+        } else {
+          if (!UUID.test(body?.membershipId ?? "")) return reply(400, { error: "A role is required" });
+          const membershipId = body.membershipId.toLowerCase();
+          if (path === "/v1/workspace/access/approve") result = await store.approveAccess(view, membershipId);
+          else if (path === "/v1/workspace/access/revoke") result = await store.revokeAccess(view, membershipId);
+          else return reply(404, { error: "Not found" });
+        }
+        return reply(result.status, result.body);
+      }
       // Phone push. The public key is not a secret; "enabled: false" tells Settings the server is
       // not set up for it, so the control can say why instead of disappearing.
       if (path === "/v1/workspace/push-key" && request.method === "GET")
@@ -155,6 +243,15 @@ export function createSharedHandler({
         if (request.method !== "POST" || path === "/v1/workspace/push-key")
           return reply(405, { error: "Method not allowed" });
         if (!config.push || !store.subscribe) return reply(503, { error: "Phone alerts are not set up on the server" });
+        // Alerts go to the bootstrap statewide coordinators only in this prototype: delivery reads
+        // WARD_COORDINATOR_USER_IDS, so a coordinator by membership would subscribe and never hear.
+        if (!whole) return reply(422, { code: "role", error: "Phone alerts are not part of your role" }, "role_denied");
+        if (view.membershipId)
+          return reply(
+            422,
+            { code: "role", error: "Phone alerts for this account are not wired in this prototype." },
+            "role_denied",
+          );
         if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
           return reply(415, { error: "JSON required" });
         let body;
@@ -217,12 +314,18 @@ export function createSharedHandler({
         typeof body.event !== "object" ||
         Array.isArray(body.event) ||
         typeof body.event.type !== "string" ||
-        body.event.type.length > 100
+        body.event.type.length > 100 ||
+        (body.reply !== undefined && body.reply !== "revision")
       )
         return reply(400, { error: "A synthetic command, command ID and valid revision are required" });
-      const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event);
+      const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event, {
+        revisionOnly: body.reply === "revision",
+        view,
+      });
       return reply(result.status, result.body);
     } catch (error) {
+      if (error?.message === "role-ended")
+        return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
       if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
       const storage = storageFailure(error);

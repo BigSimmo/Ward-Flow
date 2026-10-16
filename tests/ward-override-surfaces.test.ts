@@ -204,6 +204,28 @@ function findConstructionSites(eventTypes: readonly string[]): ConstructionSite[
 
     const relFile = path.relative(REPO_ROOT, file).split(path.sep).join("/");
     walk(asNode(ast.program), (node) => {
+      // Fix list 1.5: a named `raise("TYPE", { ...fields })` from `useWardRaise(role)` is a
+      // construction site too. The type is its first argument, the fields its second.
+      if (node.type === "CallExpression") {
+        const callee = asNode(node.callee);
+        if (!callee || callee.type !== "Identifier" || callee.name !== "raise") return;
+        const args = Array.isArray(node.arguments) ? (node.arguments as unknown[]).map((a) => asNode(a)) : [];
+        const typeArg = args[0];
+        if (!typeArg || typeArg.type !== "StringLiteral" || typeof typeArg.value !== "string") return;
+        if (!eventTypes.includes(typeArg.value)) return;
+        const fields = args[1];
+        const fieldProps =
+          fields && fields.type === "ObjectExpression" && Array.isArray(fields.properties)
+            ? (fields.properties as unknown[]).map((p) => asNode(p)).filter((p): p is AstNode => !!p)
+            : [];
+        const hasOverrideReason = fieldProps.some((p) => {
+          const key = p.type === "ObjectProperty" ? asNode(p.key) : null;
+          return !!key && key.type === "Identifier" && key.name === "overrideReason";
+        });
+        const loc = node.loc as { start?: { line?: number } } | undefined;
+        sites.push({ file: relFile, line: loc?.start?.line ?? 0, eventType: typeArg.value, hasOverrideReason });
+        return;
+      }
       if (node.type !== "ObjectExpression" || !Array.isArray(node.properties)) return;
       const props = (node.properties as unknown[])
         .map((p) => asNode(p))
@@ -276,6 +298,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // nothing new to justify. A gate that has since failed is refused as usual, and this panel's own
   // Override control records the reason.
   "src/components/ward-management/coordinator/shortlist-panel.tsx": "ACCEPT_IN_PRINCIPLE",
+  // Top 25 item 8 (15 Oct 2026): the Capacity step down board's Refer is offered only for a ward
+  // that already passes the main eligibility rules with a Ready bed. At the referral limit it asks
+  // for a cap reason (overCapReason, not an eligibility override). An eligibility override is chosen
+  // in Placement, where shortlist-panel.tsx's Override records one. So there is none to record here.
+  "src/components/ward-management/capacity/step-down-board.tsx": "REFER_TO_UNITS",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -325,7 +352,7 @@ function findWardManagementDispatchCalls(): DispatchCallSite[] {
   const calls: DispatchCallSite[] = [];
   for (const file of listSourceFiles(WARD_MANAGEMENT_DIR)) {
     const source = fs.readFileSync(file, "utf8");
-    if (!source.includes("dispatch(")) continue;
+    if (!source.includes("dispatch(") && !source.includes("raise(")) continue;
 
     let ast: ReturnType<typeof parse>;
     try {
@@ -338,7 +365,7 @@ function findWardManagementDispatchCalls(): DispatchCallSite[] {
     walk(asNode(ast.program), (node) => {
       if (node.type !== "CallExpression") return;
       const callee = asNode(node.callee);
-      if (!callee || callee.type !== "Identifier" || callee.name !== "dispatch") return;
+      if (!callee || callee.type !== "Identifier" || (callee.name !== "dispatch" && callee.name !== "raise")) return;
 
       const args = Array.isArray(node.arguments) ? (node.arguments as unknown[]) : [];
       const arg0 = asNode(args[0]);
@@ -346,6 +373,10 @@ function findWardManagementDispatchCalls(): DispatchCallSite[] {
       const line = loc?.start?.line ?? 0;
 
       let literalType: string | null = null;
+      // A named `raise("TYPE", ...)` (fix list 1.5) carries its type as the first argument.
+      if (callee.name === "raise" && arg0 && arg0.type === "StringLiteral" && typeof arg0.value === "string") {
+        literalType = arg0.value;
+      }
       if (arg0 && arg0.type === "ObjectExpression" && Array.isArray(arg0.properties)) {
         const props = (arg0.properties as unknown[])
           .map((p) => asNode(p))
@@ -419,6 +450,10 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
     "useUndoableStep's run(): dispatches the step its caller built with a literal type",
   "src/components/ward-management/use-undoable-step.ts :: undoEvent":
     "useUndoableStep's toast Undo: dispatches the undo event its caller built with a literal type",
+  // Fix list 1.5 (15 Oct 2026): the named raise helper adds the desk and the time to the type its
+  // caller names. Every `raise("TYPE", ...)` call is scanned above with its literal type.
+  "src/components/ward-management/ward-flow-raise.ts :: { ...fields, type, role, now } as WardFlowEvent":
+    'wardRaise: dispatches the event its caller named with a literal type in raise("TYPE", ...)',
 };
 
 const wardManagementDispatchCalls = findWardManagementDispatchCalls();
@@ -584,8 +619,9 @@ describe("ward override-surface guard", () => {
     // compliance guard below actually passing against real, non-empty groups.
     // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
     // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(5);
-    expect(stillInViolation.size).toBe(5);
+    // Top 25 item 8: the step down board's plain Refer (6).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(6);
+    expect(stillInViolation.size).toBe(6);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -621,7 +657,8 @@ describe("ward override-surface guard", () => {
     // Re-derived by running this file, not by arithmetic.
     // 0 -> 2, v10 pass 3 (10 Oct 2026): the two forwarding calls in use-undoable-step.ts, each
     // named with its reason in DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE.
-    expect(nonLiteralDispatchCalls.length).toBe(2);
+    // 2 -> 3, fix list 1.5 (15 Oct 2026): the named raise helper in ward-flow-raise.ts.
+    expect(nonLiteralDispatchCalls.length).toBe(3);
   });
 
   /**
@@ -674,6 +711,8 @@ describe("ward override-surface guard", () => {
     // one construction site each) left with the file itself, deleted outright by item 41
     // (owner-approved 2026-09-17). Re-derived by running this file, not by arithmetic.
     expect(counts).toEqual({
+      // Top 25 item 8: the step down board's plain Refer (allowlisted above).
+      "src/components/ward-management/capacity/step-down-board.tsx::REFER_TO_UNITS": 1,
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,

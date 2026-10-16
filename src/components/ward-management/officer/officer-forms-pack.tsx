@@ -5,7 +5,7 @@ import { FileUp, Upload, X } from "lucide-react";
 
 import { Button, Icon, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
 import { formTitleForCode } from "@/lib/form-register";
@@ -169,8 +169,7 @@ function PackUploadDialog({
   who: string;
   onClose: () => void;
 }) {
-  const { dispatch } = useWardFlow();
-  const now = useWardFlowClock();
+  const raise = useWardRaise("officer");
   const [code, setCode] = useState<string | undefined>(slot.codes.length === 1 ? slot.codes[0] : initialCode);
   const [file, setFile] = useState<{ name: string; size: number } | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -191,6 +190,7 @@ function PackUploadDialog({
 
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={onClose}>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
       <div
         ref={dialogRef}
         className={styles.modalDialog}
@@ -212,6 +212,7 @@ function PackUploadDialog({
         </header>
         <div className={styles.modalBody}>
           {needsCode ? (
+            // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
             <div className={styles.codeChoice} role="radiogroup" aria-label="Which form" onKeyDown={moveCode}>
               {slot.codes.map((option, index) => (
                 <button
@@ -259,10 +260,7 @@ function PackUploadDialog({
             title={ready ? undefined : needsCode ? "Choose the form and a file first." : "Choose a file first."}
             onClick={() => {
               if (!ready || !file) return;
-              dispatch({
-                type: "UPLOAD_PATIENT_FORM",
-                role: "officer",
-                now,
+              raise("UPLOAD_PATIENT_FORM", {
                 movementId: movement.id,
                 formName: formNameFor(slot, code),
                 fileName: file.name,

@@ -25,17 +25,20 @@ function database(version) {
 }
 
 for (const [from, expected] of [
-  [null, [1, 2, 3, 4, 5]],
-  [1, [2, 3, 4, 5]],
-  [2, [3, 4, 5]],
-  [3, [4, 5]],
-  [4, [5]],
-  [5, []],
+  [null, [1, 2, 3, 4, 5, 6, 7, 8]],
+  [1, [2, 3, 4, 5, 6, 7, 8]],
+  [2, [3, 4, 5, 6, 7, 8]],
+  [3, [4, 5, 6, 7, 8]],
+  [4, [5, 6, 7, 8]],
+  [5, [6, 7, 8]],
+  [6, [7, 8]],
+  [7, [8]],
+  [8, []],
 ]) {
-  test(`migration runner advances ${from ?? "fresh"} to version 5 in order`, async () => {
+  test(`migration runner advances ${from ?? "fresh"} to version 8 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 5);
+    assert.equal(db.current(), 8);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -51,7 +54,7 @@ for (const [from, expected] of [
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 6, "5"]) {
+  for (const version of [0, 9, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -78,6 +81,43 @@ test("migration 5 adds composite active push subscription and chronological comm
     /CREATE INDEX push_subscriptions_actor_active ON ward_flow\.push_subscriptions\(workspace_id, actor_id\) WHERE revoked_at IS NULL;/,
   );
   assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(5\);/);
+});
+
+test("migration 6 turns on row-level security for the runtime role only, and its rollback undoes exactly that", async () => {
+  const sql = await readFile(new URL("./migrations/006-row-level-security.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-006-row-level-security.sql", import.meta.url), "utf8");
+  const tables = [...sql.matchAll(/ALTER TABLE ward_flow\.(\w+) ENABLE ROW LEVEL SECURITY;/g)].map((m) => m[1]);
+  assert.deepEqual(tables.sort(), [
+    "audit",
+    "commands",
+    "migrations",
+    "push_baselines",
+    "push_deliveries",
+    "push_subscriptions",
+    "workspaces",
+  ]);
+  for (const table of tables) {
+    assert.ok(
+      sql.includes(
+        `CREATE POLICY runtime_only ON ward_flow.${table} USING (current_user = 'wardflow_backend') WITH CHECK (current_user = 'wardflow_backend');`,
+      ),
+    );
+    assert.ok(undo.includes(`DROP POLICY runtime_only ON ward_flow.${table};`));
+    assert.ok(undo.includes(`ALTER TABLE ward_flow.${table} DISABLE ROW LEVEL SECURITY;`));
+  }
+  assert.doesNotMatch(sql, /FORCE ROW LEVEL SECURITY|BYPASSRLS|GRANT|REVOKE/);
+  assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(6\);/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 6;/);
+});
+
+test("migration 7 refuses a live workspace before changing anything, and its rollback restores the old check", async () => {
+  const sql = await readFile(new URL("./migrations/007-prototype-only.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-007-prototype-only.sql", import.meta.url), "utf8");
+  assert.ok(sql.indexOf("RAISE EXCEPTION") < sql.indexOf("DROP CONSTRAINT"));
+  assert.match(sql, /ADD CONSTRAINT workspaces_data_mode_check CHECK \(data_mode = 'prototype'\);/);
+  assert.match(undo, /ADD CONSTRAINT workspaces_data_mode_check CHECK \(data_mode IN \('prototype', 'live'\)\);/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 7;/);
+  assert.doesNotMatch(sql, /DROP TRIGGER|workspace_mode_unique|DELETE|UPDATE/);
 });
 
 test("one migration list: every SQL file is listed once, in order, and matches its checksum", async () => {

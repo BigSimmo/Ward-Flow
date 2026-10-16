@@ -30,7 +30,7 @@ import {
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
@@ -71,6 +71,7 @@ import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-ar
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 
 /**
@@ -103,7 +104,7 @@ import { instantFromEstimatedTimeInputs } from "@/components/ward-management/war
  * search page reads no query anyway), so a row with no person id shows its UMRN unlinked.
  */
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
-  return info.patient?.id ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : null;
+  return info.patient?.id ? patientHref(info.patient.id) : null;
 }
 
 type SortOrder = "ledger" | "days" | "patient";
@@ -132,7 +133,17 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     dayZero,
     rejections,
     repatriations: liveRepatriations,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "patients",
+    "referrals",
+    "movements",
+    "dispatch",
+    "dayZero",
+    "rejections",
+    "repatriations",
+  );
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();

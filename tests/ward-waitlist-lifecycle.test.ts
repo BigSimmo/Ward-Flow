@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { wardTvSheet } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 it("asks for a fresh answer after same-minute waitlisting, withdrawal and re-referral, retaining history", () => {
@@ -52,6 +53,7 @@ it("asks for a fresh answer after same-minute waitlisting, withdrawal and re-ref
       movements: state.movements.filter((row) => row.id === movementId),
       unit,
       now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
       nameOf: () => "Synthetic person",
     }).askedCount;
   refer();

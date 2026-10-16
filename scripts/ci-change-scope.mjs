@@ -242,10 +242,9 @@ const workflowPatterns = [
   ".cursor/skills",
   ".github/pull_request_template.md",
   "AGENTS.md",
-  // AGENTS.md is a small core plus an index; the rules themselves live in
-  // docs/agents/**. Without this entry an edit to a moved rule matches only
-  // /^.*\.md$/ and drops to the docs-only lane — the same edit that used to
-  // route here when the text sat inline in AGENTS.md.
+  // AGENTS.md holds the agent rules. The remaining reference pages under
+  // docs/agents/** are linked from it, so an edit there routes here too rather
+  // than matching only /^.*\.md$/ and dropping to the docs-only lane.
   "docs/agents",
   "docs/codex-review-protocol.md",
   "docs/process-hardening.md",
@@ -254,8 +253,8 @@ const workflowPatterns = [
 
 const codexAutofixPatterns = [
   "AGENTS.md",
-  // check-codex-autofix-workflow.mjs enforces docs/agents/codex-github-review.md
-  // against the live workflow, so an edit there must re-run that guard.
+  // Codex review guidance lives in AGENTS.md and its linked docs/agents/**
+  // pages, so an edit there keeps the codex-autofix scope.
   "docs/agents",
   "docs/codex-review-protocol.md",
 ];
@@ -1220,7 +1219,7 @@ function selfTest() {
       build_changed: false,
     },
   );
-  assertScope("agent-rule-reference", ["docs/agents/pull-request-workflow.md"], {
+  assertScope("agent-rule-reference", ["docs/agents/task-efficiency.md"], {
     workflow_changed: true,
     codex_autofix_changed: true,
     docs_only: false,

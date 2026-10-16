@@ -268,6 +268,12 @@ test("requests arriving together share one read of the published keys", async ()
   assert.deepEqual(calls, [JWKS]);
 });
 
+test("sign-in proves the account only; an account outside the coordinator list still signs in", async () => {
+  const { verify } = setup();
+  const nurse = randomUUID();
+  assert.equal(await verify(signed("ES256", "ec-1", claims({ sub: nurse }))), nurse);
+});
+
 test("the shared API and readiness answer 429 with Retry-After when the limit is reached", async () => {
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: null },

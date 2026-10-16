@@ -19,12 +19,15 @@ const NOW = NOW_ANCHOR;
 
 vi.mock("../src/components/ward-management/ward-flow-provider", () => ({
   useWardFlow: vi.fn(),
+  useWardFlowSelect: vi.fn(),
   useWardFlowClock: () => NOW + 10,
 }));
 
-import { useWardFlow } from "../src/components/ward-management/ward-flow-provider";
+import { useWardFlow, useWardFlowSelect } from "../src/components/ward-management/ward-flow-provider";
 
 const mockedUseWardFlow = vi.mocked(useWardFlow);
+// Screens read named fields through `useWardFlowSelect`; it answers with the same mocked value.
+vi.mocked(useWardFlowSelect).mockImplementation(() => mockedUseWardFlow());
 
 afterEach(() => {
   cleanup();

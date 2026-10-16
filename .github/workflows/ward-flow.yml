@@ -78,9 +78,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -104,33 +104,21 @@ jobs:
       # These source checks need no npm install and do not assert clinical approval.
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
-      - name: Check maintained owner-ruling index
-        if: ${{ !cancelled() && steps.plan.outputs.owner_index == 'true' }}
-        run: node scripts/ward-flow/owner-rulings-index.mjs --check
-      - name: Check maintained historical lesson index
-        if: ${{ !cancelled() && steps.plan.outputs.rules_index == 'true' }}
-        run: node scripts/ward-flow/rules-index.mjs --check
-      - name: Check current organisation coverage
-        if: ${{ !cancelled() && steps.plan.outputs.organisation == 'true' }}
-        run: node scripts/ward-flow/organisation.mjs --check --source working-tree
+      # Documentation in CI is held to four checks (fix list 10.12, 15 Oct 2026): links and
+      # anchors in every tracked Markdown file, npm commands named in maintained docs, the facts
+      # and retired terms below, and the safety wording (synthetic-data disclaimer above, legal
+      # wording later in this job). The index and inventory checks run in the pre-commit hook;
+      # the organisation check runs on demand with `npm run docs:maintain:check`.
+      - name: Check document links and anchors
+        run: npm run docs:check-links
       - name: Check maintained document commands
         run: npm run docs:check-scripts
-      - name: Check Ward document links
-        run: npm run check:ward-doc-links
-      - name: Check maintained document links and anchors
-        run: npm run docs:check-links
-      - name: Check maintained architecture coverage
-        run: npm run docs:check-index
-      - name: Check script inventory
-        run: npm run docs:check-inventory
       # Facts read from source must match docs/FACTS.md and every fact marker. Retired terms
       # (docs/retired-terms.json) warn on existing lines and fail only on lines this PR adds.
       - name: Check doc facts and retired terms
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/doc-facts.mjs
-      - name: Check Ward screen verification record
-        run: node scripts/ward-flow/screen-verification.mjs --check
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && steps.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
@@ -162,7 +150,7 @@ jobs:
       # the PR did not touch, which used to go red only on main. About a minute, off the critical path.
       - name: Lint the whole tree
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --quiet --no-error-on-unmatched-pattern
+        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern
       # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
       # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
       # shard would also fail. It shares this runner, which keeps two PRs' runs inside the
@@ -205,9 +193,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -230,7 +218,7 @@ jobs:
         run: npm run check:ward-expected-reds -- --print-signatures
       - name: Upload shard coverage blob
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           # One name per shard, replaced on a re-run, so a re-run shard's stale blob is never merged.
           name: ward-coverage-blob-${{ matrix.shard }}
@@ -254,9 +242,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -329,7 +317,7 @@ jobs:
           key: ${{ steps.next-cache.outputs.cache-primary-key }}
       - name: Upload failed Ward browser evidence
         if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ward-browser-failures-${{ github.run_id }}-${{ matrix.group }}
           path: test-results/
@@ -349,9 +337,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -386,7 +374,7 @@ jobs:
         run: npm run test:e2e:release-gate
       - name: Upload failed release-gate evidence
         if: ${{ !cancelled() && steps.gate.outcome == 'failure' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ward-release-gate-failures-${{ github.run_id }}
           path: test-results/
@@ -432,10 +420,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          # Railway builds with Node 24.19.0 (docs/hosting.md, RAILPACK_NODE_VERSION); match it here.
-          node-version: "24.19.0"
+          # .nvmrc matches Railway's Node (docs/hosting.md, RAILPACK_NODE_VERSION).
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -467,9 +455,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.15.0"
+          node-version-file: .nvmrc
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -482,7 +470,7 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Download shard coverage blobs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: ward-coverage-blob-*
           merge-multiple: true

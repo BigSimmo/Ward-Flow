@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { movementReferralLink } from "@/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+import { edScreenSource } from "./helpers/ed-screen-source";
 
 const NOW = NOW_ANCHOR;
 
@@ -40,9 +41,12 @@ describe("recording that nobody raised a referral", () => {
   });
 
   it("the ED board carries the control that dispatches it", () => {
-    const source = readFileSync("src/components/ward-management/ed/ed-screen.tsx", "utf8");
+    // The screen is split across `ed-screen.tsx` and its sibling files (fix list 2.5 and 9.6,
+    // 15 Oct 2026); `edScreenSource()` reads all of them, so this still pins the control to the
+    // ED screen as a whole.
+    const source = edScreenSource();
     expect(source).toContain("ward-ed-no-referral-raised-");
-    expect(source).toContain('type: "RECORD_NO_REFERRAL"');
+    expect(source).toContain('raise("RECORD_NO_REFERRAL"');
     expect(source).toContain("No referral raised");
   });
 });

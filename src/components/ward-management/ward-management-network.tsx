@@ -33,7 +33,7 @@ import {
   unitCapacity,
   wardServiceOrder,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatElapsed, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import type {
@@ -87,10 +87,15 @@ import {
   NetworkUnitDetail,
   type NetworkHighlight,
 } from "@/components/ward-management/network/network-overview";
-import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  movementUmrn,
+  patientIdentityLine,
+  resolveSubjectPatient,
+} from "@/components/ward-management/ward-patient-resolver";
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 type BedStateKey = "available" | "pulled" | "closed" | "confirmed" | "expected";
 
@@ -259,7 +264,7 @@ function BedStateChips({
   now: Instant;
   showTime?: boolean;
 }) {
-  const { admissions } = useWardFlow();
+  const { admissions } = useWardFlowSelect("admissions");
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
@@ -330,7 +335,7 @@ function ServiceCard({
   onSelect: () => void;
   registerRef: (id: string, node: HTMLButtonElement | null) => void;
 }) {
-  const { admissions } = useWardFlow();
+  const { admissions } = useWardFlowSelect("admissions");
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
   // One spelling for both outcomes, and it is the match view's own. `matchReason` answers "can
@@ -513,12 +518,12 @@ function referralClockLines(referral: Referral, now: Instant): { department: str
   };
 }
 
-function ReferralPlacementSummary({ referral, now }: { referral: Referral; now: Instant }) {
+function ReferralPlacementSummary({ referral, who, now }: { referral: Referral; who: string; now: Instant }) {
   return (
     <>
       <header className={styles.panelHeader}>
         <h2>
-          <ListChecks aria-hidden="true" /> Referral placement · {referral.id}
+          <ListChecks aria-hidden="true" /> Referral placement · {who}
         </h2>
       </header>
       <p className={styles.patientLine} data-tier={referral.urgency} data-testid="ward-network-placement-tier">
@@ -546,7 +551,14 @@ type NetworkView = "overview" | "placement";
  * coordinator's local selection when they briefly return to the overview.
  */
 export function WardNetworkWorkspace() {
-  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "configuration",
+  );
   const { now, paused, togglePause } = usePageLive();
   const [view, setView] = useState<NetworkView>("overview");
   // Phone (v10 Network): the view tabs sit under the hero and a "Ready against waiting" row scopes
@@ -597,6 +609,7 @@ export function WardNetworkWorkspace() {
   }
 
   const viewTabs = (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
       <button
         type="button"
@@ -794,7 +807,15 @@ export function initialNetworkPatientId(movements: Movement[]): string | null {
 
 /** `now` is the page's own clock from `usePageLive()`, so pausing the hero freezes this workspace too. */
 function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
-  const { movements, units, referrals, bedReleases, leaveBeds, admissions, patients } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds, admissions, patients } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "patients",
+  );
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -1136,7 +1157,11 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   className={styles.queueRow}
                 >
                   <span className={styles.queueTop}>
-                    <strong>{isPhone ? resolveSubjectPatient(candidate, umrnLookup).umrn : candidate.id}</strong>
+                    <strong>
+                      {isPhone
+                        ? resolveSubjectPatient(candidate, umrnLookup).umrn
+                        : patientIdentityLine(resolveSubjectPatient(candidate, umrnLookup))}
+                    </strong>
                     <span className={styles.elapsed}>{elapsedLabel(candidate, now)}</span>
                   </span>
                   <span className={styles.queueMeta}>
@@ -1182,7 +1207,11 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   className={styles.queueRow}
                 >
                   <span className={styles.queueTop}>
-                    <strong>{isPhone ? resolveSubjectPatient(referral, umrnLookup).umrn : referral.id}</strong>
+                    <strong>
+                      {isPhone
+                        ? resolveSubjectPatient(referral, umrnLookup).umrn
+                        : patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}
+                    </strong>
                     {/* The referral clock only: a queue row is about how long this has waited for a
                         decision, and the department clock is on the detail panel where there is room
                         for the comparison. It carries its own term, so a stopped clock reads as
@@ -1394,10 +1423,15 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
           className={styles.shortlistPanel}
           aria-label={selectedReferral ? "Referral placement" : "Placement"}
           aria-live="polite"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
           tabIndex={0}
         >
           {selectedReferral ? (
-            <ReferralPlacementSummary referral={selectedReferral} now={now} />
+            <ReferralPlacementSummary
+              referral={selectedReferral}
+              who={patientIdentityLine(resolveSubjectPatient(selectedReferral, umrnLookup))}
+              now={now}
+            />
           ) : (
             <>
               <header className={styles.panelHeader}>
@@ -1575,7 +1609,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                 <span>Next action: {patient.blocker}</span>
               </div>
 
-              <Link className={styles.primaryLink} href={`/mockups/ward-flow/movements/${patient.id}`}>
+              <Link className={styles.primaryLink} href={movementHref(patient.id)}>
                 Open movement workspace
               </Link>
             </>

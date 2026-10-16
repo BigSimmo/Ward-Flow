@@ -18,7 +18,7 @@ describe("actual Ward local verification plan", () => {
       expect(select(file)).toContain("test:e2e:ward-journeys");
     }
     expect(select("docs/ward-flow/old.md", "D")).toContain("test:e2e:ward-journeys");
-    expect(select("backend/ward-flow/backend.test.mjs")).toContain("check:ward-backend");
+    expect(select("backend/ward-flow/backend.test.mjs")).toContain("test:backend");
     for (const file of ["README.md", "AGENTS.md", "src/app/page.tsx", "backend/ward-flow/backend.test.mjs"])
       expect(() => validateSelectedScripts(select(file))).not.toThrow();
   });

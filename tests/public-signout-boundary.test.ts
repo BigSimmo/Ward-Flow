@@ -11,6 +11,7 @@ import {
   signOutConflicts,
   WARD_FLOW_IDENTITY_ANCHOR,
 } from "../scripts/pre-commit-checks.mjs";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 const SCRIPT = resolve("scripts/pre-commit-checks.mjs");
 const SIGN_OUT_CHECK = resolve("scripts/ward-flow/sign-out-check.mjs");
@@ -66,7 +67,8 @@ describe("public repository ownership boundary", () => {
     }
   });
 
-  it("recognises a verified checkout at an arbitrary path and rejects a wrong push destination", () => {
+  it("recognises a verified checkout at an arbitrary path and rejects a wrong push destination", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const publicRoot = publicRepo();
     expect(isPublicWardFlowCheckout(publicRoot)).toBe(true);
     const wrongRoot = publicRepo();
@@ -74,7 +76,8 @@ describe("public repository ownership boundary", () => {
     expect(isPublicWardFlowCheckout(wrongRoot)).toBe(false);
   });
 
-  it("accepts the canonical ssh:// remote the push guard accepts", () => {
+  it("accepts the canonical ssh:// remote the push guard accepts", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const sshRoot = publicRepo();
     git(sshRoot, "remote", "set-url", "origin", "ssh://git@github.com/BigSimmo/Ward-Flow.git");
     expect(isPublicWardFlowCheckout(sshRoot)).toBe(true);
@@ -85,7 +88,8 @@ describe("public repository ownership boundary", () => {
     expect(isPublicWardFlowCheckout(repo())).toBe(false);
   });
 
-  it("keeps legacy releases from closing same-named public claims", () => {
+  it("keeps legacy releases from closing same-named public claims", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = publicRepo();
     const owner = publicRepo();
     const publicClaim = `- 2026-09-28 | Public | ward/shared | ${owner} | AGENTS.md`;
@@ -101,7 +105,8 @@ describe("public repository ownership boundary", () => {
     expect(signOutConflicts(["AGENTS.md"], `${log}\n${publicRelease}`, "ward/mine", root)).toEqual([]);
   });
 
-  it("requires a sign-out for a codex branch's backend file", () => {
+  it("requires a sign-out for a codex branch's backend file", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = publicRepo();
     git(root, "checkout", "--quiet", "-b", "codex/backend");
     const file = "backend/ward-flow/notes.md";
@@ -115,6 +120,8 @@ describe("public repository ownership boundary", () => {
         encoding: "utf8",
         env: { ...process.env, WARD_SIGNOUT_FILE: signOutFile },
       });
+    // An empty log blocks an unsigned file; a missing log only warns (see pre-commit-checks.test.ts).
+    writeFileSync(signOutFile, "Open sign-outs only\n");
     const blocked = run();
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain("without your sign-out");
@@ -126,7 +133,8 @@ describe("public repository ownership boundary", () => {
     expect(allowed.status).toBe(0);
   });
 
-  it("finds a same-file change on another codex branch", () => {
+  it("finds a same-file change on another codex branch", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = publicRepo();
     const file = "docs/ward-flow/shared.md";
     git(root, "checkout", "--quiet", "-b", "codex/other");

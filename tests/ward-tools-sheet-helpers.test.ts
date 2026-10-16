@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-management/ward-movements";
-import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { boundedBedAvailability, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
@@ -16,6 +17,8 @@ const seed = {
   bedReleases,
   leaveBeds,
   now: NOW_ANCHOR,
+  thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+  network: activeWardNetwork(),
 };
 
 describe("Tools sheet, Copy bed summary", () => {

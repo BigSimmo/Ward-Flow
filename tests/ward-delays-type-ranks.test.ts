@@ -23,7 +23,7 @@ import { blankCssComments } from "./helpers/strip-source-comments";
  */
 
 const BOARD_CSS = "src/components/ward-management/delays/delays-board.module.css";
-const TOKENS_CSS = "src/app/ward-flow-v6-tokens.css";
+const TOKENS_CSS = "src/app/ward-flow-v9-tokens.css";
 
 /** The declarations of one exact selector, comments blanked so a commented-out rule cannot count. */
 function ruleBody(css: string, selector: string): string {

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { legalDeadlineMinutes } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -84,7 +84,7 @@ function expectedToShow(now: number) {
     .filter((movement) => isOpen(movement))
     .filter((movement) => {
       const dueAt = movement.legalForm?.dueAt;
-      return dueAt !== undefined && clockState(dueAt, now) !== "clear";
+      return dueAt !== undefined && clockState(dueAt, now, DEFAULT_DUE_SOON_THRESHOLDS) !== "clear";
     });
 }
 

@@ -155,30 +155,11 @@ describe("every production call site draws the cut its size needs", () => {
     }));
   });
 
-  // The call sites the scan must find, re-derived 26 September 2026. Before PsychSift's removal the
-  // scan found 14 sites in 7 files and the floor was 10. PsychSift's five files (its sidebar, search
-  // header, account-setup dialog, privacy page and install prompt) went with it, leaving Ward Flow's
-  // 5 sites: 4 in the navigation rail and 1 in the sidebar. Naming the files, rather than only lowering
-  // the number, keeps this a real control: it fails if the scan breaks or if either file stops
-  // drawing the mark.
-  const WARD_CALL_SITES: Record<string, number> = {
-    "src/components/ward-management/ward-management-navigation.tsx": 4,
-    "src/components/ward-management/ward-sidebar-content.tsx": 1,
-  };
-
-  it("finds the production call sites at all", () => {
-    // Guards the scan itself: a regex that silently matches nothing would make
-    // every assertion below pass vacuously.
-    for (const [file, expected] of Object.entries(WARD_CALL_SITES)) {
-      expect(
-        callSites.filter((site) => site.file === file).length,
-        `${file} no longer draws the mark ${expected} time(s), or the scan stopped finding it`,
-      ).toBeGreaterThanOrEqual(expected);
-    }
-    expect(callSites.length).toBeGreaterThanOrEqual(
-      Object.values(WARD_CALL_SITES).reduce((sum, count) => sum + count, 0),
-    );
-    expect(callSites.every((site) => site.heights.length > 0)).toBe(true);
+  // No production file draws the mark since 15 Oct 2026: its last five call sites were in the old
+  // ClinicalRail sidebar, removed as unused once the Tools sheet (#302) took over its demo controls.
+  // The checks below stay so that a call site added later is held to the same cut rules.
+  it("finds no production call site yet", () => {
+    expect(callSites).toEqual([]);
   });
 
   it.each([

@@ -24,6 +24,7 @@ import type {
   BedPreparationNote,
   BedReleaseBlocker,
   OverrideReason,
+  ReferralCapReason,
   CancelTransportReason,
   GenderPlacementReason,
   LegalFormReceiptCorrectionReason,
@@ -418,6 +419,13 @@ export type WardFlowEvent =
        * high-acuity override. `true` when the coordinator ticked it; never `false`.
        */
       genderPlacementChecked?: true;
+      /**
+       * Top 25 item 2 (`top25-referral-cap`, owner ruling 15 Oct 2026): the reason for asking more
+       * wards at once than `WardConfiguration.parallelReferralCap`. Without it the cap still refuses,
+       * exactly as before; with a reason from `REFERRAL_CAP_REASONS` the extra ward is asked and the
+       * reason is kept in the audit trail. Only a screen with the flag on sends it.
+       */
+      overCapReason?: ReferralCapReason;
     }
   /**
    * ⚠️ `overrideReason` is on all three placement events, not just `REFER_TO_UNITS`, because of the
@@ -1280,6 +1288,9 @@ export type WardFlowEvent =
        * occupied until arrival.
        */
       originUnitId?: string;
+      /** The ward raising it, when the role is `ward`. The reducer refuses a ward caller unless this
+       *  matches `originUnitId`, so a ward sends only in its own name. */
+      actingUnitId?: string;
       /**
        * WHICH TEAM OR SERVICE SENT IT, by name. Owner, 2026-09-12: **"Yes it should."**
        *
@@ -2203,6 +2214,16 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * Top 25 item 25: keep an active broadcast alert live for longer. The added time is the
+       * fixed `DEFAULT_BROADCAST_EXTENSION_MINUTES`, never a typed value. Ids only.
+       */
+      type: "EXTEND_BROADCAST_ALERT";
+      role: WardFlowRole;
+      now: Instant;
+      alertId: string;
+    }
+  | {
+      /**
        * Global alerts, 10 Oct 2026: the coordinator asks the accepting ward (or the wards still
        * considering the referral) to pull one patient now. Ids only, no typed text.
        */
@@ -2824,7 +2845,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // including GP, stays `community`." `ed` widens the table here; the reducer's own
   // `case "RECEIVE_REFERRAL"` couples it back to `source` — this list alone cannot express "only
   // when the source is ed_medical".
-  RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
+  //
+  // Role access plan (Josh, 15 Oct 2026): a ward raises a ward-to-ward referral in its own name.
+  // The reducer couples `ward` to source `psychiatric_ward` with a real sending ward, as it couples
+  // `ed` to `ed_medical`, so a ward cannot file a referral under another source.
+  RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
   ADD_PATIENT: ["ed", "community", "coordinator"],
   /**
@@ -2988,6 +3013,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.

@@ -28,8 +28,8 @@ import {
   type RefObject,
 } from "react";
 
-import { Sheet } from "@/components/ui/sheet";
-import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { Sheet } from "@/components/wf/sheet";
+import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import {
   StatusGlyph,
   WF_BAND_SCROLLED_PX,
@@ -51,7 +51,12 @@ import { formatInstant, formatInstantWithDay, splitDuration } from "@/components
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
@@ -127,7 +132,7 @@ import styles from "./ward-bar.module.css";
  *   Ctrl/Cmd+K shortcuts, its own Escape/ArrowDown/Enter keyboard contract). Building a second
  *   search engine here would be the exact "second definition of matches" that file's own header
  *   comment already warns against for ITS OWN callers.
- * - **The three drawers' modal chrome** is `<Sheet placement="right">` (`@/components/ui/sheet`)
+ * - **The three drawers' modal chrome** is `<Sheet placement="right">` (`@/components/wf/sheet`)
  *   — this codebase's established accessible dialog: focus trap via `inert` on the rest of the
  *   page (not a hand-rolled Tab-cycle), Escape-closes, backdrop-click-closes, and focus returned
  *   to the trigger on close. It is already used across the app for exactly this shape of overlay.
@@ -527,6 +532,8 @@ function isReferralSheetPath(pathname: string): boolean {
 }
 
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
+  const network = useWardNetwork();
+  const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
@@ -551,7 +558,26 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     inboxSnoozes,
     configuration,
     supportNotifications,
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "admissions",
+    "referrals",
+    "rejections",
+    "bedReleases",
+    "leaveBeds",
+    "refreshRequests",
+    "notices",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxCompletions",
+    "plannedAdmissions",
+    "inboxOwnership",
+    "inboxSnoozes",
+    "configuration",
+    "supportNotifications",
+  );
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();
@@ -678,7 +704,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
-    (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
@@ -774,8 +799,22 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         leaveBeds,
         refreshRequests,
         now,
+        sites: network.sites,
+        thresholds,
       }),
-    [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
+    [
+      movements,
+      patients,
+      units,
+      referrals,
+      rejections,
+      bedReleases,
+      leaveBeds,
+      refreshRequests,
+      now,
+      thresholds,
+      network,
+    ],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
@@ -1321,6 +1360,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
           button, which stays the one keyboard and screen-reader control; taps inside the button's
           own container (the button itself, the sheet and its scrim) are left to it. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route */}
       <div
         className={styles.title}
         onClick={

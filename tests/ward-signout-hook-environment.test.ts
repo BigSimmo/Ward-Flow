@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { expect, it } from "vitest";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
-it("keeps foreign claims separate in a Git hook and honours explicit multi-branch releases", () => {
+it("keeps foreign claims separate in a Git hook and honours explicit multi-branch releases", (ctx) => {
+  ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
   const scratch = mkdtempSync(join(tmpdir(), "ward-hook-env-"));
   const git = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
   const objects = resolve(git(process.cwd(), "rev-parse", "--git-common-dir"), "objects").replace(/\\/g, "/");

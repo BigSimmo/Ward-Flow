@@ -270,6 +270,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CONFIRM_MORNING_ROLLUP",
   "ACKNOWLEDGE_BROADCAST_ALERT",
   "STAND_DOWN_BROADCAST_ALERT",
+  // Top 25 item 25: an alert id only; the added time is a fixed default, never typed.
+  "EXTEND_BROADCAST_ALERT",
   // Global alerts, 10 Oct 2026: ids, enums, a whole number of beds and instants only.
   "RAISE_PULL_NOW",
   "REPLY_BROADCAST_ALERT",

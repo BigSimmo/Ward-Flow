@@ -347,7 +347,7 @@ it("stops polling and signs out the view when the workspace refuses access", asy
   });
   expect(result.current.status).toBe("not-authorised");
   expect(clearAppBadge).toHaveBeenCalled();
-  expect(result.current.error).toMatch(/coordinator access/);
+  expect(result.current.error).toMatch(/Ward Flow role/);
   expect(result.current.signedIn).toBe(false);
   expect(interval.mock.calls.some(([, ms]) => ms === 3000)).toBe(false);
   expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);

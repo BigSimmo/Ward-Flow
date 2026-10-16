@@ -121,7 +121,8 @@ export function nodeVersionSatisfiesRange(version, range) {
 }
 
 function assertRuntime(projectRoot) {
-  const expectedNodeMajor = readFileSync(path.join(projectRoot, ".node-version"), "utf8").trim();
+  // .node-version pins the exact release (for example 24.19.0); engines.node tracks its major.
+  const expectedNodeMajor = readFileSync(path.join(projectRoot, ".node-version"), "utf8").trim().split(".")[0];
   const packageJson = JSON.parse(readFileSync(path.join(projectRoot, "package.json"), "utf8"));
   const expectedNodeRange = String(packageJson.engines?.node ?? "");
   const expectedNpm = String(packageJson.packageManager ?? "").replace(/^npm@/u, "");

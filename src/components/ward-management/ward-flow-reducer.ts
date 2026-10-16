@@ -1,7 +1,7 @@
 import { referralIntakeError } from "./referrals/referral-submission";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
-import { withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
+import { withoutRecordNumbers, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
   validCareChange,
   careChangeRefusal,
@@ -73,6 +73,7 @@ import {
   GENDER_NO_LONGER_SUITS_REFUSAL,
   GENDER_NO_LONGER_SUITS_NON_BINARY_REFUSAL,
   OVERRIDE_REASONS,
+  REFERRAL_CAP_REASONS,
   WARD_REQUEST_WITHDRAWAL_REASONS,
   wardRequestWithdrawalReasonLabels,
 } from "@/components/ward-management/ward-change-reasons";
@@ -682,6 +683,7 @@ export function subjectId(event: WardFlowEvent): string {
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
     case "REPLY_BROADCAST_ALERT":
       return event.alertId;
     case "RAISE_PULL_NOW":
@@ -708,8 +710,9 @@ function makeRejection(state: WardFlowState, event: WardFlowEvent, reason: strin
     at: event.now,
     movementId: subject,
     attempted: event.type,
-    // D-39: a refusal names the patient by UMRN, never by the WF journey number it was keyed on.
-    reason: withUmrnInPlaceOfMovementIds(reason, state),
+    // D-39: a refusal names the patient by UMRN, never by the WF journey number it was keyed on,
+    // and says "this referral" or "this stay" in place of any other record number.
+    reason: withoutRecordNumbers(withUmrnInPlaceOfMovementIds(reason, state)),
   };
 }
 
@@ -1291,7 +1294,9 @@ export function makeNotice(
     to,
     about,
     kind,
-    sentence,
+    // D-39: a notice says "this referral" or "this stay", never the record number. The ids stay in
+    // `about` for the link.
+    sentence: withoutRecordNumbers(sentence),
     readAt: undefined,
   };
 }
@@ -1467,7 +1472,7 @@ function protectedRefusal(
               at: event.now,
               movementId: "none",
               attempted: event.type,
-              reason: rejectionReason,
+              reason: withoutRecordNumbers(rejectionReason),
             },
           ],
         };
@@ -2478,11 +2483,7 @@ export function reduceClinicalEvent(
         raisedFrom?.patientId !== undefined &&
         event.patientId !== raisedFrom.patientId
       ) {
-        return reject(
-          state,
-          event,
-          `RAISE_REFERRAL names patient ${event.patientId}, but referral ${raisedFrom.id} is for patient ${raisedFrom.patientId}`,
-        );
+        return reject(state, event, "RAISE_REFERRAL names a different patient from the one this referral is for");
       }
       const created: Movement = {
         id: nextReferralId(sequence),
@@ -2729,8 +2730,8 @@ export function reduceClinicalEvent(
         { role: "community", placeId: communityTeamSlug(event.team) },
         { movementId: movement.id, referralId },
         existingQueuedArm
-          ? `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: reusing the existing queued referral ${referralId} rather than raising a second one to the same team.`
-          : `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: referral ${referralId}.`,
+          ? `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: reusing the existing queued referral rather than raising a second one to the same team.`
+          : `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up.`,
       );
 
       // F5: live ward requests are withdrawn (recorded with `ed_outcome_recorded`, since the
@@ -2842,7 +2843,12 @@ export function reduceClinicalEvent(
       const newUnitIds = uniqueUnitIds.filter((unitId) => !liveUnitIds.includes(unitId));
       // The cap counts live plus new, whether or not the caller re-sent the live ids.
       const combinedCount = liveUnitIds.length + newUnitIds.length;
-      if (combinedCount > state.configuration.parallelReferralCap) {
+      // Top 25 item 2 (owner ruling, 15 Oct 2026): the cap is a safety check, so a chosen reason
+      // lets the extra ward be asked (kept in the audit trail). Without one it refuses, as before.
+      if (event.overCapReason !== undefined && !REFERRAL_CAP_REASONS.includes(event.overCapReason)) {
+        return reject(state, event, `REFER_TO_UNITS overCapReason must be chosen from REFERRAL_CAP_REASONS`);
+      }
+      if (combinedCount > state.configuration.parallelReferralCap && event.overCapReason === undefined) {
         return reject(
           state,
           event,
@@ -3020,6 +3026,7 @@ export function reduceClinicalEvent(
       decision.outcome = heldBack.length ? "partial" : "accepted";
       decision.reasonCode = heldBack.length ? "transition" : "none";
       decision.overrideFactRecorded = event.overrideReason !== undefined;
+      decision.overCapRecorded = updated.referredUnitIds.length > state.configuration.parallelReferralCap;
       return replaceMovement(withHeldBack, movement.id, updated);
     }
 
@@ -5012,6 +5019,15 @@ export function reduceClinicalEvent(
           `RECEIVE_REFERRAL raised as role ed must carry source ed_medical, not ${event.source}`,
         );
       }
+      // Role access plan (15 Oct 2026): a ward raises a referral in its own name only as the
+      // sending ward. Any other source would file it under someone else.
+      if (event.role === "ward" && event.source !== "psychiatric_ward") {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must carry source psychiatric_ward, not ${event.source}`,
+        );
+      }
       if (event.source === "psychiatric_ward") {
         if (!event.originUnitId || !findUnit(state, event.originUnitId)) {
           return reject(
@@ -5020,6 +5036,15 @@ export function reduceClinicalEvent(
             `RECEIVE_REFERRAL source psychiatric_ward must name a real originUnitId (the sending ward)`,
           );
         }
+      }
+      // A ward names itself with `actingUnitId`, and may only send from that ward, as it answers
+      // only its own movements (`wardActingUnitError`). Otherwise ward A could file a referral as B.
+      if (event.role === "ward" && event.actingUnitId !== event.originUnitId) {
+        return reject(
+          state,
+          event,
+          `RECEIVE_REFERRAL raised as role ward must send from its own ward: acting as ${event.actingUnitId ?? "no named ward"}, origin ${event.originUnitId}`,
+        );
       }
       // `homeRegion` is a region from a fixed list, never an address or free text; see
       // `HOME_REGIONS`.
@@ -6979,6 +7004,7 @@ export function reduceClinicalEvent(
     case "DISPATCH_BROADCAST_ALERT":
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
     case "RAISE_PULL_NOW":
     case "REPLY_BROADCAST_ALERT": {
       const next = reduceBroadcastAlertEvent(state, event, decision, reject);

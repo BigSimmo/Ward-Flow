@@ -27,6 +27,10 @@ import { edById } from "../ward-sites";
 import { calendarDateOf } from "../ward-clock";
 import { legalFormName } from "../ward-legal-forms";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
+import { formTimeLeft } from "../legal-forms/legal-form-time-left";
+import { standingWord } from "../legal-forms/legal-forms-view";
+import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { useDueSoonThresholds } from "../ward-flow-provider";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
@@ -788,6 +792,11 @@ export function PatientDocumentsTab({
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  // Top 25 item 19 (flag top25-legal-radar): the typed paper expiry reads its time left through the
+  // one shared rule (`formTimeLeft`, Settings due soon warnings), as on the Forms and Patient pages.
+  const legalRadarOn = useWardFeatureFlag("top25-legal-radar");
+  const thresholds = useDueSoonThresholds();
+  const paperTimeLeft = legalRadarOn && movementInForce ? formTimeLeft(movement, now, thresholds) : undefined;
   const files = movement?.uploadedForms ?? [];
   const rows = [
     ...record.documents.map((d, i) => ({
@@ -890,7 +899,14 @@ export function PatientDocumentsTab({
                       <StatusGlyph tone={f.status === "Current" ? "success" : "closed"} size={10} />
                       {f.status}
                     </span>
-                    {f.due !== undefined ? (
+                    {f.due !== undefined && paperTimeLeft !== undefined && f.status !== "Closed" ? (
+                      <span className={styles.cellSub} data-testid="dossier-paper-expiry-time-left">
+                        {" "}
+                        <StatusGlyph tone={paperTimeLeft.tone} size={9} />
+                        Paper expiry typed {paperTimeLeft.at}, {paperTimeLeft.text},{" "}
+                        {standingWord(paperTimeLeft.standing, thresholds)} <LegalLimitsNotChecked variant="tag" />
+                      </span>
+                    ) : f.due !== undefined ? (
                       <span className={styles.cellSub}>
                         {" "}
                         Paper expiry typed {clock(f.due)}

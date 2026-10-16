@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 // The answer view's back link goes through contextual history (ContextualBackLink), which reads
 // the app router; jsdom has none mounted.
@@ -140,6 +140,15 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
   describe("3. ArrivalTimeModal focus trap", () => {
     it("traps Tab navigation within dialog bounds", () => {
+      // jsdom has no layout; the shared modal trap only cycles through controls that have client rects.
+      const rects = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
+        length: 1,
+        item: () => null,
+        [Symbol.iterator]: function* () {
+          yield {} as DOMRect;
+        },
+      } as DOMRectList);
+      onTestFinished(() => rects.mockRestore());
       const movement = seed.movements[0];
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>

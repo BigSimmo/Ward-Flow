@@ -171,11 +171,6 @@ npm run test:coverage
 npm run test:e2e
 npm run test:e2e:pr
 npm run test:e2e:advisory
-npm run test:e2e:all
-npm run test:e2e:accessibility
-npm run test:e2e:chromium
-npm run test:e2e:visual
-npm run check:deployment-readiness
 npm run format -- --files <exact-owned-paths>
 npm run format:check
 npm run build
