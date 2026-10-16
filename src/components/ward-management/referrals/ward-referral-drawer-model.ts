@@ -20,6 +20,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
 import { type DocumentationDraft } from "./referral-flow-panels";
 import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
 
@@ -485,6 +486,8 @@ export type KeptDraft = {
   edNeeds: EdNeeds;
   /** "Not yet identified": a short description when no person on file can be named. */
   unidentified?: string | null;
+  /** Why a ward refers someone not in its beds, kept with the ward it was answered for. */
+  notOnWard?: { unitId: string; reason: NotOnSendingWardReason };
 };
 
 export type CommunityNeeds = Omit<Extract<ReferralNeeds, { kind: "community" }>, "kind">;

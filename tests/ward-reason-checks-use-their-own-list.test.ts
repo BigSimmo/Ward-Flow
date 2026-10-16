@@ -41,6 +41,12 @@ const REDUCERS = [
   // 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the main reducer unchanged.
   "src/components/ward-management/ward-flow-record-events.ts",
   "src/components/ward-management/ward-flow-undo-events.ts",
+  // 16 Oct 2026: the referral, placement, transport and bed cases moved out the same way.
+  "src/components/ward-management/ward-flow-referral-send-events.ts",
+  "src/components/ward-management/ward-flow-referral-answer-events.ts",
+  "src/components/ward-management/ward-flow-placement-events.ts",
+  "src/components/ward-management/ward-flow-transport-events.ts",
+  "src/components/ward-management/ward-flow-bed-events.ts",
 ] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 

@@ -838,16 +838,24 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
   //   2. the declared list Part 1 drives is exactly these codes, in this order, so adding a code
   //      to the picker fails here until Part 1 is driving it too.
   it("pins where legal forms are authored, so Part 1 cannot silently miss one", () => {
-    // The reducer hands RECORD_* and UNDO_* actions to its slice files, so read all three.
-    const reducerSources = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map(
-      (name) =>
-        ts.createSourceFile(
-          `${WARD_DIR}/${name}`,
-          readFileSync(`${WARD_DIR}/${name}`, "utf8"),
-          ts.ScriptTarget.Latest,
-          true,
-          ts.ScriptKind.TS,
-        ),
+    // The reducer hands most of its cases to slice files, so read them all.
+    const reducerSources = [
+      "ward-flow-reducer.ts",
+      "ward-flow-record-events.ts",
+      "ward-flow-undo-events.ts",
+      "ward-flow-referral-send-events.ts",
+      "ward-flow-referral-answer-events.ts",
+      "ward-flow-placement-events.ts",
+      "ward-flow-transport-events.ts",
+      "ward-flow-bed-events.ts",
+    ].map((name) =>
+      ts.createSourceFile(
+        `${WARD_DIR}/${name}`,
+        readFileSync(`${WARD_DIR}/${name}`, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS,
+      ),
     );
 
     // An authored legal form is an object literal carrying a `code:` string. Read from the AST,

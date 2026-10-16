@@ -180,3 +180,14 @@ describe("the comparison table, when the join cannot run for some admissions", (
     }
   });
 });
+
+describe("the team's own page, when the join cannot run for it", () => {
+  it("words each headline figure as not linked, never a bare none", () => {
+    renderScreen(MEMBERLESS_TEAM!.id);
+    for (const key of ["admitted", "expected", "discharged", "other"]) {
+      const figure = screen.getByTestId(`ward-statistics-community-kpi-${key}`);
+      expect(figure.textContent).toBe("not linked to this team");
+      expect(figure).toHaveAttribute("data-unmeasured", "true");
+    }
+  });
+});

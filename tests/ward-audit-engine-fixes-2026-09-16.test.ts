@@ -92,14 +92,25 @@ function pulledMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACITY_UNIT) 
 
 describe("Fix 1: no dead duplicate switch cases", () => {
   it("has RECORD_LEGAL_FORM_RECEIVED and REFER_TO_COMMUNITY_TEAM as switch cases exactly once each", () => {
-    const text = source("src/components/ward-management/ward-flow-reducer.ts");
-    const countOf = (eventType: string) => (text.match(new RegExp(`case "${eventType}":`, "g")) ?? []).length;
+    const reducer = source("src/components/ward-management/ward-flow-reducer.ts");
+    const countOf = (text: string, eventType: string) =>
+      (text.match(new RegExp(`case "${eventType}":`, "g")) ?? []).length;
     // The floor: the strings must actually be found at all, or a rename would make both counts
     // zero and this test would pass for the wrong reason.
-    expect(text).toContain('case "RECORD_LEGAL_FORM_RECEIVED":');
-    expect(text).toContain('case "REFER_TO_COMMUNITY_TEAM":');
-    expect(countOf("RECORD_LEGAL_FORM_RECEIVED")).toBe(1);
-    expect(countOf("REFER_TO_COMMUNITY_TEAM")).toBe(1);
+    expect(reducer).toContain('case "RECORD_LEGAL_FORM_RECEIVED":');
+    expect(reducer).toContain('case "REFER_TO_COMMUNITY_TEAM":');
+    expect(countOf(reducer, "RECORD_LEGAL_FORM_RECEIVED")).toBe(1);
+    expect(countOf(reducer, "REFER_TO_COMMUNITY_TEAM")).toBe(1);
+    // Since the reducer split (15 and 16 October 2026) the reducer holds only a forwarding label for
+    // each, and the real case body lives in its slice. Each slice must hold that body exactly once.
+    for (const [file, eventType] of [
+      ["ward-flow-record-events.ts", "RECORD_LEGAL_FORM_RECEIVED"],
+      ["ward-flow-referral-send-events.ts", "REFER_TO_COMMUNITY_TEAM"],
+    ] as const) {
+      const slice = source(`src/components/ward-management/${file}`);
+      expect(slice, `${eventType} has no case body in ${file}`).toContain(`case "${eventType}": {`);
+      expect(countOf(slice, eventType), `${eventType} appears more than once in ${file}`).toBe(1);
+    }
   });
 });
 

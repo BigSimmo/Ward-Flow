@@ -4,7 +4,13 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { createRef, type ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
+// reset after, so no flag change re-renders a tree that is being torn down.
+beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/mockups/ward-flow",

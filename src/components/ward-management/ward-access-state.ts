@@ -85,8 +85,8 @@ function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
  * The seeded governance entries (`ward-governance-seed.ts`) a coordinator's own screens show. They
  * are derived, never stored, and the browser derives them from the workspace it was sent, from its
  * own first journeys, referral and stay. The server derives them the same way, so a review is sent,
- * and may be made, exactly when the desk's screens show its entry. The ids are fixed, so every desk
- * that shows an entry shares its reviews.
+ * and may be made, exactly when the desk's screens show its entry. Each id names its subject, so desks
+ * share a review only when they show the same entry about the same record.
  */
 function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "admissions">, state: WardFlowState) {
   return new Set(syntheticGovernanceAuditEvents({ ...state, ...sent }).map((event) => event.id));
@@ -354,12 +354,12 @@ export function commandScopeRefusal(
     referrals: scoped.referrals.filter((referral) => !glass(referral)),
   });
   const all = recordIds(state);
-  // A seeded governance entry can be reviewed, so its id counts as a record too. A coordinator may
-  // name only the ones its own screens show.
-  for (const event of syntheticGovernanceAuditEvents(state)) all.add(event.id);
+  // A seeded governance entry can be reviewed, and the whole workspace finds one about any record
+  // (`governanceAuditEntry`), so every seeded id counts as a record. A coordinator may name only the
+  // ones its own screens show.
   if (access.role === "coordinator") for (const id of seededAuditIds(scoped, state)) writable.add(id);
   for (const text of commandStrings(command)) {
-    if (all.has(text) && !writable.has(text)) return outside;
+    if ((all.has(text) || text.startsWith("audit-seed-")) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));
     const subject = category ? text.slice(category.idPrefix.length) : undefined;
     if (subject !== undefined && all.has(subject) && !writable.has(subject)) return outside;
