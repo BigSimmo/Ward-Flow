@@ -483,11 +483,10 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
         items,
         acknowledgements: current.inboxAcknowledgements,
         completions: current.inboxCompletions,
+        // The coordinator is the only desk WardBar hands a non-empty list, and its drawer reads as
+        // Alerts (#362). Render that live configuration rather than a Tasks drawer no desk mounts.
         role: "coordinator",
-        // The facade states the Tasks words. A desk that may open the Alerts screen relabels the
-        // drawer as Alerts (#362), which tests/ward-alerts-one-queue.dom.test.tsx covers, so this
-        // reads the Tasks drawer that every other desk keeps.
-        alertsQueueForDesk: false,
+        alertsQueueForDesk: true,
         now: current.now,
         dispatch: current.dispatch,
         onClose: () => {},
@@ -498,7 +497,7 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
       Number(
         oneNumber(
           markup,
-          /<strong[^>]*>\d+<\/strong> of (\d+) <span class="sr-only">invented <\/span>tasks/gu,
+          /<strong[^>]*>\d+<\/strong> of (\d+) <span class="sr-only">invented <\/span>alerts/gu,
           "the Tasks drawer's total count",
         ),
       ),

@@ -144,12 +144,13 @@ export type ShellFigureInput = {
  * The words for the one figure not carried by `wardNavCounts`. `taskItems` returns rows, not
  * a labelled count, so the noun is stated here.
  *
- * `WardTasksDrawer` — the tasks surface `shell/ward-bar.tsx` actually mounts — renders `"tasks"`
- * beside its total count (`<strong ...>N</strong> of M <span class="sr-only">invented </span>tasks`).
+ * `WardTasksDrawer` — the surface `shell/ward-bar.tsx` actually mounts — renders `"alerts"` beside
+ * its total count for the coordinator desk, the only desk the bar hands a non-empty list (#362:
+ * `<strong ...>N</strong> of M <span class="sr-only">invented </span>alerts`).
  * `tests/ward-facade-agrees-with-screens.test.ts` reads this noun back out of the drawer's rendered
  * markup, so a real divergence reddens instead of being described.
  */
-const TASKS_NOUN = "tasks";
+const TASKS_NOUN = "alerts";
 
 /**
  * Every shell figure, from one call.
