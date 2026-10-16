@@ -20,7 +20,7 @@ import {
 } from "../ward-admissions";
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "../ward-clock";
+import { dayOf, MINUTES_PER_DAY, perthCalendarDay, perthMidnight, type Instant } from "../ward-clock";
 import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
@@ -147,13 +147,14 @@ function linkedAgeBandRefusal(
   dateOfBirth: string,
   ageBand: Cohort,
 ): string | null {
-  const today = localCalendarDate(event.calendarDate);
+  const today = bookingCalendarDate(event.calendarDate);
   if (today === null)
     return `${event.type} needs today's calendar date (yyyy-mm-dd) to check a linked patient's age group`;
-  const arrivalDay = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate() + dayOf(event.expectedArrivalAt) - dayOf(event.now),
+  const calendar = perthCalendarDay(today);
+  const arrivalDay = perthMidnight(
+    calendar.year,
+    calendar.monthIndex,
+    calendar.day + dayOf(event.expectedArrivalAt) - dayOf(event.now),
   );
   const recorded = patientCohort(dateOfBirth, arrivalDay);
   return recorded === ageBand
@@ -161,13 +162,17 @@ function linkedAgeBandRefusal(
     : `On the expected arrival date this patient's recorded date of birth gives the ${recorded} age group, not ${ageBand}.`;
 }
 
-/** A "yyyy-mm-dd" calendar date as local midnight, or null when it is not one. */
-function localCalendarDate(value: unknown): Date | null {
+/** A "yyyy-mm-dd" Perth calendar date, independent of the browser or server's zone. */
+function bookingCalendarDate(value: unknown): Date | null {
   if (typeof value !== "string") return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
   if (!match) return null;
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const date = perthMidnight(year, monthIndex, day);
+  const read = perthCalendarDay(date);
+  return read.year === year && read.monthIndex === monthIndex && read.day === day ? date : null;
 }
 
 function nextPlannedAdmissionId(sequence: number): string {

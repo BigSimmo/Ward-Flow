@@ -1377,3 +1377,257 @@ test(
     }
   },
 );
+
+test(
+  "real PostgreSQL: shared views follow cover changes and recheck access after the workspace lock",
+  { skip: !url },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    try {
+      await migrate(pool);
+      async function fixture() {
+        let now = Date.parse("2026-10-07T10:00:00Z");
+        const clock = () => new Date(now);
+        const workspaceId = randomUUID();
+        const lead = randomUUID();
+        const nurse = randomUUID();
+        const store = createWorkspaceStore(pool, { workspaceId, engine, clock });
+        const leadView = await store.viewer(lead, { bootstrap: true });
+        const seed = await store.read(lead, leadView);
+        const [unitA, unitB] = seed.payload.state.units.map((unit) => unit.id);
+        const base = (
+          await store.grantAccess(leadView, {
+            actorId: nurse,
+            role: "ward",
+            scope: { kind: "ward", unitIds: [unitA] },
+            expiresAt: new Date("2027-06-01T00:00:00Z"),
+          })
+        ).body.membership;
+        const cover = async () =>
+          (
+            await store.giveCover(leadView, {
+              actorId: nurse,
+              scope: { kind: "ward", unitIds: [unitB] },
+              minutes: 60,
+            })
+          ).body.membership;
+        const confirm = (snapshot) => {
+          const unit = snapshot.payload.state.units.find((unit) => unit.id === unitB);
+          return {
+            type: "CONFIRM_CAPACITY",
+            role: "ward",
+            unitId: unitB,
+            actingUnitId: unitB,
+            value: unit.allocatable.value,
+            expectedRevision: unit.allocatable.revision ?? 0,
+          };
+        };
+        return {
+          store,
+          workspaceId,
+          lead,
+          leadView,
+          nurse,
+          base,
+          unitA,
+          unitB,
+          cover,
+          confirm,
+          clock,
+          advance: (minutes) => {
+            now += minutes * 60_000;
+          },
+        };
+      }
+      await t.test("an ended joined cover cannot authorise an already resolved command", async () => {
+        const f = await fixture();
+        const cover = await f.cover();
+        const view = await f.store.viewer(f.nurse);
+        const before = await f.store.read(f.nurse, view);
+        assert.ok(view.access.scope.unitIds.includes(f.unitB));
+        assert.equal((await f.store.revokeAccess(f.leadView, cover.id)).status, 200);
+        const result = await f.store.command(f.nurse, randomUUID(), before.revision, f.confirm(before), { view });
+        assert.equal(result.status, 422, "revoked cover must be removed before authorising the pending write");
+        assert.equal(result.body.code, "scope");
+        assert.equal(result.body.snapshot.revision, before.revision);
+        const fresh = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+        assert.deepEqual(result.body.snapshot.payload.state.patients, fresh.payload.state.patients);
+        assert.ok(fresh.payload.state.patients.length < before.payload.state.patients.length);
+      });
+      await t.test("joined cover expiry is checked after waiting for the real workspace row lock", async () => {
+        const f = await fixture();
+        await f.cover();
+        const view = await f.store.viewer(f.nurse);
+        const before = await f.store.read(f.nurse, view);
+        const blocker = await pool.connect();
+        let reachedLock;
+        const waiting = new Promise((resolve) => {
+          reachedLock = resolve;
+        });
+        const pendingStore = createWorkspaceStore(
+          {
+            query: pool.query.bind(pool),
+            connect: async () => {
+              const client = await pool.connect();
+              return {
+                query: (sql, parameters) => {
+                  const result = client.query(sql, parameters);
+                  if (sql.includes("FROM ward_flow.workspaces") && sql.endsWith("FOR UPDATE")) reachedLock();
+                  return result;
+                },
+                release: client.release.bind(client),
+              };
+            },
+          },
+          { workspaceId: f.workspaceId, engine, clock: f.clock },
+        );
+        let pending;
+        try {
+          await blocker.query("BEGIN");
+          await blocker.query("SELECT id FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [f.workspaceId]);
+          pending = pendingStore.command(f.nurse, randomUUID(), before.revision, f.confirm(before), { view });
+          await waiting;
+          f.advance(61);
+          await blocker.query("COMMIT");
+          const result = await pending;
+          assert.equal(result.status, 422, "cover ending while the command waits must no longer authorise it");
+          assert.equal(result.body.snapshot.revision, before.revision);
+          assert.equal(
+            result.body.snapshot.now,
+            before.now + 61,
+            "reply and workflow time must also follow the lock wait",
+          );
+        } finally {
+          await blocker.query("ROLLBACK");
+          blocker.release();
+          await pending?.catch(() => {});
+        }
+      });
+      await t.test("a role grant expiring during a lock wait is refused without a database failure", async () => {
+        const f = await fixture();
+        const expiresAt = new Date(f.clock().getTime() + 60_000);
+        const blocker = await pool.connect();
+        let reachedLock;
+        const waiting = new Promise((resolve) => {
+          reachedLock = resolve;
+        });
+        const pendingStore = createWorkspaceStore(
+          {
+            query: pool.query.bind(pool),
+            connect: async () => {
+              const client = await pool.connect();
+              return {
+                query: (sql, parameters) => {
+                  const result = client.query(sql, parameters);
+                  if (sql.includes("FROM ward_flow.workspaces") && sql.endsWith("FOR UPDATE")) reachedLock();
+                  return result;
+                },
+                release: client.release.bind(client),
+              };
+            },
+          },
+          { workspaceId: f.workspaceId, engine, clock: f.clock },
+        );
+        let pending;
+        try {
+          await blocker.query("BEGIN");
+          await blocker.query("SELECT id FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [f.workspaceId]);
+          pending = pendingStore
+            .grantAccess(f.leadView, {
+              actorId: randomUUID(),
+              role: "ward",
+              scope: { kind: "ward", unitIds: [f.unitA] },
+              expiresAt,
+            })
+            .then(
+              (response) => ({ response, error: undefined }),
+              (error) => ({ response: undefined, error }),
+            );
+          await waiting;
+          f.advance(2);
+          await blocker.query("COMMIT");
+          const outcome = await pending;
+          assert.equal(outcome.error, undefined, "expiry must be a normal refusal, not an SQL constraint failure");
+          assert.equal(outcome.response.status, 400);
+          assert.match(outcome.response.body.error, /end date in the future/);
+        } finally {
+          await blocker.query("ROLLBACK");
+          blocker.release();
+          await pending;
+        }
+      });
+      await t.test("an expired base role cannot write through a previously resolved view", async () => {
+        const f = await fixture();
+        const view = await f.store.viewer(f.nurse);
+        await pool.query("UPDATE ward_flow.memberships SET expires_at=$2 WHERE id=$1", [
+          f.base.id,
+          new Date(f.clock().getTime() + 60_000),
+        ]);
+        f.advance(2);
+        const before = await f.store.read(f.lead, f.leadView);
+        await assert.rejects(
+          f.store.command(
+            f.nurse,
+            randomUUID(),
+            before.revision,
+            {
+              ...f.confirm(before),
+              unitId: f.unitA,
+              actingUnitId: f.unitA,
+            },
+            { view },
+          ),
+          /role-ended/,
+        );
+      });
+      await t.test("a scoped poll waits for an access change holding the workspace lock, then refuses", async () => {
+        const f = await fixture();
+        const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+        const view = await f.store.viewer(f.nurse);
+        const revoker = await pool.connect();
+        try {
+          await revoker.query("BEGIN");
+          await revoker.query("SELECT 1 FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [f.workspaceId]);
+          await revoker.query("UPDATE ward_flow.memberships SET revoked_at=$2, revoked_by=$3 WHERE id=$1", [
+            f.base.id,
+            f.clock(),
+            f.lead,
+          ]);
+          const pending = f.store.poll(f.nurse, first.revision, view);
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          await revoker.query("COMMIT");
+          await assert.rejects(pending, /role-ended/);
+        } finally {
+          await revoker.query("ROLLBACK").catch(() => {});
+          revoker.release();
+        }
+      });
+      await t.test("same-revision polls send fresh scopes after cover grant, revoke and expiry", async () => {
+        const f = await fixture();
+        const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+        const cover = await f.cover();
+        const added = await f.store.poll(f.nurse, first.revision, await f.store.viewer(f.nurse));
+        assert.equal(added.notModified, false, "clinical revision alone cannot identify a scoped view");
+        assert.equal(added.snapshot.revision, first.revision);
+        assert.ok(added.snapshot.payload.state.patients.length > first.payload.state.patients.length);
+        await f.store.revokeAccess(f.leadView, cover.id);
+        const removed = await f.store.poll(f.nurse, first.revision, await f.store.viewer(f.nurse));
+        assert.equal(removed.notModified, false);
+        assert.deepEqual(removed.snapshot.payload.state.patients, first.payload.state.patients);
+        await f.cover();
+        f.advance(61);
+        const expired = await f.store.poll(f.nurse, first.revision, await f.store.viewer(f.nurse));
+        assert.equal(expired.notModified, false);
+        assert.deepEqual(expired.snapshot.payload.state.patients, first.payload.state.patients);
+        assert.equal(
+          (await f.store.poll(f.lead, first.revision, f.leadView)).notModified,
+          true,
+          "bootstrap whole-network views keep lean polls",
+        );
+      });
+    } finally {
+      await pool.end();
+    }
+  },
+);

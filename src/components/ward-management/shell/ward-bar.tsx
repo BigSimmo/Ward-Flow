@@ -51,6 +51,7 @@ import {
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import {
@@ -60,7 +61,7 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
-import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
+import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
@@ -1130,6 +1131,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [openReferral, roleCategory]);
 
   useEffect(() => {
+    function onHistoryTraversalCancelled() {
+      // Capture kept the panel open and restored its entry. The pending Back is finished,
+      // so a later close may try again without approving any other dirty form.
+      closingViaHistoryRef.current = null;
+    }
     function onPopState() {
       const closing = closingViaHistoryRef.current;
       if (closing !== null) {
@@ -1146,8 +1152,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // Announce in the event, outside React's state updater/render phase.
       announceToWardShell("Closed.");
     }
+    window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, onHistoryTraversalCancelled);
     window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, onHistoryTraversalCancelled);
+      window.removeEventListener("popstate", onPopState);
+    };
   }, [openPanel]);
 
   useEffect(() => {

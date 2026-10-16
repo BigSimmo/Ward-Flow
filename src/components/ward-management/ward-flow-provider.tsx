@@ -877,7 +877,9 @@ function WardFlowWorld({
     dispatchContainer({
       type: "ADOPT_SAVED_SESSION",
       [ADOPT_SESSION]: (current) =>
-        current.sharedRevision === snapshot.revision
+        // Grants and cover change the scoped payload without changing the clinical revision.
+        // A clock-only poll preserves the state reference, so it still skips adoption.
+        current.sharedRevision === snapshot.revision && current.world === snapshot.payload.state
           ? current
           : {
               ...current,

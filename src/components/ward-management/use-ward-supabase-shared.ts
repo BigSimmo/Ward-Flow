@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
+import { clearReferralDraftSession } from "./referrals/referral-draft-store";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
@@ -71,7 +72,11 @@ export function useWardSupabaseShared(enabled: boolean) {
     let timer: ReturnType<typeof setInterval> | undefined;
     let onVisibilityChange: (() => void) | undefined;
     let auth: SupabaseWardAuth | null = null;
-    const disconnect = () => {
+    let connectedActorId: string | null = null;
+    const disconnect = (forgetDrafts = true) => {
+      // Invalidate outgoing autosaves before React unmounts the old account's drawers.
+      if (forgetDrafts) clearReferralDraftSession();
+      connectedActorId = null;
       if (timer) clearInterval(timer);
       timer = undefined;
       if (onVisibilityChange && typeof document !== "undefined") {
@@ -100,7 +105,9 @@ export function useWardSupabaseShared(enabled: boolean) {
       const { SharedWorkspaceClient } = await import("./ward-shared-client");
       loadedClient = SharedWorkspaceClient;
       if (closed || !auth?.userId || auth.isRecovery) return;
-      disconnect();
+      const actorId = auth.userId;
+      disconnect(connectedActorId !== actorId);
+      connectedActorId = actorId;
       setSignedIn(true);
       setForm({ open: false, recovery: false, busy: false, message: null });
       const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL!;

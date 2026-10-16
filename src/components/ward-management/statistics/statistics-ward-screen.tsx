@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/components/ward-management/ward-download";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -1141,14 +1143,10 @@ function Roster({
         row.admission.dischargeDateMoves,
       ]),
     ];
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      `ward-flow-synthetic-${unit.id}-roster.csv`,
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `ward-flow-synthetic-${unit.id}-roster.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   return (
