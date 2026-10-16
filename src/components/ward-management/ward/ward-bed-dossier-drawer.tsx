@@ -444,7 +444,16 @@ export function WardBedDossierDrawer({
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && event.target instanceof HTMLElement && event.target.tagName === "SELECT") {
+            return;
+          }
+          onKeyDown(event);
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
       >
         <div className={styles.grab} aria-hidden="true" />
         <header className={styles.drawerHead}>
@@ -992,7 +1001,13 @@ function PhoneBedSheet({
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => {
+          onKeyDown(event);
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
       >
         <div className={styles.grab} aria-hidden="true" />
         <header className={styles.phoneHead}>

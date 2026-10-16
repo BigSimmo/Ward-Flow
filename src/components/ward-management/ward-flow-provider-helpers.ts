@@ -2,9 +2,19 @@ import type { WardFlowState } from "./ward-flow-reducer";
 
 /**
  * Small helpers for `WardFlowProvider`, kept here so the provider stays under its line cap.
- * Tabs share one channel to say that a change was made, by event type only (never its content).
+ * Tabs share one channel to say that a change was made. A message names the event type and the
+ * sending tab; a saved-state message also carries the same text the sender just saved on this device
+ * (never sent while typed text is in the session, because device saving is off then).
  */
 let sharedBroadcastChannel: BroadcastChannel | null = null;
+let nextBroadcastInstanceCounter = 0;
+
+export function getOrCreateBroadcastInstanceId(ref: { current: string }): string {
+  if (!ref.current) {
+    ref.current = `wf-${++nextBroadcastInstanceCounter}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+  return ref.current;
+}
 
 function getSharedBroadcastChannel(): BroadcastChannel | null {
   if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") {
@@ -20,11 +30,11 @@ function getSharedBroadcastChannel(): BroadcastChannel | null {
   }
 }
 
-export function broadcastDispatchEvent(eventType: string): void {
+export function broadcastDispatchEvent(eventType: string, senderId?: string, payload?: string): void {
   try {
     const channel = getSharedBroadcastChannel();
     if (channel) {
-      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType });
+      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType, senderId, payload });
     }
   } catch {
     sharedBroadcastChannel = null;

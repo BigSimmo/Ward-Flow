@@ -853,6 +853,15 @@
   cursor: not-allowed;
 }
 
+/* Workflow actions that are unavailable stay focusable (so the reason can be reached) and read as
+   unavailable by colour, never opacity, matching the greyed control buttons above. */
+.panelCardBody button[aria-disabled="true"] {
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-dim);
+  cursor: not-allowed;
+}
+
 /* Blocker Form */
 .blockerInput {
   flex: 1;

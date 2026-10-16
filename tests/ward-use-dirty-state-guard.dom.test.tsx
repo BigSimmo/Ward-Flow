@@ -297,4 +297,48 @@ describe("useDirtyStateGuard", () => {
       (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }).__wardFlowConfirmNavigation,
     ).toBeUndefined();
   });
+
+  it("intercepts popstate when dirty, undoes back/forward traversal, and suppresses the compensating popstate", () => {
+    window.history.replaceState({ page: 2 }, "", "/mockups/ward-flow/board");
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const pushStateSpy = vi.spyOn(window.history, "pushState");
+    const goSpy = vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+
+    const { unmount } = renderHook(() =>
+      useDirtyStateGuard({
+        isDirty: true,
+        confirmMessage: "Discard unsaved changes?",
+      }),
+    );
+
+    // 1. Back traversal (page 2 -> page 1) cancelled: undoes with history.go(1)
+    const backPopEvent = new PopStateEvent("popstate", { state: { page: 1 } });
+    const stopImmediateSpy = vi.spyOn(backPopEvent, "stopImmediatePropagation");
+    window.dispatchEvent(backPopEvent);
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy).toHaveBeenCalledWith("Discard unsaved changes?");
+    expect(goSpy).toHaveBeenLastCalledWith(1);
+    expect(pushStateSpy).not.toHaveBeenCalled();
+    expect(stopImmediateSpy).toHaveBeenCalled();
+
+    // 2. Compensating popstate fired by history.go(1) is ignored without re-prompting
+    const compensatingBackEvent = new PopStateEvent("popstate", { state: { page: 2 } });
+    window.dispatchEvent(compensatingBackEvent);
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(goSpy).toHaveBeenCalledTimes(1);
+
+    // 3. Forward traversal (page 2 -> page 3) cancelled: undoes with history.go(-1)
+    const forwardPopEvent = new PopStateEvent("popstate", { state: { page: 3 } });
+    window.dispatchEvent(forwardPopEvent);
+    expect(confirmSpy).toHaveBeenCalledTimes(2);
+    expect(goSpy).toHaveBeenLastCalledWith(-1);
+
+    // 4. Compensating popstate fired by history.go(-1) is ignored
+    const compensatingForwardEvent = new PopStateEvent("popstate", { state: { page: 2 } });
+    window.dispatchEvent(compensatingForwardEvent);
+    expect(confirmSpy).toHaveBeenCalledTimes(2);
+
+    unmount();
+  });
 });

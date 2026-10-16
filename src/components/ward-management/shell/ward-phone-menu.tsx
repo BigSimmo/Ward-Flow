@@ -1056,7 +1056,6 @@ export function WardPhoneMenu({
   // One Alerts queue only for the bed coordinator's desk (whose list it is, as the act-now count
   // above) when its role may open the Alerts screen. Others keep the Tasks drawer.
   const oneAlertsQueue =
-    flagOn("alerts-one-queue") &&
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];

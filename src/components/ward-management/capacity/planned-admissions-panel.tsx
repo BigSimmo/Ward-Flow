@@ -34,6 +34,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import {
   COHORTS,
   HEALTH_SERVICES,
@@ -81,6 +82,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     dispatch,
     rejections,
     plannedAdmissions: plannedFromContext,
+    shared,
   } = useWardFlowSelect(
     "units",
     "patients",
@@ -90,6 +92,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     "dispatch",
     "rejections",
     "plannedAdmissions",
+    "shared",
   );
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   const patientOf = usePatientOf();
@@ -98,9 +101,14 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason>(PLANNED_ADMISSION_CANCEL_REASONS[0]);
   const [refusal, setRefusal] = useState<string | null>(null);
   const pending = useRef<{ rejections: number } | null>(null);
+  // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
+  // form that has not asked for anything yet.
+  const [submittedInForm, setSubmittedInForm] = useState(false);
   const bookButton = useRef<HTMLButtonElement>(null);
 
-  const agenda = plannedAdmissionAgenda(plannedAdmissions);
+  useDirtyStateGuard(form !== null);
+
+  const agenda = useMemo(() => plannedAdmissionAgenda(plannedAdmissions), [plannedAdmissions]);
   const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
 
   // Patients free to book: no live stay, no open movement and no booking already waiting. The
@@ -118,19 +126,31 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       .sort((a, b) => patientDisplayName(a).localeCompare(patientDisplayName(b)));
   }, [admissions, movements, patients, plannedAdmissions]);
 
-  // A dispatch either adds a rejection (refused: say why) or not (accepted: close the form).
+  const sharedEnabled = shared?.enabled === true;
+  const sharedStatus = shared?.status;
+  const sharedError = shared?.error ?? null;
+
+  // A dispatch either adds a rejection (refused: say why) or not (accepted: close the form). In the shared
+  // workspace it settles only once saving ends, and a failed save keeps the form open with its error. The
+  // status and error are dependencies, so a save that fails without changing the board still settles.
   useEffect(() => {
     if (!pending.current) return;
+    if (sharedEnabled && sharedStatus === "saving") return;
     const before = pending.current.rejections;
     pending.current = null;
     if (rejections.length > before) {
       setRefusal(rejections[rejections.length - 1]?.reason ?? "Not recorded");
-    } else {
+    } else if (!sharedEnabled || !sharedError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- A dispatch's outcome is only visible once the provider has answered.
       setForm(null);
       setDraft(null);
       setRefusal(null);
+      setSubmittedInForm(false);
     }
-  }, [rejections, plannedAdmissions, admissions]);
+  }, [rejections, plannedAdmissions, admissions, sharedEnabled, sharedStatus, sharedError]);
+
+  const displayedRefusal =
+    refusal ?? (form !== null && submittedInForm && sharedEnabled && sharedError ? sharedError : null);
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
@@ -158,6 +178,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function openBook() {
     setRefusal(null);
+    setSubmittedInForm(false);
     setDraft({
       who: bookablePatients.length > 0 ? "patient" : "initials",
       patientId: bookablePatients[0]?.id ?? "",
@@ -177,6 +198,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function openChange(planned: PlannedAdmission) {
     setRefusal(null);
+    setSubmittedInForm(false);
     setDraft({
       who: planned.patientId ? "patient" : "initials",
       patientId: planned.patientId ?? "",
@@ -197,6 +219,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function openCancel(planned: PlannedAdmission) {
     setRefusal(null);
+    setSubmittedInForm(false);
     setCancelReason(PLANNED_ADMISSION_CANCEL_REASONS[0]);
     setForm({ mode: "cancel", id: planned.id });
   }
@@ -205,6 +228,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     setForm(null);
     setDraft(null);
     setRefusal(null);
+    setSubmittedInForm(false);
   }
 
   function submitDraft() {
@@ -229,6 +253,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
           })()
         : undefined;
     pending.current = { rejections: rejections.length };
+    setSubmittedInForm(true);
     if (form.mode === "book") {
       let sex = draft.sex;
       let ageBand: Cohort = draft.ageBand;
@@ -284,6 +309,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling) return;
     pending.current = { rejections: rejections.length };
+    setSubmittedInForm(true);
     dispatch({
       type: "CANCEL_PLANNED_ADMISSION",
       role: "coordinator",
@@ -632,9 +658,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 </Select>
               </Field>
             </div>
-            {refusal ? (
+            {displayedRefusal ? (
               <p className={styles.refusal} role="alert" data-testid="ward-planned-form-refusal">
-                {refusal}
+                {displayedRefusal}
               </p>
             ) : null}
           </div>
@@ -677,9 +703,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 ))}
               </Select>
             </Field>
-            {refusal ? (
+            {displayedRefusal ? (
               <p className={styles.refusal} role="alert">
-                {refusal}
+                {displayedRefusal}
               </p>
             ) : null}
           </div>

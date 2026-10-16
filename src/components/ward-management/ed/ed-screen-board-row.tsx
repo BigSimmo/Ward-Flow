@@ -113,9 +113,15 @@ export function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const legalFormExpiryDraftInstant = legalFormExpiryOpen
     ? instantFromDateAndTimeInputs(legalFormExpiryDraft.date, legalFormExpiryDraft.time, dayZero)
     : undefined;
-  const legalFormExpirySaveBlocked =
-    legalFormExpiryDraftInstant === undefined ||
-    (movement.legalForm?.dueAt !== undefined && legalFormExpiryDraftInstant <= movement.legalForm.dueAt);
+  // Why Save is unavailable, worded for the reason: a missing date or time, or an extension that is
+  // not later than the expiry already recorded.
+  const legalFormExpirySaveBlockedReason =
+    legalFormExpiryDraftInstant === undefined
+      ? "Enter both date and time from the paper record."
+      : movement.legalForm?.dueAt !== undefined && legalFormExpiryDraftInstant <= movement.legalForm.dueAt
+        ? "The extension must be later than the expiry already recorded."
+        : undefined;
+  const legalFormExpirySaveBlocked = legalFormExpirySaveBlockedReason !== undefined;
   // T4: offered only once a receipt is actually recorded — the reducer's own
   // "no recorded legal form receipt to correct" refusal is then structurally
   // unreachable from here, the same reasoning `isForm1A`'s "Mark Form 1A
@@ -259,6 +265,7 @@ export function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
     legalFormExpiryOpen,
     legalFormExpiryIsExtension,
     legalFormExpirySaveBlocked,
+    legalFormExpirySaveBlockedReason,
     receiptCorrectionOpen,
     acceptedUnit,
     isForm1A,
