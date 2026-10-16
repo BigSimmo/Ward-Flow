@@ -18,7 +18,7 @@ import { usePathname } from "next/navigation";
 
 import { Button, buttonClass } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
-import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
+import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   coordinatorRecordScope,

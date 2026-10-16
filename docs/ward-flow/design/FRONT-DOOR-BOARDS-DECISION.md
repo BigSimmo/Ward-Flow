@@ -4,7 +4,7 @@
 `prototypes/mockup-front-doors-v5.html` is locked and is what gets built.
 
 This record exists because that design **departs from
-[`prototypes/DESIGN-LANGUAGE.md`](prototypes/DESIGN-LANGUAGE.md)**, which was the owner's choice on
+[`prototypes/DESIGN-LANGUAGE.md`](../../../design/prototypes/DESIGN-LANGUAGE.md)**, which was the owner's choice on
 2026-09-03 and says in its own second sentence that it governs _every_ Ward Flow surface.
 
 ⚠️ **`DESIGN-LANGUAGE.md` IS UNCHANGED, AND THAT IS THE POINT.** An earlier version of this record

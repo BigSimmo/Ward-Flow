@@ -49,8 +49,8 @@ C:\Users\joshs\Backups\ward-flow-design-guide-2026-09-12\
 
 | What                                        | Where                                                                                                 |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **The mockups**                             | `docs/ward-flow/mockups/*.html`                                                                       |
-| **The design language**                     | `docs/ward-flow/design/prototypes/` · and `mockups/design-system-third-edition.html`                  |
+| **The mockups**                             | `design/third-edition-mockups/*.html`                                                                 |
+| **The design language**                     | `design/prototypes/` · and `mockups/design-system-third-edition.html`                                 |
 | **The ledger** (decisions, refusals, risks) | `docs/ward-flow-ledger.md`                                                                            |
 | **Owner decisions**                         | `docs/ward-flow/owner-*.md` — 21 files                                                                |
 | **Handovers**                               | `docs/ward-flow/handovers/`                                                                           |
@@ -58,7 +58,7 @@ C:\Users\joshs\Backups\ward-flow-design-guide-2026-09-12\
 | **The screens**                             | `src/components/ward-management/`                                                                     |
 | **The routes**                              | `src/app/mockups/ward-flow/` — 40 routes                                                              |
 
-🔴 **`docs/ward-flow/design/prototypes/` IS IN `.prettierignore` DELIBERATELY** — those files are
+🔴 **`design/prototypes/` IS IN `.prettierignore` DELIBERATELY** — those files are
 compared byte-for-byte against CSS. A whole-tree format pass reddened ten guards on 2026-09-10.
 
 ⚠️ **OPEN A MOCKUP IN A REAL BROWSER, NOT A STATIC SNAPSHOT.** Each one builds its own navigation

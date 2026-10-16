@@ -114,7 +114,7 @@ Josh reviewed and ruled on the 18 outstanding questions, architectural decisions
 ### 16. Design system documentation update (`WARD-FLOW-DESIGN-SYSTEM.md`)
 
 - **Ruling**: **Approved** — update design system document to 34 screens + standing rules, noting ongoing design perfection.
-- **Clinical rationale**: Update `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` to reflect the full active 34-screen estate and standing rules (specifically Rule D5: no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release), explicitly acknowledging that design perfection is continuous across screens.
+- **Clinical rationale**: Update `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` to reflect the full active 34-screen estate and standing rules (specifically Rule D5: no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release), explicitly acknowledging that design perfection is continuous across screens.
 
 ### 17. Aboriginal cultural safety review
 

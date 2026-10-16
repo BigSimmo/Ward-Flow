@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
  *
  * 🔴 THE DEFECT THIS GUARDS. An unresolved `var(--x)` invalidates the whole CSS declaration and the
  * browser drops it — silently, with no console error. A standalone mockup under
- * `docs/ward-flow/design/prototypes/` has no `globals.css` behind it, so an element that reads an
+ * `design/prototypes/` has no `globals.css` behind it, so an element that reads an
  * undeclared token just renders at its inherited value and the page still looks deliberate. Five
  * mockups were shipped this way (`--clinical-accent`, `--font-sans`, `--spacing-tap`, `--warning`
  * across various files) and were invisible to the person approving them, because nothing failed.
@@ -31,7 +31,7 @@ import { describe, expect, it } from "vitest";
  * about a population that no longer includes the new file.
  */
 
-const DIR = join(process.cwd(), "docs/ward-flow/design/prototypes");
+const DIR = join(process.cwd(), "design/prototypes");
 
 /**
  * Remove every `@media` block whose condition mentions `forced-colors`, walking braces so a nested

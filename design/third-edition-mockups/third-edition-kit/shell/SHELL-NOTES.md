@@ -138,7 +138,7 @@ pinning from a row is not wired (S.16.4).
 
 ## The graft, step by step
 
-Path A of RAIL-MAP part e, into `docs/ward-flow/mockups/command-third-edition.html`.
+Path A of RAIL-MAP part e, into `design/third-edition-mockups/command-third-edition.html`.
 
 1. **Head.** In the head script that restores the appearance, add one line so the rail state is
    stamped before first paint:

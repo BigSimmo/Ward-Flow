@@ -5,7 +5,7 @@ this screen before this file.
 
 **Files compared:**
 
-- Drawing: `docs/ward-flow/mockups/statistics-service-third-edition.html` (9,681 lines)
+- Drawing: `design/third-edition-mockups/statistics-service-third-edition.html` (9,681 lines)
 - Route: `src/app/mockups/ward-flow/statistics/service/[serviceId]/page.tsx`
 - Component: `src/components/ward-management/statistics/statistics-service-screen.tsx` (492 lines)
 - Existing test: `tests/ward-statistics-service-screen.dom.test.tsx` (247 lines, 12 cases already
@@ -79,7 +79,7 @@ August 2026"`). **Not built**, for two reasons: the drawing is a frozen mockup w
    whether they reconcile) but it is **drawing-family chrome that has never been built on any
    sibling, including one the owner has already ruled DO NOT REBUILD**: `statistics-overview-screen.tsx`
    carries the identical drawing pattern (confirmed:
-   `grep -c "agreeReveal\|How the numbers agree" docs/ward-flow/mockups/statistics-*-third-edition.html`
+   `grep -c "agreeReveal\|How the numbers agree" design/third-edition-mockups/statistics-*-third-edition.html`
    finds it in the community, overview and service drawings alike) and its own contract records it
    was never built there either (`docs/ward-flow/build-contracts-2026-09-12/contract-statistics-overview.md:41`,
    quoting `statistics-community-screen.tsx:283-284`: _"the drawing carries 'What is invented, and

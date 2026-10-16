@@ -337,7 +337,7 @@
     },
     {
       "id": "ward-design-reference",
-      "pattern": "docs/ward-flow/mockups/**",
+      "pattern": "design/third-edition-mockups/**",
       "priority": 20,
       "owner": "design-reference",
       "system": null,

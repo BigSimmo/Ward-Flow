@@ -1,6 +1,6 @@
 # 01 — Standalone Mockup Engineering & Design System Architecture
 
-> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
+> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
 > Kept for historical reference. The "Sovereign" tokens, 100-point numerical scoring rubric, and 4-tier ladder described herein are retired. All visual work follows the 3rd Edition Design System and the September 17 & 21 speed rules in `docs/ward-flow/HOW-WE-WORK.md`.
 
 ## Phase 1 Standard Operating Procedure
@@ -16,7 +16,7 @@
 In traditional feature development, designers sketch in Figma and hand off static exports to developers, who then struggle with Next.js compilation, routing layers, and complex data dependencies. This creates a severe lag in visual iteration.
 
 **The Sovereign Solution**:
-Every new screen or major redesign begins as a **zero-dependency, single-file HTML/CSS document** stored under `docs/ward-flow/mockups/` (e.g. `movement-third-edition.html`).
+Every new screen or major redesign begins as a **zero-dependency, single-file HTML/CSS document** stored under `design/third-edition-mockups/` (e.g. `movement-third-edition.html`).
 
 ### Why Standalone Prototypes Win:
 
@@ -323,7 +323,7 @@ Every clinical mockup must terminate with the sovereign disclosure footer. This 
 
 Before declaring a standalone mockup complete and ready for scoring:
 
-- [ ] File is saved in `docs/ward-flow/mockups/[name].html`.
+- [ ] File is saved in `design/third-edition-mockups/[name].html`.
 - [ ] Served via HTTP daemon on port `60178` (never opened via `file://`).
 - [ ] Contains all tokens for both `:root` (dark) and `[data-theme="light"]`.
 - [ ] Zero raw hex/rgb colors outside `:root` and `[data-theme="light"]`.

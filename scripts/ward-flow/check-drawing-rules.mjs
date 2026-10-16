@@ -162,19 +162,59 @@ export function checkDrawing(html, fileName) {
   const code = stripComments(html);
   const f = [];
 
-  f.push(...scan(copy, /(?<![A-Za-z])[Rr]eleas(?:e|ed|es|ing)\b/g, "R1", 'The third bed stage is "discharged", never "released" (owner, 30 August 2026)'));
-  f.push(...scan(copy, /QA 100\/100|PERFECTED|\breal[- ]time\b|(?<![-\w])live\b/gi, "R2", "No liveness or self-graded claims on invented figures (owner, 9 to 10 September 2026)"));
+  f.push(
+    ...scan(
+      copy,
+      /(?<![A-Za-z])[Rr]eleas(?:e|ed|es|ing)\b/g,
+      "R1",
+      'The third bed stage is "discharged", never "released" (owner, 30 August 2026)',
+    ),
+  );
+  f.push(
+    ...scan(
+      copy,
+      /QA 100\/100|PERFECTED|\breal[- ]time\b|(?<![-\w])live\b/gi,
+      "R2",
+      "No liveness or self-graded claims on invented figures (owner, 9 to 10 September 2026)",
+    ),
+  );
   f.push(...scan(copy, /\bnot invented\b/gi, "R3", "Never the negated form of the disclosure"));
-  f.push(...scan(copy, /(?:\(0[2-9]\)|\b0[2-9])\s?\d{4}\s?\d{4}\b|\b(?:direct|tel|phone|ph)\.?:?\s*\d{4}\s?\d{4}\b|\bpager\s*#?\s*\d+|\bext\.?\s*\d{3,}\b|\bspeed dial\b/gi, "R4", "No phone, pager or extension numbers. Use ext 01 placeholders"));
-  f.push(...scan(copy, /\bAHPRA\s+[A-Z]{3}\d+|\b[A-Z]{3}\d{8,}\b|\bstaff id\s*#?\s*\d+|#[A-Z]{2,}-\d+|\bDOB\b/gi, "R5", "No registration numbers, staff IDs, invented record numbers or dates of birth"));
+  f.push(
+    ...scan(
+      copy,
+      /(?:\(0[2-9]\)|\b0[2-9])\s?\d{4}\s?\d{4}\b|\b(?:direct|tel|phone|ph)\.?:?\s*\d{4}\s?\d{4}\b|\bpager\s*#?\s*\d+|\bext\.?\s*\d{3,}\b|\bspeed dial\b/gi,
+      "R4",
+      "No phone, pager or extension numbers. Use ext 01 placeholders",
+    ),
+  );
+  f.push(
+    ...scan(
+      copy,
+      /\bAHPRA\s+[A-Z]{3}\d+|\b[A-Z]{3}\d{8,}\b|\bstaff id\s*#?\s*\d+|#[A-Z]{2,}-\d+|\bDOB\b/gi,
+      "R5",
+      "No registration numbers, staff IDs, invented record numbers or dates of birth",
+    ),
+  );
   f.push(...scan(copy, /\bDr\.?\s+[A-Z]/g, "R6", "Clinicians are a role, never a name"));
   f.push(...scan(code, /\balert\s*\(/g, "R7", "No alert(). An unwired control says: Not wired in this prototype."));
   for (const m of copy.matchAll(/\bForm\s+(\d{1,2}[A-Z])\b/g)) {
     if (!SELECTABLE_LEGAL_FORMS.includes(m[1])) {
-      f.push({ rule: "R8", line: lineAt(copy, m.index), excerpt: m[0], message: `Form ${m[1]} is not in the engine's form set (${SELECTABLE_LEGAL_FORMS.join(", ")})` });
+      f.push({
+        rule: "R8",
+        line: lineAt(copy, m.index),
+        excerpt: m[0],
+        message: `Form ${m[1]} is not in the engine's form set (${SELECTABLE_LEGAL_FORMS.join(", ")})`,
+      });
     }
   }
-  f.push(...scan(markup, /[;—–→←]|&mdash;|&ndash;|&rarr;|&larr;/g, "R9", "No semicolons, dashes or arrows in copy. A middle dot separates facts"));
+  f.push(
+    ...scan(
+      markup,
+      /[;—–→←]|&mdash;|&ndash;|&rarr;|&larr;/g,
+      "R9",
+      "No semicolons, dashes or arrows in copy. A middle dot separates facts",
+    ),
+  );
 
   const name = basename(fileName);
   if (!SHELL_EXEMPT.has(name)) {
@@ -186,7 +226,8 @@ export function checkDrawing(html, fileName) {
       ['id="rail"', "the shared rail"],
     ];
     for (const [needle, what] of required) {
-      if (!html.includes(needle)) f.push({ rule: "R10", line: 1, excerpt: needle.slice(0, 80), message: `Missing ${what}` });
+      if (!html.includes(needle))
+        f.push({ rule: "R10", line: 1, excerpt: needle.slice(0, 80), message: `Missing ${what}` });
     }
   }
   if (name === "sign-in-third-edition.html") {
@@ -194,12 +235,20 @@ export function checkDrawing(html, fileName) {
     f.push(...scan(copy, /\bsigned in\b/gi, "R11", "Nothing on Sign in may claim a session exists"));
   }
   for (const m of css.matchAll(/font(?:-size)?\s*:[^;{}]*?(\d+(?:\.\d+)?)px/g)) {
-    if (Number(m[1]) < 12) f.push({ rule: "R12", line: lineAt(css, m.index), excerpt: m[0].slice(0, 80), message: "Nothing below 12px" });
+    if (Number(m[1]) < 12)
+      f.push({ rule: "R12", line: lineAt(css, m.index), excerpt: m[0].slice(0, 80), message: "Nothing below 12px" });
   }
-  for (const m of css.matchAll(/border-(?:left|top|right|bottom)(?:-width)?\s*:\s*(?:[2-9]|\d{2,})px|box-shadow\s*:\s*inset\s+-?[2-9]px/g)) {
+  for (const m of css.matchAll(
+    /border-(?:left|top|right|bottom)(?:-width)?\s*:\s*(?:[2-9]|\d{2,})px|box-shadow\s*:\s*inset\s+-?[2-9]px/g,
+  )) {
     const selector = selectorAt(css, m.index);
     if (!EDGE_BAR_ALLOWED.includes(selector)) {
-      f.push({ rule: "R13", line: lineAt(css, m.index), excerpt: `${selector} { ${m[0]} }`.slice(0, 80), message: "No coloured bar along an edge, no top highlight (owner, 9 September 2026)" });
+      f.push({
+        rule: "R13",
+        line: lineAt(css, m.index),
+        excerpt: `${selector} { ${m[0]} }`.slice(0, 80),
+        message: "No coloured bar along an edge, no top highlight (owner, 9 September 2026)",
+      });
     }
   }
   return f;

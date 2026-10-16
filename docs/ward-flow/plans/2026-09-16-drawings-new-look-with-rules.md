@@ -8,13 +8,13 @@
 
 **Architecture:** Start from the committed drawings (`1ef9ed3975`), which already carry every rule, refusal, disclosure, derived figure and responsive tier, and restyle their presentation to the new look. Do **not** start from the 15 September files and try to re-add what they removed: they removed about 1,400 functions, the shared shell, every disclosure line and every refusal, and hand-typed their figures. The new look uses the same fonts, type scale, radii and almost identical colour tokens as the standard, so what the owner is responding to is **composition** (summary-card strips, panel and table styling, filter bars, dialogs, the header) — and composition can be moved onto the committed skeleton. A new static checker is built first so that every screen task has a catcher that can fail.
 
-**Tech Stack:** Self-contained HTML/CSS/JS drawings in `docs/ward-flow/mockups/`; Node 24 scripts; Vitest; the Playwright-based kit in `docs/ward-flow/mockups/third-edition-kit/`.
+**Tech Stack:** Self-contained HTML/CSS/JS drawings in `design/third-edition-mockups/`; Node 24 scripts; Vitest; the Playwright-based kit in `design/third-edition-mockups/third-edition-kit/`.
 
 **Spec (read the committed copies with `git show 1ef9ed3975:<path>`; several working-tree copies were edited by the same sessions under review):**
 
 - `docs/ward-flow/README.md`
-- `docs/ward-flow/mockups/README.md` (owner rulings, lines 196–215)
-- `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` (the standard; §2 ten rules, §3 colour, §4 type, §5 layout, §8 wording, §9 accessibility, §11 recipe, §14 screens index)
+- `design/third-edition-mockups/README.md` (owner rulings, lines 196–215)
+- `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` (the standard; §2 ten rules, §3 colour, §4 type, §5 layout, §8 wording, §9 accessibility, §11 recipe, §14 screens index)
 - `docs/ward-flow/SCREEN-DEFINITION-OF-DONE.md`
 - The owner's navigation request Q005, `docs/ward-flow/plans/2026-09-13-navigation-update.md` (uncommitted; confirm in Decision D2)
 - Reference copies of the 15 September rewrite: `C:/Users/joshs/Backups/claude-work/ward-mockups-uncommitted-20260916-001518/full-working-copy/`
@@ -72,8 +72,8 @@ D1 styling onto each screen's own sections, not the new arrangement, Discharges 
 **Files:**
 
 - Create: worktree `D:/Worktrees/Database/ward-restyle` on branch `ward/restyle-drawings-20260916` from `1ef9ed3975`
-- Create: `docs/ward-flow/mockups/reference/gemini-2026-09-15/*.html` (20 files, copied from backup)
-- Create: `docs/ward-flow/mockups/reference/gemini-2026-09-15/README.md`
+- Create: `design/third-edition-mockups/reference/gemini-2026-09-15/*.html` (20 files, copied from backup)
+- Create: `design/third-edition-mockups/reference/gemini-2026-09-15/README.md`
 - Modify: `C:/Users/joshs/.claude/worktree-ownership.md` (add claim row)
 
 **Interfaces:**
@@ -111,7 +111,7 @@ Expected: `0` error lines and the lock file listed.
 
 ```bash
 SRC="C:/Users/joshs/Backups/claude-work/ward-mockups-uncommitted-20260916-001518/full-working-copy"
-DST="D:/Worktrees/Database/ward-restyle/docs/ward-flow/mockups/reference/gemini-2026-09-15"
+DST="D:/Worktrees/Database/ward-restyle/design/third-edition-mockups/reference/gemini-2026-09-15"
 mkdir -p "$DST"
 for f in CONTACT-SHEET add-a-patient-third-edition add-a-patient-third-edition-claude-draft alerts-third-edition discharges-third-edition governance-third-edition legal-forms-third-edition movement-third-edition movement-gantt-third-edition network-horizon-third-edition on-call-third-edition out-of-area-third-edition patient-now-third-edition patient-search-third-edition patient-search-perfected-third-edition settings-third-edition sign-in-third-edition transport-officer-third-edition ward-answer-third-edition wards-third-edition; do cp "$SRC/$f.html" "$DST/$f.html"; done
 ls "$DST" | wc -l
@@ -141,7 +141,7 @@ Append to `C:/Users/joshs/.claude/worktree-ownership.md`:
     worktree   D:/Worktrees/Database/ward-restyle
     branch     ward/restyle-drawings-20260916
     based on   codex/task-ward-flow-live-state-20260831 @ 1ef9ed3975
-    owns       docs/ward-flow/mockups/** in this worktree only, scripts/ward-flow/check-drawing-rules.mjs,
+    owns       design/third-edition-mockups/** in this worktree only, scripts/ward-flow/check-drawing-rules.mjs,
                tests/ward-drawing-rules.test.ts
     plan       docs/ward-flow/plans/2026-09-16-drawings-new-look-with-rules.md
 ```
@@ -150,7 +150,7 @@ Append to `C:/Users/joshs/.claude/worktree-ownership.md`:
 
 ```bash
 cd D:/Worktrees/Database/ward-restyle
-git add docs/ward-flow/mockups/reference/gemini-2026-09-15
+git add design/third-edition-mockups/reference/gemini-2026-09-15
 git commit -m "docs(ward-flow): keep the 15 September rewrite as a reference copy, never a build source" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 
@@ -532,7 +532,7 @@ Expected: the summary line reports `Tests  15 passed (15)` and `Test Files  1 pa
 
 - [ ] **Step 5: Calibrate against the committed Command drawing, which the owner has accepted**
 
-Run: `node scripts/ward-flow/check-drawing-rules.mjs docs/ward-flow/mockups/command-third-edition.html`
+Run: `node scripts/ward-flow/check-drawing-rules.mjs design/third-edition-mockups/command-third-edition.html`
 
 For each finding, decide with the Spec open:
 
@@ -543,7 +543,7 @@ Re-run until `command-third-edition.html: clean` or the task has been handed bac
 
 - [ ] **Step 6: Prove the checker can fail on the real problem**
 
-Run: `node scripts/ward-flow/check-drawing-rules.mjs docs/ward-flow/mockups/reference/gemini-2026-09-15/discharges-third-edition.html docs/ward-flow/mockups/reference/gemini-2026-09-15/on-call-third-edition.html`
+Run: `node scripts/ward-flow/check-drawing-rules.mjs design/third-edition-mockups/reference/gemini-2026-09-15/discharges-third-edition.html design/third-edition-mockups/reference/gemini-2026-09-15/on-call-third-edition.html`
 Expected: exit 1, `checked 2 file(s)`, and at least R1 and R10 on Discharges and R4 on On-call. If either file reports clean, the checker is broken: stop and hand back.
 
 - [ ] **Step 7: Commit**
@@ -561,7 +561,7 @@ git commit -m "feat(ward-flow): a static checker that fails a drawing which brea
 
 **Files:**
 
-- Create: `docs/ward-flow/mockups/NEW-LOOK-SPEC.md`
+- Create: `design/third-edition-mockups/NEW-LOOK-SPEC.md`
 
 **Interfaces:**
 
@@ -571,7 +571,7 @@ git commit -m "feat(ward-flow): a static checker that fails a drawing which brea
 - [ ] **Step 1: Extract each component's CSS from the reference**
 
 ```bash
-R=docs/ward-flow/mockups/reference/gemini-2026-09-15
+R=design/third-edition-mockups/reference/gemini-2026-09-15
 for cls in kpiStrip kpiCard kpiLabel kpiVal kpiSub panel ph tableWrap filterBar filterBtn badge btn primary modal modalDialog modalHead modalBody modalFoot toast hdrTitle hdrEnd rail railGroup railLink railEyebrow railFoot; do
   echo "== .$cls"; grep -n "\.$cls\b[^{]*{" "$R/discharges-third-edition.html" | head -3
 done
@@ -602,7 +602,7 @@ The controller shows the owner the spec summary beside one reference screen and 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/ward-flow/mockups/NEW-LOOK-SPEC.md
+git add design/third-edition-mockups/NEW-LOOK-SPEC.md
 git commit -m "docs(ward-flow): the new look written down as recipes on the standard's own tokens" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 
@@ -614,7 +614,7 @@ git commit -m "docs(ward-flow): the new look written down as recipes on the stan
 
 **Files:**
 
-- Modify: `docs/ward-flow/mockups/command-third-edition.html` (stylesheet, rail, header only; not the Command body)
+- Modify: `design/third-edition-mockups/command-third-edition.html` (stylesheet, rail, header only; not the Command body)
 
 **Interfaces:**
 
@@ -624,7 +624,7 @@ git commit -m "docs(ward-flow): the new look written down as recipes on the stan
 - [ ] **Step 1: Record the before-state**
 
 ```bash
-F=docs/ward-flow/mockups/command-third-edition.html
+F=design/third-edition-mockups/command-third-edition.html
 grep -c "function " $F; grep -o "<h2[^>]*>[^<]*" $F | sed 's/<h2[^>]*>//'
 ```
 
@@ -637,10 +637,10 @@ Keep, unchanged in behaviour: the JavaScript-built rail and its open/closed stat
 - [ ] **Step 3: Run the four catchers**
 
 ```bash
-node scripts/ward-flow/check-drawing-rules.mjs docs/ward-flow/mockups/command-third-edition.html
-node docs/ward-flow/mockups/third-edition-kit/check.mjs docs/ward-flow/mockups/command-third-edition.html platinum
-node docs/ward-flow/mockups/third-edition-kit/check-shell.mjs docs/ward-flow/mockups/command-third-edition.html platinum
-grep -c "function " docs/ward-flow/mockups/command-third-edition.html
+node scripts/ward-flow/check-drawing-rules.mjs design/third-edition-mockups/command-third-edition.html
+node design/third-edition-mockups/third-edition-kit/check.mjs design/third-edition-mockups/command-third-edition.html platinum
+node design/third-edition-mockups/third-edition-kit/check-shell.mjs design/third-edition-mockups/command-third-edition.html platinum
+grep -c "function " design/third-edition-mockups/command-third-edition.html
 ```
 
 Expected: `checked 1 file(s), 0 finding(s)`; the check.mjs output contains `ALL GREEN`; check-shell exits 0; the function count is not lower than in Step 1. Quote the decisive line of each in the report.
@@ -652,7 +652,7 @@ Serve the folder and look at 390, 820 and 1440 wide, light and dark, with each d
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/ward-flow/mockups/command-third-edition.html docs/ward-flow/plans/drawings-new-look/command-before.txt docs/ward-flow/plans/drawings-new-look/command.md
+git add design/third-edition-mockups/command-third-edition.html docs/ward-flow/plans/drawings-new-look/command-before.txt docs/ward-flow/plans/drawings-new-look/command.md
 git commit -m "feat(ward-flow): the shared header and rail in the new look, with every shell behaviour kept" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 
@@ -660,15 +660,15 @@ git commit -m "feat(ward-flow): the shared header and rail in the new look, with
 
 **Files:**
 
-- Modify: every `docs/ward-flow/mockups/*-third-edition.html` except `sign-in`, `design-system` and the reference folder
-- Modify: `docs/ward-flow/mockups/third-edition-kit/shell-sweep.mjs` (page list only)
+- Modify: every `design/third-edition-mockups/*-third-edition.html` except `sign-in`, `design-system` and the reference folder
+- Modify: `design/third-edition-mockups/third-edition-kit/shell-sweep.mjs` (page list only)
 
 - [ ] **Step 1: Widen shell-sweep's page list to every shell screen**
 
 Open `shell-sweep.mjs`, find its list of sixteen pages, and replace it with the output of:
 
 ```bash
-ls docs/ward-flow/mockups/*-third-edition.html | xargs -n1 basename | grep -v -e sign-in -e design-system
+ls design/third-edition-mockups/*-third-edition.html | xargs -n1 basename | grep -v -e sign-in -e design-system
 ```
 
 - [ ] **Step 2: Copy Command's stylesheet shell block, rail, header and shell script into each page verbatim**
@@ -676,8 +676,8 @@ ls docs/ward-flow/mockups/*-third-edition.html | xargs -n1 basename | grep -v -e
 - [ ] **Step 3: Run the sweep and the checker on every page**
 
 ```bash
-node docs/ward-flow/mockups/third-edition-kit/shell-sweep.mjs
-node scripts/ward-flow/check-drawing-rules.mjs $(ls docs/ward-flow/mockups/*-third-edition.html)
+node design/third-edition-mockups/third-edition-kit/shell-sweep.mjs
+node scripts/ward-flow/check-drawing-rules.mjs $(ls design/third-edition-mockups/*-third-edition.html)
 ```
 
 Expected: shell-sweep exits 0; the checker's last line reports the same number of files as `ls` counted. Remaining findings belong to screen bodies and are expected here; list them in the report as the input to Phase 5.
@@ -685,7 +685,7 @@ Expected: shell-sweep exits 0; the checker's last line reports the same number o
 - [ ] **Step 4: Commit**
 
 ```bash
-git add docs/ward-flow/mockups/*-third-edition.html docs/ward-flow/mockups/third-edition-kit/shell-sweep.mjs
+git add design/third-edition-mockups/*-third-edition.html design/third-edition-mockups/third-edition-kit/shell-sweep.mjs
 git commit -m "feat(ward-flow): one shell, copied to every screen, swept identical" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 
@@ -698,7 +698,7 @@ git commit -m "feat(ward-flow): one shell, copied to every screen, swept identic
 - [ ] **R-1: Record the before-state**
 
 ```bash
-F=docs/ward-flow/mockups/S
+F=design/third-edition-mockups/S
 B=docs/ward-flow/plans/drawings-new-look/S-before.txt
 mkdir -p docs/ward-flow/plans/drawings-new-look
 grep -c "function " $F > $B; grep -o "<h2[^>]*>[^<]*" $F | sed 's/<h2[^>]*>//' >> $B
@@ -713,11 +713,11 @@ grep -c "function " $F > $B; grep -o "<h2[^>]*>[^<]*" $F | sed 's/<h2[^>]*>//' >
 - [ ] **R-5: Run the catchers**
 
 ```bash
-node scripts/ward-flow/check-drawing-rules.mjs docs/ward-flow/mockups/S
-node docs/ward-flow/mockups/third-edition-kit/check.mjs docs/ward-flow/mockups/S platinum
-node docs/ward-flow/mockups/third-edition-kit/shell-sweep.mjs --files=S
-grep -c "function " docs/ward-flow/mockups/S
-grep -o "<h2[^>]*>[^<]*" docs/ward-flow/mockups/S | sed 's/<h2[^>]*>//'
+node scripts/ward-flow/check-drawing-rules.mjs design/third-edition-mockups/S
+node design/third-edition-mockups/third-edition-kit/check.mjs design/third-edition-mockups/S platinum
+node design/third-edition-mockups/third-edition-kit/shell-sweep.mjs --files=S
+grep -c "function " design/third-edition-mockups/S
+grep -o "<h2[^>]*>[^<]*" design/third-edition-mockups/S | sed 's/<h2[^>]*>//'
 ```
 
 Expected: `checked 1 file(s), 0 finding(s)`; check.mjs output contains `ALL GREEN`; shell-sweep exits 0; function count not lower than R-1; the h2 list matches R-1 except for wording changes listed in the report.
@@ -727,7 +727,7 @@ Expected: `checked 1 file(s), 0 finding(s)`; check.mjs output contains `ALL GREE
 - [ ] **R-7: Controller commits**
 
 ```bash
-git add docs/ward-flow/mockups/S docs/ward-flow/plans/drawings-new-look/S.md docs/ward-flow/plans/drawings-new-look/S-before.txt
+git add design/third-edition-mockups/S docs/ward-flow/plans/drawings-new-look/S.md docs/ward-flow/plans/drawings-new-look/S-before.txt
 git commit -m "feat(ward-flow): S in the new look, obeying the owner's rules" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 
@@ -806,7 +806,7 @@ Worker tier: Sonnet at high effort (catchers named in R-5). Each batch of three 
 
 **Files:**
 
-- Modify: `docs/ward-flow/mockups/MANIFEST.json`, `docs/ward-flow/mockups/CONTACT-SHEET.html`, `docs/ward-flow/screen-verification.json`, `docs/ward-flow/SCREEN-VERIFICATION.md`
+- Modify: `design/third-edition-mockups/MANIFEST.json`, `design/third-edition-mockups/CONTACT-SHEET.html`, `docs/ward-flow/screen-verification.json`, `docs/ward-flow/SCREEN-VERIFICATION.md`
 
 - [ ] **Step 1: Regenerate the contact sheet and manifest**
 
@@ -821,8 +821,8 @@ Expected: the final `--check` exits 0.
 - [ ] **Step 2: Whole-set checker run**
 
 ```bash
-node scripts/ward-flow/check-drawing-rules.mjs $(ls docs/ward-flow/mockups/*-third-edition.html)
-ls docs/ward-flow/mockups/*-third-edition.html | wc -l
+node scripts/ward-flow/check-drawing-rules.mjs $(ls design/third-edition-mockups/*-third-edition.html)
+ls design/third-edition-mockups/*-third-edition.html | wc -l
 ```
 
 Expected: `checked N file(s), 0 finding(s)` with N equal to the `wc -l` count.
@@ -834,7 +834,7 @@ The owner looks at every changed screen at 390, 820 and 1440 wide, light and dar
 - [ ] **Step 4: Commit**
 
 ```bash
-git add docs/ward-flow/mockups/MANIFEST.json docs/ward-flow/mockups/CONTACT-SHEET.html docs/ward-flow/screen-verification.json docs/ward-flow/SCREEN-VERIFICATION.md
+git add design/third-edition-mockups/MANIFEST.json design/third-edition-mockups/CONTACT-SHEET.html docs/ward-flow/screen-verification.json docs/ward-flow/SCREEN-VERIFICATION.md
 git commit -m "docs(ward-flow): the restyled drawings recorded as looked at, with their hashes" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
 

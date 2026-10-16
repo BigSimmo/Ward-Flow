@@ -20,7 +20,7 @@ they differ, they win.
   Preserve the current accepted app's appearance. Historical accent and typography prescriptions
   do not authorise restyling it. Keep status understandable and controls accessible.
 - **Design comes from the latest accepted Ward Flow app**, not the drawings in
-  `docs/ward-flow/mockups/`. **Behaviour comes from this engine** and its tests. Record the actual
+  `design/third-edition-mockups/`. **Behaviour comes from this engine** and its tests. Record the actual
   checked revision, widths, themes and evidence in `docs/ward-flow/screen-verification.json`.
 - **Checks follow the changed scope:** affected tests, typecheck only when selected, and the
   dedicated-repository gate. Documentation-only changes do not trigger browser checks.

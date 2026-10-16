@@ -41,9 +41,9 @@ Links to removed files now read as plain text marked "removed in the 15 Oct 2026
 
 A second trim removed 54 more files that nothing in the app, tests or scripts reads:
 
-- `docs/ward-flow/mockups/reference/` (the Gemini restyle copies of 15 September, never built from)
-- the five dated handover and status notes at the top of `docs/ward-flow/mockups/`
-- four dated notes in `docs/ward-flow/mockups/third-edition-kit/` (`REVIEW-FINDINGS.json`, `HANDOVER-MOCKUPS-CHAT-2026-09-10.md`, `MERGE-BRIEF.md`, `RESUME-2026-09-09.md`)
+- `design/third-edition-mockups/reference/` (the Gemini restyle copies of 15 September, never built from)
+- the five dated handover and status notes at the top of `design/third-edition-mockups/`
+- four dated notes in `design/third-edition-mockups/third-edition-kit/` (`REVIEW-FINDINGS.json`, `HANDOVER-MOCKUPS-CHAT-2026-09-10.md`, `MERGE-BRIEF.md`, `RESUME-2026-09-09.md`)
 - 24 finished plans and specs in `docs/superpowers/` (every one the dead-code check already treats as history)
 
 Kept on purpose: every drawing listed in `mockups/MANIFEST.json` (the screen verification check reads it), the kit's checker scripts, fonts, inputs and shell files, `AGENT-BRIEF.md`, every plan with unticked tasks (the dead-code check still reads those) and the four specs the code cites.
@@ -52,7 +52,7 @@ These files are kept in commit `5afce0b` (`5afce0b62413f4e182cfbefc7966e03b97126
 
 ```sh
 git fetch origin 5afce0b62413f4e182cfbefc7966e03b97126422
-git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- docs/ward-flow/mockups/reference
+git checkout 5afce0b62413f4e182cfbefc7966e03b97126422 -- design/third-edition-mockups/reference
 ```
 
 ### Third pass: dated plans, reports, handovers and audit output

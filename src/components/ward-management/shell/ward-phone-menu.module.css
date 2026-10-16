@@ -460,6 +460,7 @@
   min-height: 48px;
 }
 
+/* The dock's Create button is a deliberate round action button, one of the shapes that stay round. */
 .rise {
   position: absolute;
   top: -19px;

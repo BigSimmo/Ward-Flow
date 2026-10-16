@@ -221,7 +221,7 @@ function recordClinicalContact(
  * without becoming one. Nothing above this note changed.
  *
  * ⚠️ **THIRD EDITION, 2026-09-05 — THE OWNER'S REORDER, BUILT FROM THE APPROVED PROTOTYPE
- * (`docs/ward-flow/design/prototypes/mockup-community-team-hub-v1.html`).** This one changes what
+ * (`design/prototypes/mockup-community-team-hub-v1.html`).** This one changes what
  * the page says as well as how it looks, and every sentence the earlier two editions carried is
  * still here somewhere — moved, in several cases, never dropped or reworded. What is new:
  *

@@ -1,6 +1,6 @@
 // The third edition harness adapted for shell/preview.html, which is not a Command page. Run from
 // the repository root:
-//   node docs/ward-flow/mockups/third-edition-kit/shell/check-preview.mjs <file.html> platinum
+//   node design/third-edition-mockups/third-edition-kit/shell/check-preview.mjs <file.html> platinum
 // Same gates as check.mjs (fonts, weights, errors, reconcile absent, overflow at five widths, the
 // 10.5 px floor, contrast on every visible text element, the appearance control's first click from
 // a dark machine, a keyboard focus ring), with two changes: the appearance probe opens the Tools

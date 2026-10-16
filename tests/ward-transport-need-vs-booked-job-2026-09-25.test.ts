@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { CANCEL_TRANSPORT_REASONS, GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import {
+  CANCEL_TRANSPORT_REASONS,
+  GENDER_PLACEMENT_REASONS,
+} from "../src/components/ward-management/ward-change-reasons";
 import { TRANSPORT_PROVIDERS } from "../src/components/ward-management/ward-model";
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /**
@@ -137,9 +144,7 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
       movementId,
       needed: true,
     });
-    expect(recorded.rejections, "needed:true must never be refused by the booked-job guard").toEqual(
-      booked.rejections,
-    );
+    expect(recorded.rejections, "needed:true must never be refused by the booked-job guard").toEqual(booked.rejections);
   });
 });
 

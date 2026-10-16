@@ -74,33 +74,30 @@ describe("ward legal-language scanner", () => {
   });
 
   it("trips on Settings custody / Issue theatre badges", () => {
-    expect(findBannedLegalLanguage("a.tsx", '<span>Form 4A Custody Stamp</span>').map((h) => h.phrase)).toContain(
+    expect(findBannedLegalLanguage("a.tsx", "<span>Form 4A Custody Stamp</span>").map((h) => h.phrase)).toContain(
       "Form 4A Custody Stamp",
     );
-    expect(findBannedLegalLanguage("a.tsx", '<span>Form 1A Issue & Track</span>').map((h) => h.phrase)).toContain(
+    expect(findBannedLegalLanguage("a.tsx", "<span>Form 1A Issue & Track</span>").map((h) => h.phrase)).toContain(
       "Form 1A Issue & Track",
     );
-    expect(findBannedLegalLanguage("a.tsx", '<span>Destination no longer lawful</span>').map((h) => h.phrase)).toContain(
-      "Destination no longer lawful",
-    );
+    expect(
+      findBannedLegalLanguage("a.tsx", "<span>Destination no longer lawful</span>").map((h) => h.phrase),
+    ).toContain("Destination no longer lawful");
   });
 
   it("allows owner-approved Transport order titles with recorded-expiry framing (allowlist)", () => {
     // Documented allowlist: bare form titles + recorded-expiry wording are not Act-enforcement chrome.
     expect(
-      findBannedLegalLanguage(
-        "a.tsx",
-        '<span>Transport order (4A) - recorded expiry in 2h 30m</span>',
-      ),
+      findBannedLegalLanguage("a.tsx", "<span>Transport order (4A) - recorded expiry in 2h 30m</span>"),
     ).toHaveLength(0);
     expect(
-      findBannedLegalLanguage("a.tsx", '<span>Transfer order (4C) - recorded expiry in 5h 00m</span>'),
+      findBannedLegalLanguage("a.tsx", "<span>Transfer order (4C) - recorded expiry in 5h 00m</span>"),
     ).toHaveLength(0);
   });
 
   it("trips on colon-less order-clock remaining framing", () => {
     expect(
-      findBannedLegalLanguage("a.tsx", '<span>Transport order (4A) remaining</span>').map((h) => h.phrase),
+      findBannedLegalLanguage("a.tsx", "<span>Transport order (4A) remaining</span>").map((h) => h.phrase),
     ).toContain("Transport order (4A) remaining");
   });
 

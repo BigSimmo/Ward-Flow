@@ -630,7 +630,7 @@ Holds the `ward-screen.tsx` token, after the legal plan's :572-652 task and the 
 **Needed before planning 39, 46, 47 and 49:**
 
 - **39:** two served 1440 screenshots, labelled A and B: approved Settings (`git show
-1ef9ed3975:docs/ward-flow/mockups/settings-third-edition.html`) and the current file (rebuilt in `ae908cdd1b`,
+1ef9ed3975:design/third-edition-mockups/settings-third-edition.html`) and the current file (rebuilt in `ae908cdd1b`,
   `6ad62eb63c`, `f0e5ea88f9`). `settings-perfected-third-edition.html` is reference only. Then his pick.
 - **46:** a served screenshot of the Command drawing's "Statewide flow" panel. It carries its own ward list
   (`command-third-edition.html:4747`). Circle the ward labels, give the count of wards drawn against the app's 23,

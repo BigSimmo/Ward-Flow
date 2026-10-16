@@ -866,7 +866,10 @@ export function reduceReferralAnswerEvent(
           ...latestNotePatch,
         };
       } else {
-        if (event.unitId) {
+        // An ED, medical ward or community team has no bed and no unit, so a `unitId` here is a
+        // caller's mistake. A blank `unitId` is refused too: it is a malformed engine event that no
+        // screen sends, not a person's choice, so the warn-and-ask rule does not apply.
+        if (event.unitId !== undefined) {
           return reject(
             state,
             event,

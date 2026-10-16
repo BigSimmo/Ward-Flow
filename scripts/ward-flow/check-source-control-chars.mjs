@@ -129,7 +129,7 @@ const SKIP_BINARY_EXTENSIONS = new Map([
     ".bundle",
     "a compressed git bundle under docs/ward-flow/control/evidence/bundles/ (~119 MB) — binary, not text; reading it as UTF-8 would be meaningless and would misreport its compressed bytes as control characters",
   ],
-  [".woff2", "a compressed binary web font referenced by the mockups under docs/ward-flow/mockups/ — not text"],
+  [".woff2", "a compressed binary web font referenced by the mockups under design/third-edition-mockups/ — not text"],
 ]);
 
 /**
