@@ -61,6 +61,7 @@ import {
   type Desk,
   type DeskRole,
 } from "./workstation-desks";
+import { dispatchPersonaSyncForRole } from "./persona-sync";
 import styles from "./workstation-switcher.module.css";
 
 export interface OperatorSwitcherModalProps {
@@ -70,13 +71,6 @@ export interface OperatorSwitcherModalProps {
   readonly onPreview?: (name: string) => void;
   /** Optional callback to sync the clinical persona/role when a desk is selected. */
   readonly onSelectRole?: (role: DeskRole) => void;
-}
-
-export const WARD_PERSONA_SYNC_EVENT = "ward-flow-persona-sync";
-
-export function dispatchPersonaSyncForRole(role: DeskRole) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<{ role: DeskRole }>(WARD_PERSONA_SYNC_EVENT, { detail: { role } }));
 }
 
 const ROLE_ICON: Record<DeskRole, LucideIcon> = {
@@ -719,11 +713,10 @@ function DeskRow({
   const previewId = `workstation-desk-${desk.id}`;
   return (
     <div className={styles.desk} data-open={isOpen ? "true" : undefined} data-here={isHere ? "true" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+      <div className={styles.deskRow}>
         <button
           type="button"
-          className={styles.deskHead}
-          style={{ flex: 1, minWidth: 0 }}
+          className={cx(styles.deskHead, styles.deskHeadGrow)}
           aria-expanded={isOpen}
           aria-controls={previewId}
           onClick={onToggle}

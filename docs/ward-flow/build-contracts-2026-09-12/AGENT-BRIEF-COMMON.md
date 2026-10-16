@@ -14,7 +14,7 @@ worktree, switch branch, pull, or merge.**
 `src/app/mockups/ward-flow/` proves **nothing** — an agent passed exactly that check on the wrong
 base and was one step from building against the wrong edition. **The discriminating check:**
 
-    ls docs/ward-flow/mockups/ | grep -c third-edition        → must print 36
+    ls design/third-edition-mockups/ | grep -c third-edition        → must print 36
     ls docs/ward-flow/build-contracts-2026-09-12/             → must exist, ~19 files
 
 **36, not 3.** If you see 3 you are on `main`. **STOP and hand back. Do not fix your own base.**

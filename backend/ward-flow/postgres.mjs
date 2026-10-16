@@ -567,6 +567,24 @@ export function createWorkspaceStore(
     },
     viewer,
     /**
+     * The accounts holding any current role here, waiting approval included. The sign-in check
+     * reads this list now and then (cached) before it calls Supabase, so made-up accounts get only a
+     * small allowance. Before migration 8 there are no roles to hold.
+     */
+    async roleHolders() {
+      if ((await schemaVersion()) < ROLE_ACCESS_MIGRATION) return [];
+      const { rows } = await pool
+        .query(
+          "SELECT DISTINCT actor_id FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND expires_at > $2",
+          [workspaceId, clock()],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      return rows.map((row) => String(row.actor_id));
+    },
+    /**
      * The newest audit rows. The statewide coordinator reads them all, break glass included. An
      * access admin reads only role changes inside their own place, never which patient was opened.
      * The HTTP layer refuses everyone else before this runs.

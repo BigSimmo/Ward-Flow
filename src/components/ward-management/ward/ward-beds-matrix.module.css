@@ -411,14 +411,15 @@
   padding-bottom: 4px;
 }
 
-.compactBay {
-  border-bottom: none !important;
-  padding: 0 !important;
-  margin-bottom: 10px !important;
+/* Both classes, so the compact bay outranks `.bayContainer:last-of-type` and its 4px padding. */
+.bayContainer.compactBay {
+  border-bottom: none;
+  padding: 0;
+  margin-bottom: 10px;
 }
 
-.compactBay:last-of-type {
-  margin-bottom: 0 !important;
+.bayContainer.compactBay:last-of-type {
+  margin-bottom: 0;
 }
 
 .bayHeader {

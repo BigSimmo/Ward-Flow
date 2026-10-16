@@ -3,6 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
+  Bell,
   Check,
   ChevronDown,
   ClipboardCheck,
@@ -62,6 +63,7 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_ALERTS_HREF,
   WARD_ED_HREF,
   WARD_HOME_HREF,
   WARD_NAV,
@@ -106,6 +108,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
+import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, edHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
@@ -115,11 +118,12 @@ import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
+import { useAccessNavFilter } from "./ward-access";
 import styles from "./ward-bar.module.css";
 
 /**
  * Ward Flow's third-edition bar (`docs/ward-flow/plans/2026-09-10-third-edition-build-master-
- * plan.md` §1.3, item 1.1). Ported from `docs/ward-flow/mockups/command-third-edition.html`'s
+ * plan.md` §1.3, item 1.1). Ported from `design/third-edition-mockups/command-third-edition.html`'s
  * `header.hdr1` and shell script — place, the Service selector, search, three drawers (Activity,
  * Tasks and Tools), per the phase-1.1 brief. **NOT MOUNTED ANYWHERE YET**
  * — see `ward-rail.tsx`'s own header for what that means and why.
@@ -166,7 +170,7 @@ import styles from "./ward-bar.module.css";
  *   `"record-decision"`, `"contact-team"` and `"export-figures"` render as plain `<button>`
  *   elements — never an `<a>`, so no `href` attribute exists for them anywhere in this markup —
  *   that announce "`<label>` is not wired in this prototype." on click, the exact sentence standard
- *   §8.6 already uses for "Export the queue" (`docs/ward-flow/mockups/command-third-edition.html`'s
+ *   §8.6 already uses for "Export the queue" (`design/third-edition-mockups/command-third-edition.html`'s
  *   own `announce("Export the queue is not wired in this prototype.")`), reused here in each
  *   action's own words rather than invented fresh. `"none"` and an absent `primaryAction` both
  *   render nothing, which is why `resolveWardPrimaryAction` (`ward-nav.ts`) does not need to tell
@@ -216,7 +220,7 @@ import styles from "./ward-bar.module.css";
  *      further press says Nothing more to clear and names the service." A further press announces
  *      that sentence and changes nothing. This is the one behaviour `tests/ward-shell-third-
  *      edition.dom.test.tsx` names by number (assertion 2) and the one already-final drawing
- *      confirms verbatim in its own `escape()` (`docs/ward-flow/mockups/command-third-edition.html`,
+ *      confirms verbatim in its own `escape()` (`design/third-edition-mockups/command-third-edition.html`,
  *      not the earlier `third-edition-kit/shell/shell-script.js` draft, which still cleared it —
  *      see that file's own SHELL-NOTES.md for the same discrepancy, resolved by the newer file).
  *
@@ -527,6 +531,37 @@ function withRoleCategory(
 /** The Referrals board the slide-out route sits over, read from the rail rather than retyped. */
 const REFERRAL_BOARD_HREF = WARD_NAV.find((item) => item.id === "referrals")?.href ?? WARD_HOME_HREF;
 
+/**
+ * The Alerts button on the Alerts screen: moves focus to the first row of the queue (or the queue
+ * itself when it is empty) instead of opening the same list again in a drawer.
+ */
+function focusAlertsQueue(openCount: number) {
+  const focusQueue = () => {
+    const target =
+      // A snoozed row is not outstanding work, so focus lands on the first active row.
+      document.querySelector<HTMLElement>('[data-alert-id]:not([data-snoozed]) [data-testid="ward-alerts-open"]') ??
+      document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
+    if (target) {
+      if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+      target.scrollIntoView({ block: "nearest" });
+      target.focus();
+    }
+    announceToWardShell(`You are on Alerts. ${openCount} invented alerts outstanding.`);
+  };
+  // Broadcast, Notices or History may be showing, with no queue rows mounted. Choose the Now tab
+  // first and focus once it has drawn, so the section fallback is only for an empty queue.
+  const nowTab = document.getElementById("alerts-tab-now");
+  if (nowTab && nowTab.getAttribute("aria-selected") !== "true") {
+    nowTab.click();
+    requestAnimationFrame(focusQueue);
+  } else {
+    focusQueue();
+  }
+}
+
+/** The Alerts screen as an access entry, to ask whether this desk's role may open it. */
+const ALERTS_ACCESS_ENTRY = [{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }] as const;
+
 function isReferralSheetPath(pathname: string): boolean {
   return pathname.replace(/\/+$/, "") === WARD_REFERRAL_INTAKE_HREF;
 }
@@ -591,6 +626,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   useEffect(() => replayEarlyHeaderTap(), []);
 
   const { role, shellRole, placeId } = useWardNavCounts();
+  // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
+  // screen it does not open a second copy of the list; it takes the person to the queue.
+  // Only for the desk whose list it is (the bed coordinator, as the task gate below) and whose role
+  // may open the Alerts screen. Other desks keep Tasks and its "Bed coordinator's list" empty state.
+  const accessNav = useAccessNavFilter();
+  const alertsScreenOpen = accessNav(ALERTS_ACCESS_ENTRY).length > 0;
+  const alertsQueueForDesk = wardTasksAreActionableForRole(shellRole);
+  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen && alertsQueueForDesk;
+  const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
@@ -943,6 +987,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (id: WardBarPopoverId) => {
       // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
       if (id === "tools") toolsReturnFocusRef.current = null;
+      // One Alerts queue: a phone opens the Alerts screen rather than a drawer copy of it, and the
+      // Alerts screen itself moves focus to its own queue. Covers the dock, the menu and search.
+      if (id === "tasks" && oneAlertsQueue && (isPhone || onAlertsScreen)) {
+        if (onAlertsScreen) focusAlertsQueue(tasksActiveCount);
+        else {
+          // The referral sheet can persist across routes; close it through the normal lifecycle
+          // before sending the person to Alerts.
+          if (openPanel !== null) {
+            navigationPendingRef.current = true;
+            closePopover(openPanel, false);
+          }
+          router.push(WARD_ALERTS_HREF);
+        }
+        return;
+      }
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
@@ -959,7 +1018,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           `Activity opened. Synthetic data: ${scopedNotices.length} notices and ${shownActivity?.changes.length ?? 0} recent changes.`,
         );
       } else if (id === "tasks") {
-        announceToWardShell(`Tasks opened. ${tasksActiveCount} invented tasks outstanding.`);
+        announceToWardShell(
+          oneAlertsQueue
+            ? `Alerts opened. ${tasksActiveCount} invented alerts outstanding.`
+            : `Tasks opened. ${tasksActiveCount} invented tasks outstanding.`,
+        );
       } else if (id === "tools") {
         announceToWardShell(
           "Tools opened. Service now, quick actions, look ups, print and share, and demo controls are here.",
@@ -971,7 +1034,18 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
       // the selector itself.
     },
-    [scopedNotices.length, setOpenPanel, shownActivity?.changes.length, tasksActiveCount],
+    [
+      closePopover,
+      isPhone,
+      onAlertsScreen,
+      oneAlertsQueue,
+      openPanel,
+      router,
+      scopedNotices.length,
+      setOpenPanel,
+      shownActivity?.changes.length,
+      tasksActiveCount,
+    ],
   );
 
   /**
@@ -1554,19 +1628,30 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           className={styles.drawerTrigger}
           data-bar-mode="tasks"
           data-testid="ward-bar-tasks-trigger"
-          aria-haspopup="dialog"
-          aria-expanded={openPanel === "tasks"}
-          aria-controls="ward-bar-tasks-drawer"
+          aria-haspopup={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "dialog"}
+          aria-expanded={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : openPanel === "tasks"}
+          aria-controls={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "ward-bar-tasks-drawer"}
+          aria-current={onAlertsScreen ? "page" : undefined}
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ListChecks className={`${styles.triggerIcon} ${styles.tasksWide}`} aria-hidden="true" strokeWidth={1.75} />
-          {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
-          <ClipboardCheck
-            className={`${styles.triggerIcon} ${styles.tasksPhone}`}
-            aria-hidden="true"
-            strokeWidth={1.75}
-          />
-          <span className={styles.triggerLabel}>Tasks</span>
+          {oneAlertsQueue ? (
+            <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+          ) : (
+            <>
+              <ListChecks
+                className={`${styles.triggerIcon} ${styles.tasksWide}`}
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+              {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
+              <ClipboardCheck
+                className={`${styles.triggerIcon} ${styles.tasksPhone}`}
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+            </>
+          )}
+          <span className={styles.triggerLabel}>{oneAlertsQueue ? "Alerts" : "Tasks"}</span>
           <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
             {tasksActiveCount}
           </span>
@@ -2060,7 +2145,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         id="ward-bar-tasks-drawer"
         open={openPanel === "tasks"}
         onClose={() => closePopover("tasks")}
-        ariaLabel="Tasks"
+        ariaLabel={oneAlertsQueue ? "Alerts" : "Tasks"}
         headerHidden
         placement="right"
         testId="ward-bar-tasks-sheet"
@@ -2086,6 +2171,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               onSelectMovement={openMovement}
               onSelectDischarge={openDischarge}
               records={{ movements, admissions, patients, referrals, units }}
+              alertsScreenOpen={alertsScreenOpen}
+              alertsQueueForDesk={alertsQueueForDesk}
             />
           </div>
         ) : null}

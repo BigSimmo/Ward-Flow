@@ -6,10 +6,10 @@ and 10 September 2026, generalised. The lead fills in the page name, the file an
 ## Where things are
 
 - Repository root (run every command from here): the worktree root.
-- Your page: `docs/ward-flow/mockups/<page>-third-edition.html`.
-- The standard: `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` (the markdown is the source of truth;
+- Your page: `design/third-edition-mockups/<page>-third-edition.html`.
+- The standard: `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` (the markdown is the source of truth;
   `design-system-third-edition.html` mirrors it as a page; `ward-flow-digest.html` is the reader's brief).
-- The reference build: `docs/ward-flow/mockups/command-third-edition.html` (Command). Its stylesheet, shell
+- The reference build: `design/third-edition-mockups/command-third-edition.html` (Command). Its stylesheet, shell
   markup and shell script are THE source for every shared thing. Copy from it; never re-derive.
 - The harness: this folder (`check.mjs`, `check-shell.mjs`, `shots.mjs`, `run-all-checks.sh`,
   `shell-sweep.mjs`; fonts stubbed from `fonts/`; the scripts fall back to Playwright's own Chromium).
@@ -55,13 +55,13 @@ and 10 September 2026, generalised. The lead fills in the page name, the file an
    verdict about a person, no invented real-seeming name or record number, and every sentence that
    discloses an invented figure true when read alone. Where a small redesign buys a big improvement,
    make it and describe it in one line.
-4. **Format, then prove it.** `npx prettier --write docs/ward-flow/mockups/<page>-third-edition.html`
+4. **Format, then prove it.** `npx prettier --write design/third-edition-mockups/<page>-third-edition.html`
    (one file at a time; Prettier crashes on several). Then, once each, from the repository root:
 
    ```
-   node docs/ward-flow/mockups/third-edition-kit/check.mjs docs/ward-flow/mockups/<page>-third-edition.html platinum
-   node docs/ward-flow/mockups/third-edition-kit/check-shell.mjs docs/ward-flow/mockups/<page>-third-edition.html platinum
-   node docs/ward-flow/mockups/third-edition-kit/shots.mjs docs/ward-flow/mockups/<page>-third-edition.html <scratch>/shots/page platinum
+   node design/third-edition-mockups/third-edition-kit/check.mjs design/third-edition-mockups/<page>-third-edition.html platinum
+   node design/third-edition-mockups/third-edition-kit/check-shell.mjs design/third-edition-mockups/<page>-third-edition.html platinum
+   node design/third-edition-mockups/third-edition-kit/shots.mjs design/third-edition-mockups/<page>-third-edition.html <scratch>/shots/page platinum
    ```
 
    Paste the deciding lines verbatim. Look at your 1600 and 390 screenshots before reporting. Where

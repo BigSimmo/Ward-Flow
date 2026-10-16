@@ -7,20 +7,30 @@ import { drawerCloseHistoryStep, isPendingNavigation } from "@/components/ward-m
 // commits, that entry is still current, and history.back() cancelled the navigation.
 describe("closing a drawer and browser history", () => {
   it("steps back past the drawer's own entry when nothing is loading (the normal close)", () => {
-    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: true, navigationPending: false, canGoBack: true })).toBe("back");
+    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: true, navigationPending: false, canGoBack: true })).toBe(
+      "back",
+    );
   });
 
   it("never steps back while a chosen page is still loading (the slow-route case)", () => {
-    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: true, navigationPending: true, canGoBack: true })).toBe("clear");
+    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: true, navigationPending: true, canGoBack: true })).toBe(
+      "clear",
+    );
   });
 
   it("leaves history alone when the drawer's entry is no longer current", () => {
-    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: false, navigationPending: true, canGoBack: true })).toBe("none");
-    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: false, navigationPending: false, canGoBack: true })).toBe("none");
+    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: false, navigationPending: true, canGoBack: true })).toBe(
+      "none",
+    );
+    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: false, navigationPending: false, canGoBack: true })).toBe(
+      "none",
+    );
   });
 
   it("falls back to relabelling the entry when history.back is unavailable", () => {
-    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: true, navigationPending: false, canGoBack: false })).toBe("clear");
+    expect(drawerCloseHistoryStep({ drawerEntryIsCurrent: true, navigationPending: false, canGoBack: false })).toBe(
+      "clear",
+    );
   });
 
   it("treats only a same-site link to another page as a pending navigation", () => {

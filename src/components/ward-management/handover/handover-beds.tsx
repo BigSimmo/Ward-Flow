@@ -332,8 +332,8 @@ function NoWardSelected() {
       <div className={styles.ghostGrid} aria-hidden="true">
         {[0, 1, 2, 3].map((index) => (
           <div key={index}>
-            <i style={{ width: "40%" }} />
-            <i style={{ width: "70%" }} />
+            <i className={styles.ghostLineShort} />
+            <i className={styles.ghostLineLong} />
           </div>
         ))}
       </div>
@@ -495,15 +495,15 @@ export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPati
             <table className={cx(tableClasses.table, styles.bedsTable)}>
               <caption className={styles.caption}>Beds by ward, grouped by health service</caption>
               <colgroup>
-                <col style={{ width: 200 }} />
-                <col style={{ width: 170 }} />
-                <col style={{ width: 70 }} />
-                <col style={{ width: 108 }} />
-                <col style={{ width: 112 }} />
-                <col style={{ width: 62 }} />
-                <col style={{ width: 90 }} />
-                <col style={{ width: 88 }} />
-                <col style={{ width: 70 }} />
+                <col className={styles.colWard} />
+                <col className={styles.colBeds} />
+                <col className={styles.colNarrow} />
+                <col className={styles.colIncoming} />
+                <col className={styles.colUpdated} />
+                <col className={styles.colHeld} />
+                <col className={styles.colOutToday} />
+                <col className={styles.colPastEdd} />
+                <col className={styles.colNarrow} />
               </colgroup>
               <thead>
                 <tr>

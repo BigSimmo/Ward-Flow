@@ -241,7 +241,7 @@ function ToastCard({
       // Closes itself (Undo window or timer): the phone pill drops its X, as the v10 mockup draws it.
       data-auto-dismiss={toast.undo || duration > 0 ? "true" : undefined}
       // The region is pointer-events: none so it never blocks the page; each card opts back in.
-      style={{ pointerEvents: "auto" }}
+      className={overlayStyles.toastPointer}
       tone={toast.tone}
       // Remount on announceKey so a repeated identical outcome re-enters the polite live region
       // instead of staying silent while still visible.

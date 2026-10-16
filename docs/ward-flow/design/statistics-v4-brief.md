@@ -49,7 +49,7 @@ Bad: `Statistics` · `Ward Flow — Statistics Page For Wards (v4)`
 `npx vitest run tests/ward-statistics-v4-language.test.ts`
 
 1. **Your `<style>` must BEGIN with the entire content of
-   `docs/ward-flow/design/prototypes/statistics-language-v4.css`, byte for byte.** Copy it
+   `design/prototypes/statistics-language-v4.css`, byte for byte.** Copy it
    **programmatically** — read the file, write it in. Never retype it. Append your page rules
    **below** it under a marker comment; never above.
 2. **Never edit `statistics-language-v4.css`** and never edit the test. If the language lacks

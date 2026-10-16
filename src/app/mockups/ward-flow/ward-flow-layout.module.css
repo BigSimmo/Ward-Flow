@@ -9,7 +9,7 @@
  * to ordinary block layout and stack ABOVE the page rather than beside it.
  *
  * The approved drawing establishes exactly this two-part shape at its own outermost level
- * (`docs/ward-flow/mockups/command-third-edition.html`'s `.app { display: grid; grid-template-
+ * (`design/third-edition-mockups/command-third-edition.html`'s `.app { display: grid; grid-template-
  * columns: 236px minmax(0, 1fr); min-height: 100vh }` plus `.frame { display: flex; flex-
  * direction: column }`). This file is the same shape, ported to the mount point this app actually
  * has (`layout.tsx`, not a bare HTML page) and to flexbox rather than a grid track, so `WardRail`'s
@@ -220,4 +220,13 @@
 
 :global(html[data-wf-bar-ready]) .loadingNote {
   display: none;
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.bannerHolder {
+  position: sticky;
+  top: var(--wf-header-height, 3.75rem);
+  z-index: 25;
+  contain: layout style;
+  min-height: 0;
 }

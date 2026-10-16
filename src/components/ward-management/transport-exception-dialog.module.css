@@ -1,0 +1,18 @@
+/*
+ * src/components/ward-management/transport-exception-dialog.module.css
+ *
+ * Moved from inline styles (styles cleanup, 16 Oct 2026). The list of transport details that were
+ * not recorded, shown above the reason picker.
+ */
+.gapList {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.gapItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}

@@ -705,14 +705,14 @@ function PersonEntry({
           {occupant.homeRegion === null ? "home region not recorded" : `from ${occupant.homeRegion}`}
         </p>
         {occupant.stepDownCandidate && (
-          <p style={{ margin: "4px 0" }}>
+          <p className={styles.personFlagLine}>
             <span className={styles.stepDownTag} data-testid={`${idPrefix}-${occupant.key}-stepdown`}>
               Flagged for step-down
             </span>
           </p>
         )}
         {occupant.days !== null && occupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
-          <p style={{ margin: "4px 0" }}>
+          <p className={styles.personFlagLine}>
             <span
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
@@ -764,7 +764,7 @@ function PersonEntry({
       {/* 1. Identity & Stay Card */}
       <div className={styles.detailIdCard}>
         <div className={styles.detailStayRow}>
-          <p className={styles.personStay} style={{ margin: 0 }}>
+          <p className={`${styles.personStay} ${styles.flushMargin}`}>
             {occupant.days === null ? (
               <span className={styles.personNoStay}>No stay yet — not arrived</span>
             ) : (
@@ -798,20 +798,20 @@ function PersonEntry({
         </div>
 
         {/* Retain exact personWho text for test contract compatibility */}
-        <p className={styles.personWho} style={{ margin: 0 }}>
+        <p className={`${styles.personWho} ${styles.flushMargin}`}>
           {occupant.sex} · Gender: {occupant.gender ?? "Not recorded"},{" "}
           {occupant.homeRegion === null ? "home region not recorded" : `from ${occupant.homeRegion}`}
         </p>
 
         {occupant.stepDownCandidate && (
-          <div style={{ marginTop: 8 }}>
+          <div className={styles.personFlagBlock}>
             <span className={styles.stepDownTag} data-testid={`${idPrefix}-${occupant.key}-stepdown`}>
               Flagged for step-down
             </span>
           </div>
         )}
         {occupant.days !== null && occupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
-          <div style={{ marginTop: 8 }}>
+          <div className={styles.personFlagBlock}>
             <span
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
@@ -2881,12 +2881,11 @@ export function WardBoard({
                               Move the date
                             </button>
                           )}
-                          <div data-testid="ward-board-away-at-ed" style={{ flex: "1 1 100%" }}>
+                          <div data-testid="ward-board-away-at-ed" className={styles.awayAtEdBlock}>
                             {selectedOccupant.awayAtEdHours === null ? (
                               <button
                                 type="button"
-                                className={styles.detailSecondaryBtn}
-                                style={{ width: "100%" }}
+                                className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}
                                 data-testid="ward-board-record-away-submit"
                                 onClick={(e) => {
                                   const executeAway = () => {
@@ -2919,8 +2918,7 @@ export function WardBoard({
                             ) : (
                               <button
                                 type="button"
-                                className={styles.detailSecondaryBtn}
-                                style={{ width: "100%" }}
+                                className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}
                                 data-tone="good"
                                 data-testid="ward-board-record-returned-submit"
                                 onClick={() =>
@@ -2933,15 +2931,14 @@ export function WardBoard({
                                 Record that they are back on the ward
                               </button>
                             )}
-                            <p className={styles.personLine} style={{ marginTop: "0.25rem", textAlign: "center" }}>
+                            <p className={`${styles.personLine} ${styles.awayAtEdNote}`}>
                               This trip does not free the bed.
                             </p>
                           </div>
-                          <div data-testid="ward-board-stepdown-container" style={{ flex: "1 1 100%", marginTop: 8 }}>
+                          <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
                             <button
                               type="button"
-                              className={styles.detailSecondaryBtn}
-                              style={{ width: "100%" }}
+                              className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}
                               data-tone={selectedOccupant.stepDownCandidate ? "good" : undefined}
                               data-testid="ward-board-stepdown-toggle"
                               onClick={() => {
@@ -2969,9 +2966,8 @@ export function WardBoard({
                           {selectedOccupant.days !== null &&
                             selectedOccupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
                               <div
-                                className={styles.barrierSelectGroup}
+                                className={`${styles.barrierSelectGroup} ${styles.fullRowSpaced}`}
                                 data-testid="ward-board-barrier-container"
-                                style={{ flex: "1 1 100%", marginTop: 8 }}
                               >
                                 <label htmlFor="ward-board-barrier-select" className={styles.leavingLabel}>
                                   Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
@@ -3131,53 +3127,11 @@ export function WardBoard({
                   onClick={(e) => {
                     if (e.target === e.currentTarget) closeBlockerDialog();
                   }}
-                  style={{
-                    position: "fixed",
-                    inset: 0,
-                    background: "var(--scrim)",
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 1000,
-                    padding: "1rem",
-                  }}
+                  className={styles.modalBackdrop}
                 >
-                  <div
-                    style={{
-                      background: "var(--surface)",
-                      color: "var(--ink)",
-                      padding: "1.5rem",
-                      borderRadius: "var(--r1, 0.5rem)",
-                      maxWidth: "32rem",
-                      width: "92%",
-                      boxShadow: "var(--lift)",
-                      border: "1px solid var(--line-strong)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "1rem",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "0.5rem",
-                      }}
-                    >
-                      <h3
-                        id="blocker-dialog-title"
-                        style={{
-                          margin: 0,
-                          fontSize: "1.15rem",
-                          fontWeight: 600,
-                          color: "var(--ink)",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
+                  <div className={styles.blockerDialogPanel}>
+                    <div className={styles.modalHeader}>
+                      <h3 id="blocker-dialog-title" className={styles.blockerDialogTitle}>
                         Record a blocker for {blockerDialogItem.label}
                       </h3>
                       <button
@@ -3185,99 +3139,35 @@ export function WardBoard({
                         type="button"
                         onClick={closeBlockerDialog}
                         aria-label="Close dialog"
-                        style={{
-                          minHeight: "var(--ward-tap, 48px)",
-                          minWidth: "var(--ward-tap, 48px)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "1px solid var(--line-strong)",
-                          borderRadius: "var(--r1, 0.25rem)",
-                          background: "var(--surface)",
-                          color: "var(--ink)",
-                          cursor: "pointer",
-                          fontSize: "1.1rem",
-                          padding: 0,
-                        }}
+                        className={styles.blockerCloseBtn}
                       >
                         ✕
                       </button>
                     </div>
 
-                    <div
-                      style={{
-                        padding: "0.75rem 1rem",
-                        borderRadius: "var(--r1, 0.25rem)",
-                        background: "var(--surface-2, var(--sunk))",
-                        border: "1px solid var(--line)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.375rem",
-                        fontSize: "0.875rem",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          flexWrap: "wrap",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        <span style={{ fontWeight: 600, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
-                          Bed / Subject: {blockerDialogItem.label}
-                        </span>
+                    <div className={styles.blockerSubjectCard}>
+                      <div className={styles.blockerSubjectRow}>
+                        <span className={styles.blockerSubjectLabel}>Bed / Subject: {blockerDialogItem.label}</span>
                         {blockerDialogItem.chip ? (
-                          <span
-                            style={{
-                              fontFamily: "var(--mono, monospace)",
-                              fontVariantNumeric: "tabular-nums",
-                              fontSize: "0.8rem",
-                              padding: "0.125rem 0.5rem",
-                              borderRadius: "var(--wf-r-tag)",
-                              border: "1px solid var(--line-strong)",
-                              background: "var(--surface)",
-                              color: "var(--ink)",
-                            }}
-                          >
-                            {blockerDialogItem.chip}
-                          </span>
+                          <span className={styles.blockerSubjectChip}>{blockerDialogItem.chip}</span>
                         ) : null}
                       </div>
                       {blockerDialogItem.when ? (
-                        <span
-                          style={{ color: "var(--ink-soft)", fontVariantNumeric: "tabular-nums", fontSize: "0.8rem" }}
-                        >
-                          Timing indicator: {blockerDialogItem.when}
-                        </span>
+                        <span className={styles.blockerSubjectWhen}>Timing indicator: {blockerDialogItem.when}</span>
                       ) : null}
                       {blockerDialogItem.text ? (
-                        <span style={{ color: "var(--ink-soft)", fontSize: "0.825rem", lineHeight: 1.4 }}>
-                          {blockerDialogItem.text}
-                        </span>
+                        <span className={styles.blockerSubjectText}>{blockerDialogItem.text}</span>
                       ) : null}
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                      <p
-                        id="blocker-dialog-description"
-                        style={{ margin: 0, fontSize: "0.9rem", color: "var(--ink-soft)", fontWeight: 500 }}
-                      >
+                    <div className={styles.blockerReasonGroup}>
+                      <p id="blocker-dialog-description" className={styles.blockerReasonPrompt}>
                         Select the reason preventing bed release:
                       </p>
                       <div
                         role="radiogroup"
                         aria-labelledby="blocker-dialog-description"
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "0.5rem",
-                          maxHeight: "14rem",
-                          overflowY: "auto",
-                          padding: "0.25rem",
-                        }}
+                        className={styles.blockerReasonList}
                       >
                         {BED_RELEASE_BLOCKERS.map((b) => {
                           const isSelected = selectedBlocker === b;
@@ -3317,28 +3207,17 @@ export function WardBoard({
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+                    <div className={styles.modalActions}>
                       <button
                         type="button"
-                        className={styles.shiftCtl}
+                        className={`${styles.shiftCtl} ${styles.blockerCancelBtn}`}
                         onClick={closeBlockerDialog}
-                        style={{
-                          minHeight: "var(--ward-tap, 48px)",
-                          minWidth: "var(--ward-tap, 48px)",
-                          padding: "0.625rem 1.25rem",
-                          fontWeight: 500,
-                          border: "1px solid var(--line-strong)",
-                          background: "var(--surface)",
-                          color: "var(--ink)",
-                          cursor: "pointer",
-                          boxShadow: "var(--lift)",
-                        }}
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
-                        className={styles.shiftCtl}
+                        className={`${styles.shiftCtl} ${styles.blockerConfirmBtn}`}
                         data-tone="warn"
                         onClick={() => {
                           // Walkthrough D3 (25 Sept 2026): a release names its stay (owner ruling),
@@ -3367,18 +3246,6 @@ export function WardBoard({
                             );
                           }
                           closeBlockerDialog();
-                        }}
-                        style={{
-                          minHeight: "var(--ward-tap, 48px)",
-                          minWidth: "var(--ward-tap, 48px)",
-                          padding: "0.625rem 1.25rem",
-                          fontWeight: 600,
-                          border: "2px solid var(--warn)",
-                          background: "var(--warn-soft, var(--surface))",
-                          color: "var(--ink)",
-                          cursor: "pointer",
-                          fontVariantNumeric: "tabular-nums",
-                          boxShadow: "var(--lift)",
                         }}
                       >
                         Confirm blocker
@@ -3547,52 +3414,11 @@ export function WardBoard({
             onClick={(e) => {
               if (e.target === e.currentTarget) closeConfirmDialog();
             }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "var(--scrim)",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1000,
-              padding: "1rem",
-            }}
+            className={styles.modalBackdrop}
           >
-            <div
-              style={{
-                background: "var(--surface)",
-                color: "var(--ink)",
-                padding: "1.5rem",
-                borderRadius: "var(--r1, 0.5rem)",
-                maxWidth: "30rem",
-                width: "92%",
-                boxShadow: "var(--lift)",
-                border: "1px solid var(--line-strong)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1rem",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "0.5rem",
-                }}
-              >
-                <h3
-                  id="confirm-dialog-title"
-                  style={{
-                    margin: 0,
-                    fontSize: "1.15rem",
-                    fontWeight: 600,
-                    color: "var(--ink)",
-                  }}
-                >
+            <div className={styles.confirmDialogPanel}>
+              <div className={styles.modalHeader}>
+                <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
                   {pendingConfirm.kind === "leaving"
                     ? "Confirm patient departure"
                     : "Confirm emergency department transfer"}
@@ -3603,24 +3429,16 @@ export function WardBoard({
                   onClick={closeConfirmDialog}
                   aria-label="Close dialog"
                   data-testid="ward-board-confirm-close"
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--ink-soft)",
-                    cursor: "pointer",
-                    fontSize: "1.25rem",
-                    padding: "0.25rem 0.5rem",
-                    borderRadius: "var(--r0, 0.25rem)",
-                  }}
+                  className={styles.confirmCloseBtn}
+                  // `--r0` is declared nowhere, so this stays inline: in a stylesheet it would trip the
+                  // token-reference guard (tests/ward-css-token-references-resolve.test.ts).
+                  style={{ borderRadius: "var(--r0, 0.25rem)" }}
                 >
                   ✕
                 </button>
               </div>
 
-              <p
-                id="confirm-dialog-description"
-                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-soft)", lineHeight: 1.5 }}
-              >
+              <p id="confirm-dialog-description" className={styles.confirmDialogText}>
                 {pendingConfirm.kind === "leaving" ? (
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
@@ -3634,14 +3452,7 @@ export function WardBoard({
                 )}
               </p>
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "0.5rem",
-                }}
-              >
+              <div className={styles.modalActions}>
                 <button
                   type="button"
                   onClick={closeConfirmDialog}

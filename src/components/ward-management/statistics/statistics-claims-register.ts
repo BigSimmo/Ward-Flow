@@ -224,6 +224,9 @@ const WARD_MODEL = "src/components/ward-management/ward-model.ts";
 const WARD_ADMISSIONS = "src/components/ward-management/ward-admissions.ts";
 const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
 const WARD_RECORD_EVENTS = "src/components/ward-management/ward-flow-record-events.ts";
+const WARD_PLACEMENT_EVENTS = "src/components/ward-management/ward-flow-placement-events.ts";
+const WARD_BED_EVENTS = "src/components/ward-management/ward-flow-bed-events.ts";
+const WARD_REFERRAL_ANSWER_EVENTS = "src/components/ward-management/ward-flow-referral-answer-events.ts";
 const WARD_STATISTICS = "src/components/ward-management/ward-statistics.ts";
 const WARD_DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
 const WARD_BED_AVAILABILITY = "src/components/ward-management/ward-ready-beds.ts";
@@ -604,7 +607,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "Bed readiness has a yes/no flag and one shared timestamp",
     claim: "Setting `preparing` writes an instant — `SET_BED_PREPARATION` stamps `confirmedAt: event.now`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence: "preparationNote: event.preparing ? (event.note ?? null) : null, confirmedAt: event.now,",
     falsifiedBy: {
       change: "`SET_BED_PREPARATION` stops stamping an instant, so setting `preparing` no longer writes one.",
@@ -651,7 +654,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "Confirming the discharge, flagging the bed as stuck",
     claim: "`CONFIRM_BED_RELEASE` overwrites `confirmedAt`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence: 'const updated: BedRelease = { ...release, state: "confirmed", waitingOn: null, confirmedAt: event.now,',
     falsifiedBy: {
       change: "`CONFIRM_BED_RELEASE` stops writing `confirmedAt`, so confirming a discharge no longer overwrites it.",
@@ -669,7 +672,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "clearing that flag, releasing the bed and turning preparation off again all",
     claim: "`BLOCK_BED_RELEASE` overwrites `confirmedAt`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence: "blockedBy: recordedByLabel(event.role, blockedUnit.name), confirmedAt: event.now,",
     falsifiedBy: {
       change: "`BLOCK_BED_RELEASE` stops writing `confirmedAt`, so flagging the bed as stuck no longer overwrites it.",
@@ -687,7 +690,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "overwrite it. So the record can hold when preparation started or when it ended",
     claim: "`CLEAR_BED_RELEASE_BLOCK` overwrites `confirmedAt`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence: "const unblocked: BedRelease = { ...release, blocker: null, blockedBy: null, confirmedAt: event.now,",
     falsifiedBy: {
       change: "`CLEAR_BED_RELEASE_BLOCK` stops writing `confirmedAt`, so clearing the flag no longer overwrites it.",
@@ -705,7 +708,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "There is no pair of instants to subtract",
     claim: "`RELEASE_BED` overwrites `confirmedAt`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence:
       'const updatedRelease: BedRelease = { ...release, state: "discharged", waitingOn: null, blocker: null, ' +
       "blockedBy: null, confirmedAt: event.now,",
@@ -729,7 +732,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "preparation only\n              ever begins after somebody has left",
     claim: "A newly flagged release starts `preparing: false`; preparation only ever begins after `RELEASE_BED`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence:
       "// A bed nobody has yet left is not being made ready. Preparation only ever begins after " +
       "// `RELEASE_BED`, and only through `SET_BED_PREPARATION` — see that case. preparing: false,",
@@ -758,7 +761,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     claim:
       "`SET_BED_PREPARATION` stores the caller's `preparing` value as given, deriving nothing from the " +
       "release's own state.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     evidence: "const prepared: BedRelease = { ...release, preparing: event.preparing,",
     falsifiedBy: {
       change:
@@ -811,7 +814,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "Named ward referrals preserve their recipient before acceptance",
     claim: "The reducer sets an addressing's `acceptedUnitId` on the acceptance path and nowhere else.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_REFERRAL_ANSWER_EVENTS,
     evidence: 'accepted = { ...addressing, state: "accepted", acceptedUnitId: unit.id,',
     falsifiedBy: ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   },
@@ -984,7 +987,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     claim:
       '`case "DECLINE"` removes the declining unit from `referredUnitIds`, appends to `declines`, and leaves ' +
       "the movement in `destination_review`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_REFERRAL_ANSWER_EVENTS,
     evidence:
       // Re-read 17 Sept 2026: still true. The filter moved into a named const when the last-decline blocker
       // fix landed; the decline still removes the unit, appends to declines and stays at destination_review.
@@ -1280,7 +1283,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
      * says: a null records an admission whose movement carries no RESOLVED referral, never one
      * whose movement carries one.
      */
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_PLACEMENT_EVENTS,
     evidence:
       "referralId: resolvedReferral?.id ?? null,\n" +
       "        movementId: movement.id,\n" +
@@ -1455,7 +1458,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     // evidence and distinct falsifiers, so they still fail independently.
     rendered: "Named ward referrals preserve their recipient before acceptance.",
     claim: "The reducer sets an addressing's `acceptedUnitId` on the acceptance path and nowhere else.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_REFERRAL_ANSWER_EVENTS,
     evidence: 'accepted = { ...addressing, state: "accepted", acceptedUnitId: unit.id,',
     falsifiedBy: ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   },
@@ -1848,7 +1851,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: DERIVATIONS,
     rendered: "carries a unit guard and a note-membership check",
     claim: "`SET_BED_PREPARATION` refuses an event whose acting unit is not the release's unit.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     /**
      * ⚠️ **RE-POINTED 2026-09-01: THIS CITED THE REJECTION MESSAGE, NOT THE GUARD.** The claim is that the
      * reducer REFUSES a mismatched acting unit, and the thing that refuses is the `if`. A message is a string
@@ -1880,7 +1883,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: DERIVATIONS,
     rendered: "note-membership check and **no state guard**",
     claim: "`SET_BED_PREPARATION` refuses a note that is not in `BED_PREPARATION_NOTES`.",
-    sourceFile: WARD_REDUCER,
+    sourceFile: WARD_BED_EVENTS,
     /**
      * ⚠️ **RE-POINTED 2026-09-01, THE SAME REPAIR AS ITS SIBLING ABOVE.** The old citation was the rejection
      * message alone, so a membership check emptied of its condition — `if (false)` above an untouched

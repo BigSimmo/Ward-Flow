@@ -1265,10 +1265,12 @@ const TRAPS = {
   dRepull: "Pulling a held bed again skips every capacity and eligibility check.",
   dCancelLie: "The cancellation notice works out whether a bed is held from the stage, not from the bed.",
   cmhtNothing: "Nothing anywhere can close a queued community arm except the team answering or the referrer.",
-  edNeverArrives: "A queued ED arm can be declined or withdrawn before arrival; the expectation then disappears without an arrival stamp.",
+  edNeverArrives:
+    "A queued ED arm can be declined or withdrawn before arrival; the expectation then disappears without an arrival stamp.",
   rkExpiryShut:
     "Arriving closes the record, so the legal form's expiry can no longer be recorded for exactly the people it is for.",
-  rkInbox: "Real fact rows cannot be completed, but a fabricated commitment-prefixed ID can pass the completion guard without a matching inbox row.",
+  rkInbox:
+    "Real fact rows cannot be completed, but a fabricated commitment-prefixed ID can pass the completion guard without a matching inbox row.",
   sCancelTransport:
     "Two of its refusals can never run. Both describe a job already cancelled or a patient already arrived — and every way either happens also closes the movement, which a check above them catches first.",
   sStopTransport:

@@ -1,6 +1,6 @@
 > **SUPERSEDED SPECIFICATION — KEPT FOR HISTORICAL REFERENCE.**
 > This specification represents an earlier design superseded by the **Ward Flow 3rd Edition Design System** and subsequent clinical/owner rulings.
-> **Current design authority:** [`docs/ward-flow/mockups/`](../../ward-flow/mockups/) and [`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`](../../ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md).
+> **Current design authority:** [`design/third-edition-mockups/`](../../../design/third-edition-mockups/) and [`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`](../../../design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md).
 > **Current behavioural authority:** `src/components/ward-management/` and tests on branch `codex/task-ward-flow-live-state-20260831`.
 
 # Ward Flow merges 1–3 — design lock

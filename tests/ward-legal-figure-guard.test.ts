@@ -257,7 +257,8 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   PULL_HOLD_RANGE_MINUTES:
     "coordinator-usable slider band around PULL_HOLD_MINUTES — not statutory, not independently sourced",
 
-  // Product owner, 2026-08-30, ruling `FD-19` in `docs/ward-flow-ledger.md`: "a ward→ED-medical
+  // Product owner, 2026-08-30, ruling `FD-19` in the archived identity register
+  // (`docs/ward-flow/archive/decision-identity-register-2026-08-to-2026-09.md`): "a ward→ED-medical
   // trip frees the bed ONLY IF the stay is expected to exceed 48 hours, and that is overridable".
   //
   // ⚠️ THIS IS THE ONE ENTRY IN THIS LIST THAT IS A DURATION IN THE SAME UNITS A STATUTORY PERIOD
@@ -838,16 +839,24 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
   //   2. the declared list Part 1 drives is exactly these codes, in this order, so adding a code
   //      to the picker fails here until Part 1 is driving it too.
   it("pins where legal forms are authored, so Part 1 cannot silently miss one", () => {
-    // The reducer hands RECORD_* and UNDO_* actions to its slice files, so read all three.
-    const reducerSources = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map(
-      (name) =>
-        ts.createSourceFile(
-          `${WARD_DIR}/${name}`,
-          readFileSync(`${WARD_DIR}/${name}`, "utf8"),
-          ts.ScriptTarget.Latest,
-          true,
-          ts.ScriptKind.TS,
-        ),
+    // The reducer hands most of its cases to slice files, so read them all.
+    const reducerSources = [
+      "ward-flow-reducer.ts",
+      "ward-flow-record-events.ts",
+      "ward-flow-undo-events.ts",
+      "ward-flow-referral-send-events.ts",
+      "ward-flow-referral-answer-events.ts",
+      "ward-flow-placement-events.ts",
+      "ward-flow-transport-events.ts",
+      "ward-flow-bed-events.ts",
+    ].map((name) =>
+      ts.createSourceFile(
+        `${WARD_DIR}/${name}`,
+        readFileSync(`${WARD_DIR}/${name}`, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS,
+      ),
     );
 
     // An authored legal form is an object literal carrying a `code:` string. Read from the AST,

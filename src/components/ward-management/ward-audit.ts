@@ -36,7 +36,7 @@ import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
-import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { seededGovernanceAuditEntry, syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import {
   bedPlacementUndoFor,
   referralDecisionUndoFor,
@@ -391,11 +391,11 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
     if (release && uniqueRecord(state.units, release.unitId))
       return { kind: "bed-release", releaseId: release.id, unitId: release.unitId };
   } else if (event.type === "REVIEW_AUDIT_EVENT") {
-    const entry = uniqueRecord(governanceAuditEvents(state), event.eventId);
+    const entry = governanceAuditEntry(state, event.eventId);
     if (entry) return { kind: "audit-event", eventId: entry.id };
   } else if (event.type === "UNDO_AUDIT_REVIEW") {
     const review = uniqueRecord(state.auditReviews, event.reviewId);
-    const entry = review ? uniqueRecord(governanceAuditEvents(state), review.eventId) : undefined;
+    const entry = review ? governanceAuditEntry(state, review.eventId) : undefined;
     if (entry) return { kind: "audit-event", eventId: entry.id };
   } else if (event.type === "SET_CONFIGURATION") {
     return { kind: "configuration" };
@@ -847,6 +847,14 @@ export function readAuditEvents(state: WardFlowState, actor: WardRecordActor): R
  */
 export function governanceAuditEvents(state: WardFlowState): readonly AuditEvent[] {
   return [...syntheticGovernanceAuditEvents(state), ...state.auditEvents];
+}
+
+/**
+ * One governance entry by id, for a review or its undo. A seeded entry a shared desk derived from its
+ * own part of the workspace is found about whichever record its id names.
+ */
+export function governanceAuditEntry(state: WardFlowState, id: unknown): AuditEvent | undefined {
+  return uniqueRecord(governanceAuditEvents(state), id) ?? seededGovernanceAuditEntry(state, id);
 }
 
 /** `readAuditEvents` plus the synthetic seeded entries: for the Governance page only. */

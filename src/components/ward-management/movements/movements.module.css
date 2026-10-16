@@ -553,8 +553,8 @@
 .drawerSheetContent {
   composes: wardTokens from "../ward-tokens.module.css";
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
-  max-width: min(96vw, 56rem) !important;
-  max-height: min(96dvh, 54rem) !important;
+  max-width: min(96vw, 56rem);
+  max-height: min(96dvh, 54rem);
   color: var(--ink);
   background: var(--surface);
   font-family: var(--body);

@@ -1,6 +1,6 @@
 # Build contract — Network screen
 
-Drawing: `docs/ward-flow/mockups/network-third-edition.html` (11,988 lines; screen-specific
+Drawing: `design/third-edition-mockups/network-third-edition.html` (11,988 lines; screen-specific
 markup ends ~line 4650, the rest is the shared "Ward Flow Command" engine string-built in JS).
 `<title>Ward Flow Network</title>`, but the CSS banner inside says this file is "WARD FLOW
 COMMAND. Third edition" — i.e. Network is Command's engine with two whole panels deleted.

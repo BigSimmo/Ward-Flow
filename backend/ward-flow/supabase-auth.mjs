@@ -22,6 +22,19 @@ const CONFIRMED_MAX = 1_000;
  */
 export const REMOTE_CHECKS_PER_ADDRESS = 30;
 export const REMOTE_CHECKS_TOTAL = 300;
+/**
+ * Accounts with no role here (no membership and not a bootstrap coordinator) share this much smaller
+ * allowance, apart from the one above. A forger choosing a new random account for every token uses
+ * up only this, never the checks real desks need.
+ */
+export const REMOTE_CHECKS_UNKNOWN_TOTAL = 30;
+/**
+ * How long the list of accounts holding a role here is reused. At most one database read per
+ * period, however many tokens arrive, and a new grant is recognised within this time.
+ */
+export const ROLE_HOLDERS_REFRESH_MS = 30_000;
+/** After a failed read, the next one is tried this soon, so a brief outage does not hold real desks back. */
+export const ROLE_HOLDERS_RETRY_MS = 5_000;
 const LIMIT_WINDOW_MS = 60_000;
 const LIMIT_ADDRESSES_MAX = 10_000;
 
@@ -73,9 +86,11 @@ function validTokenTimes(claims, at) {
  * signature against Supabase's published keys (cached). A signed token naming a key that is not in
  * the current list is refused here. Every other token without a usable published key (a legacy
  * shared-secret token, no key ID, an unsupported or unreadable key, or the key list cannot be read)
- * is sent to /auth/v1/user, behind per-address and total limits. Malformed, expired, not-yet-valid
- * and wrong-issuer tokens never reach Supabase. A token verified locally stays
- * valid until it expires
+ * is sent to /auth/v1/user, behind per-address and total limits. Before that call the account is
+ * checked against the cached role holders (`roleHolders`) and the bootstrap list: an account with no
+ * role here draws on its own small allowance, so made-up accounts cannot crowd out real desks.
+ * Malformed, expired, not-yet-valid and wrong-issuer tokens never reach Supabase. A token verified
+ * locally stays valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
  */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
@@ -84,6 +99,9 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   const fetch = dependencies.fetch ?? globalThis.fetch;
   const now = dependencies.now ?? Date.now;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
+  const coordinatorIds = new Set(config.coordinatorIds ?? []);
+  /** The accounts outside the bootstrap list that hold a role here. A failed read keeps the last list. */
+  const loadRoleHolders = dependencies.roleHolders ?? (async () => []);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
 
   /** One bounded GET to the approved project. Covers the body read too, not just the headers. */
@@ -181,20 +199,74 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
-  const limits = { windowStart: -Infinity, total: 0, addresses: new Map() };
-  function allowRemoteCheck(address) {
-    const at = now();
-    if (at - limits.windowStart >= LIMIT_WINDOW_MS) {
-      limits.windowStart = at;
-      limits.total = 0;
-      limits.addresses.clear();
+  const holders = { ids: new Set(), nextReadAt: -Infinity, pending: null, startedAt: -Infinity };
+  /** Start a read. Only the latest read may change the list, so an abandoned one that ends late is ignored. */
+  function startRead() {
+    /** @type {Promise<void>} */
+    const read = Promise.resolve()
+      .then(() => loadRoleHolders())
+      .then(
+        (ids) => {
+          if (holders.pending !== read) return;
+          holders.ids = new Set(Array.isArray(ids) ? ids : []);
+          holders.nextReadAt = now() + ROLE_HOLDERS_REFRESH_MS;
+        },
+        () => {
+          if (holders.pending === read) holders.nextReadAt = now() + ROLE_HOLDERS_RETRY_MS;
+        },
+      )
+      .finally(() => {
+        if (holders.pending === read) holders.pending = null;
+      });
+    holders.pending = read;
+    holders.startedAt = now();
+  }
+  /**
+   * Read the role holders at most once per refresh period, shared by every request waiting on it.
+   * A request waits no longer than the verifier's deadline, then uses the last list it has. A read
+   * still running after a whole refresh period is abandoned and a new one started.
+   */
+  async function holdsRole(subject) {
+    if (coordinatorIds.has(subject)) return true;
+    const stalled = holders.pending !== null && now() - holders.startedAt >= ROLE_HOLDERS_REFRESH_MS;
+    if ((holders.pending === null && now() >= holders.nextReadAt) || stalled) startRead();
+    if (holders.pending) {
+      let timer;
+      await Promise.race([holders.pending, new Promise((resolve) => (timer = setTimeout(resolve, timeoutMs)))]);
+      clearTimeout(timer);
     }
-    const key = limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+    return holders.ids.has(subject);
+  }
+  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map() };
+  function startWindow() {
+    const at = now();
+    if (at - limits.windowStart < LIMIT_WINDOW_MS) return;
+    limits.windowStart = at;
+    limits.total = 0;
+    limits.unknown = 0;
+    limits.addresses.clear();
+  }
+  function addressKey(address) {
+    return limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+  }
+  /**
+   * Charged before the account lookup, refused or not, so every lookup counts against the address
+   * and an address over its limit costs no database read.
+   */
+  function chargeAddress(address) {
+    startWindow();
+    const key = addressKey(address);
     const used = limits.addresses.get(key) ?? 0;
-    // A claimed subject is unverified: never let one source spend another source's account budget.
-    if (used >= REMOTE_CHECKS_PER_ADDRESS || limits.total >= REMOTE_CHECKS_TOTAL) return false;
+    if (used >= REMOTE_CHECKS_PER_ADDRESS) return false;
     limits.addresses.set(key, used + 1);
-    limits.total += 1;
+    return true;
+  }
+  /** A claimed subject is unverified, so it picks the pool but never has a budget of its own to spend. */
+  function allowRemoteCheck(known) {
+    startWindow();
+    if (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL) return false;
+    if (known) limits.total += 1;
+    else limits.unknown += 1;
     return true;
   }
 
@@ -260,7 +332,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const known = confirmed.get(tokenKey);
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
-    if (!allowRemoteCheck(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(await holdsRole(subject))) throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);

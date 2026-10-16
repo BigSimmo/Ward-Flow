@@ -337,7 +337,7 @@ declaration sites), and four primitives each in its own module — `ward-panel`,
 chip + kind chip), `ward-figure`, `ward-shared` (seven hoisted classes). Plus two gates:
 `ward-primitives-shared.test.ts` and `ward-design-language-contract.test.ts`.
 
-**The ten approved prototypes are committed** at `docs/ward-flow/design/prototypes/` with a README.
+**The ten approved prototypes are committed** at `design/prototypes/` with a README.
 They had been living in a session temp directory. **The shared design-language block is 14,025
 characters, byte-identical across all ten**, sha256 prefix `ffea7bce424f5346`.
 
@@ -400,7 +400,7 @@ trusting a merge message: `3f126a357`, `c067535bb`, `9a1bd4efb`, `668833ecb`, `f
 
 **Landed:** the community team page states when a team name is spelled more than one way in
 the S2015 source and refuses to merge the spellings; four statistics prototypes
-(`docs/ward-flow/design/prototypes/mockup-statistics-{overview,ward,ed,cmht}-v1.html`) on one
+(`design/prototypes/mockup-statistics-{overview,ward,ed,cmht}-v1.html`) on one
 shared style block; viewport/charset meta across 19 prototype files; three files that silently
 dropped a CSS rule (missing opening `/*`); and the owner's ruling that all four Inner City
 spellings are one service, recorded as a signed table in
