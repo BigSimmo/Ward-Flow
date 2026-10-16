@@ -4509,9 +4509,9 @@ export function reduceClinicalEvent(
           `CLEAR_STAY_DISCHARGE_BLOCKER reason must be chosen from DISCHARGE_DELAY_CLEAR_REASONS`,
         );
       }
-      // No default: when the event names no reason, none is recorded, so a clinical reason nobody
-      // gave is never written into the history.
+      // No default: an omitted reason stays omitted rather than becoming a clinical reason.
       const clearedReason = event.reason as DischargeDelayClearReason | undefined;
+      const reasonPatch = clearedReason === undefined ? {} : { reason: clearedReason };
       const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
       const linkedRelease = next.bedReleases.find(
         (candidate) =>
@@ -4529,12 +4529,7 @@ export function reduceClinicalEvent(
         lastClearedBlockReason: clearedReason,
         clearedBlockHistory: [
           ...(linkedRelease.clearedBlockHistory ?? []),
-          {
-            at: event.now,
-            by: event.role,
-            ...(clearedReason === undefined ? {} : { reason: clearedReason }),
-            blocker: admission.blockReason,
-          },
+          { at: event.now, by: event.role, ...reasonPatch, blocker: admission.blockReason },
         ],
       });
     }
@@ -4828,9 +4823,9 @@ export function reduceClinicalEvent(
       if (event.reason !== undefined && !DISCHARGE_DELAY_CLEAR_REASONS.includes(event.reason)) {
         return reject(state, event, `CLEAR_BED_RELEASE_BLOCK reason must be chosen from DISCHARGE_DELAY_CLEAR_REASONS`);
       }
-      // No default: when the event names no reason, none is recorded, so a clinical reason nobody
-      // gave is never written into the history.
+      // No default: an omitted reason stays omitted rather than becoming a clinical reason.
       const clearedReason = event.reason as DischargeDelayClearReason | undefined;
+      const reasonPatch = clearedReason === undefined ? {} : { reason: clearedReason };
       const unblocked: BedRelease = {
         ...release,
         blocker: null,
@@ -4839,12 +4834,7 @@ export function reduceClinicalEvent(
         lastClearedBlockReason: clearedReason,
         clearedBlockHistory: [
           ...(release.clearedBlockHistory ?? []),
-          {
-            at: event.now,
-            by: event.role,
-            ...(clearedReason === undefined ? {} : { reason: clearedReason }),
-            blocker: release.blocker,
-          },
+          { at: event.now, by: event.role, ...reasonPatch, blocker: release.blocker },
         ],
       };
       decision.outcome = "accepted";
@@ -5552,8 +5542,7 @@ export function reduceClinicalEvent(
           state: "accepted",
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
-          // A re-acceptance after a decline must not carry the old refusal reason onto the acceptance.
-          declineReason: undefined,
+          declineReason: undefined, // a re-acceptance after a decline drops the old refusal reason
           ...historyPatch,
           ...latestNotePatch,
         };
