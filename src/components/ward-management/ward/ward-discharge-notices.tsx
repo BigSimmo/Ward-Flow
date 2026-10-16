@@ -54,7 +54,12 @@ export function WardDischargeNotices({
           {SUPPORT_SERVICE_TYPES.map((service) => (
             <li key={service} className={styles.row}>
               <span className={styles.service}>{SERVICE_LABELS[service]}</span>
-              <Button variant="sec" size="sm" disabled aria-describedby={`${baseId}-ward-discharge-notice-${service}`}>
+              <Button
+                variant="sec"
+                size="sm"
+                aria-disabled="true"
+                aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
+              >
                 Send notice
               </Button>
               <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>

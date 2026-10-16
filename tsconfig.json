@@ -31,6 +31,9 @@
     "scratch/**",
     "worktrees/**",
     "tmp/**",
+    "**/.worktrees/**",
+    "**/.claude/**",
+    "**/.next-playwright/**",
     "scripts/archive/**",
     "docs/**" // frozen evidence artifacts here intentionally reference removed/renamed symbols
   ]

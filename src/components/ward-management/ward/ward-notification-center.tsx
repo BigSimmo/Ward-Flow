@@ -16,6 +16,7 @@ import {
 } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
+import { buzzKeys } from "./ward-buzz-keys";
 import styles from "./ward-notification-center.module.css";
 
 export interface WardNotificationCenterProps {
@@ -54,10 +55,6 @@ const TABS: TabDefinition[] = [
   { id: "urgent", label: "Urgent" },
   { id: "notices", label: "Notices" },
 ];
-
-import { buildBuzzKey } from "./ward-home-tab";
-
-export { buildBuzzKey };
 
 /* Walkthrough code-read, 25 Sept 2026: this called the resolver with movements only, so every
    patient — linked or not — came back "Unknown Patient". Inside the provider it now uses the
@@ -141,12 +138,10 @@ export function WardNotificationCenter({
   };
 
   // 1. Coordinator Buzzes matching unitId
-  const matchingBuzzes = useMemo(() => {
-    const counts = new Map<string, number>();
-    return refreshRequests
-      .map((buzz) => ({ buzz, buzzKey: buildBuzzKey(buzz, counts) }))
-      .filter(({ buzz }) => buzz.unitId === unitId);
-  }, [refreshRequests, unitId]);
+  const keys = buzzKeys(refreshRequests);
+  const matchingBuzzes = refreshRequests
+    .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
+    .filter(({ buzz }) => buzz.unitId === unitId);
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
 

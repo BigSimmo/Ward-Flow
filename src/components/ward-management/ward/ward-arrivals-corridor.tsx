@@ -48,9 +48,15 @@ function wardSafeRejectionReason(reason: string): string {
   return reason;
 }
 
-import { pullBlockedReason } from "./ward-home-tab";
-
-export { pullBlockedReason };
+export function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
+  if (movement.acceptedUnitId !== unit.id) {
+    return `${who ?? "This patient"} was accepted at a different unit, not ${unit.name}.`;
+  }
+  if (unit.allocatable.value <= 0) {
+    return `No allocatable bed remains at ${unit.name}.`;
+  }
+  return undefined;
+}
 
 interface WardArrivalsCorridorProps {
   unit: Unit;

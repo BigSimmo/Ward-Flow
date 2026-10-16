@@ -7,7 +7,7 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { cx } from "@/components/wf";
+import { cx, type WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -170,9 +170,19 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
 
-import { bedGlyphTone } from "./ward-home-tab";
-
-export { bedGlyphTone };
+export function bedGlyphTone(bed: BedItem): WfTone | null {
+  if (bed.isClosed) return "neutral";
+  if (bed.status === "vacant") return bed.preparing ? "warning" : "success";
+  if (bed.status === "reserved") return "info";
+  if (bed.isPulled) return "danger";
+  if (bed.pastDate) return "danger";
+  if (bed.isHdu) return "danger";
+  if (bed.isSpecialling) return "warning";
+  if (bed.status === "leave") return "info";
+  if (bed.dischargeConfirmed) return "success";
+  if (bed.blockReason) return "warning";
+  return "neutral";
+}
 
 interface WardBedCardProps {
   bed: BedItem;
