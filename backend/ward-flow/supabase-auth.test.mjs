@@ -4,7 +4,11 @@ import { test } from "node:test";
 import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { clientAddress, createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
-import { REMOTE_CHECKS_PER_ADDRESS, createSupabaseAuthenticator } from "./supabase-auth.mjs";
+import {
+  REMOTE_CHECKS_PER_ADDRESS,
+  REMOTE_CHECKS_UNKNOWN_TOTAL,
+  createSupabaseAuthenticator,
+} from "./supabase-auth.mjs";
 
 const coordinator = randomUUID();
 const config = {
@@ -231,6 +235,72 @@ test("one coordinator's checks cannot use up the allowance for the others", asyn
     VerifierRateLimitedError,
   );
   assert.equal(await verify(legacy(claims({ sub: other })), { clientAddress: "203.0.113.50" }), other);
+});
+
+test("made-up accounts share one small allowance, so they never use up the checks real desks need", async () => {
+  const nurse = randomUUID();
+  const lookups = [];
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    knownSubject: async (subject) => {
+      lookups.push(subject);
+      return subject === nurse;
+    },
+    fetch: async (url, init) => {
+      calls.push(url);
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      return Response.json({ id: JSON.parse(Buffer.from(token, "base64url").toString()).sub });
+    },
+  });
+  // Each forged token names a new account from a new address, so neither per-account nor
+  // per-address limits apply. Only the allowance for accounts with no role does.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` });
+  await assert.rejects(
+    verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.70" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(calls.length, REMOTE_CHECKS_UNKNOWN_TOTAL);
+  // A bootstrap coordinator and an account with a role still get through.
+  assert.equal(await verify(legacy(), { clientAddress: "203.0.113.71" }), coordinator);
+  assert.equal(await verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.72" }), nurse);
+  assert.equal(lookups.length, REMOTE_CHECKS_UNKNOWN_TOTAL + 2);
+});
+
+test("the account lookup is skipped for an address over its limit, and a failed lookup counts as no role", async () => {
+  const nurse = randomUUID();
+  let lookups = 0;
+  const verify = createSupabaseAuthenticator(config, {
+    knownSubject: async () => {
+      lookups += 1;
+      throw new Error("database unavailable");
+    },
+    fetch: async () => Response.json({ id: nurse }),
+  });
+  for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS; index += 1)
+    await verify(legacy(claims({ sub: nurse, jti: String(index) })), { clientAddress: "203.0.113.80" });
+  assert.equal(lookups, REMOTE_CHECKS_PER_ADDRESS);
+  await assert.rejects(
+    verify(legacy(claims({ sub: nurse, jti: "over" })), { clientAddress: "203.0.113.80" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(lookups, REMOTE_CHECKS_PER_ADDRESS);
+  // Every lookup failed, so those checks came from the no-role allowance, which is now spent.
+  await assert.rejects(
+    verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.81" }),
+    VerifierRateLimitedError,
+  );
+});
+
+test("without a lookup, only the bootstrap coordinator list counts as having a role", async () => {
+  const { verify } = setup({ user: { id: coordinator } });
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `192.0.2.${index}` }).catch(() => {});
+  await assert.rejects(
+    verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "192.0.2.200" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(await verify(legacy(), { clientAddress: "192.0.2.201" }), coordinator);
 });
 
 test("requests arriving together share one read of the published keys", async () => {

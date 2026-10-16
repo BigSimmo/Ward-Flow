@@ -22,6 +22,12 @@ const CONFIRMED_MAX = 1_000;
  */
 export const REMOTE_CHECKS_PER_ADDRESS = 30;
 export const REMOTE_CHECKS_TOTAL = 300;
+/**
+ * Accounts with no role here (no membership and not a bootstrap coordinator) share this much smaller
+ * allowance, apart from the one above. A forger choosing a new random account for every token uses
+ * up only this, never the checks real desks need.
+ */
+export const REMOTE_CHECKS_UNKNOWN_TOTAL = 30;
 const LIMIT_WINDOW_MS = 60_000;
 const LIMIT_ADDRESSES_MAX = 10_000;
 
@@ -63,8 +69,10 @@ function decodeJwt(token) {
  * signature against Supabase's published keys (cached). A signed token naming a key that is not in
  * the current list is refused here. Every other token without a usable published key (a legacy
  * shared-secret token, no key ID, an unsupported or unreadable key, or the key list cannot be read)
- * is sent to /auth/v1/user, behind per-address, per-account and total limits. Junk tokens never
- * reach Supabase. A token verified locally stays valid until it expires
+ * is sent to /auth/v1/user, behind per-address, per-account and total limits. Before that call the
+ * account is looked up (`knownSubject`, a membership or the bootstrap list): an account with no role
+ * here draws on its own small allowance, so made-up accounts cannot crowd out real desks. Junk tokens
+ * never reach Supabase. A token verified locally stays valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
  */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
@@ -73,6 +81,9 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   const fetch = dependencies.fetch ?? globalThis.fetch;
   const now = dependencies.now ?? Date.now;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
+  const coordinatorIds = new Set(config.coordinatorIds ?? []);
+  /** Whether an account outside the bootstrap list holds a role here. A failed lookup counts as no role. */
+  const knownSubject = dependencies.knownSubject ?? (async () => false);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
 
   /** One bounded GET to the approved project. Covers the body read too, not just the headers. */
@@ -170,28 +181,40 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
-  const limits = { windowStart: -Infinity, total: 0, addresses: new Map(), subjects: new Map() };
-  function allowRemoteCheck(address, subject) {
+  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map(), subjects: new Map() };
+  function startWindow() {
     const at = now();
-    if (at - limits.windowStart >= LIMIT_WINDOW_MS) {
-      limits.windowStart = at;
-      limits.total = 0;
-      limits.addresses.clear();
-      limits.subjects.clear();
-    }
-    const key = limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+    if (at - limits.windowStart < LIMIT_WINDOW_MS) return;
+    limits.windowStart = at;
+    limits.total = 0;
+    limits.unknown = 0;
+    limits.addresses.clear();
+    limits.subjects.clear();
+  }
+  function addressKey(address) {
+    return limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+  }
+  /** Checked before the account lookup, so an address over its limit costs no database read. */
+  function addressSpent(address) {
+    startWindow();
+    return (limits.addresses.get(addressKey(address)) ?? 0) >= REMOTE_CHECKS_PER_ADDRESS;
+  }
+  function allowRemoteCheck(address, subject, known) {
+    startWindow();
+    const key = addressKey(address);
     const used = limits.addresses.get(key) ?? 0;
     const subjectUsed = limits.subjects.get(subject) ?? 0;
     // Keep one account's forged tokens from consuming the shared allowance for others.
     if (
       used >= REMOTE_CHECKS_PER_ADDRESS ||
       subjectUsed >= REMOTE_CHECKS_PER_ADDRESS ||
-      limits.total >= REMOTE_CHECKS_TOTAL
+      (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL)
     )
       return false;
     limits.addresses.set(key, used + 1);
     limits.subjects.set(subject, subjectUsed + 1);
-    limits.total += 1;
+    if (known) limits.total += 1;
+    else limits.unknown += 1;
     return true;
   }
 
@@ -263,7 +286,15 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const known = confirmed.get(tokenKey);
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
-    if (!allowRemoteCheck(clientAddress, subject)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (addressSpent(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    const hasRole =
+      coordinatorIds.has(subject) ||
+      (await Promise.resolve()
+        .then(() => knownSubject(subject))
+        .then((value) => value === true)
+        .catch(() => false));
+    if (!allowRemoteCheck(clientAddress, subject, hasRole))
+      throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);

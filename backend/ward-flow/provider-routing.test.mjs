@@ -238,3 +238,24 @@ test("shared HTTP authorisation and verifier outages never reach the store", asy
   }
   assert.equal(reads, 0);
 });
+
+test("the sign-in check asks the shared workspace whether an account holds a role", async () => {
+  const config = readConfig(environment("postgres", "supabase"));
+  const nurse = randomUUID();
+  let knownSubject;
+  await createBackend(config, {
+    database: {
+      postgres: async () => ({ createPool: async () => ({ end: async () => {} }), verifyPool: async () => {} }),
+    },
+    auth: {
+      supabase: async () => async (_config, dependencies) => {
+        knownSubject = dependencies.knownSubject;
+        return async () => config.coordinatorIds[0];
+      },
+    },
+    engine: async () => ({}),
+    workspace: async () => ({ createWorkspaceStore: () => ({ hasRole: async (subject) => subject === nurse }) }),
+  });
+  assert.equal(await knownSubject(nurse), true);
+  assert.equal(await knownSubject(randomUUID()), false);
+});
