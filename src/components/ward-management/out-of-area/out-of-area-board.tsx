@@ -407,12 +407,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (!existing || existing.receivingWardAgreed) return;
     const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
     const agreedNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
-    dispatch({
-      type: "UNDO_REPATRIATION",
-      role: "coordinator",
-      now: existing.at,
-      admissionId,
-    });
     runStep(
       {
         type: "RECORD_REPATRIATION",
