@@ -10,7 +10,10 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
+import {
+  isValidStoredWardFlowState,
+  withInboxStreamADefaults,
+} from "../src/components/ward-management/ward-flow-storage-validation";
 import { REFERRAL_DECLINE_REASONS, type Referral } from "../src/components/ward-management/ward-model";
 import { patientAddedOnDayOf } from "../src/components/ward-management/ward-patients";
 import { referralState } from "../src/components/ward-management/ward-referrals";
@@ -421,6 +424,16 @@ describe("governance: synthetic seed entries and UNDO_AUDIT_REVIEW", () => {
     );
     for (const scenario of ["scarce", "emhs-demo", "emhs-surge"] as const)
       expect(governanceAuditEvents(seedWardFlowState(scenario)).length).toBeGreaterThan(0);
+  });
+
+  it("keeps a review saved under a seeded entry's old fixed id on restore", () => {
+    const reviewed = wardFlowReducer(seedWardFlowState(), review(REFERRAL_ENTRY));
+    const saved = {
+      ...reviewed,
+      auditReviews: reviewed.auditReviews.map((row) => ({ ...row, eventId: "audit-seed-referral-override" })),
+    };
+    expect(isValidStoredWardFlowState(stored(saved))).toBe(true);
+    expect(withInboxStreamADefaults(saved).auditReviews.map((row) => row.eventId)).toEqual([REFERRAL_ENTRY]);
   });
 
   it("reviews a synthetic entry, and Undo takes the review back exactly", () => {

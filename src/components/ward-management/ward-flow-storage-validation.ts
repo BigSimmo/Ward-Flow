@@ -827,12 +827,36 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
 }
 
 /**
- * A validated stored state with the stream A inbox records filled in when the save predates them.
+ * A validated stored state with the stream A inbox records filled in when the save predates them,
+ * and reviews of seeded governance entries moved to ids that name their subject.
  * Call after `isValidStoredWardFlowState` on every restore path.
  */
 export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
   const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
-  return { ...state, inboxOwnership: stored.inboxOwnership ?? {}, inboxSnoozes: stored.inboxSnoozes ?? {} };
+  return withSeededReviewIds({
+    ...state,
+    inboxOwnership: stored.inboxOwnership ?? {},
+    inboxSnoozes: stored.inboxSnoozes ?? {},
+  });
+}
+
+/**
+ * Seeded entries once had fixed ids (`audit-seed-legal-status`). They were derived from the first
+ * records of this same state, so a review saved under one moves to the entry's current id
+ * (`audit-seed-legal-status:<movement id>`) and stays shown as reviewed.
+ */
+function withSeededReviewIds<T extends WardFlowState>(state: T): T {
+  const legacy = (eventId: string) => /^audit-seed-[a-z-]+$/.test(eventId);
+  if (!state.auditReviews.some((review) => legacy(review.eventId))) return state;
+  const seeded = syntheticGovernanceAuditEvents(state);
+  return {
+    ...state,
+    auditReviews: state.auditReviews.map((review) => {
+      if (!legacy(review.eventId)) return review;
+      const entry = seeded.find((candidate) => candidate.id.startsWith(`${review.eventId}:`));
+      return entry ? { ...review, eventId: entry.id } : review;
+    }),
+  };
 }
 
 /**
