@@ -547,7 +547,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       const teamKey = communityTeamKey(scope.kind === "team" ? scope.teamName : undefined);
       const ownTeam = (name: string | undefined) => teamKey !== "" && communityTeamKey(name) === teamKey;
       referrals = workspace.referrals.flatMap((referral) => {
-        if (ownTeam(referral.sendingTeamName)) return [referral];
+        // Only a community referral is the team's own: another source's typed team name grants nothing.
+        if (referral.source === "community" && ownTeam(referral.sendingTeamName)) return [referral];
         const trimmed = trimReferral(
           referral,
           (addressing) => addressing.destination.kind === "community_team" && ownTeam(addressing.destination.teamName),

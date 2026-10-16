@@ -20,6 +20,7 @@ import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
   scopeBroadcastAlerts,
@@ -330,18 +331,13 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         saveScenarioFile: wholeNetwork ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
-        supportNotifications:
-          coordinator || access.role === "ward"
-            ? (context.supportNotifications ?? []).filter((record) =>
-                record.occasion === "discharge"
-                  ? admissionIds.has(record.subjectId) && !scoped.datesOnlyAdmissionIds.has(record.subjectId)
-                  : scoped.movements.some(
-                      (movement) =>
-                        movement.id === record.subjectId &&
-                        (typeof movement.acceptedUnitId === "string" ? unitIn(movement.acceptedUnitId) : coordinator),
-                    ),
-              )
-            : [],
+        supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
+          coordinator,
+          unitIn,
+          role: access.role,
+          movements: scoped.movements,
+          wholeStay: (admissionId) => admissionIds.has(admissionId) && !scoped.datesOnlyAdmissionIds.has(admissionId),
+        }),
         wardReferralInbox: (unitId: string) => (unitIn(unitId) ? context.wardReferralInbox(unitId) : []),
         resolvePatientIdentity: (subject) => resolveSubjectPatient(subject, resolveIndex),
       },

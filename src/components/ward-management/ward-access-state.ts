@@ -104,9 +104,32 @@ function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boo
  * An admission or transfer notification belongs to the ward the person arrived on. A sending ward
  * still sees its outbound move, but never the receiving ward's notes about it (review on PR #365).
  */
-function notifiesOnArrival(context: Context, movement: { acceptedUnitId?: string | null }): boolean {
+function notifiesOnArrival(
+  context: Pick<Context, "coordinator" | "unitIn">,
+  movement: { acceptedUnitId?: string | null },
+): boolean {
   // A service coordinator sees notes only from wards in its own service, as a ward desk does.
   return typeof movement.acceptedUnitId === "string" ? context.unitIn(movement.acceptedUnitId) : context.coordinator;
+}
+
+/**
+ * The support notifications one desk sees: a discharge note only for a stay it is sent in full, an
+ * arrival note only from a ward it covers. The scoped state and the browser shell share this rule.
+ */
+export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string }>(
+  records: readonly R[] | undefined,
+  desk: Pick<Context, "coordinator" | "unitIn"> & {
+    readonly role: WardAccess["role"];
+    readonly movements: readonly { id: string; acceptedUnitId?: string | null }[];
+    readonly wholeStay: (admissionId: string) => boolean;
+  },
+): R[] {
+  if (!desk.coordinator && desk.role !== "ward") return [];
+  return (records ?? []).filter((record) =>
+    record.occasion === "discharge"
+      ? desk.wholeStay(record.subjectId)
+      : desk.movements.some((movement) => movement.id === record.subjectId && notifiesOnArrival(desk, movement)),
+  );
 }
 
 /** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
@@ -186,15 +209,13 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   plannedAdmissions: (context) =>
     context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
   supportNotifications: (context) =>
-    context.coordinator || context.access.role === "ward"
-      ? (context.state.supportNotifications ?? []).filter((record) =>
-          record.occasion === "discharge"
-            ? wholeStay(context, record.subjectId)
-            : context.scoped.movements.some(
-                (movement) => movement.id === record.subjectId && notifiesOnArrival(context, movement),
-              ),
-        )
-      : [],
+    supportNotificationsForDesk(context.state.supportNotifications, {
+      coordinator: context.coordinator,
+      unitIn: context.unitIn,
+      role: context.access.role,
+      movements: context.scoped.movements,
+      wholeStay: (admissionId) => wholeStay(context, admissionId),
+    }),
   // Whole before and after records: the statewide desk's only.
   undoRecords: () => [],
 };

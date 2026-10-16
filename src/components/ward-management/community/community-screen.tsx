@@ -6,6 +6,7 @@ import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
 import { useIsPhone, useOptionalToast } from "@/components/wf";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionBelongsToTeam,
@@ -480,7 +481,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "/" || e.key === "[") {
-        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+        // An open sheet or dialog keeps the keys: the shortcut must not reach the page behind it.
+        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || hasOpenSheet()) return;
         const target = e.target;
         const inEditable =
           target instanceof HTMLElement &&

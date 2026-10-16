@@ -286,7 +286,7 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 ## §7.80 — Post-#316 Estate Reconciliation & 15 October Part 1 Remediations (15–16 October 2026)
 
-### 1. Merged PRs Since §7.79 (#286–#316, through PR #316 `53941021`)
+### 1. Merged PRs Since §7.79 (#286–#316, through PR #316 `9e1e2ff4`)
 
 - **PR #287 (`b8fd53d1`)**: Automated documentation maintenance pipeline (`npm run docs:maintain`) and `manifest.ts` `background_color` (`R7`).
 - **PR #289 (`7debf591`) & PR #295 (`ef302b7e`)**: Cut `backend/ward-flow/` default primary store over to Supabase (`D-55`) and removed retired Azure runtime code.
