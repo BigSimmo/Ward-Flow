@@ -538,7 +538,8 @@ const REFERRAL_BOARD_HREF = WARD_NAV.find((item) => item.id === "referrals")?.hr
 function focusAlertsQueue(openCount: number) {
   const focusQueue = () => {
     const target =
-      document.querySelector<HTMLElement>('[data-alert-id] [data-testid="ward-alerts-open"]') ??
+      // A snoozed row is not outstanding work, so focus lands on the first active row.
+      document.querySelector<HTMLElement>('[data-alert-id]:not([data-snoozed]) [data-testid="ward-alerts-open"]') ??
       document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
     if (target) {
       if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");

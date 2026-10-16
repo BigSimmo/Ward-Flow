@@ -1057,6 +1057,12 @@ export function WardPhoneMenu({
   const oneAlertsQueue =
     flagOn("alerts-one-queue") && accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
+  // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
+  const menuGroups = oneAlertsQueue
+    ? groups
+        .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
+        .filter((group) => group.entries.length > 0)
+    : groups;
 
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
@@ -1120,7 +1126,7 @@ export function WardPhoneMenu({
           query={query}
           entries={entries}
           needs={needs}
-          groups={groups}
+          groups={menuGroups}
           pageRow={pageRow}
           onResult={(item) => {
             announceToWardShell(`${item.title}.`);

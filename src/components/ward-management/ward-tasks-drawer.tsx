@@ -1232,7 +1232,7 @@ export function WardTasksDrawer({
           <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
             ·
           </span>
-          {words === ALERTS_WORDS ? null : (
+          {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
             <>
               <Link
                 href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}

@@ -24,6 +24,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -129,6 +130,13 @@ describe("the phone dock with one Alerts queue", () => {
     expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAttribute("aria-current", "page");
   });
 
+  it("lists Alerts once in the menu, as the dock tab, not again in its group", () => {
+    renderDock();
+    act(() => openWardMenu(null));
+    const railHrefs = screen.getAllByTestId("ward-rail-link").map((link) => link.getAttribute("href"));
+    expect(railHrefs).not.toContain(WARD_ALERTS_HREF);
+  });
+
   it("keeps the Tasks drawer button for a role that may not open the Alerts screen", () => {
     asExecutive();
     renderDock();
@@ -183,6 +191,7 @@ describe("the bar's Alerts button", () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
     const drawer = await screen.findByRole("complementary", { name: "Tasks" });
     expect(within(drawer).queryByTestId("ward-tasks-open-alerts")).toBeNull();
+    expect(within(drawer).queryByTestId("ward-tasks-jump-alerts")).toBeNull();
   });
 
   it("chooses the Now tab before focusing the queue when another Alerts view is showing", async () => {
