@@ -617,7 +617,7 @@
 
 .stepDone::before,
 .stepCurrent::before {
-  background: var(--wf-accent) !important;
+  background: var(--wf-accent);
 }
 
 .stepDot {

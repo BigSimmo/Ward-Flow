@@ -1152,10 +1152,8 @@ export function MovementWorkspaceCockpit({
                   </div>
                 ) : null}
                 <details>
-                  <summary className={styles.actionSay} style={{ cursor: "pointer", fontWeight: 600 }}>
-                    Timeline coverage
-                  </summary>
-                  <p className={styles.actionSay} style={{ marginTop: "4px" }}>
+                  <summary className={`${styles.actionSay} ${styles.coverageSummary}`}>Timeline coverage</summary>
+                  <p className={`${styles.actionSay} ${styles.coverageNote}`}>
                     Events with recorded times appear above. Events without a recorded time are listed separately.
                   </p>
                 </details>

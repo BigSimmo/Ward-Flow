@@ -2647,11 +2647,11 @@
   }
 
   .regionGrid[data-diagram-expansion="cover-shortlist"] {
-    grid-template-columns: 14rem minmax(0, 1fr) !important;
+    grid-template-columns: 14rem minmax(0, 1fr);
   }
 
   .regionGrid[data-diagram-expansion="cover-shortlist"] .shortlistColumn {
-    display: none !important;
+    display: none;
   }
 
   .midCol {
@@ -2784,7 +2784,7 @@
   /* No bottom padding: the Refer bar is sticky to the bottom of this scroller, and padding here
      would hold it above the sheet's edge with rows showing through underneath. */
   .shortlistBody {
-    overflow-y: auto !important;
+    overflow-y: auto;
     overscroll-behavior: contain;
     max-height: calc(85dvh - 3.5rem);
     padding-bottom: 0;
@@ -2863,4 +2863,9 @@
  */
 .body:has(> [data-testid="ward-since-last-look"]) {
   grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.transitOverdueSpaced {
+  margin-top: var(--ward-space-8, 0.5rem);
 }

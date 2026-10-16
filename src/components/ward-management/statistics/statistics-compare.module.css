@@ -246,7 +246,7 @@ table.pinTable {
 
   /* BarList sets its label column inline; on phone the bars need the width. */
   .chart > figure > div {
-    --wf-bar-label: 8.5rem !important;
+    --wf-bar-label: 8.5rem;
   }
 
   .pinSelect {

@@ -461,7 +461,7 @@ export function RecordPreview({
               </div>
               <div className={styles.statItem}>
                 <span className={styles.statItemLabel}>Hospital Wait Time</span>
-                <span className={styles.statItemValue} style={{ fontWeight: 600, color: "var(--ink)" }}>
+                <span className={`${styles.statItemValue} ${styles.statItemValueStrong}`}>
                   {waitTimeHours > 0 ? `${waitTimeHours.toFixed(1)}h` : "None (Not admitted)"}{" "}
                   {isBreaching ? `(waiting ${LONG_WAIT_TEXT})` : ""}
                 </span>
@@ -991,7 +991,7 @@ export function RecordPreview({
             </div>
             <div className={styles.statItem}>
               <span className={styles.statItemLabel}>Hospital Wait Time</span>
-              <span className={styles.statItemValue} style={{ fontWeight: 600, color: "var(--ink)" }}>
+              <span className={`${styles.statItemValue} ${styles.statItemValueStrong}`}>
                 {waitTimeHours > 0 ? `${waitTimeHours.toFixed(1)}h` : "None (Not admitted)"}{" "}
                 {isBreaching ? `(waiting ${LONG_WAIT_TEXT})` : ""}
               </span>

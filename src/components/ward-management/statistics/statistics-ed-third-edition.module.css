@@ -20,7 +20,7 @@
 .pageGrid[data-active-tab="weat"] [data-tab-section]:not([data-tab-section="weat"]):not([data-tab-section="common"]),
 .pageGrid[data-active-tab="comparison"]
   [data-tab-section]:not([data-tab-section="comparison"]):not([data-tab-section="common"]) {
-  display: none !important;
+  display: none;
 }
 
 /* ─── Department Switcher ─── */
@@ -73,7 +73,7 @@
   font-family: var(--mono);
   font-size: var(--t-0);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap !important;
+  white-space: nowrap;
   transition:
     background 0.12s ease,
     color 0.12s ease;
@@ -229,7 +229,7 @@
   background: var(--sunk);
   border: 1px solid var(--line);
   color: var(--ink-soft);
-  white-space: nowrap !important;
+  white-space: nowrap;
   line-height: 1.4;
 }
 
@@ -243,7 +243,7 @@
   background: var(--sunk);
   border: 1px solid var(--line);
   color: var(--ink-soft);
-  white-space: nowrap !important;
+  white-space: nowrap;
 }
 .chip[data-tone="good"] {
   background: var(--good-soft);
@@ -477,7 +477,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .pageGrid > * {
-  grid-area: auto !important;
+  grid-area: auto;
 }
 .pageGrid > nav,
 .pageGrid > :global([data-testid="ward-statistics-ed-identity"]),
@@ -499,14 +499,14 @@
   grid-column: 1 / -1;
 }
 .pageGrid > .departmentSwitcher {
-  grid-column: 1 / -1 !important;
+  grid-column: 1 / -1;
 }
 .pageGrid > :global([data-testid="ward-statistics-ed-wait"]),
 .pageGrid > :global([data-testid="ward-statistics-ed-bands"]) {
-  grid-column: 1 / -1 !important;
+  grid-column: 1 / -1;
 }
 .pageGrid > :global([data-testid="statistics-ed-limits-group"]) {
-  grid-column: 1 / -1 !important;
+  grid-column: 1 / -1;
 }
 
 .bandValue {

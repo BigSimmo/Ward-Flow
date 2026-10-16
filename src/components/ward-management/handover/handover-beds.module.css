@@ -701,3 +701,45 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.ghostLineShort {
+  width: 40%;
+}
+
+.ghostLineLong {
+  width: 70%;
+}
+
+/* Beds table column widths (table-layout: fixed). Ready and Holds share the narrow width. */
+.colWard {
+  width: 200px;
+}
+
+.colBeds {
+  width: 170px;
+}
+
+.colNarrow {
+  width: 70px;
+}
+
+.colIncoming {
+  width: 108px;
+}
+
+.colUpdated {
+  width: 112px;
+}
+
+.colHeld {
+  width: 62px;
+}
+
+.colOutToday {
+  width: 90px;
+}
+
+.colPastEdd {
+  width: 88px;
+}

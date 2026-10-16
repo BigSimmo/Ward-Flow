@@ -62,7 +62,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("cto")}
               >
                 <span>Active CTO (Form 5A)</span>
-                <span className={styles.badgePill} id="chipCtoBadge" style={{ color: "var(--good)" }}>
+                <span className={`${styles.badgePill} ${styles.inkGood}`} id="chipCtoBadge">
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("cto")).length}
                 </span>
               </button>
@@ -89,7 +89,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 </span>
               </button>
             </div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
+            <div className={styles.filterMeta}>
               <span id="caseloadSectorNote">{team.name} / Sector Catchment</span>
             </div>
           </div>
@@ -118,7 +118,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                     <th scope="col">Key Clinician</th>
                     <th scope="col">Last Contact</th>
                     <th scope="col">Next Scheduled Contact / Review</th>
-                    <th scope="col" style={{ textAlign: "right" }}>
+                    <th scope="col" className={styles.cellEnd}>
                       Actions
                     </th>
                   </tr>
@@ -132,7 +132,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                         setSelectedPatientId(row.patientId);
                         setActiveDrawer("pxDrawer");
                       }}
-                      style={{ cursor: "pointer" }}
+                      className={styles.clickable}
                     >
                       <td>
                         <b>{row.umrn}</b>
@@ -147,7 +147,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                       <td>{row.keyClinician}</td>
                       <td>{row.lastContact}</td>
                       <td>{row.nextReview}</td>
-                      <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                      <td className={styles.cellEnd} onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           className={styles.btnSmSec}
@@ -181,13 +181,13 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
               <span id="caseloadHeadBadge" className={styles.badgePill}>
                 {caseloadRows.length} Patients
               </span>
-              <span id="caseloadSectorNote" style={{ display: "none" }}>
+              <span id="caseloadSectorNote" className={styles.displayNone}>
                 {team.name}
               </span>
-              <span id="chipDepotBadge" style={{ display: "none" }}>
+              <span id="chipDepotBadge" className={styles.displayNone}>
                 Depot
               </span>
-              <span id="chipHighAcuityBadge" style={{ display: "none" }}>
+              <span id="chipHighAcuityBadge" className={styles.displayNone}>
                 High Acuity
               </span>
             </h3>

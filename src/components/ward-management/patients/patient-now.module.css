@@ -3201,3 +3201,36 @@
     line-height: 18px;
   }
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.secH.secHFlush {
+  margin: 0;
+}
+
+.etaPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.overdueIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--wf-danger);
+}
+
+.recordedNote {
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+}
+
+.formChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.formChipName {
+  font-weight: 600;
+}

@@ -412,13 +412,13 @@
 }
 
 .compactBay {
-  border-bottom: none !important;
-  padding: 0 !important;
-  margin-bottom: 10px !important;
+  border-bottom: none;
+  padding: 0;
+  margin-bottom: 10px;
 }
 
 .compactBay:last-of-type {
-  margin-bottom: 0 !important;
+  margin-bottom: 0;
 }
 
 .bayHeader {

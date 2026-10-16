@@ -2909,12 +2909,12 @@
   }
 
   .screen[data-referral-view="register"] .registerQueue {
-    min-height: 0 !important;
-    height: 100% !important;
-    max-height: 100% !important;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
-    overflow-y: auto !important;
+    overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -2926,12 +2926,12 @@
   }
 
   .screen[data-referral-view="register"] .registerDetail {
-    min-height: 0 !important;
-    height: 100% !important;
-    max-height: 100% !important;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden !important;
+    overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r1, 10px);
@@ -2983,8 +2983,8 @@
   }
 
   .screen[data-referral-view="register"] .registerDetail[data-has-selection="false"] {
-    height: 100% !important;
-    max-height: 100% !important;
+    height: 100%;
+    max-height: 100%;
     overflow-y: auto;
   }
 
@@ -3328,7 +3328,7 @@
 }
 
 .unifiedTriageBannerZero .triageLargeCount {
-  color: var(--ink-soft) !important;
+  color: var(--ink-soft);
 }
 
 .triageSummaryRow {
@@ -4475,7 +4475,7 @@
 
 /* Answers the base rule's !important: a zero count is quiet ink, not a colour. */
 .screen[data-ward-design="v6"] .unifiedTriageBannerZero .triageLargeCount {
-  color: var(--wf-ink-2) !important;
+  color: var(--wf-ink-2);
 }
 
 .screen[data-ward-design="v6"] .triagePillGroup {
@@ -5552,4 +5552,11 @@
   .cancelBtn {
     min-height: 48px;
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.decidedPatientName {
+  display: block;
+  font-size: 0.82rem;
+  margin-top: 0.2rem;
 }

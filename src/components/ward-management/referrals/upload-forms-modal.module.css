@@ -1,0 +1,70 @@
+/*
+ * src/components/ward-management/referrals/upload-forms-modal.module.css
+ *
+ * Moved from inline styles (styles cleanup, 16 Oct 2026). Only the literal styles with no colour
+ * fallback moved here: the dialog's hex and rgba fallbacks stay inline in the component, because
+ * ward stylesheets may declare no raw colour (tests/ward-raw-colour.test.ts).
+ */
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  min-height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form {
+  padding: 1.5rem;
+}
+
+.field {
+  margin-bottom: 1.25rem;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+
+.dropField {
+  margin-bottom: 1.5rem;
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.fileName {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
