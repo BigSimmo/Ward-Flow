@@ -58,7 +58,9 @@ describe("WARD_FLOW_TEXT_SAFE payload-shape compile-time guard", () => {
     // claim about the TYPE `UnreviewedStringOrUnknownKeys<SyntheticSafeLookingPayload>` resolves
     // to — exactly the one unreviewed key — rather than an assertion against a hard-coded runtime
     // literal that could never fail.
-    expectTypeOf<UnreviewedStringOrUnknownKeys<SyntheticSafeLookingPayload>>().toEqualTypeOf<"suspiciousFreeTextField">();
+    expectTypeOf<
+      UnreviewedStringOrUnknownKeys<SyntheticSafeLookingPayload>
+    >().toEqualTypeOf<"suspiciousFreeTextField">();
 
     // A synthetic payload with ONLY reviewed keys must compile with no error at all — the negative
     // control proving the sentinel above fails because of `suspiciousFreeTextField` specifically,
@@ -82,7 +84,9 @@ describe("WARD_FLOW_TEXT_SAFE payload-shape compile-time guard", () => {
       injectedUnreviewedField: string;
     };
 
-    expectTypeOf<UnreviewedStringOrUnknownKeys<WidenedRealSafeEventPayload>>().toEqualTypeOf<"injectedUnreviewedField">();
+    expectTypeOf<
+      UnreviewedStringOrUnknownKeys<WidenedRealSafeEventPayload>
+    >().toEqualTypeOf<"injectedUnreviewedField">();
 
     // @ts-expect-error — the same violation, expressed as a failed `AssertNever` assignment (the
     // actual mechanism `ward-flow-persistence-classification.ts`'s own real assertions use), so this
@@ -90,7 +94,9 @@ describe("WARD_FLOW_TEXT_SAFE payload-shape compile-time guard", () => {
     // for a widened real event.
     // The @ts-expect-error above is the entire proof; nothing references this alias afterward.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile-time assertion
-    type _RealEventWidenedSentinelMustNotCompile = AssertNever<UnreviewedStringOrUnknownKeys<WidenedRealSafeEventPayload>>;
+    type _RealEventWidenedSentinelMustNotCompile = AssertNever<
+      UnreviewedStringOrUnknownKeys<WidenedRealSafeEventPayload>
+    >;
   });
 
   it("sentinel 3 — importing the REAL assertions by name: deleting them from the source file is a compile error, not a silent gap", () => {

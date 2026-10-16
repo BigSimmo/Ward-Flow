@@ -489,5 +489,8 @@ describe("the no-4A-recorded notice beside the booking control", () => {
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
 function seedPatientName(movementId: string): string {
   const seed = seedWardFlowState();
-  return resolveSubjectPatient(seed.movements.find((movement) => movement.id === movementId), seed).displayName;
+  return resolveSubjectPatient(
+    seed.movements.find((movement) => movement.id === movementId),
+    seed,
+  ).displayName;
 }
