@@ -21,6 +21,7 @@ import { patientAgeYears, type Patient } from "@/components/ward-management/ward
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type DocumentationDraft } from "./referral-flow-panels";
+import { type NotOnSendingWardReason } from "../ward-change-reasons";
 import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
 
 /**
@@ -476,6 +477,7 @@ export type KeptDraft = {
   security: string;
   provisionalDiag: string;
   doctorNote: string;
+  notOnWardReason?: NotOnSendingWardReason | "";
   clinicalSummary: string;
   transport: string;
   transitNote: string;

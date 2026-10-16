@@ -376,7 +376,14 @@ export function useWardReferralDrawerState({
         : defaultPatient.provisionalDiag),
   );
   const [doctorNote, setDoctorNote] = useState(kept?.doctorNote ?? defaultPatient.doctorNote);
-  const [notOnWardReason, setNotOnWardReason] = useState<NotOnSendingWardReason | "">("");
+  const [notOnWardReason, setNotOnWardReason] = useState<NotOnSendingWardReason | "">(kept?.notOnWardReason ?? "");
+  const previousSendingWardId = useRef(sendingWard?.id);
+  useEffect(() => {
+    if (previousSendingWardId.current !== sendingWard?.id) {
+      setNotOnWardReason("");
+      previousSendingWardId.current = sendingWard?.id;
+    }
+  }, [sendingWard?.id]);
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
   const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
@@ -412,6 +419,7 @@ export function useWardReferralDrawerState({
     security,
     provisionalDiag,
     doctorNote,
+    notOnWardReason,
     clinicalSummary,
     transport,
     transitNote,
@@ -742,10 +750,18 @@ export function useWardReferralDrawerState({
         : [];
 
   // A ward refers its own inpatients, the stay the transfer moves (`movementSourceAdmission` in the
-  // reducer). Anyone else warns and asks why (Josh, 16 Oct 2026), then goes as a new admission.
+  // reducer). People with an occupied stay on another ward must be referred from that ward so the
+  // receiving movement can resolve its transfer source; people with no stay can be recorded as new admissions.
   const patientOnSendingWard =
     !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
   const notOnSendingWard = !!sendingWard && !patientOnSendingWard;
+  const occupiedOnAnotherWard =
+    !!sendingWard &&
+    !!patientRecord &&
+    admissions.some(
+      (admission) =>
+        admission.patientId === patientRecord.id && admission.state === "occupied" && admission.unitId !== sendingWard.id,
+    );
   const notOnWardNote =
     sendingWard && notOnSendingWard && notOnWardReason
       ? `Not in a bed on ${sendingWard.name}: ${notOnWardReason}.`
@@ -755,8 +771,11 @@ export function useWardReferralDrawerState({
     if (!patientRecord && unidentified === null)
       return 'Find a registered patient, add a new patient, or choose "Not yet identified".';
     if (!patientRecord && !unidentified?.trim()) return "Describe the unidentified person.";
+    if (occupiedOnAnotherWard)
+      return "This person occupies another ward. Refer them from that ward or complete a recorded transfer.";
     if (sendingWard && notOnSendingWard && !notOnWardReason)
       return `This person is not in a bed on ${sendingWard.name}. Choose why the ward is referring them.`;
+
     if (!effectiveCohort) return "Choose the age band.";
     if (!catchmentConfirmed || !catchmentTeam.trim()) return "Confirm the patient's catchment before continuing.";
     if (!homeRegion) return "Choose the patient's home region.";
@@ -775,6 +794,9 @@ export function useWardReferralDrawerState({
     if (!sendingWard && sourceKind === "community" && !sendingTeam.trim())
       return "Record the referring community service.";
     if (!URGENCY_LEVELS.some((tier) => String(tier) === urgency)) return "Choose the referral urgency.";
+    if (notOnWardReason === "Another reason, given in the referral" && !doctorNote.trim())
+      return "Give the other reason in the referral notes.";
+    if (referralReason.length > 1000) return `Shorten the referral reason to ${1000 - notOnWardNote.length - 1} characters or fewer.`;
     return null;
   }
   const originValid =
@@ -787,7 +809,9 @@ export function useWardReferralDrawerState({
   const needsSendingTeam = !sendingWard && !senderMissing && sourceKind === "community";
   const needed: Record<DrawerSection, number> = {
     patient: [
-      (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && !notOnWardReason),
+      (!patientRecord && !unidentified?.trim()) ||
+      occupiedOnAnotherWard ||
+      (notOnSendingWard && !notOnWardReason),
       !effectiveCohort,
       !catchmentConfirmed || !catchmentTeam.trim(),
       !homeRegion,
