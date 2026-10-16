@@ -50,6 +50,7 @@ import {
 } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import {
@@ -776,6 +777,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // is gated on `shellRole`, not the route — it no longer drops to 0 on ED, team and officer pages.
   // L1 (site review, 12 Oct 2026): the one task list (`taskItems`, `ward-act-now-items.ts`) that
   // Alerts and Home Exceptions read too, so the badge and those lists cannot disagree.
+  // The quick look is the Alerts list for the bed coordinator, so it words a stuck handover as the
+  // Alerts screen does (same rows, tones and counts either way).
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const tasksItems = useMemo(() => {
     if (!wardTasksAreActionableForRole(shellRole)) return [];
     return taskItems(
@@ -790,6 +794,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         supportNotifications,
         plannedAdmissions,
         leaveBeds,
+        stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
       },
       now,
     );
@@ -806,6 +811,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     configuration,
     inboxSnoozes,
     leaveBeds,
+    stuckHandoverOn,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveItems = useMemo(
