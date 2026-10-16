@@ -4,6 +4,7 @@ import { hasOpenSheet, lockPageScroll } from "@/components/wf/sheet-focus";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import {
   Fragment,
@@ -30,10 +31,7 @@ import {
   searchWardFlow,
   type SmartSearchResults,
 } from "@/components/ward-management/search/ward-smart-search";
-import {
-  GlobalSearchPreview,
-  type GlobalSearchPreviewItem,
-} from "@/components/ward-management/search/global-search-preview";
+import type { GlobalSearchPreviewItem } from "@/components/ward-management/search/global-search-preview";
 import { StatusGlyph } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
@@ -79,6 +77,14 @@ import {
 } from "lucide-react";
 
 import styles from "./ward-global-search.module.css";
+import { preloadWhenIdle } from "./preload-when-idle";
+
+// The result preview only draws once a result is highlighted, so its code loads on its own rather
+// than in the shell chunk every Ward Flow page downloads first. It is fetched when the browser is
+// idle after load, so a highlighted result normally finds it already there (phone script budget).
+const loadGlobalSearchPreview = () => import("@/components/ward-management/search/global-search-preview");
+const GlobalSearchPreview = dynamic(() => loadGlobalSearchPreview().then((m) => m.GlobalSearchPreview));
+preloadWhenIdle(loadGlobalSearchPreview);
 
 /**
  * WARD FLOW'S GLOBAL SEARCH — one control, mounted once in the header of every ward route.
