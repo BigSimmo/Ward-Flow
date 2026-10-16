@@ -53,8 +53,10 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
   describe("CSS Architecture & Single-Row Guarantee", () => {
     const css = readFileSync(BAR_CSS_PATH, "utf8");
 
+    // No other rule sets flex-wrap on .bar, so nowrap holds without !important (styles cleanup,
+    // 16 Oct 2026, tests/ward-css-important-ratchet.test.ts).
     it("pins .bar to single-row flex-wrap: nowrap", () => {
-      expect(css).toMatch(/\.bar\s*\{[^}]*flex-wrap:\s*nowrap\s*!important/u);
+      expect(css).toMatch(/\.bar\s*\{[^}]*flex-wrap:\s*nowrap\s*;/u);
       expect(css).not.toMatch(/\.bar\s*\{[^}]*flex-wrap:\s*wrap\b/u);
     });
 

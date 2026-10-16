@@ -425,9 +425,6 @@
   .metrics > div:nth-child(2) {
     border-right: 0;
   }
-  .metrics > div:nth-child(-n + 2) {
-    border-bottom: 1px solid var(--line);
-  }
 }
 @media (max-width: 600px) {
   .deck {
@@ -499,7 +496,7 @@
 .metrics > div {
   padding: 10px 12px;
   gap: 3px;
-  border-bottom: 0 !important;
+  border-bottom: 0;
 }
 .metrics svg {
   width: 16px;
@@ -593,8 +590,9 @@
   .metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* Outranks `.metrics > div { border-bottom: 0 }` by specificity, so only phones get the divider. */
   .metrics > div:nth-child(-n + 2) {
-    border-bottom: 1px solid var(--line) !important;
+    border-bottom: 1px solid var(--line);
   }
   .deck {
     padding: 12px;

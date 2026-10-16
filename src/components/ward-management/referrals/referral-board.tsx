@@ -1939,7 +1939,7 @@ function DecidedSection({
                     </td>
                     <td>
                       <div>{outcomeLabel(referral)}</div>
-                      <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
+                      <span className={styles.decidedPatientName}>
                         <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                       </span>
                     </td>

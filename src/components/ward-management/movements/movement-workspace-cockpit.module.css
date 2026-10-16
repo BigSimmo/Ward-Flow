@@ -965,3 +965,13 @@
     display: none;
   }
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.coverageSummary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.coverageNote {
+  margin-top: 4px;
+}
