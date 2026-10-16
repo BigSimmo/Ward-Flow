@@ -823,6 +823,8 @@ function WardFlowWorld({
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
   const broadcastInstanceIdRef = useRef("");
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
+  // A remote snapshot must not replace edits made locally since the last sync.
+  const localEditsSinceBroadcastRef = useRef(false);
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
@@ -840,6 +842,7 @@ function WardFlowWorld({
       // so a toast pushed straight after this dispatch does not claim the action was saved.
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
+      localEditsSinceBroadcastRef.current = true;
       dispatchContainer(event);
       broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
     },
@@ -973,11 +976,14 @@ function WardFlowWorld({
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
+        if (initialNow !== undefined || messageEvent.data?.type !== "WARD_FLOW_DISPATCH" || !messageEvent.data.payload) {
+          return;
+        }
         if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
           if (messageEvent.data.senderId && messageEvent.data.senderId === instanceId) {
             return;
           }
-          if (!shared.enabled) {
+          if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
             const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
             const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
             const { saved } = tryReadDemoState(dayZero, referenceAbsolute, rawPayload);
@@ -990,6 +996,7 @@ function WardFlowWorld({
               dispatchContainer({
                 type: "ADOPT_SAVED_SESSION",
                 [ADOPT_SESSION]: (current) => {
+                  if (current.typedTextSeen || !current.sessionAdopted) return current;
                   const baseMounted = mountedAtAbsolute ?? saved.savedAtAbsolute;
                   const restoredElapsed =
                     saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + baseMounted - saved.savedAtAbsolute;
@@ -1018,7 +1025,7 @@ function WardFlowWorld({
     } catch {
       return undefined;
     }
-  }, [dayZero, mountedAtAbsolute, shared.enabled]);
+  }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
   // storage fails. Shared mode does not save actions on this device.
