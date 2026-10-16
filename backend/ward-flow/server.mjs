@@ -190,7 +190,7 @@ export async function sweepPush(sharedStore, log = (event) => console.error(JSON
 /**
  * @param {any} server
  * @param {{ end(): Promise<unknown> } | undefined} pool
- * @param {Pick<NodeJS.EventEmitter, "once"> & { exitCode?: number | string | null }} [signals] `process`, or an emitter in tests.
+ * @param {Pick<NodeJS.EventEmitter, "once" | "on"> & { exitCode?: number | string | null; exit?: (code: number) => void }} [signals] `process`, or an emitter in tests.
  */
 export function registerShutdown(server, pool, signals = process) {
   let shutdown;
@@ -218,14 +218,14 @@ export function registerShutdown(server, pool, signals = process) {
     const { errorName, errorCode } = errorFields(error);
     console.error(JSON.stringify({ event: "ward_backend_unhandled_rejection", errorName, errorCode }));
     signals.exitCode = 1;
-    const forceExit = setTimeout(() => signals.exit(1), 5_000);
+    const forceExit = setTimeout(() => signals.exit?.(1), 5_000);
     void close().finally(() => clearTimeout(forceExit));
   });
   signals.on("uncaughtException", (error) => {
     const { errorName, errorCode } = errorFields(error);
     console.error(JSON.stringify({ event: "ward_backend_uncaught_exception", errorName, errorCode }));
     signals.exitCode = 1;
-    const forceExit = setTimeout(() => signals.exit(1), 5_000);
+    const forceExit = setTimeout(() => signals.exit?.(1), 5_000);
     void close().finally(() => clearTimeout(forceExit));
   });
   server.on("error", () => {
