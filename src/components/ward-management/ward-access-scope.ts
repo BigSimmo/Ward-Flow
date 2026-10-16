@@ -610,7 +610,6 @@ export function coordinatorRecordScope(
     movements: readonly { id: string }[];
     referrals: readonly { id: string }[];
     admissions: readonly { id: string }[];
-    patients?: readonly { id: string }[];
   },
   bedReleases: readonly { id: string; unitId: string }[],
   unitIn: (unitId: string) => boolean,
@@ -626,8 +625,8 @@ export function coordinatorRecordScope(
    */
   auditEvents<E extends ScopedAuditEvent>(events: readonly E[]): E[];
   /**
-   * A refusal's subject id: a journey, referral, stay, release, leave bed, person, ward or ED in
-   * scope, or "none".
+   * A refusal's subject id: a journey, referral, stay, release, leave bed, ward or ED in scope, or
+   * "none". A person alone is not enough, because one person can be known to two services.
    */
   rejectionSubject(id: string): boolean;
   /**
@@ -643,7 +642,6 @@ export function coordinatorRecordScope(
   const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
   const releaseIds = new Set(bedReleases.filter((release) => unitIn(release.unitId)).map((release) => release.id));
   const leaveBedIds = new Set(leaveBeds.filter((bed) => unitIn(bed.unitId)).map((bed) => bed.id));
-  const patientIds = new Set((scoped.patients ?? []).map((patient) => patient.id));
   const subject = (record: AuditSubject): boolean => {
     switch (record.kind) {
       case "admission":
@@ -704,7 +702,6 @@ export function coordinatorRecordScope(
     admissionIds.has(id) ||
     releaseIds.has(id) ||
     leaveBedIds.has(id) ||
-    patientIds.has(id) ||
     unitIn(id) ||
     edIn(id);
   const refusals = (events: readonly ScopedAuditEvent[]) => {

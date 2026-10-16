@@ -415,21 +415,14 @@ describe("the scoped workspace", () => {
     expect(records.rejectionSubject("none")).toBe(true);
     expect(records.rejectionSubject(unitId)).toBe(true);
     expect(records.rejectionSubject(otherUnit.id)).toBe(false);
-    // A refused leave bed end or order on the desk's own ward or person stays with it.
-    const withLeave = coordinatorRecordScope(
-      { ...scoped, patients: [{ id: "synthetic-person" }] },
-      state.bedReleases,
-      own,
-      undefined,
-      [
-        { id: "leave-own", unitId },
-        { id: "leave-other", unitId: otherUnit.id },
-      ],
-    );
+    // A refused leave bed end on the desk's own ward stays with it. A person alone does not.
+    const withLeave = coordinatorRecordScope(scoped, state.bedReleases, own, undefined, [
+      { id: "leave-own", unitId },
+      { id: "leave-other", unitId: otherUnit.id },
+    ]);
     expect(withLeave.rejectionSubject("leave-own")).toBe(true);
     expect(withLeave.rejectionSubject("leave-other")).toBe(false);
-    expect(withLeave.rejectionSubject("synthetic-person")).toBe(true);
-    expect(withLeave.rejectionSubject("synthetic-stranger")).toBe(false);
+    expect(withLeave.rejectionSubject(scoped.patients[0]?.id ?? "synthetic-person")).toBe(false);
   });
 
   it("hides counts below the small-number threshold", () => {

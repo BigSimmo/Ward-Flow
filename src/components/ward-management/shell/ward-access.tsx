@@ -259,7 +259,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
       return (review: AuditReview) => kept.has(review.eventId);
     };
-    // A refusal names its subject: a journey, ward, stay, release, leave bed, person or ED. A refused
+    // A refusal names its subject: a journey, ward, stay, release, leave bed or ED. A refused
     // record command names none, so it follows its own audit row and stays only when that row is in
     // scope, which lets the desk's screen hear its own refusal (reviews on PR #345).
     // The audit log is read only when a refusal is paired with a row, and through the governance read
