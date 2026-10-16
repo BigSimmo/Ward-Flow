@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
+import { ExtendSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -93,6 +95,22 @@ describe("Legal forms — wired confirm controls (F2.1)", () => {
       fireEvent.click(enabledRenewConfirm);
       expect(screen.queryByTestId("ward-legal-extend")).not.toBeInTheDocument();
     }
+  });
+});
+
+describe("Legal forms — extension shows the day it will record", () => {
+  it("names the resolved day before Confirm, since the field takes a time only", () => {
+    const base = wardMovements.find((m) => m.legalForm !== undefined)!;
+    const dueAt = NOW + 60;
+    const target = { ...base, legalForm: { ...base.legalForm!, dueAt } };
+    render(<ExtendSheet target={target} label="Synthetic movement" now={NOW} onClose={() => {}} />);
+    expect(screen.queryByTestId("ward-legal-forms-renew-resolved")).not.toBeInTheDocument();
+    // A time earlier in the day than the current expiry rolls to the next day, and the sheet says so.
+    const earlier = formatInstant(dueAt - 30);
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: earlier } });
+    expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent(
+      `Records the new expiry as ${earlier} tomorrow.`,
+    );
   });
 });
 

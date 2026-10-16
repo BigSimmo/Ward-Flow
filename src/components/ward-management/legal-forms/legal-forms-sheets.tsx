@@ -407,6 +407,12 @@ export function ExtendSheet({
               />
             </Field>
           </div>
+          {parsedDueAt !== null ? (
+            // The field takes a time only, so the resolved day is shown before Confirm records it.
+            <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-resolved">
+              Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
+            </p>
+          ) : null}
           <Field label="Justification" id="legal-forms-renew-justification">
             <Textarea
               readOnly
