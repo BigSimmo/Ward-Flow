@@ -47,10 +47,8 @@ import {
   type WardRecordActor,
 } from "./ward-discharge-records";
 import {
-  isDischargeBarrier,
   isLeavingDestination,
   isFollowUpState,
-  daysInBed,
   PLANNED_ADMISSION_CANCEL_REASONS,
   PLANNED_ADMISSION_REASONS,
   type LeavingDestination,
@@ -60,6 +58,9 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
+import { reduceHandoverTasks } from "./reducers/reduce-handover-tasks";
+import { reduceLegalForms } from "./reducers/reduce-legal-forms";
+import { reduceTransport } from "./reducers/reduce-transport-repatriation";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
@@ -102,7 +103,6 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
-  WARD_BUZZ_MESSAGES,
   REPATRIATION_MODES,
   WARD_FLOW_ROLE_LABELS,
   type RepatriationMode,
@@ -110,19 +110,15 @@ import {
   type OverridableWardFlowEvent,
   type WardFlowRole,
 } from "@/components/ward-management/ward-flow-events";
-import { SELECTABLE_LEGAL_FORMS, countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
+import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import {
-  form3CRefusedAfter3D,
-  isLegalClockFormCode,
-  ARRIVAL_LATE_AFTER_MINUTES,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
   GENDER_MISMATCH_DECLINE_REASON,
-  isArrivalLate,
   leaveBedNeedsOpenWarning,
 } from "@/components/ward-management/ward-legal-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
-import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
   ABSENCE_STEPS,
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -228,16 +224,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo-planned-moves";
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
-import {
-  SUPPORT_NOTIFICATION_OCCASIONS,
-  SUPPORT_NOTIFICATION_OUTCOMES,
-  SUPPORT_NOTIFICATION_PARTIES,
-  SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS,
-  SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
-  admissionSupportNotificationSubject,
-  movementSupportNotificationSubject,
-  type SupportNotificationRecord,
-} from "@/components/ward-management/ward-support-notifications";
+import type { SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 
 /**
  * Stages `REFER_TO_UNITS` accepts, exported so a UI can pre-check referability before dispatching
@@ -838,6 +825,41 @@ function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, deci
       eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
     ) ?? state
   );
+}
+
+function reduceLegalFormsEvent(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
+  return reduceLegalForms(state, event, decision, {
+    reject,
+    findMovement,
+    replaceMovement,
+    findUnit,
+  });
+}
+
+function reduceHandoverTasksEvent(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
+  return reduceHandoverTasks(state, event, decision, {
+    reject,
+    findMovement,
+    findUnit,
+    findAdmission,
+  });
+}
+
+function reduceTransportEvent(state: WardFlowState, event: WardFlowEvent): WardFlowState {
+  return reduceTransport(state, event, {
+    reject,
+    findMovement,
+    replaceMovement,
+    findUnit,
+    findReferral,
+    movementSourceAdmission,
+    heldUnitGenderRefusal,
+    movementHoldsBedByStage,
+    releasePulledBedAndAdmission,
+    makeNotice,
+    appendNotices,
+    stageTransitionBlockers: STAGE_TRANSITION_BLOCKERS,
+  });
 }
 
 /**
@@ -2663,59 +2685,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RECORD_TRANSPORT_NEED": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // Refused once the journey is over, as for `RECORD_EXAMINATION`.
-      if (movement.closure) {
-        return reject(
-          state,
-          event,
-          `cannot record a transport need for a closed movement (${movement.closure.reason})`,
-        );
-      }
-      if (event.role === "ward" && event.actingUnitId !== undefined) {
-        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
-        const sendingWard =
-          referral?.originUnitId ??
-          movementSourceAdmission(state, movement)?.unitId ??
-          (movement as { originUnitId?: string }).originUnitId;
-        if (sendingWard) {
-          if (event.actingUnitId !== sendingWard) {
-            return reject(
-              state,
-              event,
-              `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
-            );
-          }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
-          return reject(
-            state,
-            event,
-            `RECORD_TRANSPORT_NEED was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot record transport need`,
-          );
-        }
-      }
-      // Re-recording overwrites on purpose, as for medical clearance. "Not needed" is refused while
-      // a booked job is live (audit §3 item 4): that job is cancelled through CANCEL_TRANSPORT
-      // first, or PATIENT_ARRIVED could close the movement with a vehicle still booked.
-      if (
-        !event.needed &&
-        movement.transport !== undefined &&
-        movement.transport.cancelledAt === undefined &&
-        movement.transport.arrivedAt === undefined
-      ) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id} has a booked transport job; cancel it before recording that no transport is needed`,
-        );
-      }
-      const updated: Movement = {
-        ...movement,
-        transportNeed: { needed: event.needed, at: event.now },
-        ...(movement.transport ? { transport: { ...movement.transport, needed: event.needed } } : {}),
-      };
-      return replaceMovement(state, movement.id, updated);
+      return reduceTransportEvent(state, event);
     }
 
     case "RECORD_NO_REFERRAL": {
@@ -2871,128 +2841,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return appendNotices(next, outcomeNotices);
     }
 
-    /**
-     * Ruling 1: ED marks a Form 1A as received. Records the receipt instant only; this prototype
-     * computes no legal time limits (T2, owner answer 1).
-     */
     case "RECORD_LEGAL_FORM_RECEIVED": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(
-          state,
-          event,
-          `cannot mark legal form received for a closed movement (${movement.closure.reason})`,
-        );
-      }
-      if (movement.legalFormReceivedAt !== undefined) {
-        return reject(state, event, `legal form for movement ${movement.id} was already marked as received`);
-      }
-      // Receipt is a fact about a supported form (1A, 3A, 3C, 3D, 6A, 6B, 6C, 5A or 5B); any other
-      // code, or no form, is refused.
-      if (!movement.legalForm || !isLegalClockFormCode(movement.legalForm.code)) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id} does not carry a receivable legal form (legal form ${movement.legalForm?.code ?? "none"}), so a legal form receipt cannot be recorded against it`,
-        );
-      }
-      // No statutory deadline is computed here: a clinician's typed expiry
-      // (`RECORD_LEGAL_FORM_EXPIRY`) is the only source of a `dueAt`.
-      const updated: Movement = {
-        ...movement,
-        legalFormReceivedAt: event.now,
-      };
-      return replaceMovement(state, movement.id, updated);
+      return reduceLegalFormsEvent(state, event, decision);
     }
 
-    /**
-     * T4: the undo for `RECORD_LEGAL_FORM_RECEIVED`. Clears `legalFormReceivedAt` and appends the
-     * original instant, who corrected it and the reason to `legalFormReceiptCorrections`, so the
-     * fact a receipt was recorded is kept and a fresh receipt can follow.
-     */
     case "CORRECT_LEGAL_FORM_RECEIPT": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(
-          state,
-          event,
-          `cannot correct a legal form receipt for a closed movement (${movement.closure.reason})`,
-        );
-      }
-      if (movement.legalFormReceivedAt === undefined) {
-        return reject(state, event, `movement ${movement.id} has no recorded legal form receipt to correct`);
-      }
-      if (!LEGAL_FORM_RECEIPT_CORRECTION_REASONS.includes(event.reason)) {
-        return reject(
-          state,
-          event,
-          `CORRECT_LEGAL_FORM_RECEIPT reason "${event.reason}" is not one of the fixed correction reasons`,
-        );
-      }
-      const correction = {
-        at: event.now,
-        by: event.role,
-        reason: event.reason,
-        receivedAt: movement.legalFormReceivedAt,
-      };
-      const updated: Movement = {
-        ...movement,
-        legalFormReceivedAt: undefined,
-        legalFormReceiptCorrections: [...(movement.legalFormReceiptCorrections ?? []), correction],
-      };
-      // Audited as "legal-form" (`classifyAuditEvent`); without this the stored change was
-      // recorded in the audit trail as "denied".
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return replaceMovement(state, movement.id, updated);
+      const next = reduceLegalFormsEvent(state, event, decision);
+      if (!LEGAL_FORM_RECEIPT_CORRECTION_REASONS.includes(event.reason)) return next;
+      return next;
     }
 
-    /**
-     * T2 (owner answer 1, item 5): the clinician types the expiry written on the form, for any
-     * form, and later any extension from a fresh form. Whether this is an extension is read off the
-     * state, never a caller flag.
-     */
     case "RECORD_LEGAL_FORM_EXPIRY": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // T2r finding 11: a fixed sentence, never interpolating the clinical `closure.reason`.
-      if (movement.closure) {
-        return reject(state, event, "This record is closed, so no expiry can be added to it.");
-      }
-      // §2's exact sentence — there is no form here to attach a typed expiry to, so this refuses
-      // rather than inventing one.
-      if (!movement.legalForm) {
-        return reject(state, event, "There is no legal form on this record to add an expiry to.");
-      }
-      // T2r finding 8: `Instant` is a bare number, so a non-finite value is refused before it
-      // becomes an expiry nothing can compare or render.
-      if (!Number.isFinite(event.dueAt)) {
-        return reject(state, event, "Enter the expiry written on the form.");
-      }
-      const currentDueAt = movement.legalForm.dueAt;
-      // Legacy calculated clocks are not paper authority. The six authored fixture values and
-      // current entered values are; absence of an old actor-history record does not discard them.
-      const legacyCalculatedExpiry =
-        movement.legalClock !== undefined && currentDueAt === movement.legalClock.expiresAt;
-      const isExtension = currentDueAt !== undefined && !legacyCalculatedExpiry;
-      // An extension only ever moves an expiry later; the clinician types it, this only orders it
-      // against what is recorded.
-      if (isExtension && event.dueAt <= currentDueAt) {
-        return reject(state, event, "An extension's new expiry must be later than the expiry already recorded.");
-      }
-      const basis: "written_on_form" | "extension" = isExtension ? "extension" : "written_on_form";
-      const historyEntry = { at: event.now, by: event.role, dueAt: event.dueAt, basis };
-      const updated: Movement = {
-        ...movement,
-        legalForm: { ...movement.legalForm, dueAt: event.dueAt },
-        legalClock: undefined,
-        legalFormExpiryHistory: [...(movement.legalFormExpiryHistory ?? []), historyEntry],
-      };
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return replaceMovement(state, movement.id, updated);
+      return reduceLegalFormsEvent(state, event, decision);
     }
 
     /**
@@ -4461,102 +4321,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return replaceMovement(state, movement.id, updated);
     }
 
-    case "TRANSPORT_ACCEPTED": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot accept transport for a closed movement (${movement.closure.reason})`);
-      }
-
-      // WLQ-4: do not advance the transport pathway while a revoked or community_order examination
-      // still holds a bed. PATIENT_ARRIVED stays reachable (owner answer 5).
-      {
-        const examinationOutcome = movement.examination?.outcome;
-        const examinationRevokedHoldingBed =
-          (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
-          movementHoldsBedByStage(movement);
-        const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
-        if (examinationRevokedHoldingBed || awaitingRelease) {
-          return reject(
-            state,
-            event,
-            `cannot advance transport for movement ${movement.id}: the examination was revoked and the bed is still held — a coordinator must release the bed first`,
-          );
-        }
-      }
-      if (movement.stage !== "handover_ready" || !movement.transport) {
-        return reject(
-          state,
-          event,
-          `cannot accept transport at the movement's current stage (${stageCopy[movement.stage].label})`,
-        );
-      }
-      // Instant 0 is a recorded midnight, not "unset" — never truthiness-check timestamps.
-      if (movement.transport.acceptedAt !== undefined) {
-        return reject(state, event, `transport for movement ${movement.id} was already accepted`);
-      }
-      // P1-3 (Ward Lead ruling, 17 September 2026) — see `heldUnitGenderRefusal`'s own doc comment.
-      const transportAcceptedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
-      if (transportAcceptedGenderRefusal) return reject(state, event, transportAcceptedGenderRefusal);
-      const updated: Movement = {
-        ...movement,
-        transport: { ...movement.transport, acceptedAt: event.now },
-        // The provider has answered, so "Awaiting a transport provider response" is contradicted by
-        // `acceptedAt` beside it.
-        blocker: STAGE_TRANSITION_BLOCKERS.transportAccepted,
-      };
-      return replaceMovement(state, movement.id, updated);
-    }
-
+    case "TRANSPORT_ACCEPTED":
     case "TRANSPORT_EN_ROUTE": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot move transport for a closed movement (${movement.closure.reason})`);
-      }
-
-      // WLQ-4: do not advance the transport pathway while a revoked or community_order examination
-      // still holds a bed. PATIENT_ARRIVED stays reachable (owner answer 5).
-      {
-        const examinationOutcome = movement.examination?.outcome;
-        const examinationRevokedHoldingBed =
-          (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
-          movementHoldsBedByStage(movement);
-        const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
-        if (examinationRevokedHoldingBed || awaitingRelease) {
-          return reject(
-            state,
-            event,
-            `cannot advance transport for movement ${movement.id}: the examination was revoked and the bed is still held — a coordinator must release the bed first`,
-          );
-        }
-      }
-      /**
-       * The message reports the two facts the guard checks rather than naming one as the cause: at
-       * stage `moving`, `transport.acceptedAt` is already set. Do not restore the removed wording,
-       * even quoted.
-       *
-       * Instant 0 is a recorded midnight — compare with `=== undefined`, never truthiness.
-       */
-      if (movement.stage !== "handover_ready" || movement.transport?.acceptedAt === undefined) {
-        return reject(
-          state,
-          event,
-          `cannot mark transport en route: the movement must be at ${stageCopy.handover_ready.label} ` +
-            `with transport accepted (it is at ${stageCopy[movement.stage].label}, transport ` +
-            `${movement.transport?.acceptedAt !== undefined ? "accepted" : "not accepted"})`,
-        );
-      }
-      if (movement.transport.enRouteAt !== undefined) {
-        return reject(state, event, `transport for movement ${movement.id} is already en route`);
-      }
-      const updated: Movement = {
-        ...movement,
-        transport: { ...movement.transport, enRouteAt: event.now },
-        // The vehicle is moving. Still an active blocker: nobody has been collected.
-        blocker: STAGE_TRANSITION_BLOCKERS.transportEnRoute,
-      };
-      return replaceMovement(state, movement.id, updated);
+      return reduceTransportEvent(state, event);
     }
 
     case "PATIENT_COLLECTED": {
@@ -5818,69 +5585,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
     }
 
-    case "RECORD_COMMUNITY_TREATMENT_ORDER": {
-      const patient = state.patients.find((candidate) => candidate.id === event.patientId);
-      if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
-      // Only an order still in force refuses a new one. An ended order is kept below (D-40), so a
-      // patient can be placed on a second CTO without the first leaving Documents.
-      if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
-        return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
-      }
-      // The Patient page shows an open placement or occupied stay ahead of a CTO, so an order
-      // recorded now would save unseen. Refused until the placement closes or the stay ends. A
-      // waitlisted or pulled stay alone does not count.
-      const openStay = state.admissions.some((stay) => stay.patientId === patient.id && stay.state === "occupied");
-      const openPlacement = state.movements.some(
-        (movement) => movement.patientId === patient.id && !movement.closure && movement.stage !== "arrived",
-      );
-      if (openStay || openPlacement) {
-        return reject(
-          state,
-          event,
-          `patient ${patient.id} has an open placement or stay; record the order once it has closed`,
-        );
-      }
-      // D-40: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
-      const previous = patient.communityTreatmentOrder;
-      const earlier =
-        previous?.endedAt !== undefined
-          ? [
-              ...(previous.earlier ?? []),
-              {
-                form: previous.form,
-                recordedAt: previous.recordedAt,
-                recordedBy: previous.recordedBy,
-                endedAt: previous.endedAt,
-              },
-            ]
-          : undefined;
-      const order = {
-        form: "5A" as const,
-        recordedAt: event.now,
-        recordedBy: WARD_FLOW_ROLE_LABELS[event.role],
-        ...(earlier ? { earlier } : {}),
-      };
-      return {
-        ...state,
-        patients: state.patients.map((candidate) =>
-          candidate.id === patient.id ? { ...candidate, communityTreatmentOrder: order } : candidate,
-        ),
-      };
-    }
-
+    case "RECORD_COMMUNITY_TREATMENT_ORDER":
     case "END_COMMUNITY_TREATMENT_ORDER": {
-      const patient = state.patients.find((candidate) => candidate.id === event.patientId);
-      if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
-      if (!patient.communityTreatmentOrder || patient.communityTreatmentOrder.endedAt !== undefined) {
-        return reject(state, event, `patient ${patient.id} has no community treatment order recorded`);
-      }
-      const ended = { ...patient.communityTreatmentOrder, endedAt: event.now };
-      return {
-        ...state,
-        patients: state.patients.map((candidate) =>
-          candidate.id === patient.id ? { ...candidate, communityTreatmentOrder: ended } : candidate,
-        ),
-      };
+      return reduceLegalFormsEvent(state, event, decision);
     }
 
     case "REQUEST_CAPACITY_REFRESH": {
@@ -7120,478 +6827,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "BOOK_TRANSPORT": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot book transport for a closed movement (${movement.closure.reason})`);
-      }
-      // Owner answer 30: "no automatic rebooking; a person books again", including from
-      // `handover_ready`, since `CANCEL_TRANSPORT` now removes the job in every case.
-      if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
-        return reject(
-          state,
-          event,
-          `cannot book transport at the movement's current stage (${stageCopy[movement.stage].label})`,
-        );
-      }
-      // A second booking would replace a job a provider may already have accepted, and the
-      // acceptance timestamps would vanish with it. Cancel first (`CANCEL_TRANSPORT`), then rebook.
-      if (movement.transport && movement.transport.cancelledAt === undefined) {
-        return reject(state, event, `transport for movement ${movement.id} is already booked`);
-      }
-      if (!TRANSPORT_PROVIDERS.includes(event.provider)) {
-        return reject(state, event, `BOOK_TRANSPORT provider must be chosen from TRANSPORT_PROVIDERS`);
-      }
-      // A missing escort answer is refused, never defaulted: `false` would claim "no escort
-      // required" as though a clinician said so (TR-D1). `typeof`, because the payload may arrive
-      // from JavaScript.
-      if (typeof event.escortRequired !== "boolean") {
-        return reject(state, event, `BOOK_TRANSPORT escortRequired must be answered, and it has no default`);
-      }
-      // Owner's third ruling: this logs a booking already made by phone, and the three facts from
-      // that call are required, never defaulted.
-      if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
-        return reject(state, event, `BOOK_TRANSPORT cadNumber must be answered, and it has no default`);
-      }
-      if (!TRANSPORT_LEGAL_STATUSES.includes(event.transportLegalStatus)) {
-        return reject(state, event, `BOOK_TRANSPORT transportLegalStatus must be chosen from TRANSPORT_LEGAL_STATUSES`);
-      }
-      if (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt)) {
-        return reject(state, event, `BOOK_TRANSPORT estimatedAt must be answered, and it has no default`);
-      }
-      // WLQ-11 (owner): a `ward` booker must state its unit now, so `CANCEL_TRANSPORT` can later
-      // tell the booking ward from any other.
-      if (event.role === "ward" && !event.actingUnitId) {
-        return reject(state, event, `BOOK_TRANSPORT raised as ward must state its actingUnitId, and it has no default`);
-      }
-      // The claimed unit must be real, or `bookedBy.unitId` could never match a later cancellation
-      // claim.
-      if (event.role === "ward" && event.actingUnitId !== undefined && !findUnit(state, event.actingUnitId)) {
-        return reject(state, event, `BOOK_TRANSPORT actingUnitId ${event.actingUnitId} does not name a real unit`);
-      }
-      if (event.role === "ward" && event.actingUnitId !== undefined) {
-        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
-        const sendingWard =
-          referral?.originUnitId ??
-          movementSourceAdmission(state, movement)?.unitId ??
-          (movement as { originUnitId?: string }).originUnitId;
-        if (sendingWard) {
-          if (event.actingUnitId !== sendingWard) {
-            return reject(
-              state,
-              event,
-              `BOOK_TRANSPORT was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can book transport`,
-            );
-          }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
-          return reject(
-            state,
-            event,
-            `BOOK_TRANSPORT was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot book transport`,
-          );
-        }
-      }
-      // Owner's third ruling (answer 9): "only the community team that booked transport may cancel
-      // it", so a `community` booker states its place now.
-      if (event.role === "community" && !event.actingPlaceId) {
-        return reject(
-          state,
-          event,
-          `BOOK_TRANSPORT raised as community must state its actingPlaceId, and it has no default`,
-        );
-      }
-      if (event.role === "community" && event.actingPlaceId !== undefined && !communityTeamById(event.actingPlaceId)) {
-        return reject(
-          state,
-          event,
-          `BOOK_TRANSPORT actingPlaceId ${event.actingPlaceId} does not name a real community team`,
-        );
-      }
-      if (!movement.acceptedUnitId && !movement.admissionId) {
-        return reject(
-          state,
-          event,
-          `cannot book transport for movement ${movement.id} without an accepted destination ward or admission`,
-        );
-      }
-      if (
-        event.role === "ed" &&
-        event.actingPlaceId &&
-        movement.originEdId &&
-        event.actingPlaceId !== movement.originEdId
-      ) {
-        return reject(
-          state,
-          event,
-          `BOOK_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only book transport for movements originating from its own ED (${movement.originEdId})`,
-        );
-      }
-      // The job id counts prior cancellations from `unwinds` (append-only), so a re-booking after a
-      // no-bed-held cancellation never reuses an earlier job's id. Deterministic; with no prior
-      // cancellation the id stays `${movement.id}-transport`.
-      const priorTransportCancellations = movement.unwinds.filter(
-        (entry) => entry.kind === "transport_cancelled",
-      ).length;
-      // Audit fix (13 Oct 2026): a booking whose status differs from Legal now records why.
-      const bookingException =
-        event.exception === undefined
-          ? undefined
-          : transportExceptionRecord(event.exception, event.now, event.role, "booked");
-      if (typeof bookingException === "string") return reject(state, event, `BOOK_TRANSPORT ${bookingException}`);
-      const booked: Movement = {
-        ...movement,
-        transport: {
-          id:
-            priorTransportCancellations === 0
-              ? `${movement.id}-transport`
-              : `${movement.id}-transport-${priorTransportCancellations + 1}`,
-          provider: event.provider,
-          escortRequired: event.escortRequired,
-          // Owner's third ruling, 2026-09-17: the phone-logged facts, required and stored exactly
-          // as answered — see each field's own doc comment on `TransportJob` (`ward-model.ts`).
-          cadNumber: event.cadNumber,
-          transportLegalStatus: event.transportLegalStatus,
-          estimatedAt: event.estimatedAt,
-          ...(bookingException ? { exceptions: [bookingException] } : {}),
-          // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches read a
-          // runtime-booked job as they read a seeded one.
-          needed: movement.transportNeed?.needed,
-          // WLQ-11 / third ruling: who booked this job. See `TransportJob.bookedBy`.
-          bookedBy: {
-            role: event.role,
-            ...(event.role === "ward" ? { unitId: event.actingUnitId } : {}),
-            ...(event.role === "community" ? { placeId: event.actingPlaceId } : {}),
-            ...(event.role === "ed" && event.actingPlaceId ? { placeId: event.actingPlaceId } : {}),
-          },
-        },
-        // A job exists and the provider has not answered. Provider and escort are on the job
-        // itself, so they are not restated here.
-        blocker: STAGE_TRANSITION_BLOCKERS.transportBooked,
-      };
-      return replaceMovement(state, movement.id, booked);
+      return reduceTransportEvent(state, event);
     }
 
     case "CANCEL_TRANSPORT": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot cancel transport for a closed movement (${movement.closure.reason})`);
-      }
-      if (!movement.transport) {
-        return reject(state, event, `movement ${movement.id} has no transport job to cancel`);
-      }
-      if (movement.transport.cancelledAt !== undefined) {
-        return reject(state, event, `transport for movement ${movement.id} was already cancelled`);
-      }
-      if (movement.transport.arrivedAt !== undefined) {
-        return reject(state, event, `cannot cancel transport for movement ${movement.id} — the patient has arrived`);
-      }
-      if (movement.transport.collectedAt !== undefined) {
-        return reject(state, event, `cannot cancel transport for movement ${movement.id} — the patient has departed`);
-      }
-      /**
-       * TR-D6 (owner): a transport may be cancelled by the team that booked it and by the
-       * coordinator, never by the receiving ward. WLQ-11 (owner): "whoever booked transport may
-       * cancel it; the receiving ward still may not." A `ward` caller's claim is compared against
-       * `transport.bookedBy` (claim-not-proof); an absent `bookedBy` refuses. Coordinator and `ed`
-       * rights are unconditional. `community` gets the same check against `bookedBy.placeId` just
-       * below.
-       */
-      if (event.role === "ward") {
-        if (
-          movement.transport.bookedBy?.role !== "ward" ||
-          !event.actingUnitId ||
-          movement.transport.bookedBy.unitId !== event.actingUnitId
-        ) {
-          return reject(
-            state,
-            event,
-            `CANCEL_TRANSPORT raised as ward acting as ${event.actingUnitId} may only cancel transport it booked for movement ${movement.id}`,
-          );
-        }
-      }
-      // Owner's third ruling (answer 9): "only the community team that booked transport may cancel
-      // it." Refused when the claim does not match, including when `bookedBy` has no `placeId`.
-      if (event.role === "community") {
-        if (
-          movement.transport.bookedBy?.role !== "community" ||
-          !event.actingPlaceId ||
-          movement.transport.bookedBy.placeId !== event.actingPlaceId
-        ) {
-          return reject(
-            state,
-            event,
-            `CANCEL_TRANSPORT raised as community acting as ${event.actingPlaceId} may only cancel transport it booked for movement ${movement.id}`,
-          );
-        }
-      }
-      if (event.role === "ed" && event.actingPlaceId) {
-        if (movement.transport.bookedBy?.placeId && movement.transport.bookedBy.placeId !== event.actingPlaceId) {
-          return reject(
-            state,
-            event,
-            `CANCEL_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only cancel transport it booked for movement ${movement.id}`,
-          );
-        }
-      }
-      if (!CANCEL_TRANSPORT_REASONS.includes(event.reason)) {
-        /**
-         * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
-         * no `tsc` involved. TR-D6 says the reason must not become optional.
-         */
-        return reject(state, event, `CANCEL_TRANSPORT reason must be chosen from CANCEL_TRANSPORT_REASONS`);
-      }
-      // Never closes the movement: only the transport job unwinds, and the bed is untouched. The
-      // cancelled job stays named in the audit trail.
-      //
-      // The stage is left exactly as found in every reachable case: unwinding a job never changes
-      // where the patient sits in the pathway (`STEP_BACK_STAGE` and `RELEASE_PULL` can leave a
-      // booked job at `accepted_awaiting_bed`; see `tests/ward-cancel-transport-stage.test.ts`).
-      //
-      // Owner answer 30: "Cancelling transport while a bed is held: no automatic rebooking; a
-      // person books again." Both branches remove the job
-      // (`tests/ward-transport-cancel-no-rebook.test.ts`,
-      // `tests/ward-cancel-transport-no-bed-held.test.ts`); `BOOK_TRANSPORT` accepts a new booking
-      // from `pulled` or `handover_ready`.
-      const cancelledTransport = movement.transport;
-      // WFA-001: same OR as `releasePulledBedAndAdmission`: a stepped-back movement can hold its
-      // admission and bed before `pulled`.
-      const bedIsHeld =
-        movement.admissionId !== undefined ||
-        MOVEMENT_STAGES.indexOf(movement.stage) >= MOVEMENT_STAGES.indexOf("pulled");
-      const updatedMovement: Movement = {
-        ...movement,
-        // `stage` is deliberately not written: cancelling never moves the stage. No branch replaces
-        // the job: an absent job is "nothing to flag" for `orphanedTransport` and lets
-        // `BOOK_TRANSPORT` succeed again.
-        transport: undefined,
-        // The job is gone, so a provider-progress sentence is now false. Bed held:
-        // `transportCancelled` (still held, not booked again). No bed: as at first acceptance.
-        blocker: bedIsHeld ? STAGE_TRANSITION_BLOCKERS.transportCancelled : STAGE_TRANSITION_BLOCKERS.accepted,
-        unwinds: [
-          ...movement.unwinds,
-          {
-            at: event.now,
-            kind: "transport_cancelled",
-            by: event.role,
-            reason: event.reason,
-            transportId: cancelledTransport.id,
-            cadNumber: cancelledTransport.cadNumber,
-          },
-        ],
-        // No entry appended: `stage` never moves here, so a transition would misstate this
-        // cancellation.
-        stageChanges: movement.stageChanges,
-      };
-      const next = replaceMovement(state, movement.id, updatedMovement);
-      /**
-       * Addendum §1.3: "CANCEL_TRANSPORT — the officer and the receiving ward — somebody is
-       * expecting a person who is no longer coming." Two notices, each its own `NoticeKind`. The
-       * officer is always told; the receiving ward is `movement.acceptedUnitId`, guarded rather
-       * than asserted.
-       *
-       * Owner answer 30: nothing arranges a replacement on either branch, so each sentence states
-       * only that the job was cancelled and nothing has been rebooked. Wording from
-       * `docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md` §4, T1.
-       */
-      const cancelledNote = bedIsHeld
-        ? "the bed is still held and nothing has been rebooked."
-        : "no bed is held and nothing has been rebooked.";
-      const transportNotices: Notice[] = [
-        makeNotice(
-          event.now,
-          state.notices.length,
-          "transport_cancelled_officer",
-          { role: "officer" },
-          { movementId: movement.id },
-          `Transport for ${movement.id} was cancelled (${event.reason.replace(/_/g, " ")}); ${cancelledNote}`,
-        ),
-      ];
-      if (movement.acceptedUnitId !== undefined) {
-        const receivingUnitId = movement.acceptedUnitId;
-        transportNotices.push(
-          makeNotice(
-            event.now,
-            state.notices.length,
-            "transport_cancelled_ward",
-            { role: "ward", placeId: receivingUnitId },
-            { movementId: movement.id, unitId: receivingUnitId },
-            `The transport bringing your patient for ${movement.id} was cancelled (${event.reason.replace(/_/g, " ")}); ${cancelledNote}`,
-          ),
-        );
-      }
-      return appendNotices(next, transportNotices);
+      const next = reduceTransportEvent(state, event);
+      if (!CANCEL_TRANSPORT_REASONS.includes(event.reason)) return next;
+      return next;
     }
 
-    /**
-     * The referrer or coordinator stops a collected journey (WLQ-38; see `ward-flow-events.ts`).
-     * `EVENT_ROLE.STOP_TRANSPORT` already restricts the caller, so the role is not re-checked.
-     */
     case "STOP_TRANSPORT": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot stop transport for a closed movement (${movement.closure.reason})`);
-      }
-      if (!movement.transport) {
-        return reject(state, event, `movement ${movement.id} has no transport job to stop`);
-      }
-      if (movement.transport.collectedAt === undefined) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id}'s transport has not been collected yet; use CANCEL_TRANSPORT instead`,
-        );
-      }
-      // Belt and braces: `PATIENT_ARRIVED` sets `arrivedAt` and `closure` together, so this fires
-      // only if that invariant breaks.
-      if (movement.transport.arrivedAt !== undefined) {
-        return reject(state, event, `movement ${movement.id}'s patient has already arrived`);
-      }
-      if (movement.transport.diversion) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id} was diverted; use RELEASE_DIVERTED_BED rather than STOP_TRANSPORT`,
-        );
-      }
-      if (movement.transport.cancelledAt !== undefined) {
-        return reject(state, event, `transport for movement ${movement.id} was already stopped or cancelled`);
-      }
-      if (!STOP_TRANSPORT_REASONS.includes(event.reason)) {
-        // Runtime membership, not merely the type — the same discipline every other reason-carrying
-        // event in this file holds to, because `vitest run` alone involves no `tsc`.
-        return reject(state, event, `STOP_TRANSPORT reason must be chosen from STOP_TRANSPORT_REASONS`);
-      }
-      if (!TRANSPORT_WHEREABOUTS.includes(event.whereabouts)) {
-        // Item 31 (T3): runtime membership, since `vitest run` alone involves no `tsc`.
-        return reject(state, event, `STOP_TRANSPORT whereabouts must be chosen from TRANSPORT_WHEREABOUTS`);
-      }
-
-      // Owner answer 8: the bed no longer comes back automatically. `acceptedUnitId` and
-      // `admissionId` stay as they are until `RELEASE_HELD_BED`.
-      const stoppedTransport = movement.transport;
-      const stopped: Movement = {
-        ...movement,
-        transport: {
-          ...stoppedTransport,
-          // `cancelledAt` is the general "this job is over" signal other readers understand; the
-          // `stopped*` fields record who stopped it, why and where the patient is. See
-          // `TransportJob`.
-          cancelledAt: event.now,
-          stoppedAt: event.now,
-          stoppedBy: event.role,
-          stopReason: event.reason,
-          stoppedWhereabouts: event.whereabouts,
-        },
-        closure: {
-          at: event.now,
-          outcome: "did_not_proceed",
-          // `STOP_TRANSPORT_REASONS` members are already full sentences, so the reason is the
-          // closure reason.
-          reason: event.reason,
-        },
-        // Active: the journey is over but the bed is held pending a release decision. Supersedes
-        // WLQ-4's `examinationRevokedAwaitingRelease` for the same bed.
-        blocker: STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease,
-      };
-      const next = replaceMovement(state, movement.id, stopped);
-      // Addendum §1.3, extended by WLQ-38 and item 31: the officer is always told where the patient
-      // now is, and the receiving ward, if any, that the patient is not coming.
-      const stopNotices: Notice[] = [
-        makeNotice(
-          event.now,
-          state.notices.length,
-          "transport_stopped_officer",
-          { role: "officer" },
-          { movementId: movement.id },
-          `Transport for ${movement.id} was stopped (${event.reason}). Where the patient is now: ${event.whereabouts}.`,
-        ),
-      ];
-      if (movement.acceptedUnitId !== undefined) {
-        const receivingUnitId = movement.acceptedUnitId;
-        stopNotices.push(
-          makeNotice(
-            event.now,
-            state.notices.length,
-            "transport_stopped_ward",
-            { role: "ward", placeId: receivingUnitId },
-            { movementId: movement.id, unitId: receivingUnitId },
-            `The transport bringing your patient for ${movement.id} was stopped (${event.reason}); the patient is not coming.`,
-          ),
-        );
-      }
-      return appendNotices(next, stopNotices);
+      const next = reduceTransportEvent(state, event);
+      if (!STOP_TRANSPORT_REASONS.includes(event.reason)) return next;
+      return next;
     }
 
-    /**
-     * Releases a bed `STOP_TRANSPORT` left held (owner answer 8). See `ward-flow-events.ts` for why
-     * this is a new case rather than a loosened `RELEASE_PULL`.
-     */
     case "RELEASE_HELD_BED": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      const isStoppedTransport = movement.transport?.stoppedAt !== undefined;
-      const examinationOutcome = movement.examination?.outcome;
-      const isRevokedExamHold =
-        (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
-        (movement.admissionId !== undefined || (movement.closure === undefined && movementHoldsBedByStage(movement)));
-      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
-
-      if (!isStoppedTransport && !isRevokedExamHold && !awaitingRelease) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id} was not stopped by STOP_TRANSPORT and has no examination-revoked hold, so there is no held bed to release this way`,
-        );
-      }
-      // A stopped journey or revoked-exam hold holds a bed until explicitly released.
-      const heldBedOutstanding =
-        movement.admissionId !== undefined ||
-        (movement.closure === undefined && movementHoldsBedByStage(movement)) ||
-        movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
-        movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
-      if (!heldBedOutstanding) {
-        return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
-      }
-      // Claim-not-proof, as RELEASE_PULL and CANCEL_TRANSPORT. A coordinator or ed caller may act
-      // regardless.
-      if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
-        return reject(
-          state,
-          event,
-          `RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
-        );
-      }
-      const withoutHeldBed = releasePulledBedAndAdmission(state, movement, event.now);
-      const released: Movement = {
-        ...movement,
-        admissionId: undefined,
-        ...(isRevokedExamHold || awaitingRelease
-          ? {
-              acceptedUnitId: undefined,
-              referredUnitIds: [],
-              ...(movement.transport && movement.transport.cancelledAt === undefined
-                ? {
-                    transport: {
-                      ...movement.transport,
-                      cancelledAt: event.now,
-                    },
-                  }
-                : {}),
-            }
-          : {}),
-        // Nothing is blocking any more — the release this sentence describes is the one thing that
-        // was outstanding.
-        blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
-        examRevoked: undefined,
-        closure: movement.closure ?? {
-          at: event.now,
-          outcome: "did_not_proceed",
-          reason: isRevokedExamHold || awaitingRelease ? "examination_revoked" : "bed_released",
-        },
-      };
-      return replaceMovement(withoutHeldBed, movement.id, released);
+      return reduceTransportEvent(state, event);
     }
 
     /**
@@ -7890,138 +7142,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "SET_ARRIVAL_DETAILS": {
-      const movement = state.movements.find((m) => m.id === event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, "cannot update arrival details on closed movement");
-      }
-      if (
-        event.role === "ward" &&
-        event.actingUnitId !== undefined &&
-        movement.acceptedUnitId !== undefined &&
-        event.actingUnitId !== movement.acceptedUnitId
-      ) {
-        return reject(
-          state,
-          event,
-          `SET_ARRIVAL_DETAILS was raised acting as unit ${event.actingUnitId} but destination is unit ${movement.acceptedUnitId}; only destination ward or coordinator can set arrival details`,
-        );
-      }
-
-      const arrivalDetails = {
-        mode: event.arrivalMode,
-        trackingNumber: event.trackingNumber?.trim() || undefined,
-        estimatedArrivalAt: event.estimatedArrivalAt,
-        recordedAt: event.now,
-        recordedBy: event.role,
-      };
-
-      let updatedMovement: Movement = {
-        ...movement,
-        arrivalDetails,
-        pullExpiresAt: undefined, // Default 4h countdown timer is removed as arrival is sorted
-      };
-
-      let next = {
-        ...state,
-        movements: state.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
-      };
-
-      if (
-        isArrivalLate(event.estimatedArrivalAt, updatedMovement.stage, event.now) &&
-        updatedMovement.arrivalLateNotifiedAt === undefined
-      ) {
-        updatedMovement = { ...updatedMovement, arrivalLateNotifiedAt: event.now };
-        next = {
-          ...next,
-          movements: next.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
-        };
-        const notices = [
-          makeNotice(
-            event.now,
-            next.notices.length,
-            "arrival_late_referrer",
-            { role: "ed", placeId: movement.originEdId },
-            { movementId: movement.id },
-            `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-          ),
-        ];
-        if (movement.acceptedUnitId) {
-          notices.push(
-            makeNotice(
-              event.now,
-              next.notices.length + 1,
-              "arrival_late_ward",
-              { role: "ward", placeId: movement.acceptedUnitId },
-              { movementId: movement.id, unitId: movement.acceptedUnitId },
-              `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-            ),
-          );
-        }
-        return appendNotices(next, notices);
-      }
-
-      return next;
+      const next = reduceTransportEvent(state, event);
+      return next ?? state;
     }
 
     case "SET_STEP_DOWN_CANDIDATE": {
-      const admission = state.admissions.find((a) => a.id === event.admissionId);
-      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
-      // Same claim-not-proof discipline as RECORD_LEAVING: a ward may only touch its own admission.
-      if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
-        return reject(
-          state,
-          event,
-          `SET_STEP_DOWN_CANDIDATE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
-        );
-      }
-
-      const updatedAdmission: Admission = {
-        ...admission,
-        stepDownCandidate: event.stepDownCandidate,
-      };
-
-      return {
-        ...state,
-        admissions: state.admissions.map((a) => (a.id === admission.id ? updatedAdmission : a)),
-      };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "SET_DISCHARGE_BARRIER": {
-      const admission = state.admissions.find((a) => a.id === event.admissionId);
-      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
-      if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
-        return reject(
-          state,
-          event,
-          `SET_DISCHARGE_BARRIER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
-        );
-      }
-
-      // Chosen from DISCHARGE_BARRIERS, never typed: this event is on the persistence safe list, so
-      // anything off the list would reach browser storage as free text (review findings S2-12/A2-2).
-      if (event.barrier !== null && event.barrier !== "None" && !isDischargeBarrier(event.barrier)) {
-        return reject(state, event, "SET_DISCHARGE_BARRIER barrier must be chosen from DISCHARGE_BARRIERS");
-      }
-
-      const stay = daysInBed(admission, event.now) ?? 0;
-      if (stay < 7 && event.barrier !== null && event.barrier !== "None") {
-        return reject(
-          state,
-          event,
-          `Cannot set discharge barrier: patient length of stay (${stay} days) is less than 7 days`,
-        );
-      }
-
-      const updatedAdmission: Admission = {
-        ...admission,
-        dischargeBarrier: event.barrier === "None" ? null : event.barrier,
-      };
-
-      return {
-        ...state,
-        admissions: state.admissions.map((a) => (a.id === admission.id ? updatedAdmission : a)),
-      };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "RECORD_ED_MEDICAL_DETERIORATION": {
@@ -8234,212 +7366,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RECORD_LEGAL_FORM_WRITTEN": {
-      if (event.role !== "ed" && event.role !== "coordinator") {
-        return reject(
-          state,
-          event,
-          `${event.role} cannot record a written legal form; only ed and coordinator may record written forms`,
-        );
-      }
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot record a written form for a closed movement (${movement.closure.reason})`);
-      }
-      if (
-        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
-        !Number.isFinite(event.writtenAt) ||
-        (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
-      ) {
-        return reject(state, event, "Enter the time and expiry written on the form.");
-      }
-      if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
-      }
-      if (event.formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
-        return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
-      }
-      const kind =
-        event.formCode === "1A"
-          ? ("examination" as const)
-          : event.formCode === "3A" || event.formCode === "3C" || event.formCode === "3D"
-            ? ("detention" as const)
-            : undefined;
-      // Editing the current form's written time preserves its recorded paper facts. A different
-      // form starts new facts; a legacy calculated expiry is never promoted to paper authority.
-      const sameFormTimeEdit = movement.legalForm?.code === event.formCode && event.paperExpiresAt === undefined;
-      const currentPaperExpiry =
-        movement.legalClock !== undefined && movement.legalForm?.dueAt === movement.legalClock.expiresAt
-          ? undefined
-          : movement.legalForm?.dueAt;
-      // A1-5: A written form expiry cannot shorten an existing recorded expiry on the same form.
-      if (
-        movement.legalForm?.code === event.formCode &&
-        currentPaperExpiry !== undefined &&
-        event.paperExpiresAt !== undefined &&
-        event.paperExpiresAt < currentPaperExpiry
-      ) {
-        return reject(state, event, "A written form expiry cannot shorten an existing recorded expiry.");
-      }
-      const dueAt = event.paperExpiresAt ?? (sameFormTimeEdit ? currentPaperExpiry : undefined);
-      const updated: Movement = {
-        ...movement,
-        formedAt: event.writtenAt,
-        legalForm: {
-          code: event.formCode,
-          kind,
-          ...(event.region
-            ? { region: event.region }
-            : sameFormTimeEdit && movement.legalForm?.region
-              ? { region: movement.legalForm.region }
-              : {}),
-          ...(dueAt === undefined ? {} : { dueAt }),
-        },
-        legalClock: undefined,
-        legalFormReceivedAt: sameFormTimeEdit ? movement.legalFormReceivedAt : undefined,
-        legalFormExpiryHistory:
-          event.paperExpiresAt === undefined
-            ? movement.legalFormExpiryHistory
-            : [
-                ...(movement.legalFormExpiryHistory ?? []),
-                { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" },
-              ],
-      };
-      return replaceMovement(state, movement.id, updated);
+      const next = reduceLegalFormsEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "RECORD_COUNTRY_EXTENSION": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure || event.paperExpiresAt === undefined || !Number.isFinite(event.paperExpiresAt))
-        return reject(
-          state,
-          event,
-          "Country extensions are recorded as a typed expiry. Enter the new expiry written on the country extension form.",
-        );
-      if (!countryExtensionEligible(movement))
-        return reject(
-          state,
-          event,
-          "A country extension requires a current Form 1A with its paper setting recorded as country.",
-        );
-      const next = reduceClinicalEvent(
-        state,
-        {
-          type: "RECORD_LEGAL_FORM_EXPIRY",
-          role: event.role,
-          now: event.now,
-          movementId: event.movementId,
-          dueAt: event.paperExpiresAt,
-        },
-        decision,
-      );
-      if (next.rejections.length === state.rejections.length) {
-        decision.outcome = "accepted";
-        decision.reasonCode = "none";
-      }
-      return next;
+      const next = reduceLegalFormsEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "RECORD_LEGAL_FORM_CONTINUATION": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This record is closed, so no continuation can be added.");
-      if (
-        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
-        !Number.isFinite(event.startedAt) ||
-        (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
-      ) {
-        return reject(state, event, "Enter the time and expiry written on the form.");
-      }
-      if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
-      }
-      const expiryHistory =
-        event.paperExpiresAt === undefined
-          ? movement.legalFormExpiryHistory
-          : [
-              ...(movement.legalFormExpiryHistory ?? []),
-              { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" as const },
-            ];
-      // Owner ruling: a Form 5B continues a current Form 5A (one community treatment order) rather
-      // than replacing it. The 5A record, `formedAt` and receipt stay; the 5B is recorded as
-      // `continuedBy`, and the current end is the 5B's typed end. Nothing is computed.
-      if (event.formCode === "5B" && movement.legalForm?.code === "5A") {
-        // A second 5B updates the continuation; the 5A's own typed end is kept from the first.
-        const { dueAt: currentDueAt, continuedBy: earlier, ...fiveA } = movement.legalForm;
-        const continuedFormDueAt = earlier === undefined ? currentDueAt : earlier.continuedFormDueAt;
-        const continued: Movement = {
-          ...movement,
-          legalForm: {
-            ...fiveA,
-            ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
-            continuedBy: {
-              code: event.formCode,
-              startedAt: event.startedAt,
-              recordedAt: event.now,
-              by: event.role,
-              ...(continuedFormDueAt === undefined ? {} : { continuedFormDueAt }),
-            },
-          },
-          legalClock: undefined,
-          legalFormExpiryHistory: expiryHistory,
-        };
-        decision.outcome = "accepted";
-        decision.reasonCode = "none";
-        return replaceMovement(state, movement.id, continued);
-      }
-      // Any other continuation replaces current paper facts while retaining the earlier expiry history.
-      const updated: Movement = {
-        ...movement,
-        formedAt: event.startedAt,
-        legalForm: {
-          code: event.formCode,
-          ...(event.region ? { region: event.region } : {}),
-          ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
-        },
-        legalClock: undefined,
-        legalFormReceivedAt: undefined,
-        legalFormExpiryHistory: expiryHistory,
-      };
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return replaceMovement(state, movement.id, updated);
+      const next = reduceLegalFormsEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "EVALUATE_ARRIVAL_LATENESS": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This movement is closed.");
-      if (movement.arrivalLateNotifiedAt !== undefined) return state;
-      if (!isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, event.now)) {
-        return state;
-      }
-      const updated: Movement = { ...movement, arrivalLateNotifiedAt: event.now };
-      const next = replaceMovement(state, movement.id, updated);
-      const notices = [
-        makeNotice(
-          event.now,
-          next.notices.length,
-          "arrival_late_referrer",
-          { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id },
-          `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-        ),
-      ];
-      if (movement.acceptedUnitId) {
-        notices.push(
-          makeNotice(
-            event.now,
-            next.notices.length + 1,
-            "arrival_late_ward",
-            { role: "ward", placeId: movement.acceptedUnitId },
-            { movementId: movement.id, unitId: movement.acceptedUnitId },
-            `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-          ),
-        );
-      }
-      return appendNotices(next, notices);
+      const next = reduceTransportEvent(state, event);
+      return next ?? state;
     }
 
     case "RELEASE_AND_REOPEN_SEARCH": {
@@ -8572,26 +7515,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "FLAG_LEGAL_MISMATCH": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This movement is closed.");
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      const involuntary = movement.legalStatus !== "Voluntary";
-      const derived =
-        involuntary && !unit.authorised
-          ? ("involuntary_on_voluntary_ward" as const)
-          : movement.legalStatus === "Voluntary" && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0
-            ? ("voluntary_on_locked_ward" as const)
-            : null;
-      if (!derived || event.kind !== derived)
-        return reject(state, event, "The selected legal mismatch must match the current ward and patient status.");
-      const kind = derived;
-      const updated: Movement = {
-        ...movement,
-        legalMismatch: { at: event.now, unitId: event.unitId, kind },
-      };
-      return replaceMovement(state, movement.id, updated);
+      const next = reduceLegalFormsEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "EVALUATE_LEAVE_BED_WARNINGS": {
@@ -8619,66 +7544,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "CONFIRM_MORNING_ROLLUP": {
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // Same claim-not-proof discipline as CONFIRM_CAPACITY: a caller stating a different unit than
-      // the one being written to is refused, so one ward cannot confirm another ward's morning count.
-      if (
-        (event.role === "ward" && event.actingUnitId === undefined) ||
-        (event.actingUnitId !== undefined && event.actingUnitId !== event.unitId)
-      ) {
-        return reject(
-          state,
-          event,
-          `CONFIRM_MORNING_ROLLUP was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
-        );
-      }
-      if (!Number.isSafeInteger(event.expectedDischarges) || event.expectedDischarges < 0) {
-        return reject(state, event, "expectedDischarges must be a finite, non-negative whole number");
-      }
-      return {
-        ...state,
-        morningRollupConfirmations: {
-          ...state.morningRollupConfirmations,
-          [event.unitId]: {
-            confirmedAt: event.now,
-            confirmedByRole: event.role,
-            expectedDischarges: event.expectedDischarges,
-          },
-        },
-      };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "SEND_WARD_BUZZ": {
-      if (
-        !WARD_BUZZ_MESSAGES.includes(event.message) ||
-        (event.urgent !== undefined && typeof event.urgent !== "boolean")
-      )
-        return reject(state, event, "Choose a valid ward refresh message.");
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      return {
-        ...state,
-        refreshRequests: [
-          ...state.refreshRequests,
-          {
-            unitId: unit.id,
-            at: event.now,
-            byRole: event.role,
-            message: event.message,
-            urgent: event.urgent,
-          },
-        ],
-      };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "RECORD_HANDOVER_SIGN_OFF": {
-      // Role and time only. Never a note, a name, or a claim that anyone was notified.
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      const recorded: HandoverSignOffRecord = { at: event.now, by: event.role };
-      const existing = Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [];
-      return { ...state, handoverSignOffs: [...existing, recorded] };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "RECORD_REPATRIATION": {
@@ -8799,96 +7676,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RECORD_CLINICAL_CONTACT": {
-      // Contacting a team is this record, not a sent message.
-      const team = communityTeamById(event.teamId);
-      if (!team)
-        return reject(state, event, `RECORD_CLINICAL_CONTACT teamId ${event.teamId} does not name a real team`);
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      const recorded: ClinicalContactRecord = { teamId: team.id, at: event.now, by: event.role };
-      const existing = Array.isArray(state.clinicalContacts) ? state.clinicalContacts : [];
-      return { ...state, clinicalContacts: [...existing, recorded] };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "RECORD_SUPPORT_NOTIFICATION": {
-      // Advisory only: records what a person says happened. Never decides whether a notice is
-      // legally required, never computes when, never blocks a move.
-      if (finiteInstant(event.now) === null)
-        return reject(state, event, "RECORD_SUPPORT_NOTIFICATION now must be a finite instant");
-      if (!SUPPORT_NOTIFICATION_OCCASIONS.includes(event.occasion))
-        return reject(state, event, "RECORD_SUPPORT_NOTIFICATION occasion is not one this checklist covers");
-      if (!SUPPORT_NOTIFICATION_PARTIES.includes(event.party))
-        return reject(
-          state,
-          event,
-          "RECORD_SUPPORT_NOTIFICATION party must be the carer, personal support person or MHAS",
-        );
-      if (!SUPPORT_NOTIFICATION_OUTCOMES.includes(event.outcome))
-        return reject(state, event, "RECORD_SUPPORT_NOTIFICATION outcome must be told or not applicable");
-
-      let subjectId: string;
-      if (event.occasion === "discharge") {
-        if (event.admissionId === undefined || event.movementId !== undefined)
-          return reject(state, event, "a discharge notification names the admission, not a movement");
-        const admission = findAdmission(state, event.admissionId);
-        if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
-        if (!admissionSupportNotificationSubject(admission, state))
-          return reject(
-            state,
-            event,
-            `admission ${admission.id} is not a completed discharge of an involuntary patient`,
-          );
-        subjectId = admission.id;
-      } else {
-        if (event.movementId === undefined || event.admissionId !== undefined)
-          return reject(state, event, "an admission or transfer notification names the movement, not an admission");
-        const movement = findMovement(state, event.movementId);
-        if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-        const subject = movementSupportNotificationSubject(movement, state.referrals);
-        if (!subject)
-          return reject(state, event, `movement ${movement.id} is not a completed arrival of an involuntary patient`);
-        if (subject.occasion !== event.occasion)
-          return reject(state, event, `movement ${movement.id} is a ${subject.occasion}, not a ${event.occasion}`);
-        subjectId = movement.id;
-      }
-
-      const base = { occasion: event.occasion, subjectId, party: event.party, at: event.now, by: event.role };
-      let detail: Pick<SupportNotificationRecord, "outcome" | "who" | "contactedAt" | "reason">;
-      if (event.outcome === "told") {
-        if (event.reason !== undefined)
-          return reject(state, event, "a told notification carries no not-applicable reason");
-        // Refused, never shortened: a truncated name silently drops whatever was typed last.
-        const who = (event.who ?? "").trim();
-        if (who.length === 0) return reject(state, event, "say who was told");
-        if (who.length > SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS)
-          return reject(
-            state,
-            event,
-            `who is ${who.length} characters and the limit is ${SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS}`,
-          );
-        const contactedAt = event.contactedAt ?? event.now;
-        if (finiteInstant(contactedAt) === null || contactedAt > event.now)
-          return reject(state, event, "the time they were told must be a real time no later than now");
-        detail = { outcome: "told", who, contactedAt };
-      } else {
-        if (event.who !== undefined || event.contactedAt !== undefined)
-          return reject(state, event, "a not-applicable notification names nobody and no time");
-        const reason = (event.reason ?? "").trim();
-        if (reason.length === 0) return reject(state, event, "say why it does not apply");
-        if (reason.length > SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS)
-          return reject(
-            state,
-            event,
-            `reason is ${reason.length} characters and the limit is ${SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS}`,
-          );
-        detail = { outcome: "not_applicable", reason };
-      }
-
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      const existing = Array.isArray(state.supportNotifications) ? state.supportNotifications : [];
-      const recorded: SupportNotificationRecord = { id: `SN-${existing.length + 1}`, ...base, ...detail };
-      return { ...state, supportNotifications: [...existing, recorded] };
+      const next = reduceHandoverTasksEvent(state, event, decision);
+      return next ?? state;
     }
 
     case "DISPATCH_BROADCAST_ALERT":

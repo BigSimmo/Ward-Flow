@@ -4451,6 +4451,8 @@ export function EdScreen({ edId }: EdScreenProps) {
                           <button
                             type="button"
                             disabled={!communityTeamChoice}
+                            aria-describedby={!communityTeamChoice ? `ward-ed-cmht-reason-${movement.id}` : undefined}
+                            title={!communityTeamChoice ? "Choose a community mental health team first." : undefined}
                             data-testid={`ward-ed-cmht-confirm-${movement.id}`}
                             className={styles.declineButton}
                             onClick={() => {
@@ -4468,6 +4470,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                           >
                             Confirm CMHT referral
                           </button>
+                          {!communityTeamChoice ? (
+                            <span id={`ward-ed-cmht-reason-${movement.id}`} className="sr-only">
+                              Choose a community mental health team first.
+                            </span>
+                          ) : null}
                           <button
                             type="button"
                             data-testid={`ward-ed-cmht-cancel-${movement.id}`}
@@ -5027,10 +5034,21 @@ export function EdScreen({ edId }: EdScreenProps) {
                           type="submit"
                           className={styles.declineSubmit}
                           disabled={legalFormExpirySaveBlocked}
+                          aria-describedby={
+                            legalFormExpirySaveBlocked ? `ward-ed-legal-form-expiry-reason-${movement.id}` : undefined
+                          }
+                          title={
+                            legalFormExpirySaveBlocked ? "Enter both date and time from the paper record." : undefined
+                          }
                           data-testid={`ward-ed-legal-form-expiry-save-${movement.id}`}
                         >
                           {legalFormExpiryIsExtension ? "Save extension" : "Save expiry"}
                         </button>
+                        {legalFormExpirySaveBlocked ? (
+                          <span id={`ward-ed-legal-form-expiry-reason-${movement.id}`} className="sr-only">
+                            Enter both date and time from the paper record.
+                          </span>
+                        ) : null}
                       </form>
                     ) : null}
 
@@ -5069,10 +5087,25 @@ export function EdScreen({ edId }: EdScreenProps) {
                           type="submit"
                           className={styles.declineSubmit}
                           disabled={receiptCorrectionReasonDraft === undefined}
+                          aria-describedby={
+                            receiptCorrectionReasonDraft === undefined
+                              ? `ed-correct-form-receipt-reason-hint-${movement.id}`
+                              : undefined
+                          }
+                          title={
+                            receiptCorrectionReasonDraft === undefined
+                              ? "Choose a reason for the receipt correction first."
+                              : undefined
+                          }
                           data-testid={`ed-correct-form-receipt-save-${movement.id}`}
                         >
                           Save correction
                         </button>
+                        {receiptCorrectionReasonDraft === undefined ? (
+                          <span id={`ed-correct-form-receipt-reason-hint-${movement.id}`} className="sr-only">
+                            Choose a reason for the receipt correction first.
+                          </span>
+                        ) : null}
                       </form>
                     ) : null}
                   </>
@@ -6470,6 +6503,18 @@ export function EdScreen({ edId }: EdScreenProps) {
                                     !genderRecordDraft[movement.id] ||
                                     genderRecordDraft[movement.id] === movement.gender
                                   }
+                                  aria-describedby={
+                                    !genderRecordDraft[movement.id] ||
+                                    genderRecordDraft[movement.id] === movement.gender
+                                      ? `ward-ed-record-gender-reason-${movement.id}`
+                                      : undefined
+                                  }
+                                  title={
+                                    !genderRecordDraft[movement.id] ||
+                                    genderRecordDraft[movement.id] === movement.gender
+                                      ? "Choose a new gender value to record first."
+                                      : undefined
+                                  }
                                   onClick={() => {
                                     const gender = genderRecordDraft[movement.id];
                                     if (!gender) return;
@@ -6485,6 +6530,12 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 >
                                   Record gender
                                 </button>
+                                {!genderRecordDraft[movement.id] ||
+                                genderRecordDraft[movement.id] === movement.gender ? (
+                                  <span id={`ward-ed-record-gender-reason-${movement.id}`} className="sr-only">
+                                    Choose a new gender value to record first.
+                                  </span>
+                                ) : null}
                               </div>
                             )}
                           </li>

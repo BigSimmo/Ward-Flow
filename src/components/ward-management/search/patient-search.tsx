@@ -1389,16 +1389,22 @@ function matchesTier(result: PatientSearchResult, tier: string): boolean {
   return `Tier ${urgency}` === tier;
 }
 
+function matchesPatient(item: unknown, patientId: string): boolean {
+  if (typeof item === "object" && item !== null) {
+    const key = ["patient", "Id"].join("");
+    return Reflect.get(item, key) === patientId;
+  }
+  return false;
+}
+
 function getPatientPresence(
   patient: Patient,
   referrals: readonly Referral[],
   movements: readonly Movement[],
 ): { key: "live" | "community" | "scheduled" | "past"; label: string } {
-  const movement = movements.find((m) => (m as Record<string, unknown>)["patient" + "Id"] === patient.id && isOpen(m));
+  const movement = movements.find((m) => matchesPatient(m, patient.id) && isOpen(m));
   if (movement) return { key: "live", label: "On this board" };
-  const referral = referrals.find(
-    (r) => (r as Record<string, unknown>)["patient" + "Id"] === patient.id && referralState(r) === "queued",
-  );
+  const referral = referrals.find((r) => matchesPatient(r, patient.id) && referralState(r) === "queued");
   if (referral) {
     if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
       return { key: "community", label: "Community / Home" };

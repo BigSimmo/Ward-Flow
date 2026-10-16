@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { VerifierUnavailableError } from "./auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 
@@ -10,8 +11,23 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   const fetch = dependencies.fetch ?? globalThis.fetch;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
+  const cacheTtlMs = dependencies.cacheTtlMs ?? 20_000;
+  const tokenCache = new Map();
+
   return async (authorization) => {
     if (!/^Bearer [^\s]+$/.test(authorization ?? "") || authorization.length > 16_384) throw new Error("Unauthorised");
+
+    const cacheKey = createHash("sha256").update(authorization).digest("hex");
+    if (cacheTtlMs > 0) {
+      const cached = tokenCache.get(cacheKey);
+      if (cached) {
+        if (cached.expiresAt > Date.now()) {
+          return cached.userId;
+        }
+        tokenCache.delete(cacheKey);
+      }
+    }
+
     const controller = new AbortController();
     let timer;
     // Covers response-body reads too; fetch resolving headers does not end the deadline.
@@ -36,6 +52,20 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
           if (!UUID.test(user?.id ?? "")) throw new VerifierUnavailableError("Token verifier unavailable");
           const userId = user.id.toLowerCase();
           if (!config.coordinatorIds.includes(userId)) throw new InvalidCredentialError("Unauthorised");
+
+          if (cacheTtlMs > 0) {
+            const now = Date.now();
+            for (const [k, e] of tokenCache) {
+              if (e.expiresAt <= now) tokenCache.delete(k);
+            }
+            while (tokenCache.size >= 128) {
+              const oldestKey = tokenCache.keys().next().value;
+              if (!oldestKey) break;
+              tokenCache.delete(oldestKey);
+            }
+            tokenCache.set(cacheKey, { userId, expiresAt: now + cacheTtlMs });
+          }
+
           return userId;
         })(),
         deadline,

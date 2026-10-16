@@ -26,7 +26,7 @@
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -291,8 +291,8 @@ function WardBlock({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const squares = buildSquares(ward);
-  const bays = buildBays(squares);
+  const squares = useMemo(() => buildSquares(ward), [ward]);
+  const bays = useMemo(() => buildBays(squares), [squares]);
 
   const [hoveredBed, setHoveredBed] = useState<{
     square: BedSquare;
@@ -998,9 +998,15 @@ export function BedMap({
   const [bedDetail, setBedDetail] = useState(initialBedDetail);
   const [activeService, setActiveService] = useState<string>();
   const mapRef = useRef<HTMLDivElement>(null);
-  const wards = bedMapWards(units, bedReleases, admissions, leaveBeds);
-  const groups = groupBedMapWardsByService(wards);
-  const renderedGroups = service ? groups.filter((group) => group.service === service) : groups;
+  const wards = useMemo(
+    () => bedMapWards(units, bedReleases, admissions, leaveBeds),
+    [units, bedReleases, admissions, leaveBeds],
+  );
+  const groups = useMemo(() => groupBedMapWardsByService(wards), [wards]);
+  const renderedGroups = useMemo(
+    () => (service ? groups.filter((group) => group.service === service) : groups),
+    [groups, service],
+  );
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") return;
     const sections = Array.from(mapRef.current?.querySelectorAll<HTMLElement>("[data-service]") ?? []);

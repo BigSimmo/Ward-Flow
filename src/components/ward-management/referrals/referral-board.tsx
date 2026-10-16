@@ -28,6 +28,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { hasOpenSheet } from "@/components/ward-management/ward-modal-focus";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
@@ -701,7 +702,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     }
     const onKeyDown = (e: KeyboardEvent) => {
       // A sheet over the page closes first; the referral stays open behind it.
-      if (e.key === "Escape" && sheet === null && !e.defaultPrevented) {
+      const target = e.target as HTMLElement | null;
+      if (
+        e.key === "Escape" &&
+        sheet === null &&
+        !e.defaultPrevented &&
+        !hasOpenSheet() &&
+        !document.querySelector('[aria-modal="true"]') &&
+        target?.tagName !== "SELECT"
+      ) {
         e.preventDefault();
         closeDetail();
       }
@@ -711,7 +720,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   }, [selectedReferralId, closeDetail, sheet]);
 
   const onShortcutKey = useEffectEvent((e: KeyboardEvent) => {
-    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || sheet !== null || isTyping(e.target)) return;
+    if (
+      e.defaultPrevented ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.altKey ||
+      sheet !== null ||
+      hasOpenSheet() ||
+      document.querySelector('[aria-modal="true"]') !== null ||
+      isTyping(e.target)
+    ) {
+      return;
+    }
     const key = e.key.toLowerCase();
     if (key === "j" || key === "k") {
       e.preventDefault();

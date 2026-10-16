@@ -202,7 +202,17 @@ export function WardNotificationCenter({
       aria-live="polite"
       data-testid="ward-notification-center"
       data-urgent-buzz={hasUrgentBuzz ? "true" : "false"}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && onClose) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
     >
+      <span className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-notification-live-summary">
+        {`${totalUnreadAlerts} unread notification${totalUnreadAlerts === 1 ? "" : "s"}, ${activeTab} filter active, sample records`}
+      </span>
       {/* a) Telemetry & Action Strip */}
       <div className={styles.telemetryStrip}>
         <div className={styles.titleArea}>

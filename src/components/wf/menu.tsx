@@ -244,12 +244,16 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
   );
 }
 
+export type PopoverCloseOptions = {
+  restoreFocus?: boolean;
+};
+
 export type PopoverProps = {
   /** Accessible name of the popover dialog. */
   label: string;
   trigger: (props: MenuTriggerProps) => ReactNode;
   /** Content. Receives `close` so an action inside can dismiss it. */
-  children: (close: () => void) => ReactNode;
+  children: (close: (options?: PopoverCloseOptions | unknown) => void) => ReactNode;
   align?: "start" | "end";
   className?: string;
   panelClassName?: string;
@@ -265,28 +269,65 @@ export function Popover({ label, trigger, children, align = "start", className, 
   const anchorRef = useRef<HTMLSpanElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const skipReturnFocusRef = useRef(false);
 
-  // Focus goes back to the trigger after Escape or an action inside, not after an outside press.
+  // Focus goes back to the trigger after Escape or an in-place action inside, not after an outside press, Tab-out, or link navigation.
   const [returnFocus, setReturnFocus] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const closeAndReturn = useCallback(() => {
+  const close = useCallback(() => {
+    setReturnFocus(false);
     setOpen(false);
-    setReturnFocus(true);
+  }, []);
+  const closeAndReturn = useCallback((options?: PopoverCloseOptions | unknown) => {
+    let shouldRestore = true;
+    if (typeof options === "boolean") {
+      shouldRestore = options;
+    } else if (options && typeof options === "object") {
+      if ("restoreFocus" in options && typeof (options as PopoverCloseOptions).restoreFocus === "boolean") {
+        shouldRestore = Boolean((options as PopoverCloseOptions).restoreFocus);
+      } else if ("target" in options || "currentTarget" in options) {
+        const target =
+          ((options as { target?: unknown }).target as Element | null) ??
+          ((options as { currentTarget?: unknown }).currentTarget as Element | null);
+        if (target && typeof target.closest === "function" && target.closest("a[href]")) {
+          shouldRestore = false;
+        }
+      }
+    }
+    setOpen(false);
+    setReturnFocus(shouldRestore);
   }, []);
   useOutsidePress(open, anchorRef, close);
 
   useEffect(() => {
-    if (!open && returnFocus) triggerRef.current?.focus();
+    if (!open && returnFocus) {
+      if (!skipReturnFocusRef.current) {
+        triggerRef.current?.focus();
+      }
+      skipReturnFocusRef.current = false;
+    }
   }, [open, returnFocus]);
 
   useEffect(() => {
     if (!open) return;
+    skipReturnFocusRef.current = false;
     const panel = panelRef.current;
     const first = panel?.querySelector<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
     (first ?? panel)?.focus();
   }, [open]);
+
+  const onTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "Escape" && open) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeAndReturn({ restoreFocus: true });
+    } else if (event.key === "ArrowDown" && !open) {
+      event.preventDefault();
+      setReturnFocus(false);
+      setOpen(true);
+    }
+  };
 
   return (
     <span ref={anchorRef} className={cx(styles.anchor, className)}>
@@ -299,7 +340,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
           setReturnFocus(false);
           setOpen((value) => !value);
         },
-        onKeyDown: () => {},
+        onKeyDown: onTriggerKeyDown,
       })}
       {open ? (
         <div
@@ -315,11 +356,41 @@ export function Popover({ label, trigger, children, align = "start", className, 
             align === "end" ? styles.end : styles.start,
             panelClassName,
           )}
+          onClickCapture={(event) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest?.("a[href]")) {
+              skipReturnFocusRef.current = true;
+            }
+          }}
+          onBlur={(event) => {
+            const next = event.relatedTarget as Node | null;
+            if (next && !anchorRef.current?.contains(next)) {
+              close();
+            }
+          }}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
-              closeAndReturn();
+              closeAndReturn({ restoreFocus: true });
+            } else if (event.key === "Tab") {
+              const panel = panelRef.current;
+              const focusables = panel
+                ? Array.from(
+                    panel.querySelectorAll<HTMLElement>(
+                      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                    ),
+                  ).filter((el) => !el.closest("[hidden], [inert]"))
+                : [];
+              const first = focusables[0];
+              const last = focusables.at(-1);
+              if (
+                focusables.length === 0 ||
+                (!event.shiftKey && document.activeElement === last) ||
+                (event.shiftKey && (document.activeElement === first || document.activeElement === panel))
+              ) {
+                close();
+              }
             }
           }}
         >

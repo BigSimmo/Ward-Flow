@@ -1,5 +1,12 @@
 import { parseSubscription } from "./push.mjs";
 
+let engineCheckSynthetic;
+try {
+  ({ checkSyntheticPayload: engineCheckSynthetic } = await import("./dist/engine.mjs"));
+} catch {
+  // Engine dist not yet built
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PATHS = [
   "/v1/workspace",
@@ -11,7 +18,16 @@ const PATHS = [
   "/v1/workspace/push-status",
 ];
 
-export function createSharedHandler({ config, store, authenticate, readBody, verifierUnavailable }) {
+export function createSharedHandler({
+  config,
+  store,
+  authenticate,
+  readBody,
+  verifierUnavailable,
+  checkSyntheticPayload: customCheckSyntheticPayload = undefined,
+}) {
+  const checkSynthetic = customCheckSyntheticPayload ?? engineCheckSynthetic;
+
   return async (request) => {
     const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff" };
     const reply = (status, body) => Response.json(body, { status, headers });
@@ -134,7 +150,8 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
         typeof body.event !== "object" ||
         Array.isArray(body.event) ||
         typeof body.event.type !== "string" ||
-        body.event.type.length > 100
+        body.event.type.length > 100 ||
+        (checkSynthetic && !checkSynthetic(body.event).safe)
       )
         return reply(400, { error: "A synthetic command, command ID and valid revision are required" });
       const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event);

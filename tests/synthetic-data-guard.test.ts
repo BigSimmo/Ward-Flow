@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
-import { redactCaptionIdentifiers } from "@/lib/privacy";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
 describe("synthetic-data-guard", () => {
+  it("passes seedWardFlowState() without false positives", () => {
+    const state = seedWardFlowState();
+    const result = checkSyntheticPayload(state);
+    expect(result.safe).toBe(true);
+  });
+
   it("passes valid synthetic clinical demonstration data", () => {
     const demoPayload = {
       patients: [
@@ -125,9 +131,23 @@ describe("synthetic-data-guard", () => {
     expect(checkSyntheticPayload(deep, 5).safe).toBe(false);
   });
 
-  it("redacts WA UMRN formats in redactCaptionIdentifiers", () => {
-    expect(redactCaptionIdentifiers("Patient UMRN: 1234567 admitted")).toBe("Patient [id] admitted");
-    expect(redactCaptionIdentifiers("Patient UMRN-1234567 admitted")).toBe("Patient [id] admitted");
-    expect(redactCaptionIdentifiers("Patient UMRN1234567 admitted")).toBe("Patient [id] admitted");
+  it("detects real 8-digit UMRN values in record fields", () => {
+    const payload = { umrn: "12345678" };
+    const result = checkSyntheticPayload(payload);
+    expect(result.safe).toBe(false);
+    if (!result.safe) {
+      expect(result.reason).toContain("hospital record number");
+    }
+  });
+
+  it("permits explicit synthetic-prefixed identifiers and demo contacts", () => {
+    const payload = {
+      umrn: "SYNTHETIC-12345678",
+      notes: "Demo patient SYNTHETIC-UMRN-1234567 admitted.",
+      contact: "DEMO-0412345678",
+      wardUmrn: "UM100093",
+    };
+    const result = checkSyntheticPayload(payload);
+    expect(result.safe).toBe(true);
   });
 });

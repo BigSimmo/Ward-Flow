@@ -29,10 +29,18 @@ import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
+import { z } from "zod";
+
+export const wardFlowEventEnvelopeSchema = z
+  .object({
+    type: z.string().min(1).max(120),
+  })
+  .passthrough();
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
-const text = (v: unknown): v is string => typeof v === "string";
+const text = (v: unknown): v is string => typeof v === "string" && v.length <= 10_000;
+
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const counter = (v: unknown): v is number => finite(v) && Number.isSafeInteger(v) && v >= 0;
 const bool = (v: unknown) => typeof v === "boolean";

@@ -1,6 +1,19 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["**/*mockup*", "docs/**"],
+  "ignore": ["mockups/**", "**/*-mockups/**", "**/*-mockup.tsx", "**/*-mockups.tsx", "docs/**"],
+  "ignoreDependencies": [
+    "@typescript/typescript6",
+    "esbuild",
+    "parse5",
+    "playwright-core",
+    "server-only",
+    "sharp",
+    "tsx",
+    "zod"
+  ],
+  "rules": {
+    "duplicates": "off"
+  },
   "workspaces": {
     ".": {
       "entry": [

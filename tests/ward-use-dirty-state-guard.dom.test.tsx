@@ -297,4 +297,27 @@ describe("useDirtyStateGuard", () => {
       (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }).__wardFlowConfirmNavigation,
     ).toBeUndefined();
   });
+
+  it("intercepts popstate when dirty and restores history URL when user cancels confirm", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const pushStateSpy = vi.spyOn(window.history, "pushState");
+    const guardedHref = window.location.href;
+
+    const { unmount } = renderHook(() =>
+      useDirtyStateGuard({
+        isDirty: true,
+        confirmMessage: "Discard unsaved changes?",
+      }),
+    );
+
+    const popEvent = new PopStateEvent("popstate", { state: { page: 1 } });
+    const stopImmediateSpy = vi.spyOn(popEvent, "stopImmediatePropagation");
+    window.dispatchEvent(popEvent);
+
+    expect(confirmSpy).toHaveBeenCalledWith("Discard unsaved changes?");
+    expect(pushStateSpy).toHaveBeenCalledWith(window.history.state, "", guardedHref);
+    expect(stopImmediateSpy).toHaveBeenCalled();
+
+    unmount();
+  });
 });

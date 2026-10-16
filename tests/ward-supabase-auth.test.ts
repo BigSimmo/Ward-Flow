@@ -187,3 +187,30 @@ it("refuses refreshed tokens for a different account and removes the old session
   expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   auth.dispose();
 });
+
+it("caches verified tokens for the configured TTL without repeating user fetches", async () => {
+  const { createSupabaseAuthenticator } = await import("../backend/ward-flow/supabase-auth.mjs");
+  let fetchCount = 0;
+  const coordinatorId = "12345678-1234-1234-1234-123456789abc";
+  const config = {
+    coordinatorIds: [coordinatorId],
+    supabase: {
+      projectRef: "zakzoemeedfepxcstsou",
+      url,
+      publishableKey: "sb_publishable_test",
+    },
+  };
+  const authenticator = createSupabaseAuthenticator(config, {
+    cacheTtlMs: 20_000,
+    fetch: async () => {
+      fetchCount++;
+      return Response.json({ id: coordinatorId });
+    },
+  });
+
+  const id1 = await authenticator("Bearer test-token-1");
+  const id2 = await authenticator("Bearer test-token-1");
+  expect(id1).toBe(coordinatorId);
+  expect(id2).toBe(coordinatorId);
+  expect(fetchCount).toBe(1);
+});

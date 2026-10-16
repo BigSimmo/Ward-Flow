@@ -225,20 +225,27 @@ export function eventHistoryWording(
   return EVENT_HISTORY_TABLE[type as WardFlowEvent["type"]]?.plainWording;
 }
 
+function eventFieldString<K extends string>(event: WardFlowEvent, field: K): string | undefined {
+  if (typeof event === "object" && event !== null && field in event) {
+    const val = Reflect.get(event, field);
+    return typeof val === "string" ? val : undefined;
+  }
+  return undefined;
+}
+
 /**
  * Helper to extract any recorded reason string from an event.
  */
 function extractEventReason(event: WardFlowEvent): string {
   if (event.type === "RECORD_ED_MEDICAL_DETERIORATION") return "Medical Deterioration - ED Resuscitation Required";
-  const ev = event as unknown as Record<string, unknown>;
-  if (typeof ev.reason === "string" && ev.reason.trim().length > 0) return ev.reason.trim();
-  if (typeof ev.declineReason === "string" && ev.declineReason.trim().length > 0) return ev.declineReason.trim();
-  if (typeof ev.overrideReason === "string" && ev.overrideReason.trim().length > 0) return ev.overrideReason.trim();
-  if (typeof ev.stopReason === "string" && ev.stopReason.trim().length > 0) return ev.stopReason.trim();
-  if (typeof ev.blocker === "string" && ev.blocker.trim().length > 0) return ev.blocker.trim();
-  if (typeof ev.leavingDestination === "string" && ev.leavingDestination.trim().length > 0)
-    return `Destination: ${ev.leavingDestination}`;
-  if (typeof ev.outcome === "string" && ev.outcome.trim().length > 0) return `Outcome: ${ev.outcome}`;
+  for (const field of ["reason", "declineReason", "overrideReason", "stopReason", "blocker"]) {
+    const val = eventFieldString(event, field);
+    if (val && val.trim().length > 0) return val.trim();
+  }
+  const leavingDestination = eventFieldString(event, "leavingDestination");
+  if (leavingDestination && leavingDestination.trim().length > 0) return `Destination: ${leavingDestination.trim()}`;
+  const outcome = eventFieldString(event, "outcome");
+  if (outcome && outcome.trim().length > 0) return `Outcome: ${outcome.trim()}`;
   return "Not recorded";
 }
 
@@ -263,15 +270,20 @@ export function buildHistoryEntry(event: WardFlowEvent, now: Instant): WardHisto
 
   const reason = extractEventReason(event);
 
-  const ev = event as unknown as Record<string, unknown>;
   const relatedLinks: WardHistoryEntry["relatedLinks"] = {};
 
-  if (typeof ev.movementId === "string" && ev.movementId.length > 0) relatedLinks.movementId = ev.movementId;
-  if (typeof ev.bedId === "string" && ev.bedId.length > 0) relatedLinks.bedId = ev.bedId;
-  if (typeof ev.unitId === "string" && ev.unitId.length > 0) relatedLinks.unitId = ev.unitId;
-  if (typeof ev.actingUnitId === "string" && ev.actingUnitId.length > 0) relatedLinks.unitId = ev.actingUnitId;
-  if (typeof ev.referralId === "string" && ev.referralId.length > 0) relatedLinks.referralId = ev.referralId;
-  if (typeof ev.admissionId === "string" && ev.admissionId.length > 0) relatedLinks.admissionId = ev.admissionId;
+  const movementId = eventFieldString(event, "movementId");
+  if (movementId && movementId.length > 0) relatedLinks.movementId = movementId;
+  const bedId = eventFieldString(event, "bedId");
+  if (bedId && bedId.length > 0) relatedLinks.bedId = bedId;
+  const unitId = eventFieldString(event, "unitId");
+  if (unitId && unitId.length > 0) relatedLinks.unitId = unitId;
+  const actingUnitId = eventFieldString(event, "actingUnitId");
+  if (actingUnitId && actingUnitId.length > 0) relatedLinks.unitId = actingUnitId;
+  const referralId = eventFieldString(event, "referralId");
+  if (referralId && referralId.length > 0) relatedLinks.referralId = referralId;
+  const admissionId = eventFieldString(event, "admissionId");
+  if (admissionId && admissionId.length > 0) relatedLinks.admissionId = admissionId;
 
   return {
     time,
@@ -318,13 +330,12 @@ export function selectPatientHistory(
     const config = EVENT_HISTORY_TABLE[event.type];
     if (!config || (config.category !== "patient" && config.category !== "both")) continue;
 
-    const ev = event as unknown as Record<string, unknown>;
     // D-14 (patient link is default-deny): match on the record ids only, never the patient link.
     const matchesPatient =
-      ev.movementId === recordId ||
-      ev.admissionId === recordId ||
-      ev.referralId === recordId ||
-      ev.plannedAdmissionId === recordId;
+      eventFieldString(event, "movementId") === recordId ||
+      eventFieldString(event, "admissionId") === recordId ||
+      eventFieldString(event, "referralId") === recordId ||
+      eventFieldString(event, "plannedAdmissionId") === recordId;
 
     if (matchesPatient) {
       matchingEntries.push(buildHistoryEntry(event, now));
@@ -354,9 +365,12 @@ export function selectBedHistory(
     const config = EVENT_HISTORY_TABLE[event.type];
     if (!config || (config.category !== "bed" && config.category !== "both")) continue;
 
-    const ev = event as unknown as Record<string, unknown>;
-    const matchesUnit = ev.unitId === unitId || ev.actingUnitId === unitId;
-    const matchesBed = bedId ? ev.bedId === bedId || ev.releaseId === bedId : true;
+    const unit = eventFieldString(event, "unitId");
+    const actingUnit = eventFieldString(event, "actingUnitId");
+    const bed = eventFieldString(event, "bedId");
+    const release = eventFieldString(event, "releaseId");
+    const matchesUnit = unit === unitId || actingUnit === unitId;
+    const matchesBed = bedId ? bed === bedId || release === bedId : true;
 
     if (matchesUnit && matchesBed) {
       matchingEntries.push(buildHistoryEntry(event, now));

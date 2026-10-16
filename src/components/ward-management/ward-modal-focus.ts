@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useId, useRef, type RefObject } from "react";
-import { canRestoreFocusTo, isTopmostSheet, lockPageScroll, popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import {
+  canRestoreFocusTo,
+  hasOpenSheet,
+  isTopmostSheet,
+  lockPageScroll,
+  popSheet,
+  pushSheet,
+} from "@/components/ui/sheet-focus";
+
+export { hasOpenSheet, isTopmostSheet };
 
 /** Shared Ward dialog lifecycle using the existing overlay stack and background isolation. */
 export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | null>, onClose: () => void) {
@@ -28,6 +37,7 @@ export function useWardModalFocus(open: boolean, ref: RefObject<HTMLElement | nu
       if (!isTopmostSheet(id)) return;
       if (event.key === "Escape") {
         event.preventDefault();
+        event.stopPropagation();
         event.stopImmediatePropagation();
         closeRef.current();
       } else if (event.key === "Tab") {

@@ -605,7 +605,13 @@ export function SettingsScreen() {
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("Configuration file exceeds 10 MB limit.");
+      event.target.value = "";
+      return;
+    }
     const reader = new FileReader();
+
     reader.onload = (loaded) => {
       try {
         const parsed: unknown = JSON.parse(loaded.target?.result as string);

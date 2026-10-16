@@ -21,8 +21,10 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 // `--shard` (it was 65% of shard 1 at 267s). An exact `phone-scroll` alternative
 // would silently leave the siblings uncollected, so the arm is open on purpose —
 // a future ui-phone-scroll-*.spec.ts runs rather than quietly not running.
-// `tests/playwright-project-isolation.test.ts` asserts every such file on disk is
-// matched here.
+// `tests/playwright-project-isolation.test.ts` and `tests/test-file-runner-visibility.test.ts`
+// assert that `productionSpecPattern` and `mockupSpecPattern` stay disjoint on disk, while
+// `scripts/playwright-pr-shards.mjs` maps `api-csrf-proxy.spec.ts` (`chromium`) and all 14
+// `ui-ward-*.spec.ts` journeys (`chromium-mockups`) into the three balanced PR UI shards.
 const productionSpecPattern =
   /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/;
 const mockupSpecPattern =

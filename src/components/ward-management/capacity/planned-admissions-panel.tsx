@@ -34,6 +34,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import {
   COHORTS,
   HEALTH_SERVICES,
@@ -81,6 +82,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     dispatch,
     rejections,
     plannedAdmissions: plannedFromContext,
+    shared,
   } = useWardFlow();
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   const patientOf = usePatientOf();
@@ -89,9 +91,16 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason>(PLANNED_ADMISSION_CANCEL_REASONS[0]);
   const [refusal, setRefusal] = useState<string | null>(null);
   const pending = useRef<{ rejections: number } | null>(null);
+  const sharedRef = useRef(shared);
   const bookButton = useRef<HTMLButtonElement>(null);
 
-  const agenda = plannedAdmissionAgenda(plannedAdmissions);
+  useDirtyStateGuard(form !== null);
+
+  useEffect(() => {
+    sharedRef.current = shared;
+  }, [shared]);
+
+  const agenda = useMemo(() => plannedAdmissionAgenda(plannedAdmissions), [plannedAdmissions]);
   const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
 
   // Patients free to book: no live stay, no open movement and no booking already waiting. The
@@ -112,16 +121,20 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   // A dispatch either adds a rejection (refused: say why) or not (accepted: close the form).
   useEffect(() => {
     if (!pending.current) return;
+    const currentShared = sharedRef.current;
+    if (currentShared?.enabled && currentShared.status === "saving") return;
     const before = pending.current.rejections;
     pending.current = null;
     if (rejections.length > before) {
       setRefusal(rejections[rejections.length - 1]?.reason ?? "Not recorded");
-    } else {
+    } else if (!currentShared?.enabled || !currentShared.error) {
       setForm(null);
       setDraft(null);
       setRefusal(null);
     }
   }, [rejections, plannedAdmissions, admissions]);
+
+  const displayedRefusal = refusal ?? (form !== null && shared?.enabled && shared.error ? shared.error : null);
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
@@ -623,9 +636,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 </Select>
               </Field>
             </div>
-            {refusal ? (
+            {displayedRefusal ? (
               <p className={styles.refusal} role="alert" data-testid="ward-planned-form-refusal">
-                {refusal}
+                {displayedRefusal}
               </p>
             ) : null}
           </div>
@@ -668,9 +681,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 ))}
               </Select>
             </Field>
-            {refusal ? (
+            {displayedRefusal ? (
               <p className={styles.refusal} role="alert">
-                {refusal}
+                {displayedRefusal}
               </p>
             ) : null}
           </div>

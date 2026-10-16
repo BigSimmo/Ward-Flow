@@ -906,6 +906,22 @@ export function CommunityScreen({
         window.location.href = communityTeamHref(target);
       }
     };
+
+    return () => {
+      delete win.switchTab;
+      delete win.selectTeam;
+      delete win.acceptReferral;
+      delete win.declineReferral;
+      delete win.completeContact;
+      delete win.openPatientDrawer;
+      delete win.closeDrawer;
+      delete win.setSubFilter;
+      delete win.setRiskFilter;
+      delete win.openReferralDrawer;
+      delete win.openCrisisModal;
+      delete win.openModal;
+      delete win.openDrawer;
+    };
   }, [
     referrals,
     liveReferrals,

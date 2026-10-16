@@ -469,21 +469,31 @@ export function MovementWorkspaceCockpit({
                 type="button"
                 data-testid="ward-console-record-gender-submit"
                 className={styles.controlButton}
-                disabled={genderRecordDraft === undefined}
-                onClick={() => {
-                  if (genderRecordDraft === undefined) return;
-                  dispatch({
-                    type: "RECORD_MOVEMENT_GENDER",
-                    role: "coordinator",
-                    now,
-                    movementId: patient.id,
-                    gender: genderRecordDraft,
-                  });
-                  setGenderRecordDraft(undefined);
-                }}
+                aria-disabled={genderRecordDraft === undefined ? "true" : undefined}
+                aria-describedby={genderRecordDraft === undefined ? "ward-console-record-gender-blocked" : undefined}
+                title={genderRecordDraft === undefined ? "Choose a gender to record first." : undefined}
+                onClick={
+                  genderRecordDraft === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        dispatch({
+                          type: "RECORD_MOVEMENT_GENDER",
+                          role: "coordinator",
+                          now,
+                          movementId: patient.id,
+                          gender: genderRecordDraft,
+                        });
+                        setGenderRecordDraft(undefined);
+                      }
+                }
               >
                 Record gender
               </button>
+              {genderRecordDraft === undefined ? (
+                <span id="ward-console-record-gender-blocked" className="sr-only">
+                  Choose a gender to record first.
+                </span>
+              ) : null}
             </div>
           ) : null}
 
@@ -1345,9 +1355,22 @@ export function MovementWorkspaceCockpit({
                     onChange={(changed) => setBlockerDraft(changed.target.value)}
                     placeholder="Awaiting single-room clean"
                   />
-                  <button type="submit" className={styles.controlButton} disabled={blockerDraft.trim().length === 0}>
+                  <button
+                    type="submit"
+                    className={styles.controlButton}
+                    disabled={blockerDraft.trim().length === 0}
+                    aria-describedby={blockerDraft.trim().length === 0 ? "ward-console-blocker-blocked" : undefined}
+                    title={
+                      blockerDraft.trim().length === 0 ? "Enter what is holding this movement up first." : undefined
+                    }
+                  >
                     Record it
                   </button>
+                  {blockerDraft.trim().length === 0 ? (
+                    <span id="ward-console-blocker-blocked" className="sr-only">
+                      Enter what is holding this movement up first.
+                    </span>
+                  ) : null}
                   {blockerIsActive && (
                     <button
                       type="button"

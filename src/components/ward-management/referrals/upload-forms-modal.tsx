@@ -234,7 +234,10 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               <div style={{ fontWeight: 600, fontSize: "0.9375rem" }}>
                 {fileName ? fileName : "Click to select a file"}
               </div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}>
+              <div
+                id="upload-forms-file-requirement"
+                style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}
+              >
                 {fileAttached
                   ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
                   : "Select a non-empty PDF, JPEG or PNG. Contents are not retained."}
@@ -264,6 +267,10 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             <button
               type="submit"
               disabled={!fileAttached || simulatedSize <= 0}
+              aria-describedby={!fileAttached || simulatedSize <= 0 ? "upload-forms-file-requirement" : undefined}
+              title={
+                !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
+              }
               data-testid="confirm-upload-form-button"
               style={{
                 minHeight: "48px",

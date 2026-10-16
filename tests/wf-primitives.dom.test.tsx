@@ -18,6 +18,7 @@ import {
   LiveChip,
   Menu,
   type MenuItem,
+  Popover,
   Segmented,
   Stepper,
   Switch,
@@ -28,6 +29,7 @@ import {
   durMinutes,
   type ChoiceItem,
 } from "@/components/wf";
+import { guessPhoneFromUserAgent, guessTabletFromRequest, guessTabletFromUserAgent } from "@/components/wf/phone-guess";
 
 const MIN = 60_000;
 
@@ -494,5 +496,90 @@ describe("Kit CSS", () => {
 
   it("gives segmented options a visible focus ring from the focus token", () => {
     expect(block(css("choice.module.css"), ".segItem:focus-visible")).toContain("var(--wf-focus-ring)");
+  });
+});
+
+describe("Popover", () => {
+  it("closes on Escape and returns focus to the trigger, and closes on Tab out without stealing focus", async () => {
+    render(
+      <div>
+        <Popover
+          label="Ward profile"
+          trigger={(props) => (
+            <button {...props} type="button">
+              Open profile
+            </button>
+          )}
+        >
+          {(close) => (
+            <div>
+              <button type="button" onClick={() => close()}>
+                In-place action
+              </button>
+              <a
+                href="#ward"
+                onClick={(event) => {
+                  event.preventDefault();
+                  close({ restoreFocus: false });
+                }}
+              >
+                Enter ward
+              </a>
+            </div>
+          )}
+        </Popover>
+        <button type="button">Next page control</button>
+      </div>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Open profile" });
+    await userEvent.click(trigger);
+    expect(screen.getByRole("dialog", { name: "Ward profile" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "In-place action" })).toHaveFocus();
+
+    // Escape closes and returns focus to trigger
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Ward profile" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    // Reopen via ArrowDown on trigger, then Tab past the last control inside
+    await userEvent.keyboard("{ArrowDown}");
+    expect(screen.getByRole("dialog", { name: "Ward profile" })).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Enter ward" });
+    link.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(screen.queryByRole("dialog", { name: "Ward profile" })).not.toBeInTheDocument();
+
+    // Reopen and click navigation link with restoreFocus: false -> does not pull focus back to trigger
+    await userEvent.click(trigger);
+    const navLink = screen.getByRole("link", { name: "Enter ward" });
+    navLink.focus();
+    await userEvent.click(navLink);
+    expect(screen.queryByRole("dialog", { name: "Ward profile" })).not.toBeInTheDocument();
+    expect(trigger).not.toHaveFocus();
+  });
+});
+
+describe("phone and tablet user-agent guess", () => {
+  it("distinguishes phones, tablets and desktop user agents", () => {
+    const iphoneUa = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148";
+    const ipadUa = "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148";
+    const androidTabletUa =
+      "Mozilla/5.0 (Linux; Android 14; Pixel Tablet) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
+    const desktopUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
+
+    expect(guessPhoneFromUserAgent(iphoneUa)).toBe(true);
+    expect(guessTabletFromUserAgent(iphoneUa)).toBe(false);
+
+    expect(guessPhoneFromUserAgent(ipadUa)).toBe(false);
+    expect(guessTabletFromUserAgent(ipadUa)).toBe(true);
+    expect(guessTabletFromRequest(ipadUa, "?0")).toBe(true);
+    expect(guessTabletFromRequest(ipadUa, "?1")).toBe(false);
+
+    expect(guessPhoneFromUserAgent(androidTabletUa)).toBe(false);
+    expect(guessTabletFromUserAgent(androidTabletUa)).toBe(true);
+
+    expect(guessPhoneFromUserAgent(desktopUa)).toBe(false);
+    expect(guessTabletFromUserAgent(desktopUa)).toBe(false);
   });
 });

@@ -1088,6 +1088,8 @@ function Registers({
   );
 }
 
+const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
+
 export function DelaysBoard({
   groups,
   now,
@@ -1106,6 +1108,7 @@ export function DelaysBoard({
   const patientOf = usePatientOf();
   const rows = useMemo(() => boardRows(groups, now), [groups, now]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
+  const catchments = useMemo(() => boardCatchments(rows), [rows]);
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
   // shell-9: the address is read after hydration, so follow the Menu's severe filter whenever it
   // changes (Back and Forward included). Adjusting state during render is React's pattern for
@@ -1433,7 +1436,6 @@ export function DelaysBoard({
     buttons[next]?.focus();
   };
 
-  const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
   let body: ReactNode[] = [];
   if (!flat) {
     for (const group of groups) {
@@ -1589,41 +1591,44 @@ export function DelaysBoard({
       onNotWired={onNotWired}
     />
   );
-  const portraitRow = (row: BoardRow) => {
-    const patient = patientOf(row.movement);
-    const ward = wardSummary(row, units);
-    return {
-      id: row.movement.id,
-      name: patient.formalName,
-      sub: [patient.umrn, transitNote(row.movement, now), originLabel(row.movement)].filter(Boolean).join(" · "),
-      figure: splitDuration(row.waited),
-      figureNote: phoneUpdate(row),
-      tone: waitTone(row.waited),
-      next: flat ? causeTitle(row.cause) : ward.text,
-      actNow:
-        row.owner === "yours" &&
-        (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
-      selected: selectedId === row.movement.id,
+  const portraitGroups: PortraitGroup[] = useMemo(() => {
+    if (!portrait) return [];
+    const portraitRow = (row: BoardRow) => {
+      const patient = patientOf(row.movement);
+      const ward = wardSummary(row, units);
+      return {
+        id: row.movement.id,
+        name: patient.formalName,
+        sub: [patient.umrn, transitNote(row.movement, now), originLabel(row.movement)].filter(Boolean).join(" · "),
+        figure: splitDuration(row.waited),
+        figureNote: phoneUpdate(row),
+        tone: waitTone(row.waited),
+        next: flat ? causeTitle(row.cause) : ward.text,
+        actNow:
+          row.owner === "yours" &&
+          (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
+        selected: selectedId === row.movement.id,
+      };
     };
-  };
-  const portraitGroups: PortraitGroup[] = flat
-    ? [
-        {
-          id: "flat",
-          title: "Longest wait first",
-          rows: [...shown].sort(byWait).map(portraitRow),
-        },
-      ]
-    : groups.map((group) => {
-        const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
-        return {
-          id: group.cause,
-          title: group.title,
-          tone: list[0]?.severe ? ("danger" as const) : undefined,
-          note: list[0] ? `${ownerName(list[0].owner)} to clear` : undefined,
-          rows: list.map(portraitRow),
-        };
-      });
+    return flat
+      ? [
+          {
+            id: "flat",
+            title: "Longest wait first",
+            rows: [...shown].sort(byWait).map(portraitRow),
+          },
+        ]
+      : groups.map((group) => {
+          const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
+          return {
+            id: group.cause,
+            title: group.title,
+            tone: list[0]?.severe ? ("danger" as const) : undefined,
+            note: list[0] ? `${ownerName(list[0].owner)} to clear` : undefined,
+            rows: list.map(portraitRow),
+          };
+        });
+  }, [portrait, flat, shown, groups, units, now, selectedId, patientOf]);
   const portraitRail = portrait ? (
     <PortraitRail
       title="Registers"
@@ -2098,7 +2103,7 @@ export function DelaysBoard({
                   bins={bins}
                   now={now}
                   filters={filters}
-                  catchments={boardCatchments(rows)}
+                  catchments={catchments}
                   selectedId={selectedId}
                   onFilters={(patch, toFlat) => {
                     set(patch);
@@ -2127,7 +2132,7 @@ export function DelaysBoard({
               bins={bins}
               now={now}
               filters={filters}
-              catchments={boardCatchments(rows)}
+              catchments={catchments}
               selectedId={selectedId}
               onFilters={(patch, toFlat) => {
                 set(patch);

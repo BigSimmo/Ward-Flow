@@ -15,6 +15,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -212,6 +213,12 @@ type WardFlowContextValue = {
   loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
+  /** Shared workspace connection status and error for forms that must await shared save completion. */
+  shared?: {
+    enabled: boolean;
+    status: WardSharedConnection["status"];
+    error: string | null;
+  };
 };
 
 export type { WardFlowContextValue };
@@ -345,12 +352,25 @@ type AdoptSessionAction = {
  *  (`ward-flow-scenario-file.ts`) never reaches the reducer, the event log or a role check. */
 type LoadScenarioFileAction = { type: "LOAD_SCENARIO_FILE_INTERNAL"; world: WardFlowState; restoredElapsed: number };
 
+function syncWorldGlobals(world: WardFlowState): void {
+  activateScenarioNetwork(world.scenario);
+  applyDueSoonThresholds(
+    world.configuration.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
+    world.configuration.dueSoonMinutes ?? DUE_SOON_MINUTES,
+  );
+}
+
 function wardFlowContainerReducer(
   container: WardFlowContainer,
   action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction,
 ): WardFlowContainer {
-  if (ADOPT_SESSION in action) return action[ADOPT_SESSION](container);
-  if (action.type === "LOAD_SCENARIO_FILE_INTERNAL")
+  if (ADOPT_SESSION in action) {
+    const adopted = action[ADOPT_SESSION](container);
+    syncWorldGlobals(adopted.world);
+    return adopted;
+  }
+  if (action.type === "LOAD_SCENARIO_FILE_INTERNAL") {
+    syncWorldGlobals(action.world);
     // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
     // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
     // It also counts as adopted, so a late browser restore can never replace it.
@@ -364,7 +384,9 @@ function wardFlowContainerReducer(
       sessionAdopted: true,
       preAdoptionEvents: undefined,
     };
+  }
   const next = trackWardFlowTypedTextDispatch(container, action);
+  syncWorldGlobals(next.world);
   if (container.sessionAdopted) return next;
   return { ...next, preAdoptionEvents: [...(container.preAdoptionEvents ?? []), action] };
 }
@@ -455,11 +477,10 @@ function upgradeDemoPayload(value: unknown): unknown {
 
 /** Same-day reload includes time away. A different day or backward clock starts a fresh demo;
  * no saved event or entered time is shifted or reconstructed. Storage access is entirely guarded. */
-function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
+function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOverride?: string): DemoRead {
   if (typeof window === "undefined") return {};
   try {
-    const storage = window.sessionStorage;
-    const raw = storage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    const raw = rawOverride ?? window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
     if (!raw) return {};
     let stored: unknown;
     try {
@@ -485,7 +506,13 @@ function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
   }
 }
 
-function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, savedAtAbsolute: number): boolean {
+function tryWriteDemoState(
+  state: WardFlowState,
+  dayZero: Date,
+  now: Instant,
+  savedAtAbsolute: number,
+  senderId?: string,
+): boolean {
   if (typeof window === "undefined") return false;
   try {
     const payload: WardFlowDemoPayload = {
@@ -499,7 +526,11 @@ function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, sa
       // caller-supplied id back in `reason`/`id`, so a saved day keeps its work but not its refusals.
       state: { ...state, rejections: [] },
     };
-    window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, JSON.stringify(payload));
+    const serialized = JSON.stringify(payload);
+    window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, serialized);
+    if (senderId) {
+      broadcastDispatchEvent("SYNC_SAVED_STATE", senderId, serialized);
+    }
     return true;
   } catch {
     return false;
@@ -518,6 +549,14 @@ export function clearWardFlowDemoState(): boolean {
 }
 
 let sharedBroadcastChannel: BroadcastChannel | null = null;
+let nextBroadcastInstanceCounter = 0;
+
+function getOrCreateBroadcastInstanceId(ref: { current: string }): string {
+  if (!ref.current) {
+    ref.current = `wf-${++nextBroadcastInstanceCounter}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+  return ref.current;
+}
 
 function getSharedBroadcastChannel(): BroadcastChannel | null {
   if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") {
@@ -533,11 +572,11 @@ function getSharedBroadcastChannel(): BroadcastChannel | null {
   }
 }
 
-function broadcastDispatchEvent(eventType: string): void {
+function broadcastDispatchEvent(eventType: string, senderId?: string, payload?: string): void {
   try {
     const channel = getSharedBroadcastChannel();
     if (channel) {
-      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType });
+      channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType, senderId, payload });
     }
   } catch {
     sharedBroadcastChannel = null;
@@ -769,15 +808,21 @@ function WardFlowWorld({
     wardFlowContainerReducer,
     anchorOffsetMinutes,
     // A pinned `now` never reads a saved session, so it starts adopted and holds no replay queue.
-    (offset): WardFlowContainer => ({
-      world: seedWardFlowStateAt(offset),
-      typedTextSeen: false,
-      restoredElapsed: 0,
-      sessionAdopted: initialNow !== undefined,
-    }),
+    (offset): WardFlowContainer => {
+      const world = seedWardFlowStateAt(offset);
+      syncWorldGlobals(world);
+      return {
+        world,
+        typedTextSeen: false,
+        restoredElapsed: 0,
+        sessionAdopted: initialNow !== undefined,
+      };
+    },
   );
   const state = container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
+  const broadcastInstanceIdRef = useRef("");
+  const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
@@ -796,20 +841,16 @@ function WardFlowWorld({
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
       dispatchContainer(event);
-      broadcastDispatchEvent(event.type);
+      broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
     },
     [dispatchContainer, sharedEnabled, dispatchShared],
   );
-  // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
-  // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
-  activateScenarioNetwork(state.scenario);
-  // The due-time warnings follow Settings (Josh, 26 Sept 2026, question 3) the same way: applied
-  // before any child renders, idempotent. A configuration saved before these keys existed has
-  // neither, so the defaults stand in.
-  applyDueSoonThresholds(
-    state.configuration.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
-    state.configuration.dueSoonMinutes ?? DUE_SOON_MINUTES,
-  );
+  // Every ward lookup follows the scenario on screen (`ward-scenarios.ts`) and due-time warnings
+  // follow Settings (`ward-clock.ts`). Synchronised in `useLayoutEffect` (as well as reducer state
+  // transitions) so the component render body stays pure.
+  useLayoutEffect(() => {
+    syncWorldGlobals(state);
+  }, [state]);
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -928,10 +969,46 @@ function WardFlowWorld({
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
+    const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
         if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
+          if (messageEvent.data.senderId && messageEvent.data.senderId === instanceId) {
+            return;
+          }
+          if (!shared.enabled) {
+            const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
+            const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
+            const { saved } = tryReadDemoState(dayZero, referenceAbsolute, rawPayload);
+            if (saved) {
+              openRequestSequence.current = Math.max(
+                openRequestSequence.current,
+                nextOpenRequestSequence(saved.state.auditEvents),
+              );
+              lastAdoptedBroadcastWorldRef.current = saved.state;
+              dispatchContainer({
+                type: "ADOPT_SAVED_SESSION",
+                [ADOPT_SESSION]: (current) => {
+                  const baseMounted = mountedAtAbsolute ?? saved.savedAtAbsolute;
+                  const restoredElapsed =
+                    saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + baseMounted - saved.savedAtAbsolute;
+                  const isSameWorld =
+                    JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
+                  if (isSameWorld) {
+                    return current;
+                  }
+                  return {
+                    ...current,
+                    world: saved.state,
+                    restoredElapsed,
+                    sessionAdopted: true,
+                    preAdoptionEvents: undefined,
+                  };
+                },
+              });
+            }
+          }
           setTick((tick) => tick + 1);
         }
       };
@@ -941,7 +1018,7 @@ function WardFlowWorld({
     } catch {
       return undefined;
     }
-  }, []);
+  }, [dayZero, mountedAtAbsolute, shared.enabled]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
   // storage fails. Shared mode does not save actions on this device.
@@ -963,7 +1040,7 @@ function WardFlowWorld({
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [savingOnDevice, container.typedTextSeen]);
+  }, [savingOnDevice, container.typedTextSeen, shared.enabled]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1039,7 +1116,16 @@ function WardFlowWorld({
       return;
     }
     if (storageUnavailable) return;
-    if (!tryWriteDemoState(state, dayZero, nowRef.current, mountedAtAbsolute + Math.max(0, elapsedRef.current))) {
+    const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
+    if (
+      !tryWriteDemoState(
+        state,
+        dayZero,
+        nowRef.current,
+        mountedAtAbsolute + Math.max(0, elapsedRef.current),
+        isFromRemoteBroadcast ? undefined : getOrCreateBroadcastInstanceId(broadcastInstanceIdRef),
+      )
+    ) {
       setStorageUnavailable(true);
     }
   }, [
@@ -1099,6 +1185,16 @@ function WardFlowWorld({
       return { ok: true };
     },
     [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+  );
+
+  const sharedConnection = useMemo(
+    () =>
+      shared.enabled && container.sharedRevision === undefined
+        ? { ...shared, snapshot: null }
+        : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+          ? { ...shared, status: "saving" as const }
+          : shared,
+    [shared, container.sharedRevision],
   );
 
   const value = useMemo<WardFlowContextValue>(
@@ -1195,6 +1291,11 @@ function WardFlowWorld({
       saveScenarioFile,
       loadScenarioFile,
       savingOnDevice: initialNow !== undefined ? !container.typedTextSeen && !storageUnavailable : savingOnDevice,
+      shared: {
+        enabled: sharedConnection.enabled,
+        status: sharedConnection.status,
+        error: sharedConnection.error,
+      },
     }),
     [
       // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
@@ -1213,6 +1314,9 @@ function WardFlowWorld({
       container.eventLog,
       shared.enabled,
       shared.eventLog,
+      sharedConnection.enabled,
+      sharedConnection.status,
+      sharedConnection.error,
       dayZero,
       dispatch,
       focusMovementId,
@@ -1224,16 +1328,6 @@ function WardFlowWorld({
       initialNow,
       now,
     ],
-  );
-
-  const sharedConnection = useMemo(
-    () =>
-      shared.enabled && container.sharedRevision === undefined
-        ? { ...shared, snapshot: null }
-        : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-          ? { ...shared, status: "saving" as const }
-          : shared,
-    [shared, container.sharedRevision],
   );
 
   return (

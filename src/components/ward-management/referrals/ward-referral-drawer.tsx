@@ -32,7 +32,7 @@ import {
 import Link from "next/link";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { hasOpenSheet, useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
@@ -1144,11 +1144,15 @@ function WardReferralDrawerContent({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
+      if (hasOpenSheet() && !drawerRef.current?.contains(document.activeElement)) return;
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
+        const active = document.activeElement as HTMLElement | null;
         if (
-          document.activeElement?.tagName !== "INPUT" &&
-          document.activeElement?.tagName !== "TEXTAREA" &&
-          document.activeElement?.tagName !== "SELECT"
+          active?.tagName !== "INPUT" &&
+          active?.tagName !== "TEXTAREA" &&
+          active?.tagName !== "SELECT" &&
+          !active?.isContentEditable
         ) {
           e.preventDefault();
           onViewChange("new");
@@ -1795,11 +1799,15 @@ function WardReferralDrawerContent({
         aria-modal={withBackdrop ? true : undefined}
         aria-labelledby="referralDrawerTitle"
         onKeyDownCapture={(event) => {
-          if (event.key === "Escape" && isSearchOpen) {
+          if (event.key === "Escape") {
             event.preventDefault();
             event.stopPropagation();
-            setIsSearchOpen(false);
-            setSearchQuery("");
+            if (isSearchOpen) {
+              setIsSearchOpen(false);
+              setSearchQuery("");
+            } else {
+              handleDrawerClose();
+            }
           }
         }}
       >

@@ -132,7 +132,7 @@ export function listen(handler, config) {
       }
     },
   );
-  server.maxConnections = 16;
+  server.maxConnections = 64;
   server.setTimeout(15_000, (socket) => socket.destroy());
   return server.listen(config.port, config.host);
 }

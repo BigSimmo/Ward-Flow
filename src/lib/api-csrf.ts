@@ -101,7 +101,7 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
     return { allowed: false, reason: "invalid_csrf_header" };
   }
 
-  const secFetchSite = headers.get("sec-fetch-site");
+  const secFetchSite = headers.get("sec-fetch-site")?.trim().toLowerCase() ?? null;
   if (secFetchSite === "cross-site") return { allowed: false, reason: "cross_site" };
 
   const hosts = addressedHosts(headers, requestHost);
@@ -115,10 +115,9 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
     return originHost && hosts.has(originHost) ? ALLOWED : { allowed: false, reason: "origin_mismatch" };
   }
 
-  // Fetch Metadata already said same-origin/same-site/none and there is no Origin
-  // to contradict it. Referer is deliberately not consulted here: it is the weaker
-  // signal and is routinely stripped by privacy settings.
-  if (secFetchSite !== null) return ALLOWED;
+  // Same-origin Fetch Metadata without an Origin header is safe to allow immediately.
+  // For same-site, none, or unknown values without Origin, fall through to Referer/CSRF checks.
+  if (secFetchSite === "same-origin") return ALLOWED;
 
   // Explicit valid x-ward-flow-csrf header vouches for programmatic or non-browser
   // requests when Fetch Metadata and Origin are absent (A4-12).

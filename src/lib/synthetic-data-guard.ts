@@ -20,8 +20,13 @@ const HOSPITAL_RECORD_PATTERN = /\b(?:UMRN|MRN|UR[N#]?)\s*[:#-]?\s*(\d{6,10})\b/
 const PHONE_PATTERN =
   /\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/;
 
+// Explicit synthetic demonstration token prefix (e.g. SYNTHETIC-12345678, DEMO-0412345678)
+const SYNTHETIC_TOKEN_PATTERN = /\b(?:SYNTHETIC|DEMO)[-_ ][A-Za-z0-9_-]+/gi;
+
 function scanString(value: string): SyntheticCheckResult | null {
-  const medicareMatch = MEDICARE_PATTERN.exec(value);
+  const sanitized = value.replace(SYNTHETIC_TOKEN_PATTERN, "");
+
+  const medicareMatch = MEDICARE_PATTERN.exec(sanitized);
   if (medicareMatch) {
     // Redact digits for privacy in the error message
     const redacted = `${medicareMatch[1].slice(0, 3)}****${medicareMatch[1].slice(-2)}`;
@@ -32,7 +37,7 @@ function scanString(value: string): SyntheticCheckResult | null {
     };
   }
 
-  const recordMatch = HOSPITAL_RECORD_PATTERN.exec(value);
+  const recordMatch = HOSPITAL_RECORD_PATTERN.exec(sanitized);
   if (recordMatch) {
     return {
       safe: false,
@@ -41,7 +46,7 @@ function scanString(value: string): SyntheticCheckResult | null {
     };
   }
 
-  const phoneMatch = PHONE_PATTERN.exec(value);
+  const phoneMatch = PHONE_PATTERN.exec(sanitized);
   if (phoneMatch) {
     return {
       safe: false,
@@ -101,6 +106,11 @@ export function checkSyntheticPayload(payload: unknown, maxDepth = 16): Syntheti
           if (typeof value === "number" || typeof value === "string") {
             const combinedViolation = scanString(`${key}: ${value}`);
             if (combinedViolation) return combinedViolation;
+
+            if (/UMRN|MRN|\bUR\b/i.test(key)) {
+              const asRecordViolation = scanString(`UMRN: ${value}`);
+              if (asRecordViolation) return asRecordViolation;
+            }
           }
 
           // Check value

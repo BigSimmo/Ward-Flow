@@ -801,6 +801,13 @@ export function WardTasksDrawer({
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? "true" : undefined}
         aria-label="Tasks"
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+          }
+        }}
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">

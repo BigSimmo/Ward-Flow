@@ -145,3 +145,28 @@ test("shared configuration reads only the approved Supabase target and refuses l
     );
   assert.throws(() => readConfig({ ...env, WARD_WORKSPACE_ID: "00000000-0000-4000-8000-000000000000" }), /workspace/);
 });
+
+test("command events containing real Australian identifiers are rejected", async () => {
+  const { calls, handler } = setup();
+  for (const badEvent of [
+    { type: "PULL_PATIENT", role: "coordinator", notes: "Medicare: 2123 45678 1" },
+    { type: "PULL_PATIENT", role: "coordinator", umrn: "12345678" },
+    { type: "PULL_PATIENT", role: "coordinator", contact: "0412 345 678" },
+  ]) {
+    const response = await handler(request("/commands", { ...body, event: badEvent }));
+    assert.equal(response.status, 400);
+  }
+  assert.equal(calls.length, 0);
+});
+
+test("engine.applyCommand rejects events containing real Australian identifiers", async () => {
+  const { seedWorld, applyCommand } = await import("./dist/engine.mjs");
+  const world = seedWorld(new Date());
+  for (const badEvent of [
+    { type: "ADVANCE_CLOCK", role: "coordinator", notes: "Medicare: 2123 45678 1" },
+    { type: "ADVANCE_CLOCK", role: "coordinator", umrn: "12345678" },
+    { type: "ADVANCE_CLOCK", role: "coordinator", contact: "0412 345 678" },
+  ]) {
+    assert.throws(() => applyCommand(world, badEvent, new Date()), /invalid-command/);
+  }
+});

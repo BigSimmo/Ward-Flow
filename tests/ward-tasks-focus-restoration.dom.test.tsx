@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 
+import { hasOpenSheet } from "@/components/ward-management/ward-modal-focus";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -60,4 +61,27 @@ it("does not attempt to restore focus to an opener removed while the drawer is o
   await afterFrames();
   expect(previous.isConnected).toBe(false);
   expect(document.activeElement).toBe(document.body);
+});
+
+it("registers the open drawer on the sheet stack and stops Escape from reaching guarded board listeners", async () => {
+  const previous = opener();
+  const boardEscapeSpy = vi.fn();
+  const onWindowKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape" && !event.defaultPrevented && !hasOpenSheet()) {
+      boardEscapeSpy();
+    }
+  };
+  window.addEventListener("keydown", onWindowKeyDown);
+  try {
+    render(<Harness />);
+    expect(hasOpenSheet()).toBe(true);
+    const closeBtn = screen.getByRole("button", { name: "Close tasks panel" });
+    fireEvent.keyDown(closeBtn, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+    expect(hasOpenSheet()).toBe(false);
+    expect(boardEscapeSpy).not.toHaveBeenCalled();
+    expect(previous).toHaveFocus();
+  } finally {
+    window.removeEventListener("keydown", onWindowKeyDown);
+  }
 });

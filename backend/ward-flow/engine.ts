@@ -8,17 +8,47 @@ import {
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
+import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+
+export { checkSyntheticPayload };
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
 /** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
 const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+function hasValidBounds(node: unknown, depth = 0): boolean {
+  if (depth > 16) return false;
+  if (typeof node === "string") return node.length <= 10_000;
+  if (typeof node === "number") return Number.isFinite(node);
+  if (typeof node === "boolean" || node === null || node === undefined) return true;
+  if (typeof node === "object") {
+    if (Array.isArray(node)) {
+      if (node.length > 500) return false;
+      for (const item of node) {
+        if (!hasValidBounds(item, depth + 1)) return false;
+      }
+      return true;
+    }
+    const entries = Object.entries(node);
+    if (entries.length > 200) return false;
+    for (const [key, val] of entries) {
+      if (key.length > 200) return false;
+      if (!hasValidBounds(val, depth + 1)) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
   return (
     !!value &&
     typeof value === "object" &&
     !Array.isArray(value) &&
     typeof (value as Record<string, unknown>).type === "string" &&
-    Object.hasOwn(EVENT_ROLE, (value as Record<string, unknown>).type as string)
+    Object.hasOwn(EVENT_ROLE, (value as Record<string, unknown>).type as string) &&
+    hasValidBounds(value) &&
+    checkSyntheticPayload(value).safe
   );
 }
 
@@ -84,6 +114,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   const role = fields.role ?? roles[0];
   if (!roles.includes(role as WardFlowEvent["role"])) throw new Error("invalid-command");
   const event = { ...fields, type, role, now: worldNow(world, at) } as WardFlowEvent;
+  if (!checkSyntheticPayload(event).safe) throw new Error("invalid-command");
   let next: WardFlowState;
   try {
     next = serialise(wardFlowReducer(world.state, event));

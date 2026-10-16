@@ -141,8 +141,21 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       }
     };
 
+    const guardedHref = window.location.href;
+    const handlePopState = (event: PopStateEvent) => {
+      const confirmed = confirmNavigationAcrossGuards();
+      if (!confirmed) {
+        window.history.pushState(window.history.state, "", guardedHref);
+        event.stopImmediatePropagation();
+      }
+    };
+
     document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [isDirty, confirmMessage, skipAnchor]);
 
   return { clearDraft };
