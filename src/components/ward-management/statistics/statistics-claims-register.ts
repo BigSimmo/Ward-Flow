@@ -345,7 +345,7 @@ const BED_RELEASE_BODY =
   "/** Reason the most recent discharge blocker was cleared, chosen from `DISCHARGE_DELAY_CLEAR_REASONS`. */ " +
   "lastClearedBlockReason?: DischargeDelayClearReason; " +
   "/** Append-only history of cleared discharge blockers on this bed release. */ " +
-  "clearedBlockHistory?: ReadonlyArray<{ readonly at: Instant; readonly by: WardFlowRole; readonly reason: DischargeDelayClearReason; readonly blocker?: BedReleaseBlocker | null; }>; };";
+  "clearedBlockHistory?: ReadonlyArray<{ readonly at: Instant; readonly by: WardFlowRole; /** Absent when the clearing event named no reason; never defaulted. */ readonly reason?: DischargeDelayClearReason; readonly blocker?: BedReleaseBlocker | null; }>; };";
 
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather
