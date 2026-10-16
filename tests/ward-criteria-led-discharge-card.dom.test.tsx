@@ -48,6 +48,7 @@ describe("criteria led discharge card", () => {
     expect(onChange).toHaveBeenCalledWith({
       criteria: ["Accommodation confirmed", "Transport home arranged"],
       met: ["Accommodation confirmed", "Transport home arranged"],
+      toggle: { criterion: "Transport home arranged", met: true },
       setByTreatingPsychiatrist: false,
     });
     const allMet = { ...RECORD, items: RECORD.items.map((item) => ({ ...item, metAt: NOW - 10 })) };

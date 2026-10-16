@@ -2030,6 +2030,11 @@ export type WardFlowEvent =
       criteria: DischargeCriterion[] | null;
       /** The chosen criteria now met. */
       met: DischargeCriterion[];
+      /**
+       * A single tick or untick, applied to the criteria as they stand when the event is handled.
+       * When present it replaces `criteria` and `met`, so two quick ticks cannot overwrite each other.
+       */
+      toggle?: { criterion: DischargeCriterion; met: boolean };
       /** The ward records that the treating psychiatrist set this list. Needed to set or change it. */
       setByTreatingPsychiatrist: boolean;
     }

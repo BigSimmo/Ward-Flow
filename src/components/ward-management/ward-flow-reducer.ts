@@ -215,7 +215,11 @@ import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
-import { criteriaEligibility, nextDischargeCriteria } from "@/components/ward-management/ward-discharge-criteria";
+import {
+  criteriaEligibility,
+  nextDischargeCriteria,
+  type DischargeCriteriaChange,
+} from "@/components/ward-management/ward-discharge-criteria";
 
 /**
  * Stages `REFER_TO_UNITS` accepts, exported so a UI can pre-check referability before dispatching
@@ -6727,7 +6731,23 @@ export function reduceClinicalEvent(
         return reject(state, event, "Discharge criteria review time is invalid or before the ward clock.");
       }
       const eligibility = admissionCriteriaEligibility(state, admission);
-      const next = nextDischargeCriteria(admission.dischargeCriteria, event, eligibility, event.now);
+      // A tick or untick is applied to the criteria held now, so a stale list sent by another desk
+      // or an earlier tick cannot overwrite a newer one.
+      let change: DischargeCriteriaChange = event;
+      if (event.toggle && !event.setByTreatingPsychiatrist) {
+        const items = admission.dischargeCriteria?.items;
+        if (!Array.isArray(items))
+          return reject(state, event, "Discharge criteria are set by the treating psychiatrist.");
+        const met = items.filter((item) => item.metAt !== null).map((item) => item.criterion);
+        change = {
+          criteria: items.map((item) => item.criterion),
+          met: event.toggle.met
+            ? [...met.filter((c) => c !== event.toggle?.criterion), event.toggle.criterion]
+            : met.filter((c) => c !== event.toggle?.criterion),
+          setByTreatingPsychiatrist: false,
+        };
+      }
+      const next = nextDischargeCriteria(admission.dischargeCriteria, change, eligibility, event.now);
       if ("refusal" in next) return reject(state, event, next.refusal);
       return {
         ...state,

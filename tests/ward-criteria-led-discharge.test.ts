@@ -5,6 +5,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import {
+  CRITERIA_CTO_IN_FORCE,
   CRITERIA_STATUS_NOT_RECORDED,
   CRITERIA_VOLUNTARY_ONLY,
   criteriaEligibility,
@@ -61,6 +62,12 @@ describe("criteriaEligibility", () => {
     expect(criteriaEligibility(undefined, "Voluntary")).toBe("voluntary");
     expect(criteriaEligibility(undefined, undefined)).toBe("not_recorded");
     expect(criteriaEligibility("Community treatment order", undefined)).toBe("not_recorded");
+  });
+
+  it("gives a community treatment order in force its own result, not the unrecorded one", () => {
+    expect(criteriaEligibility("Voluntary", "Voluntary", true)).toBe("cto");
+    const change = { criteria: ["Accommodation confirmed"], met: [], setByTreatingPsychiatrist: true };
+    expect(nextDischargeCriteria(null, change, "cto", 1000)).toEqual({ refusal: CRITERIA_CTO_IN_FORCE });
   });
 
   it("excludes an involuntary patient whichever record says so", () => {
@@ -164,5 +171,37 @@ describe("SET_DISCHARGE_CRITERIA in the reducer", () => {
       setCriteria(id, NOW_ANCHOR, { actingUnitId: "scgh-adult-open" } as Partial<WardFlowEvent>),
     );
     expect(lastRejection(state, wrongWard)).toBe("Discharge criteria can only be set by the patient's own ward.");
+  });
+
+  it("applies a tick to the criteria held now, so a second stale tick cannot clear the first", () => {
+    const seeded = seedWardFlowState();
+    const id = voluntaryStay(seeded);
+    const set = wardFlowReducer(withVoluntary(seeded, id), setCriteria(id, NOW_ANCHOR));
+    // Both ticks were built from the same untouched list, as two quick clicks before a save returns.
+    const tick = (criterion: "Accommodation confirmed" | "Transport home arranged") =>
+      setCriteria(id, NOW_ANCHOR, {
+        criteria: ["Accommodation confirmed", "Transport home arranged"],
+        met: [criterion],
+        toggle: { criterion, met: true },
+        setByTreatingPsychiatrist: false,
+      } as Partial<WardFlowEvent>);
+    const both = wardFlowReducer(
+      wardFlowReducer(set, tick("Accommodation confirmed")),
+      tick("Transport home arranged"),
+    );
+    const items = both.admissions.find((a) => a.id === id)?.dischargeCriteria?.items;
+    expect(items?.map((item) => item.metAt !== null)).toEqual([true, true]);
+
+    const untick = wardFlowReducer(
+      both,
+      setCriteria(id, NOW_ANCHOR, {
+        toggle: { criterion: "Accommodation confirmed", met: false },
+        setByTreatingPsychiatrist: false,
+      } as Partial<WardFlowEvent>),
+    );
+    expect(untick.admissions.find((a) => a.id === id)?.dischargeCriteria?.items.map((i) => i.metAt !== null)).toEqual([
+      false,
+      true,
+    ]);
   });
 });

@@ -17,6 +17,8 @@ import styles from "./ward-discharge-criteria-card.module.css";
 export type DischargeCriteriaUpdate = {
   criteria: DischargeCriterion[] | null;
   met: DischargeCriterion[];
+  /** A single tick or untick, applied to the criteria as they stand when the event is handled. */
+  toggle?: { criterion: DischargeCriterion; met: boolean };
   setByTreatingPsychiatrist: boolean;
 };
 
@@ -72,6 +74,7 @@ export function WardDischargeCriteriaCard({
     onChange?.({
       criteria: items.map((item) => item.criterion),
       met: met ? [...metList, criterion] : metList.filter((entry) => entry !== criterion),
+      toggle: { criterion, met },
       setByTreatingPsychiatrist: false,
     });
   };

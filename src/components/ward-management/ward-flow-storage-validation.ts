@@ -11,6 +11,7 @@ import {
   PLANNED_ADMISSION_INITIALS_PATTERN,
   PLANNED_ADMISSION_STATES,
 } from "./ward-admissions";
+import { isDischargeCriterion } from "./ward-discharge-criteria";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import {
   MOVEMENT_STAGES,
@@ -317,6 +318,15 @@ const admission = z.looseObject({
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
   dischargeBarrier: z.custom(isDischargeBarrier).nullable().optional(),
+  // D-60: a closed shape. Each criterion is a fixed list value and nothing else is accepted, so
+  // typed text cannot be restored here and the drawer can rely on `items` being an array.
+  dischargeCriteria: z
+    .strictObject({
+      setAt: finite,
+      items: z.array(z.strictObject({ criterion: z.custom(isDischargeCriterion), metAt: nullableFinite })),
+    })
+    .nullable()
+    .optional(),
   careJourney: z.custom(validCareJourney).optional(),
   followUp: z
     .looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text })

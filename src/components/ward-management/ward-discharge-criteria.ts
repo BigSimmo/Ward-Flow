@@ -35,7 +35,7 @@ export type DischargeCriteriaStatus =
   | { kind: "in_progress"; met: number; total: number; lapsesAt: Instant }
   | { kind: "all_met"; total: number; lapsesAt: Instant };
 
-export type CriteriaEligibility = "voluntary" | "involuntary" | "not_recorded";
+export type CriteriaEligibility = "voluntary" | "involuntary" | "not_recorded" | "cto";
 
 export const CRITERIA_VOLUNTARY_ONLY =
   "Criteria led discharge is for voluntary patients only. An involuntary patient's discharge waits for the psychiatrist to revoke the order.";
@@ -43,9 +43,13 @@ export const CRITERIA_VOLUNTARY_ONLY =
 export const CRITERIA_STATUS_NOT_RECORDED =
   "Criteria led discharge needs the patient recorded as voluntary. Check and record the legal status first.";
 
+export const CRITERIA_CTO_IN_FORCE =
+  "Criteria led discharge is not available while a community treatment order is in force. Discharge waits for the psychiatrist.";
+
 /** Why criteria cannot be set or used for this patient, or null when they are voluntary. */
 export function criteriaEligibilityRefusal(eligibility: CriteriaEligibility): string | null {
   if (eligibility === "involuntary") return CRITERIA_VOLUNTARY_ONLY;
+  if (eligibility === "cto") return CRITERIA_CTO_IN_FORCE;
   if (eligibility === "not_recorded") return CRITERIA_STATUS_NOT_RECORDED;
   return null;
 }
@@ -80,14 +84,15 @@ export type DischargeCriteriaChange = {
  * reducer's discharge guard (`patientRecordIsInvoluntary`): a patient record starting
  * "Involuntary" or detained awaiting examination, or a stay whose movement is not Voluntary. A
  * patient counts as voluntary only when that is recorded. Anything else, including no recorded
- * status or a community treatment order, is not recorded, so excluding a patient is the failure.
+ * status, is not recorded, so excluding a patient is the failure. A community treatment order in
+ * force has its own result so the ward is told the real reason.
  */
 export function criteriaEligibility(
   patientLegalStatus: string | undefined,
   movementLegalStatus: string | undefined,
   ctoInForce = false,
 ): CriteriaEligibility {
-  if (ctoInForce) return "not_recorded";
+  if (ctoInForce) return "cto";
   const patientStatus = patientLegalStatus?.trim();
   const recordInvoluntary =
     patientStatus !== undefined &&
