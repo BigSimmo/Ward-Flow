@@ -5,7 +5,7 @@ import { useMemo, type MouseEvent } from "react";
 import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboard, Plus, Users } from "lucide-react";
 
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
-import { calendarDateOf, demoDayZero, perthCalendarDay } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, demoDayZero } from "@/components/ward-management/ward-clock";
 import { destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
@@ -568,13 +568,11 @@ export function GlobalSearchPreview({
   const resolvedNow = now ?? flow?.now;
   const activeDate = useMemo(() => {
     // With no simulation clock in reach (no `now` prop, no provider) the only date left is the real one.
-    if (resolvedNow === undefined) {
-      const perth = perthCalendarDay(new Date());
-      return new Date(perth.year, perth.monthIndex, perth.day);
-    }
+    // `patientAgeYears` reads the instant on the Perth calendar day itself, so pass the instant straight
+    // through: rebuilding a browser-local midnight here would land on the day before in zones east of Perth.
+    if (resolvedNow === undefined) return new Date();
     const resolvedDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
-    const perth = perthCalendarDay(calendarDateOf(resolvedNow, resolvedDayZero));
-    return new Date(perth.year, perth.monthIndex, perth.day);
+    return calendarDateOf(resolvedNow, resolvedDayZero);
   }, [dayZero, flow?.dayZero, resolvedNow]);
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   let body;

@@ -14,12 +14,7 @@ import {
   referralAddressingStateLabel,
 } from "@/components/ward-management/ward-referrals";
 import { patientDisplayName, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
-import {
-  calendarDateOf,
-  demoDayZero,
-  formatInstantWithDay,
-  perthCalendarDay,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
@@ -258,8 +253,8 @@ export function RecordPreview({
   const flow = useOptionalWardFlow();
   const activeDate = useMemo(() => {
     const activeDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
-    const perth = perthCalendarDay(calendarDateOf(now, activeDayZero));
-    return new Date(perth.year, perth.monthIndex, perth.day);
+    // `patientAgeYears` reads this instant on the Perth calendar day itself (no browser-local midnight).
+    return calendarDateOf(now, activeDayZero);
   }, [dayZero, flow?.dayZero, now]);
 
   useEffect(() => {
