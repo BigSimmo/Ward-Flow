@@ -253,10 +253,10 @@ const eslintConfig = defineConfig([
     ".tmp-visual/**",
     "sample-documents/**",
     "scratch/**",
-    // Archived design artefacts moved out of docs/ (third edition drawings and their kit,
-    // byte-pinned prototypes). The kit's shell-script.js is copied into the drawings, so
-    // editing it to satisfy lint would make them drift. They were never linted under docs/.
-    "design/third-edition-mockups/**",
+    // Archived design artefacts moved out of docs/. The kit's shell browser scripts are copied
+    // into the third edition drawings, so editing them to satisfy lint would make the drawings
+    // drift. The prototypes are byte-pinned. The kit's .mjs check scripts stay linted.
+    "design/third-edition-mockups/third-edition-kit/shell/*.js",
     "design/prototypes/**",
     // Recursive `**/` variants cover nested worktrees; the bare globs above already
     // ignore the repo-root dirs, so only the recursive forms are kept here.
