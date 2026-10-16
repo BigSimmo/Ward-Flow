@@ -11,7 +11,7 @@ import type { TransportJob } from "@/components/ward-management/ward-model";
 
 /** `transportLeg`'s five-leg union plus its own out-of-band `"Cancelled"` value — this is the
  * full set of non-absent leg values the tracker can ever render. */
-export type TrackerLeg = TransportLeg | "Cancelled";
+type TrackerLeg = TransportLeg | "Cancelled";
 
 export type TrackerRowState = {
   leg: TrackerLeg | undefined;

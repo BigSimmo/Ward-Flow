@@ -8,7 +8,7 @@ export type WfFill =
   "data-1" | "data-2" | "data-3" | "ready" | "closed" | "danger" | "warning" | "success" | "info" | "neutral" | "track";
 
 /** Class for a fill colour role. `hatch` marks pulled, crossing or estimated parts. */
-export function fillClass(fill: WfFill = "data-1", hatch = false): string {
+function fillClass(fill: WfFill = "data-1", hatch = false): string {
   return hatch ? styles.hatch : (styles[`c-${fill}`] ?? styles["c-data-1"]);
 }
 

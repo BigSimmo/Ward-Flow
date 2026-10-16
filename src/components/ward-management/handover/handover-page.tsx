@@ -194,13 +194,6 @@ export function movementInHandoverScope(
   }
 }
 
-/** Observation / acuity label — urgent flag only, not invented observation cadence. */
-export function movementObservationLabel(movement: Movement): string {
-  if (movement.flaggedUrgent) return "Urgent";
-  if (movement.specialling) return "1:1 Specialling";
-  return "Standard";
-}
-
 /**
  * Shift handover sign-off. The engine stores role and time only. This helper dispatches first
  * and returns a record only when that call is allowed and does not throw — never a claim that
@@ -268,7 +261,7 @@ export function resolveMovementPatient(
  * Egress table, which until 25 September 2026 named six patients nobody in this model holds, each
  * under a real seeded UMRN that belongs to someone else entirely (audit finding, same date).
  */
-export function resolveAdmissionPatient(
+function resolveAdmissionPatient(
   admission: Admission | undefined,
   patients: Patient[],
   referrals: Referral[],
@@ -1599,7 +1592,7 @@ function HandoverHistory({
 }
 
 /** THE ONE CONTROL — `<select aria-label="Filter the sheet">` */
-export function HandoverScopeControl({
+function HandoverScopeControl({
   value,
   onChange,
   units,

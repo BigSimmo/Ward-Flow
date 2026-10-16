@@ -96,7 +96,7 @@ function edLabel(edId: string): string {
 }
 
 /** A bed meeting discharge row, with the person it belongs to from the Shift brief's own rows. */
-export type WardTvGoingRow = BedMeetingDischargeRow & { person: DailySheetPerson | undefined };
+type WardTvGoingRow = BedMeetingDischargeRow & { person: DailySheetPerson | undefined };
 
 export type WardTvSheet = {
   unit: Unit;
@@ -174,7 +174,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
   };
 }
 
-export type EdTvWard = { id: string; name: string; ready: number; lockedReady: number };
+type EdTvWard = { id: string; name: string; ready: number; lockedReady: number };
 
 export type EdTvSheet = {
   summary: EdSummary;
@@ -272,7 +272,7 @@ export function tvServiceParam(service: HealthService | null): string {
 }
 
 /** One health service's line on the state screen, every figure from that service's own bed meeting sheet. */
-export type TvServiceRow = {
+type TvServiceRow = {
   service: HealthService;
   ready: number;
   lockedReady: number;
@@ -282,7 +282,7 @@ export type TvServiceRow = {
 };
 
 /** One ward's line on a health service screen, every figure from that ward's own TV sheet. */
-export type TvWardRow = {
+type TvWardRow = {
   id: string;
   name: string;
   ready: number;

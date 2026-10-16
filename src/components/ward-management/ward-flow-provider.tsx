@@ -235,7 +235,7 @@ export type { WardFlowContextValue };
  *  screens read through `useWardFlowSelect` instead; this stays for whole-value readers and tests. */
 export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
-export const WardClockContext = createContext<Instant | null>(null);
+const WardClockContext = createContext<Instant | null>(null);
 
 export type WardFlowKey = keyof WardFlowContextValue;
 
@@ -1345,39 +1345,6 @@ function WardFlowWorld({
         </WardDemoNotSavedContext.Provider>
       </WardClockContext.Provider>
     </WardFlowOverride>
-  );
-}
-
-export function WardFlowClockProvider({
-  children,
-  initialNow,
-  anchorOffsetMinutes,
-  mountedAtAbsolute,
-  clockOffsetMinutes,
-}: {
-  children: ReactNode;
-  initialNow?: Instant;
-  anchorOffsetMinutes: number;
-  mountedAtAbsolute: number | null;
-  clockOffsetMinutes: number;
-}) {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    if (initialNow !== undefined) return; // pinned: never tick in a test
-    const id = setInterval(() => setTick((previous) => previous + 1), 30_000);
-    return () => clearInterval(id);
-  }, [initialNow]);
-
-  const elapsed =
-    initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
-
-  const now = NOW_ANCHOR + anchorOffsetMinutes + elapsed + clockOffsetMinutes;
-
-  return (
-    <WardClockContext.Provider value={now}>
-      <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
-    </WardClockContext.Provider>
   );
 }
 

@@ -87,7 +87,6 @@ import {
   STATISTICS_OVERVIEW_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-export { WardDemoClockPopover };
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import {
   referralSheetRequestFromHref,
@@ -493,7 +492,7 @@ function PhoneMenuEntry({
   );
 }
 
-export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
+function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
   return phone ? undefined : action;
 }
 
@@ -503,7 +502,7 @@ export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boo
  * own primary (Record a decision, Contact a team, Export the figures) keeps it, so the bar still
  * holds one primary button.
  */
-export function routeBarAction(pathname: string): WardPrimaryAction {
+function routeBarAction(pathname: string): WardPrimaryAction {
   const action = resolveWardPrimaryAction(pathname);
   // The intake route IS the open referral slide-out, so a second referral trigger stays off there.
   if (action?.kind === "none" && pathname.replace(/\/$/, "") === WARD_REFERRAL_INTAKE_HREF) return action;

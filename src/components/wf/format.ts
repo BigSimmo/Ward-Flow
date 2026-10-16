@@ -35,13 +35,3 @@ export function clk(at: Date | number): string {
   const d = typeof at === "number" ? new Date(at) : at;
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-
-/** Splits a duration into number and unit parts so the unit can be set smaller (`4h 17m`). */
-export function durParts(ms: number): { value: string; unit: string }[] {
-  return dur(ms)
-    .split(" ")
-    .map((part) => {
-      const match = /^(\d+)([a-z]+)$/.exec(part);
-      return match ? { value: match[1], unit: match[2] } : { value: part, unit: "" };
-    });
-}

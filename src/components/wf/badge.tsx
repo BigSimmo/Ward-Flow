@@ -3,7 +3,7 @@ import { cx } from "./cx";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./badge.module.css";
 
-export type BadgeVariant = "default" | "plain" | "solid" | "onHero" | "mono";
+type BadgeVariant = "default" | "plain" | "solid" | "onHero" | "mono";
 
 export type BadgeProps = {
   /** Glyph shape and colour. Omit for a neutral label with no glyph. */

@@ -1214,4 +1214,3 @@ export function CommunityScreen(props: CommunityScreenProps) {
 }
 
 /** Re-exported for any reader of this module's old surface; the type now lives with the helpers. */
-export type { AcceptedBeforeAdmission };

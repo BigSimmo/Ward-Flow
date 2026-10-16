@@ -13,7 +13,7 @@ import { requiresAuthorisedDestination } from "@/components/ward-management/ward
 import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
-export type AdmissionChecklistState = "done" | "outstanding" | "not_wired";
+type AdmissionChecklistState = "done" | "outstanding" | "not_wired";
 
 export type AdmissionChecklistItem = {
   key: "medical_clearance" | "legal_form" | "transport" | "contraband_search" | "medication_chart";

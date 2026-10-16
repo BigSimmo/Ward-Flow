@@ -161,7 +161,7 @@ export const NO_PATIENT_KEY = "none";
 /** A registered person with no open movement is picked by this key, `patient:<id>`. */
 export const PATIENT_KEY_PREFIX = "patient:";
 
-export const NO_RISK_FLAGS: MockPatientProfile["riskFlags"] = {
+const NO_RISK_FLAGS: MockPatientProfile["riskFlags"] = {
   aggression: false,
   absconding: false,
   medical: false,
@@ -391,7 +391,7 @@ export const DESTINATION_LABELS: Record<DrawerCategory, string> = {
   ed: "ED psychiatry",
 };
 
-export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** "1991-09-17" as "17 Sep 1991"; anything else is shown as recorded. */
 export function formatDob(value: string): string {

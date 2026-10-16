@@ -3,7 +3,7 @@
  * Directory ids only, kept on this device. A change made in one place is announced to the other
  * through a window event, because a same-page localStorage write raises no `storage` event.
  */
-export const FAVOURITES_KEY = "ward-flow:on-call:favourites";
+const FAVOURITES_KEY = "ward-flow:on-call:favourites";
 
 const FAVOURITES_EVENT = "ward-flow:on-call-favourites";
 

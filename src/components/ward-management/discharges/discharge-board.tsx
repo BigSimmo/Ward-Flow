@@ -85,7 +85,7 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 const CHART_DAYS_AHEAD = 14;
 
 /** Moved to `./discharge-board-model` and `./discharge-board-parts`; re-exported so imports keep working. */
-export { groupDischarges, type DischargeGroups } from "./discharge-board-model";
+export { groupDischarges } from "./discharge-board-model";
 export { DischargeGroupSection } from "./discharge-board-parts";
 
 /** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */

@@ -518,7 +518,7 @@ export function DisplayPane({
 /* Profile and shift ------------------------------------------------------------------------- */
 
 /** The sections the printed handover sheet carries, as the Handover screen names them. */
-export const HANDOVER_SHEET_SECTIONS = [
+const HANDOVER_SHEET_SECTIONS = [
   "Act now",
   "Due by the handover",
   "Finding a ward",

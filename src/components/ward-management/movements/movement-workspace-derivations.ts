@@ -296,7 +296,7 @@ export type Attention = { key: string; who: string; chip: string; level: WardChi
  *
  * It is `urgent` for that reason and not because orphaned records are important in general.
  */
-export function orphanedTransportAttention(movement: Movement): Attention | undefined {
+function orphanedTransportAttention(movement: Movement): Attention | undefined {
   const orphan = orphanedTransport(movement);
   if (orphan === undefined) return undefined;
   return {

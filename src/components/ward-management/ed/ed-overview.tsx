@@ -24,7 +24,7 @@ import { healthServiceAcronym } from "@/components/ward-management/ward-service-
 
 import styles from "./ed-overview.module.css";
 
-export type EdOverviewDepartment = {
+type EdOverviewDepartment = {
   id: string;
   name: string;
   code: string;
@@ -35,7 +35,7 @@ export type EdOverviewDepartment = {
 };
 
 /** A hero highlight chip (v10: at most five; this page uses four). Pressing one dims the other rows. */
-export type EdOverviewChip = { id: string; label: string; value: number; tone?: WfTone };
+type EdOverviewChip = { id: string; label: string; value: number; tone?: WfTone };
 
 type Props = {
   departmentId: string;

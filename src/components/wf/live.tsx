@@ -10,7 +10,7 @@ import { useIsPhone } from "./use-is-phone";
 import { useMinuteNow } from "./use-minute-now";
 import styles from "./live.module.css";
 
-export type LiveState = "live" | "paused" | "syncing" | "stale" | "offline";
+type LiveState = "live" | "paused" | "syncing" | "stale" | "offline";
 
 export type LiveChipProps = {
   state: LiveState;
@@ -151,7 +151,7 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
 }
 
 /** Direction words. Every duration carries one. */
-export type TimerDirection = "waiting" | "in" | "left" | "overdue" | "ago" | "away" | "travelling" | "open";
+type TimerDirection = "waiting" | "in" | "left" | "overdue" | "ago" | "away" | "travelling" | "open";
 
 const COUNTDOWN: TimerDirection[] = ["in", "left"];
 const MINUTE = 60_000;

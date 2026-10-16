@@ -389,7 +389,7 @@ export type CommunityScopedReferral = {
  * Each tells a community team the person was also sent somewhere else. Community needs are this
  * team's own and stay.
  */
-export type CommunityScopedIntake = {
+type CommunityScopedIntake = {
   catchment: ReferralIntakeDetails["catchment"];
   reasonForReferral: string;
   legalStatus: string;

@@ -110,7 +110,7 @@ export function legalStatusTextIsInvoluntary(legalStatus: string | undefined): b
  * Whether a movement's closed legal-status vocabulary is involuntary for this checklist: detained
  * awaiting examination or an involuntary inpatient. "Referred for psychiatric examination" is not.
  */
-export function movementLegalStatusIsInvoluntary(legalStatus: Movement["legalStatus"] | undefined): boolean {
+function movementLegalStatusIsInvoluntary(legalStatus: Movement["legalStatus"] | undefined): boolean {
   return legalStatus === "Detained awaiting examination" || legalStatus === "Involuntary inpatient";
 }
 
@@ -300,54 +300,3 @@ export function supportNotificationInboxItems(
 
 export const SUPPORT_SERVICE_TYPES = ["pharmacy", "transport", "cleaning"] as const;
 export type SupportServiceType = (typeof SUPPORT_SERVICE_TYPES)[number];
-
-export interface SupportServiceDispatch {
-  service: SupportServiceType;
-  admissionId: string;
-  unitId: string;
-  status: "queued";
-  dispatchedAt: string | Instant;
-  summary: string;
-}
-
-/**
- * Parallel support-service dispatch for confirmed discharges (#1).
- * Simultaneously queues Pharmacy (TTO scripts), Transport (booking), and Cleaning (bed pre-stage)
- * when a discharge is confirmed, eliminating serial afternoon bed release bottlenecks.
- */
-export function dispatchParallelDischargeSupport(input: {
-  admissionId: string;
-  unitId: string;
-  now: string | Instant;
-}): SupportServiceDispatch[] {
-  const { admissionId, unitId, now } = input;
-  if (!admissionId.trim() || !unitId.trim()) {
-    return [];
-  }
-  return [
-    {
-      service: "pharmacy",
-      admissionId,
-      unitId,
-      status: "queued",
-      dispatchedAt: now,
-      summary: "TTO scripts & blister pack queued for morning dispense",
-    },
-    {
-      service: "transport",
-      admissionId,
-      unitId,
-      status: "queued",
-      dispatchedAt: now,
-      summary: "Departure transport / collection slot pre-booked",
-    },
-    {
-      service: "cleaning",
-      admissionId,
-      unitId,
-      status: "queued",
-      dispatchedAt: now,
-      summary: "Environmental services pre-staged for bed release",
-    },
-  ];
-}

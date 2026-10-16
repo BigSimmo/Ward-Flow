@@ -97,7 +97,7 @@ function Figure({ value }: { value: number | string }) {
   return <>{value === 0 ? "None" : value}</>;
 }
 
-export type TvTileProps = {
+type TvTileProps = {
   label: string;
   value: number | string;
   detail: string;
@@ -346,7 +346,7 @@ function WardTable({ rows }: { rows: MeetingTvExtras["wards"] }) {
   );
 }
 
-export function BedMeetingTvView({
+function BedMeetingTvView({
   sheet,
   extras,
   now,
@@ -623,7 +623,7 @@ function Trend({ values }: { values: number[] }) {
   );
 }
 
-export function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; scenario: string }) {
+function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; scenario: string }) {
   const { summary } = sheet;
   const target =
     sheet.accessTargetMinutes % 60 === 0

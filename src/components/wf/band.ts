@@ -29,10 +29,10 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  */
 
 /** The band applies at every width, phone included (v10 Home mockup, Josh 11 Oct 2026). */
-export const WF_BAND_QUERY = "all";
+const WF_BAND_QUERY = "all";
 
 /** A hero this close to the top of the page opens the page. */
-export const WF_BAND_TOP_SLACK_PX = 40;
+const WF_BAND_TOP_SLACK_PX = 40;
 
 /** The header turns solid and light once the page has scrolled this far. */
 export const WF_BAND_SCROLLED_PX = 4;
