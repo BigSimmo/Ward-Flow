@@ -85,7 +85,7 @@ try {
     await page.getByRole("button", { name: "Save clearance outcome", exact: true }).click();
     await tab(page, "Documents");
     await page.getByRole("button", { name: "Record document details", exact: true }).click();
-    await page.locator("#form-type-select").selectOption("Clinical Transfer Summary");
+    await page.getByLabel("Document / Statutory Form Type").selectOption("Clinical Transfer Summary");
     await page.getByLabel("Upload document file").setInputFiles({
       name: "synthetic-transfer-summary.pdf",
       mimeType: "application/pdf",
