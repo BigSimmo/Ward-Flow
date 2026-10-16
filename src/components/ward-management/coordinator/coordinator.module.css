@@ -2784,7 +2784,6 @@
   /* No bottom padding: the Refer bar is sticky to the bottom of this scroller, and padding here
      would hold it above the sheet's edge with rows showing through underneath. */
   .shortlistBody {
-    overflow-y: auto;
     overscroll-behavior: contain;
     max-height: calc(85dvh - 3.5rem);
     padding-bottom: 0;
@@ -2815,6 +2814,13 @@
   .shortlistRegion,
   .shortlistBody {
     overflow: visible;
+  }
+}
+
+/* After the rule above, so the phone sheet's shortlist still scrolls inside its own height. */
+@media (max-width: 48rem) {
+  .shortlistBody {
+    overflow-y: auto;
   }
 }
 
