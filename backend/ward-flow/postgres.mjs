@@ -392,7 +392,8 @@ export function createWorkspaceStore(
         const access = engine.parseAccess(row.role, row.scope);
         if (!access) continue;
         if (row.kind === "cover" && access.role === "ward") wardCovers.push({ membershipId: row.id, access });
-        else roles.push({ membershipId: row.id, access, own: access });
+        // Cover gives no place of its own, so it can never be passed on (own: null).
+        else roles.push({ membershipId: row.id, access, own: row.kind === "cover" ? null : access });
       }
       // Cover of a ward joins a nurse in charge's own ward, so night cover of two wards is one desk.
       // Held with no ward of their own, or for an ED, cover is a choice of who to work as.
@@ -409,7 +410,7 @@ export function createWorkspaceStore(
               }
             : choice,
         );
-      if (!wardRoles.length) for (const cover of wardCovers) choices.push({ ...cover, own: cover.access });
+      if (!wardRoles.length) for (const cover of wardCovers) choices.push({ ...cover, own: null });
     }
     const chosen = workingAs
       ? choices.find((choice) => (choice.membershipId ?? "bootstrap") === workingAs)
@@ -452,8 +453,9 @@ export function createWorkspaceStore(
       version,
       membershipId: chosen.membershipId,
       access: chosen.access,
-      // The role as granted, before any cover joined it: what this desk may give cover of.
-      ownAccess: chosen.own ?? chosen.access,
+      // The role as granted, before any cover joined it: what this desk may give cover of. `null`
+      // when the desk is working as cover, which is never given on.
+      ownAccess: chosen.own === undefined ? chosen.access : chosen.own,
       grants,
       recentGrant,
     };
@@ -839,9 +841,11 @@ export function createWorkspaceStore(
       if (!cover) return refused(400, "Cover is for one ward or one ED.");
       return transaction(async (client, at) => {
         const row = await lock(client, view.actorId, at, view);
+        const giver = view.ownAccess === undefined ? view.access : view.ownAccess;
+        if (!giver) return refused(403, "Cover cannot be passed on. Ask the ward's nurse in charge or a coordinator.");
         const refusal = engine.coverRefusal(
           row.payload,
-          view.ownAccess ?? view.access,
+          giver,
           view.actorId,
           request.actorId,
           cover.scope,

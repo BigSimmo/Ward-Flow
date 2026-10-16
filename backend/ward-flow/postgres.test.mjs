@@ -1175,6 +1175,17 @@ test(
       assert.equal((await store.revokeAccess(bView, given.body.membership.id)).status, 403);
       assert.equal((await store.revokeAccess(aView, given.body.membership.id)).status, 200);
       assert.deepEqual((await store.viewer(nurseB)).access, { role: "ward", scope: wardB });
+      // Held with no ward of their own, cover is the whole desk, and it is never given on.
+      const relief = randomUUID();
+      const reliefCover = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      assert.equal(reliefCover.status, 200);
+      const reliefView = await store.viewer(relief);
+      assert.deepEqual(reliefView.access, { role: "ward", scope: wardA });
+      assert.equal(reliefView.ownAccess, null);
+      const passedOn = await store.giveCover(reliefView, { actorId: nurseB, scope: wardA, minutes: 60 });
+      assert.equal(passedOn.status, 403);
+      assert.match(passedOn.body.error, /cannot be passed on/);
+      assert.equal((await store.revokeAccess(aView, reliefCover.body.membership.id)).status, 200);
 
       // A person with no role asks once; a request is not a role.
       assert.deepEqual((await store.ownRequest(asker)).body, { request: null });
@@ -1208,7 +1219,7 @@ test(
       );
       assert.deepEqual(
         answers.map((row) => row.action),
-        ["ACCESS_COVER", "ACCESS_DECLINE"],
+        ["ACCESS_COVER", "ACCESS_COVER", "ACCESS_DECLINE"],
       );
 
       // Alerts by role: a coordinator by membership hears the whole network, a nurse in charge
