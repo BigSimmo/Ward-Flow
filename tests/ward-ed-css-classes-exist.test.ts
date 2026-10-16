@@ -58,7 +58,7 @@ function definesClass(name: string): boolean {
  * The five classes `styles.dataTable`, `styles.n`, `styles.formCol`, `styles.fresh`, and
  * `styles.popBody` — introduced by commit ae908cdd1b and never defined in ed.module.css — have
  * since been resolved against the ED drawing
- * (docs/ward-flow/mockups/emergency-department-third-edition.html):
+ * (design/third-edition-mockups/emergency-department-third-edition.html):
  *   - `.dataTable`: removed from ed-screen.tsx. The drawing's `.dataTable` table-level rule adds
  *     nothing `.boardTable` doesn't already provide (width/border-collapse/colours match; the
  *     font-size differs by 0.5px, imperceptible).

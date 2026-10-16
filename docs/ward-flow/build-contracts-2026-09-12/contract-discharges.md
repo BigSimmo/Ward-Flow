@@ -18,7 +18,7 @@ Built screen renders, in order (`discharge-board.tsx:169-209`):
 
 ## 2. Drawing's sections, in order
 
-`docs/ward-flow/mockups/discharges-third-edition.html` (11,851 lines total — see limits below).
+`design/third-edition-mockups/discharges-third-edition.html` (11,851 lines total — see limits below).
 
 1. Header (shared third-edition shell): title "Discharges" + "Synthetic prototype" chip (tooltip only carries the governance sentence, line 4442), universal search, Service menu, Activity/Tasks/Tools drawers, "New referral" menu (line 4437-4520).
 2. `#qFilter` — a filter bar under the header, shown only when a service is chosen; explicitly stated as decorative for this page (comment, line ~4413-4418: the four groups "stay network wide" regardless).

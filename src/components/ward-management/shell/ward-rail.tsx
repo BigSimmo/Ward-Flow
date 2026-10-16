@@ -20,10 +20,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExter
 
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
-import {
-  OperatorSwitcherModal,
-  WARD_PERSONA_SYNC_EVENT,
-} from "@/components/ward-management/settings/operator-switcher-modal";
+import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
+import { WARD_PERSONA_SYNC_EVENT } from "@/components/ward-management/settings/persona-sync";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";

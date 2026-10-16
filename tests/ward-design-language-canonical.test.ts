@@ -27,7 +27,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const DIR = join(process.cwd(), "docs/ward-flow/design/prototypes");
+const DIR = join(process.cwd(), "design/prototypes");
 
 /** The source of record. Its whole style block IS the language. */
 const SOURCE = "design-language.html";

@@ -1,8 +1,8 @@
 # Ward Flow design system, third edition
 
 > **HISTORICAL DRAWING STANDARD.** Current app authority clarified 2 October 2026: preserve the
-> accepted app design on local `main`, following [the entry point](../README.md) and
-> [active screen acceptance](../SCREEN-DEFINITION-OF-DONE.md). The prescriptions below explain the
+> accepted app design on local `main`, following [the entry point](../../docs/ward-flow/README.md) and
+> [active screen acceptance](../../docs/ward-flow/SCREEN-DEFINITION-OF-DONE.md). The prescriptions below explain the
 > drawings; they do not authorise restyling the app. Typography/accent exceptions are scoped
 > historical decisions, not general permissions. Wording/punctuation rules concern authored
 > interface copy, not clinician-entered narrative or ordinary documentation.

@@ -12,7 +12,7 @@ Built and routed:
 
 It covers all five body panels the drawing draws, and the prose is near word-for-word identical to the drawing in most panels (compare `statistics-overview-screen.tsx:127-171` capacity panel to drawing lines 4974-5002; `:255-283` declines "who this count misses" + "precedent" paragraph to drawing lines 5060-5081; `:299-336` worklist panel to drawing lines 5082-5116).
 
-## 2. THE DRAWING'S SECTIONS, in order (`docs/ward-flow/mockups/statistics-overview-third-edition.html`)
+## 2. THE DRAWING'S SECTIONS, in order (`design/third-edition-mockups/statistics-overview-third-edition.html`)
 
 1. `#overviewScope` "What this section will hold" — line 4945
 2. "Capacity across the network, right now" — line 4974

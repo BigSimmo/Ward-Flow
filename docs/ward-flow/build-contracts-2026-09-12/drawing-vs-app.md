@@ -4,9 +4,9 @@ Method: static source reading only (`grep`/`sed`/`ls`/`git`), no test run, no de
 drawing I extracted its named sections (`<h1>`–`<h4>`, `aria-label`, tab labels, `WardPanel title=`)
 and searched the mapped app screen's `.tsx` file(s) for the same or an equivalent name.
 
-**Denominator.** `docs/ward-flow/mockups/` and `docs/ward-flow/design/prototypes/` together hold far
+**Denominator.** `design/third-edition-mockups/` and `design/prototypes/` together hold far
 more than sixteen HTML files (the prototypes folder alone has ~30 early iteration files: `mockup-*-v1`
-through `-v6`). The current `docs/ward-flow/mockups/README.md` names an explicit, authoritative set of
+through `-v6`). The current `design/third-edition-mockups/README.md` names an explicit, authoritative set of
 **sixteen "third-edition" pages** as "the drawings of Ward Flow" — one page per screen, all built to
 one shared standard — and marks everything in `design/prototypes/` and the pre-third-edition mockups
 as **superseded**. I measured exactly those sixteen, listed below. **Found: 16. Examined: 16.**

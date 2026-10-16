@@ -68,7 +68,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
  * other holding. `tests/ward-patient-placement-fields.dom.test.tsx` asserts both, separately, each
  * proved by its own mutation.
  *
- * ⚠️ **A NOTE FOR WHOEVER MEETS `docs/ward-flow/design/prototypes/mockup-patient.html` NEXT.** That
+ * ⚠️ **A NOTE FOR WHOEVER MEETS `design/prototypes/mockup-patient.html` NEXT.** That
  * mockup's "Identity and key facts" panel additionally shows "open to the team" and, in a panel
  * below it, past psychiatric history, current medications, past medical history and referral
  * history. NONE of that is a missing render on this screen — it is a field set `R-2026-09-04-A`

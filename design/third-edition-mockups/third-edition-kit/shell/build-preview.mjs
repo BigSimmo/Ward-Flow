@@ -1,7 +1,7 @@
 // Builds shell/preview.html: the mockup's full <style> block copied in, then shell.css, the third
 // edition font link, shell-markup.html with a stub in place of the Command body, the preview's
 // engine stub and shell-script.js. Run from the repository root:
-//   node docs/ward-flow/mockups/third-edition-kit/shell/build-preview.mjs
+//   node design/third-edition-mockups/third-edition-kit/shell/build-preview.mjs
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";

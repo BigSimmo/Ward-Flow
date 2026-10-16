@@ -31,7 +31,7 @@ starting point, not the ceiling; read yours before designing.
 with the canonical block from `design-language.html`, byte for byte.**
 
 - Copy the content between `<style>` and `</style>` in
-  `docs/ward-flow/design/prototypes/design-language.html` as the **first** thing in your style block.
+  `design/prototypes/design-language.html` as the **first** thing in your style block.
 - Append your screen's own rules **below** it, under a clear marker comment. Never above: a rule
   above the copy is overridden by it and reads as dead code.
 - **Never edit `design-language.html`.** If the language is missing something you need, say so and

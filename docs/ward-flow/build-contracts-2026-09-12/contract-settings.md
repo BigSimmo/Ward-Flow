@@ -1,6 +1,6 @@
 # Build contract — Ward Flow Settings screen
 
-Drawing: `docs/ward-flow/mockups/settings-third-edition.html` (8448 lines).
+Drawing: `design/third-edition-mockups/settings-third-edition.html` (8448 lines).
 Route measured absent: `src/app/mockups/ward-flow/settings/` does not exist. No nav entry exists
 either (`grep -i settings src/components/ward-management/ward-nav.ts` — no hit). This is a genuine
 new build, not a re-skin of an existing route.

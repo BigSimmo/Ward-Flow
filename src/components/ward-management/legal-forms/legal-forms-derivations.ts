@@ -135,7 +135,7 @@ export function isLegalDeadlineBreached(movement: Movement, now: Instant): boole
  * The screen's own sort key: a passed deadline sorts first (the most overdue first, since it is
  * the most negative), a coming deadline sorts next (soonest first), and a form with no `dueAt`
  * sorts last of all, carrying `Infinity`. Matches the approved drawing's own `legalSortKey`
- * (`docs/ward-flow/mockups/legal-forms-third-edition.html`, lines 8581-8599), which the drawing's
+ * (`design/third-edition-mockups/legal-forms-third-edition.html`, lines 8581-8599), which the drawing's
  * own comment traces to Command's tie-break for its priority queue ("Deadlines passed, then the
  * nearest deadline, then the longest wait").
  */

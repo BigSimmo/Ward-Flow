@@ -18,7 +18,10 @@ export async function GET() {
   // The route checks production itself rather than relying on the proxy alone (A4-14): a matcher
   // change or a direct invocation must not expose a design-reference mockup in production.
   if (shouldBlockProductionMockups("/mockups/ward-flow-digest")) return new Response(null, { status: 404 });
-  const document = await readFile(path.join(process.cwd(), "docs/ward-flow/mockups/ward-flow-digest.html"), "utf8");
+  const document = await readFile(
+    path.join(process.cwd(), "design/third-edition-mockups/ward-flow-digest.html"),
+    "utf8",
+  );
 
   return new Response(document.replace(GOOGLE_FONTS_LINK_TAG, ""), {
     headers: { "Content-Type": "text/html; charset=utf-8" },

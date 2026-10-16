@@ -1,4 +1,4 @@
-# Build contract — Ward answer (`docs/ward-flow/mockups/ward-answer-third-edition.html`)
+# Build contract — Ward answer (`design/third-edition-mockups/ward-answer-third-edition.html`)
 
 ## 1. Does this screen already exist?
 

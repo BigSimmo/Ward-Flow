@@ -1,7 +1,7 @@
 > **Historical source boundary — 2 October 2026.** The preserved material below
 > describes the former Database/PsychSift workflow or a completed task. Its commands,
 > hosting and appearance claims are not current Ward instructions. Use the
-> [repository boundary](../../../../AGENTS.md) and [Ward entry point](../../README.md) for current work.
+> [repository boundary](../../../AGENTS.md) and [Ward entry point](../../../docs/ward-flow/README.md) for current work.
 
 <!-- docs-script-refs:historical-start -->
 
@@ -27,7 +27,7 @@
 > **Status on 10 September 2026.** Sixteen mockups now stand on the third edition: Command and the
 > owner's fifteen pages (Delays, Capacity, Ward, Bed board, Search hub, Raise a referral, Patient
 > search, Patient Now, Community team, Movement, Emergency department, Statistics and its ward,
-> community team and emergency department sub-pages), each in `docs/ward-flow/mockups/` as
+> community team and emergency department sub-pages), each in `design/third-edition-mockups/` as
 > `<page>-third-edition.html`. Sixteen agents, one per page, ported Command's shell and applied the
 > never list and the page polish; their reports are in the lead chat and summarised in the commit
 > messages. The typeface changed on the owner's ruling to Geist with Geist Mono, applied to all sixteen
@@ -69,22 +69,22 @@ it stands.
 
 Repository (this branch):
 
-| Path                                                              | What it is                                                                                           |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `docs/ward-flow/mockups/command-third-edition.html`               | The Command mockup, third edition, light and dark. Real engine, real data, `window.__commandCheck`.  |
-| `docs/ward-flow/mockups/design-system-third-edition.html`         | The design system page: ten rules, tokens, contrast pairs recomputed on load, 19 live components.    |
-| `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`               | The same standard as a document.                                                                     |
-| `docs/ward-flow/mockups/third-edition-kit/MERGE-BRIEF.md`         | The merge specification. Its tokens are the third edition tokens.                                    |
-| `docs/ward-flow/mockups/third-edition-kit/check.mjs`              | The verification harness (see section 6).                                                            |
-| `docs/ward-flow/mockups/third-edition-kit/shots.mjs`              | Screenshots in both themes at 1x and 2x plus a light and dark pair.                                  |
-| `docs/ward-flow/mockups/third-edition-kit/inputs/rail.html`       | The owner's rail artifact, as published (second edition identity).                                   |
-| `docs/ward-flow/mockups/third-edition-kit/inputs/buildsheet.html` | The owner's build sheet, as published.                                                               |
-| `docs/ward-flow/mockups/third-edition-kit/inputs/SHELL-SPEC.md`   | Every rule of the build sheet extracted and numbered, with its conflicts against the brief.          |
-| `docs/ward-flow/mockups/third-edition-kit/inputs/RAIL-MAP.md`     | The rail artifact mapped line by line, the engine diff, and the integration plan (read part d, e).   |
-| `docs/ward-flow/mockups/third-edition-kit/inputs/SHELL-REVIEW.md` | Not written. The review agent was cut off. Do it first (section 5, step 1).                          |
-| `docs/ward-flow/mockups/third-edition-kit/shell/`                 | Only `shell.css`, a first draft of the restyled shell rules, unverified. No markup, script or notes. |
-| `docs/ward-flow/mockups/third-edition-kit/REVIEW-FINDINGS.json`   | The 82 findings from the five reviewers of the third edition mockup and design system.               |
-| `docs/ward-flow/mockups/third-edition-kit/check-output.txt`       | The harness output on the mockup at wind down.                                                       |
+| Path                                                                    | What it is                                                                                           |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `design/third-edition-mockups/command-third-edition.html`               | The Command mockup, third edition, light and dark. Real engine, real data, `window.__commandCheck`.  |
+| `design/third-edition-mockups/design-system-third-edition.html`         | The design system page: ten rules, tokens, contrast pairs recomputed on load, 19 live components.    |
+| `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`               | The same standard as a document.                                                                     |
+| `design/third-edition-mockups/third-edition-kit/MERGE-BRIEF.md`         | The merge specification. Its tokens are the third edition tokens.                                    |
+| `design/third-edition-mockups/third-edition-kit/check.mjs`              | The verification harness (see section 6).                                                            |
+| `design/third-edition-mockups/third-edition-kit/shots.mjs`              | Screenshots in both themes at 1x and 2x plus a light and dark pair.                                  |
+| `design/third-edition-mockups/third-edition-kit/inputs/rail.html`       | The owner's rail artifact, as published (second edition identity).                                   |
+| `design/third-edition-mockups/third-edition-kit/inputs/buildsheet.html` | The owner's build sheet, as published.                                                               |
+| `design/third-edition-mockups/third-edition-kit/inputs/SHELL-SPEC.md`   | Every rule of the build sheet extracted and numbered, with its conflicts against the brief.          |
+| `design/third-edition-mockups/third-edition-kit/inputs/RAIL-MAP.md`     | The rail artifact mapped line by line, the engine diff, and the integration plan (read part d, e).   |
+| `design/third-edition-mockups/third-edition-kit/inputs/SHELL-REVIEW.md` | Not written. The review agent was cut off. Do it first (section 5, step 1).                          |
+| `design/third-edition-mockups/third-edition-kit/shell/`                 | Only `shell.css`, a first draft of the restyled shell rules, unverified. No markup, script or notes. |
+| `design/third-edition-mockups/third-edition-kit/REVIEW-FINDINGS.json`   | The 82 findings from the five reviewers of the third edition mockup and design system.               |
+| `design/third-edition-mockups/third-edition-kit/check-output.txt`       | The harness output on the mockup at wind down.                                                       |
 
 Published pages (claude.ai artifacts, private to the owner):
 
@@ -106,7 +106,7 @@ Published pages (claude.ai artifacts, private to the owner):
   standard completeness, visual quality): 82 findings, 63 of them high or medium, saved in
   `REVIEW-FINDINGS.json` in this folder. A fix pass was started and was cut off part way by the
   session's usage limit. The mockup on this branch carries the fixes applied up to that point; run
-  `git diff 4b96c56 -- docs/ward-flow/mockups/command-third-edition.html` to see exactly which. The
+  `git diff 4b96c56 -- design/third-edition-mockups/command-third-edition.html` to see exactly which. The
   harness output at wind down is in `check-output.txt`. Treat every finding as open until re-checked.
 - The design system page and document are built on the same stylesheet. The page counts its own
   figures on load and recomputes every contrast pair from the live tokens; its rail line must read
@@ -180,9 +180,9 @@ From a directory that has `node_modules` with Playwright and Chromium at
 `/opt/pw-browsers/chromium`:
 
 ```
-node docs/ward-flow/mockups/third-edition-kit/check.mjs docs/ward-flow/mockups/command-third-edition.html platinum
-node docs/ward-flow/mockups/third-edition-kit/check-shell.mjs docs/ward-flow/mockups/command-third-edition.html platinum
-node docs/ward-flow/mockups/third-edition-kit/shots.mjs docs/ward-flow/mockups/command-third-edition.html out/command platinum
+node design/third-edition-mockups/third-edition-kit/check.mjs design/third-edition-mockups/command-third-edition.html platinum
+node design/third-edition-mockups/third-edition-kit/check-shell.mjs design/third-edition-mockups/command-third-edition.html platinum
+node design/third-edition-mockups/third-edition-kit/shots.mjs design/third-edition-mockups/command-third-edition.html out/command platinum
 ```
 
 The scripts route Google Fonts to a local `fonts/` directory when one exists beside them. Without it
@@ -217,7 +217,7 @@ harness before trusting the build. CI on PR #2738 was not re-checked after the l
 ## 9. Prompt to paste into the next chat
 
 > Continue the Ward Flow third edition. Read
-> `docs/ward-flow/mockups/third-edition-kit/HANDOVER.md` on branch
+> `design/third-edition-mockups/third-edition-kit/HANDOVER.md` on branch
 > `claude/review-four-mockups-0l9x8c` (PR #2738) and do section 5 in order, after settling the
 > section 8 decisions with me. Every build must pass the harness in section 6 in both themes, with
 > the output pasted. Publish the finished Command mockup and design system as artifacts and send
@@ -228,14 +228,14 @@ harness before trusting the build. CI on PR #2738 was not re-checked after the l
 Written here because four chat messages to the Ward Lead's session went undelivered while it was busy.
 
 **SHAs on `claude/wardflow-design-review-43df97` not in `485a9cfa98`, oldest first**, all under
-`docs/ward-flow/mockups/**` or `docs/outstanding-issues-inbox/**`, nothing under `src/`:
+`design/third-edition-mockups/**` or `docs/outstanding-issues-inbox/**`, nothing under `src/`:
 `c12f32aab5` (second review fixes and the harness), `2959641e49` (ledger requests F1 to F4),
 `e8eb7ed90a` (12px floor), `225edbc2f0` (fifteen mockups as received), `b2520948b8` (thirteen take the
 shared stylesheet), `eb6877bf88`, `e6a1d7af0e`, `1ee1169c51`, `a152782c82` (four mid-run WIP snapshots,
 superseded), `73b3904f4a` (eight pages, batch one), `ef478931a4` (eight pages, batch two), `e185cc766b`
 (Geist across all sixteen, ALL GREEN), and the commit carrying this section.
 
-**Chat-only artifacts:** none. Every mockup is a file in `docs/ward-flow/mockups/`; the standard's three
+**Chat-only artifacts:** none. Every mockup is a file in `design/third-edition-mockups/`; the standard's three
 mirrors and the harness evidence are in the repo. Seventeen artifacts published on 10 September (the
 sixteen pages and a combined page) are copies of those files, not sources. The combined page is also at
 `C:\Users\joshs\Downloads\ward-flow-all-mockups.html` and in the backup folder.

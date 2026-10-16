@@ -22,7 +22,7 @@ The ward home screen has never adopted the token layer at all, so it is a bigger
 `composes:`, Vitest for unit and DOM tests, Playwright for journeys.
 
 **Spec:** 🔴 **the ward home screen is built from
-`docs/ward-flow/design/prototypes/mockup-ward-home-v4.html`, NOT v3.** The owner locked v4 in on
+`design/prototypes/mockup-ward-home-v4.html`, NOT v3.** The owner locked v4 in on
 2026-09-05 after asking for the sizes, the heading, the colour scheme, a where-to-refer panel and a
 daily summary. **v3 is kept, unchanged apart from the shared style block, and is no longer the
 spec** — it is the record of what was approved earlier that night, and it contains one sentence
@@ -222,7 +222,7 @@ for the other.
 
 **Files:**
 
-- Read: `docs/ward-flow/design/prototypes/design-language.html`
+- Read: `design/prototypes/design-language.html`
 - Read: `src/components/ward-management/ward-tokens.module.css`
 - Create: `docs/ward-flow/design/token-map-2026-09-05.md`
 
@@ -234,7 +234,7 @@ for the other.
 - [ ] **Step 1: Extract every custom property the canonical block declares**
 
 ```bash
-grep -oE "^\s+--[a-z0-9-]+:" docs/ward-flow/design/prototypes/design-language.html | tr -d ' :' | sort -u
+grep -oE "^\s+--[a-z0-9-]+:" design/prototypes/design-language.html | tr -d ' :' | sort -u
 ```
 
 - [ ] **Step 2: For each, find the ward token with the same VALUE**
@@ -1055,7 +1055,7 @@ statement that reads as caution.**
 **Files:**
 
 - Create: `tests/ward-design-language-canonical.test.ts`
-- Modify: `docs/ward-flow/design/prototypes/README.md`
+- Modify: `design/prototypes/README.md`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1064,7 +1064,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const DIR = join(process.cwd(), "docs/ward-flow/design/prototypes");
+const DIR = join(process.cwd(), "design/prototypes");
 
 function styleBlock(file: string): string {
   const html = readFileSync(join(DIR, file), "utf8");

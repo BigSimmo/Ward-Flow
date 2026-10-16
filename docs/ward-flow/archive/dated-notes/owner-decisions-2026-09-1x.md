@@ -88,12 +88,12 @@ home area. If the two ever appear to conflict on a screen, hand it back.
 
     screen name    Patient
     route          /mockups/ward-flow/people/[patientId]      (unchanged)
-    drawing        docs/ward-flow/mockups/patient-now-third-edition.html
+    drawing        design/third-edition-mockups/patient-now-third-edition.html
 
 **What this binds:** the title the screen renders, the label in the rail and in every navigation
 list, the accessible name, and the words any other screen uses to link to it.
 
-⚠️ **The drawing's FILENAME is not renamed by a builder.** It is in `docs/ward-flow/mockups/**`,
+⚠️ **The drawing's FILENAME is not renamed by a builder.** It is in `design/third-edition-mockups/**`,
 which Ward Mockups owns, and renaming a byte-checked file mid-build breaks every reference to it.
 Ward Mockups decides whether and when the file is renamed; until then the file is
 `patient-now-third-edition.html` and the screen it draws is called **Patient**. A builder that finds
@@ -275,11 +275,11 @@ The Access record panel's header note reads, always and unqualified:
 
 **It is in FIVE places, all of them drawings, and NONE of them `src/`:**
 
-    docs/ward-flow/mockups/patient-search-third-edition.html:4932
-    docs/ward-flow/mockups/third-edition-kit/inputs/buildsheet.html:5703
-    docs/ward-flow/mockups/third-edition-kit/inputs/rail.html:7530
-    docs/ward-flow/mockups/third-edition-kit/inputs/SHELL-SPEC.md:533
-    docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md:1101
+    design/third-edition-mockups/patient-search-third-edition.html:4932
+    design/third-edition-mockups/third-edition-kit/inputs/buildsheet.html:5703
+    design/third-edition-mockups/third-edition-kit/inputs/rail.html:7530
+    design/third-edition-mockups/third-edition-kit/inputs/SHELL-SPEC.md:533
+    design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md:1101
 
 ⚠️ **That changes what this is.** It is not a falsehood shipping to a clinician today — it is a
 falsehood a lane is about to build FROM. Correcting the drawing costs one sentence; correcting the
@@ -315,7 +315,7 @@ header can — it is not made redundant by this.
 
 ### Routing — and why it is not one chat's job
 
-- **Ward Mockups owns `docs/ward-flow/mockups/**` and makes all five edits.** No other chat touches
+- **Ward Mockups owns `design/third-edition-mockups/**` and makes all five edits.** No other chat touches
   those files; that folder is outside every gate and a second editor there is how a fixed defect
   gets redrawn.
 - **Lane C (Ward Builder Three) builds the corrected sentence**, not the drawn one. Its Task 7 was

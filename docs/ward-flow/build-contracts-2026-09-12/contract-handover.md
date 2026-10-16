@@ -1,6 +1,6 @@
 # Build contract — Handover (shift handover)
 
-Drawing: `docs/ward-flow/mockups/handover-third-edition.html`
+Drawing: `design/third-edition-mockups/handover-third-edition.html`
 Built screen under review: `src/app/mockups/ward-flow/handover/page.tsx` →
 `src/components/ward-management/handover/handover-page.tsx` (730 lines) +
 `src/components/ward-management/handover/handover.module.css` (354 lines)

@@ -257,7 +257,8 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   PULL_HOLD_RANGE_MINUTES:
     "coordinator-usable slider band around PULL_HOLD_MINUTES — not statutory, not independently sourced",
 
-  // Product owner, 2026-08-30, ruling `FD-19` in `docs/ward-flow-ledger.md`: "a ward→ED-medical
+  // Product owner, 2026-08-30, ruling `FD-19` in the archived identity register
+  // (`docs/ward-flow/archive/decision-identity-register-2026-08-to-2026-09.md`): "a ward→ED-medical
   // trip frees the bed ONLY IF the stay is expected to exceed 48 hours, and that is overridable".
   //
   // ⚠️ THIS IS THE ONE ENTRY IN THIS LIST THAT IS A DURATION IN THE SAME UNITS A STATUTORY PERIOD

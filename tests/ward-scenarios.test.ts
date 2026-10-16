@@ -265,10 +265,10 @@ describe("ward scenarios", () => {
         "at strandedMovements first — it counts open movements with nowhere eligible to go on an " +
         "ordinary night, so a rise there means the network now strands patients it used to place, " +
         "and that is a clinical regression rather than a test that needs updating.",
-    // RE-MEASURED 2026-09-25, 21:25, on the R7 split merged with batch 3g: seeded movements record
-    // gender (authored demo data), so `gender_designation` can pass the two single-sex wards on gender:
-    // 408 -> 430 pairs. Stranded UNCHANGED at 2. (A 453/1 reading at batch 3a was superseded by batch
-    // 3g's own seed and capacity changes.)
+      // RE-MEASURED 2026-09-25, 21:25, on the R7 split merged with batch 3g: seeded movements record
+      // gender (authored demo data), so `gender_designation` can pass the two single-sex wards on gender:
+      // 408 -> 430 pairs. Stranded UNCHANGED at 2. (A 453/1 reading at batch 3a was superseded by batch
+      // 3g's own seed and capacity changes.)
     ).toEqual({ openMovements: 53, eligiblePairs: 430, strandedMovements: 2 });
   });
 
@@ -290,11 +290,11 @@ describe("ward scenarios", () => {
         "because the scarce scenario changes bed counts and never the movements; if it does not, " +
         "the scenario has started altering something it must not touch, and the last test in this " +
         "file says which attributes those are.",
-    // RE-MEASURED 2026-09-25, 21:25, same tree: UNCHANGED at 130 pairs and 3 stranded, because the
-    // single-sex wards sit at zero allocatable beds on the scarce night.
-    // RE-MEASURED 2026-09-26, after the Kununurra ward was removed (owner-approved ward facts):
-    // 130 -> 135 pairs, stranded UNCHANGED at 3. The scarce night's allocatable beds are keyed by
-    // each unit's position (index % 3), so removing one unit moved which later units draw a bed.
+      // RE-MEASURED 2026-09-25, 21:25, same tree: UNCHANGED at 130 pairs and 3 stranded, because the
+      // single-sex wards sit at zero allocatable beds on the scarce night.
+      // RE-MEASURED 2026-09-26, after the Kununurra ward was removed (owner-approved ward facts):
+      // 130 -> 135 pairs, stranded UNCHANGED at 3. The scarce night's allocatable beds are keyed by
+      // each unit's position (index % 3), so removing one unit moved which later units draw a bed.
     ).toEqual({ openMovements: 53, eligiblePairs: 135, strandedMovements: 3 });
 
     expect(

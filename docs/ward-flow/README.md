@@ -51,7 +51,7 @@ catchment data). They are listed in [`STATUS.md`](STATUS.md).
 - **Design: the app as rendered from the latest accepted Ward Flow build.** Owner ruling,
   25 September 2026: keep the current design, style and layout, and disregard other designs,
   including the Command visual pilot and the design-system proposal. The drawings in
-  [`mockups/`](mockups/) and [`mockups/WARD-FLOW-DESIGN-SYSTEM.md`](mockups/WARD-FLOW-DESIGN-SYSTEM.md)
+  [`mockups/`](../../design/third-edition-mockups/) and [`mockups/WARD-FLOW-DESIGN-SYSTEM.md`](../../design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md)
   are background only. Where a drawing and the current app differ in look, ask the owner before
   changing the app to match the drawing.
   Reconfirmed by the owner on 2 October 2026 for the stale-rules review: use the current design on

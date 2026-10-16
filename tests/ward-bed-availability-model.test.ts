@@ -257,10 +257,9 @@ describe("bed release model", () => {
     const everyLeaveBed = [...seeded.leaveBeds, reducerProduced];
     for (const bed of everyLeaveBed) {
       const keys = Object.keys(bed);
-      expect(
-        keys.filter((key) => !OPTIONAL_LEAVE_BED_FIELDS.includes(key)).sort(),
-        bed.id,
-      ).toEqual(ALLOWED_LEAVE_BED_FIELDS);
+      expect(keys.filter((key) => !OPTIONAL_LEAVE_BED_FIELDS.includes(key)).sort(), bed.id).toEqual(
+        ALLOWED_LEAVE_BED_FIELDS,
+      );
     }
   });
 
