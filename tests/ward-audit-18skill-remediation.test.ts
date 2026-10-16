@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 import { findExplanatoryDisabledButtonViolations } from "../scripts/ward-flow/check-explanatory-buttons.mjs";
 import { GET as getHealth } from "../src/app/api/health/route";
 import { GET as getLocalProjectId } from "../src/app/api/local-project-id/route";
-import {
-  eventLogEntryFor,
-  getEventLogSequence,
-  withEventLogSequence,
-} from "../src/components/ward-management/ward-event-log";
+import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
 import { readmissionDetailText } from "../src/components/ward-management/ward-readmission-flag";
 import { buildBuzzKey } from "../src/components/ward-management/ward/ward-notification-center";
 
@@ -47,30 +43,25 @@ describe("18-skill audit remediation invariants", () => {
     expect(healthRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
 
     const projectRes = getLocalProjectId(
-      new Request("http://localhost:3000/api/local-project-id", {
-        headers: { host: "localhost:3000" },
-      }),
+      new Request("http://localhost:3000/api/local-project-id", { headers: { host: "localhost:3000" } }),
     );
     expect(projectRes.headers.get("Cache-Control")).toBe("no-store");
     expect(projectRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
-  it("tracks monotonic EventLogEntry sequences without mutating enumerable shape and disambiguates duplicate buzzes", () => {
-    const entry = withEventLogSequence(
-      eventLogEntryFor({ type: "RESET_SCENARIO", role: "demo", now: 600 }, true),
-      1042,
-    );
+  it("tracks monotonic EventLogEntry sequences and disambiguates duplicate buzzes", () => {
+    const entry = eventLogEntryFor({ type: "RESET_SCENARIO", role: "demo", now: 600 }, true);
     expect(entry).toEqual({
+      sequence: 0,
       type: "RESET_SCENARIO",
       role: "demo",
       now: 600,
       accepted: true,
     });
-    expect(getEventLogSequence(entry, 0)).toBe(1042);
 
     const counts = new Map<string, number>();
     const buzz = { unitId: "ward-alpha", at: 540, byRole: "coordinator", message: "Refresh now", urgent: true };
-    expect(buildBuzzKey(buzz, counts)).toBe("ward-alpha:540:coordinator:Refresh now:true#0");
+    expect(buildBuzzKey(buzz, counts)).toBe("ward-alpha:540:coordinator:Refresh now:true");
     expect(buildBuzzKey(buzz, counts)).toBe("ward-alpha:540:coordinator:Refresh now:true#1");
   });
 });

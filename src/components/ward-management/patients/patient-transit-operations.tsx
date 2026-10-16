@@ -836,10 +836,10 @@ export function PatientTransitOperations({
                   title={
                     !releaseReason
                       ? "Choose a release reason first"
-                      : activeJob
-                        ? "Cancel the transport job before releasing the bed"
-                        : job?.collectedAt !== undefined
-                          ? "The bed cannot be released after the patient has been collected"
+                      : job?.collectedAt !== undefined
+                        ? "The bed cannot be released after the patient has been collected"
+                        : activeJob
+                          ? "Cancel the transport job before releasing the bed"
                           : undefined
                   }
                   onClick={() => {

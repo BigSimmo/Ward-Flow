@@ -62,7 +62,7 @@ export function buildBuzzKey(
   const base = `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}`;
   const occurrence = occurrenceCounts.get(base) ?? 0;
   occurrenceCounts.set(base, occurrence + 1);
-  return `${base}#${occurrence}`;
+  return occurrence === 0 ? base : `${base}#${occurrence}`;
 }
 
 /* Walkthrough code-read, 25 Sept 2026: this called the resolver with movements only, so every

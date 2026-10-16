@@ -1053,9 +1053,12 @@ export function AddPatientForm() {
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
                   onClick={(event) => {
+                    if (isSubmitting || !answered) {
+                      ignoreUnavailableActivation(event);
+                      return;
+                    }
                     submitIntentRef.current = "refer";
                     setSubmitIntent("refer");
-                    ignoreUnavailableActivation(event);
                   }}
                 >
                   {isSubmitting && submitIntent === "refer" ? "Starting referral..." : "Register & start referral →"}
@@ -1069,9 +1072,12 @@ export function AddPatientForm() {
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
                   onClick={(event) => {
+                    if (isSubmitting || !answered) {
+                      ignoreUnavailableActivation(event);
+                      return;
+                    }
                     submitIntentRef.current = "profile";
                     setSubmitIntent("profile");
-                    ignoreUnavailableActivation(event);
                   }}
                 >
                   {isSubmitting ? "Adding patient..." : "Add patient"}

@@ -100,6 +100,10 @@ export function Button(props: ButtonProps) {
       event.preventDefault();
       return;
     }
+    if (isAriaDisabled) {
+      // Caller-owned aria-disabled: block the native action but let the caller's guard announce why.
+      event.preventDefault();
+    }
     onClick?.(event);
   };
 
