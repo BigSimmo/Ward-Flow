@@ -81,6 +81,7 @@ export function reduceReferralSendEvent(
     replaceMovement,
     replaceReferral,
     withdrawAllLiveRequestsForReferrer,
+    withoutReferralBedHold,
   } = helpers;
   switch (event.type) {
     case "RAISE_REFERRAL": {
@@ -361,7 +362,10 @@ export function reduceReferralSendEvent(
           `movement ${movement.id} is on a legal form; a conclusive examination outcome must be recorded before referring to a community team`,
         );
       }
-      const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPulledBed = withoutReferralBedHold(
+        releasePulledBedAndAdmission(state, movement, event.now),
+        movement,
+      );
       const linkedReferral = withoutPulledBed.referrals.find((r) => r.id === movement.referralId);
       const originEd = allEmergencyDepartments().find((d) => d.id === movement.originEdId);
       const originSite = originEd ? siteByCode(originEd.siteCode) : undefined;
@@ -444,6 +448,7 @@ export function reduceReferralSendEvent(
         ...movement,
         admissionId: undefined,
         acceptedUnitId: undefined,
+        heldBedNumber: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
         referralAnswerHistory: [
@@ -819,7 +824,10 @@ export function reduceReferralSendEvent(
 
         // Gives back a pulled bed and its admission, or does nothing if none was pulled. Shared
         // with `RELEASE_PULL`.
-        const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+        const withoutPulledBed = withoutReferralBedHold(
+          releasePulledBedAndAdmission(state, movement, event.now),
+          movement,
+        );
         const revokedByCoordinator = event.role === "coordinator";
         const acceptingUnitId = movement.acceptedUnitId;
         const liveTransport =
@@ -831,6 +839,7 @@ export function reduceReferralSendEvent(
           // A revoked acceptance holds no ward: cleared here, as RECORD_ED_OUTCOME and
           // REFER_TO_COMMUNITY_TEAM do, so no board reads a closed movement as still going to it.
           acceptedUnitId: undefined,
+          heldBedNumber: undefined,
           // A booked-but-uncollected job is cancelled in the same update that closes the movement;
           // `orphanedTransport` assumes no live job outlives a closure.
           transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
@@ -988,7 +997,8 @@ export function reduceReferralSendEvent(
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
       if (event.role === "ed" && event.actingPlaceId !== undefined) {
-        const originEdId = referralReferrer(referral)?.placeId;
+        const referrer = referralReferrer(referral);
+        const originEdId = referrer?.role === "ed" ? referrer.placeId : undefined;
         if (originEdId === undefined || event.actingPlaceId !== originEdId) {
           return reject(
             state,
@@ -999,9 +1009,9 @@ export function reduceReferralSendEvent(
       }
       if (event.role === "community" && event.actingPlaceId !== undefined) {
         if (
-          referral.sendingTeamName !== undefined &&
-          event.actingPlaceId !== referral.sendingTeamName &&
-          event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName)
+          referral.sendingTeamName === undefined ||
+          (event.actingPlaceId !== referral.sendingTeamName &&
+            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName))
         ) {
           return reject(
             state,

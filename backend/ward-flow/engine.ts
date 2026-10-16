@@ -365,11 +365,27 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
   if (!canBreakGlass(access.role)) return "Opening a record outside your care is not part of your role.";
   if (typeof patientId !== "string" || !world.state.patients.some((patient) => patient.id === patientId))
     return "That patient is not in the workspace.";
-  const { state } = scopeWardFlowState(world.state, access, {
+  const { state, scoped } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
     places: wardPlaceLookup(world.state.units),
   });
-  if (state.patients.some((patient) => patient.id === patientId)) return "That patient is already in your care.";
+  // In care means a live record the desk sees in full. A finished move, an answered referral or a
+  // past stay kept only for the hand-off window is history, so break glass stays open for that
+  // person's current care elsewhere (review on PR #365).
+  const inFullCare =
+    state.movements.some((movement) => movement.patientId === patientId && movement.closure === undefined) ||
+    state.referrals.some(
+      (referral) =>
+        referral.patientId === patientId &&
+        referral.destinations.some((line) => line.state === "queued" && line.withdrawnAt === undefined),
+    ) ||
+    state.admissions.some(
+      (admission) =>
+        admission.patientId === patientId &&
+        admission.state !== "departed" &&
+        !scoped.datesOnlyAdmissionIds.has(admission.id),
+    );
+  if (inFullCare) return "That patient is already in your care.";
   return null;
 }
 

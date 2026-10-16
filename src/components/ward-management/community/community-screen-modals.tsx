@@ -155,37 +155,10 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
         </div>
         <div className={styles.modalBody}>
           {activeModalType === "contact" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-              }}
-              className={styles.stackLg}
-            >
-              <p className={styles.footnote}>
-                Log a formal face-to-face or telehealth clinical contact against catchment caseload.
+            <div className={styles.stackLg}>
+              <p className={styles.footnote} data-testid="ward-community-last-contact">
+                Logs a team-level contact timestamp for {teamConfig.name} in this session.
               </p>
-              <div>
-                <label htmlFor="community-contact-patient" className={styles.contactLabel}>
-                  Patient ID
-                </label>
-                <input
-                  id="community-contact-patient"
-                  type="text"
-                  required
-                  defaultValue=""
-                  className={`${styles.searchInput} ${styles.contactInput}`}
-                />
-              </div>
-              <div>
-                <label htmlFor="community-contact-modality" className={styles.contactLabel}>
-                  Contact Modality
-                </label>
-                <select id="community-contact-modality" className={`${styles.declineSelect} ${styles.contactSelect}`}>
-                  <option value="home">Home Visit (Community Outreach)</option>
-                  <option value="clinic">Clinic Appointment</option>
-                  <option value="phone">Telephone Review</option>
-                </select>
-              </div>
               <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>
                 <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
                   Cancel
@@ -210,7 +183,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   ? `Contact recorded as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
                   : "Clinical contact is not recorded yet."}
               </p>
-            </form>
+            </div>
           )}
 
           {activeModalType === "handover" && (
@@ -266,7 +239,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               </div>
 
               <div className={styles.deploymentNote}>
-                <b>Current Deployment:</b> Urgent joint assessment PT-4620 with MHERT / WA Police co-response. En-route{" "}
+                <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
                 {teamConfig.campus} to catchment residence. Duress beacon: not wired in this prototype.
               </div>
 

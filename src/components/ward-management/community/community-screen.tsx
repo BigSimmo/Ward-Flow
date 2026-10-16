@@ -6,6 +6,7 @@ import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
 import { useIsPhone, useOptionalToast } from "@/components/wf";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionBelongsToTeam,
@@ -471,27 +472,45 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   }, [toastMessage]);
 
   useEffect(() => {
+    // Escape runs last (window), after any open layer has handled it.
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      setActiveModal(null);
+      setActiveModalType(null);
+      setActiveDrawer(null);
+    }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setActiveModal(null);
-        setActiveModalType(null);
-        setActiveDrawer(null);
-      } else if (
-        e.key === "/" &&
-        (e.target as HTMLElement)?.tagName !== "INPUT" &&
-        (e.target as HTMLElement)?.tagName !== "TEXTAREA"
-      ) {
-        e.preventDefault();
-        // The hero's search popover opens from its own trigger and focuses its input itself.
-        if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
-        document.getElementById("q")?.focus();
-      } else if (e.key === "[") {
-        const current = document.documentElement.getAttribute("data-rail");
-        document.documentElement.setAttribute("data-rail", current === "closed" ? "open" : "closed");
+      if (e.key === "/" || e.key === "[") {
+        // An open sheet or dialog keeps the keys: the shortcut must not reach the page behind it.
+        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || hasOpenSheet()) return;
+        const target = e.target;
+        const inEditable =
+          target instanceof HTMLElement &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.tagName === "SELECT" ||
+            target.isContentEditable);
+        if (inEditable) return;
+        if (e.key === "/") {
+          e.preventDefault();
+          // Claimed here, on the document, before the shared header's window listener takes it
+          // for the global search (as `community-index.tsx` does).
+          e.stopPropagation();
+          // The hero's search popover opens from its own trigger and focuses its input itself.
+          if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
+          document.getElementById("q")?.focus();
+        } else {
+          const current = document.documentElement.getAttribute("data-rail");
+          document.documentElement.setAttribute("data-rail", current === "closed" ? "open" : "closed");
+        }
       }
     }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   function handleToggleDecline(referralId: string) {

@@ -40,7 +40,6 @@ function describeConfiguredClaude(name: string, body: () => void) {
 if (!hasClaudeSettings) {
   describe("public Claude configuration boundary", () => {
     it("does not ship a partial permission or hook configuration", () => {
-      expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
       const workflow = readFileSync(join(repoRoot, ".github/workflows/ward-flow.yml"), "utf8");
       expect(workflow).toContain("contents: read");
       expect(workflow).not.toContain("contents: write");

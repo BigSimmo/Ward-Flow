@@ -669,16 +669,11 @@ export function reduceTransportEvent(
           `cannot book transport for movement ${movement.id} without an accepted destination ward or admission`,
         );
       }
-      if (
-        event.role === "ed" &&
-        event.actingPlaceId &&
-        movement.originEdId &&
-        event.actingPlaceId !== movement.originEdId
-      ) {
+      if (event.role === "ed" && event.actingPlaceId !== undefined && event.actingPlaceId !== movement.originEdId) {
         return reject(
           state,
           event,
-          `BOOK_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only book transport for movements originating from its own ED (${movement.originEdId})`,
+          `${event.type} was raised acting as ED ${event.actingPlaceId} but movement origin is ${movement.originEdId}; only the origin ED can book or record transport for its own movement`,
         );
       }
       // The job id counts prior cancellations from `unwinds` (append-only), so a re-booking after a
@@ -985,11 +980,11 @@ export function reduceTransportEvent(
       if (movement.closure) {
         return reject(state, event, "cannot update arrival details on closed movement");
       }
+      // A ward must name itself, so the shared backend can check that desk is the receiving ward
+      // and not the sending one (review on PR #365).
       if (
         event.role === "ward" &&
-        event.actingUnitId !== undefined &&
-        movement.acceptedUnitId !== undefined &&
-        event.actingUnitId !== movement.acceptedUnitId
+        (event.actingUnitId === undefined || event.actingUnitId !== movement.acceptedUnitId)
       ) {
         return reject(
           state,

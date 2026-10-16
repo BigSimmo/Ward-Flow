@@ -1346,7 +1346,14 @@ export function departAdmission(
         };
   // Leaving ends any discharge blocker too: the stay is over, so it must not carry a "held up" reason
   // into history, the same way its bed release loses its blocker below.
-  const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination, blockReason: null };
+  const departed: Admission = {
+    ...admission,
+    state: "departed",
+    leftAt: now,
+    leavingDestination,
+    blockReason: null,
+    dischargeCriteria: null,
+  };
   const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
   // Owner ruling: a leave bed belongs to one stay, so leaving ends it in the same write. No bed
   // figure moves here.
@@ -1732,12 +1739,14 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
         allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
+      const { bedNumber: _sendingBedNumber, ...admissionWithoutBedNumber } = admission;
+      void _sendingBedNumber;
       next = {
         ...next,
         admissions: [
           ...next.admissions,
           {
-            ...admission,
+            ...admissionWithoutBedNumber,
             id,
             unitId: receiving.id,
             movementId,
@@ -1754,6 +1763,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
             dischargeConfirmedBy: null,
             dischargeDateMoves: 0,
             blockReason: null,
+            dischargeBarrier: null,
+            dischargeCriteria: null,
+            stepDownCandidate: false,
             awayAtEmergencyDepartmentSince: null,
             careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
           },
@@ -1923,6 +1935,34 @@ export function heldBedRefusal(
       ),
   );
   return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already held for someone` : null;
+}
+
+/**
+ * A released bed is free again only once the accepted referral arm that held it lets go too:
+ * `heldBedRefusal` reads both the movement's and the arm's `heldBedNumber` (review on PR #365).
+ */
+export function withoutReferralBedHold(state: WardFlowState, movement: Movement): WardFlowState {
+  const unitId = movement.acceptedUnitId;
+  if (movement.referralId === undefined || unitId === undefined) return state;
+  let changed = false;
+  const referrals = state.referrals.map((referral) => {
+    if (referral.id !== movement.referralId) return referral;
+    const destinations = referral.destinations.map((arm) => {
+      if (
+        arm.state !== "accepted" ||
+        arm.heldBedNumber === undefined ||
+        arm.destination.kind !== "psychiatric_ward" ||
+        (arm.acceptedUnitId ?? arm.destination.unitId) !== unitId
+      )
+        return arm;
+      changed = true;
+      const { heldBedNumber: _heldBed, ...released } = arm;
+      void _heldBed;
+      return released;
+    });
+    return changed ? { ...referral, destinations } : referral;
+  });
+  return changed ? { ...state, referrals } : state;
 }
 
 /**
@@ -2449,6 +2489,16 @@ export function reduceClinicalEvent(
           `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
         );
       }
+      const divertedHoldingBed =
+        movement.transport?.diversion !== undefined ||
+        movement.blocker === STAGE_TRANSITION_BLOCKERS.divertedAwaitingRelease;
+      if (divertedHoldingBed) {
+        return reject(
+          state,
+          event,
+          `cannot clear diversion hold on movement ${movement.id}: patient was diverted while holding a bed — requires bed release (RELEASE_DIVERTED_BED)`,
+        );
+      }
       // Refused rather than a no-op: a control must not report success for an act that changed
       // nothing.
       if (BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim())) {
@@ -2647,6 +2697,7 @@ const RECORDED_FACT_EVENT_HELPERS: RecordedFactEventHelpers = {
   referralReferrer,
   reject,
   releasePulledBedAndAdmission,
+  withoutReferralBedHold,
   replaceAdmission,
   replaceMovement,
   replaceReferral,
@@ -2682,6 +2733,7 @@ const REFERRAL_SEND_EVENT_HELPERS = {
   referralReferrer,
   reject,
   releasePulledBedAndAdmission,
+  withoutReferralBedHold,
   replaceMovement,
   replaceReferral,
   withdrawAllLiveRequestsForReferrer,
@@ -2726,6 +2778,7 @@ const PLACEMENT_EVENT_HELPERS = {
   pullOverrides,
   reject,
   releasePulledBedAndAdmission,
+  withoutReferralBedHold,
   replaceMovement,
   replaceUnit,
   wardActingMovementRefusal,

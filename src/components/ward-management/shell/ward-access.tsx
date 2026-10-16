@@ -16,10 +16,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Button, buttonClass } from "@/components/wf";
+import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
   scopeBroadcastAlerts,
@@ -330,7 +331,13 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         saveScenarioFile: wholeNetwork ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
-        supportNotifications: coordinator ? context.supportNotifications : [],
+        supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
+          coordinator,
+          unitIn,
+          role: access.role,
+          movements: scoped.movements,
+          wholeStay: (admissionId) => admissionIds.has(admissionId) && !scoped.datesOnlyAdmissionIds.has(admissionId),
+        }),
         wardReferralInbox: (unitId: string) => (unitIn(unitId) ? context.wardReferralInbox(unitId) : []),
         resolvePatientIdentity: (subject) => resolveSubjectPatient(subject, resolveIndex),
       },
@@ -618,7 +625,17 @@ export function WardIdleLock() {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const [locked, setLocked] = useState(false);
+  const lockRef = useRef<HTMLDivElement | null>(null);
   const minutes = CLINICAL_VALUES.idleLock.value;
+  // Escape must not unlock: only the visible button does, so the cover stays until someone acts on it.
+  useModalFocus({
+    open: locked,
+    onClose: () => undefined,
+    panelRef: lockRef,
+    closeOnEscape: false,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (!on) return;
@@ -640,7 +657,7 @@ export function WardIdleLock() {
   }, [on, access, minutes]);
   if (!locked) return null;
   return (
-    <div className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
+    <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
       <div className={styles.lockCard}>
         <h1 id="ward-idle-lock-title">Locked after {minutes} minutes</h1>
         <p>

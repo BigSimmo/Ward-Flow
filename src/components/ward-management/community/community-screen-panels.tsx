@@ -609,7 +609,8 @@ export function communityCoveragePanel(view: CommunityScreenView) {
                   establish current care.
                 </li>
                 <li>
-                  <strong>Follow-up.</strong> Follow-up status is not shown or editable here.
+                  <strong>Follow-up.</strong> Follow-up arrangements and contact outcomes can be recorded for this team
+                  on the Back in the community tab.
                 </li>
                 <li>
                   <strong>Referrals raised.</strong> Community sources carry no team name.
