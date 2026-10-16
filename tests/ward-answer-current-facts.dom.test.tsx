@@ -127,12 +127,15 @@ describe("Ward answer current facts", () => {
 
     expect(choices).toHaveLength(DECLINE_REASONS.length);
     expect(choices.every((choice) => !(choice as HTMLInputElement).checked)).toBe(true);
-    expect(submit).toBeDisabled();
+    // Unavailable but still focusable, so its reason stays reachable (AUD-A11Y-02).
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(submit);
+    expect(screen.getByTestId("answer-decline-probe")).toHaveTextContent("none");
 
     // Owner ruling 2026-09-25: DECLINE with reason no_bed now waitlists the patient instead of
     // declining; capability_mismatch still declines, so this reason keeps exercising a real decline.
     fireEvent.click(within(form).getByRole("radio", { name: "capability mismatch" }));
-    expect(submit).not.toBeDisabled();
+    expect(submit).not.toHaveAttribute("aria-disabled");
     fireEvent.click(submit);
 
     expect(screen.getByTestId("answer-decline-probe")).toHaveTextContent("capability_mismatch");

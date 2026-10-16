@@ -24,13 +24,16 @@ import {
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
+import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+
+export { checkSyntheticPayload };
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
 /** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
 const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 /** A known type, an explicit allowed role and well-formed fields: see command-schemas.ts. */
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
-  return validSharedCommand(value);
+  return validSharedCommand(value) && checkSyntheticPayload(value).safe;
 }
 
 /** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */

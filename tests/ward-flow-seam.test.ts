@@ -49,6 +49,10 @@ const APPROVED_SHARED_MODULES = new Map([
   ],
   ["@/components/wf/sheet", "the slide-over panel primitive"],
   [
+    "@/lib/synthetic-data-guard",
+    "the repository's synthetic-data check, so a scenario file is refused before it is saved or loaded if it holds anything that looks like real patient data",
+  ],
+  [
     "@/components/wf",
     "the approved v6 design system kit (Josh, 7 October 2026): tokens-only primitives every Ward Flow " +
       "screen builds from. Imported through this one barrel only, so it travels as one folder.",
@@ -280,7 +284,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // its new path, so the seam is the same four primitives, not the whole old ui folder.
     // 10 -> 11 on 2026-10-10: @/lib/theme-client, the one theme switch. The ward's own appearance key
     // was the defect, so the ward now calls the owner.
-    expect(APPROVED_SHARED_MODULES.size).toBe(11);
+    // 11 -> 12 on 2026-10-16: @/lib/synthetic-data-guard, so a scenario file is scanned before it is
+    // saved or loaded (audit remediation, PR 355).
+    expect(APPROVED_SHARED_MODULES.size).toBe(12);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -299,6 +305,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf/tooltip",
       "@/lib/client-store-factory",
       "@/lib/form-register",
+      "@/lib/synthetic-data-guard",
       "@/lib/theme-client",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route

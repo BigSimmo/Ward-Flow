@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
@@ -204,7 +205,10 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 style={{ color: "var(--ward-accent, #0284c7)", margin: "0 auto 0.5rem" }}
               />
               <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}>
+              <div
+                id="upload-forms-file-requirement"
+                style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}
+              >
                 {fileAttached
                   ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
                   : "Select a non-empty PDF, JPEG or PNG. Contents are not retained."}
@@ -233,7 +237,12 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </button>
             <button
               type="submit"
-              disabled={!fileAttached || simulatedSize <= 0}
+              aria-disabled={!fileAttached || simulatedSize <= 0 ? "true" : undefined}
+              onClick={!fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
+              aria-describedby={!fileAttached || simulatedSize <= 0 ? "upload-forms-file-requirement" : undefined}
+              title={
+                !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
+              }
               data-testid="confirm-upload-form-button"
               style={{
                 minHeight: "48px",
