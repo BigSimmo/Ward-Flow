@@ -1,0 +1,39 @@
+name: Ward Flow release tag
+
+# Railway deploys a main commit once Ward Flow CI succeeds on it. This tags that same commit
+# `deploy-YYYY-MM-DD-<short sha>`, so every deploy has a named point to compare against or roll back
+# to. It runs only after a successful CI run for a push to main, and is the only workflow that may
+# write: it creates one tag through the API, checks out nothing and runs no repository code.
+on:
+  workflow_run:
+    workflows: [Ward Flow CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    name: Tag the deployed commit
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Create the deploy tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
+        run: |
+          case "$HEAD_SHA" in *[!0-9a-f]* | "") echo "Unexpected commit id" >&2; exit 1 ;; esac
+          tag="deploy-${RUN_STARTED_AT:0:10}-${HEAD_SHA:0:7}"
+          if gh api "repos/$REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag already exists"
+            exit 0
+          fi
+          gh api "repos/$REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$HEAD_SHA" >/dev/null
+          echo "Tagged $HEAD_SHA as $tag"
