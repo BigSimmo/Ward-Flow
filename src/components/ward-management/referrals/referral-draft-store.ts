@@ -27,10 +27,11 @@ export function clearReferralDraftSession(): void {
   lastReferrer = null;
 }
 
-export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion): void {
-  if (ownerVersion !== sessionVersion) return;
+export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion): boolean {
+  if (ownerVersion !== sessionVersion) return false;
   kept = draft;
   keptAtMs = Date.now();
+  return true;
 }
 
 export function readKeptReferralDraft<T>(): T | null {
@@ -41,10 +42,11 @@ export function readKeptReferralDraftAt(): number | null {
   return kept === null ? null : keptAtMs;
 }
 
-export function discardReferralDraft(ownerVersion = sessionVersion): void {
-  if (ownerVersion !== sessionVersion) return;
+export function discardReferralDraft(ownerVersion = sessionVersion): boolean {
+  if (ownerVersion !== sessionVersion) return false;
   kept = null;
   keptAtMs = null;
+  return true;
 }
 
 /**
@@ -53,9 +55,10 @@ export function discardReferralDraft(ownerVersion = sessionVersion): void {
  */
 let lastReferrer: unknown = null;
 
-export function rememberReferrerContact<T>(contact: T, ownerVersion = sessionVersion): void {
-  if (ownerVersion !== sessionVersion) return;
+export function rememberReferrerContact<T>(contact: T, ownerVersion = sessionVersion): boolean {
+  if (ownerVersion !== sessionVersion) return false;
   lastReferrer = contact;
+  return true;
 }
 
 export function readLastReferrerContact<T>(): T | null {

@@ -526,11 +526,15 @@ export function useWardReferralDrawerState({
     onClose();
   }
   function keepAndClose() {
-    keepReferralDraft(draftNow, draftOwnerVersion);
+    const kept = keepReferralDraft(draftNow, draftOwnerVersion);
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    announceToWardShell("Referral draft kept until this tab reloads.");
+    announceToWardShell(
+      kept
+        ? "Referral draft kept until this tab reloads."
+        : "Referral draft could not be kept because the session changed.",
+    );
   }
 
   const handleDrawerClose = useCallback(() => {
