@@ -28,7 +28,9 @@ import {
   type UndoStepType,
 } from "./ward-undo";
 import {
+  admissionCriteriaEligibility,
   dischargeIdentity,
+  dischargeMovement,
   readOpenedDischargeRecord,
   safeCounter,
   selectDischargeRecord,
@@ -36,6 +38,8 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
+// D-64: these two live beside the discharge records so the Discharges list can use them too.
+export { admissionCriteriaEligibility, dischargeMovement };
 import {
   isLeavingDestination,
   isFollowUpState,
@@ -156,7 +160,6 @@ import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
-import { criteriaEligibility } from "@/components/ward-management/ward-discharge-criteria";
 import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
@@ -1446,20 +1449,6 @@ export function patientRecordIsInvoluntary(legalStatus: string | undefined): boo
   return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
 }
 
-/** A previous stay must never decide this admission's discharge or transport state. */
-export function dischargeMovement(state: Pick<WardFlowState, "movements">, admission: Admission): Movement | undefined {
-  return (
-    state.movements.find((movement) => movement.admissionId === admission.id) ??
-    state.movements.find(
-      (movement) =>
-        admission.patientId !== null &&
-        movement.patientId === admission.patientId &&
-        movement.admissionId === undefined &&
-        movement.closure === undefined,
-    )
-  );
-}
-
 /**
  * The legal status the bed panel shows for a stay, read from the same two records as
  * `admissionCriteriaEligibility`, so the Legal tile and the criteria led discharge card agree.
@@ -1484,20 +1473,6 @@ export function admissionLegalStatus(
     return patientStatus;
   }
   return dischargeMovement(state, admission)?.legalStatus ?? patientStatus;
-}
-
-/** The single legal-status lookup used by both the ward card and the command reducer. */
-export function admissionCriteriaEligibility(
-  state: Pick<WardFlowState, "movements" | "patients">,
-  admission: Admission,
-) {
-  const movement = dischargeMovement(state, admission);
-  const patient = uniqueRecord(state.patients, admission.patientId);
-  return criteriaEligibility(
-    patient?.legalStatus,
-    movement?.legalStatus,
-    activeCommunityTreatmentOrder(patient) !== undefined,
-  );
 }
 
 /** A collected journey whose vehicle has not yet arrived or been stood down. */

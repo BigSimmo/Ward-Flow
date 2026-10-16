@@ -108,11 +108,11 @@ function shortLegal(label: string | undefined): string {
   return label.startsWith("Form ") ? label.split(" ").slice(0, 2).join(" ") : label;
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
     <>
       <dt className={styles.kvDt}>{label}</dt>
-      <dd className={styles.kvDd}>{children}</dd>
+      <dd className={cx(styles.kvDd, wide && styles.kvWide)}>{children}</dd>
     </>
   );
 }
@@ -1105,7 +1105,8 @@ function PhoneBedSheet({
                 <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
                 {planRows}
                 {isOccupied && admissionId ? (
-                  <Row label="Going to">
+                  // The longest destinations do not fit beside the label at 390px, so the select takes its own line.
+                  <Row label="Going to" wide>
                     <select
                       id="drawer-leaving-dest"
                       aria-label="Where are they going?"
