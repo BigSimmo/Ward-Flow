@@ -17,7 +17,10 @@ describe("18-skill audit remediation invariants", () => {
     const typecheckConfig = readRepoFile("tsconfig.typecheck.json");
 
     for (const pattern of ["tmp/**", ".worktrees/**", ".claude/**", ".next-playwright/**"]) {
-      expect(tsconfig).toContain(`"${pattern}"`);
+      // The root config spells dot-directories as "**/.x/**": the isolated Playwright run rewrites
+      // root excludes to "../../" and refuses entries that start with ".".
+      const rootEntry = pattern.startsWith(".") ? `"**/${pattern}"` : `"${pattern}"`;
+      expect(tsconfig).toContain(rootEntry);
       expect(typecheckConfig).toContain(`"${pattern}"`);
     }
   });
