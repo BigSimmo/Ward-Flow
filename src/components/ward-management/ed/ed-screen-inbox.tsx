@@ -77,7 +77,6 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                 data-minutes-in-department={clocks.inDepartment}
               >
                 <header className={styles.inboxItemHeader}>
-                  <strong>{referralPatient.umrn}</strong>
                   <span className={styles.inboxName}>{referralPatient.displayName}</span>
                   <span className={styles.umrnNote}>
                     (UMRN: <strong>{referralPatient.umrn}</strong>)
