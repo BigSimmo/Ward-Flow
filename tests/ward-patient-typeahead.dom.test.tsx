@@ -231,7 +231,7 @@ describe("PatientTypeahead — D6: the active row survives forced-colors", () =>
 });
 
 /*
- * Standard §8.6 (`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`): "The footer of the results
+ * Standard §8.6 (`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`): "The footer of the results
  * is always: 'Names are invented. Search never returns a risk score, an acuity score or a best
  * match.'" This component is NOT the shell's search §8.6 governs (`WardGlobalSearch`, its own test
  * in `tests/ward-global-search.dom.test.tsx`, gets the full sentence) — it performs no score

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;

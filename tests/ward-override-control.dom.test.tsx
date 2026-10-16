@@ -88,7 +88,6 @@ function ReferWF009ToBrmAdultSecureWithReason() {
   );
 }
 
-
 // Broome is not forensic (owner ruling 2026-09-25); these screens test the forensic gate on a
 // made-up forensic Broome for this file only.
 markBroomeForensicForThisFile();

@@ -43,7 +43,7 @@ import { movementHref, patientHref } from "@/components/ward-management/shell/wa
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
-import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {

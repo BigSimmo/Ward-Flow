@@ -368,7 +368,7 @@ repository-wide `docs/outstanding-issues.md` is not used for Ward Flow (owner ru
    before this round started) and `node scripts/ward-flow/rules-index.mjs --check` re-run.
 5. **Which Settings file is Gemini's rebuild.** Recorded: `settings-third-edition.html` (routed at
    `/mockups/ward-flow/settings`), confirmed by commit date. See "What is built" above and
-   `docs/ward-flow/mockups/README.md`.
+   `design/third-edition-mockups/README.md`.
 
 **Closed by Wave 2 docs hygiene (22 September):**
 

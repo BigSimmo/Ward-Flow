@@ -21,7 +21,7 @@ import { join, relative } from "node:path";
 import { PAIRS, ROUTE_COMPONENTS, SUPERSEDED } from "./screen-pairs.mjs";
 
 const ROOT = process.cwd();
-const MOCKUPS = join(ROOT, "docs", "ward-flow", "mockups");
+const MOCKUPS = join(ROOT, "design", "third-edition-mockups");
 const ROUTE_SOURCES = [
   { root: join(ROOT, "src", "app", "mockups", "ward-flow"), prefix: "", file: "page.tsx" },
   // These two commissioned references live beside the Ward Flow page tree. Keep their public

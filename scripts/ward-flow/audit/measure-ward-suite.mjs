@@ -45,13 +45,7 @@ const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
 const expected = new Map(manifest.expected.map((entry) => [entry.file, entry]));
 const reportDir = mkdtempSync(path.join(tmpdir(), "ward-measure-"));
 const reportPath = path.join(reportDir, "report.json");
-const keptReport = path.join(
-  projectRoot,
-  "docs",
-  "ward-flow",
-  "audit-artefacts",
-  "stabilisation-suite-report.json",
-);
+const keptReport = path.join(projectRoot, "docs", "ward-flow", "audit-artefacts", "stabilisation-suite-report.json");
 
 try {
   try {

@@ -189,6 +189,9 @@ const DATA_NOUNS = [
   "movements",
   "task",
   "tasks",
+  // One Alerts queue (16 Oct 2026): the Tasks rows are called alerts when that flag is on.
+  "alert",
+  "alerts",
   "data",
 ];
 

@@ -7,8 +7,8 @@
 
 # Raise a referral — locked design, and the plan to build it
 
-**Design of record:** [`prototypes/mockup-referral-intake-v5.html`](prototypes/mockup-referral-intake-v5.html)
-**Superseded, kept for comparison:** [`prototypes/mockup-referral-intake-v4.html`](prototypes/mockup-referral-intake-v4.html)
+**Design of record:** [`prototypes/mockup-referral-intake-v5.html`](../../../design/prototypes/mockup-referral-intake-v5.html)
+**Superseded, kept for comparison:** [`prototypes/mockup-referral-intake-v4.html`](../../../design/prototypes/mockup-referral-intake-v4.html)
 **Screen:** `src/components/ward-management/referrals/referral-intake.tsx` (1,526 lines, one component today)
 **Status:** design locked, not yet built. Nothing in this plan has been implemented.
 

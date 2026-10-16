@@ -232,6 +232,36 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "checking an event's patientId against state.patients), not a screen.",
   },
   {
+    file: "ward-flow-referral-send-events.ts",
+    reason:
+      "The reducer's RAISE_REFERRAL and REFER_TO_COMMUNITY_TEAM cases (carrying the raising record's own patientId onto the new referral), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
+      "The same engine plumbing as the reducer entry above, not a screen.",
+  },
+  {
+    file: "ward-flow-referral-answer-events.ts",
+    reason:
+      "The reducer's RECEIVE_REFERRAL case (validating an incoming patientId against state.patients, owner ruling 2026-09-02), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
+      "The same engine plumbing as the reducer entry above, not a screen.",
+  },
+  {
+    file: "ward-flow-placement-events.ts",
+    reason:
+      "The reducer's PULL_PATIENT case (D-14: deriving Admission.patientId from the movement's own linked referral), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
+      "The same engine plumbing as the reducer entry above, not a screen.",
+  },
+  {
+    file: "ward-flow-transport-events.ts",
+    reason:
+      "The reducer's PATIENT_ARRIVED case (resolving the arriving person from the movement's own referral or admission), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
+      "The same engine plumbing as the reducer entry above, not a screen.",
+  },
+  {
+    file: "ward-flow-bed-events.ts",
+    reason:
+      "The reducer's END_COMMUNITY_TREATMENT_ORDER case (checking an event's patientId against state.patients), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
+      "The same engine plumbing as the reducer entry above, not a screen.",
+  },
+  {
     file: "movements/movement-drawer.tsx",
     reason:
       "🔴 OWNER RULING O-16.3, 2026-09-11 — 'Yes show the patient name.' The Movement detail " +
@@ -371,7 +401,9 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 29 → 39 on 2026-10-15: fix list 2.5 and 9.6 split ed-screen.tsx and community-screen.tsx into
     // sections. No new reader: the same A2-1 reads moved, two into ED parts and eight into community
     // parts, each named beside its entry.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(39);
+    // 39 → 44 on 2026-10-16: the reducer split moved the engine's own cases into five slice files
+    // unchanged. No new reader: the same reducer reads moved, each slice named beside its entry.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(44);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

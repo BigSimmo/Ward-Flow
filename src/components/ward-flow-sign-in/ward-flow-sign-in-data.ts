@@ -1,7 +1,7 @@
 // src/components/ward-flow-sign-in/ward-flow-sign-in-data.ts
 /**
  * The role/action data this screen shows, ported verbatim (in content, not markup) from the
- * approved drawing (`docs/ward-flow/mockups/sign-in-third-edition.html`, lines 4757-4907) —
+ * approved drawing (`design/third-edition-mockups/sign-in-third-edition.html`, lines 4757-4907) —
  * seven roles, thirteen actions, who the screens index names for each action, and the four
  * things refused to every role regardless of which is chosen.
  *

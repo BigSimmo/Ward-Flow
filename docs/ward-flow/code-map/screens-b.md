@@ -536,7 +536,7 @@ the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.t
   `resolvePatientNowRecord` (24, 32, 41).
 - **`src/components/ward-management/patients/patient-now-records.ts`** (638 lines) — synthetic rich
   clinical scenario data for the two demonstrated patients (WF-009 "Stuck", WF-004 "Moving well"),
-  authored from `docs/ward-flow/mockups/patient-now-original-third-edition.html`. Exports
+  authored from `design/third-edition-mockups/patient-now-original-third-edition.html`. Exports
   `ClinicalGate`, `ContactCard`, `NextStepItem`, `HistoricalPresentation`, `CommunityTeamRecord`,
   `DocumentRecord`, `PatientNowRecord`, `PATIENT_NOW_RECORDS`, `dur`, `clock`, `fillTemplate`. All
   patient data here is synthetic, not real.

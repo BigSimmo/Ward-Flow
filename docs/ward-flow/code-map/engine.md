@@ -106,6 +106,13 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 - **`ward-flow-reducer.ts`** (8,741 lines at baseline) — the whole engine's write path: `WardFlowState`,
   `wardFlowReducer(state, event)`, `seedWardFlowState`/`seedWardFlowStateAt`, and every event's
   guard-and-effect case. See §1a for its internal structure and §2 for the event catalogue.
+- **Reducer slice files** (split out unchanged, 15 and 16 October 2026) — `reduceClinicalEvent`
+  now forwards selected `RECORD_*` cases to `ward-flow-record-events.ts`, `UNDO_*` cases to
+  `ward-flow-undo-events.ts`, and whole groups to `ward-flow-referral-send-events.ts`,
+  `ward-flow-referral-answer-events.ts`, `ward-flow-placement-events.ts`,
+  `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`.
+  Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
+  slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
@@ -783,8 +790,8 @@ WardFlowRole[]>` is exhaustive by type, so `tsc` refuses to compile a missing en
    `tests/ward-event-permissions.test.ts` separately pins the _exact_ role list by hand
    (comparing against a hard-coded expectation, not against `EVENT_ROLE` itself) — a widened role
    list must be a deliberate edit to that test, not a side effect nobody reviewed.
-3. **Add the `case "TYPE":`** in `reduceClinicalEvent`'s switch (`ward-flow-reducer.ts:1745`
-   onward) — the role check has already run by the time the case body executes; write only the
+3. **Add the `case "TYPE":`** in `reduceClinicalEvent`'s switch, or in the slice file that owns
+   its group (§1) with a forwarding `case` in the reducer — the role check has already run by the time the case body executes; write only the
    domain guards and the state update. Use the existing `find*`/`replace*` helpers rather than
    indexing arrays directly.
 4. **Classify it for persistence** in `ward-flow-persistence-classification.ts` — add the type

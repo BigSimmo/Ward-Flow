@@ -557,7 +557,7 @@ The current local time is: 2026-09-13T21:32:16+08:00.
 
 The full-page, ultra-high-fidelity HTML mockup for the **Network page with the integrated 48-Hour Bed Horizon Gantt chart** has been built and saved directly to the active worktree and artifact storage:
 
-- **Local Worktree File**: [`network-horizon-third-edition.html`](../mockups/network-horizon-third-edition.html)
+- **Local Worktree File**: [`network-horizon-third-edition.html`](../../../design/third-edition-mockups/network-horizon-third-edition.html)
 - **Artifact File**: `network-full-page-mockup.html` (historical local artifact; unavailable in this repository)
 
 ---
@@ -1001,7 +1001,7 @@ The **Movement page** has been reviewed and rebuilt into an ultra-high-fidelity 
 
 ### Files Ready to Inspect
 
-- **Local Worktree File**: [`movement-gantt-third-edition.html`](../mockups/movement-gantt-third-edition.html)
+- **Local Worktree File**: [`movement-gantt-third-edition.html`](../../../design/third-edition-mockups/movement-gantt-third-edition.html)
 - **Artifact File**: `movement-perfected-mockup.html` (historical local artifact; unavailable in this repository)
 
 You can launch it in your browser immediately:
@@ -1040,7 +1040,7 @@ Start-Process "D:\Worktrees\Database\ward-lead\docs\ward-flow\mockups\movement-g
 | **Clinical Governance & Safety** | Zero PII / WA MHA 2014 | **10/10** — Fully compliant synthetic data (`WF-###`), authentic WA Health Services (NMHS, SMHS, EMHS, WACHS), legitimate Form 1A and Form 5A statutory references. |
 | **Overall Mockup Score** | **Composite Average** | **9.8 / 10** |
 
-The standalone HTML is fully self-contained and interactive in both [`movement-gantt-third-edition.html`](../mockups/movement-gantt-third-edition.html) and your Antigravity artifacts viewer.
+The standalone HTML is fully self-contained and interactive in both [`movement-gantt-third-edition.html`](../../../design/third-edition-mockups/movement-gantt-third-edition.html) and your Antigravity artifacts viewer.
 
 ---
 
@@ -1097,7 +1097,7 @@ INITIAL COMPOSITE AESTHETIC SCORE:  7.6 / 10  ("Functional prototype, but visual
 
 ### Part 2: The Visual Re-Engineering
 
-The mockup has been completely rewritten and re-styled in both [`movement-gantt-third-edition.html`](../mockups/movement-gantt-third-edition.html) and `movement-perfected-mockup.html` (historical local artifact; unavailable in this repository).
+The mockup has been completely rewritten and re-styled in both [`movement-gantt-third-edition.html`](../../../design/third-edition-mockups/movement-gantt-third-edition.html) and `movement-perfected-mockup.html` (historical local artifact; unavailable in this repository).
 
 Let's update the code with these visual enhancements:
 
@@ -1152,7 +1152,7 @@ h a soft animated breathing glow (`animation: pulseGlow`).
 ### Live Preview & Files
 
 Both files have been updated with this perfected design:
-- **Local Worktree File**: [`movement-gantt-third-edition.html`](../mockups/movement-gantt-third-edition.html)
+- **Local Worktree File**: [`movement-gantt-third-edition.html`](../../../design/third-edition-mockups/movement-gantt-third-edition.html)
 - **Artifact File**: `movement-perfected-mockup.html` (historical local artifact; unavailable in this repository)
 
 You can launch the updated mockup immediately:
@@ -1240,7 +1240,7 @@ I have completely dismantled the self-inflated scoring system. You were 100% rig
 
 The changes have been applied **directly to the live file you are viewing at `http://127.0.0.1:60178/movement-third-edition.html`**:
 
-- **Live Local File**: [`movement-third-edition.html`](../mockups/movement-third-edition.html)
+- **Live Local File**: [`movement-third-edition.html`](../../../design/third-edition-mockups/movement-third-edition.html)
 - **Synced Artifact**: `movement-perfected-mockup.html` (historical local artifact; unavailable in this repository)
 
 You can hit **Refresh** in your browser right now on [Ward Flow Movement](http://127.0.0.1:60178/movement-third-edition.html) to see the live updates.
@@ -1311,7 +1311,7 @@ Here are the links to open and view the updated Movement mockup:
   👉 **[http://127.0.0.1:60178/movement-third-edition.html](http://127.0.0.1:60178/movement-third-edition.html)**
 
 - **Local Worktree File**:  
-  [`movement-third-edition.html`](../mockups/movement-third-edition.html)
+  [`movement-third-edition.html`](../../../design/third-edition-mockups/movement-third-edition.html)
 
 - **Artifact File**:  
   `movement-perfected-mockup.html` (historical local artifact; unavailable in this repository)

@@ -42,7 +42,7 @@ docs/ward-flow/control/work-claims.md
 # `statistics-language-*.css` BYTE FOR BYTE. Prettier formats CSS as CSS and HTML as HTML, so a
 # whole-tree format pass reflows the two differently and the embedded copy stops matching. Measured
 # 2026-09-10: `npm run format` broke 10 of these tests at once. These files are artefacts, not code.
-docs/ward-flow/design/prototypes/
+design/prototypes/
 
 # The ward journey map's GENERATED output. `npm run ward:journey` rewrites each of these from
 # `src/components/ward-management/`, so a whole-tree format pass and the generator reformat the

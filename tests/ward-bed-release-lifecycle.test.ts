@@ -547,7 +547,7 @@ describe("ward bed release lifecycle", () => {
 
   it("fix round 1 (Critical): recording a leaving at full vacancy still reconciles to unit.beds", () => {
     // CHANGED 25 September 2026: RELEASE_BED no longer moves any bed figure at all once accepted —
-    // `departureAlreadyIncremented` is now a hard-coded `true` in the reducer's RELEASE_BED case,
+    // the RELEASE_BED case leaves the unit untouched (its old always-true count flag is gone),
     // because the figure this test exists to clamp only ever moves through `departAdmission`
     // (reached via RECORD_LEAVING) now. The test is rewritten to exercise RECORD_LEAVING, which is
     // where that clamp actually runs; the reconciliation identity being proved is unchanged.
@@ -985,7 +985,7 @@ describe("ward bed release lifecycle", () => {
     // admission is still occupied; it is refused outright (see the reducer's own RELEASE_BED
     // comment). Rewritten to pin that refusal, then to prove the second half of the same rule: once
     // the admission has genuinely departed, RELEASE_BED completes a still-live release but writes
-    // NO bed figure — `departureAlreadyIncremented` is a hard-coded `true` in RELEASE_BED now,
+    // NO bed figure — RELEASE_BED leaves the unit untouched (its old always-true count flag is gone),
     // because the figure only ever moves through `departAdmission` (RECORD_LEAVING). Constructing an
     // already-departed admission whose release is still expected has to be done by hand here
     // (spreading state directly, the same technique "fix round 1 (Critical)" above uses) because

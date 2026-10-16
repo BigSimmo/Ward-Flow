@@ -62,7 +62,7 @@ import styles from "./ward-flow-layout.module.css";
  * with no such ancestor, it would fall back to block layout and stack above the page rather than
  * beside it. `ward-flow-layout.module.css`'s `.shellRow`/`.shellContent` supply that ancestor,
  * mirroring the approved drawing's own outermost shape
- * (`docs/ward-flow/mockups/command-third-edition.html`'s `.app`/`.frame`) rather than inventing a
+ * (`design/third-edition-mockups/command-third-edition.html`'s `.app`/`.frame`) rather than inventing a
  * new one. `WardBar` renders inside `.shellContent`, ahead of `WardGround`, as this route tree's
  * header; `WardLiveRegion` (the shell's one polite announcer, `shell/ward-live-region.tsx`) mounts
  * once at the top, because both `WardRail` and `WardBar` call `announceToWardShell` and something

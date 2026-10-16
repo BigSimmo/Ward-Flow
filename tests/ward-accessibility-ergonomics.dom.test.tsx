@@ -2,7 +2,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { useState } from "react";
-import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
+// reset after, so no flag change re-renders a tree that is being torn down.
+beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
 
 // The answer view's back link goes through contextual history (ContextualBackLink), which reads
 // the app router; jsdom has none mounted.

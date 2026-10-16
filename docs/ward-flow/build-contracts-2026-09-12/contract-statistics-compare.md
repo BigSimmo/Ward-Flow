@@ -19,7 +19,7 @@ Built and routed, and already substantially ahead of the drawing in places:
   example of the exact defect class this brief's §3 warns about ("a claim with an expiry date and
   nothing connects it to the work that expires it").
 
-## 2. THE DRAWING'S SECTIONS, in order (`docs/ward-flow/mockups/statistics-compare-third-edition.html`)
+## 2. THE DRAWING'S SECTIONS, in order (`design/third-edition-mockups/statistics-compare-third-edition.html`)
 
 1. `#scope` "What this section will hold" — line 4684
 2. "Why this is two tables and not one" — line 4701

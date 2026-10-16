@@ -1,4 +1,4 @@
-# Build contract — the drawing's "Wards" screen (`docs/ward-flow/mockups/wards-third-edition.html`)
+# Build contract — the drawing's "Wards" screen (`design/third-edition-mockups/wards-third-edition.html`)
 
 Read-only research. No repo file touched. Worktree: `D:\Worktrees\Database\ward-lead`.
 

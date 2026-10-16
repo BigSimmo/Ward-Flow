@@ -134,7 +134,7 @@ files.
   `/mockups/ward-flow-sign-in` is a sibling of `/mockups/ward-flow` and the prefix match is
   exact-or-following-slash, explained at lines 40-51), and `isDeveloperGatedPath()`.
   **`/mockups/ward-flow-digest` is not in this list.** Its `route.ts` reads
-  `docs/ward-flow/mockups/ward-flow-digest.html` off disk with `node:fs/promises` and `node:path`
+  `design/third-edition-mockups/ward-flow-digest.html` off disk with `node:fs/promises` and `node:path`
   and serves it verbatim — a genuine production route handler, not a mockup page — but because it is
   not developer-gated, `shouldBlockProductionMockups` 404s it in any real production deploy; it only
   serves in dev/test. No other file under `src/lib/developer-area/` (12 further files — `access.ts`,
@@ -303,7 +303,7 @@ Findings from that trace worth knowing before any Ward Flow task:
    (`src/lib/developer-area/headers.ts:52-58`) lists `/mockups/ward-flow` and
    `/mockups/ward-flow-sign-in` but not `/mockups/ward-flow-digest`, even though the digest route
    sits right beside the other two and serves a real file
-   (`docs/ward-flow/mockups/ward-flow-digest.html`) from `src/app/mockups/ward-flow-digest/route.ts`.
+   (`design/third-edition-mockups/ward-flow-digest.html`) from `src/app/mockups/ward-flow-digest/route.ts`.
    `shouldBlockProductionMockups` (`src/proxy.ts:350-373`) therefore 404s it in any real production
    deploy; it only serves in dev/test. A future editor adding a fourth Ward-adjacent
    `/mockups/ward-flow-*` route must add its own line to the prefixes array by hand — the comment at

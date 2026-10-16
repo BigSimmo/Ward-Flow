@@ -1,6 +1,6 @@
 # Build contract — Ward Flow "Sign in" screen
 
-Drawing: `docs/ward-flow/mockups/sign-in-third-edition.html`
+Drawing: `design/third-edition-mockups/sign-in-third-edition.html`
 Route status: measured — no route exists for this screen anywhere in `src/app` or `ward-nav.ts`. Genuine new build.
 This document is READ-ONLY output. No repository file was built, edited, created or deleted to produce it.
 

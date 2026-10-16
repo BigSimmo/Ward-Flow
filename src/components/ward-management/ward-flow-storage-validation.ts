@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import {
@@ -44,41 +44,41 @@ import { UNDO_STEP_ACTIONS } from "./ward-undo";
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
-const fits = (schema: z.ZodType, value: unknown) => schema.safeParse(value).success;
+const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).success;
 
 // zod 4 numbers refuse NaN and both infinities, and `z.int()` is a safe integer.
 const finite = z.number();
-const counter = z.int().nonnegative();
+const counter = z.int().check(z.nonnegative());
 const text = z.string();
 const bool = z.boolean();
 const record = z.looseObject({});
 const records = z.array(record);
 const strings = z.array(text);
-const nullableFinite = finite.nullable();
-const nullableText = text.nullable();
+const nullableFinite = z.nullable(finite);
+const nullableText = z.nullable(text);
 const urgency = z.literal([1, 2, 3]);
 /** A bed number: a whole number from 1. `Number.isInteger`, unlike `z.int()`, has no size cap. */
-const bed = z.number().min(1).refine(Number.isInteger);
+const bed = z.number().check(z.gte(1)).check(z.refine(Number.isInteger));
 /** A link to another record: absent, null, or an id that `consistent` resolves. */
-const link = nullableText.optional();
+const link = z.optional(nullableText);
 /** A list that a stored state must hold empty. */
-const empty = z.array(z.unknown()).max(0);
+const empty = z.array(z.unknown()).check(z.maxLength(0));
 /** An object whose every value matches `value`; `consistent` checks the keys where they are ids. */
-const entries = <T extends z.ZodType>(value: T) => z.object({}).catchall(value);
+const entries = <T extends z.ZodMiniType>(value: T) => z.catchall(z.object({}), value);
 const stamped = z.looseObject({ at: finite, by: text });
 const distinctIds = (rows: readonly { id: string }[]) => new Set(rows.map((row) => row.id)).size === rows.length;
-const id = text.min(1);
+const id = text.check(z.minLength(1));
 
 // Pass 1: rules for known keys at any depth. A history list holds rows with a finite time and the
 // named text fields; a record key holds an object; a unit list holds strings.
-const history = (shape: z.ZodRawShape) => z.array(z.looseObject({ at: finite, ...shape }));
+const history = (shape: z.core.$ZodShape) => z.array(z.looseObject({ at: finite, ...shape }));
 const legalFormRule = z.looseObject({
   code: text,
-  region: z.enum(["metro", "country"]).optional(),
+  region: z.optional(z.enum(["metro", "country"])),
 });
 const medicalClearanceRule = z.looseObject({ cleared: bool, at: finite });
 const closureRule = z.looseObject({ at: finite, outcome: text, reason: text });
-const NESTED_KEY_RULES = new Map<string, z.ZodType>([
+const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["statusChanges", history({ from: text, to: text, by: text, reason: text })],
   ["urgencyChanges", history({ by: text, reason: text, from: urgency, to: urgency })],
   ["overrides", history({ by: text, reason: text, unitIds: strings })],
@@ -153,40 +153,41 @@ function nested(value: unknown, depth = 0): boolean {
 // time and a role label. D-40: earlier orders have each ended, and hold the same four facts and
 // nothing else. Neither may carry another key.
 const endedOrder = z.strictObject({ form: z.literal("5A"), recordedAt: finite, recordedBy: text, endedAt: finite });
-const patient = z
-  .object({
-    id: text.regex(/^PT-/),
+const patient = z.catchall(
+  z.object({
+    id: text.check(z.regex(/^PT-/)),
     umrn: text,
     givenName: text,
     familyName: text,
-    dateOfBirth: text.regex(/^\d{4}-\d{2}-\d{2}$/),
-    communityTreatmentOrder: z
-      .strictObject({
+    dateOfBirth: text.check(z.regex(/^\d{4}-\d{2}-\d{2}$/)),
+    communityTreatmentOrder: z.optional(
+      z.strictObject({
         form: z.literal("5A"),
         recordedAt: finite,
         recordedBy: text,
-        endedAt: finite.optional(),
-        earlier: z.array(endedOrder).optional(),
-      })
-      .optional(),
+        endedAt: z.optional(finite),
+        earlier: z.optional(z.array(endedOrder)),
+      }),
+    ),
     // v10 pass 2: `addedAt` is the one other non-text field, a finite instant when present.
     // Optional, so a save made before it existed loads unchanged; no storage version bump.
-    addedAt: finite.optional(),
-  })
+    addedAt: z.optional(finite),
+  }),
   // Every other patient field stays plain text.
-  .catchall(text);
+  text,
+);
 
 const capacityFigure = z.looseObject({
   value: counter,
   confirmedAt: finite,
   staleAfterMinutes: counter,
   source: z.enum(["feed", "ward"]),
-  revision: counter.optional(),
+  revision: z.optional(counter),
 });
 const unit = z
   .looseObject({
     id,
-    siteCode: text.refine((code) => !!siteByCode(code)),
+    siteCode: text.check(z.refine((code) => !!siteByCode(code))),
     name: text,
     cohort: z.enum(COHORTS),
     sexDesignation: z.enum(["Undesignated", "Female only", "Male only"]),
@@ -202,42 +203,44 @@ const unit = z
     sexMix: z.looseObject({ Female: counter, Male: counter }),
     empty: capacityFigure,
     allocatable: capacityFigure,
-    reservationReleaseCapacityConflicts: z
-      .array(
+    reservationReleaseCapacityConflicts: z.optional(
+      z.array(
         z.looseObject({
           movementId: text,
           at: finite,
-          admissionId: id.optional(),
+          admissionId: z.optional(id),
           allocatableBefore: counter,
           allocatableLockedBefore: counter,
           lockedBedReleased: bool,
         }),
-      )
-      .optional(),
-    arrivalCapacityConflicts: z.array(z.looseObject({ movementId: text, at: finite })).optional(),
+      ),
+    ),
+    arrivalCapacityConflicts: z.optional(z.array(z.looseObject({ movementId: text, at: finite }))),
   })
   // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the older feed
   // empty count and does not rewrite the separately recorded locked count. Each count is bounded
   // above; recovery must not invent a relationship the producer rejects.
-  .refine(
-    (unit) =>
-      unit.empty.value <= unit.beds &&
-      unit.allocatable.value <= unit.beds &&
-      unit.lockedBeds <= unit.beds &&
-      unit.allocatableLocked <= unit.lockedBeds &&
-      unit.held + unit.blocked <= unit.beds &&
-      // Release conflicts are bounded historical observations, not evidence of an arrival or a
-      // reason to relax any count invariant.
-      (unit.reservationReleaseCapacityConflicts ?? []).every(
-        (conflict) =>
-          conflict.allocatableBefore <= unit.beds &&
-          conflict.allocatableLockedBefore <= unit.lockedBeds &&
-          (conflict.allocatableBefore === unit.beds ||
-            (conflict.lockedBedReleased && conflict.allocatableLockedBefore === unit.lockedBeds)),
-      ),
+  .check(
+    z.refine(
+      (unit) =>
+        unit.empty.value <= unit.beds &&
+        unit.allocatable.value <= unit.beds &&
+        unit.lockedBeds <= unit.beds &&
+        unit.allocatableLocked <= unit.lockedBeds &&
+        unit.held + unit.blocked <= unit.beds &&
+        // Release conflicts are bounded historical observations, not evidence of an arrival or a
+        // reason to relax any count invariant.
+        (unit.reservationReleaseCapacityConflicts ?? []).every(
+          (conflict) =>
+            conflict.allocatableBefore <= unit.beds &&
+            conflict.allocatableLockedBefore <= unit.lockedBeds &&
+            (conflict.allocatableBefore === unit.beds ||
+              (conflict.lockedBedReleased && conflict.allocatableLockedBefore === unit.lockedBeds)),
+        ),
+    ),
   );
 
-const emergencyDepartmentId = text.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId));
+const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
 const movement = z
   .looseObject({
     id,
@@ -259,34 +262,36 @@ const movement = z
     overrides: records,
     declines: records,
     withdrawnReferrals: records,
-    referralAnswerHistory: records.optional(),
+    referralAnswerHistory: z.optional(records),
     unwinds: records,
     stageChanges: records,
     referredUnitIds: strings,
-    transport: z.looseObject({ id: text, provider: text, escortRequired: bool }).optional(),
+    transport: z.optional(z.looseObject({ id: text, provider: text, escortRequired: bool })),
     patientId: link,
     referralId: link,
     admissionId: link,
     sourceAdmissionId: link,
     acceptedUnitId: link,
-    closure: closureRule.optional(),
-    medicalClearance: medicalClearanceRule.optional(),
-    medicalDeterioration: z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: finite.optional() }).optional(),
+    closure: z.optional(closureRule),
+    medicalClearance: z.optional(medicalClearanceRule),
+    medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
   })
-  .refine((movement) => {
-    const pause = movement.medicalDeterioration;
-    if (pause === undefined) return true;
-    if (pause.resumedAt !== undefined) return pause.resumedAt > pause.at;
-    // An unresumed pause holds the referral before placement: nothing accepted, no bed pulled,
-    // not medically cleared, and no live transport.
-    return (
-      movement.acceptedUnitId === undefined &&
-      movement.admissionId === undefined &&
-      movement.stage === "placement_requested" &&
-      movement.medicalClearance?.cleared === false &&
-      (movement.transport === undefined || movement.transport.cancelledAt !== undefined)
-    );
-  });
+  .check(
+    z.refine((movement) => {
+      const pause = movement.medicalDeterioration;
+      if (pause === undefined) return true;
+      if (pause.resumedAt !== undefined) return pause.resumedAt > pause.at;
+      // An unresumed pause holds the referral before placement: nothing accepted, no bed pulled,
+      // not medically cleared, and no live transport.
+      return (
+        movement.acceptedUnitId === undefined &&
+        movement.admissionId === undefined &&
+        movement.stage === "placement_requested" &&
+        movement.medicalClearance?.cleared === false &&
+        (movement.transport === undefined || movement.transport.cancelledAt !== undefined)
+      );
+    }),
+  );
 
 const admission = z.looseObject({
   id,
@@ -296,10 +301,10 @@ const admission = z.looseObject({
   highAcuity: bool,
   sex: text,
   // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
-  gender: z.enum(REFERRAL_GENDERS).optional(),
+  gender: z.optional(z.enum(REFERRAL_GENDERS)),
   dischargeDateMoves: counter,
   // v10 pass 2 (Bed board): optional, a whole bed on the stay's own unit when present.
-  bedNumber: bed.optional(),
+  bedNumber: z.optional(bed),
   pulledAt: nullableFinite,
   arrivedAt: nullableFinite,
   awayAtEmergencyDepartmentSince: nullableFinite,
@@ -314,16 +319,16 @@ const admission = z.looseObject({
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,
   blockReason: nullableText,
-  leavingDestination: z.custom(isLeavingDestination).nullable(),
+  leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
-  dischargeBarrier: z.custom(isDischargeBarrier).nullable().optional(),
+  dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
   // Criteria are fixed-list values with finite times, never typed text (D-60).
-  dischargeCriteria: z.custom(isDischargeCriteriaRecord).nullable().optional(),
-  careJourney: z.custom(validCareJourney).optional(),
-  followUp: z
-    .looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text })
-    .nullable(),
+  dischargeCriteria: z.optional(z.nullable(z.custom(isDischargeCriteriaRecord))),
+  careJourney: z.optional(z.custom(validCareJourney)),
+  followUp: z.nullable(
+    z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),
+  ),
 });
 
 // A destination is one of three kinds, each holding its own facts; any other kind is refused.
@@ -379,10 +384,12 @@ const bedRelease = z.looseObject({
 // no earlier than the absence began.
 const absence = z
   .strictObject({ since: finite, steps: z.array(z.strictObject({ step: z.enum(ABSENCE_STEPS), at: finite })) })
-  .refine(
-    (absence) =>
-      absence.steps.every((done) => done.at >= absence.since) &&
-      new Set(absence.steps.map((done) => done.step)).size === absence.steps.length,
+  .check(
+    z.refine(
+      (absence) =>
+        absence.steps.every((done) => done.at >= absence.since) &&
+        new Set(absence.steps.map((done) => done.step)).size === absence.steps.length,
+    ),
   );
 const leaveBed = z.looseObject({
   id,
@@ -391,7 +398,7 @@ const leaveBed = z.looseObject({
   expectedReturn: finite,
   confirmedAt: finite,
   confirmedBy: text,
-  absentWithoutLeave: absence.optional(),
+  absentWithoutLeave: z.optional(absence),
 });
 
 const refreshRequest = z.looseObject({ unitId: text, at: finite, byRole: text });
@@ -399,7 +406,7 @@ const refreshRequest = z.looseObject({ unitId: text, at: finite, byRole: text })
 const auditEvent = z
   .looseObject({
     id,
-    sequence: counter.min(1),
+    sequence: counter.check(z.gte(1)),
     generation: counter,
     at: nullableFinite,
     actor: record,
@@ -408,11 +415,15 @@ const auditEvent = z
     action: text,
     category: text,
   })
-  .refine(
-    (row) =>
-      row.action !== "RECORD_ADMISSION_CARE" ||
-      (row.details.kind === "care" &&
-        (row.details.recorded === undefined || row.details.recorded === null || validCareChange(row.details.recorded))),
+  .check(
+    z.refine(
+      (row) =>
+        row.action !== "RECORD_ADMISSION_CARE" ||
+        (row.details.kind === "care" &&
+          (row.details.recorded === undefined ||
+            row.details.recorded === null ||
+            validCareChange(row.details.recorded))),
+    ),
   );
 
 const broadcastAlert = z.looseObject({
@@ -435,28 +446,28 @@ const broadcastAlert = z.looseObject({
   status: z.enum(["active", "stood_down", "expired"]),
   dispatchedAt: finite,
   expiresAt: finite,
-  durationMinutes: finite.positive(),
+  durationMinutes: finite.check(z.positive()),
   acknowledgedUnits: strings,
   // Global alerts, 10 Oct 2026: every new field is optional, so a version 7 save restores.
-  kind: z.enum(["directive", "bed_call", "pull_now"]).optional(),
-  replies: z
-    .array(
+  kind: z.optional(z.enum(["directive", "bed_call", "pull_now"])),
+  replies: z.optional(
+    z.array(
       // The banner looks up each answer and reason label, so an unknown one is refused here.
       z.looseObject({
         unitId: text,
-        answer: z.string().refine((answer) => Object.hasOwn(BROADCAST_ANSWER_LABELS, answer)),
+        answer: z.string().check(z.refine((answer) => Object.hasOwn(BROADCAST_ANSWER_LABELS, answer))),
         at: finite,
-        reason: z.enum(REFERRAL_DECLINE_REASONS).optional(),
-        beds: finite.optional(),
-        readyAt: finite.optional(),
+        reason: z.optional(z.enum(REFERRAL_DECLINE_REASONS)),
+        beds: z.optional(finite),
+        readyAt: z.optional(finite),
       }),
-    )
-    .optional(),
-  movementId: text.optional(),
-  targetUnitIds: strings.optional(),
-  answerBy: finite.optional(),
+    ),
+  ),
+  movementId: z.optional(text),
+  targetUnitIds: z.optional(strings),
+  answerBy: z.optional(finite),
   // A count past the movement's history would hide a later pull; `consistent` bounds it.
-  stageChangesAtDispatch: z.number().nonnegative().refine(Number.isInteger).optional(),
+  stageChangesAtDispatch: z.optional(z.number().check(z.nonnegative()).check(z.refine(Number.isInteger))),
 });
 
 // Stream D: a planned admission names a real ward, chooses every category from its fixed list, and
@@ -472,7 +483,7 @@ const plannedAdmission = z
     ageBand: z.enum(COHORTS),
     sex: z.enum(RECORDED_SEXES),
     // Gender (9 Oct 2026) is optional: a v7 save made before bookings kept it has none.
-    gender: z.enum(REFERRAL_GENDERS).optional(),
+    gender: z.optional(z.enum(REFERRAL_GENDERS)),
     expectedStayDays: z.custom(isPlannedAdmissionStayDays),
     expectedArrivalAt: finite,
     bookedAt: finite,
@@ -480,17 +491,19 @@ const plannedAdmission = z
     changedAt: nullableFinite,
     changeCount: counter,
     cancelledAt: nullableFinite,
-    cancelReason: z.custom(isPlannedAdmissionCancelReason).nullable(),
+    cancelReason: z.nullable(z.custom(isPlannedAdmissionCancelReason)),
     convertedAt: nullableFinite,
     patientId: nullableText,
-    initials: text.regex(PLANNED_ADMISSION_INITIALS_PATTERN).nullable(),
+    initials: z.nullable(text.check(z.regex(PLANNED_ADMISSION_INITIALS_PATTERN))),
     admissionId: nullableText,
   })
-  .refine(
-    (row) =>
-      (row.patientId === null) !== (row.initials === null) &&
-      (row.state === "arrived" || row.admissionId === null) &&
-      (row.state === "cancelled") === (row.cancelReason !== null),
+  .check(
+    z.refine(
+      (row) =>
+        (row.patientId === null) !== (row.initials === null) &&
+        (row.state === "arrived" || row.admissionId === null) &&
+        (row.state === "cancelled") === (row.cancelReason !== null),
+    ),
   );
 
 const auditReview = z.looseObject({ id, eventId: text, at: finite, generation: counter });
@@ -515,13 +528,13 @@ const undoRecord = z.discriminatedUnion("kind", [
       after: record,
       noticeIds: strings,
     })
-    .refine((row) => row.before.id === row.referralId && row.after.id === row.referralId),
+    .check(z.refine((row) => row.before.id === row.referralId && row.after.id === row.referralId)),
   z.looseObject({
     ...undoRow,
     kind: z.literal("bed-placement"),
     admissionId: text,
     unitId: text,
-    beforeBed: bed.nullable(),
+    beforeBed: z.nullable(bed),
     afterBed: bed,
   }),
   z
@@ -531,7 +544,7 @@ const undoRecord = z.discriminatedUnion("kind", [
       undoType: text,
       action: text,
       subjectId: text,
-      seq: counter.optional(),
+      seq: z.optional(counter),
       unitId: nullableText,
       // v10 pass 3: a step's before/after rows are state rows, already walked by `nested`.
       changes: z.array(
@@ -542,35 +555,37 @@ const undoRecord = z.discriminatedUnion("kind", [
         ]),
       ),
     })
-    .refine((row) => STEP_ACTIONS.get(row.undoType)?.includes(row.action) === true),
+    .check(z.refine((row) => STEP_ACTIONS.get(row.undoType)?.includes(row.action) === true)),
 ]);
 
 const notice = z.looseObject({ id, raisedAt: finite, to: record, about: record, kind: text, sentence: text });
 
 const storedState = z.looseObject({
-  auditEvents: z.array(auditEvent).refine(distinctIds),
-  auditReviews: z.array(auditReview).refine(distinctIds),
-  movements: z.array(movement).refine(distinctIds),
-  units: z.array(unit).refine(distinctIds),
+  auditEvents: z.array(auditEvent).check(z.refine(distinctIds)),
+  auditReviews: z.array(auditReview).check(z.refine(distinctIds)),
+  movements: z.array(movement).check(z.refine(distinctIds)),
+  units: z.array(unit).check(z.refine(distinctIds)),
   // Refusals are never written (the provider saves `rejections: []`, Josh D-18, 25 Sept 2026,
   // because a refusal can quote a caller-supplied id); refusing a stored one is the second fence.
   rejections: empty,
-  bedReleases: z.array(bedRelease).refine(distinctIds),
-  leaveBeds: z.array(leaveBed).refine(distinctIds),
+  bedReleases: z.array(bedRelease).check(z.refine(distinctIds)),
+  leaveBeds: z.array(leaveBed).check(z.refine(distinctIds)),
   refreshRequests: z.array(refreshRequest),
-  referrals: z.array(referral).refine(distinctIds),
-  patients: z.array(patient).refine(distinctIds),
-  admissions: z.array(admission).refine(distinctIds),
-  notices: z.array(notice).refine(distinctIds),
+  referrals: z.array(referral).check(z.refine(distinctIds)),
+  patients: z.array(patient).check(z.refine(distinctIds)),
+  admissions: z.array(admission).check(z.refine(distinctIds)),
+  notices: z.array(notice).check(z.refine(distinctIds)),
   // Repatriation contains a typed CAD number and can never belong to a persistable session.
   repatriations: empty,
   // Carer/PSP/MHAS notification records hold typed names and reasons (D-18): absent or empty only.
-  supportNotifications: empty.optional(),
+  supportNotifications: z.optional(empty),
   handoverSignOffs: z.array(stamped),
-  clinicalContacts: z.array(stamped.extend({ teamId: text.refine((teamId) => communityTeamById(teamId) !== null) })),
-  broadcastAlerts: z.array(broadcastAlert).refine(distinctIds),
-  plannedAdmissions: z.array(plannedAdmission).refine(distinctIds),
-  undoRecords: z.array(undoRecord).optional(),
+  clinicalContacts: z.array(
+    z.extend(stamped, { teamId: text.check(z.refine((teamId) => communityTeamById(teamId) !== null)) }),
+  ),
+  broadcastAlerts: z.array(broadcastAlert).check(z.refine(distinctIds)),
+  plannedAdmissions: z.array(plannedAdmission).check(z.refine(distinctIds)),
+  undoRecords: z.optional(z.array(undoRecord)),
   worldGeneration: counter,
   auditSequence: counter,
   auditReviewSequence: counter,
@@ -586,18 +601,20 @@ const storedState = z.looseObject({
   scenario: z.enum(WARD_SCENARIOS),
   dischargeRevisions: entries(counter),
   inboxAcknowledgements: entries(z.array(stamped)),
-  inboxCompletions: entries(z.array(stamped.extend({ kind: z.enum(["completed", "reopened"]) }))),
+  inboxCompletions: entries(z.array(z.extend(stamped, { kind: z.enum(["completed", "reopened"]) }))),
   // Stream A, 9 Oct 2026: added without a storage version bump, so a save made before them has
   // neither. Absent is valid and restores as empty (`withInboxStreamADefaults`); present must be valid.
-  inboxOwnership: entries(z.array(stamped)).optional(),
-  inboxSnoozes: entries(
-    z.array(
-      z.union([
-        stamped.extend({ kind: z.literal("returned") }),
-        stamped.extend({ kind: z.literal("snoozed"), until: finite, reason: z.custom(isSnoozeReason) }),
-      ]),
+  inboxOwnership: z.optional(entries(z.array(stamped))),
+  inboxSnoozes: z.optional(
+    entries(
+      z.array(
+        z.union([
+          z.extend(stamped, { kind: z.literal("returned") }),
+          z.extend(stamped, { kind: z.literal("snoozed"), until: finite, reason: z.custom(isSnoozeReason) }),
+        ]),
+      ),
     ),
-  ).optional(),
+  ),
   morningRollupConfirmations: entries(
     z.looseObject({ confirmedAt: finite, confirmedByRole: text, expectedDischarges: counter }),
   ),

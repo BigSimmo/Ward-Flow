@@ -29,8 +29,8 @@ disjoint component directories; an integration phase that proves the whole flows
 **Tech stack:** Next.js 16 App Router, React 19, TypeScript 6 strict, CSS Modules, Vitest (unit and
 DOM), Playwright (journeys), the third-edition kit harness (Playwright's Chromium) for the mockups.
 
-**Spec:** the sixteen mockups `docs/ward-flow/mockups/*-third-edition.html` and the standard
-`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` (third edition, Geist, 10 September rulings). The
+**Spec:** the sixteen mockups `design/third-edition-mockups/*-third-edition.html` and the standard
+`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` (third edition, Geist, 10 September rulings). The
 plan argues from them; where this plan and a mockup disagree, the mockup wins; where a mockup and the
 standard's never list disagree, the standard wins and the mockup is a defect to route to Ward Mockups.
 
@@ -46,7 +46,7 @@ standard's never list disagree, the standard wins and the mockup is a defect to 
 
 🔴 **The master line does NOT yet carry the last three mockup commits** — `d523d5e3cd` (twelve shell
 fixes on all pages), `aa985f8517` (bar one row at laptop widths), `fb7ef96b83` (checker evidence).
-Measured: `git show <line>:docs/ward-flow/mockups/command-third-edition.html | grep -c accent-press`
+Measured: `git show <line>:design/third-edition-mockups/command-third-edition.html | grep -c accent-press`
 prints `0` on `911813e5f4` and `>0` on `fb7ef96b83`. **Phase 0 folds them first.** Until then a
 builder reading the mockups from the master line builds the wrong shell.
 
@@ -69,7 +69,7 @@ builder reading the mockups from the master line builds the wrong shell.
 It is **not** a redesign of the model, the reducer or the referral front door; those are built and
 ruled on. It is **not** permission to touch the seven owner questions in §6. It is **not** a mockup
 programme: a mockup defect found while building goes to Ward Mockups (owner of
-`docs/ward-flow/mockups/**`), never fixed by a builder.
+`design/third-edition-mockups/**`), never fixed by a builder.
 
 ---
 
@@ -93,13 +93,13 @@ programme: a mockup defect found while building goes to Ward Mockups (owner of
 
 - [ ] **0.1 Fold the three mockup commits** `d523d5e3cd..fb7ef96b83` from
       `claude/wardflow-design-review-43df97` into the ward line. ⚠️ **Two live chats have edited
-      `docs/ward-flow/mockups/**` today**: this branch, and Ward Mockups on `ward/mockups-20260910`
+      `design/third-edition-mockups/**` today**: this branch, and Ward Mockups on `ward/mockups-20260910`
       (17 commits ahead of its base `da185a9197`, measured 2026-09-10). Run
       `git merge-tree --write-tree <line> fb7ef96b83` and the same against Ward Mockups' tip before
       folding either; a dirty tree is a real conflict on a byte-checked drawing and is resolved by
       Ward Mockups, never by picking a side. Artefact check:
-      `git show <line>:docs/ward-flow/mockups/command-third-edition.html | grep -c accent-press` → `≥ 1`,
-      and `git show <line>:docs/ward-flow/mockups/third-edition-kit/check-output.txt | grep -c "ALL GREEN"` → `18`.
+      `git show <line>:design/third-edition-mockups/command-third-edition.html | grep -c accent-press` → `≥ 1`,
+      and `git show <line>:design/third-edition-mockups/third-edition-kit/check-output.txt | grep -c "ALL GREEN"` → `18`.
 - [ ] **0.2 Fold this plan** (commit named in the message that carried it) and confirm by
       `git show <line>:docs/ward-flow/plans/2026-09-10-third-edition-build-master-plan.md | grep -c "^## 0 · Read this before anything else"` → `1`.
 - [ ] **0.3 Back up**: `env -u MSYS2_ARG_CONV_EXCL bash ~/.claude/scripts/backup-work.sh`, then read
@@ -247,12 +247,12 @@ imports only from the folded line and never edits it.
 | **Ward Builder Two** (lane B)              | `D:/Worktrees/Database/ward-builder-two` (statistics reword work complete and folded) | `ward/lane-b-ward-board-ed-community-2026091x`          | `ward/**`, `ward-table/**`, `wards/**`, `board/**`, `ed/**`, `community/**`, their tests                                                                                                                           | after 1.6  |
 | **Ward Builder Three** (lane C)            | `D:/Worktrees/Database/ward-builder-three` (complete and folded 2026-09-10)           | `ward/lane-c-search-patient-referral-2026091x`          | `search/**`, `hub/**`, `patients/**`, `referrals/**`, their tests                                                                                                                                                  | after 1.6  |
 | **Ward Builder Four** (lane D)             | `D:/Worktrees/Database/ward-builder-four` (FREE — marker guard folded)                | `ward/lane-d-statistics-2026091x`                       | `statistics/**`, `tests/ward-statistics*`                                                                                                                                                                          | after 1.6  |
-| Ward Mockups                               | `D:/Worktrees/Database/ward-mockups`                                                  | its own                                                 | `docs/ward-flow/mockups/**`, `docs/ward-flow/design/prototypes/**` — **receives every mockup defect a builder finds**                                                                                              | throughout |
+| Ward Mockups                               | `D:/Worktrees/Database/ward-mockups`                                                  | its own                                                 | `design/third-edition-mockups/**`, `design/prototypes/**` — **receives every mockup defect a builder finds**                                                                                                       | throughout |
 | Ward Verifier (if the owner keeps it open) | `D:/Worktrees/Database/ward-verifier-9afb82c6e`                                       | none — assesses, never builds                           | writes only its findings register                                                                                                                                                                                  | Phase 3    |
 
 **Shared files nobody in a lane may edit:** `layout.tsx`, `ward-nav.ts`, `shell/**`, `ward-facade.ts`,
 the seeds, `ward-model.ts`, `ward-flow-reducer.ts`, any `*.module.css` outside the lane's directories,
-`docs/ward-flow/mockups/**`. A needed change there is a four-line message to Ward Lead, who makes it on
+`design/third-edition-mockups/**`. A needed change there is a four-line message to Ward Lead, who makes it on
 the line and announces the SHA. **Before the first edit each lane writes its `.ward-session.json`
 marker at its worktree root, its row in `docs/ward-flow/assignment-register.md` ("claim before you
 build"; never write _authorised_ in the status column — only the rulings table records the owner's
@@ -1033,7 +1033,7 @@ answered; everything else in this plan proceeds.**
 | Screen | `node scripts/run-ward-tests.mjs` (every `tests/ward-*`, refuses if any file produced no result; takes no heavy lock) then `node scripts/check-ward-expected-reds.mjs` (actual reds must equal `tests/ward-expected-reds.json`, currently `"expected": []`, in both directions). Neither runs in `verify:cheap`, `verify:pr-local` or CI — a builder who runs only the standard pyramid never sees them (A5 §7.4)                                                                                                                                                                                                                                                       | `N passed`, floors `FLOOR_FILES=200` / `FLOOR_TESTS=2500` met; the reds script's own summary                                                      | before the SHA goes to Ward Lead |
 | Screen | the existing structural nets, named so nobody assumes they ran: `ward-route-component-binding`, `ward-component-reachability`, `ward-mode-workspace-reachability`, `ward-event-reachability`, `ward-nav`, `ward-seed-reaches-every-branch`, `ward-table-min-width` (six column-count pins that must be re-derived, never deleted), `ward-css-token-references-resolve`, `ward-design-language-contract`                                                                                                                                                                                                                                                                 | `N passed` per file                                                                                                                               | before the SHA goes to Ward Lead |
 | Screen | **render it and look** at 390, 820 and 1440 px, light and dark, plus print — one dev server per machine, the URL from `npm run ensure`, project identity confirmed at `/api/local-project-id`                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | a screenshot per width in the lane's report                                                                                                       | before the SHA goes to Ward Lead |
-| Shell  | `tests/ward-shell-third-edition.dom.test.tsx`; the mockup harness on Command as the reference: `node docs/ward-flow/mockups/third-edition-kit/check.mjs docs/ward-flow/mockups/command-third-edition.html platinum` — **the harness proves the drawing, not the app**; the app's shell is proved by the DOM test and `tests/ui-ward-chrome-header.spec.ts` (or its owner-ruled successor)                                                                                                                                                                                                                                                                               | `ALL GREEN`; `N passed`                                                                                                                           | Phase 1 and after every fold     |
+| Shell  | `tests/ward-shell-third-edition.dom.test.tsx`; the mockup harness on Command as the reference: `node design/third-edition-mockups/third-edition-kit/check.mjs design/third-edition-mockups/command-third-edition.html platinum` — **the harness proves the drawing, not the app**; the app's shell is proved by the DOM test and `tests/ui-ward-chrome-header.spec.ts` (or its owner-ruled successor)                                                                                                                                                                                                                                                                   | `ALL GREEN`; `N passed`                                                                                                                           | Phase 1 and after every fold     |
 | Fold   | `scripts/ward-flow/folded.sh` (refuses to report until a known-folded commit reads folded); the artefact grep the requester named; `git merge-base --is-ancestor <sha> <line>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | folded / not folded / cannot tell — three verdicts                                                                                                | every fold                       |
 | Line   | heavy gates **once**, at the end of each phase, on the master line only: `npm run typecheck`, `npm run lint`, the full Vitest suite; then the ward browser journeys armed for one run — `npm run ensure` first, then `npm run test:e2e:ward-journeys` (the `chromium-mockups` project; the default `chromium` project inverts the `@mockup` tag so `verify:ui` collects **zero** ward tests). `docs/ward-flow/deferred-ward-browser-failures-2026-09-10.md` lists three owner-deferred reds from a single run (referral columns off-screen at 641px; a seed-order assertion; a `peel-ed` test id) — a red beyond those is a finding for Ward Lead, not a fix for a lane | `Test Files N passed`, `Tests N passed`, `exit 0`; typecheck `0 errors`; the journeys' `N passed / N failed` line with the three known reds named | end of Phase 1, Phase 2, Phase 3 |
 | Lock   | exit 75 or a capacity refusal means **blocked, retry** — never a failure, never something to fix                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | —                                                                                                                                                 | always                           |

@@ -6,7 +6,7 @@
 // this guard; run it by name or let the full suite run it.
 //
 // WHY THIS EXISTS. Task 2 of `.superpowers/sdd/wise-singing-thunder/` ports the fourth-edition
-// statistics design language (`docs/ward-flow/design/prototypes/statistics-language-v4.css`) into
+// statistics design language (`design/prototypes/statistics-language-v4.css`) into
 // `src/components/ward-management/statistics/statistics-v4.module.css` as app-token-only
 // primitives. Two existing guards already cover PART of "every colour is a token" for this file
 // automatically, because both discover their file set from disk rather than from a list:
