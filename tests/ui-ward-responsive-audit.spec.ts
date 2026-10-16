@@ -281,7 +281,9 @@ test("@mockup movement status stays inside phone, tablet and desktop viewports",
   await page.goto("/mockups/ward-flow/movements/WF-001", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(new RegExp(`${movementPath("WF-001")}$`, "u"));
   await expect(page).not.toHaveURL(/WF-001/u);
-  await expect(page.getByTestId("ward-patient-live-status")).toContainText("Stage");
+  // While the page streams in, React can hold a second, hidden copy in a <div hidden> until it
+  // swaps it in, so check only the copy on screen.
+  await expect(page.getByTestId("ward-patient-live-status").filter({ visible: true })).toContainText("Stage");
   for (const width of [320, 820, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expect

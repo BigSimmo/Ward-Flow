@@ -64,6 +64,16 @@ function decodeJwt(token) {
   };
 }
 
+/** The optional not-before claim restricts a token only when present. No clock tolerance. */
+function validTokenTimes(claims, at) {
+  const seconds = at / 1000;
+  return (
+    Number.isFinite(claims.exp) &&
+    claims.exp > seconds &&
+    (claims.nbf === undefined || (Number.isFinite(claims.nbf) && claims.nbf <= seconds))
+  );
+}
+
 /**
  * Maps an Authorization header to the signed-in Supabase account's user ID, or throws:
  * InvalidCredentialError (401) for a bad token, VerifierUnavailableError (503) when Supabase cannot be reached and
@@ -72,14 +82,15 @@ function decodeJwt(token) {
  * Sign-in proves who the account is, nothing more: which role it holds, if any, is the shared
  * workspace's own record (`store.viewer`), checked on every request.
  *
- * A token is first checked here: shape, expiry and issuer, then its
+ * A token is first checked here: shape, validity times and issuer, then its
  * signature against Supabase's published keys (cached). A signed token naming a key that is not in
  * the current list is refused here. Every other token without a usable published key (a legacy
  * shared-secret token, no key ID, an unsupported or unreadable key, or the key list cannot be read)
- * is sent to /auth/v1/user, behind per-address, per-account and total limits. Before that call the
+ * is sent to /auth/v1/user, behind per-address and total limits. Before that call the
  * account is checked against the cached role holders (`roleHolders`) and the bootstrap list: an account with no role
- * here draws on its own small allowance, so made-up accounts cannot crowd out real desks. Junk tokens
- * never reach Supabase. A token verified locally stays valid until it expires
+ * here draws on its own small allowance, so made-up accounts cannot crowd out real desks. Malformed, expired,
+ * not-yet-valid and wrong-issuer tokens never reach Supabase. A token verified locally stays
+ * valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
  */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
@@ -217,7 +228,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     }
     return holders.ids.has(subject);
   }
-  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map(), subjects: new Map() };
+  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map() };
   function startWindow() {
     const at = now();
     if (at - limits.windowStart < LIMIT_WINDOW_MS) return;
@@ -225,7 +236,6 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     limits.total = 0;
     limits.unknown = 0;
     limits.addresses.clear();
-    limits.subjects.clear();
   }
   function addressKey(address) {
     return limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
@@ -242,16 +252,10 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     limits.addresses.set(key, used + 1);
     return true;
   }
-  function allowRemoteCheck(subject, known) {
+  function allowRemoteCheck(known) {
     startWindow();
-    const subjectUsed = limits.subjects.get(subject) ?? 0;
-    // Keep one account's forged tokens from consuming the shared allowance for others.
-    if (
-      subjectUsed >= REMOTE_CHECKS_PER_ADDRESS ||
-      (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL)
-    )
-      return false;
-    limits.subjects.set(subject, subjectUsed + 1);
+    // A claimed subject is unverified: only the account's class (role or none) is budgeted, never the subject itself.
+    if (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL) return false;
     if (known) limits.total += 1;
     else limits.unknown += 1;
     return true;
@@ -275,13 +279,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const subject = typeof claims?.sub === "string" ? claims.sub.toLowerCase() : "";
     // Free checks first: nothing below runs, and nothing leaves this server, for a token that is
     // malformed, expired or from another project.
-    if (
-      !jwt ||
-      typeof claims.exp !== "number" ||
-      claims.exp * 1000 <= now() ||
-      claims.iss !== ISSUER ||
-      !UUID.test(subject)
-    )
+    if (!jwt || !validTokenTimes(claims, now()) || claims.iss !== ISSUER || !UUID.test(subject))
       throw new InvalidCredentialError("Unauthorised");
     const algorithm = ALGORITHMS[jwt.header.alg];
     if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {
@@ -310,10 +308,10 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
         } catch {
           valid = false;
         }
-        // Expiry is checked again here: the token may have expired while the keys were read.
+        // Validity times are checked again after waiting for the published keys.
         if (
           !valid ||
-          claims.exp * 1000 <= now() ||
+          !validTokenTimes(claims, now()) ||
           !audience.includes("authenticated") ||
           claims.role !== "authenticated"
         )
@@ -326,8 +324,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
     if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
-    if (!allowRemoteCheck(subject, await holdsRole(subject)))
-      throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(await holdsRole(subject))) throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);
@@ -335,7 +332,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       throw new VerifierUnavailableError("Token verifier unavailable");
     }
     // The server-returned account must be the token's own subject.
-    if (!userId || userId !== subject) throw new InvalidCredentialError("Unauthorised");
+    if (!userId || userId !== subject || !validTokenTimes(claims, now()))
+      throw new InvalidCredentialError("Unauthorised");
     if (confirmed.size >= CONFIRMED_MAX) confirmed.delete(confirmed.keys().next().value);
     confirmed.set(tokenKey, { userId, until: Math.min(now() + CONFIRMED_TTL_MS, claims.exp * 1000) });
     return userId;
