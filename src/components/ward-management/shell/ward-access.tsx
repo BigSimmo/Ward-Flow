@@ -69,6 +69,7 @@ import {
 export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from "./ward-access-store";
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
 import { announceToWardShell } from "./ward-live-region";
+import { forgetStepUp, useStepUp } from "./ward-step-up";
 import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
@@ -506,6 +507,8 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
   const [other, setOther] = useState("");
   const minutes = CLINICAL_VALUES.breakGlassWindow.value;
   const ready = reason !== null && (reason !== "other" || other.trim().length > 0);
+  // Opening a record outside your care needs a recent sign-in (feature 9).
+  const { guard, dialog } = useStepUp();
   return (
     <section className={styles.glass} aria-labelledby="ward-break-glass-title">
       <h2 id="ward-break-glass-title">Open this record anyway</h2>
@@ -545,18 +548,23 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
         data-testid="ward-break-glass-open"
         onClick={() =>
           reason &&
-          breakGlass({
-            patientId,
-            now,
-            windowMinutes: minutes,
-            reason,
-            otherText: other,
-            placeLabel: accessPlaceLabel(access, units),
-          })
+          void guard(async () =>
+            breakGlass({
+              patientId,
+              now,
+              windowMinutes: minutes,
+              reason,
+              otherText: other,
+              placeLabel: accessPlaceLabel(access, units),
+            })
+              ? null
+              : "Not opened.",
+          )
         }
       >
         Open read only
       </Button>
+      {dialog}
     </section>
   );
 }
@@ -627,6 +635,7 @@ export function WardIdleLock() {
     if (!on) return;
     const lock = () => {
       lockWardDesk();
+      forgetStepUp();
       setLocked(true);
     };
     let timer = window.setTimeout(lock, minutes * 60_000);

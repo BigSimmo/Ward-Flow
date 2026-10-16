@@ -1,0 +1,555 @@
+"use client";
+
+/**
+ * **THE ACCESS TAB — who holds which role, and cover for a second ward or ED (role access plan,
+ * later pass, Josh's go 16 Oct 2026).**
+ *
+ * Shown only with the `role-access` flag on. An Access admin desk sees the roles list: grant,
+ * approve as the second person, remove, the review list (ending soon, not used) and requests for
+ * access. A coordinator, nurse in charge or ED clinician sees cover instead: give a colleague cover
+ * of one ward or ED for one shift at most, and end it early. Every change goes behind the step-up
+ * check and through the same rules the server uses (`ward-access-admin.ts`).
+ *
+ * The local demo works on made-up staff held for this tab only. The shared workspace passes its
+ * own source, read from the server, through `AccessSourcesContext`.
+ */
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { KeyRound, ShieldCheck, UserPlus, Users } from "lucide-react";
+
+import { Badge, Button, Card, CardBody, CardHead, Field, Select, TextInput, type WfTone } from "@/components/wf";
+import {
+  ACCESS_ROLE_LABELS,
+  ROLE_SCOPE_KINDS,
+  WARD_ACCESS_ROLES,
+  type WardAccess,
+  type WardAccessRole,
+  type WardAccessScope,
+} from "@/components/ward-management/ward-role-access";
+import {
+  COVER_MAX_MINUTES,
+  coverAccess,
+  coverRefusal,
+  membershipStatus,
+  reviewNotes,
+  type AccessMembership,
+  type AccessPlaces,
+  type AccessRequest,
+  type MembershipStatus,
+} from "@/components/ward-management/ward-access-admin";
+import { wardAccessPlaces } from "@/components/ward-management/ward-access-places";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { MINUTES_PER_DAY, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
+import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
+import { accessPlaceLabel, useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access";
+import {
+  endCover,
+  giveCover,
+  sameDesk,
+  useWardAccessSnapshot,
+} from "@/components/ward-management/shell/ward-access-store";
+import {
+  DEMO_ADMIN_ID,
+  DEMO_STAFF,
+  demoStaffLabel,
+  localApprove,
+  localDecide,
+  localGrant,
+  localRevoke,
+  useLocalAccessAdmin,
+} from "@/components/ward-management/shell/ward-access-admin-store";
+import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
+
+import styles from "./access-settings.module.css";
+
+/** The desks that see the Access tab. Everyone else has nothing to give. */
+export function showsAccessTab(desk: WardAccess): boolean {
+  return desk.role === "admin" || desk.role === "coordinator" || desk.role === "ward" || desk.role === "ed";
+}
+
+/** Where the roles list comes from: the local demo's made-up staff, or the shared server. */
+export type AccessAdminSource = {
+  readonly memberships: readonly AccessMembership[];
+  readonly requests: readonly AccessRequest[];
+  /** Who can be picked to grant to. `null` in the shared workspace, where an account id is typed. */
+  readonly people: readonly { readonly id: string; readonly label: string }[] | null;
+  readonly label: (actorId: string) => string;
+  readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
+  readonly approve: (id: string) => Promise<StepUpResult>;
+  readonly revoke: (id: string) => Promise<StepUpResult>;
+  readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
+};
+
+/** The shared workspace's sources. Absent in the local demo. */
+export const AccessSourcesContext = createContext<{ admin: AccessAdminSource | null } | null>(null);
+
+const GRANT_DAYS = [30, 90, 180, 365] as const;
+const COVER_HOURS = [4, 8, 12].filter((hours) => hours * 60 <= COVER_MAX_MINUTES);
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+/** "in 10 days", "3 hours ago": the demo clock's minutes, in words. */
+export function whenText(at: Instant, now: Instant): string {
+  const minutes = Math.abs(at - now);
+  const amount =
+    minutes >= MINUTES_PER_DAY
+      ? plural(Math.round(minutes / MINUTES_PER_DAY), "day")
+      : minutes >= 60
+        ? plural(Math.round(minutes / 60), "hour")
+        : plural(minutes, "minute");
+  return at >= now ? `in ${amount}` : `${amount} ago`;
+}
+
+const STATUS: Record<MembershipStatus, { label: string; tone: WfTone }> = {
+  waiting: { label: "Waiting for a second approver", tone: "warning" },
+  active: { label: "Active", tone: "success" },
+  unused: { label: "Switched off, not used", tone: "closed" },
+  ended: { label: "Ended", tone: "neutral" },
+};
+
+/** Every place a role may hold, in words. Built from the workspace, never a literal list of wards. */
+export function placeOptions(
+  role: WardAccessRole,
+  units: readonly Unit[],
+): { key: string; label: string; scope: WardAccessScope }[] {
+  const options: WardAccessScope[] = [];
+  for (const kind of ROLE_SCOPE_KINDS[role]) {
+    if (kind === "statewide") options.push({ kind: "statewide" });
+    if (kind === "jobs") options.push({ kind: "jobs" });
+    if (kind === "service") for (const service of HEALTH_SERVICES) options.push({ kind: "service", service });
+    if (kind === "site")
+      for (const siteCode of [...new Set(units.map((unit) => unit.siteCode))]) options.push({ kind: "site", siteCode });
+    if (kind === "ward") for (const unit of units) options.push({ kind: "ward", unitIds: [unit.id] });
+    if (kind === "ed") for (const ed of allEmergencyDepartments()) options.push({ kind: "ed", edId: ed.id });
+    if (kind === "team")
+      for (const teamName of Object.values(COMMUNITY_TEAMS)) options.push({ kind: "team", teamName });
+  }
+  return options.map((scope) => ({
+    key: JSON.stringify(scope),
+    label: accessPlaceLabel({ role, scope }, units),
+    scope,
+  }));
+}
+
+function useLocalAdminSource(desk: WardAccess, now: Instant, places: AccessPlaces): AccessAdminSource {
+  const { memberships, requests } = useLocalAccessAdmin(now);
+  return useMemo(() => {
+    const admin = { access: desk, actorId: DEMO_ADMIN_ID };
+    return {
+      memberships,
+      requests,
+      people: DEMO_STAFF.filter((person) => person.id !== DEMO_ADMIN_ID),
+      label: demoStaffLabel,
+      grant: async (input) => localGrant(admin, { ...input, now, places }),
+      approve: async (id) => localApprove(admin, id, now, places),
+      revoke: async (id) => localRevoke(admin, id, now, places),
+      decide: async (id, decision, expiresAt) => localDecide(admin, id, decision, { expiresAt, now, places }),
+    };
+  }, [memberships, requests, desk, now, places]);
+}
+
+/** One line saying what the last change did, read aloud. */
+function useResult(): [ReactNode, (message: string | null, done: string) => void] {
+  const [text, setText] = useState<string | null>(null);
+  const line = text ? (
+    <p className={styles.result} role="status" data-testid="ward-access-result">
+      {text}
+    </p>
+  ) : null;
+  return [line, (message, done) => setText(message ?? done)];
+}
+
+/** The Access tab's content for the current desk. */
+export function AccessSettings() {
+  const { desk, previewOf } = useWardAccessSnapshot();
+  if (previewOf) return <p className={styles.intro}>Preview only. Access changes are made from your own desk.</p>;
+  if (desk.role === "admin") return <AccessAdminPanel />;
+  return <CoverPanel />;
+}
+
+function AccessAdminPanel() {
+  const { desk } = useWardAccessSnapshot();
+  const { units, now } = useUnscopedWardFlow();
+  const places = useMemo(() => wardAccessPlaces(units), [units]);
+  const local = useLocalAdminSource(desk, now, places);
+  const shared = useContext(AccessSourcesContext)?.admin ?? null;
+  const source = shared ?? local;
+  const { guard, dialog } = useStepUp();
+  const [result, say] = useResult();
+
+  const run = (action: () => Promise<StepUpResult>, done: string) => void guard(action).then((r) => say(r, done));
+  const describe = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
+  const live = source.memberships.filter((m) => membershipStatus(m, now) !== "ended");
+  const waiting = live.filter((m) => membershipStatus(m, now) === "waiting");
+  const open = source.requests.filter((r) => r.decision === null);
+  const defaultEnd = now + 90 * MINUTES_PER_DAY;
+
+  return (
+    <>
+      <p className={styles.intro}>
+        You give and remove roles. You see no patients from this desk. Nobody grants themselves a role, and a
+        coordinator or access admin role works only once a second person approves it.
+      </p>
+      {result}
+
+      <Card data-testid="ward-access-requests">
+        <CardHead title="Requests for access" icon={UserPlus} meta={plural(open.length, "open request")} />
+        <CardBody flush>
+          {open.length === 0 ? (
+            <p className={styles.empty}>No requests waiting.</p>
+          ) : (
+            <ul className={styles.list}>
+              {open.map((request) => (
+                <li key={request.id} className={styles.row}>
+                  <span className={styles.who}>
+                    <span className={styles.name}>{source.label(request.actorId)}</span>
+                    <span className={styles.meta}>
+                      Asked for {describe(request.access)}, {whenText(request.requestedAt, now)}
+                    </span>
+                  </span>
+                  <span className={styles.actions}>
+                    <Button
+                      size="sm"
+                      variant="sec"
+                      onClick={() =>
+                        run(
+                          () => source.decide(request.id, "approved", defaultEnd),
+                          `Given for 90 days: ${describe(request.access)}.`,
+                        )
+                      }
+                    >
+                      Give for 90 days
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => run(() => source.decide(request.id, "declined", defaultEnd), "Request declined.")}
+                    >
+                      Decline
+                    </Button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      {waiting.length > 0 ? (
+        <Card data-testid="ward-access-waiting">
+          <CardHead title="Waiting for a second approver" icon={ShieldCheck} meta={plural(waiting.length, "role")} />
+          <CardBody flush>
+            <ul className={styles.list}>
+              {waiting.map((m) => (
+                <li key={m.id} className={styles.row}>
+                  <span className={styles.who}>
+                    <span className={styles.name}>{source.label(m.actorId)}</span>
+                    <span className={styles.meta}>
+                      {describe(m.access)}. Granted by {source.label(m.grantedBy)}.
+                    </span>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="sec"
+                    onClick={() => run(() => source.approve(m.id), `Approved: ${describe(m.access)}.`)}
+                  >
+                    Approve
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      <GrantForm source={source} units={units} now={now} onRun={run} />
+
+      <Card data-testid="ward-access-roles">
+        <CardHead title="Everyone with a role" icon={Users} meta={plural(live.length, "role")} />
+        <CardBody flush>
+          <ul className={styles.list}>
+            {live.map((m) => {
+              const status = membershipStatus(m, now);
+              const notes = reviewNotes(m, now);
+              return (
+                <li key={m.id} className={styles.row} data-testid="ward-access-role-row">
+                  <span className={styles.who}>
+                    <span className={styles.name}>{source.label(m.actorId)}</span>
+                    <span className={styles.meta}>
+                      {describe(m.access)}. Ends {whenText(m.expiresAt, now)}. Last used{" "}
+                      {m.lastUsedAt === null ? "never" : whenText(m.lastUsedAt, now)}.
+                    </span>
+                  </span>
+                  <span className={styles.notes}>
+                    <Badge tone={STATUS[status].tone} size="sm">
+                      {STATUS[status].label}
+                    </Badge>
+                    {notes.endingSoon ? (
+                      <Badge tone="warning" size="sm">
+                        Ending soon
+                      </Badge>
+                    ) : null}
+                    {m.kind === "cover" ? <Badge size="sm">Cover</Badge> : null}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => run(() => source.revoke(m.id), `Removed: ${describe(m.access)}.`)}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardBody>
+      </Card>
+      {dialog}
+    </>
+  );
+}
+
+function GrantForm({
+  source,
+  units,
+  now,
+  onRun,
+}: {
+  source: AccessAdminSource;
+  units: readonly Unit[];
+  now: Instant;
+  onRun: (action: () => Promise<StepUpResult>, done: string) => void;
+}) {
+  const [person, setPerson] = useState(source.people?.[0]?.id ?? "");
+  const [role, setRole] = useState<WardAccessRole>("ward");
+  const options = useMemo(() => placeOptions(role, units), [role, units]);
+  const [placeKey, setPlaceKey] = useState<string>("");
+  const [days, setDays] = useState<number>(90);
+  const place = options.find((option) => option.key === placeKey) ?? options[0];
+
+  return (
+    <Card data-testid="ward-access-grant">
+      <CardHead title="Give a role" icon={KeyRound} meta="Every role has an end date" />
+      <div className={styles.form}>
+        <Field label={source.people ? "Person" : "Account id"}>
+          {source.people ? (
+            <Select value={person} onChange={(event) => setPerson(event.target.value)}>
+              {source.people.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <TextInput value={person} onChange={(event) => setPerson(event.target.value.trim())} autoComplete="off" />
+          )}
+        </Field>
+        <Field label="Role">
+          <Select
+            value={role}
+            onChange={(event) => {
+              setRole(event.target.value as WardAccessRole);
+              setPlaceKey("");
+            }}
+          >
+            {WARD_ACCESS_ROLES.map((option) => (
+              <option key={option} value={option}>
+                {ACCESS_ROLE_LABELS[option]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Place">
+          <Select value={place?.key ?? ""} onChange={(event) => setPlaceKey(event.target.value)}>
+            {options.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Ends">
+          <Select value={String(days)} onChange={(event) => setDays(Number(event.target.value))}>
+            {GRANT_DAYS.map((option) => (
+              <option key={option} value={option}>
+                In {option} days
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <div className={styles.formFoot}>
+        <Button
+          variant="pri"
+          size="sm"
+          disabledReason={!person ? "Choose who first." : undefined}
+          onClick={() => {
+            if (!place || !person) return;
+            const access: WardAccess = { role, scope: place.scope };
+            onRun(
+              () => source.grant({ actorId: person, access, expiresAt: now + days * MINUTES_PER_DAY }),
+              `Given: ${source.label(person)}, ${ACCESS_ROLE_LABELS[role]}, ${place.label}, for ${days} days.`,
+            );
+          }}
+          data-testid="ward-access-grant-submit"
+        >
+          Give role
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Cover (feature 2). The places this desk may give cover of, and the desks that may hold it: a
+ * ward's cover goes to another ward's nurse in charge, an ED's to another ED's clinician.
+ */
+function CoverPanel() {
+  const { desk, covers } = useWardAccessSnapshot();
+  const { units, now } = useUnscopedWardFlow();
+  const places = useMemo(() => wardAccessPlaces(units), [units]);
+  const { guard, dialog } = useStepUp();
+  const [result, say] = useResult();
+  const deskId = JSON.stringify(desk);
+
+  const givable = useMemo(
+    () =>
+      [...placeOptions("ward", units), ...placeOptions("ed", units)].filter(
+        (option) =>
+          coverRefusal({
+            giver: desk,
+            giverId: deskId,
+            recipientId: "anyone",
+            scope: option.scope,
+            minutes: 60,
+            places,
+          }) === null,
+      ),
+    [desk, deskId, units, places],
+  );
+  const [placeKey, setPlaceKey] = useState("");
+  const place = givable.find((option) => option.key === placeKey) ?? givable[0];
+  const recipients = useMemo(
+    () =>
+      place ? placeOptions(place.scope.kind === "ed" ? "ed" : "ward", units).filter((o) => o.key !== place.key) : [],
+    [place, units],
+  );
+  const [recipientKey, setRecipientKey] = useState("");
+  const recipient = recipients.find((option) => option.key === recipientKey) ?? recipients[0];
+  const [hours, setHours] = useState<number>(COVER_HOURS[COVER_HOURS.length - 1] ?? 1);
+  const mine = covers.filter((cover) => sameDesk(cover.givenBy, desk) || sameDesk(cover.recipient, desk));
+  const label = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
+
+  const give = () => {
+    if (!place || !recipient) return;
+    const access = coverAccess(place.scope);
+    const recipientAccess = coverAccess(recipient.scope);
+    if (!access || !recipientAccess) return;
+    const minutes = hours * 60;
+    void guard(async () => {
+      const refusal = coverRefusal({
+        giver: desk,
+        giverId: deskId,
+        recipientId: JSON.stringify(recipientAccess),
+        scope: place.scope,
+        minutes,
+        places,
+      });
+      if (refusal) return refusal;
+      return giveCover({ recipient: recipientAccess, scope: place.scope, now, until: now + minutes })
+        ? null
+        : "Cover was not given.";
+    }).then((r) => say(r, `Cover given: ${recipient.label} holds ${place.label} for ${plural(hours, "hour")}.`));
+  };
+
+  return (
+    <>
+      <p className={styles.intro}>
+        Give a colleague cover of a ward or ED while you are off the floor or the night is short staffed. Cover lasts{" "}
+        {plural(CLINICAL_VALUES.coverLength.value, "hour")} at most and ends by itself. No access admin is needed.
+      </p>
+      {result}
+      <Card data-testid="ward-access-cover">
+        <CardHead title="Give cover" icon={KeyRound} meta="One ward or one ED" />
+        {givable.length === 0 ? (
+          <p className={styles.empty}>This desk has no ward or ED to give cover of.</p>
+        ) : (
+          <>
+            <div className={styles.form}>
+              <Field label="Cover of">
+                <Select value={place?.key ?? ""} onChange={(event) => setPlaceKey(event.target.value)}>
+                  {givable.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Held by">
+                <Select value={recipient?.key ?? ""} onChange={(event) => setRecipientKey(event.target.value)}>
+                  {recipients.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.scope.kind === "ed" ? "ED clinician" : "Nurse in charge"}, {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="For">
+                <Select value={String(hours)} onChange={(event) => setHours(Number(event.target.value))}>
+                  {COVER_HOURS.map((option) => (
+                    <option key={option} value={option}>
+                      {plural(option, "hour")}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+            <div className={styles.formFoot}>
+              <Button variant="pri" size="sm" onClick={give} data-testid="ward-access-cover-submit">
+                Give cover
+              </Button>
+            </div>
+          </>
+        )}
+      </Card>
+      <Card data-testid="ward-access-cover-list">
+        <CardHead title="Cover now" icon={Users} meta={plural(mine.length, "cover")} />
+        <CardBody flush>
+          {mine.length === 0 ? (
+            <p className={styles.empty}>No cover given or held by this desk.</p>
+          ) : (
+            <ul className={styles.list}>
+              {mine.map((cover) => (
+                <li key={cover.id} className={styles.row}>
+                  <span className={styles.who}>
+                    <span className={styles.name}>{accessPlaceLabel({ role: "ward", scope: cover.scope }, units)}</span>
+                    <span className={styles.meta}>
+                      Held by {label(cover.recipient)} until {formatInstantWithDay(cover.until, now)}. Given by{" "}
+                      {label(cover.givenBy)}.
+                    </span>
+                  </span>
+                  {sameDesk(cover.givenBy, desk) || desk.role === "coordinator" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        endCover(cover.id);
+                        say(null, "Cover ended.");
+                      }}
+                    >
+                      End cover
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+      {dialog}
+    </>
+  );
+}
