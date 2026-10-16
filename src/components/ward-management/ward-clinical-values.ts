@@ -375,7 +375,7 @@ export const CLINICAL_VALUES = {
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
     source:
-      "D-63 (16 Oct 2026), local workflow choice; fits the 24 hour pre-discharge medical review in the WACHS Criteria Led Discharge Guideline",
+      "D-63 (16 Oct 2026), local workflow choice; matches the pre-discharge medical review window in the WACHS Criteria Led Discharge Guideline",
   },
   dischargeCriteriaValidity: {
     ...SIGNED_BY_JOSH_16_OCT,
@@ -384,7 +384,7 @@ export const CLINICAL_VALUES = {
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
     source:
-      "D-63 (16 Oct 2026), WACHS Criteria Led Discharge Guideline (16 Apr 2026): a medical review within 24 hours before discharge. Was 72 hours (D-60)",
+      "D-63 (16 Oct 2026), WACHS Criteria Led Discharge Guideline (16 Apr 2026), s 2.5 and s 3: a medical review within this window before discharge. Shortened from the D-60 figure",
   },
   leaveOpenWarning: {
     ...SIGNED_BY_JOSH,
