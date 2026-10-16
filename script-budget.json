@@ -1,9 +1,9 @@
 {
-  "$comment": "Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB. Lower a budget when a route shrinks. Raise one only with a reason in the PR.",
+  "$comment": "Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB. Lower a budget when a route shrinks. Raise one only with a reason in the PR. 16 October 2026 (PR 369): Referrals 600 to 605 and ED 555 to 560, because the audit fixes add the history guard, scoped sync and draft-owner code that those two routes load, measured at 602 and 556.",
   "budgets": {
     "/mockups/ward-flow": 585,
-    "/mockups/ward-flow/referrals": 600,
-    "/mockups/ward-flow/ed": 555,
+    "/mockups/ward-flow/referrals": 605,
+    "/mockups/ward-flow/ed": 560,
     "/mockups/ward-flow/ward/rph-adult-secure": 610,
     "/mockups/ward-flow/movements/WF-001": 650
   }
