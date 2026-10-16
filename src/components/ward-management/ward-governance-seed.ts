@@ -12,9 +12,14 @@ import type { WardFlowState } from "./ward-flow-reducer";
  * ⚠️ **Derived, never stored.** They are computed from the seeded world each time they are read
  * (`governanceAuditEvents`, `ward-audit.ts`): never written to `auditEvents`, so the captured log,
  * its sequence numbers and every test pinned to a fresh, empty log are unchanged, and a reset brings
- * them back. Each carries `origin: "synthetic-seed"`, `sequence: 0` and an `audit-seed-N` id, so no
+ * them back. Each carries `origin: "synthetic-seed"`, `sequence: 0` and an `audit-seed-` id, so no
  * screen can mistake one for something captured this session. A review of one is an ordinary
  * `REVIEW_AUDIT_EVENT`, stored like any other.
+ *
+ * The id names the entry and its subject (`audit-seed-legal-status:<movement id>`). A shared desk
+ * derives these from its own part of the workspace, so two desks can show the same kind of entry
+ * about different records. Each keeps its own review, and desks share one only when the entry is
+ * about the same record.
  *
  * Subjects carry no patient link (`patientId: null`): D-14 keeps that link to its allowlisted
  * readers, and a synthetic entry has no reason to join a record to a person.
@@ -39,8 +44,8 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     return movement ? { kind: "movement" as const, movementId: movement.id, patientId: null } : undefined;
   };
   const entries: (AuditEvent | undefined)[] = [];
-  const base = (id: string, minutesBefore: number, role: WardFlowRole, unitId?: string) => ({
-    id,
+  const base = (name: string, subjectId: string, minutesBefore: number, role: WardFlowRole, unitId?: string) => ({
+    id: `audit-seed-${name}:${subjectId}`,
     sequence: 0,
     generation: state.worldGeneration,
     at: start - minutesBefore,
@@ -50,7 +55,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
 
   if (referral && unitA)
     entries.push({
-      ...base("audit-seed-referral-override", 190, "coordinator"),
+      ...base("referral-override", referral.id, 190, "coordinator"),
       subject: { kind: "referral", referralId: referral.id, patientId: null },
       outcome: "accepted",
       reasonCode: "none",
@@ -65,7 +70,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const legalSubject = movementSubject(0);
   if (legalSubject && unitA)
     entries.push({
-      ...base("audit-seed-legal-status", 160, "ward", unitA.id),
+      ...base("legal-status", legalSubject.movementId, 160, "ward", unitA.id),
       subject: legalSubject,
       outcome: "accepted",
       reasonCode: "none",
@@ -80,7 +85,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const refusedSubject = movementSubject(1);
   if (refusedSubject && unitB)
     entries.push({
-      ...base("audit-seed-pull-patient", 120, "ward", unitB.id),
+      ...base("pull-patient", refusedSubject.movementId, 120, "ward", unitB.id),
       subject: refusedSubject,
       outcome: "denied",
       reasonCode: "scope",
@@ -94,7 +99,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   if (admission)
     entries.push({
-      ...base("audit-seed-admission-access", 95, "coordinator"),
+      ...base("admission-access", admission.id, 95, "coordinator"),
       subject: {
         kind: "admission",
         admissionId: admission.id,
@@ -110,7 +115,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const referSubject = movementSubject(2);
   if (referSubject && unitA && unitB)
     entries.push({
-      ...base("audit-seed-refer-to-units", 70, "coordinator"),
+      ...base("refer-to-units", referSubject.movementId, 70, "coordinator"),
       subject: referSubject,
       outcome: "accepted",
       reasonCode: "none",
@@ -127,7 +132,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   if (legalSubject)
     entries.push({
-      ...base("audit-seed-legal-status-stale", 40, "coordinator"),
+      ...base("legal-status-stale", legalSubject.movementId, 40, "coordinator"),
       subject: legalSubject,
       outcome: "stale",
       reasonCode: "revision",
@@ -136,4 +141,45 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
       details: { before: "Involuntary inpatient", requested: "Voluntary", after: "Involuntary inpatient" },
     });
   return entries.filter((entry): entry is AuditEvent => entry !== undefined);
+}
+
+/** How many records of each kind the seeded entries take their subjects from (see above). */
+const SEEDED_SUBJECT_POSITIONS = 3;
+
+/**
+ * The list with one record moved to each position a seeded entry may take its subject from. A desk's
+ * part keeps the whole workspace's order, so a record never sits further forward there than it does
+ * in the whole workspace.
+ */
+function placements<T extends { readonly id: string }>(records: readonly T[], id: string): T[][] {
+  const index = records.findIndex((candidate) => candidate.id === id);
+  if (index < 0) return [];
+  const record = records[index];
+  const rest = records.filter((candidate) => candidate !== record);
+  return Array.from({ length: Math.min(SEEDED_SUBJECT_POSITIONS, index + 1) }, (_, at) => [
+    ...rest.slice(0, at),
+    record,
+    ...rest.slice(at),
+  ]);
+}
+
+/**
+ * The seeded entry with this id, about whichever record its id names. A shared desk derives seeded
+ * entries from its own part of the workspace, so their subjects need not be the first records of the
+ * whole one. The entry is rebuilt with that record in its subject's place, so the whole workspace
+ * finds every entry a desk's screens show.
+ */
+export function seededGovernanceAuditEntry(state: WardFlowState, id: unknown): AuditEvent | undefined {
+  if (typeof id !== "string" || !id.startsWith("audit-seed-") || !id.includes(":")) return undefined;
+  const subjectId = id.slice(id.indexOf(":") + 1);
+  const worlds: WardFlowState[] = [
+    ...placements(state.referrals, subjectId).map((referrals) => ({ ...state, referrals })),
+    ...placements(state.movements, subjectId).map((movements) => ({ ...state, movements })),
+    ...placements(state.admissions, subjectId).map((admissions) => ({ ...state, admissions })),
+  ];
+  for (const world of worlds) {
+    const entry = syntheticGovernanceAuditEvents(world).find((candidate) => candidate.id === id);
+    if (entry) return entry;
+  }
+  return undefined;
 }

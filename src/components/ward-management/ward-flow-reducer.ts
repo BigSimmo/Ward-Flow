@@ -13,7 +13,7 @@ import {
   appendAudit,
   classifyAuditEvent,
   finiteInstant,
-  governanceAuditEvents,
+  governanceAuditEntry,
   reviewDecision,
   type AuditDecision,
   type WardAuditState,
@@ -1588,7 +1588,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   if (event.type === "REVIEW_AUDIT_EVENT") {
     if (!safeCounter(event.expectedReviewCount) || !reviewDecision(event.decision)) return deny("invalid-payload");
     // v10 pass 2: the synthetic seeded governance entries (`ward-governance-seed.ts`) are reviewable too.
-    const entry = uniqueRecord(governanceAuditEvents(state), event.eventId);
+    const entry = governanceAuditEntry(state, event.eventId);
     if (!entry || entry.generation !== state.worldGeneration || entry.category === "review")
       return deny("missing-or-inaccessible");
     const count = state.auditReviews.filter(
