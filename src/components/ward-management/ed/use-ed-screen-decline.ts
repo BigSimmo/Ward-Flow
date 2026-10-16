@@ -88,17 +88,19 @@ export function useEdInboxDecline({
       );
     } else {
       setDeclineRejection(undefined);
-      const declined = pendingDeclineRef.current;
-      if (declined !== undefined) {
-        offerStep(
-          {
-            success: "Referral declined",
-            undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined.id }),
-            undone: "Decline undone",
-          },
-          { completion: declined.completion },
-        );
-      }
+    }
+    const declined = pendingDeclineRef.current;
+    // A confirmed command owns its result. An unrelated refusal in the same render must not
+    // suppress it; rejection-count inference is only for legacy callers returning void.
+    if (declined && (declined.completion !== undefined || rejections.length <= priorRejectionCountRef.current)) {
+      offerStep(
+        {
+          success: "Referral declined",
+          undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined.id }),
+          undone: "Decline undone",
+        },
+        { completion: declined.completion },
+      );
     }
     pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
