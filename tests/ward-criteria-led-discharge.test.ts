@@ -153,6 +153,19 @@ describe("nextDischargeCriteria and dischargeCriteriaStatus", () => {
     expect(second.record.items.map((item) => item.metAt)).toEqual([now + 1, now + 2]);
   });
 
+  it("refuses a tick whose met value is not true or false", () => {
+    if (!("record" in set) || !set.record) throw new Error("set refused");
+    const change = {
+      criteria: ["Accommodation confirmed"],
+      met: [],
+      setByTreatingPsychiatrist: false,
+      tick: { criterion: "Accommodation confirmed", met: "false" as unknown as boolean },
+    };
+    expect(nextDischargeCriteria(set.record, change, "voluntary", now + 1)).toEqual({
+      refusal: "A tick must say met or not met.",
+    });
+  });
+
   it("clears earlier ticks when the psychiatrist reviews the list", () => {
     if (!("record" in set) || !set.record) throw new Error("set refused");
     const ticked = { ...set.record, items: set.record.items.map((item) => ({ ...item, metAt: now })) };

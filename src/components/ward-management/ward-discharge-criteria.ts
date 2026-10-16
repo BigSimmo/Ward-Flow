@@ -149,6 +149,7 @@ export function nextDischargeCriteria(
   const tick = change.setByTreatingPsychiatrist ? undefined : change.tick;
   if (tick) {
     if (!current) return { refusal: "Discharge criteria are set by the treating psychiatrist." };
+    if (typeof tick.met !== "boolean") return { refusal: "A tick must say met or not met." };
     if (!isDischargeCriterion(tick.criterion) || !current.items.some((item) => item.criterion === tick.criterion)) {
       return { refusal: "Only a chosen discharge criterion can be marked met." };
     }
