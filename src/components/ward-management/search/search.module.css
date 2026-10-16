@@ -1241,7 +1241,7 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  text-decoration: none !important;
+  text-decoration: none;
   transition:
     background 0.12s,
     border-color 0.12s,
@@ -1354,7 +1354,7 @@
   transition:
     background 0.12s,
     border-color 0.12s;
-  text-decoration: none !important;
+  text-decoration: none;
   width: 100%;
   box-sizing: border-box;
   border-left: 3px solid transparent;
@@ -1955,7 +1955,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  text-decoration: none !important;
+  text-decoration: none;
   cursor: pointer;
   border: none;
 }
@@ -1978,7 +1978,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  text-decoration: none !important;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -2005,7 +2005,7 @@
     transform 0.12s ease,
     opacity 0.12s ease;
   white-space: nowrap;
-  text-decoration: none !important;
+  text-decoration: none;
   border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--ink-soft);

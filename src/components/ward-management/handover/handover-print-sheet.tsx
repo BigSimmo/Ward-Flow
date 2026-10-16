@@ -475,19 +475,19 @@ export function HandoverPrintSheet({
             <thead>
               <tr>
                 <th scope="col">Ward</th>
-                <th scope="col" style={{ width: 70 }}>
+                <th scope="col" className={styles.colNarrow}>
                   In beds
                 </th>
-                <th scope="col" style={{ width: 56 }}>
+                <th scope="col" className={styles.colReady}>
                   Ready
                 </th>
-                <th scope="col" style={{ width: 80 }}>
+                <th scope="col" className={styles.colUpdated}>
                   Updated
                 </th>
-                <th scope="col" style={{ width: 50 }}>
+                <th scope="col" className={styles.colHeld}>
                   Held
                 </th>
-                <th scope="col" style={{ width: 70 }}>
+                <th scope="col" className={styles.colNarrow}>
                   Past EDD
                 </th>
               </tr>
@@ -520,10 +520,10 @@ export function HandoverPrintSheet({
             <thead>
               <tr>
                 <th scope="col">Patient</th>
-                <th scope="col" style={{ width: 150 }}>
+                <th scope="col" className={styles.colWard}>
                   Ward
                 </th>
-                <th scope="col" style={{ width: 180 }}>
+                <th scope="col" className={styles.colHold}>
                   Hold
                 </th>
               </tr>

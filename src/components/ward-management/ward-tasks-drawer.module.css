@@ -946,7 +946,7 @@
     min-width: 3rem;
   }
 
-  /* The footer quick jumps are inline styled links about 18px tall, so reach them by their hook. */
+  /* The footer quick jumps are text links about 18px tall, so reach them by their hook. */
   .drawer [data-testid="ward-tasks-quick-jumps"] {
     align-items: center;
   }
@@ -1251,4 +1251,27 @@
   .row {
     cursor: pointer;
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). The footer quick jumps to the network
+   exception boards. */
+.quickJumps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font-size: 0.75rem;
+}
+
+.quickJump {
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.quickJumpSep {
+  color: var(--wf-ink-3);
 }

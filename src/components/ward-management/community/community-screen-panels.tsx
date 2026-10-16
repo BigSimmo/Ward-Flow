@@ -441,9 +441,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
       <div className={styles.clinicFleetGrid}>
         <div className={styles.cardPanel}>
           <div className={styles.panelHead}>
-            <h3 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-              Clinic Room Utilization
-            </h3>
+            <h3 className={`${styles.panelTitle} ${styles.titleMd}`}>Clinic Room Utilization</h3>
             <span className={styles.badgePill}>3 Rooms Active</span>
           </div>
           <div className={styles.panelBody}>
@@ -452,36 +450,28 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
                 <span className={styles.clinicRoomTitle}>Room 1 · Consultant Clinic</span>
                 <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 1pm</span>
               </div>
-              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                Dr K. Rao · Urgent Intakes &amp; Medication Reviews
-              </span>
+              <span className={styles.roomDetail}>Dr K. Rao · Urgent Intakes &amp; Medication Reviews</span>
             </div>
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
                 <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 5pm</span>
               </div>
-              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                RN C. Davis · Long-acting injections, ECG, metabolic monitoring
-              </span>
+              <span className={styles.roomDetail}>RN C. Davis · Long-acting injections, ECG, metabolic monitoring</span>
             </div>
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 3 · Crisis Walk-in &amp; Triage</span>
                 <span className={`${styles.statusPillBadge} ${styles.warn}`}>Active Standby</span>
               </div>
-              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                Dr J. Lim · Urgent walk-in community assessments
-              </span>
+              <span className={styles.roomDetail}>Dr J. Lim · Urgent walk-in community assessments</span>
             </div>
           </div>
         </div>
 
         <div className={styles.cardPanel}>
           <div className={styles.panelHead}>
-            <h3 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-              Mobile Outreach Vehicles
-            </h3>
+            <h3 className={`${styles.panelTitle} ${styles.titleMd}`}>Mobile Outreach Vehicles</h3>
             <span className={styles.badgePill}>2 Vehicles</span>
           </div>
           <div className={styles.panelBody}>
@@ -492,9 +482,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
                 </span>
                 <span className={`${styles.statusPillBadge} ${styles.warn}`}>In Field</span>
               </div>
-              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                Staff: T. Bradley RN &amp; Dr J. Lim · Scheduled Home Visits
-              </span>
+              <span className={styles.roomDetail}>Staff: T. Bradley RN &amp; Dr J. Lim · Scheduled Home Visits</span>
             </div>
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
@@ -503,18 +491,14 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
                 </span>
                 <span className={`${styles.statusPillBadge} ${styles.good}`}>At Base</span>
               </div>
-              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                Staff: M. Davies SW · Available for Urgent Dispatch
-              </span>
+              <span className={styles.roomDetail}>Staff: M. Davies SW · Available for Urgent Dispatch</span>
             </div>
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Morning MDT Huddle Log</span>
                 <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10am Completed</span>
               </div>
-              <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
-                14 Catchment cases reviewed · 2 Inpatient transfers coordinated
-              </span>
+              <span className={styles.roomDetail}>14 Catchment cases reviewed · 2 Inpatient transfers coordinated</span>
             </div>
           </div>
         </div>

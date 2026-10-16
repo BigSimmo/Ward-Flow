@@ -189,7 +189,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
         >
           <EdInboxReferrals ctx={ctx} />
 
-          <h2 className={styles.sectionHeading} style={{ marginTop: "1rem" }}>
+          <h2 className={styles.sectionHeading}>
             Awaiting Review &middot; {awaitingReviewPatients.length} patient
             {awaitingReviewPatients.length === 1 ? "" : "s"}
           </h2>
@@ -219,7 +219,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.meta}>
                         {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                        <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                        <span className={styles.umrnNote}>
                           UMRN: <strong>{patientInfo.umrn}</strong>
                         </span>
                         <span className={styles.bayNumber}>{patientBay(m.id)}</span>
@@ -285,7 +285,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.meta}>
                         {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                        <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                        <span className={styles.umrnNote}>
                           UMRN: <strong>{patientInfo.umrn}</strong>
                         </span>
                         <span className={styles.bayNumber}>{patientBay(m.id)}</span>
@@ -443,7 +443,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.meta}>
                         {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                        <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                        <span className={styles.umrnNote}>
                           UMRN: <strong>{patientInfo.umrn}</strong>
                         </span>
                         <span className={styles.bayNumber}>{patientBay(m.id)}</span>

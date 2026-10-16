@@ -2036,24 +2036,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onChange={(event) => {
               setCapacityValue(event.target.value);
             }}
-            className={styles.capacityInput}
-            style={{
-              minHeight: "var(--ward-tap, 48px)",
-              fontFamily: "var(--mono, monospace)",
-              fontVariantNumeric: "tabular-nums",
-            }}
+            className={`${styles.capacityInput} ${styles.capacityInputMono}`}
           />
           <button
             type="submit"
             data-testid="ward-capacity-submit"
-            className={styles.capacitySubmit}
-            style={{
-              minHeight: "var(--ward-tap, 48px)",
-              minWidth: "var(--ward-tap, 48px)",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className={`${styles.capacitySubmit} ${styles.tapTarget}`}
           >
             Confirm capacity
           </button>
@@ -2081,7 +2069,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             Review today&apos;s expected discharges → ({releasesCountedToday.length})
           </button>
         </div>
-        <p className={styles.capacityConfirmed} style={{ fontVariantNumeric: "tabular-nums" }}>
+        <p className={`${styles.capacityConfirmed} ${styles.tabularNums}`}>
           {capacityRevision !== (unit.allocatable.revision ?? 0) && (
             <button
               type="button"
@@ -2994,9 +2982,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
                   </div>
                   <div
-                    className={styles.capacityFreshnessRow}
+                    className={`${styles.capacityFreshnessRow} ${styles.flushMargin}`}
                     data-testid="ward-unit-capacity-freshness"
-                    style={{ margin: 0 }}
                   >
                     <WardFreshness
                       confirmedAt={unit.allocatable.confirmedAt}
@@ -3477,16 +3464,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </h2>
                 <button
                   type="button"
-                  className={styles.drawerCloseBtn}
+                  className={`${styles.drawerCloseBtn} ${styles.tapTarget}`}
                   onClick={closeCapacityModal}
                   aria-label="Close capacity confirmation modal"
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
                 >
                   &times; Close
                 </button>
@@ -3499,100 +3479,50 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 <div className={styles.unitCard}>
                   <div className={styles.unitCardHeader}>
                     <h3 className={styles.sectionHeading}>Bed roster &amp; census overview</h3>
-                    <span
-                      className={styles.statusPillBadge}
-                      style={{
-                        color: "var(--ink)",
-                        borderColor: "var(--line-strong)",
-                      }}
-                    >
-                      {unit.name}
-                    </span>
+                    <span className={`${styles.statusPillBadge} ${styles.unitNamePill}`}>{unit.name}</span>
                   </div>
                   <div className={styles.unitCardBody}>
                     <dl className={styles.unitFacts}>
                       <div>
                         <dt>Total Staffed Beds</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {unit.beds} {unit.beds === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>Beds in use</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {occupancy.inUse} / {unit.beds} {unit.beds === 1 ? "bed" : "beds"} (
                           {formatWardOccupancy(occupancy)})
                         </dd>
                       </div>
                       <div>
                         <dt>Confirmed free</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {unit.allocatable.value} {unit.allocatable.value === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>Ready Vacant</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {capacity.available} {capacity.available === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>{BED_STATE_LABELS.pulled}, not arrived</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {states.pulled} {states.pulled === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>{BED_STATE_LABELS.closed}, not offered</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {states.closed} {states.closed === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>Unoccupied change</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {(() => {
                             const parsed = parseInt(capacityValue, 10);
                             if (isNaN(parsed)) return "Not recorded";
@@ -3609,13 +3539,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       </div>
                       <div>
                         <dt>Physical Vacancy Delta</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {(() => {
                             const openVacant = Math.max(0, unit.beds - capacity.occupied - states.closed);
                             return `${openVacant} ${openVacant === 1 ? "bed" : "beds"} vacant${states.closed > 0 ? ` (${states.closed} closed)` : ""}`;
@@ -3631,15 +3555,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               <div className={styles.modalFoot}>
                 <button
                   type="button"
-                  className={styles.btnActionSec}
+                  className={`${styles.btnActionSec} ${styles.tapTarget}`}
                   onClick={closeCapacityModal}
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
                 >
                   Done
                 </button>

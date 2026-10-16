@@ -13,6 +13,8 @@ import {
   TRANSPORT_EXCEPTION_REASON_LABELS,
 } from "@/components/ward-management/ward-transport-checks";
 
+import styles from "./transport-exception-dialog.module.css";
+
 /**
  * Audit fixes A4-11 and S-2 (13 Oct 2026): a transport step with a check still open (no Form 4A
  * uploaded, fit to travel not recorded) is never blocked. This dialog names what is open and asks
@@ -60,9 +62,9 @@ export function TransportExceptionDialog({
       }}
       secondary={[{ label: "Cancel", onAction: close }]}
     >
-      <ul aria-label="Not recorded" style={{ margin: "0 0 12px", padding: 0, listStyle: "none" }}>
+      <ul aria-label="Not recorded" className={styles.gapList}>
         {gaps.map((gap) => (
-          <li key={gap} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 28 }}>
+          <li key={gap} className={styles.gapItem}>
             <StatusGlyph tone="warning" size={9} />
             <span>{TRANSPORT_EXCEPTION_GAP_LABELS[gap]}</span>
           </li>
