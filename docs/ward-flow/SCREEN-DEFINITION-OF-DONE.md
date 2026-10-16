@@ -107,7 +107,7 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
   leaving it out just means the generated page's **Implementation hash at look** column keeps
   reading "not recorded". **The word "CURRENT" is retired everywhere in this record** — a
   matching hash, drawing or implementation, proves only that nothing moved since the look, not
-  that the screen is right. This is WF-35: several screens once read "deviates" next to
+  that the screen is right. Several screens once read "deviates" next to
   "CURRENT" at the same time, because a drawing-hash match was being read as a claim about the
   built screen it never actually compared.
 

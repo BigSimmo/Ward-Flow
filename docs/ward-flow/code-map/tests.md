@@ -195,7 +195,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-coordinator-refusal-marker.dom.test.tsx`** (143 lines) — the persistent refusal marker
 - **`tests/ward-coordinator-service-scope.dom.test.tsx`** (235 lines) — fixture sanity: South Metro actually splits the Command populations both ways
 - **`tests/ward-data-checker.test.ts`** (593 lines) — the ward data checker is a check that can fail
-- **`tests/ward-declined-by-all-precedence.test.ts`** (355 lines) — WF-23: declined-by-all precedence against acceptance
+- **`tests/ward-declined-by-all-precedence.test.ts`** (355 lines) — declined-by-all precedence against acceptance
 - **`tests/ward-delay-cause-vocabulary.test.ts`** (158 lines) — a delay cause's note agrees with its own title about what the event is called
 - **`tests/ward-delays-derivations.test.ts`** (714 lines) — delayGroups
 - **`tests/ward-delays-service-scope.dom.test.tsx`** (385 lines) — fixture sanity: South Metro actually splits the open population both ways
@@ -383,7 +383,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-suburb.test.ts`** (183 lines) — a referral records its suburb
 - **`tests/ward-referral-visibility.test.ts`** (3021 lines) — FD-23 — a ward cannot see where else a patient has been referred
 - **`tests/ward-referral-wait-line.test.ts`** (111 lines) — the wait figure the referral board and match view print
-- **`tests/ward-referral-withdrawn-counts.test.ts`** (89 lines) — WF-13 T11 — the nav count drops when a referral is withdrawn
+- **`tests/ward-referral-withdrawn-counts.test.ts`** (89 lines) — T11 — the nav count drops when a referral is withdrawn
 - **`tests/ward-referrals-print.test.ts`** (262 lines) — Ward referrals — print background stays ink-on-paper under dark theme
 - **`tests/ward-referrer-withdrawal.test.ts`** (328 lines) — recording that a referrer withdrew their referral
 - **`tests/ward-seed-referral-census.test.ts`** (184 lines) — K1 — seedWardFlowState() referral census (2026-09-17 pin)
@@ -576,7 +576,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-console-examination-revoked-flag.dom.test.tsx`** (164 lines) — movement console — revoked-while-bed-held flag (T8)
 - **`tests/ward-console-step-back-holds-bed.dom.test.tsx`** (93 lines) — correcting a stage on a movement that is holding a bed
 - **`tests/ward-console-timeline-reasons.test.ts`** (151 lines) — the movement workspace's stage-transition reason labels
-- **`tests/ward-coordinator-closed-selection.dom.test.tsx`** (134 lines) — the coordinator screen never keeps a closed movement selected (WF-22)
+- **`tests/ward-coordinator-closed-selection.dom.test.tsx`** (134 lines) — the coordinator screen never keeps a closed movement selected
 - **`tests/ward-management-print.test.ts`** (325 lines) — the movement workspace prints as ink on paper, not as a dark band
 - **`tests/ward-movement-absence-wording.test.ts`** (79 lines) — an id this screen cannot resolve names the record, never the network
 - **`tests/ward-movement-blocker.test.ts`** (801 lines) — Movement.blocker — free prose, and it must stay that way
@@ -761,7 +761,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 ### Truthfulness guards (screens do not show what the data does not hold) (19 files)
 
 - **`tests/ward-activity-consistent-across-screens.dom.test.tsx`** (139 lines) — Activity drawer is consistently wired across all screens
-- **`tests/ward-activity-count-separate.dom.test.tsx`** (134 lines) — WF-10 — the Activity segment count and the Notices heading are never summed
+- **`tests/ward-activity-count-separate.dom.test.tsx`** (134 lines) — the Activity segment count and the Notices heading are never summed
 - **`tests/ward-announced-figures-carry-their-marker.test.ts`** (1037 lines) — the population this guard walks
 - **`tests/ward-bed-designation-fixture.test.ts`** (70 lines) — invented bed designations
 - **`tests/ward-empty-bed-exclusion-is-visible.dom.test.tsx`** (139 lines) — an impossible empty-bed record is excluded AND said out loud
@@ -795,7 +795,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-owner-decisions-2026-09-16.test.ts`** (204 lines) — 2026-09-16 Product Owner Rulings Verification
 - **`tests/ward-prototype-disclosure.test.ts`** (295 lines) — every ward route a reader can open says its data is synthetic
 - **`tests/ward-reference-registry.test.ts`** (95 lines) — the WA reference registry
-- **`tests/ward-screen-verification-lib.test.ts`** (182 lines) — drawingStatus — WF-35: the word CURRENT is retired
+- **`tests/ward-screen-verification-lib.test.ts`** (182 lines) — drawingStatus — the word CURRENT is retired
 - **`tests/ward-sites-reference-alignment.test.ts`** (103 lines) — demo wards borrow real WA names
 - **`tests/ward-whois-register.test.ts`** (107 lines) — a marker only holds a role when git corroborates it
 

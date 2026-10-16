@@ -564,10 +564,10 @@ safe global key across 30 files.
 
 18 item(s):
 
-- #1 (no owner-issued ID, this file's own numbering) — line 35, heading: "1. Non-transport handover progression (`WF-16`)"
-- #2 (no owner-issued ID, this file's own numbering) — line 40, heading: "2. Bed cancellation automatically cancels or prompts cancellation of linked booked transport (`WF-37`)"
-- #3 (no owner-issued ID, this file's own numbering) — line 45, heading: "3. CRITICAL CLINICAL RULING: Involuntary bed matching and zero vacant locked bed handling (`WF-01`, `WF-10`)"
-- #4 (no owner-issued ID, this file's own numbering) — line 54, heading: "4. Terminal state on referral withdrawal (`WF-13`, `P3-WD`)"
+- #1 (no owner-issued ID, this file's own numbering) — line 35, heading: "1. Non-transport handover progression"
+- #2 (no owner-issued ID, this file's own numbering) — line 40, heading: "2. Bed cancellation automatically cancels or prompts cancellation of linked booked transport"
+- #3 (no owner-issued ID, this file's own numbering) — line 45, heading: "3. CRITICAL CLINICAL RULING: Involuntary bed matching and zero vacant locked bed handling"
+- #4 (no owner-issued ID, this file's own numbering) — line 54, heading: "4. Terminal state on referral withdrawal (`P3-WD`)"
 - #5 (no owner-issued ID, this file's own numbering) — line 59, heading: "5. Network-wide search privacy and cross-ward referral lookup (`D-14`)"
 - #6 (no owner-issued ID, this file's own numbering) — line 64, heading: "6. Community screen transport booking affordance (`ISSUE-P2-88`)"
 - #7 (no owner-issued ID, this file's own numbering) — line 69, heading: "7. Mobile drawer responsive sheet adaptation (`DRAWER-RESPONSIVE-SHEET`)"

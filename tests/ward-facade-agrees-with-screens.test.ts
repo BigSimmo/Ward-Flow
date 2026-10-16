@@ -134,7 +134,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
-import { WardChromeHeader } from "@/components/ward-management/ward-chrome-header";
+import { WardTasksPanel } from "@/components/ward-management/ward-tasks-panel";
 
 // jsdom is already the installed test environment; use only its document API here.
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
@@ -451,7 +451,7 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
    */
   tasks: {
     screen: "the header bar's Tasks control",
-    component: WardChromeHeader,
+    component: WardTasksPanel,
     read: (markup) =>
       Number(
         oneNumber(
@@ -500,17 +500,15 @@ describe("the shell facade agrees with the screens that own its figures", () => 
   });
 
   /**
-   * IMPORTANT 1's OWN GUARD — the facade states `TASKS_NOUN` rather than deriving it, and its own
-   * doc comment used to claim it was the wording `ward-chrome-header.tsx` already renders when it
-   * was in fact a third phrasing nothing guarded. Reading the noun back out of the same header
-   * markup assertion 1 already renders is what makes the next divergence redden instead of being
-   * described.
+   * IMPORTANT 1's OWN GUARD — the facade states `TASKS_NOUN` rather than deriving it. Reading the
+   * noun back out of the same tasks control markup assertion 1 already renders is what makes the
+   * next divergence redden instead of being described.
    */
   it("the tasks noun matches the words the header control renders beside its count", () => {
     const state = seed();
-    const markup = markupOf(state, WardChromeHeader);
+    const markup = markupOf(state, WardTasksPanel);
     const match = markup.match(
-      /data-testid="ward-tasks-opener"[^>]*>Tasks<span[^>]*>\d+<\/span><span[^>]*>([^<]+)<\/span>/u,
+      /data-testid="ward-tasks-opener"[^>]*>Tasks<span[^>]*>\d+<\/span><span[^>]*>(?:items\s+)?([^<]+)<\/span>/u,
     );
     expect(match, "the header's Tasks control markup did not match the expected shape at all").not.toBeNull();
     const renderedNoun = match![1];

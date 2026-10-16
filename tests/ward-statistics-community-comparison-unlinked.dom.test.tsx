@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 }));
 
 /**
- * WF-47 — **THE COMPARISON TABLE PRINTS BARE ZEROS WHEN MEMBERSHIP CANNOT BE WORKED OUT.**
+ * **THE COMPARISON TABLE PRINTS BARE ZEROS WHEN MEMBERSHIP CANNOT BE WORKED OUT.**
  *
  * `statistics-community-screen.tsx`'s "Where this team sits" table rendered
  * `row.lists.currentlyAdmitted.length` (and the two counts beside it) directly, with no gate on

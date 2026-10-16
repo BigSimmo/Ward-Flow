@@ -15,7 +15,7 @@
 
 1. **Master Project Issues Catalog**:
    - Authored [`docs/ward-flow/PROJECT-ISSUES.md`](../PROJECT-ISSUES.md): the authoritative cross-session register of all **62 verified issues** and **13 active blocking questions**, fully reconciled with the OneDrive Master Audit (`Ward_Flow_Master_2026-09-13.md`) and Master Tracker (`Ward_Flow_Master_Tracker.xlsx`).
-   - Reconciled [`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md) with the 14 Whole-Journey Invariants (`I-01` to `I-14`), 52 Canonical Families (`WF-01` to `WF-52`), and 483-alias Crosswalk.
+   - Reconciled [`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md) with the 14 Whole-Journey Invariants (`I-01` to `I-14`), 52 Canonical Families, and 483-alias Crosswalk.
 2. **Third-Edition Patient Search (`src/components/ward-management/search/`)**:
    - Implemented [`patient-search.tsx`](../../../src/components/ward-management/search/patient-search.tsx) and [`search-filters.ts`](../../../src/components/ward-management/search/search-filters.ts) matching the Sovereign Clinical Console design standard (`docs/ward-flow/mockups/patient-search-perfected-third-edition.html`).
    - **4 Dropdown Filters**: **Service** (East Metro, North Metro, South Metro, WACHS), **Setting** (ED, Inpatient Ward, In-Transit), **Legal Status** (Form 1A, Form 4A, Form 5A, Voluntary), and **Wait Band** (< 6h, 6–24h, > 24h).
@@ -44,18 +44,18 @@ The complete catalog with file line numbers, defect mechanisms, clinical risks, 
 | **Tier 1: P0 Critical**  |   **13**    | Statutory breaches (WA MHA 2014), state-machine deadlocks, irreversible arrival erasure, D-14 privacy violations.    |
 | **Tier 2: P1 Serious**   |   **21**    | Bed capacity arithmetic leaks, decoupled intake architecture, missing undo/cancellation handlers, temporal collapse. |
 | **Tier 3: P2 Important** |   **28**    | Priority queue distortions, permissions matrix omissions, legibility, model drift.                                   |
-| **Total Issues**         |   **62**    | **Mapped to Invariants `I-01` to `I-14` and Canonical Families `WF-01` to `WF-52`**                                  |
+| **Total Issues**         |   **62**    | **Mapped to Invariants `I-01` to `I-14` and 52 Canonical Families**                                                  |
 
 ### Tier 1 (P0 Critical) Quick Reference
 
 1. **`ISSUE-P0-01`**: Form 1A 24-Hour Statutory Expiry Countdown Clock Missing (`ed-screen.tsx`, `ward-legal-forms.ts`).
 2. **`ISSUE-P0-02`**: Cross-Ward Default-Deny Privacy Boundary Violation under Owner Ruling D-14 (`ward-derivations.ts`, `record-preview.tsx`).
 3. **`ISSUE-P0-03`**: Irreversible Physical Arrival Erasure via Administrative Step-Back (`ward-flow-reducer.ts:1924`, Invariant `I-05`).
-4. **`ISSUE-P0-04`**: Acuity-Staffing Ratio Bypass at Physical Bed Allocation (`ward-admissions.ts:686-703`, `I-06` / `WF-03`).
-5. **`ISSUE-P0-05`**: Front-Door Terminal Withdrawal Orphan Cascade (`ward-flow-reducer.ts:3120-3165`, `I-07` / `WF-10`).
-6. **`ISSUE-P0-06`**: Transport Cancellation Auto-Advances Movement to Handover Ready (`ward-flow-reducer.ts:2410-2435`, `I-04` / `WF-04`).
+4. **`ISSUE-P0-04`**: Acuity-Staffing Ratio Bypass at Physical Bed Allocation (`ward-admissions.ts:686-703`, `I-06`).
+5. **`ISSUE-P0-05`**: Front-Door Terminal Withdrawal Orphan Cascade (`ward-flow-reducer.ts:3120-3165`, `I-07`).
+6. **`ISSUE-P0-06`**: Transport Cancellation Auto-Advances Movement to Handover Ready (`ward-flow-reducer.ts:2410-2435`, `I-04`).
 7. **`ISSUE-P0-07`**: Form 4A Transport Order Statutory Validity Unchecked Before Booking (`ward-model.ts:588-601`).
-8. **`ISSUE-P0-08`**: State Accounting Inconsistency on Revoked Examination Closure (`ward-flow-reducer.ts:1605-1632`, `I-02` / `WF-01`).
+8. **`ISSUE-P0-08`**: State Accounting Inconsistency on Revoked Examination Closure (`ward-flow-reducer.ts:1605-1632`, `I-02`).
 9. **`ISSUE-P0-09`**: Permissions Matrix Omits 3 Reducer Events (56 Defined vs 53 Mapped) (`ward-permissions.ts`).
 10. **`ISSUE-P0-10`**: Command Timeline Dynamically Rewrites Historical Events (`command-activity.tsx`, `I-14`).
 11. **`ISSUE-P0-11`**: Gender-Determines-Bed Safety Gate Missing from Movements and Referrals (`ward-eligibility.ts:180-210`).
@@ -94,17 +94,17 @@ Detailed clinical impacts, options, and recommendations were cited as `docs/ward
 
 ## 4. Key Files to Know
 
-| File                      | Path                                                                                                                            | Purpose                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| **Master Issues Catalog** | [`docs/ward-flow/PROJECT-ISSUES.md`](../PROJECT-ISSUES.md)                                                                      | Authoritative register of 62 issues + 13 questions            |
-| **Ward Flow Entry Point** | [`docs/ward-flow/README.md`](../README.md)                                                                                      | Entry point, commands, and rules                              |
-| **New Chat Prompt**       | [`docs/ward-flow/NEW-CHAT-PROMPT.md`](../NEW-CHAT-PROMPT.md)                                                                    | Resumption instructions for AI sessions                       |
-| **Task Ledger**           | [`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md)                                                               | Reconciled task ledger (`WF-01` to `WF-52`, `I-01` to `I-14`) |
-| **Perfected Mockup**      | [`docs/ward-flow/mockups/patient-search-perfected-third-edition.html`](../mockups/patient-search-perfected-third-edition.html)  | Authoritative UI reference for Patient Search                 |
-| **Search Component**      | [`src/components/ward-management/search/patient-search.tsx`](../../../src/components/ward-management/search/patient-search.tsx) | Live React component with 4 dropdown filters & yield strip    |
-| **Search Filters**        | [`src/components/ward-management/search/search-filters.ts`](../../../src/components/ward-management/search/search-filters.ts)   | Filter predicates, site mappings, and quick query chips       |
-| **Search CSS**            | [`src/components/ward-management/search/search.module.css`](../../../src/components/ward-management/search/search.module.css)   | Sovereign Clinical Console token styles (0 raw colours)       |
-| **Search DOM Tests**      | [`tests/ward-patient-search.dom.test.tsx`](../../../tests/ward-patient-search.dom.test.tsx)                                     | 46 comprehensive DOM tests                                    |
+| File                      | Path                                                                                                                            | Purpose                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Master Issues Catalog** | [`docs/ward-flow/PROJECT-ISSUES.md`](../PROJECT-ISSUES.md)                                                                      | Authoritative register of 62 issues + 13 questions         |
+| **Ward Flow Entry Point** | [`docs/ward-flow/README.md`](../README.md)                                                                                      | Entry point, commands, and rules                           |
+| **New Chat Prompt**       | [`docs/ward-flow/NEW-CHAT-PROMPT.md`](../NEW-CHAT-PROMPT.md)                                                                    | Resumption instructions for AI sessions                    |
+| **Task Ledger**           | [`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md)                                                               | Reconciled task ledger (`I-01` to `I-14`)                  |
+| **Perfected Mockup**      | [`docs/ward-flow/mockups/patient-search-perfected-third-edition.html`](../mockups/patient-search-perfected-third-edition.html)  | Authoritative UI reference for Patient Search              |
+| **Search Component**      | [`src/components/ward-management/search/patient-search.tsx`](../../../src/components/ward-management/search/patient-search.tsx) | Live React component with 4 dropdown filters & yield strip |
+| **Search Filters**        | [`src/components/ward-management/search/search-filters.ts`](../../../src/components/ward-management/search/search-filters.ts)   | Filter predicates, site mappings, and quick query chips    |
+| **Search CSS**            | [`src/components/ward-management/search/search.module.css`](../../../src/components/ward-management/search/search.module.css)   | Sovereign Clinical Console token styles (0 raw colours)    |
+| **Search DOM Tests**      | [`tests/ward-patient-search.dom.test.tsx`](../../../tests/ward-patient-search.dom.test.tsx)                                     | 46 comprehensive DOM tests                                 |
 
 ---
 

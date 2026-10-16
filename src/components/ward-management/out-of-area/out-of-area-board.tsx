@@ -67,7 +67,7 @@ import {
   bedMeetingComparison,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
-import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
+import { ReturnPlan, TravelIcon, canSendReturnPlan, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
@@ -358,6 +358,84 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
+  function sendPlanToWard(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const draft = draftFor(admissionId);
+    if (!canSendReturnPlan(draft, now)) return;
+    const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
+    if (
+      estimatedAt === undefined ||
+      (draft.mode !== "road" && draft.mode !== "flight") ||
+      draft.provider === undefined ||
+      draft.transportLegalStatus === undefined
+    ) {
+      return;
+    }
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    const sentNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return movement pending receiving ward agreement.`;
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: draft.homeHospital,
+        receivingWardAgreed: false,
+        mode: draft.mode,
+        provider: draft.provider,
+        cadNumber: draft.cadNumber.trim(),
+        transportLegalStatus: draft.transportLegalStatus,
+        estimatedAt,
+      },
+      {
+        success: sentNotice,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[admissionId];
+      return next;
+    });
+    setRepatNotice(sentNotice);
+  }
+
+  function markWardAgreed(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const existing = recordOf(admissionId);
+    if (!existing || existing.receivingWardAgreed) return;
+    const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
+    const agreedNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
+    dispatch({
+      type: "UNDO_REPATRIATION",
+      role: "coordinator",
+      now: existing.at,
+      admissionId,
+    });
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: existing.homeHospital,
+        receivingWardAgreed: true,
+        mode: existing.mode,
+        provider: existing.provider,
+        cadNumber: existing.cadNumber,
+        transportLegalStatus: existing.transportLegalStatus,
+        estimatedAt: Math.max(existing.estimatedAt, now),
+      },
+      {
+        success: agreedNotice,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
+    setRepatNotice(agreedNotice);
+  }
+
   // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
   const legalOf = (entry: OutOfAreaEntry): string | undefined =>
     stayLegalShort(entry.admission, { movements, patients, referrals });
@@ -388,6 +466,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       notice={repatNotice}
       onDismissNotice={() => setRepatNotice(null)}
       onRecord={() => recordReturn(entry)}
+      onSendToWard={() => sendPlanToWard(entry)}
+      onMarkWardAgreed={() => markWardAgreed(entry)}
       header={header}
       idPrefix={idPrefix}
     />

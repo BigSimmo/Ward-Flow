@@ -7775,9 +7775,9 @@
         },
         {
           "ancestorTitles": ["CANCEL_TRANSPORT when no bed is held"],
-          "fullName": "CANCEL_TRANSPORT when no bed is held WF-37 / Ruling 2: RELEASE_PULL clears linked transport immediately so re-allocation is never blocked",
+          "fullName": "CANCEL_TRANSPORT when no bed is held ISSUE-37 / Ruling 2: RELEASE_PULL clears linked transport immediately so re-allocation is never blocked",
           "status": "passed",
-          "title": "WF-37 / Ruling 2: RELEASE_PULL clears linked transport immediately so re-allocation is never blocked",
+          "title": "ISSUE-37 / Ruling 2: RELEASE_PULL clears linked transport immediately so re-allocation is never blocked",
           "duration": 9.559499999999957,
           "failureMessages": [],
           "meta": {},
@@ -7804,9 +7804,9 @@
         },
         {
           "ancestorTitles": ["CANCEL_TRANSPORT leaves the movement's stage exactly where it found it"],
-          "fullName": "CANCEL_TRANSPORT leaves the movement's stage exactly where it found it (b) RELEASE_PULL clears transport and stage stays accepted_awaiting_bed (WF-37 / Ruling 2)",
+          "fullName": "CANCEL_TRANSPORT leaves the movement's stage exactly where it found it (b) RELEASE_PULL clears transport and stage stays accepted_awaiting_bed (ISSUE-37 / Ruling 2)",
           "status": "passed",
-          "title": "(b) RELEASE_PULL clears transport and stage stays accepted_awaiting_bed (WF-37 / Ruling 2)",
+          "title": "(b) RELEASE_PULL clears transport and stage stays accepted_awaiting_bed (ISSUE-37 / Ruling 2)",
           "duration": 4.633700000000033,
           "failureMessages": [],
           "meta": {},
@@ -10479,9 +10479,9 @@
         },
         {
           "ancestorTitles": ["Command activity from current records"],
-          "fullName": "Command activity from current records shows the opening urgency tier on past events, not the current tier (WF-49)",
+          "fullName": "Command activity from current records shows the opening urgency tier on past events, not the current tier (ISSUE-49)",
           "status": "passed",
-          "title": "shows the opening urgency tier on past events, not the current tier (WF-49)",
+          "title": "shows the opening urgency tier on past events, not the current tier (ISSUE-49)",
           "duration": 17.213400000000092,
           "failureMessages": [],
           "meta": {},
@@ -10489,9 +10489,9 @@
         },
         {
           "ancestorTitles": ["Command activity from current records"],
-          "fullName": "Command activity from current records shows the current tier for a movement whose urgency has never changed (WF-49)",
+          "fullName": "Command activity from current records shows the current tier for a movement whose urgency has never changed (ISSUE-49)",
           "status": "passed",
-          "title": "shows the current tier for a movement whose urgency has never changed (WF-49)",
+          "title": "shows the current tier for a movement whose urgency has never changed (ISSUE-49)",
           "duration": 6.396400000000085,
           "failureMessages": [],
           "meta": {},
@@ -13650,8 +13650,8 @@
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["WF-23: declined-by-all precedence against acceptance"],
-          "fullName": "WF-23: declined-by-all precedence against acceptance A declines, B accepts in principle: no rejections, one decline kept, the movement is not declined-by-all, and the statistics count is unchanged",
+          "ancestorTitles": ["ISSUE-23: declined-by-all precedence against acceptance"],
+          "fullName": "ISSUE-23: declined-by-all precedence against acceptance A declines, B accepts in principle: no rejections, one decline kept, the movement is not declined-by-all, and the statistics count is unchanged",
           "status": "passed",
           "title": "A declines, B accepts in principle: no rejections, one decline kept, the movement is not declined-by-all, and the statistics count is unchanged",
           "duration": 22.4418,
@@ -13660,8 +13660,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-23: declined-by-all precedence against acceptance"],
-          "fullName": "WF-23: declined-by-all precedence against acceptance A declines, B accepts, the acceptance is withdrawn: reads acceptance_withdrawn, not counted, until a fresh decline lands",
+          "ancestorTitles": ["ISSUE-23: declined-by-all precedence against acceptance"],
+          "fullName": "ISSUE-23: declined-by-all precedence against acceptance A declines, B accepts, the acceptance is withdrawn: reads acceptance_withdrawn, not counted, until a fresh decline lands",
           "status": "passed",
           "title": "A declines, B accepts, the acceptance is withdrawn: reads acceptance_withdrawn, not counted, until a fresh decline lands",
           "duration": 7.103399999999965,
@@ -13670,8 +13670,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-23: declined-by-all precedence against acceptance"],
-          "fullName": "WF-23: declined-by-all precedence against acceptance positive control: A and B both decline — the movement IS declined-by-all",
+          "ancestorTitles": ["ISSUE-23: declined-by-all precedence against acceptance"],
+          "fullName": "ISSUE-23: declined-by-all precedence against acceptance positive control: A and B both decline — the movement IS declined-by-all",
           "status": "passed",
           "title": "positive control: A and B both decline — the movement IS declined-by-all",
           "duration": 5.055599999999913,
@@ -13680,8 +13680,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-23: declined-by-all precedence against acceptance"],
-          "fullName": "WF-23: declined-by-all precedence against acceptance finding 2: a decline that is NOT the last live request leaves the blocker unchanged",
+          "ancestorTitles": ["ISSUE-23: declined-by-all precedence against acceptance"],
+          "fullName": "ISSUE-23: declined-by-all precedence against acceptance finding 2: a decline that is NOT the last live request leaves the blocker unchanged",
           "status": "passed",
           "title": "finding 2: a decline that is NOT the last live request leaves the blocker unchanged",
           "duration": 4.6784000000000106,
@@ -34298,9 +34298,9 @@
         },
         {
           "ancestorTitles": ["recording that a patient has left"],
-          "fullName": "recording that a patient has left subsequent RELEASE_BED does not double-increment empty or allocatable if departure already incremented it (WF-06)",
+          "fullName": "recording that a patient has left subsequent RELEASE_BED does not double-increment empty or allocatable if departure already incremented it (ISSUE-06)",
           "status": "passed",
-          "title": "subsequent RELEASE_BED does not double-increment empty or allocatable if departure already incremented it (WF-06)",
+          "title": "subsequent RELEASE_BED does not double-increment empty or allocatable if departure already incremented it (ISSUE-06)",
           "duration": 4.746399999999994,
           "failureMessages": [],
           "meta": {},
@@ -34703,8 +34703,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 — a withdrawn referral leaves the ED hub's live lists"],
-          "fullName": "WF-13 — a withdrawn referral leaves the ED hub's live lists baseline: before withdrawal, the expect sits in edExpectsFor, edReferralsFor and referralQueueOrder",
+          "ancestorTitles": ["a withdrawn referral leaves the ED hub's live lists"],
+          "fullName": "a withdrawn referral leaves the ED hub's live lists baseline: before withdrawal, the expect sits in edExpectsFor, edReferralsFor and referralQueueOrder",
           "status": "passed",
           "title": "baseline: before withdrawal, the expect sits in edExpectsFor, edReferralsFor and referralQueueOrder",
           "duration": 4.2479999999999905,
@@ -34713,8 +34713,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 — a withdrawn referral leaves the ED hub's live lists"],
-          "fullName": "WF-13 — a withdrawn referral leaves the ED hub's live lists removes the referral from edExpectsFor, edArrivedFor and edReferralsFor once withdrawn",
+          "ancestorTitles": ["a withdrawn referral leaves the ED hub's live lists"],
+          "fullName": "a withdrawn referral leaves the ED hub's live lists removes the referral from edExpectsFor, edArrivedFor and edReferralsFor once withdrawn",
           "status": "passed",
           "title": "removes the referral from edExpectsFor, edArrivedFor and edReferralsFor once withdrawn",
           "duration": 4.0656999999999925,
@@ -34723,8 +34723,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 — a withdrawn referral leaves the ED hub's live lists"],
-          "fullName": "WF-13 — a withdrawn referral leaves the ED hub's live lists removes the referral from referralQueueOrder once withdrawn",
+          "ancestorTitles": ["a withdrawn referral leaves the ED hub's live lists"],
+          "fullName": "a withdrawn referral leaves the ED hub's live lists removes the referral from referralQueueOrder once withdrawn",
           "status": "passed",
           "title": "removes the referral from referralQueueOrder once withdrawn",
           "duration": 3.607500000000016,
@@ -34733,8 +34733,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 — a withdrawn referral leaves the ED hub's live lists"],
-          "fullName": "WF-13 — a withdrawn referral leaves the ED hub's live lists labels the withdrawn addressing 'Withdrawn by the referrer.'",
+          "ancestorTitles": ["a withdrawn referral leaves the ED hub's live lists"],
+          "fullName": "a withdrawn referral leaves the ED hub's live lists labels the withdrawn addressing 'Withdrawn by the referrer.'",
           "status": "passed",
           "title": "labels the withdrawn addressing 'Withdrawn by the referrer.'",
           "duration": 4.2339000000000055,
@@ -34743,8 +34743,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 — a sibling addressing that already answered is untouched"],
-          "fullName": "WF-13 — a sibling addressing that already answered is untouched keeps the sibling's 'Declined — …' label, and still withdraws the live destination",
+          "ancestorTitles": ["a sibling addressing that already answered is untouched"],
+          "fullName": "a sibling addressing that already answered is untouched keeps the sibling's 'Declined — …' label, and still withdraws the live destination",
           "status": "passed",
           "title": "keeps the sibling's 'Declined — …' label, and still withdraws the live destination",
           "duration": 5.7193000000000325,
@@ -34753,8 +34753,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 — an accepted control is unchanged"],
-          "fullName": "WF-13 — an accepted control is unchanged stays in edArrivedFor and keeps its 'Accepted.' label after an unrelated withdrawal",
+          "ancestorTitles": ["an accepted control is unchanged"],
+          "fullName": "an accepted control is unchanged stays in edArrivedFor and keeps its 'Accepted.' label after an unrelated withdrawal",
           "status": "passed",
           "title": "stays in edArrivedFor and keeps its 'Accepted.' label after an unrelated withdrawal",
           "duration": 5.150199999999984,
@@ -42311,8 +42311,8 @@
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["WF-13 T11 — the nav count drops when a referral is withdrawn"],
-          "fullName": "WF-13 T11 — the nav count drops when a referral is withdrawn counts RF-014 before withdrawal, or the drop below would be vacuous",
+          "ancestorTitles": ["ISSUE-13 T11 — the nav count drops when a referral is withdrawn"],
+          "fullName": "ISSUE-13 T11 — the nav count drops when a referral is withdrawn counts RF-014 before withdrawal, or the drop below would be vacuous",
           "status": "passed",
           "title": "counts RF-014 before withdrawal, or the drop below would be vacuous",
           "duration": 6.3537000000000035,
@@ -42321,8 +42321,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 T11 — the nav count drops when a referral is withdrawn"],
-          "fullName": "WF-13 T11 — the nav count drops when a referral is withdrawn the sidebar's referrals figure drops by exactly one",
+          "ancestorTitles": ["ISSUE-13 T11 — the nav count drops when a referral is withdrawn"],
+          "fullName": "ISSUE-13 T11 — the nav count drops when a referral is withdrawn the sidebar's referrals figure drops by exactly one",
           "status": "passed",
           "title": "the sidebar's referrals figure drops by exactly one",
           "duration": 89.78490000000005,
@@ -42331,8 +42331,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 T11 — the patient-search referral figure drops when a referral is withdrawn"],
-          "fullName": "WF-13 T11 — the patient-search referral figure drops when a referral is withdrawn counts RF-014 in searchPatients before withdrawal, or the drop below would be vacuous",
+          "ancestorTitles": ["ISSUE-13 T11 — the patient-search referral figure drops when a referral is withdrawn"],
+          "fullName": "ISSUE-13 T11 — the patient-search referral figure drops when a referral is withdrawn counts RF-014 in searchPatients before withdrawal, or the drop below would be vacuous",
           "status": "passed",
           "title": "counts RF-014 in searchPatients before withdrawal, or the drop below would be vacuous",
           "duration": 4.954300000000103,
@@ -42341,8 +42341,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-13 T11 — the patient-search referral figure drops when a referral is withdrawn"],
-          "fullName": "WF-13 T11 — the patient-search referral figure drops when a referral is withdrawn the referral half of searchPatients drops by exactly one",
+          "ancestorTitles": ["ISSUE-13 T11 — the patient-search referral figure drops when a referral is withdrawn"],
+          "fullName": "ISSUE-13 T11 — the patient-search referral figure drops when a referral is withdrawn the referral half of searchPatients drops by exactly one",
           "status": "passed",
           "title": "the referral half of searchPatients drops by exactly one",
           "duration": 3.8057999999999765,
@@ -44316,8 +44316,8 @@
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["drawingStatus — WF-35: the word CURRENT is retired"],
-          "fullName": "drawingStatus — WF-35: the word CURRENT is retired is NOT YET LOOKED AT when nobody has looked",
+          "ancestorTitles": ["drawingStatus — ISSUE-35: the word CURRENT is retired"],
+          "fullName": "drawingStatus — ISSUE-35: the word CURRENT is retired is NOT YET LOOKED AT when nobody has looked",
           "status": "passed",
           "title": "is NOT YET LOOKED AT when nobody has looked",
           "duration": 2.5653000000000077,
@@ -44326,8 +44326,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["drawingStatus — WF-35: the word CURRENT is retired"],
-          "fullName": "drawingStatus — WF-35: the word CURRENT is retired is UNAGEABLE when a look happened but recorded no hash",
+          "ancestorTitles": ["drawingStatus — ISSUE-35: the word CURRENT is retired"],
+          "fullName": "drawingStatus — ISSUE-35: the word CURRENT is retired is UNAGEABLE when a look happened but recorded no hash",
           "status": "passed",
           "title": "is UNAGEABLE when a look happened but recorded no hash",
           "duration": 0.2995000000000232,
@@ -44336,8 +44336,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["drawingStatus — WF-35: the word CURRENT is retired"],
-          "fullName": "drawingStatus — WF-35: the word CURRENT is retired is MANIFEST NOT AVAILABLE when the manifest file itself is missing, even with a recorded hash",
+          "ancestorTitles": ["drawingStatus — ISSUE-35: the word CURRENT is retired"],
+          "fullName": "drawingStatus — ISSUE-35: the word CURRENT is retired is MANIFEST NOT AVAILABLE when the manifest file itself is missing, even with a recorded hash",
           "status": "passed",
           "title": "is MANIFEST NOT AVAILABLE when the manifest file itself is missing, even with a recorded hash",
           "duration": 0.2185000000000059,
@@ -44346,8 +44346,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["drawingStatus — WF-35: the word CURRENT is retired"],
-          "fullName": "drawingStatus — WF-35: the word CURRENT is retired a matching hash never yields CURRENT — it yields DRAWING UNCHANGED since look",
+          "ancestorTitles": ["drawingStatus — ISSUE-35: the word CURRENT is retired"],
+          "fullName": "drawingStatus — ISSUE-35: the word CURRENT is retired a matching hash never yields CURRENT — it yields DRAWING UNCHANGED since look",
           "status": "passed",
           "title": "a matching hash never yields CURRENT — it yields DRAWING UNCHANGED since look",
           "duration": 1.2284999999999968,
@@ -44356,8 +44356,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["drawingStatus — WF-35: the word CURRENT is retired"],
-          "fullName": "drawingStatus — WF-35: the word CURRENT is retired a mismatched hash is STALE",
+          "ancestorTitles": ["drawingStatus — ISSUE-35: the word CURRENT is retired"],
+          "fullName": "drawingStatus — ISSUE-35: the word CURRENT is retired a mismatched hash is STALE",
           "status": "passed",
           "title": "a mismatched hash is STALE",
           "duration": 0.1728999999999985,
@@ -44366,8 +44366,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["drawingStatus — WF-35: the word CURRENT is retired"],
-          "fullName": "drawingStatus — WF-35: the word CURRENT is retired an available manifest with no entry for this mockup (undefined lookup) is still STALE, not CURRENT",
+          "ancestorTitles": ["drawingStatus — ISSUE-35: the word CURRENT is retired"],
+          "fullName": "drawingStatus — ISSUE-35: the word CURRENT is retired an available manifest with no entry for this mockup (undefined lookup) is still STALE, not CURRENT",
           "status": "passed",
           "title": "an available manifest with no entry for this mockup (undefined lookup) is still STALE, not CURRENT",
           "duration": 0.2512999999999863,
@@ -51966,8 +51966,8 @@
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["WF-10 — the Activity segment count and the Notices heading are never summed"],
-          "fullName": "WF-10 — the Activity segment count and the Notices heading are never summed has one notice scoped to this ward and two activity changes, or the assertions below are vacuous",
+          "ancestorTitles": ["the Activity segment count and the Notices heading are never summed"],
+          "fullName": "the Activity segment count and the Notices heading are never summed has one notice scoped to this ward and two activity changes, or the assertions below are vacuous",
           "status": "passed",
           "title": "has one notice scoped to this ward and two activity changes, or the assertions below are vacuous",
           "duration": 3.9851000000001022,
@@ -51976,8 +51976,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-10 — the Activity segment count and the Notices heading are never summed"],
-          "fullName": "WF-10 — the Activity segment count and the Notices heading are never summed reads the Activity segment count as the activity changes alone, not changes plus notices",
+          "ancestorTitles": ["the Activity segment count and the Notices heading are never summed"],
+          "fullName": "the Activity segment count and the Notices heading are never summed reads the Activity segment count as the activity changes alone, not changes plus notices",
           "status": "passed",
           "title": "reads the Activity segment count as the activity changes alone, not changes plus notices",
           "duration": 445.164,
@@ -51986,8 +51986,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["WF-10 — the Activity segment count and the Notices heading are never summed"],
-          "fullName": "WF-10 — the Activity segment count and the Notices heading are never summed keeps the Notices heading counting notices on its own, unaffected by the fix above — now unread notices only",
+          "ancestorTitles": ["the Activity segment count and the Notices heading are never summed"],
+          "fullName": "the Activity segment count and the Notices heading are never summed keeps the Notices heading counting notices on its own, unaffected by the fix above — now unread notices only",
           "status": "passed",
           "title": "keeps the Notices heading counting notices on its own, unaffected by the fix above — now unread notices only",
           "duration": 130.86069999999995,
@@ -58006,8 +58006,8 @@
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["the coordinator screen never keeps a closed movement selected (WF-22)"],
-          "fullName": "the coordinator screen never keeps a closed movement selected (WF-22) has a real, open, unaccepted movement with a live referral to withdraw — or every assertion below is vacuous",
+          "ancestorTitles": ["the coordinator screen never keeps a closed movement selected (ISSUE-22)"],
+          "fullName": "the coordinator screen never keeps a closed movement selected (ISSUE-22) has a real, open, unaccepted movement with a live referral to withdraw — or every assertion below is vacuous",
           "status": "passed",
           "title": "has a real, open, unaccepted movement with a live referral to withdraw — or every assertion below is vacuous",
           "duration": 4.905300000000352,
@@ -58016,8 +58016,8 @@
           "tags": []
         },
         {
-          "ancestorTitles": ["the coordinator screen never keeps a closed movement selected (WF-22)"],
-          "fullName": "the coordinator screen never keeps a closed movement selected (WF-22) selects the movement, closes it mid-session, and drops the selection rather than keeping it",
+          "ancestorTitles": ["the coordinator screen never keeps a closed movement selected (ISSUE-22)"],
+          "fullName": "the coordinator screen never keeps a closed movement selected (ISSUE-22) selects the movement, closes it mid-session, and drops the selection rather than keeping it",
           "status": "passed",
           "title": "selects the movement, closes it mid-session, and drops the selection rather than keeping it",
           "duration": 1004.1194,

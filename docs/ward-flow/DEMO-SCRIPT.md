@@ -1,6 +1,6 @@
 # A Day in the Life: Western Australia Psychiatric Bed Flow Demonstration Script
 
-**Document ID:** WF-60  
+**Document:** Ward Flow Demonstration Script  
 **Version:** 1.0.0  
 **Target Audience:** Clinical Directors, Mental Health Executive Directors, Emergency Department Directors, Nurse Unit Managers (NUMs), and Statewide Bed Flow Coordinators across WA Health (NMHS, SMHS, EMHS, and WACHS).  
 **Presenter Persona:** Dr Josh / Senior Statewide Mental Health Flow Consultant  
@@ -567,4 +567,4 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 
 ---
 
-_End of Demonstration Script (WF-60). Authoritative demonstration document for WA Health stakeholders._
+_End of Demonstration Script. Authoritative demonstration document for WA Health stakeholders._

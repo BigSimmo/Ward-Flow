@@ -187,7 +187,7 @@ export function referralState(referral: Referral): ReferralState {
 }
 
 /**
- * WF-13 — ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
+ * ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that
  * moment and deliberately leaves `state` untouched (O-17.11, see that event's own reducer case):
@@ -458,7 +458,7 @@ export function edExpectsFor(
       if (destination.kind !== "emergency_department") continue;
       if (destination.edId !== edId) continue;
       if (destination.purpose !== purpose) continue;
-      // ⚠️ WF-13: `accepted` is admitted on its own terms (an accepted addressing is still an
+      // ⚠️ `accepted` is admitted on its own terms (an accepted addressing is still an
       // expect until arrival). Anything else must be an addressing still awaiting an answer — a
       // withdrawn one, though still `state === "queued"`, is neither.
       if (addressing.state !== "accepted" && !isAwaitingAnswer(addressing)) continue;
@@ -501,7 +501,7 @@ export function edArrivedFor(
       if (destination.kind !== "emergency_department") continue;
       if (destination.edId !== edId) continue;
       if (destination.purpose !== purpose) continue;
-      // ⚠️ WF-13: same admission rule as `edExpectsFor` above, over the arrived half of the split.
+      // ⚠️ same admission rule as `edExpectsFor` above, over the arrived half of the split.
       if (addressing.state !== "accepted" && !isAwaitingAnswer(addressing)) continue;
       here.push({ referral, addressing, destination });
     }
@@ -521,7 +521,7 @@ export function edReferralsFor(
       if (destination.kind !== "emergency_department") continue;
       if (destination.edId !== edId) continue;
       if (destination.purpose !== purpose) continue;
-      // ⚠️ WF-13: this worklist admits `queued` only, and a withdrawn addressing — still
+      // ⚠️ this worklist admits `queued` only, and a withdrawn addressing — still
       // `state === "queued"` under O-17.11 — is not something this department still owes anybody.
       if (!isAwaitingAnswer(addressing)) continue;
       addressed.push({ referral, addressing, destination });
@@ -682,7 +682,7 @@ export function referralQueueOrder(referrals: Referral[]): Referral[] {
   return referrals
     .filter(
       (referral) =>
-        // ⚠️ WF-13: `referralState` alone is not enough. It reports "queued" for a referral whose
+        // ⚠️ `referralState` alone is not enough. It reports "queued" for a referral whose
         // only destinations have all been withdrawn (none accepted, none declined), because
         // withdrawal never touches `state` (O-17.11). Nothing is left for a coordinator to work,
         // so it must not stay on the queue — hence the added check that at least one destination
@@ -1155,7 +1155,7 @@ export const COMMUNITY_DECLINE_REASON_LABELS: Record<CommunityDeclineReason, str
  * here would invite a `"Not recorded"` fallback that reads as though a decision happened.
  */
 export function referralAddressingStateLabel(addressing: ReferralAddressing): string {
-  // ⚠️ WF-13: CHECKED BEFORE THE SWITCH, DELIBERATELY NOT A FIFTH CASE ON IT. `withdrawnAt` is a
+  // ⚠️ CHECKED BEFORE THE SWITCH, DELIBERATELY NOT A FIFTH CASE ON IT. `withdrawnAt` is a
   // FIELD, not a state (O-17.11) — `RECORD_REFERRER_WITHDRAWAL` leaves `state` at `"queued"` and
   // stamps this instead, so a switch keyed on `state` alone would keep reading a withdrawn
   // addressing as "Queued." forever. See `isAwaitingAnswer` above for the one home of this check.
@@ -1486,7 +1486,7 @@ export function outOfAreaLedger(
 }
 
 /**
- * Bed Hold Expiry Alert (WF-21):
+ * Bed Hold Expiry Alert:
  * Flags bed holds that have been active longer than Josh's named default (2 hours) without confirmed
  * dispatch.
  * Does NOT automatically cancel or release the bed (per clinical safety rules: do not release

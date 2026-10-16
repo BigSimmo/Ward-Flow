@@ -26,7 +26,7 @@ function TestActionTrigger() {
   );
 }
 
-describe("CoordinatorCockpit (WF-A1-15)", () => {
+describe("CoordinatorCockpit", () => {
   it("renders the coordinator cockpit container wrapping the coordinator screen", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

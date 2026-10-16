@@ -226,13 +226,8 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/out-of-area/out-of-area-third-edition.module.css: 62.5625",
     "src/components/ward-management/referrals/referrals.module.css: 62.5625",
     "src/components/ward-management/search/search.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-community-third-edition.module.css: 62.5625",
     "src/components/ward-management/statistics/statistics-ed-third-edition.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-landing-third-edition.module.css: 62.5625",
     "src/components/ward-management/statistics/statistics-sections.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-service-third-edition.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-third-edition.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-ward-third-edition.module.css: 62.5625",
     "src/components/ward-management/ward-management-network-third-edition.module.css: 62.5625",
     "src/components/ward-management/ward-management-network.module.css: 62.5625",
     "src/components/ward-management/ward/ward.module.css: 62.5625",
@@ -363,10 +358,6 @@ describe("the breakpoint scale", () => {
     // fourth-edition mockup's own `48rem`/`78rem`, which would have been two genuinely new steps.
     "src/components/ward-management/statistics/statistics-v4.module.css: 52",
     "src/components/ward-management/statistics/statistics-v4.module.css: 76",
-    // Task 3's accepted Statistics overview uses the drawing's two independent panel columns and
-    // becomes one column below 1000px. 62.5rem is that documented 1000px content boundary in the
-    // opt-in third-edition module; Compare remains a full-width stack at every width.
-    "src/components/ward-management/statistics/statistics-third-edition.module.css: 62.5",
     // Full-estate third-edition registrations. These pin the exact source boundaries; the served
     // 390/820/1440 matrices establish the surrounding layouts, but do not claim pixel-level proof
     // at every threshold between those sampled widths.

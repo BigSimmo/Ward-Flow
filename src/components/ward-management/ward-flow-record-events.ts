@@ -1507,23 +1507,23 @@ export function reduceRecordedFactEvent(
       if (movement.closure) {
         return reject(state, event, `cannot divert a closed movement (${movement.closure.reason})`);
       }
-      if (!movement.transport) {
+      if (!movement.transport && movement.stage !== "moving") {
         return reject(state, event, `movement ${movement.id} has no transport job to divert`);
       }
-      if (movement.transport.collectedAt === undefined) {
+      if (movement.transport?.collectedAt === undefined && movement.stage !== "moving") {
         return reject(
           state,
           event,
           `movement ${movement.id}'s transport has not been collected yet; diversion is only for a journey already under way`,
         );
       }
-      if (movement.transport.arrivedAt !== undefined) {
+      if (movement.transport?.arrivedAt !== undefined) {
         return reject(state, event, `movement ${movement.id}'s patient has already arrived`);
       }
-      if (movement.transport.stoppedAt !== undefined || movement.transport.cancelledAt !== undefined) {
+      if (movement.transport?.stoppedAt !== undefined || movement.transport?.cancelledAt !== undefined) {
         return reject(state, event, `movement ${movement.id}'s transport was already stopped or cancelled`);
       }
-      if (movement.transport.diversion) {
+      if (movement.transport?.diversion) {
         return reject(state, event, `movement ${movement.id} was already diverted`);
       }
       if (!DIVERSION_REASONS.includes(event.reason)) {
@@ -1533,10 +1533,20 @@ export function reduceRecordedFactEvent(
         return reject(state, event, `RECORD_DIVERSION place must be chosen from TRANSPORT_WHEREABOUTS`);
       }
 
+      const baseTransport = movement.transport ?? {
+        id: `${movement.id}-transport`,
+        provider: "Ambulance service" as const,
+        escortRequired: false,
+        cadNumber: "SYN-DIVERT",
+        transportLegalStatus: movement.legalStatus === "Voluntary" ? ("voluntary" as const) : ("involuntary" as const),
+        estimatedAt: event.now,
+        collectedAt: event.now,
+      };
       const diverted: Movement = {
         ...movement,
         transport: {
-          ...movement.transport,
+          ...baseTransport,
+          collectedAt: baseTransport.collectedAt ?? event.now,
           diversion: {
             at: event.now,
             by: event.role,
@@ -1942,7 +1952,8 @@ export function reduceRecordedFactEvent(
         return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
       }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
-      if (existing.some((record) => record.admissionId === admission.id)) {
+      const existingRecord = existing.find((record) => record.admissionId === admission.id);
+      if (existingRecord && (existingRecord.receivingWardAgreed || event.receivingWardAgreed !== true)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);
       }
       if (!siteByCode(event.homeHospital)) {
@@ -2039,7 +2050,9 @@ export function reduceRecordedFactEvent(
       }
       return {
         ...state,
-        repatriations: [...existing, recorded],
+        repatriations: existingRecord
+          ? existing.map((record) => (record.admissionId === admission.id ? recorded : record))
+          : [...existing, recorded],
         movements: nextMovements,
         referralSequence: nextSequence,
       };

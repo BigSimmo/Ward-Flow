@@ -44,9 +44,11 @@ describe("Ward browser-build CSS", () => {
   });
 
   it("compiles Statistics third edition modules with pure selectors", async () => {
-    const r1 = await compile("src/components/ward-management/statistics/statistics-third-edition.module.css");
+    const r1 = await compile("src/components/ward-management/statistics/statistics-ed-third-edition.module.css");
     expect(r1.css.length).toBeGreaterThan(0);
-    const r2 = await compile("src/components/ward-management/statistics/statistics-service-third-edition.module.css");
+    const r2 = await compile(
+      "src/components/ward-management/statistics/statistics-section-frame-third-edition.module.css",
+    );
     expect(r2.css.length).toBeGreaterThan(0);
   });
 

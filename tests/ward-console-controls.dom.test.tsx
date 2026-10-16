@@ -81,7 +81,7 @@ function WorkspaceTestControls({ movementId, legalStatus }: { movementId: Moveme
        * — so they are driven here exactly as `ADVANCE_CLOCK` and `CHANGE_LEGAL_STATUS` already are.
        * ⚠️ Owner ruling 2026-09-25: RELEASE_PULL now refuses outright while a transport job is
        * booked ("...has a transport job booked; cancel it (CANCEL_TRANSPORT) before releasing the
-       * pull") — until this ruling it cancelled a linked job automatically (WF-37 / Ruling 2), so
+       * pull") — until this ruling it cancelled a linked job automatically (Ruling 2), so
        * `test-cancel-transport` must be clicked first wherever a test needs RELEASE_PULL to succeed
        * on a movement with a booked job. Stepping back the stage behind the booking (STEP_BACK_STAGE)
        * still touches nothing else and leaves transport active without a bed held.
@@ -1098,7 +1098,7 @@ describe("the workspace timeline's withdrawn-referral line", () => {
 
 describe("a transport job that outlived the bed it was booked against", () => {
   /**
-   * 🔴 Under WF-37 (Ruling 2), `RELEASE_PULL` cancels linked transport automatically.
+   * 🔴 Under audit rule (Ruling 2), `RELEASE_PULL` cancels linked transport automatically.
    * Stepping back the stage behind the booking (`STEP_BACK_STAGE` to `accepted_awaiting_bed`)
    * touches nothing else and leaves the transport job active without a bed held.
    *

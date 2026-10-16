@@ -207,7 +207,7 @@ Confirm the remote is `BigSimmo/Ward-Flow` and the branch is based on its `main`
 2. MANDATORY CONTEXT TO READ FIRST:
    - Read the latest handover: `docs/ward-flow/handovers/WARD-FLOW-HANDOVER-2026-09-14.md`
    - Read the Master Issues Catalog: `docs/ward-flow/PROJECT-ISSUES.md` (authoritative register of 62 verified issues: 13 P0, 21 P1, 28 P2, and 13 active blocking questions)
-   - Read the reconciled task ledger: `docs/ward-flow-task-ledger.md` (mapped to Invariants I-01..I-14 and Families WF-01..WF-52)
+   - Read the reconciled task ledger: `docs/ward-flow-task-ledger.md` (mapped to Invariants I-01..I-14 and task families)
    - Read the project entry point: `docs/ward-flow/README.md`
 
 3. WHAT WAS JUST COMPLETED & VERIFIED:

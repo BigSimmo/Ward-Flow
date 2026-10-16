@@ -141,7 +141,7 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
     module: "src/components/ward-management/coordinator/coordinator-cockpit.tsx",
-    why: "added by #269 (WF-A1-15) but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
+    why: "added by #269 but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
   },
   {
     module: "src/components/ward-management/patients/person-by-umrn.tsx",
@@ -188,12 +188,12 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    * comment saying the same thing could never do.
    */
   {
-    module: "src/components/ward-management/ward-chrome-header.tsx",
-    why: "RETIRED 2026-09-11 — shell/ward-bar.tsx replaced it; layout.tsx mounts the bar instead",
+    module: "src/components/ward-management/ward-chrome-search.tsx",
+    why: "RETIRED 2026-09-11 — the bar owns the one search box",
   },
   {
-    module: "src/components/ward-management/ward-chrome-search.tsx",
-    why: "RETIRED 2026-09-11 — reached only from ward-chrome-header; the bar owns the one search box",
+    module: "src/components/ward-management/ward-tasks-panel.tsx",
+    why: "RETIRED 2026-09-11 — shell/ward-bar.tsx mounts WardTasksDrawer directly; ward-facade-agrees-with-screens.test.ts reads TASKS_NOUN from its opener",
   },
   /*
    * ✅ **`ward-standing-strip.tsx` CAME BACK AS FLOATING DYNAMIC ISLAND HUD — 2026-09-30.**

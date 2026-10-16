@@ -1,15 +1,15 @@
-# Fix plan — tests, verification, statistics and the fold gate (WF-34/35/47/52) — read-only Opus planner, 16 Sept 2026, base 65aa7c54a6
+# Fix plan — tests, verification, statistics and the fold gate — read-only Opus planner, 16 Sept 2026, base 65aa7c54a6
 
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/HOW-WE-WORK.md`.** Kept for history; do not follow. Its mutation-proof requirement is replaced by the 17 Sept test-scope rule.
 
 ## Key findings
 
-- WF-35: `screen-verification.mjs:141-147` marks a screen CURRENT purely because its drawing hash matches;
+- Screen verification: `screen-verification.mjs:141-147` marks a screen CURRENT purely because its drawing hash matches;
   source never compared. Pre-commit trigger (`.githooks/pre-commit:59`) ignores `mockups/MANIFEST.json`.
-- WF-47: the n=1 median is **already suppressed** (floor 5, tested) — ledger §7.3 row is stale. Real
+- Statistics median and community table: the n=1 median is **already suppressed** (floor 5, tested) — ledger §7.3 row is stale. Real
   latent defect: the community comparison table renders bare `lists.*.length` without the membership gate
   (statistics-community-screen.tsx:145-148, 376-378).
-- WF-34: `run-ward-tests.mjs` does not report skipped or wholly-skipped files; patient-link detector misses
+- Test runner & privacy detector: `run-ward-tests.mjs` does not report skipped or wholly-skipped files; patient-link detector misses
   destructuring. "retry vs reset" is not a defect (Next 16 uses `retry`).
 - Legal-figure guard: one `it` with 90s timeout, nested loops over codes × event types.
 - Two `expect(true)` tests (ward-screen-overview-and-entry.dom.test.tsx:110-112, 169-171); stale comment.
@@ -34,13 +34,13 @@ fold: measure local server stability (34 routes × 3) into an evidence doc S · 
 `patientId` reads (may go red — hand back names; privacy) S · T11 remove orphaned worktree registration
 (Q3; Verifier; backup, unlock, prune --dry-run then prune with CLAUDE_ALLOW_PROTECTED_DELETE=1) S · T12
 delete zz-clock-probe (Q2; Verifier; record reduction in diff-integrity.json) S · T13 controller corrects
-§7.3 rows WF-34/35/47/52 at fold S.
+affected §7.3 rows at fold S.
 
 ## Owner questions
 
 Q1 the 28 migrated inbox files: A move to a Ward Flow archive folder [rec] / B accept a failing check / C
 put back pending · Q2 delete zz-clock-probe [yes] · Q3 remove orphaned `ward-lead1` registration [yes] ·
-Q4 keep WF-47 metric definitions "Later"; build only T8 now [yes].
+Q4 keep statistics metric definitions "Later"; build only T8 now [yes].
 
 ## Fold gate (combined line → ward-lead). Each command `; echo "exit=$?"`, never piped into tail.
 

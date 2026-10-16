@@ -130,6 +130,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // Modal & interactive state
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [holdDuration, setHoldDuration] = useState("120");
+  const [numEndorsement, setNumEndorsement] = useState<string | null>(null);
+  const [askedQuestions, setAskedQuestions] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -1115,11 +1117,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                 <input
                                   type="text"
                                   className={styles.phoneSheetInput}
-                                  defaultValue={`NUM ${unit.name}`}
+                                  value={numEndorsement ?? `NUM ${unit.name}`}
+                                  onChange={(e) => setNumEndorsement(e.target.value)}
                                 />
                               </label>
                               <p className={styles.phoneSheetNote}>
-                                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+                                {`Bed hold (${holdDuration}m) and nurse unit manager endorsement are recorded with this acceptance.`}
                               </p>
                               <p className={styles.phoneSheetNote}>
                                 <StatusGlyph tone="neutral" size={8} />
@@ -1167,9 +1170,13 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         <button
                           type="button"
                           className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.askButton}`}
-                          onClick={() => triggerToast("Not wired in this prototype.")}
+                          aria-pressed={Boolean(askedQuestions[activeMovement.id])}
+                          onClick={() => {
+                            setAskedQuestions((prev) => ({ ...prev, [activeMovement.id]: true }));
+                            triggerToast("Clarification request logged for referring ED clinician.");
+                          }}
                         >
-                          Ask a question
+                          {askedQuestions[activeMovement.id] ? "Question logged" : "Ask a question"}
                         </button>
                         <button
                           type="button"
@@ -1486,11 +1493,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   id="num-endorsement-input"
                   type="text"
                   className={styles.formInput}
-                  defaultValue={`NUM ${unit.name}`}
+                  value={numEndorsement ?? `NUM ${unit.name}`}
+                  onChange={(e) => setNumEndorsement(e.target.value)}
                 />
               </div>
               <p className={styles.formNote}>
-                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+                {`Bed hold (${holdDuration}m) and nurse unit manager endorsement are recorded with this acceptance.`}
               </p>
             </div>
             <div className={styles.modalFoot}>

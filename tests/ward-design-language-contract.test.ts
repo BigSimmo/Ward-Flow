@@ -589,14 +589,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     "ward-standing-strip.module.css",
     "ward-tasks-panel.module.css",
     "ward-tasks-drawer.module.css",
-    /*
-     * ⚠️ **`.bar` — the single header row, added when the owner asked for the figures toggle to sit
-     * in the top of the header rather than in a bar of its own.** Same category as the four above
-     * and as `ward-shell`/`ward-sidebar`: its first rule is a chrome component that page content
-     * scrolls UNDER, so a transparent one renders text through text. Not a page root; the file
-     * contains no `.screen` or `.modeShell` equivalent.
-     */
-    "ward-chrome-header.module.css",
     // ⚠️ ADDED — Task 2, fourth-edition statistics language port (wise-singing-thunder). Same
     // shape again: this file's first declared rule is `.band` (the figure-band primitive), which
     // legitimately paints `--ward-canvas` the same way `.panel` does two rows above it. The file
@@ -608,10 +600,9 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // ADDED 2026-09-25 (test fixer): its first rule is `.navBar`, a bordered, rounded section bar
     // mounted inside the statistics screens' own root — a component, not a page root.
     "statistics-nav.module.css",
-    // ADDED 2026-10-03 (PR #33): first rules are `.disclosure` (a bordered, rounded disclosure card)
-    // and `.chart` (a bordered chart card). Both are components mounted inside a statistics screen's
-    // own root, which paints the ground beneath them; neither file has a `.screen` root.
-    "statistics/statistics-family.module.css",
+    // ADDED 2026-10-03 (PR #33): first rule is `.chart` (a bordered chart card), a component
+    // mounted inside a statistics screen's own root, which paints the ground beneath it; the file
+    // has no `.screen` root.
     "statistics/statistics-insight-chart.module.css",
     // ADDED 2026-10-04 (stranded-patient prompts): first rule is `.panel`, a bordered, rounded
     // disclosure the ward board mounts inside its own root, which paints the ground beneath it.
@@ -653,8 +644,7 @@ describe("the ground is not merely painted — it has to be visible", () => {
      *                                     scrolls BESIDE it, exactly `ward-sidebar.module.css`'s
      *                                     `.panel` above.
      *   `.bar`  (`ward-bar.module.css`)   the persistent top header row — page content scrolls
-     *                                     UNDER it, exactly `ward-chrome-header.module.css`'s own
-     *                                     `.bar` above (same class name, same role).
+     *                                     UNDER it, so a transparent one renders text through text.
      *
      * 🔴 **NEITHER FILE HAS A `.screen` OR `.modeShell` EQUIVALENT.** Both are single-purpose shell
      * stylesheets, not page-content stylesheets — there is no page root here for a background to

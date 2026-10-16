@@ -88,7 +88,7 @@ export function wardNavCounts(input: WardNavCountInput): WardNavCounts {
        * declined" — a referral still waiting on somebody. An accepted or fully-declined referral is
        * finished with and is not work.
        *
-       * ⚠️ WF-13: `referralState` alone is not enough — it stays "queued" for a referral whose only
+       * ⚠️ `referralState` alone is not enough — it stays "queued" for a referral whose only
        * destination has been withdrawn, because `RECORD_REFERRER_WITHDRAWAL` never touches `state`
        * (O-17.11). The added `some(isAwaitingAnswer)` excludes a referral with nothing left
        * genuinely awaiting an answer, the same rule `referralQueueOrder` (`ward-referrals.ts`) now

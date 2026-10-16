@@ -145,7 +145,7 @@ describe("recording that a patient has left", () => {
     expect(unit(next, person.unitId).allocatable.value).toBe(before + 1);
   });
 
-  it("RECORD_LEAVING completes the person's own release in one write, and a subsequent RELEASE_BED is refused as already discharged (WF-06)", () => {
+  it("RECORD_LEAVING completes the person's own release in one write, and a subsequent RELEASE_BED is refused as already discharged", () => {
     // Owner decision 2026-09-25: a bed release is a named patient's discharge, so pairing is by
     // `admissionId`, never by ward-wide counts — rewritten from the count-based double-increment
     // guard this test used to be, per the bed-release-link plan (section 7a T2, section 7b).

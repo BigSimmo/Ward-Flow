@@ -864,7 +864,7 @@ export type GenderGateResult = { gate: "gender"; pass: boolean; detail: string }
 
 export function genderEligibility(
   patient: Pick<Patient, "gender">,
-  unit: Unit,
+  unit: Pick<Unit, "id" | "name" | "sexDesignation">,
   /**
    * Deliberately inert — see rule 3 above. Accepted only so a caller who reaches for the same
    * `OVERRIDE_REASONS` vocabulary the nine `SUITABILITY_GATES` accept gets the same shape of
@@ -873,11 +873,17 @@ export function genderEligibility(
    * `OVERRIDE_REASONS`, not one of them.
    */
   _attemptedOverrideReason?: OverrideReason,
+  genderPlacements?: ReadonlyArray<GenderPlacement>,
 ): GenderGateResult {
   // Read and discarded — the whole point. See the parameter's own doc comment: nothing below this
   // line may ever consult it, and `void` here is what lets the parameter exist without an
   // unused-variable warning inviting somebody to "clean up" the inert third argument into use.
   void _attemptedOverrideReason;
+  const unitId = (unit as { readonly id?: string }).id;
+  const coveredByCoordinatorPlacement =
+    unitId !== undefined &&
+    Array.isArray(genderPlacements) &&
+    genderPlacements.some((record) => record.unitIds.includes(unitId));
   if (patient.gender === undefined) {
     // WLQ-35 (owner ruling, 2026-09-15, docs/ward-flow/owner-decisions-2026-09-15.md): "a person
     // with no recorded gender may be placed on a ward that takes either gender, and is refused on
@@ -892,6 +898,13 @@ export function genderEligibility(
         detail: `Gender is not yet recorded, but ${unit.name} is undesignated and takes either gender`,
       };
     }
+    if (coveredByCoordinatorPlacement) {
+      return {
+        gate: "gender",
+        pass: true,
+        detail: `Coordinator gender placement recorded for ${unit.name}`,
+      };
+    }
     return {
       gate: "gender",
       pass: false,
@@ -901,17 +914,25 @@ export function genderEligibility(
   if (patient.gender !== "Female" && patient.gender !== "Male") {
     // R7 (25 September 2026): Non-binary or Different term. Same shape as "not yet recorded"
     // above: an undesignated ward takes either gender; a single-sex ward needs a coordinator.
-    return unit.sexDesignation === "Undesignated"
-      ? {
-          gate: "gender",
-          pass: true,
-          detail: `Gender is not female or male, but ${unit.name} is undesignated and takes either gender`,
-        }
-      : {
-          gate: "gender",
-          pass: false,
-          detail: `Gender is not female or male - this gate cannot determine whether ${unit.name} accepts this patient`,
-        };
+    if (unit.sexDesignation === "Undesignated") {
+      return {
+        gate: "gender",
+        pass: true,
+        detail: `Gender is not female or male, but ${unit.name} is undesignated and takes either gender`,
+      };
+    }
+    if (coveredByCoordinatorPlacement) {
+      return {
+        gate: "gender",
+        pass: true,
+        detail: `Coordinator gender placement recorded for ${unit.name}`,
+      };
+    }
+    return {
+      gate: "gender",
+      pass: false,
+      detail: `Gender is not female or male - this gate cannot determine whether ${unit.name} accepts this patient`,
+    };
   }
   const accepts = sexDesignationAccepts(unit.sexDesignation, patient.gender);
   return {
@@ -922,5 +943,50 @@ export function genderEligibility(
         ? `${unit.name} is undesignated and accepts either gender`
         : `${unit.name} is ${unit.sexDesignation.toLowerCase()} and accepts this patient's gender`
       : `${unit.name} is ${unit.sexDesignation.toLowerCase()} and does not accept this patient's gender`,
+  };
+}
+
+export type GenderPlacementValidation = {
+  readonly eligible: boolean;
+  readonly conflictWarning: string | undefined;
+  readonly requiresCoordinatorReview: boolean;
+  readonly detail: string;
+};
+
+/**
+ * Validates gender placement for a patient against a target unit's sex designation,
+ * explicitly handling Non-binary and Different-term patients on single-sex vs undesignated wards
+ * and surfacing single-sex ward conflict warnings when coordinator review has not yet occurred.
+ */
+export function validateGenderPlacement(
+  request: {
+    readonly gender?: Patient["gender"];
+    readonly sex?: Sex;
+    readonly genderPlacements?: ReadonlyArray<GenderPlacement>;
+  },
+  unit: Pick<Unit, "id" | "name" | "sexDesignation">,
+): GenderPlacementValidation {
+  const result = genderEligibility({ gender: request.gender }, unit, undefined, request.genderPlacements);
+  if (result.pass) {
+    return {
+      eligible: true,
+      conflictWarning: undefined,
+      requiresCoordinatorReview: false,
+      detail: result.detail,
+    };
+  }
+  const isNonBinaryOrUnrecorded =
+    request.gender === "Non-binary" || request.gender === "Different term" || request.gender === undefined;
+  const isSingleSexWard = unit.sexDesignation !== "Undesignated";
+  const requiresCoordinatorReview = isNonBinaryOrUnrecorded && isSingleSexWard;
+  return {
+    eligible: false,
+    conflictWarning: isSingleSexWard
+      ? requiresCoordinatorReview
+        ? `${unit.name} is a single-sex (${unit.sexDesignation.toLowerCase()}) ward; placing a ${request.gender?.toLowerCase() ?? "patient without recorded gender"} patient requires a recorded coordinator gender placement.`
+        : `${unit.name} is a single-sex (${unit.sexDesignation.toLowerCase()}) ward and conflicts with recorded gender (${request.gender}).`
+      : result.detail,
+    requiresCoordinatorReview,
+    detail: result.detail,
   };
 }

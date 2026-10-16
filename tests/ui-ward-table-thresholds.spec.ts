@@ -97,14 +97,6 @@ import { expect, test } from "playwright/test";
  * chosen to clear it. This is the "moved in a commit that says which screen and why" case the file
  * header above describes, not drift.
  *
- * ⚠️ UPDATED AGAIN, 2026-09-17: 640px and 440px had both gone inert a second time — re-measured at
- * 679px/744px (wards) and 498px/555px (eds) min/max-content, both risen past their pins since the
- * last re-tuning. Raised to 760px (47.5rem) and 576px (36rem) respectively, in
- * `statistics-third-edition.module.css` — the copy `statistics-compare-screen.tsx` actually
- * imports; `statistics-sections.module.css` carries the same class names but is dead for this
- * screen, so editing it would have changed nothing rendered. See that file's own comment for the
- * full re-measurement.
- *
  * ⚠️ UPDATED AGAIN, 2026-10-07, for the v6 rebuild: both tables moved behind each card's Data view
  * and onto the v6 table. Re-measured at 1440px: wards 581px and departments 511px max-content, so
  * the pins are 592px (37rem) and 520px (32.5rem) in `statistics-compare.module.css`. The sweep opens

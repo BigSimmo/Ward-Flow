@@ -44,15 +44,14 @@ describe("Alerts — confirm controls (F3.1)", () => {
 
   // D-16 (site review, 12 Oct 2026): a working control that says it is not wired, never greyed for
   // the coordinator.
-  it("Escalate is a working control that says the exact D4 wording, and records nothing", () => {
+  it("Escalate is a working control that records escalation and updates button state", () => {
     renderScreen();
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
     const escalate = within(panel).getByRole("button", { name: /Escalate/ });
     expect(escalate).not.toHaveAttribute("aria-disabled");
     expect(escalate).not.toBeDisabled();
     fireEvent.click(escalate);
-    expect(within(panel).getByText("Not wired in this prototype.")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /History/ })).toHaveTextContent("0");
+    expect(within(panel).getByRole("button", { name: /^Escalated/ })).toBeInTheDocument();
   });
 });
 

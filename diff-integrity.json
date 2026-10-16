@@ -465,6 +465,27 @@
       "after": 3,
       "reason": "The removed case asserted that the FD-23 screen-boundary guard lists community/community-team-hub.tsx. That screen was deleted on 15 Oct 2026 as unreachable dead code (Josh approved dead-code deletion that day). The live team page, community/community-screen.tsx, reads the full referral record, so it cannot replace the entry until that is fixed; the gap was routed to the Engine safety workstream rather than hidden by a weaker assertion.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ui-ward-chrome-header.spec.ts",
+      "before": 12,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 16 Oct 2026 together with the unreferenced ward-chrome-header.tsx and ward-chrome-header.module.css components. The live WardCommandBar replaced WardChromeHeader across all screens and is covered by its own active test suites.",
+      "approvedOn": "2026-10-16"
+    },
+    {
+      "path": "tests/ward-chrome-header-actions.dom.test.tsx",
+      "before": 9,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 16 Oct 2026 together with the unreferenced ward-chrome-header.tsx and ward-chrome-header.module.css components. The live WardCommandBar replaced WardChromeHeader across all screens and is covered by its own active test suites.",
+      "approvedOn": "2026-10-16"
+    },
+    {
+      "path": "tests/ward-statistics-compare-two-tables.dom.test.tsx",
+      "before": 22,
+      "after": 21,
+      "reason": "The removed case read statistics-third-edition.module.css's dead .compareWardTable/.compareEdTable right-alignment rule, which was deleted on 16 Oct 2026 as an orphaned CSS module after StatisticsCompareScreen moved to statistics-v6.module.css and statistics-compare.module.css. The sibling column-count-to-threshold case in the same file was repointed to statistics-compare.module.css (.wardTable 40rem, .edTable 35rem).",
+      "approvedOn": "2026-10-16"
     }
   ]
 }

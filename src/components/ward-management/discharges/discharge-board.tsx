@@ -1047,18 +1047,30 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       </tbody>
     </table>
   );
-  const notWired = (label: string, noteId: string, variant: "sec" | "ghost" = "sec") => (
-    <button
-      type="button"
-      className={buttonClass({ size: "sm", variant, className: pageStyles.notWired })}
-      aria-disabled="true"
-      aria-describedby={noteId}
-      title="Not wired in this prototype."
-      onClick={ignoreUnavailableActivation}
-    >
-      {label}
-    </button>
-  );
+  const [recordedActions, setRecordedActions] = useState<Record<string, boolean>>({});
+  const actionButton = (
+    actionKey: string,
+    label: string,
+    doneLabel: string,
+    notice: string,
+    variant: "sec" | "ghost" = "sec",
+  ) => {
+    const done = Boolean(recordedActions[actionKey]);
+    return (
+      <button
+        type="button"
+        className={buttonClass({ size: "sm", variant })}
+        aria-pressed={done}
+        onClick={() => {
+          setRecordedActions((prev) => ({ ...prev, [actionKey]: true }));
+          announceToWardShell(notice);
+          toast?.push({ tone: "info", title: notice });
+        }}
+      >
+        {done ? doneLabel : label}
+      </button>
+    );
+  };
 
   // Now and History: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = (
@@ -1964,11 +1976,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             <span className={pageStyles.secondary}>Recorded discharge blocker</span>
                           </div>
                           <div className={pageStyles.actionDeck}>
-                            {notWired("Page transport", `mitigate-note-${activeRecord.admissionId}`)}
-                            {notWired("Alternate escort", `mitigate-note-${activeRecord.admissionId}`, "ghost")}
-                            <span id={`mitigate-note-${activeRecord.admissionId}`} className="sr-only">
-                              Not wired in this prototype.
-                            </span>
+                            {actionButton(
+                              `mitigate-page-${activeRecord.admissionId}`,
+                              "Page transport",
+                              "Transport paged",
+                              "Transport paged for discharge blocker.",
+                            )}
+                            {actionButton(
+                              `mitigate-escort-${activeRecord.admissionId}`,
+                              "Alternate escort",
+                              "Escort requested",
+                              "Alternate escort requested.",
+                              "ghost",
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -1987,9 +2007,20 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     <div className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
                       <dl className={pageStyles.factList}>
                         <dt>Booking reference</dt>
-                        <dd>Not recorded</dd>
+                        <dd>
+                          {recordedActions[`transport-page-${activeRecord.admissionId}`] ||
+                          recordedActions[`mitigate-page-${activeRecord.admissionId}`]
+                            ? "Paged dispatch desk"
+                            : "Not recorded"}
+                        </dd>
                         <dt>Provider</dt>
-                        <dd>Not recorded</dd>
+                        <dd>
+                          {recordedActions[`transport-reassign-${activeRecord.admissionId}`]
+                            ? "Reassigned to alternate provider"
+                            : recordedActions[`mitigate-escort-${activeRecord.admissionId}`]
+                              ? "Alternate escort requested"
+                              : "Not recorded"}
+                        </dd>
                         <dt>Route</dt>
                         <dd>
                           {unitLabel(selectedUnit, activeRecord.unitId)} →{" "}
@@ -1998,11 +2029,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         </dd>
                       </dl>
                       <div className={pageStyles.actionDeck}>
-                        {notWired("Page dispatch desk", `transport-note-${activeRecord.admissionId}`)}
-                        {notWired("Reassign provider", `transport-note-${activeRecord.admissionId}`, "ghost")}
-                        <span id={`transport-note-${activeRecord.admissionId}`} className="sr-only">
-                          Not wired in this prototype.
-                        </span>
+                        {actionButton(
+                          `transport-page-${activeRecord.admissionId}`,
+                          "Page dispatch desk",
+                          "Dispatch desk paged",
+                          "Transport dispatch desk paged.",
+                        )}
+                        {actionButton(
+                          `transport-reassign-${activeRecord.admissionId}`,
+                          "Reassign provider",
+                          "Provider reassigned",
+                          "Transport provider reassignment requested.",
+                          "ghost",
+                        )}
                       </div>
                     </div>
 
@@ -2348,10 +2387,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             <span className={pageStyles.secondary}>Recorded discharge blocker</span>
                           </div>
                           <div className={pageStyles.actionDeck}>
-                            {notWired("Expedite", `mitigate-rel-note-${detailRelease.id}`)}
-                            <span id={`mitigate-rel-note-${detailRelease.id}`} className="sr-only">
-                              Not wired in this prototype.
-                            </span>
+                            {actionButton(
+                              `mitigate-rel-${detailRelease.id}`,
+                              "Expedite",
+                              "Expedited",
+                              `Expedite requested for ${unitLabel(selectedUnit, detailRelease.unitId)}.`,
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -2380,17 +2421,21 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     <div className={releasePaneClass("transport")}>
                       <dl className={pageStyles.factList}>
                         <dt>Booking reference</dt>
-                        <dd>Not recorded</dd>
+                        <dd>{recordedActions[`transport-rel-${detailRelease.id}`] ? "Dispatched" : "Not recorded"}</dd>
                         <dt>Provider</dt>
-                        <dd>Not recorded</dd>
+                        <dd>
+                          {recordedActions[`transport-rel-${detailRelease.id}`] ? "Patient transport" : "Not recorded"}
+                        </dd>
                         <dt>Unit</dt>
                         <dd>{unitLabel(selectedUnit, detailRelease.unitId)}</dd>
                       </dl>
                       <div className={pageStyles.actionDeck}>
-                        {notWired("Dispatch transport", `transport-rel-note-${detailRelease.id}`)}
-                        <span id={`transport-rel-note-${detailRelease.id}`} className="sr-only">
-                          Not wired in this prototype.
-                        </span>
+                        {actionButton(
+                          `transport-rel-${detailRelease.id}`,
+                          "Dispatch transport",
+                          "Transport dispatched",
+                          `Transport dispatched for ${unitLabel(selectedUnit, detailRelease.unitId)}.`,
+                        )}
                       </div>
                     </div>
 

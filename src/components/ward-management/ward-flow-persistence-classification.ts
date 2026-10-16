@@ -412,7 +412,10 @@ type WardFlowReviewedStringOrUnknownKey =
   // `calendarDateOf(now, dayZero)` for the linked age-group check. Not about a person; never typed.
   | "calendarDate"
   // v10 pass 2: `UNDO_AUDIT_REVIEW` names an `AuditReview.id`; the reducer finds the review or refuses.
-  | "reviewId";
+  | "reviewId"
+  // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
+  // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
+  | "reassessmentNote";
 
 /** True exactly when `T` is (or includes) the wide `string` type — never for a literal or a union of
  *  literals, which is what lets a closed code-shaped union field pass untouched while a genuine
@@ -545,7 +548,10 @@ export type _AssertNoUnreviewedRaiseReferralDraftFields = AssertNever<Unreviewed
  * whether or not the reducer accepts it.
  */
 export function eventCarriesTypedTextPayload(event: WardFlowEvent): boolean {
-  return "overrideSignOff" in event && event.overrideSignOff !== undefined;
+  return (
+    ("overrideSignOff" in event && event.overrideSignOff !== undefined) ||
+    ("reassessmentNote" in event && event.reassessmentNote !== undefined)
+  );
 }
 
 export function findWardFlowEventTypeCoverageGaps(types: readonly string[]): string[] {

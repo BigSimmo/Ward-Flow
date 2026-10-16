@@ -120,61 +120,61 @@ Provider/reducer state is shared across client navigation under the Ward Flow la
 
 ### Historical crosswalk
 
-Reference: `reviews/2026-09-13-local-audit-1734/WardFlow_Local_Final_Audit.md`, including its WF-49–51 additions. “Fixed” below is source-level unless this audit's test/browser evidence is expressly named. Historical test totals are never reused as current green results.
+Reference: `reviews/2026-09-13-local-audit-1734/WardFlow_Local_Final_Audit.md`, including its ISSUE-49–51 additions. “Fixed” below is source-level unless this audit's test/browser evidence is expressly named. Historical test totals are never reused as current green results.
 
 | Earlier ID | Current classification                         | Current evidence / disposition                                                                                                                         |
 | ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| WF-01      | partly fixed                                   | Ordinary helper removes the admission; corrected-stage dangling pointer remains WFA-004.                                                               |
-| WF-02      | partly fixed                                   | Re-pull preserves admission; collected step-back/release still reproduced WFA-004.                                                                     |
-| WF-03      | superseded by a later ruling / fixed in source | Remaining high-acuity guard exists with reason + NUM exception; do not impose unconditional ban or shortlist staffing guard.                           |
-| WF-04      | partly fixed                                   | No automatic rebooking or stage jump; held-bed truthfulness WFA-001 remains.                                                                           |
-| WF-05      | not currently verifiable                       | No complete postcollection diversion contract/runtime proof. Owner recovery decision.                                                                  |
-| WF-06      | partly fixed                                   | Aggregate two-track reconciliation exists; no common turnover identity WFA-010.                                                                        |
-| WF-07      | partly fixed                                   | Capacity finite integer/bounds and stage enum checks exist; other event payloads lack exhaustive runtime validation.                                   |
-| WF-08      | still present, source-inspected                | Unsynchronised capacityValue and no expected revision, WFA-008; old browser evidence not reused.                                                       |
-| WF-09      | partly fixed                                   | Runtime admission copies provenance; WFA-007 reproduced a display fallback, later removed externally in source and not re-tested.                      |
-| WF-10      | partly fixed                                   | Recipient notices/read scope exist; all removed-row delivery paths not browser-verified.                                                               |
-| WF-11      | fixed in source                                | Additive unit requests and explicit withdrawal; duplicates inside one raw payload still unverified.                                                    |
-| WF-12      | fixed in source for the cited restriction      | Community acceptance permitted; aggregate state treats independent pending non-community arms separately. Both decision orders not manually exercised. |
-| WF-13      | fixed in source                                | Accept/decline reject withdrawn addressing.                                                                                                            |
-| WF-14      | partly fixed                                   | ED discharge/community/no-admission closure and re-referral exist; all terminal responsibility paths unverified.                                       |
-| WF-15      | still present                                  | ED-origin movement and transfer-out label are not a joined inter-ward pathway.                                                                         |
-| WF-16      | fixed in source                                | Explicit no-transport handover and ward arrival supported.                                                                                             |
-| WF-17      | not currently verifiable                       | Repeat-examination and correction versus reassessment policy needs explicit owner evidence.                                                            |
-| WF-18      | partly fixed                                   | Protected discharge persists; accepted/actually completed community follow-up not established.                                                         |
-| WF-19      | still present                                  | Away flag identifies no receiving ED encounter/responsible service.                                                                                    |
-| WF-20      | still present                                  | Ward-level leave lacks patient/admission episode linkage.                                                                                              |
-| WF-21      | not currently verifiable                       | Expiry is a signal, not authority to release. Snapshot/renewal contract not accepted by this audit.                                                    |
-| WF-22      | not currently verifiable                       | No current closed-selection browser sequence completed.                                                                                                |
-| WF-23      | not currently verifiable                       | No current decline-A/accept-B handover projection probe completed.                                                                                     |
-| WF-24      | partly fixed                                   | Explicit day selection exists for ward release controls; all date/time inputs and later-day paths not executed.                                        |
-| WF-25      | partly fixed                                   | Calendar-day bands explicit; mutable confirmedAt still used for discharged recency. Occurrence/update distinction needs review.                        |
-| WF-26      | not currently verifiable                       | Scarce scenario's full physical reconciliation not executed; WFA-010 records the decision boundary.                                                    |
-| WF-27      | not currently verifiable                       | No real-provider Capacity crash established. Do not turn stale mock failure into runtime defect.                                                       |
-| WF-28      | superseded / not currently verifiable          | No morning route in current 41-route subtree; retention of frozen-morning requirement needs owner scope evidence.                                      |
-| WF-29      | still present                                  | Prototype roles/session state do not establish authenticated service-scoped authority. External readiness gate.                                        |
-| WF-30      | not currently verifiable                       | No discrimination outcome asserted. Cultural/privacy display review remains external and owner-deferred.                                               |
-| WF-31      | still present                                  | External legal validation absent; invented runtime legal dates now WFA-005.                                                                            |
-| WF-32      | still present                                  | Operational ordering not clinically validated; flagged Tier 3 visibly precedes unflagged Tier 1 under current rule.                                    |
-| WF-33      | still present                                  | Separate session worlds, non-durable text-bearing sessions; WFA-009.                                                                                   |
-| WF-34      | still present                                  | Mis-specified cancelled-transport test and new counterexamples; WFA-001 and section 6.                                                                 |
-| WF-35      | still present                                  | Historical STATUS/ledger verdicts disagree and refer to changing builds; no Next retry defect inferred.                                                |
-| WF-36      | not currently verifiable at runtime            | Preparation gate is conditional; zero-empty positive-allocatable boundary WFA-010 remains source concern.                                              |
-| WF-37      | partly fixed                                   | RELEASE_PULL now cancels/removes booking; corrected collected case still bypasses stop WFA-004.                                                        |
-| WF-38      | fixed in source / projections unverified       | Pull override appended to movement and audit; no blanket missing-reason allegation retained.                                                           |
-| WF-39      | still present                                  | Five new zero/repeat cases fail, WFA-002.                                                                                                              |
-| WF-40      | still present                                  | Preparation has release identity, not canonical physical-bed/turnover linkage.                                                                         |
-| WF-41      | partly fixed                                   | Intake constraints have an engine event; whether each should block allocation is an owner decision.                                                    |
-| WF-42      | not currently verifiable                       | Physical arrival is not separately proven receiving clinical responsibility.                                                                           |
-| WF-43      | partly fixed                                   | Held-gender recheck exists; full legal/escort/readiness dependency contract not established.                                                           |
-| WF-44      | still present                                  | No independent directory/catchment recertification.                                                                                                    |
-| WF-45      | still present                                  | Multi-leg retrieval/repatriation not established by single-job model.                                                                                  |
-| WF-46      | still present                                  | Safety ownership, regulatory assessment and controlled pilot acceptance external.                                                                      |
-| WF-47      | still present                                  | Identity/time/resource defects invalidate confidence in plausible aggregate metrics.                                                                   |
-| WF-48      | partly fixed                                   | This report preserves one evidence map; governance generators do not certify live journeys.                                                            |
-| WF-49      | still present in source vocabulary             | Six engine roles versus three chrome role categories; current community screen not manually verified.                                                  |
-| WF-50      | not currently verifiable                       | Current Capacity zero-gap wording not inspected in a loaded browser; no old guarantee accepted.                                                        |
-| WF-51      | not currently verifiable as same cause         | Connection refusal occurred; no missing-SST cause established. No cache deletion performed.                                                            |
+| ISSUE-01   | partly fixed                                   | Ordinary helper removes the admission; corrected-stage dangling pointer remains WFA-004.                                                               |
+| ISSUE-02   | partly fixed                                   | Re-pull preserves admission; collected step-back/release still reproduced WFA-004.                                                                     |
+| ISSUE-03   | superseded by a later ruling / fixed in source | Remaining high-acuity guard exists with reason + NUM exception; do not impose unconditional ban or shortlist staffing guard.                           |
+| ISSUE-04   | partly fixed                                   | No automatic rebooking or stage jump; held-bed truthfulness WFA-001 remains.                                                                           |
+| ISSUE-05   | not currently verifiable                       | No complete postcollection diversion contract/runtime proof. Owner recovery decision.                                                                  |
+| ISSUE-06   | partly fixed                                   | Aggregate two-track reconciliation exists; no common turnover identity WFA-010.                                                                        |
+| ISSUE-07   | partly fixed                                   | Capacity finite integer/bounds and stage enum checks exist; other event payloads lack exhaustive runtime validation.                                   |
+| ISSUE-08   | still present, source-inspected                | Unsynchronised capacityValue and no expected revision, WFA-008; old browser evidence not reused.                                                       |
+| ISSUE-09   | partly fixed                                   | Runtime admission copies provenance; WFA-007 reproduced a display fallback, later removed externally in source and not re-tested.                      |
+| ISSUE-10   | partly fixed                                   | Recipient notices/read scope exist; all removed-row delivery paths not browser-verified.                                                               |
+| ISSUE-11   | fixed in source                                | Additive unit requests and explicit withdrawal; duplicates inside one raw payload still unverified.                                                    |
+| ISSUE-12   | fixed in source for the cited restriction      | Community acceptance permitted; aggregate state treats independent pending non-community arms separately. Both decision orders not manually exercised. |
+| ISSUE-13   | fixed in source                                | Accept/decline reject withdrawn addressing.                                                                                                            |
+| ISSUE-14   | partly fixed                                   | ED discharge/community/no-admission closure and re-referral exist; all terminal responsibility paths unverified.                                       |
+| ISSUE-15   | still present                                  | ED-origin movement and transfer-out label are not a joined inter-ward pathway.                                                                         |
+| ISSUE-16   | fixed in source                                | Explicit no-transport handover and ward arrival supported.                                                                                             |
+| ISSUE-17   | not currently verifiable                       | Repeat-examination and correction versus reassessment policy needs explicit owner evidence.                                                            |
+| ISSUE-18   | partly fixed                                   | Protected discharge persists; accepted/actually completed community follow-up not established.                                                         |
+| ISSUE-19   | still present                                  | Away flag identifies no receiving ED encounter/responsible service.                                                                                    |
+| ISSUE-20   | still present                                  | Ward-level leave lacks patient/admission episode linkage.                                                                                              |
+| ISSUE-21   | not currently verifiable                       | Expiry is a signal, not authority to release. Snapshot/renewal contract not accepted by this audit.                                                    |
+| ISSUE-22   | not currently verifiable                       | No current closed-selection browser sequence completed.                                                                                                |
+| ISSUE-23   | not currently verifiable                       | No current decline-A/accept-B handover projection probe completed.                                                                                     |
+| ISSUE-24   | partly fixed                                   | Explicit day selection exists for ward release controls; all date/time inputs and later-day paths not executed.                                        |
+| ISSUE-25   | partly fixed                                   | Calendar-day bands explicit; mutable confirmedAt still used for discharged recency. Occurrence/update distinction needs review.                        |
+| ISSUE-26   | not currently verifiable                       | Scarce scenario's full physical reconciliation not executed; WFA-010 records the decision boundary.                                                    |
+| ISSUE-27   | not currently verifiable                       | No real-provider Capacity crash established. Do not turn stale mock failure into runtime defect.                                                       |
+| ISSUE-28   | superseded / not currently verifiable          | No morning route in current 41-route subtree; retention of frozen-morning requirement needs owner scope evidence.                                      |
+| ISSUE-29   | still present                                  | Prototype roles/session state do not establish authenticated service-scoped authority. External readiness gate.                                        |
+| ISSUE-30   | not currently verifiable                       | No discrimination outcome asserted. Cultural/privacy display review remains external and owner-deferred.                                               |
+| ISSUE-31   | still present                                  | External legal validation absent; invented runtime legal dates now WFA-005.                                                                            |
+| ISSUE-32   | still present                                  | Operational ordering not clinically validated; flagged Tier 3 visibly precedes unflagged Tier 1 under current rule.                                    |
+| ISSUE-33   | still present                                  | Separate session worlds, non-durable text-bearing sessions; WFA-009.                                                                                   |
+| ISSUE-34   | still present                                  | Mis-specified cancelled-transport test and new counterexamples; WFA-001 and section 6.                                                                 |
+| ISSUE-35   | still present                                  | Historical STATUS/ledger verdicts disagree and refer to changing builds; no Next retry defect inferred.                                                |
+| ISSUE-36   | not currently verifiable at runtime            | Preparation gate is conditional; zero-empty positive-allocatable boundary WFA-010 remains source concern.                                              |
+| ISSUE-37   | partly fixed                                   | RELEASE_PULL now cancels/removes booking; corrected collected case still bypasses stop WFA-004.                                                        |
+| ISSUE-38   | fixed in source / projections unverified       | Pull override appended to movement and audit; no blanket missing-reason allegation retained.                                                           |
+| ISSUE-39   | still present                                  | Five new zero/repeat cases fail, WFA-002.                                                                                                              |
+| ISSUE-40   | still present                                  | Preparation has release identity, not canonical physical-bed/turnover linkage.                                                                         |
+| ISSUE-41   | partly fixed                                   | Intake constraints have an engine event; whether each should block allocation is an owner decision.                                                    |
+| ISSUE-42   | not currently verifiable                       | Physical arrival is not separately proven receiving clinical responsibility.                                                                           |
+| ISSUE-43   | partly fixed                                   | Held-gender recheck exists; full legal/escort/readiness dependency contract not established.                                                           |
+| ISSUE-44   | still present                                  | No independent directory/catchment recertification.                                                                                                    |
+| ISSUE-45   | still present                                  | Multi-leg retrieval/repatriation not established by single-job model.                                                                                  |
+| ISSUE-46   | still present                                  | Safety ownership, regulatory assessment and controlled pilot acceptance external.                                                                      |
+| ISSUE-47   | still present                                  | Identity/time/resource defects invalidate confidence in plausible aggregate metrics.                                                                   |
+| ISSUE-48   | partly fixed                                   | This report preserves one evidence map; governance generators do not certify live journeys.                                                            |
+| ISSUE-49   | still present in source vocabulary             | Six engine roles versus three chrome role categories; current community screen not manually verified.                                                  |
+| ISSUE-50   | not currently verifiable                       | Current Capacity zero-gap wording not inspected in a loaded browser; no old guarantee accepted.                                                        |
+| ISSUE-51   | not currently verifiable as same cause         | Connection refusal occurred; no missing-SST cause established. No cache deletion performed.                                                            |
 
 The 16 September handover's absent community referral/receipt-undo/already-fixed reducer claims are partly superseded by current events and guards. The 18 September remeasurement correctly warns that preserving resources on step-back is intentional; it does not refute WFA-004's subsequent collected-release bypass. `JOURNEY-AUDIT-REPORT.md` describes static mockup journeys, not this React engine; its “100/100” result and old statutory-duration content are **inaccurate or stale as current runtime assurance**. The task ledger's 603-file/7,080-test green claim and STATUS's 31-file/40-failure claim are **not currently verifiable** against this dirty build and were not used as baselines.
 
@@ -184,7 +184,7 @@ Severity refers to the potential effect if relied upon operationally; all observ
 
 ### WFA-001 — Cancellation describes a retained bed as absent
 
-- **Severity / priority / status:** High, P1, recommended. Historical WF-02/WF-04.
+- **Severity / priority / status:** High, P1, recommended. Historical ISSUE-02/ISSUE-04.
 - **Journey / screens / roles:** J2–J3; ED, transport, coordinator/ward notices; ED/coordinator/booking owner.
 - **Observed / reproduction:** pull → book → step back to accepted_awaiting_bed → cancel. Admission/hold remains but blocker says awaiting a bed and cancellation notice says no bed held.
 - **Expected / authority:** step-back owner ruling preserves resources; 17 September cancellation ruling requires truthful cancellation without automatic rebooking.
@@ -194,7 +194,7 @@ Severity refers to the potential effect if relied upon operationally; all observ
 
 ### WFA-002 — Zero-valued transport milestones block or repeat progression
 
-- **Severity / priority / status:** High, P1, recommended. Historical WF-39.
+- **Severity / priority / status:** High, P1, recommended. Historical ISSUE-39.
 - **Journey / screens / roles:** J3; officer job and receiving ward; officer/ward.
 - **Observed / reproduction:** acceptedAt=0 fails en-route precondition; enRouteAt=0 fails collection; collectedAt=0 fails arrival. Repeat acceptance/en-route at zero is treated as absent and can overwrite the milestone.
 - **Expected / authority:** Instant is minutes from day-zero, so zero and negative values are valid; undefined represents missing. Existing UI/transport derivations already use explicit presence checks.
@@ -214,7 +214,7 @@ Severity refers to the potential effect if relied upon operationally; all observ
 
 ### WFA-004 — Stage correction permits unsafe release and dangling admission links
 
-- **Severity / priority / status:** High, P1, recommended. Historical WF-01/WF-02/WF-37.
+- **Severity / priority / status:** High, P1, recommended. Historical ISSUE-01/ISSUE-02/ISSUE-37.
 - **Journey / screens / roles:** J2–J4; stage correction, release, examination; coordinator/ward/ED.
 - **Observed / reproduction:** collect → step back to pulled → RELEASE_PULL removes admission/job and refunds bed despite recorded collection. Collected → step back → revoked examination can likewise release the commitment. Separately, precollection pull → step back to destination_review → revoked examination deletes the admission while leaving movement.admissionId pointing to it.
 - **Expected / authority:** correction preserves physical facts; 17 September stop-transport ruling requires whereabouts and distinct held-bed release after collection. Identity references must remain valid.
@@ -255,7 +255,7 @@ Severity refers to the potential effect if relied upon operationally; all observ
 
 ### WFA-008 — Capacity confirmation can overwrite newer allocation
 
-- **Severity / priority / status:** High, P1, recommended. Historical WF-08.
+- **Severity / priority / status:** High, P1, recommended. Historical ISSUE-08.
 - **Journey / screens / roles:** J2/J5; Ward and downstream capacity consumers; ward.
 - **Observed / reproduction:** source path retains capacityValue initialised once at `ward-screen.tsx:297`; only input onChange updates it. An intervening pull changes allocatable, then Confirm sends the older draft. CONFIRM_CAPACITY validates scope/integer/bounds but accepts no expected revision.
 - **Expected / authority:** allocation conservation and fresh confirmation; stale data must not silently recredit a held bed.
@@ -275,7 +275,7 @@ Severity refers to the potential effect if relied upon operationally; all observ
 
 ### WFA-010 — Resource model lacks physical turnover and leave identity
 
-- **Severity / priority / status:** High before operational use, P1 decision; needs owner. Historical WF-06/19/20/36/40.
+- **Severity / priority / status:** High before operational use, P1 decision; needs owner. Historical ISSUE-06/19/20/36/40.
 - **Journey / screens / roles:** J2/J4; Ward/Board/Discharges/Capacity/statistics; ward/coordinator.
 - **Observed / reproduction:** source shows aggregate reconciliation of runtime departed admissions versus anonymous released beds; leave is a unit-level record; no common physical-bed/turnover/leave-episode key. Pull tests positive allocatable and checks openBedsNow only when preparing count is positive. A zero-empty/positive-allocatable boundary therefore needs an explicit control/probe, including eligibility override behavior.
 - **Expected / authority:** one physical turnover has one capacity effect, and two different turnovers retain two effects; a leave/return refers to the correct person/episode. Existing owner accounting rules do not authorise inventing bed identifiers.

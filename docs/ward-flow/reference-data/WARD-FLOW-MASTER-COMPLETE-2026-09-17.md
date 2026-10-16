@@ -110,7 +110,7 @@ _Canonical detailed audit:_ `C:\\Users\\joshs\\Documents\\WARD-FLOW-CONSOLIDATED
 |     1 | Scaffold from handover + live stamps                                  | **DONE**                       |
 |     2 | Capacity duals / purge (Graylands, Bentley 50, network 166, E-CENSUS) | **DONE**                       |
 |     3 | ED/facility completion notes (KEMH+PCH tip gap; private flags)        | **DONE**                       |
-|     4 | Catchment contests WF-03..06 encoded in open questions / pack         | **DONE**                       |
+|     4 | Catchment contests OQ-03..06 encoded in open questions / pack         | **DONE**                       |
 |     5 | Distance schema + null stubs                                          | **DONE** (no invented km)      |
 |     6 | Tip fixture overlay                                                   | **NOT STARTED — Joshua-gated** |
 |     7 | Owner ratification + flip approval flags                              | **NOT STARTED — Joshua-gated** |
@@ -163,23 +163,23 @@ _Canonical detailed audit:_ `C:\\Users\\joshs\\Documents\\WARD-FLOW-CONSOLIDATED
 
 Answer these; until then tip stays synthetic and routing stays non-automatic.
 
-### D1. Graylands capacity (WF-07)
+### D1. Graylands capacity (OQ-07)
 
 - **Options:** (a) hold dual / prefer neither · (b) temporarily display 109 with dual footnote · (c) temporarily display 122 with dual footnote · (d) wait for NMHS ward-level staffed census
 - **Recommendation:** **(a)/(d)** — do not pick a single number for product routing.
 
-### D2. Lynwood CAMHS (WF-03)
+### D2. Lynwood CAMHS (OQ-03)
 
 - **Conflict:** CAHS postcode PDF (12 Nov 2025): Lynwood 6147 → Midland/Swan; Fremantle clinic webpage lists Lynwood; Swan page omits.
 - **Options:** follow PDF · follow Fremantle page · mark contested / manual only
 - **Recommendation:** **contested / manual only** until CAHS confirms.
 
-### D3. Butler / Wanneroo (WF-04)
+### D3. Butler / Wanneroo (OQ-04)
 
 - Both clinics verified; suburb split **unpublished** (Oct 2023 Joondalup-area list).
 - **Recommendation:** keep clinics; **no auto-split**; shared referral pathway until NMHS publishes grain.
 
-### D4. Armadale / Orchard (WF-06 / GEO-MEAD-EUDORIA)
+### D4. Armadale / Orchard (OQ-06 / GEO-MEAD-EUDORIA)
 
 - Tip Mead ATT / Eudoria CTT **aligned** to OneDrive Armadale CTT Guidelines; **contested** vs live Orchard Avenue (9398 6600). ATT manual phone 9391 2400.
 - **Recommendation:** tip names OK as demo; live contact = Orchard until HSP confirms rename.
@@ -200,39 +200,39 @@ Answer these; until then tip stays synthetic and routing stays non-automatic.
 
 | ID                  | Subject                                        | Finding (short)                                                                                                                                    |
 | ------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WF-01               | Synthetic production substitution              | Ward Flow's bed and designation fixtures are invented; held field is inert.                                                                        |
-| WF-02               | Team vocabulary is not an active registry      | Picker is derived from 2015 rows, 71 strings normalised to 65 names. Ten separate region-team entries are explicitly synthetic.                    |
-| WF-03               | Lynwood child catchment conflict               | 2025 CAHS schedule lists Swan; 2026 Fremantle page lists Fremantle.                                                                                |
-| WF-04               | Butler / Wanneroo split                        | Current directory has both clinics. Oct 2023 catchment table provides a single broad Wanneroo/Joondalup area.                                      |
-| WF-05               | FSFHG three geographic CTTs                    | Fremantle, Cockburn and Melville CTTs share a broad published Fremantle area; individual boundaries not found.                                     |
-| WF-06               | Armadale adult and older boundaries            | LGA-level service description found, but complete current approved adult suburb schedule not established.                                          |
-| WF-07               | Graylands capacity disagreement                | Aug 2026 page: 109 = 51 acute + 58 extended. Mar 2026 inpatient page: 122 = 53 + 69.                                                               |
-| WF-08               | SCGH denominator disagreement                  | 30 inpatient + 8 observation in one page; 36 aggregate on another.                                                                                 |
-| WF-09               | Fremantle staged opening                       | 104 is post-expansion facility capacity. Ten Boodalung beds confirmed open. All 40 expansion beds not independently confirmed operational.         |
-| WF-10               | Cockburn reconfiguration                       | 75 building beds is not a reliable current acute MH total after a ward's care-awaiting-placement conversion.                                       |
-| WF-11               | PCH / Nickoll duplication                      | One 20-bed CAHS service across two sites. Historical 8/12 split not a second 12-bed service.                                                       |
-| WF-19               | Host campus versus clinical operator           | Nickoll is CAHS at Hollywood; Mt Lawley changes to EMHS from Sep 1; JHC and Midland public care are privately operated.                            |
-| WF-20               | ED hours and false ED records                  | Murdoch changes to 08:00–22:00 from Sep 1. Cockburn explicitly has no emergency service. Future SJOG Subiaco ED opening not established.           |
-| WF-23               | No live availability or legal designation feed | Public website counts cannot establish beds open now, staffing, allocation, transfer acceptance, sex configuration or current legal authorisation. |
+| OQ-01               | Synthetic production substitution              | Ward Flow's bed and designation fixtures are invented; held field is inert.                                                                        |
+| OQ-02               | Team vocabulary is not an active registry      | Picker is derived from 2015 rows, 71 strings normalised to 65 names. Ten separate region-team entries are explicitly synthetic.                    |
+| OQ-03               | Lynwood child catchment conflict               | 2025 CAHS schedule lists Swan; 2026 Fremantle page lists Fremantle.                                                                                |
+| OQ-04               | Butler / Wanneroo split                        | Current directory has both clinics. Oct 2023 catchment table provides a single broad Wanneroo/Joondalup area.                                      |
+| OQ-05               | FSFHG three geographic CTTs                    | Fremantle, Cockburn and Melville CTTs share a broad published Fremantle area; individual boundaries not found.                                     |
+| OQ-06               | Armadale adult and older boundaries            | LGA-level service description found, but complete current approved adult suburb schedule not established.                                          |
+| OQ-07               | Graylands capacity disagreement                | Aug 2026 page: 109 = 51 acute + 58 extended. Mar 2026 inpatient page: 122 = 53 + 69.                                                               |
+| OQ-08               | SCGH denominator disagreement                  | 30 inpatient + 8 observation in one page; 36 aggregate on another.                                                                                 |
+| OQ-09               | Fremantle staged opening                       | 104 is post-expansion facility capacity. Ten Boodalung beds confirmed open. All 40 expansion beds not independently confirmed operational.         |
+| OQ-10               | Cockburn reconfiguration                       | 75 building beds is not a reliable current acute MH total after a ward's care-awaiting-placement conversion.                                       |
+| OQ-11               | PCH / Nickoll duplication                      | One 20-bed CAHS service across two sites. Historical 8/12 split not a second 12-bed service.                                                       |
+| OQ-19               | Host campus versus clinical operator           | Nickoll is CAHS at Hollywood; Mt Lawley changes to EMHS from Sep 1; JHC and Midland public care are privately operated.                            |
+| OQ-20               | ED hours and false ED records                  | Murdoch changes to 08:00–22:00 from Sep 1. Cockburn explicitly has no emergency service. Future SJOG Subiaco ED opening not established.           |
+| OQ-23               | No live availability or legal designation feed | Public website counts cannot establish beds open now, staffing, allocation, transfer acceptance, sex configuration or current legal authorisation. |
 | WF-ED-KEMH-PCH      | Tip missing public EDs KEMH and PCH            | WA Health ED dashboard 2026-09-17 lists KEMH + PCH; tip demo has 8 EDs without them. Register also has private Hollywood + SJOG Murdoch.           |
 | E-CENSUS-404        | E-CENSUS primary URL undercut                  | EMHS capacity chain primary URL returned 404 / retired as of 2026-09-17. Do not use as live primary.                                               |
-| GEO-BUTLER-WANNEROO | Butler/Wanneroo tip over-collapse              | Tip over-collapses; public split contested WF-04.                                                                                                  |
-| GEO-ALMA-CTT        | Alma Street CTT-grain overclaim                | FSFHG three CTTs lack published individual boundaries WF-05.                                                                                       |
+| GEO-BUTLER-WANNEROO | Butler/Wanneroo tip over-collapse              | Tip over-collapses; public split contested OQ-04.                                                                                                  |
+| GEO-ALMA-CTT        | Alma Street CTT-grain overclaim                | FSFHG three CTTs lack published individual boundaries OQ-05.                                                                                       |
 
 ## 7. Open questions — P1
 
 | ID               | Subject                                        | Finding (short)                                                                                                                             |
 | ---------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| WF-12            | Bentley individual wards                       | Aug 2026 profile supplies 50 adult, 26 older, 12 EMyU. Full current ward-level breakdown not found.                                         |
-| WF-13            | Armadale HDU double-counting                   | 33 adult beds explicitly includes high-dependency beds. Moodjar/Karri/Yorgum split not established.                                         |
-| WF-14            | Joondalup omitted / 102 physical capacity      | Repo treats Joondalup as ED feeder. Current provider describes 102-bed mental health facility.                                              |
-| WF-15            | Fiona Stanley adult count                      | Youth 14 and MBU 8 verified. Adult-unit current number not independently established.                                                       |
-| WF-16            | Rockingham older published numbers             | 30-bed configuration is supported by a 2010 official opening source; not a current operational bed list.                                    |
-| WF-17            | Older-adult geography and NMHS 56 total        | Older community service existence established, but separate approved catchments and Selby/Osborne individual ward capacities not all found. |
-| WF-18            | Private ward-level census                      | Perth Clinic 100, Marian 69, Abbotsford 77 published aggregate. Hollywood 101 comes from 2020 opening.                                      |
-| WF-21            | Raw locality spelling / partial suburbs        | Examples Nirinba, North Dandelup, Wannunup, Willeton, Warnboro, Pinjarra/Carcoola and split Keralup.                                        |
-| WF-22            | CAMHS contact and postcode conflicts           | Fremantle phone changed between schedule and clinic page. Bibra Lake 6163 versus 6153; current geographic clinic index has nine sites.      |
-| WF-24            | Research scope is not whole-state completeness | This package is Perth metro plus Peel and selected statewide interfaces. It is not every regional team, NGO program or every private ward.  |
+| OQ-12            | Bentley individual wards                       | Aug 2026 profile supplies 50 adult, 26 older, 12 EMyU. Full current ward-level breakdown not found.                                         |
+| OQ-13            | Armadale HDU double-counting                   | 33 adult beds explicitly includes high-dependency beds. Moodjar/Karri/Yorgum split not established.                                         |
+| OQ-14            | Joondalup omitted / 102 physical capacity      | Repo treats Joondalup as ED feeder. Current provider describes 102-bed mental health facility.                                              |
+| OQ-15            | Fiona Stanley adult count                      | Youth 14 and MBU 8 verified. Adult-unit current number not independently established.                                                       |
+| OQ-16            | Rockingham older published numbers             | 30-bed configuration is supported by a 2010 official opening source; not a current operational bed list.                                    |
+| OQ-17            | Older-adult geography and NMHS 56 total        | Older community service existence established, but separate approved catchments and Selby/Osborne individual ward capacities not all found. |
+| OQ-18            | Private ward-level census                      | Perth Clinic 100, Marian 69, Abbotsford 77 published aggregate. Hollywood 101 comes from 2020 opening.                                      |
+| OQ-21            | Raw locality spelling / partial suburbs        | Examples Nirinba, North Dandelup, Wannunup, Willeton, Warnboro, Pinjarra/Carcoola and split Keralup.                                        |
+| OQ-22            | CAMHS contact and postcode conflicts           | Fremantle phone changed between schedule and clinic page. Bibra Lake 6163 versus 6153; current geographic clinic index has nine sites.      |
+| OQ-24            | Research scope is not whole-state completeness | This package is Perth metro plus Peel and selected statewide interfaces. It is not every regional team, NGO program or every private ward.  |
 | GEO-MEAD-EUDORIA | Mead/Eudoria stale vs Orchard                  | Verify Orchard as current before ingest.                                                                                                    |
 | GEO-NO-CAMHS     | No CAMHS in tip                                | Register holds CAMHS clinics; tip has none — expected demo gap.                                                                             |
 
@@ -240,18 +240,18 @@ Answer these; until then tip stays synthetic and routing stays non-automatic.
 
 | ID      | Subject                                                  | Finding (short)                                                                                                                                                              |
 | ------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WF-25   | Stirling parent versus clinic identity                   | Stirling is a supported umbrella; existing five-clinic list omitted the parent. Exact local identifier behind user term Stirling CMHT is unresolved.                         |
-| WF-26   | Mixed service hierarchy counted as teams                 | Geographic areas, physical clinics, cohorts, ATT/CTT functions and specialist programmes must not be flattened into a misleading team count.                                 |
-| WF-27   | Child community versus inpatient age thresholds          | Community CAMHS under 18 is not PCH inpatient under 16; Nickoll selected 14–15.                                                                                              |
-| WF-28   | Older-adult threshold is service-specific                | City older adult publishes 45 for Aboriginal/Torres Strait Islander people; FOAMHS 55 plus self-identification. No universal Aboriginal threshold.                           |
-| WF-29   | Postcode field contradictions                            | Bibra Lake 6163 vs 6153; Kenwick 6107 vs 6108; Thornlie 6108 vs 6107 between schedule and clinic pages.                                                                      |
-| WF-30   | ED live-labelled source stale                            | Fetched official ED page carried 11 August 2026 02:15 data during September review.                                                                                          |
-| WF-31   | Fremantle MHCC versus ATT transition                     | V Block newer MHCC page versus W Block older ATT 08–20 page; project 24/7 promise does not settle current actual hours.                                                      |
-| WF-32   | Joondalup design versus operation                        | Architect supplies 102-room breakdown with swing capacity, not current operational ward IDs or staffed allocation.                                                           |
-| WF-33   | Older-adult source acquisition gap                       | 112 undated NMHS older-adult locality rows now text-extracted. Effective-date confirmation, fresh visual table verification and operational ratification remain outstanding. |
-| WF-34   | No fresh PDF visual validation                           | New screenshot attempts failed. Parsed text and inherited structured rows were checked, but layout-sensitive completeness still needs page-image validation.                 |
-| WF-35   | Public-source contact and page mirrors                   | A recently crawled mirror can contain older contacts than another official page. Contacts are not call-tested and review status must be field-specific.                      |
-| WF-36   | OCP authorisation reference outdated for operational use | PriorOctober 2025 legal register is not a currentSeptember 2026 authorisation attestation. Lock status is not legal authority.                                               |
+| OQ-25   | Stirling parent versus clinic identity                   | Stirling is a supported umbrella; existing five-clinic list omitted the parent. Exact local identifier behind user term Stirling CMHT is unresolved.                         |
+| OQ-26   | Mixed service hierarchy counted as teams                 | Geographic areas, physical clinics, cohorts, ATT/CTT functions and specialist programmes must not be flattened into a misleading team count.                                 |
+| OQ-27   | Child community versus inpatient age thresholds          | Community CAMHS under 18 is not PCH inpatient under 16; Nickoll selected 14–15.                                                                                              |
+| OQ-28   | Older-adult threshold is service-specific                | City older adult publishes 45 for Aboriginal/Torres Strait Islander people; FOAMHS 55 plus self-identification. No universal Aboriginal threshold.                           |
+| OQ-29   | Postcode field contradictions                            | Bibra Lake 6163 vs 6153; Kenwick 6107 vs 6108; Thornlie 6108 vs 6107 between schedule and clinic pages.                                                                      |
+| OQ-30   | ED live-labelled source stale                            | Fetched official ED page carried 11 August 2026 02:15 data during September review.                                                                                          |
+| OQ-31   | Fremantle MHCC versus ATT transition                     | V Block newer MHCC page versus W Block older ATT 08–20 page; project 24/7 promise does not settle current actual hours.                                                      |
+| OQ-32   | Joondalup design versus operation                        | Architect supplies 102-room breakdown with swing capacity, not current operational ward IDs or staffed allocation.                                                           |
+| OQ-33   | Older-adult source acquisition gap                       | 112 undated NMHS older-adult locality rows now text-extracted. Effective-date confirmation, fresh visual table verification and operational ratification remain outstanding. |
+| OQ-34   | No fresh PDF visual validation                           | New screenshot attempts failed. Parsed text and inherited structured rows were checked, but layout-sensitive completeness still needs page-image validation.                 |
+| OQ-35   | Public-source contact and page mirrors                   | A recently crawled mirror can contain older contacts than another official page. Contacts are not call-tested and review status must be field-specific.                      |
+| OQ-36   | OCP authorisation reference outdated for operational use | PriorOctober 2025 legal register is not a currentSeptember 2026 authorisation attestation. Lock status is not legal authority.                                               |
 | PREP-01 | Undated older-adult schedule                             | 112 rows extracted, but publication/effective date absent and screenshot failed.                                                                                             |
 | PREP-02 | SCGH observation denominator                             | Specific page 6 beds+2 chairs differs from broader page 8 beds.                                                                                                              |
 | PREP-03 | Selby historical32 not independently current-confirmed   | 2024 annual report could not be reacquired; combined 56 does not itself prove current split.                                                                                 |
@@ -283,18 +283,18 @@ Living list while bots finish. **Do not ingest as truth.**
 
 ## B. Live conflicts re-observed today
 
-1. **Graylands beds (WF-07)** — HIGH conflict
+1. **Graylands beds (OQ-07)** — HIGH conflict
    - 109 = 51 acute + 58 extended (NMHS Graylands pages; one marked Last Updated 24/06/2026)
    - 122 = 53 acute + 69 HECS (NMHS Inpatient Adult MH; Last Updated 10/03/2026)
    - Future forensic expansion announced Apr 2026 — not current census  
      → Need ward-level operating/staffed split from NMHS.
 
-2. **Lynwood CAMHS (WF-03)** — MEDIUM, leaning Fremantle
+2. **Lynwood CAMHS (OQ-03)** — MEDIUM, leaning Fremantle
    - Fremantle CAMHS suburb list includes Lynwood 6147 (updated 10/12/2025)
    - Historical Swan schedule may still conflict; need official postcode PDF + Swan page cross-check
    - PDF lead: CAHS catchment-by-postcode + older map PDF (2019 profiling — treat as HISTORICAL).
 
-3. **Butler vs Wanneroo (WF-04)** — HIGH open
+3. **Butler vs Wanneroo (OQ-04)** — HIGH open
    - NMHS clinics page lists **both** Butler and Wanneroo clinics (page updated 14/02/2025)
    - Adult catchment PDF still “updated October 2023” with broad Joondalup/Wanneroo list under Wanneroo CMH — **no Butler-only suburb schedule found yet**  
      → Need current suburb/address split + exception pathways.
@@ -307,8 +307,8 @@ Missing or incomplete for robust ingest:
 - Complete **statewide** regional psych units (handover scope = metro + selected regional only)
 - Ward-by-ward **staffed vs commissioned vs physical** for every named unit
 - Private facility bed claims (marketing vs authorised)
-- FSFHG CTT boundaries Fremantle/Cockburn/Melville (WF-05)
-- Armadale adult/older full suburb schedules (WF-06)
+- FSFHG CTT boundaries Fremantle/Cockburn/Melville (OQ-05)
+- Armadale adult/older full suburb schedules (OQ-06)
 - Owner ratification contacts (suggested owners not contacted)
 - Raw offline archive of all source HTML/PDFs
 - Deep Research standalone report bodies (not in bundle)
@@ -336,7 +336,7 @@ Armadale, FSH, Joondalup, KEMH, Peel, PCH, Rockingham, RPH, SCGH, SJOG Midland P
 
 URL: https://cahs.health.wa.gov.au/~/media/HSPs/CAHS/Documents/Mental-Health/Catchment-area-by-postcode.pdf
 
-**CORRECTION (Geo independent re-extract, same PDF, footer 12 November 2025):** Lynwood 6147 appears **once** under Midland/Swan only — not dual-listed in the PDF. Postcode 6147 is split by suburb: Parkwood→Fremantle/Murdoch; Langford+Lynwood→Swan. WF-03 contest is **PDF/Swan schedule vs Fremantle clinic webpage** (which lists Lynwood), not a PDF dual-row for Lynwood.
+**CORRECTION (Geo independent re-extract, same PDF, footer 12 November 2025):** Lynwood 6147 appears **once** under Midland/Swan only — not dual-listed in the PDF. Postcode 6147 is split by suburb: Parkwood→Fremantle/Murdoch; Langford+Lynwood→Swan. OQ-03 contest is **PDF/Swan schedule vs Fremantle clinic webpage** (which lists Lynwood), not a PDF dual-row for Lynwood.
 
 ## H. Catchment web fact-check complete (2026-09-17)
 
@@ -371,7 +371,7 @@ Tip SHA `f10ca39fbd` confirmed.
 | Graylands public | Dual live 109 vs 122 — **leave both**; do not prefer 109                                                  |
 | Tip EDs          | **8** (RPH, SCGH, FSH, Armadale, SJOG Midland, Rockingham, Joondalup, Peel)                               |
 | Handover EDs     | **12** — tip missing **KEMH, Perth Children’s, Hollywood Private, SJOG Murdoch**                          |
-| WF-01            | Confirmed — `ward-sites.ts` marks all beds invented; held inert                                           |
+| OQ-01            | Confirmed — `ward-sites.ts` marks all beds invented; held inert                                           |
 
 Fremantle/Bentley/Graylands correctly have no ED in tip.
 
@@ -395,14 +395,14 @@ _Full inventory:_ `ward-flow-data-review/referring-forms/INVENTORY-REPORT-2026-0
 
 | Claim                     | OneDrive                                                                                                                  | Live WA/HSP (URL + date)                                                                                                                                                                                                                                                                                                    | Research pack                                                                          | Tip f10ca39fbd                              | Status                                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
-| Graylands beds 109 vs 122 | YOD clinic referral only; **no** acute/HECS census in extracted PDFs                                                      | **109** = 51 acute + 58 HECS on https://www.nmhs.health.wa.gov.au/Hospitals-and-Services/Hospitals/Graylands (fetched 2026-09-17; search stamp ~24/06/2026). **122** = 53 acute + 69 HECS on https://nmhs.health.wa.gov.au/Hospitals-and-Services/Mental-Health/Inpatient (Last Updated **10/03/2026**, fetched 2026-09-17) | `web-capacity-factcheck` / `web-capacity-adversary` / LOW-CONFIDENCE WF-07 — dual HIGH | Synthetic GRY ~25 invented — not 109 or 122 | **conflict** (dual live) + **tip-synthetic**                               |
+| Graylands beds 109 vs 122 | YOD clinic referral only; **no** acute/HECS census in extracted PDFs                                                      | **109** = 51 acute + 58 HECS on https://www.nmhs.health.wa.gov.au/Hospitals-and-Services/Hospitals/Graylands (fetched 2026-09-17; search stamp ~24/06/2026). **122** = 53 acute + 69 HECS on https://nmhs.health.wa.gov.au/Hospitals-and-Services/Mental-Health/Inpatient (Last Updated **10/03/2026**, fetched 2026-09-17) | `web-capacity-factcheck` / `web-capacity-adversary` / LOW-CONFIDENCE OQ-07 — dual HIGH | Synthetic GRY ~25 invented — not 109 or 122 | **conflict** (dual live) + **tip-synthetic**                               |
 | Graylands YOD pathway     | Extracted: Neurosciences YOD clinic onset <65; (08) 6159 6464; Graylands.Neurosciences@health.wa.gov.au; Updated Mar 2021 | NMHS Neuro specialties page linked from referral PDF                                                                                                                                                                                                                                                                        | Research pack notes YOD ≠ bed truth                                                    | No YOD entity expected in tip beds          | **agree** pathway exists; **missing** as bed authority                     |
-| WF-03 Lynwood CAMHS       | Catchment maps present; BMHS **adult** ATT list includes Lynwood (Bentley) — different cohort                             | CAHS PDF→Swan; Fremantle clinic page→Fremantle; Swan page omits Lynwood (`web-catchment-factcheck`)                                                                                                                                                                                                                         | geo-catchments-p0-synthesis CONTESTED                                                  | Tip has **no CAMHS**                        | **contested** — OneDrive maps do not resolve                               |
-| WF-04 Butler / Wanneroo   | Adult HITH Oct 2019 list puts Butler under Joondalup catchment; no Butler-vs-Wanneroo clinic split                        | NMHS clinics page: both clinics exist; shared WannerooCatchment inbox; Oct 2023 AMSH PDF single Joondalup list                                                                                                                                                                                                              | web-catchment-factcheck                                                                | Tip over-collapses Butler→Clarkson          | **contested** / **missing** suburb split                                   |
-| WF-05 FSFHG CTT schedules | FSFHG ATT MoC Mar 2023 extracted; CTT Guidelines present; **no** Fremantle/Cockburn/Melville suburb schedules             | SMHS: 3 geographic CTTs + EIP + ACTT verified; schedules unpublished                                                                                                                                                                                                                                                        | web-catchment-factcheck WF-05                                                          | Tip Alma CTT-grain = overclaim              | **missing** schedules / **tip-synthetic**                                  |
-| WF-06 Armadale / Orchard  | ATT Referral (AKG) still **Mead Centre / 3056 Albany Hwy / 9391 2400**; CTT at Eudoria St in manual                       | Live AHS Adult MH Programs: ATT+CTT at **Orchard Ave Centre** Tenancy 3/10 Orchard Ave; phone **9398 6600**; ATTReferral.Armadale@health.wa.gov.au; Last Updated **24/02/2026** (https://www.ahs.health.wa.gov.au/Services/Mental-Health/Adult-Mental-Health-Programs). LGA wording verified; suburb schedule not found     | web-catchment-factcheck; tip Mead/Eudoria stale                                        | Tip Mead/Eudoria stale                      | **conflict** OneDrive address vs live Orchard; **missing** suburb schedule |
+| OQ-03 Lynwood CAMHS       | Catchment maps present; BMHS **adult** ATT list includes Lynwood (Bentley) — different cohort                             | CAHS PDF→Swan; Fremantle clinic page→Fremantle; Swan page omits Lynwood (`web-catchment-factcheck`)                                                                                                                                                                                                                         | geo-catchments-p0-synthesis CONTESTED                                                  | Tip has **no CAMHS**                        | **contested** — OneDrive maps do not resolve                               |
+| OQ-04 Butler / Wanneroo   | Adult HITH Oct 2019 list puts Butler under Joondalup catchment; no Butler-vs-Wanneroo clinic split                        | NMHS clinics page: both clinics exist; shared WannerooCatchment inbox; Oct 2023 AMSH PDF single Joondalup list                                                                                                                                                                                                              | web-catchment-factcheck                                                                | Tip over-collapses Butler→Clarkson          | **contested** / **missing** suburb split                                   |
+| OQ-05 FSFHG CTT schedules | FSFHG ATT MoC Mar 2023 extracted; CTT Guidelines present; **no** Fremantle/Cockburn/Melville suburb schedules             | SMHS: 3 geographic CTTs + EIP + ACTT verified; schedules unpublished                                                                                                                                                                                                                                                        | web-catchment-factcheck OQ-05                                                          | Tip Alma CTT-grain = overclaim              | **missing** schedules / **tip-synthetic**                                  |
+| OQ-06 Armadale / Orchard  | ATT Referral (AKG) still **Mead Centre / 3056 Albany Hwy / 9391 2400**; CTT at Eudoria St in manual                       | Live AHS Adult MH Programs: ATT+CTT at **Orchard Ave Centre** Tenancy 3/10 Orchard Ave; phone **9398 6600**; ATTReferral.Armadale@health.wa.gov.au; Last Updated **24/02/2026** (https://www.ahs.health.wa.gov.au/Services/Mental-Health/Adult-Mental-Health-Programs). LGA wording verified; suburb schedule not found     | web-catchment-factcheck; tip Mead/Eudoria stale                                        | Tip Mead/Eudoria stale                      | **conflict** OneDrive address vs live Orchard; **missing** suburb schedule |
 | ATT team presence         | Extracted ATT ops for AKG, BHS, FSFHG + Psychiatry contacts sheet                                                         | Live confirms Armadale ATT, FSFHG ATT entry, NMHS community clinics                                                                                                                                                                                                                                                         | Handover programmes                                                                    | tip `ward-teams.ts` synthetic names         | **agree** entities exist; **tip-synthetic** vocabulary                     |
-| CTT team presence         | CTT Guidelines (+BHS) extracted; receives via ATT                                                                         | Live Armadale CTT at Orchard Ave; FSFHG geographic CTTs named                                                                                                                                                                                                                                                               | WF-05                                                                                  | Synthetic teams                             | **partial** / **tip-synthetic**                                            |
+| CTT team presence         | CTT Guidelines (+BHS) extracted; receives via ATT                                                                         | Live Armadale CTT at Orchard Ave; FSFHG geographic CTTs named                                                                                                                                                                                                                                                               | OQ-05                                                                                  | Synthetic teams                             | **partial** / **tip-synthetic**                                            |
 | TCU/PRU/RRU capacity      | Extracted: BWK = PRU 20 + RRU 20 = **40** transitional rehabilitation beds (Bentley Woodlupine / subacute)                | EMHS subacute/TCU descriptions reference 40 beds across PRU + RRU; primary E-CENSUS medcareers URL returned HTTP 404 on 2026-09-17                                                                                                                                                                                          | `capacity_assertions.json` records 40 subacute/TCU beds (`E-CENSUS-404` noted)         | Not modelled as acute inpatient unit in tip | **agree** 40 subacute beds; primary URL retired                            |
 
 ---
@@ -415,7 +415,7 @@ _Full inventory:_ `ward-flow-data-review/referring-forms/INVENTORY-REPORT-2026-0
 **Method:** Live NMHS/SMHS/EMHS/CAHS/WACHS + provider pages, 17 Sep 2026 PT. Tip `ward-sites` beds discarded as invented.  
 **Constraint:** read-only; never merge.
 
-## WF-07 Graylands — BOTH totals still live
+## OQ-07 Graylands — BOTH totals still live
 
 | Claim                    | Source shape                                 | Confidence |
 | ------------------------ | -------------------------------------------- | ---------- |
@@ -462,7 +462,7 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 
 **Date:** 2026-09-17 (Australia/Perth, AWST)  
 **Baseline (authoritative for web findings):** `web-catchment-factcheck-2026-09-17.md`  
-**Scope:** Tip ↔ baseline synthesis for WF-03…WF-06 + distance schema. **No tip merge. No invented km/min. No invented boundaries.**  
+**Scope:** Tip ↔ baseline synthesis for OQ-03…OQ-06 + distance schema. **No tip merge. No invented km/min. No invented boundaries.**  
 **Tip layer note:** Tip travel bands flagged `TRAVEL_BANDS_ARE_INVENTED=true` (see `LOW-CONFIDENCE-AND-GAPS-2026-09-17.md`). Tip catchments/teams are demo/synthetic until owner-approved ingest.
 
 **Status vocabulary:** VERIFIED · CONTESTED · MISSING
@@ -473,17 +473,17 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 
 | P0     | Topic                                                | Status                                                       | Tip action                                                |
 | ------ | ---------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
-| WF-03  | Lynwood CAMHS (Swan vs Fremantle)                    | **CONTESTED**                                                | Do not auto-route; do not pick a winner from page recency |
-| WF-04  | Butler vs Wanneroo adult (and OA) split              | **MISSING** clinic-grain suburb split (clinics **VERIFIED**) | Keep both clinic IDs; block split-based routing           |
-| WF-05  | FSFHG Fremantle / Cockburn / Melville CTT boundaries | **MISSING** CTT suburb schedules (team names **VERIFIED**)   | FSFHG-area eligibility only — not team assignment         |
-| WF-06  | Armadale adult + older catchments                    | **VERIFIED** at LGA grain; **MISSING** suburb MH schedules   | Do not invent suburb list from EMHS 2016 hospital map     |
+| OQ-03  | Lynwood CAMHS (Swan vs Fremantle)                    | **CONTESTED**                                                | Do not auto-route; do not pick a winner from page recency |
+| OQ-04  | Butler vs Wanneroo adult (and OA) split              | **MISSING** clinic-grain suburb split (clinics **VERIFIED**) | Keep both clinic IDs; block split-based routing           |
+| OQ-05  | FSFHG Fremantle / Cockburn / Melville CTT boundaries | **MISSING** CTT suburb schedules (team names **VERIFIED**)   | FSFHG-area eligibility only — not team assignment         |
+| OQ-06  | Armadale adult + older catchments                    | **VERIFIED** at LGA grain; **MISSING** suburb MH schedules   | Do not invent suburb list from EMHS 2016 hospital map     |
 | Travel | ED↔ward↔community distance matrix                    | **MISSING** numerics; schema **VERIFIED** (adopt baseline)   | Discard invented tip travel bands for operational use     |
 
 **Standing rule:** contested or unpublished splits → `automatic_routing_approved = false` / `approved_for_routing = false`.
 
 ---
 
-## WF-03 — Lynwood child/youth CAMHS (settled framing)
+## OQ-03 — Lynwood child/youth CAMHS (settled framing)
 
 ### Official artefacts (do not regress)
 
@@ -495,7 +495,7 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 
 **Source URL (PDF):** https://cahs.health.wa.gov.au/~/media/HSPs/CAHS/Documents/Mental-Health/Catchment-area-by-postcode.pdf
 
-**Remaining P0 synthesis items (`WF-04`, `WF-05`, `WF-06`, and transfer distance schema):** Encoded directly in `catchment_assertions.json`, `open_questions.json`, and `distances.json` with `approved_for_routing = false` on all contested or unpublished clinic splits.
+**Remaining P0 synthesis items (`OQ-04`, `OQ-05`, `OQ-06`, and transfer distance schema):** Encoded directly in `catchment_assertions.json`, `open_questions.json`, and `distances.json` with `approved_for_routing = false` on all contested or unpublished clinic splits.
 
 ---
 
@@ -516,7 +516,7 @@ Physical vs staffed vs authorised | aggregates as wards | staged/design as ops |
 ## 0. Non-negotiable rules (from handover + Joshua)
 
 1. Preparation first: confirm completeness + currency; **do not** silently replace synthetic demo fixtures with real beds.
-2. Keep **verified reference layer** separate from **synthetic demo/test layer** (WF-01).
+2. Keep **verified reference layer** separate from **synthetic demo/test layer** (OQ-01).
 3. Null/unknown beds ≠ zero. Never invent.
 4. Capacity types stay distinct: physical / authorised / commissioned / staffed / available / observation / staged / design.
 5. Catchment assertions are source-claims, not unique suburbs; conflicts stay contested until owner-confirmed.
@@ -545,8 +545,8 @@ Handover itself says packaging **did not re-crawl**; treat as research master re
 
 Canonical code surfaces (not exhaustive):
 
-- `ward-sites.ts` — units/beds/sites (WF-01 synthetic risk)
-- `ward-teams.ts` — community vocabulary (WF-02; 2015-derived risk)
+- `ward-sites.ts` — units/beds/sites (OQ-01 synthetic risk)
+- `ward-teams.ts` — community vocabulary (OQ-02; 2015-derived risk)
 - `ward-model.ts` — model/designations
 - `ward-catchment.ts` — catchment logic/data
 - `ward-distance.ts`, `ward-travel-bands.ts` — transfer modelling
@@ -570,8 +570,8 @@ Canonical code surfaces (not exhaustive):
 
 ## 4. Fresh web finding
 
-- **CAHS postcode PDF (12 Nov 2025 footer, fetched 2026-09-17):** Postcode `6147` splits Parkwood → Fremantle CAMHS and Langford + Lynwood → Swan CAMHS, while the live Fremantle CAMHS webpage lists Lynwood (`WF-03` kept contested).
-- **NMHS Graylands pages (fetched 2026-09-17):** Both the 109-bed (`51` acute + `58` HECS) and 122-bed (`53` acute + `69` HECS) published figures remain live (`WF-07` kept dual).
+- **CAHS postcode PDF (12 Nov 2025 footer, fetched 2026-09-17):** Postcode `6147` splits Parkwood → Fremantle CAMHS and Langford + Lynwood → Swan CAMHS, while the live Fremantle CAMHS webpage lists Lynwood (`OQ-03` kept contested).
+- **NMHS Graylands pages (fetched 2026-09-17):** Both the 109-bed (`51` acute + `58` HECS) and 122-bed (`53` acute + `69` HECS) published figures remain live (`OQ-07` kept dual).
 
 ---
 

@@ -40,7 +40,7 @@ import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
-import type { ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
+import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -570,6 +570,8 @@ function AlertsWorkspace() {
     (item: InboxItem) => allEntries.find((entry) => entry.item.id === item.id)?.subject.displayName ?? "this patient",
     [allEntries],
   );
+  const [extendedBroadcastMinutes, setExtendedBroadcastMinutes] = useState<Record<string, number>>({});
+  const [pushedBroadcastIds, setPushedBroadcastIds] = useState<Record<string, boolean>>({});
   // Acting on the open alert keeps it open, so the panel never jumps to the next one mid-task.
   const detailHandlers: AlertDetailHandlers = {
     onTake: (item) => {
@@ -619,6 +621,27 @@ function AlertsWorkspace() {
         refused: "Release was not accepted. The bed is still held.",
       });
       dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
+    },
+    onEscalate: (item) => {
+      setChosenId(item.id);
+      if (item.movementId) {
+        const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+        track({
+          type: "RECORD_ESCALATION",
+          ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
+          refused: "Escalation was not accepted.",
+        });
+        dispatch({
+          type: "RECORD_ESCALATION",
+          role: "coordinator",
+          now: clockNow,
+          movementId: item.movementId,
+          triedUnitIds: movement?.declines.map((decline) => decline.unitId) ?? [],
+          contact: ESCALATION_CONTACTS[0],
+        });
+      } else {
+        setBroadcastSuccessNotice(`Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`);
+      }
     },
   };
   const queueHandlers: QueueHandlers = {
@@ -1642,11 +1665,21 @@ function AlertsWorkspace() {
                             <dt>Ends</dt>
                             <dd>
                               <span className={styles.mono}>
-                                {formatInstantWithDay(activeBroadcast.expiresAt, now)}
+                                {formatInstantWithDay(
+                                  activeBroadcast.expiresAt + (extendedBroadcastMinutes[activeBroadcast.id] ?? 0),
+                                  now,
+                                )}
                               </span>
                               , in{" "}
                               <span className={styles.mono}>
-                                {minutesText(Math.max(0, activeBroadcast.expiresAt - now))}
+                                {minutesText(
+                                  Math.max(
+                                    0,
+                                    activeBroadcast.expiresAt +
+                                      (extendedBroadcastMinutes[activeBroadcast.id] ?? 0) -
+                                      now,
+                                  ),
+                                )}
                               </span>
                             </dd>
                           </div>
@@ -1676,25 +1709,36 @@ function AlertsWorkspace() {
                           <Button
                             size="sm"
                             icon={Clock}
-                            disabledReason="Not wired in this prototype."
-                            reasonDisplay="tooltip"
+                            onClick={() => {
+                              setExtendedBroadcastMinutes((prev) => ({
+                                ...prev,
+                                [activeBroadcast.id]: (prev[activeBroadcast.id] ?? 0) + 60,
+                              }));
+                              setBroadcastSuccessNotice(`Extended "${activeBroadcast.title}" by 60 minutes.`);
+                            }}
                           >
-                            Extend
+                            {(extendedBroadcastMinutes[activeBroadcast.id] ?? 0) > 0 ? "Extended (+60m)" : "Extend"}
                           </Button>
                           <Button
                             size="sm"
                             icon={Smartphone}
-                            disabledReason="Not wired in this prototype."
+                            disabledReason={
+                              pushedBroadcastIds[activeBroadcast.id] ? "Already pushed to shift phones" : undefined
+                            }
                             reasonDisplay="tooltip"
+                            onClick={() => {
+                              setPushedBroadcastIds((prev) => ({ ...prev, [activeBroadcast.id]: true }));
+                              setBroadcastSuccessNotice(`Pushed "${activeBroadcast.title}" to on-shift phones.`);
+                            }}
                           >
-                            Push to phones
+                            {pushedBroadcastIds[activeBroadcast.id] ? "Pushed to phones" : "Push to phones"}
                           </Button>
                         </div>
                       </div>
                       <div className={styles.directiveRing}>
                         <TimeRing
                           from={activeBroadcast.dispatchedAt}
-                          until={activeBroadcast.expiresAt}
+                          until={activeBroadcast.expiresAt + (extendedBroadcastMinutes[activeBroadcast.id] ?? 0)}
                           now={now}
                           size={96}
                         />

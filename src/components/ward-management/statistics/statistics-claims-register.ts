@@ -953,7 +953,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: 'data-testid="ward-statistics-refused-so-far-count"',
     claim:
       "The counted condition is exactly `referredUnitIds` empty, `declines` non-empty and no accepting unit " +
-      "(WF-23, 2026-09-17: an accepted movement with an earlier decline is not 'declined by all') — no clock and " +
+      "(2026-09-17: an accepted movement with an earlier decline is not 'declined by all') — no clock and " +
       "no closure state.",
     sourceFile: WARD_DERIVATIONS,
     evidence:

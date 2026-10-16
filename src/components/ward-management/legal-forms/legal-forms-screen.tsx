@@ -1037,6 +1037,26 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           onDraft={setRecordDraft}
           openMovements={openMovements}
           labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
+          now={now}
+          onSaveForm={({ movementId, formCode, writtenAt }) => {
+            if (!isOwnedLegalFormCode(formCode)) return false;
+            runStep(
+              {
+                type: "RECORD_LEGAL_FORM_WRITTEN",
+                role: routeRole,
+                now,
+                movementId,
+                formCode,
+                writtenAt,
+              },
+              {
+                success: `Form ${formCode} recorded`,
+                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+                undone: "Form record undone.",
+              },
+            );
+            return true;
+          }}
         />
         <ExtendSheet
           target={movements.find((movement) => movement.id === extendId) ?? null}
@@ -1046,6 +1066,23 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           })()}
           now={now}
           onClose={() => setExtendId(null)}
+          onExtendForm={(movement, dueAt) => {
+            runStep(
+              {
+                type: "RECORD_LEGAL_FORM_EXPIRY",
+                role: routeRole,
+                now,
+                movementId: movement.id,
+                dueAt,
+              },
+              {
+                success: `Form ${movement.legalForm?.code ?? ""} extended`,
+                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
+                undone: "Form extension undone.",
+              },
+            );
+            return true;
+          }}
         />
         <TellSheet
           open={tell !== null}

@@ -541,7 +541,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     "/mockups/ward-flow/reports/chronology",
-    "The PIR patient chronology (D-37, WF-57). Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",
+    "The PIR patient chronology (D-37). Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",
   ],
 ]);
 

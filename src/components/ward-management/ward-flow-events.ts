@@ -23,6 +23,7 @@ import type {
 import type {
   BedPreparationNote,
   BedReleaseBlocker,
+  DischargeDelayClearReason,
   OverrideReason,
   CancelTransportReason,
   GenderPlacementReason,
@@ -1105,6 +1106,8 @@ export type WardFlowEvent =
       releaseId: string;
       /** Same claim-not-proof discipline as `CONFIRM_BED_RELEASE`'s own field. */
       actingUnitId: string;
+      /** Optional reason the discharge delay blocker was cleared, from `DISCHARGE_DELAY_CLEAR_REASONS`. */
+      reason?: DischargeDelayClearReason;
     }
   | {
       type: "SET_BED_PREPARATION";
@@ -1381,10 +1384,11 @@ export type WardFlowEvent =
       /** B1: a ward answering names itself; refused when it answers for another ward. The
        *  coordinator acts for any ward and sends none. */
       actingUnitId?: string;
-      /** Optional fields for reassessment of clinical decisions (WF-17) */
+      /** Optional fields for reassessment of clinical decisions */
       clinicalUpdate?: boolean;
       reassessment?: boolean;
       clearanceUpdated?: boolean;
+      reassessmentNote?: string;
     }
   | {
       type: "RECORD_LOCAL_BED_SOUGHT";
@@ -1639,6 +1643,8 @@ export type WardFlowEvent =
       admissionId: string;
       /** Same claim-not-proof discipline as the event above. */
       actingUnitId: string;
+      /** Optional reason the discharge delay blocker was cleared, from `DISCHARGE_DELAY_CLEAR_REASONS`. */
+      reason?: DischargeDelayClearReason;
     }
   | {
       /**

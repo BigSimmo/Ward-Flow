@@ -1,6 +1,6 @@
 // tests/ward-raise-referral-uniqueness.test.ts
 //
-// R5 (docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md, WF-09): RAISE_REFERRAL had no
+// R5 (docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md): RAISE_REFERRAL had no
 // uniqueness guard at all. A second open movement could be raised from the same referral, and a
 // journey could be raised from an addressing its own referrer had withdrawn or its own department
 // had declined — none of it refused. Owner Q11 confirms the shape: refused WHILE an earlier

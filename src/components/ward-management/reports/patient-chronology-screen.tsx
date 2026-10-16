@@ -126,7 +126,7 @@ const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.given
 const clockOrMissing = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatInstant(instant));
 
 /**
- * PIR CHRONOLOGY (D-37, WF-57). Choose one synthetic person and read every recorded event for them
+ * PIR CHRONOLOGY (D-37). Choose one synthetic person and read every recorded event for them
  * in time order: occurred and recorded time, role, action, before and after, and any override or
  * change reason. Prints from the browser and downloads as CSV. The audit trail is coordinator-only,
  * so it is read only when the route's role is the coordinator; any other role sees records and the

@@ -459,12 +459,12 @@ describe("Fix 5: RECORD_REFERRER_WITHDRAWAL cascades to every linked open moveme
    * both.
    *
    * 🔴 **CORRECTED 2026-09-17, R5 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`,
-   * WF-09).** This used to build the second movement with a SECOND live `RAISE_REFERRAL` dispatch
+   * audit rule).** This used to build the second movement with a SECOND live `RAISE_REFERRAL` dispatch
    * carrying the same `referralId`, on the reasoning (quoted here until this correction, because
    * the reading that made it true is what a reader would otherwise re-derive) that "nothing here or
    * in RAISE_REFERRAL prevents a referral linking to more than one open movement... it only checks
    * the referral exists and is addressed to the raising department, never that it has not already
-   * been raised from before." **That reasoning is now false.** WF-09 added exactly the guard this
+   * been raised from before." **That reasoning is now false.** audit rule added exactly the guard this
    * fixture used to exploit: a second `RAISE_REFERRAL` from a referral with an already-open linked
    * movement is refused, by design (`tests/ward-raise-referral-uniqueness.test.ts`). So the second
    * `RAISE_REFERRAL` call below is now a WALK-IN — no `referralId` — and the link is spliced onto

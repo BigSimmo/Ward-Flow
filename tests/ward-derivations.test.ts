@@ -552,7 +552,7 @@ describe("destinationNoLongerLawful", () => {
 describe("unitCapacity clamping and closed unit protection", () => {
   // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands — Ready = min(allocatable,
   // empty), not clamped to the nominal bed count — and a closed unit counts as zero capacity.
-  it("WF-FIX-10 / A3-14: keeps main's Ready rule and pins available to 0 for a closed unit", () => {
+  it("A3-14: keeps main's Ready rule and pins available to 0 for a closed unit", () => {
     const baseUnit = allUnits()[0];
     const zeroBedUnit = {
       ...baseUnit,

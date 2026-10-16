@@ -411,7 +411,7 @@ type CandidateWard = {
   tone: "success" | "warning";
   /** "Eligible now", or the recorded reason an override would need. */
   text: string;
-  /** In catchment with no free locked bed: kept and marked rather than rejected (WF-01). */
+  /** In catchment with no free locked bed: kept and marked rather than rejected. */
   waitlist: boolean;
 };
 

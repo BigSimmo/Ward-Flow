@@ -139,7 +139,7 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  *
  * Kept from the third edition: the selection survives a role switch while the movement is open
  * (`focusMovementId`, Task 12), a closed movement stops being explained and hands focus back to
- * the queue (WF-22), the registers are never ED-filtered, and the service scope narrows only the
+ * the queue, the registers are never ED-filtered, and the service scope narrows only the
  * queue and the ED card, never the bedflow or the shortlist.
  */
 export function CoordinatorScreen() {
@@ -236,7 +236,7 @@ export function CoordinatorScreen() {
     setRightPanel("placement");
   }
 
-  // WF-22: gated on `isOpen`, so a movement that closes while selected stops being explained.
+  // gated on `isOpen`, so a movement that closes while selected stops being explained.
   const selectedMovement = selectedMovementId
     ? movements.find((movement) => movement.id === selectedMovementId && isOpen(movement))
     : undefined;
