@@ -280,7 +280,29 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     });
   }
 
-  return async (authorization, { clientAddress = "unknown" } = {}) => {
+  /**
+   * When this account last signed in with its password or another factor: the newest `amr`
+   * timestamp, in milliseconds. A refreshed token keeps it, so it answers "how recently did this
+   * person prove it is them" for step-up (feature 9). Undefined when the token carries none.
+   */
+  const signedInAt = (claims) => {
+    const times = Array.isArray(claims?.amr)
+      ? claims.amr.map((entry) => entry?.timestamp).filter((value) => Number.isFinite(value))
+      : [];
+    return times.length ? Math.max(...times) * 1000 : undefined;
+  };
+  /**
+   * `session`, when given, is filled once the token is verified: `signedInAt` (above) and `aal`.
+   * The subject is still the only return value.
+   */
+  return async (authorization, { clientAddress = "unknown", session = null } = {}) => {
+    const verified = (userId, claims) => {
+      if (session) {
+        session.signedInAt = signedInAt(claims);
+        session.aal = typeof claims?.aal === "string" ? claims.aal : undefined;
+      }
+      return userId;
+    };
     if (!/^Bearer [^\s]+$/.test(authorization ?? "") || authorization.length > 16_384)
       throw new InvalidCredentialError("Unauthorised");
     const jwt = decodeJwt(authorization.slice(7));
@@ -325,12 +347,12 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
           claims.role !== "authenticated"
         )
           throw new InvalidCredentialError("Unauthorised");
-        return subject;
+        return verified(subject, claims);
       }
     }
     const tokenKey = createHash("sha256").update(authorization).digest("hex");
     const known = confirmed.get(tokenKey);
-    if (known && known.until > now()) return known.userId;
+    if (known && known.until > now()) return verified(known.userId, claims);
     confirmed.delete(tokenKey);
     if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
     if (!allowRemoteCheck(await holdsRole(subject))) throw new VerifierRateLimitedError("Too many sign-in checks");
@@ -345,6 +367,6 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       throw new InvalidCredentialError("Unauthorised");
     if (confirmed.size >= CONFIRMED_MAX) confirmed.delete(confirmed.keys().next().value);
     confirmed.set(tokenKey, { userId, until: Math.min(now() + CONFIRMED_TTL_MS, claims.exp * 1000) });
-    return userId;
+    return verified(userId, claims);
   };
 }

@@ -1,6 +1,11 @@
 // @ts-check
 import { createHash, randomUUID } from "node:crypto";
-import { LATEST_MIGRATION, MINIMUM_RUNTIME_MIGRATION, ROLE_ACCESS_MIGRATION } from "./migrations.mjs";
+import {
+  ACCESS_COVER_MIGRATION,
+  LATEST_MIGRATION,
+  MINIMUM_RUNTIME_MIGRATION,
+  ROLE_ACCESS_MIGRATION,
+} from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
@@ -12,6 +17,10 @@ const VERSION_TRUSTED_MS = 60_000;
 const GRANT_SETTLE_MS = 60_000;
 /** Roles that work only once a second person has approved them. */
 const APPROVED_ROLES = ["coordinator", "admin"];
+/** How often a role's "last used" time is written: once an hour is enough for a 90 day rule. */
+const LAST_USED_EVERY_MS = 3_600_000;
+/** Open requests for access kept at once, so made-up accounts cannot fill the table. */
+const MAX_OPEN_REQUESTS = 200;
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -200,12 +209,37 @@ export function createWorkspaceStore(
     );
     const fresh = freshAlerts(previous, current);
     if (!fresh.length) return false;
+    const byRole = (await schemaVersion()) >= ACCESS_COVER_MIGRATION;
     // An item that left and came back red is announced again, as the open-tab notifier does.
     const queued = await client.query(
-      "INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) SELECT s.id, item FROM ward_flow.push_subscriptions s CROSS JOIN unnest($4::text[]) AS item WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND s.actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR s.actor_id <> $3::uuid) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL",
+      `INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) SELECT s.id, item FROM ward_flow.push_subscriptions s CROSS JOIN unnest($4::text[]) AS item WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL${byRole ? " AND s.membership_id IS NULL" : ""} AND s.actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR s.actor_id <> $3::uuid) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL`,
       [workspaceId, push.coordinatorIds, excludeActorId, fresh.map((alert) => alert.id)],
     );
-    return queued.rowCount > 0;
+    let count = queued.rowCount;
+    if (byRole) {
+      // From 9, a device turned on from a desk held by membership hears that desk's own act-now
+      // rows only: the fresh items its scoped workspace still shows.
+      const { rows: desks } = await client.query(
+        "SELECT DISTINCT m.id, m.role, m.scope FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND (m.approved_at IS NOT NULL OR NOT (m.role = ANY($3::text[]))) LIMIT 500",
+        [workspaceId, at, APPROVED_ROLES],
+      );
+      const freshIds = new Set(fresh.map((alert) => alert.id));
+      for (const desk of desks) {
+        const access = engine.parseAccess(desk.role, desk.scope);
+        if (!access) continue;
+        const items = engine
+          .scopedActNowAlerts(world, access, at)
+          .map((alert) => alert.id)
+          .filter((id) => freshIds.has(id));
+        if (!items.length) continue;
+        const own = await client.query(
+          "INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) SELECT s.id, item FROM ward_flow.push_subscriptions s CROSS JOIN unnest($4::text[]) AS item WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND s.membership_id=$2 AND ($3::uuid IS NULL OR s.actor_id <> $3::uuid) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL",
+          [workspaceId, desk.id, excludeActorId, items],
+        );
+        count += own.rowCount;
+      }
+    }
+    return count > 0;
   }
   /**
    * After commit, and from the sweep: send each device one notification for its due pending
@@ -232,10 +266,16 @@ export function createWorkspaceStore(
         return new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
       };
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
+      // A bootstrap coordinator's device while it is still named; from 9 also a device held by a
+      // role that is still active.
+      const listener =
+        (await schemaVersion()) >= ACCESS_COVER_MIGRATION
+          ? "((s.membership_id IS NULL AND s.actor_id = ANY($2::uuid[])) OR EXISTS (SELECT 1 FROM ward_flow.memberships m WHERE m.id = s.membership_id AND m.revoked_at IS NULL AND m.expires_at > $5))"
+          : "s.actor_id = ANY($2::uuid[])";
       let after = "0";
       for (;;) {
         const { rows } = await pool.query(
-          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND s.actor_id = ANY($2::uuid[]) AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth`,
+          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth`,
           [
             workspaceId,
             push.coordinatorIds,
@@ -327,22 +367,49 @@ export function createWorkspaceStore(
   async function viewer(actorId, { bootstrap = false, workingAs = null } = {}) {
     const at = clock();
     const version = await schemaVersion();
-    const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE }] : [];
+    const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
     if (version >= ROLE_ACCESS_MIGRATION) {
+      // From 9, a role not worked as for the set time is switched off (cover is too short to go
+      // unused), and cover is a membership of its own kind.
+      const covers = version >= ACCESS_COVER_MIGRATION;
       const { rows } = await pool
         .query(
-          "SELECT id, role, scope FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
-          [workspaceId, actorId, at, APPROVED_ROLES],
+          covers
+            ? "SELECT id, role, scope, kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $5) ORDER BY granted_at, id LIMIT 20"
+            : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
+          covers
+            ? [workspaceId, actorId, at, APPROVED_ROLES, new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000)]
+            : [workspaceId, actorId, at, APPROVED_ROLES],
         )
         .catch((error) => {
           forgetVersionOnMissing(error);
           throw error;
         });
+      const roles = [];
+      const wardCovers = [];
       for (const row of rows) {
         // A row the access table would not allow is skipped, never widened.
         const access = engine.parseAccess(row.role, row.scope);
-        if (access) choices.push({ membershipId: row.id, access });
+        if (!access) continue;
+        if (row.kind === "cover" && access.role === "ward") wardCovers.push({ membershipId: row.id, access });
+        else roles.push({ membershipId: row.id, access, own: access });
       }
+      // Cover of a ward joins a nurse in charge's own ward, so night cover of two wards is one desk.
+      // Held with no ward of their own, or for an ED, cover is a choice of who to work as.
+      const wardRoles = roles.filter((choice) => choice.access.role === "ward");
+      for (const choice of roles)
+        choices.push(
+          choice.access.role === "ward" && wardCovers.length
+            ? {
+                ...choice,
+                access: engine.withCover(
+                  choice.access,
+                  wardCovers.map((cover) => cover.access.scope),
+                ),
+              }
+            : choice,
+        );
+      if (!wardRoles.length) for (const cover of wardCovers) choices.push({ ...cover, own: cover.access });
     }
     const chosen = workingAs
       ? choices.find((choice) => (choice.membershipId ?? "bootstrap") === workingAs)
@@ -358,6 +425,17 @@ export function createWorkspaceStore(
         : { status: "none" };
     let grants = [];
     let recentGrant = false;
+    if (chosen.membershipId && version >= ACCESS_COVER_MIGRATION)
+      // When this role was last worked as, for the "not used" switch-off. Written at most hourly.
+      await pool
+        .query(
+          "UPDATE ward_flow.memberships SET last_used_at=$2 WHERE id=$1 AND (last_used_at IS NULL OR last_used_at < $3)",
+          [chosen.membershipId, at, new Date(at.getTime() - LAST_USED_EVERY_MS)],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
     if (chosen.membershipId) {
       const { rows } = await pool.query(
         "SELECT patient_id, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT 50",
@@ -374,21 +452,42 @@ export function createWorkspaceStore(
       version,
       membershipId: chosen.membershipId,
       access: chosen.access,
+      // The role as granted, before any cover joined it: what this desk may give cover of.
+      ownAccess: chosen.own ?? chosen.access,
       grants,
       recentGrant,
     };
   }
+  /** Minutes from `at` to a stored time, so a screen can place it on its own clock. */
+  const minutesFrom = (value, at) => (value ? Math.round((new Date(value).getTime() - at.getTime()) / 60_000) : null);
   /** A membership as an access admin sees it. */
-  const presentMembership = (row) => ({
+  const presentMembership = (row, at = clock()) => ({
     id: row.id,
     actorId: row.actor_id,
     role: row.role,
     scope: row.scope,
+    kind: row.kind ?? "role",
     grantedBy: row.granted_by,
     grantedAt: new Date(row.granted_at).toISOString(),
     expiresAt: new Date(row.expires_at).toISOString(),
+    lastUsedAt: row.last_used_at ? new Date(row.last_used_at).toISOString() : null,
     approved: row.approved_at !== null || !APPROVED_ROLES.includes(row.role),
     approvedBy: row.approved_by,
+    minutes: {
+      granted: minutesFrom(row.granted_at, at),
+      expires: minutesFrom(row.expires_at, at),
+      lastUsed: minutesFrom(row.last_used_at, at),
+    },
+  });
+  /** A request for access as an access admin sees it. */
+  const presentRequest = (row, at = clock()) => ({
+    id: row.id,
+    actorId: row.actor_id,
+    role: row.role,
+    scope: row.scope,
+    requestedAt: new Date(row.requested_at).toISOString(),
+    decision: row.decision,
+    minutes: { requested: minutesFrom(row.requested_at, at) },
   });
   const refused = (status, error) => ({ status, body: { error } });
   const notAdmin = "Granting and removing roles is not part of your role.";
@@ -403,8 +502,17 @@ export function createWorkspaceStore(
       return refused(409, "Roles are not set up on this database yet. Apply migration 8 first.");
     return null;
   }
-  async function changeMembership(view, membershipId, action, change) {
-    const blocked = accessRefusal(view);
+  // From 9 the giver of cover may end it too, so cover needs no access admin at either end.
+  function coverRefusalBefore9(view) {
+    if (!(view.version >= ACCESS_COVER_MIGRATION))
+      return refused(
+        409,
+        "Cover and requests for access are not set up on this database yet. Apply migration 9 first.",
+      );
+    return null;
+  }
+  async function changeMembership(view, membershipId, action, change, { coverGiver = false } = {}) {
+    const blocked = coverGiver && !engine.managesAccess(view.access) ? coverRefusalBefore9(view) : accessRefusal(view);
     if (blocked) return blocked;
     return transaction(async (client, at) => {
       const row = await lock(client, view.actorId, at, view);
@@ -415,10 +523,14 @@ export function createWorkspaceStore(
       const membership = rows[0];
       if (!membership) return refused(404, "That role is not active.");
       const access = engine.parseAccess(membership.role, membership.scope);
+      const ownCover = coverGiver && membership.kind === "cover" && membership.granted_by === view.actorId;
+      if (!ownCover && !engine.managesAccess(view.access)) return refused(403, notAdmin);
       // A row the access table cannot read is left to a statewide admin.
-      const covered = access
-        ? engine.scopeWithin(row.payload, access.scope, view.access.scope)
-        : view.access.scope.kind === "statewide";
+      const covered =
+        ownCover ||
+        (access
+          ? engine.scopeWithin(row.payload, access.scope, view.access.scope)
+          : view.access.scope.kind === "statewide");
       if (!covered) return refused(403, "That role is wider than your own.");
       const outcome = change(membership);
       if (typeof outcome === "string") return refused(422, outcome);
@@ -435,8 +547,41 @@ export function createWorkspaceStore(
         revision,
         changes: { membershipId, actorId: membership.actor_id, role: membership.role, scope: membership.scope },
       });
-      return { status: 200, body: { membership: presentMembership(updated[0]) } };
+      return { status: 200, body: { membership: presentMembership(updated[0], at) } };
     });
+  }
+  /** Inside the workspace lock: a new role for a person until a set time, audited. */
+  async function insertGrant(client, row, view, { actorId, access, expiresAt, kind = "role" }, at, action) {
+    const id = randomUUID();
+    const { rows } = await client.query(
+      kind === "cover"
+        ? "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at, kind) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'cover') RETURNING *"
+        : "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
+      [id, workspaceId, actorId, access.role, access.scope, view.actorId, at, expiresAt],
+    );
+    const revision = Number(row.revision);
+    await audit(client, view, view.actorId, {
+      action,
+      outcome: "accepted",
+      priorRevision: revision,
+      revision,
+      changes: {
+        membershipId: id,
+        actorId,
+        role: access.role,
+        scope: access.scope,
+        expiresAt: expiresAt.toISOString(),
+      },
+    });
+    return rows[0];
+  }
+  /** Who may hear phone alerts as this desk: a whole-network bootstrap, or a role from 9 on. */
+  function pushByRole(view) {
+    return (
+      view.membershipId !== null &&
+      view.version >= ACCESS_COVER_MIGRATION &&
+      engine.PUSH_ROLES.includes(view.access.role)
+    );
   }
   return {
     pushEnabled: !!push,
@@ -446,8 +591,11 @@ export function createWorkspaceStore(
       if (!Number.isInteger(version) || version < MINIMUM_RUNTIME_MIGRATION || version > LATEST_MIGRATION)
         throw new Error("Shared schema unavailable");
     },
-    async subscribe(actorId, subscription) {
+    /** `membershipId`: the desk the device was turned on from, or null for a bootstrap coordinator. */
+    async subscribe(actorId, subscription, membershipId = null) {
       if (!push) throw new Error("push-disabled");
+      const byRole = (await schemaVersion()) >= ACCESS_COVER_MIGRATION;
+      if (membershipId && !byRole) throw new Error("push-disabled");
       return transaction(async (client, at) => {
         // Workspace key-share locks do not conflict with one another; serialize the
         // per-account count and insert so the device limit cannot be exceeded.
@@ -487,9 +635,17 @@ export function createWorkspaceStore(
           "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.endpoint=$1",
           [subscription.endpoint],
         );
+        const takeover =
+          "ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL" +
+          (byRole ? ", membership_id=EXCLUDED.membership_id" : "") +
+          " WHERE ward_flow.push_subscriptions.revoked_at IS NOT NULL OR (ward_flow.push_subscriptions.p256dh=EXCLUDED.p256dh AND ward_flow.push_subscriptions.auth=EXCLUDED.auth) OR (ward_flow.push_subscriptions.workspace_id=EXCLUDED.workspace_id AND ward_flow.push_subscriptions.actor_id=EXCLUDED.actor_id)";
         const stored = await client.query(
-          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL WHERE ward_flow.push_subscriptions.revoked_at IS NOT NULL OR (ward_flow.push_subscriptions.p256dh=EXCLUDED.p256dh AND ward_flow.push_subscriptions.auth=EXCLUDED.auth) OR (ward_flow.push_subscriptions.workspace_id=EXCLUDED.workspace_id AND ward_flow.push_subscriptions.actor_id=EXCLUDED.actor_id)",
-          [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at],
+          byRole
+            ? `INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at, membership_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ${takeover}`
+            : `INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ${takeover}`,
+          byRole
+            ? [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at, membershipId]
+            : [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at],
         );
         // A concurrent first claim by another account can win the insert; it is not overwritten.
         if (!stored.rowCount) return "in-use";
@@ -569,7 +725,8 @@ export function createWorkspaceStore(
     /**
      * The accounts holding any current role here, waiting approval included. The sign-in check
      * reads this list now and then (cached) before it calls Supabase, so made-up accounts get only a
-     * small allowance. Before migration 8 there are no roles to hold.
+     * small allowance. Before migration 8 there are no roles to hold. Running cover is a membership,
+     * so its holder counts; a request for access is not, so its asker stays in the no-role allowance.
      */
     async roleHolders() {
       if ((await schemaVersion()) < ROLE_ACCESS_MIGRATION) return [];
@@ -607,25 +764,37 @@ export function createWorkspaceStore(
         return !!access && engine.scopeWithin(payload, access.scope, view.access.scope);
       });
     },
-    /** Every active or waiting role inside the access admin's own place. */
+    /**
+     * Every active or waiting role and cover inside the access admin's own place, with when each
+     * was last used, and from 9 the open requests for access there too.
+     */
     async listAccess(view) {
       const blocked = accessRefusal(view);
       if (blocked) return blocked;
       const at = clock();
       const world = await read(view.actorId);
+      const inside = (row) => {
+        const access = engine.parseAccess(row.role, row.scope);
+        return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+      };
       const { rows } = await pool.query(
         "SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2 ORDER BY granted_at, id LIMIT 500",
         [workspaceId, at],
       );
+      const requests =
+        view.version >= ACCESS_COVER_MIGRATION
+          ? (
+              await pool.query(
+                "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL ORDER BY requested_at, id LIMIT $2",
+                [workspaceId, MAX_OPEN_REQUESTS],
+              )
+            ).rows
+          : [];
       return {
         status: 200,
         body: {
-          memberships: rows
-            .filter((row) => {
-              const access = engine.parseAccess(row.role, row.scope);
-              return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
-            })
-            .map(presentMembership),
+          memberships: rows.filter(inside).map((row) => presentMembership(row, at)),
+          requests: requests.filter(inside).map((row) => presentRequest(row, at)),
         },
       };
     },
@@ -645,26 +814,168 @@ export function createWorkspaceStore(
         if (!engine.scopeExists(row.payload, access.scope)) return refused(422, "That place is not in the workspace.");
         if (!engine.scopeWithin(row.payload, access.scope, view.access.scope))
           return refused(403, "That role is wider than your own.");
-        const id = randomUUID();
-        const { rows } = await client.query(
-          "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
-          [id, workspaceId, request.actorId, access.role, access.scope, view.actorId, at, request.expiresAt],
+        const granted = await insertGrant(
+          client,
+          row,
+          view,
+          { actorId: request.actorId, access, expiresAt: request.expiresAt },
+          at,
+          "ACCESS_GRANT",
         );
-        const revision = Number(row.revision);
-        await audit(client, view, view.actorId, {
-          action: "ACCESS_GRANT",
-          outcome: "accepted",
-          priorRevision: revision,
-          revision,
-          changes: {
-            membershipId: id,
-            actorId: request.actorId,
-            role: access.role,
-            scope: access.scope,
-            expiresAt: request.expiresAt.toISOString(),
+        return { status: 200, body: { membership: presentMembership(granted, at) } };
+      });
+    },
+    /**
+     * Cover of one ward or ED for a colleague, for one shift at most (feature 2). Given by a
+     * coordinator inside its place, or by a nurse in charge or ED clinician for their own ward or
+     * ED. Needs no access admin, and ends by itself. Cover is a membership, so it counts as a role
+     * holder for the sign-in pre-check while it runs.
+     */
+    async giveCover(view, request) {
+      const blocked = coverRefusalBefore9(view);
+      if (blocked) return blocked;
+      const shape = request.scope ? engine.coverAccess(request.scope) : null;
+      const cover = shape ? engine.parseAccess(shape.role, request.scope) : null;
+      if (!cover) return refused(400, "Cover is for one ward or one ED.");
+      return transaction(async (client, at) => {
+        const row = await lock(client, view.actorId, at, view);
+        const refusal = engine.coverRefusal(
+          row.payload,
+          view.ownAccess ?? view.access,
+          view.actorId,
+          request.actorId,
+          cover.scope,
+          request.minutes,
+        );
+        if (refusal) return refused(422, refusal);
+        const expiresAt = new Date(at.getTime() + request.minutes * 60_000);
+        const given = await insertGrant(
+          client,
+          row,
+          view,
+          { actorId: request.actorId, access: cover, expiresAt, kind: "cover" },
+          at,
+          "ACCESS_COVER",
+        );
+        return { status: 200, body: { membership: presentMembership(given, at) } };
+      });
+    },
+    /** The cover this desk gave or holds, and for a coordinator all cover inside its place. */
+    async listCovers(view) {
+      const blocked = coverRefusalBefore9(view);
+      if (blocked) return blocked;
+      const at = clock();
+      const world = await read(view.actorId);
+      const { rows } = await pool.query(
+        "SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND kind='cover' AND revoked_at IS NULL AND expires_at > $2 ORDER BY granted_at, id LIMIT 200",
+        [workspaceId, at],
+      );
+      const coordinator = view.access.role === "coordinator";
+      return {
+        status: 200,
+        body: {
+          covers: rows
+            .filter((row) => {
+              if (row.granted_by === view.actorId || row.actor_id === view.actorId) return true;
+              const access = engine.parseAccess(row.role, row.scope);
+              return coordinator && !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+            })
+            .map((row) => presentMembership(row, at)),
+        },
+      };
+    },
+    /**
+     * A signed-in person with no role asks for one (feature 7). Open to any signed-in account, so
+     * it is checked hard: a real place, one open request each, and a cap on open requests. A
+     * request is not a role, so it never counts as a role holder for the sign-in pre-check.
+     */
+    async requestAccess(actorId, request) {
+      if ((await schemaVersion()) < ACCESS_COVER_MIGRATION)
+        return refused(409, "Asking for access is not set up on this database yet.");
+      const access = engine.parseAccess(request.role, request.scope);
+      if (!access) return refused(400, "A role and a place that go together are required.");
+      return transaction(async (client, at) => {
+        const row = await lock(client, actorId, at);
+        const { rows } = await client.query(
+          "SELECT count(*) FILTER (WHERE actor_id=$2)::int AS mine, count(*)::int AS open FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL",
+          [workspaceId, actorId],
+        );
+        const refusal = engine.requestRefusal(row.payload, access, rows[0].mine);
+        if (refusal) return refused(422, refusal);
+        if (rows[0].open >= MAX_OPEN_REQUESTS)
+          return refused(429, "Too many requests are waiting. Ask your access admin directly.");
+        const { rows: stored } = await client.query(
+          "INSERT INTO ward_flow.access_requests(id, workspace_id, actor_id, role, scope, requested_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING *",
+          [randomUUID(), workspaceId, actorId, access.role, access.scope, at],
+        );
+        if (!stored.length) return refused(422, "You have already asked. An access admin will answer it.");
+        return { status: 200, body: { request: presentRequest(stored[0], at) } };
+      });
+    },
+    /** This account's own open request, so the screen can say it is waiting. */
+    async ownRequest(actorId) {
+      if ((await schemaVersion()) < ACCESS_COVER_MIGRATION) return { status: 200, body: { request: null } };
+      const at = clock();
+      const { rows } = await pool.query(
+        "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND actor_id=$2 AND decision IS NULL LIMIT 1",
+        [workspaceId, actorId],
+      );
+      return { status: 200, body: { request: rows[0] ? presentRequest(rows[0], at) : null } };
+    },
+    /**
+     * An access admin answers a request. Approving grants the asked-for role until `expiresAt`,
+     * through the same rules as a grant, so nobody approves a role wider than their own.
+     */
+    async decideRequest(view, requestId, decision, expiresAt) {
+      const blocked = accessRefusal(view) ?? coverRefusalBefore9(view);
+      if (blocked) return blocked;
+      if (decision !== "approved" && decision !== "declined") return refused(400, "Approve or decline.");
+      return transaction(async (client, at) => {
+        const row = await lock(client, view.actorId, at, view);
+        const { rows } = await client.query(
+          "SELECT * FROM ward_flow.access_requests WHERE id=$1 AND workspace_id=$2 AND decision IS NULL FOR UPDATE",
+          [requestId, workspaceId],
+        );
+        const request = rows[0];
+        if (!request) return refused(404, "That request has already been answered.");
+        const access = engine.parseAccess(request.role, request.scope);
+        if (!access || !engine.scopeWithin(row.payload, access.scope, view.access.scope))
+          return refused(403, "That role is wider than your own.");
+        if (request.actor_id === view.actorId) return refused(422, "Nobody grants themselves a role.");
+        let membership = null;
+        if (decision === "approved") {
+          if (!(expiresAt > at)) return refused(400, "A role needs an end date in the future.");
+          if (!engine.scopeExists(row.payload, access.scope))
+            return refused(422, "That place is not in the workspace.");
+          membership = await insertGrant(
+            client,
+            row,
+            view,
+            { actorId: request.actor_id, access, expiresAt },
+            at,
+            "ACCESS_GRANT",
+          );
+        } else {
+          const revision = Number(row.revision);
+          await audit(client, view, view.actorId, {
+            action: "ACCESS_DECLINE",
+            outcome: "accepted",
+            priorRevision: revision,
+            revision,
+            changes: { requestId, actorId: request.actor_id, role: request.role, scope: request.scope },
+          });
+        }
+        const { rows: answered } = await client.query(
+          "UPDATE ward_flow.access_requests SET decision=$2, decided_by=$3, decided_at=$4 WHERE id=$1 RETURNING *",
+          [requestId, decision, view.actorId, at],
+        );
+        return {
+          status: 200,
+          body: {
+            request: presentRequest(answered[0], at),
+            ...(membership ? { membership: presentMembership(membership, at) } : {}),
           },
-        });
-        return { status: 200, body: { membership: presentMembership(rows[0]) } };
+        };
       });
     },
     /** The second person's approval of a coordinator or access admin role. */
@@ -677,10 +988,15 @@ export function createWorkspaceStore(
             : ["approved_at", "approved_by"],
       );
     },
-    /** Ends a role now. */
+    /** Ends a role now. Cover is ended by its giver too, with no access admin. */
     revokeAccess(view, membershipId) {
-      return changeMembership(view, membershipId, "ACCESS_REVOKE", () => ["revoked_at", "revoked_by"]);
+      return changeMembership(view, membershipId, "ACCESS_REVOKE", () => ["revoked_at", "revoked_by"], {
+        coverGiver: true,
+      });
     },
+    pushByRole,
+    /** Granting access, cover or breaking glass needs a sign-in this recent. */
+    stepUpMinutes: engine.STEP_UP_MINUTES,
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a
      * reason. Each opening is kept as the "who looked" record and audited. More than the set

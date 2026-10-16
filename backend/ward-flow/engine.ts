@@ -1,9 +1,16 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
+  ACCESS_UNUSED_MINUTES as ACCESS_UNUSED_RULE_MINUTES,
+  STEP_UP_MINUTES as STEP_UP_RULE_MINUTES,
+  coverAccess as coverAccessRule,
+  coverRefusal as coverRefusalRule,
   managesAccess as managesAccessRule,
+  requestRefusal as requestRefusalRule,
+  revokeRefusal as revokeRefusalRule,
   scopeNamesPlace,
   scopeWithinScope,
+  withCover as withCoverRule,
   type AccessPlaces,
 } from "../../src/components/ward-management/ward-access-admin";
 import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
@@ -267,6 +274,82 @@ export function scopeExists(world: SharedWorld, scope: WardAccessScope): boolean
  */
 export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: WardAccessScope): boolean {
   return scopeWithinScope(inner, outer, accessPlaces(world));
+}
+
+/** Granting access, cover or breaking glass needs a sign-in this recent (synthetic). */
+export const STEP_UP_MINUTES = STEP_UP_RULE_MINUTES;
+/** A role not worked as for this long stops working by itself (synthetic). */
+export const ACCESS_UNUSED_MINUTES = ACCESS_UNUSED_RULE_MINUTES;
+
+/**
+ * Why this cover may not be given, or `null` (feature 2): the same rule the Access tab uses. The
+ * role it carries comes from `coverAccess`: a ward's cover is a nurse in charge's, an ED's an ED
+ * clinician's.
+ */
+export function coverRefusal(
+  world: SharedWorld,
+  giver: WardAccess,
+  giverId: string,
+  recipientId: string,
+  scope: WardAccessScope,
+  minutes: number,
+): string | null {
+  return coverRefusalRule({ giver, giverId, recipientId, scope, minutes, places: accessPlaces(world) });
+}
+
+export function coverAccess(scope: WardAccessScope): WardAccess | null {
+  return coverAccessRule(scope);
+}
+
+/** A ward desk with cover of more wards works them as one desk. ED cover is never merged. */
+export function withCover(access: WardAccess, covers: readonly WardAccessScope[]): WardAccess {
+  return withCoverRule(access, covers);
+}
+
+/** Why a person with no role may not ask for this one, or `null` (feature 7). */
+export function requestRefusal(world: SharedWorld, access: WardAccess, openRequests: number): string | null {
+  return requestRefusalRule({ access, openRequests, places: accessPlaces(world) });
+}
+
+/** Why this person may not end this role or cover, or `null`. A cover's giver ends it too. */
+export function revokeRefusal(
+  world: SharedWorld,
+  remover: WardAccess,
+  removerId: string,
+  membership: { kind: "role" | "cover"; grantedBy: string; access: WardAccess },
+): string | null {
+  return revokeRefusalRule({
+    remover,
+    removerId,
+    membership: {
+      id: "",
+      actorId: "",
+      grantedAt: 0,
+      expiresAt: 0,
+      approvedBy: null,
+      lastUsedAt: null,
+      revokedAt: null,
+      ...membership,
+    },
+    places: accessPlaces(world),
+  });
+}
+
+/**
+ * Who hears phone alerts by role (feature 10): a coordinator, a site bed manager, a nurse in
+ * charge or an ED clinician, each for the act-now rows inside their own place only. An executive
+ * sees counts, an access admin no patients, so neither is sent alerts.
+ */
+export const PUSH_ROLES: readonly WardAccess["role"][] = ["coordinator", "bed_manager", "ward", "ed"];
+
+/** The act-now rows this desk may hear about: `actNowAlerts` on its own scoped workspace. */
+export function scopedActNowAlerts(
+  world: SharedWorld,
+  access: WardAccess,
+  at: Date,
+): { id: string; site: string | null }[] {
+  if (!validWorld(world) || !PUSH_ROLES.includes(access.role)) return [];
+  return accessIsWholeNetwork(access) ? actNowAlerts(world, at) : actNowAlerts(scopeWorld(world, access, at), at);
 }
 
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);

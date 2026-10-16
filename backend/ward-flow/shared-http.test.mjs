@@ -45,14 +45,18 @@ function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
       calls.push(["audit", ...args]);
       return [auditEvent];
     },
+    // Granting access and breaking glass need a recent sign-in (feature 9).
+    stepUpMinutes: 10,
     ...overrides,
   };
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
     store: {},
     sharedStore,
-    authenticate: async (token) => {
+    authenticate: async (token, { session } = {}) => {
       if (!token) throw new Error("Unauthorized");
+      // "Bearer stale" stands for a sign-in older than the step-up window.
+      if (session) session.signedInAt = token === "Bearer stale" ? Date.now() - 11 * 60_000 : Date.now();
       return actor;
     },
     log: (event) => logs.push(event),
@@ -418,4 +422,102 @@ test("access and break glass routes check their fields and pass the store's answ
     assert.equal((await handler(request(path, data))).status, 400, path);
   assert.equal((await handler(request("/access/grant"))).status, 405);
   assert.equal(seen.length, 5);
+});
+
+test("the powerful steps need a recent sign-in, and say so with their own code", async () => {
+  const seen = [];
+  const { handler } = setup(coordinator, "prototype", {
+    grantAccess: async () => {
+      seen.push("grant");
+      return { status: 200, body: {} };
+    },
+    breakGlass: async () => {
+      seen.push("breakGlass");
+      return { status: 200, body: {} };
+    },
+    listAccess: async () => ({ status: 200, body: { memberships: [] } }),
+  });
+  const grant = {
+    actorId: other,
+    role: "ward",
+    scope: { kind: "ward", unitIds: ["unit-a"] },
+    expiresAt: "2027-01-01T00:00:00.000Z",
+  };
+  for (const [path, data] of [
+    ["/access/grant", grant],
+    ["/break-glass", { patientId: "p-1", reason: "handover" }],
+  ]) {
+    const response = await handler(request(path, data, "Bearer stale"));
+    assert.equal(response.status, 401, path);
+    assert.equal((await response.json()).code, "step-up");
+  }
+  assert.deepEqual(seen, []);
+  // Reading the list is not a powerful step.
+  assert.equal((await handler(request("/access", undefined, "Bearer stale"))).status, 200);
+  assert.equal((await handler(request("/access/grant", grant))).status, 200);
+  assert.deepEqual(seen, ["grant"]);
+  // A store that names no window asks every time.
+  const strict = setup(coordinator, "prototype", {
+    stepUpMinutes: undefined,
+    grantAccess: async () => ({ status: 200, body: {} }),
+  });
+  assert.equal((await strict.handler(request("/access/grant", grant, "Bearer stale"))).status, 401);
+});
+
+test("cover, requests and answers check their fields; asking for access needs no role", async () => {
+  const seen = [];
+  const answer =
+    (name) =>
+    async (...args) => {
+      seen.push([name, ...args]);
+      return { status: 200, body: { name } };
+    };
+  const { handler } = setup(coordinator, "prototype", {
+    giveCover: answer("cover"),
+    listCovers: answer("covers"),
+    decideRequest: answer("decide"),
+    requestAccess: answer("request"),
+    ownRequest: answer("own"),
+  });
+  const view = { ...STATEWIDE_VIEW, actorId: coordinator };
+  const scope = { kind: "ward", unitIds: ["unit-a"] };
+  const requestId = "77777777-7777-4777-8777-777777777777";
+  assert.equal((await handler(request("/access/cover", { actorId: other, scope, minutes: 480 }))).status, 200);
+  assert.deepEqual(await (await handler(request("/access/cover"))).json(), { name: "covers" });
+  const decided = { requestId, decision: "approved", expiresAt: "2027-01-01T00:00:00.000Z" };
+  assert.equal((await handler(request("/access/decide", decided))).status, 200);
+  assert.deepEqual(seen, [
+    ["cover", view, { actorId: other, scope, minutes: 480 }],
+    ["covers", view],
+    ["decide", view, requestId, "approved", new Date(decided.expiresAt)],
+  ]);
+  for (const [path, data] of [
+    ["/access/cover", { actorId: "x", scope, minutes: 480 }],
+    ["/access/cover", { actorId: other, scope, minutes: "8h" }],
+    ["/access/decide", { ...decided, decision: "maybe" }],
+    ["/access/decide", { ...decided, requestId: "x" }],
+    ["/access/request", { role: 7, scope }],
+  ])
+    assert.equal((await handler(request(path, data))).status, 400, path);
+
+  // An account with no role may ask for one, and read its own request, but nothing else.
+  seen.length = 0;
+  const nobody = setup(other, "prototype", {
+    viewer: async () => ({ status: "none" }),
+    requestAccess: answer("request"),
+    ownRequest: answer("own"),
+  });
+  assert.equal((await nobody.handler(request("/access/request", { role: "ward", scope }))).status, 200);
+  assert.deepEqual(await (await nobody.handler(request("/access/request"))).json(), { name: "own" });
+  const closed = await nobody.handler(request("/access"));
+  assert.equal(closed.status, 403);
+  assert.deepEqual(await closed.json(), {
+    error: "No Ward Flow role is assigned to this account",
+    code: "no-role",
+    canRequest: true,
+  });
+  assert.deepEqual(seen, [
+    ["request", other, { role: "ward", scope }],
+    ["own", other],
+  ]);
 });

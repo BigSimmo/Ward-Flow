@@ -16,7 +16,22 @@ const ROUTES = new Map([
   ["/v1/workspace/access/grant", "access_grant"],
   ["/v1/workspace/access/approve", "access_approve"],
   ["/v1/workspace/access/revoke", "access_revoke"],
+  ["/v1/workspace/access/cover", "access_cover"],
+  ["/v1/workspace/access/request", "access_request"],
+  ["/v1/workspace/access/decide", "access_decide"],
   ["/v1/workspace/break-glass", "break_glass"],
+]);
+/**
+ * The powerful steps (feature 9): giving, approving or ending a role, giving cover, answering a
+ * request for access and opening a record outside your care. Each needs a recent sign-in.
+ */
+const STEP_UP_PATHS = new Set([
+  "/v1/workspace/access/grant",
+  "/v1/workspace/access/approve",
+  "/v1/workspace/access/revoke",
+  "/v1/workspace/access/cover",
+  "/v1/workspace/access/decide",
+  "/v1/workspace/break-glass",
 ]);
 /** Names one of the account's roles when it holds more than one: a membership ID or "bootstrap". */
 const WORKING_AS = "x-ward-working-as";
@@ -123,8 +138,13 @@ export function createSharedHandler({
       });
     }
     let actorId;
+    /** @type {{ signedInAt?: number, aal?: string }} */
+    const session = {};
     try {
-      actorId = await authenticate(request.headers.get("authorization"), { clientAddress: meta.clientAddress });
+      actorId = await authenticate(request.headers.get("authorization"), {
+        clientAddress: meta.clientAddress,
+        session,
+      });
     } catch (error) {
       if (verifierRateLimited && error instanceof verifierRateLimited) {
         headers["retry-after"] = "60";
@@ -155,6 +175,20 @@ export function createSharedHandler({
       // browser or the sign-in token. Accounts in WARD_COORDINATOR_USER_IDS are the bootstrap
       // statewide coordinators; everyone else needs an active membership.
       const view = await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId), workingAs });
+      // Asking for access is open to a signed-in account with no role, or with more than one
+      // (feature 7). Nothing else is, so it is answered before the role checks below.
+      if (path === "/v1/workspace/access/request" && store.requestAccess) {
+        if (request.method === "GET") {
+          const result = await store.ownRequest(actorId);
+          return reply(result.status, result.body);
+        }
+        const { body, refusal } = await json();
+        if (refusal) return refusal;
+        if (typeof body?.role !== "string" || JSON.stringify(body?.scope ?? null).length > 4096)
+          return reply(400, { error: "A role and a place are required" });
+        const result = await store.requestAccess(actorId, { role: body.role, scope: body.scope });
+        return reply(result.status, result.body);
+      }
       if (view.status === "choose")
         return reply(
           409,
@@ -166,7 +200,28 @@ export function createSharedHandler({
           "auth_denied",
         );
       if (view.status !== "ok")
-        return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
+        return reply(
+          403,
+          {
+            error: "No Ward Flow role is assigned to this account",
+            ...(store.requestAccess ? { code: "no-role", canRequest: true } : {}),
+          },
+          "auth_denied",
+        );
+      // A recent sign-in for the powerful steps. The window comes from the clinical values module
+      // through the store; a store that names none asks every time.
+      if (STEP_UP_PATHS.has(path) && request.method === "POST") {
+        const windowMs = (Number.isFinite(store.stepUpMinutes) ? store.stepUpMinutes : 0) * 60_000;
+        if (!(Number.isFinite(session.signedInAt) && session.signedInAt >= Date.now() - windowMs))
+          return reply(
+            401,
+            {
+              code: "step-up",
+              error: "Sign in again to carry on. This step needs a recent sign-in.",
+            },
+            "step_up",
+          );
+      }
       const whole = view.access.role === "coordinator" && view.access.scope.kind === "statewide";
       if (path === "/v1/workspace" && request.method === "GET") {
         const workspace = {
@@ -203,6 +258,10 @@ export function createSharedHandler({
         const result = await store.listAccess(view);
         return reply(result.status, result.body);
       }
+      if (path === "/v1/workspace/access/cover" && request.method === "GET" && store.listCovers) {
+        const result = await store.listCovers(view);
+        return reply(result.status, result.body);
+      }
       if (path.startsWith("/v1/workspace/access/") || path === "/v1/workspace/break-glass") {
         const { body, refusal } = await json();
         if (refusal) return refusal;
@@ -226,6 +285,30 @@ export function createSharedHandler({
             scope: body.scope,
             expiresAt,
           });
+        } else if (path === "/v1/workspace/access/cover") {
+          if (
+            !store.giveCover ||
+            !UUID.test(body?.actorId ?? "") ||
+            !Number.isSafeInteger(body?.minutes) ||
+            JSON.stringify(body?.scope ?? null).length > 4096
+          )
+            return reply(400, { error: "A person, a ward or ED and a length are required" });
+          result = await store.giveCover(view, {
+            actorId: body.actorId.toLowerCase(),
+            scope: body.scope,
+            minutes: body.minutes,
+          });
+        } else if (path === "/v1/workspace/access/decide") {
+          const expiresAt = typeof body?.expiresAt === "string" ? new Date(body.expiresAt) : null;
+          if (
+            !store.decideRequest ||
+            !UUID.test(body?.requestId ?? "") ||
+            !["approved", "declined"].includes(body?.decision) ||
+            !expiresAt ||
+            !Number.isFinite(expiresAt.getTime())
+          )
+            return reply(400, { error: "A request, an answer and an end date are required" });
+          result = await store.decideRequest(view, body.requestId.toLowerCase(), body.decision, expiresAt);
         } else {
           if (!UUID.test(body?.membershipId ?? "")) return reply(400, { error: "A role is required" });
           const membershipId = body.membershipId.toLowerCase();
@@ -243,13 +326,21 @@ export function createSharedHandler({
         if (request.method !== "POST" || path === "/v1/workspace/push-key")
           return reply(405, { error: "Method not allowed" });
         if (!config.push || !store.subscribe) return reply(503, { error: "Phone alerts are not set up on the server" });
-        // Alerts go to the bootstrap statewide coordinators only in this prototype: delivery reads
-        // WARD_COORDINATOR_USER_IDS, so a coordinator by membership would subscribe and never hear.
-        if (!whole) return reply(422, { code: "role", error: "Phone alerts are not part of your role" }, "role_denied");
-        if (view.membershipId)
+        // A bootstrap statewide coordinator hears the whole network. From migration 9 a desk held
+        // by membership (coordinator, bed manager, nurse in charge, ED) hears its own place only;
+        // before 9 delivery reads WARD_COORDINATOR_USER_IDS alone, so it would never hear.
+        const byRole = !!view.membershipId && !!store.pushByRole?.(view);
+        if (!view.membershipId && !whole)
+          return reply(422, { code: "role", error: "Phone alerts are not part of your role" }, "role_denied");
+        if (view.membershipId && !byRole)
           return reply(
             422,
-            { code: "role", error: "Phone alerts for this account are not wired in this prototype." },
+            {
+              code: "role",
+              error: store.pushByRole
+                ? "Phone alerts are not part of your role, or are not set up on this database yet."
+                : "Phone alerts for this account are not wired in this prototype.",
+            },
             "role_denied",
           );
         if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
@@ -263,7 +354,7 @@ export function createSharedHandler({
         if (path === "/v1/workspace/push-subscribe") {
           const subscription = parseSubscription(body?.subscription);
           if (!subscription) return reply(400, { error: "A browser push subscription is required" });
-          const outcome = await store.subscribe(actorId, subscription);
+          const outcome = await store.subscribe(actorId, subscription, view.membershipId ?? null);
           return outcome === "limit"
             ? reply(409, {
                 code: "limit",
