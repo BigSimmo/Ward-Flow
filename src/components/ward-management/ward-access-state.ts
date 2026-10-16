@@ -85,8 +85,8 @@ function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
  * The seeded governance entries (`ward-governance-seed.ts`) a coordinator's own screens show. They
  * are derived, never stored, and the browser derives them from the workspace it was sent, from its
  * own first journeys, referral and stay. The server derives them the same way, so a review is sent,
- * and may be made, exactly when the desk's screens show its entry. The ids are fixed, so every desk
- * that shows an entry shares its reviews.
+ * and may be made, exactly when the desk's screens show its entry. Each id names its subject, so desks
+ * share a review only when they show the same entry about the same record.
  */
 function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "admissions">, state: WardFlowState) {
   return new Set(syntheticGovernanceAuditEvents({ ...state, ...sent }).map((event) => event.id));

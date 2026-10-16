@@ -357,7 +357,42 @@ describe("a command from a desk", () => {
     const access: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
     const own = new Set(scopeWardFlowState(state, access, options).state.referrals.map((referral) => referral.id));
     const world = withReviews({ ...state, referrals: state.referrals.filter((referral) => !own.has(referral.id)) });
-    expect(verdicts(world, access)).toContainEqual({ id: "audit-seed-referral-override", allowed: false });
+    expect(verdicts(world, access).find((verdict) => verdict.id.startsWith("audit-seed-referral-override:"))).toEqual(
+      expect.objectContaining({ allowed: false }),
+    );
+  });
+
+  it("keeps each desk's review of a seeded entry to the record it is about", () => {
+    const services = [...new Set(state.units.map((unit) => unitHealthService(unit)!))];
+    const desks = services.map((service): WardAccess => ({ role: "coordinator", scope: { kind: "service", service } }));
+    const shownBy = desks.map(
+      (access) =>
+        new Set(syntheticGovernanceAuditEvents(scopeWardFlowState(state, access, options).state).map((e) => e.id)),
+    );
+    // Each desk reviews every seeded entry its own screens show.
+    const world: WardFlowState = {
+      ...state,
+      auditReviews: shownBy.flatMap((shown, desk) =>
+        [...shown].map((eventId) => ({
+          id: `review-${desk}-${eventId}`,
+          eventId,
+          generation: state.worldGeneration,
+          at: NOW_ANCHOR,
+          byRole: "coordinator" as const,
+          decision: "reviewed" as const,
+        })),
+      ),
+    };
+    // Two desks show the same kind of entry about different records, so it has two ids.
+    const legal = shownBy.map((shown) => [...shown].find((id) => id.startsWith("audit-seed-legal-status:")));
+    expect(new Set(legal.filter(Boolean)).size).toBeGreaterThan(1);
+    desks.forEach((access, desk) => {
+      const sent = scopeWardFlowState(world, access, options).state.auditReviews;
+      // A desk is sent a review only when its own screens show that entry, never another desk's
+      // review of an entry about a record it cannot see.
+      for (const review of sent) expect(shownBy[desk].has(review.eventId)).toBe(true);
+      expect(sent.some((review) => review.id.startsWith(`review-${desk}-`))).toBe(true);
+    });
   });
 
   it("is never refused for the statewide coordinator", () => {
