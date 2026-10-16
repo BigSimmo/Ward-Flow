@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download-blob";
+
 import { useState } from "react";
 import Link from "next/link";
 import { CalendarClock, ChevronDown, FileText, LayoutList, PhoneCall, Search, Users } from "lucide-react";
@@ -750,14 +752,10 @@ function TeamComparison({
         String(cellText(row.figures.other)),
       ]),
     ];
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      "ward-flow-synthetic-community-teams.csv",
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ward-flow-synthetic-community-teams.csv";
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   return (

@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download-blob";
+
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -556,15 +558,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ]);
     }
     try {
-      const url = URL.createObjectURL(
+      downloadBlob(
         new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+        "ward-flow-synthetic-out-of-area.csv",
       );
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "ward-flow-synthetic-out-of-area.csv";
-      link.click();
-      // F-17: iPhone Safari starts the download after click() returns; revoking at once can cancel it.
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
       setToolNote("Export is not available in this browser");
     }

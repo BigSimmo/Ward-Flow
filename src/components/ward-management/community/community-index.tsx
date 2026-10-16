@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download-blob";
+
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -433,15 +435,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       const facts = teamFacts.get(team.name);
       lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
     }
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      "ward-flow-synthetic-community-team-list.csv",
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ward-flow-synthetic-community-team-list.csv";
-    link.click();
-    // F-17: iPhone Safari starts the download after click() returns; revoking at once can cancel it.
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   const serviceItems = COMMUNITY_SERVICE_OPTIONS.map((option) => ({

@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download-blob";
+
 import { useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -247,7 +249,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   function downloadCsv() {
     if (!chronology) return;
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob(
         [
           chronologyCsv(
@@ -259,12 +261,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         ],
         { type: "text/csv;charset=utf-8" },
       ),
+      "ward-flow-synthetic-chronology.csv",
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ward-flow-synthetic-chronology.csv";
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   function copyRow(row: ChronologyRow) {

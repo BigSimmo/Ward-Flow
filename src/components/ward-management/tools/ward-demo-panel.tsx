@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download-blob";
+
 import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { WardDemoReset } from "../demo-reset/ward-demo-reset";
@@ -38,14 +40,7 @@ export function WardDemoPanel() {
       setMessage(built.reason);
       return;
     }
-    const url = URL.createObjectURL(new Blob([built.json], { type: "application/json" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = built.fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    downloadBlob(new Blob([built.json], { type: "application/json" }), built.fileName);
     setMessage(`Saved ${built.fileName} to your downloads.`);
   }
 

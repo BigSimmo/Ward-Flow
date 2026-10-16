@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download-blob";
+
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { statisticsChartScale } from "./statistics-chart-scale";
@@ -145,14 +147,10 @@ export function StatisticsInsightChart({
         valueOf(row) === null ? (row.unavailable ?? "Not recorded") : "Recorded",
       ]),
     ];
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob([data.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      `ward-flow-${testId}.csv`,
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `ward-flow-${testId}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
   }
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
