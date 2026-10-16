@@ -45,7 +45,7 @@ verdict it names that document.
 7. **Saves go to `sessionStorage`, and stop once anything typed happens.** Typed free text never
    reaches browser storage (the privacy lock).
 8. **The rendered app is the current design authority; the engine is the behaviour authority.** The
-   drawings in `docs/ward-flow/mockups/` are background. See [Ward Flow's entry point](../README.md).
+   drawings in `design/third-edition-mockups/` are background. See [Ward Flow's entry point](../README.md).
 9. **The current base is public Ward Flow `main`.** Verify the checkout and `origin` before any remote
    action. The former Database ward line and its local-only rule do not govern this repository.
 10. **Owner rulings are law.** They are indexed in `docs/ward-flow/OWNER-RULINGS.md`; a later answer

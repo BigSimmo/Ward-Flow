@@ -12,7 +12,7 @@ import { hubReconciliationLine } from "@/components/ward-management/hub/hub-prov
  * day somebody wired it — at which point the line would start lying about figures instead of
  * about nothing.
  *
- * The strings are transcribed from `docs/ward-flow/mockups/search-hub-third-edition.html`, which
+ * The strings are transcribed from `design/third-edition-mockups/search-hub-third-edition.html`, which
  * is the spec. They are not composed from a description of the spec: this screen's trailing clause
  * is `no event feed on this screen`, and an instruction describing the sentence as carrying "the
  * last event" would have produced a sentence claiming an event feed this screen does not have.

@@ -13,7 +13,7 @@ mockups (Command plus the owner's fifteen) on branch `claude/wardflow-design-rev
 `ward-flow-phase-5-resume-166ecb`. The owner's usage limit cut the first run; it resumed from snapshot
 commits and finished. Tip at completion: `e185cc766b` (re-measure; SHAs expire).
 
-**Why:** the pages now live in `docs/ward-flow/mockups/<page>-third-edition.html`, all in Geist and
+**Why:** the pages now live in `design/third-edition-mockups/<page>-third-edition.html`, all in Geist and
 Geist Mono on the owner's 9 September ruling, with `third-edition-kit/check-output.txt` as the ALL GREEN
 evidence and `third-edition-kit/HANDOVER.md` carrying the 10 September status.
 

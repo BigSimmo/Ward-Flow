@@ -22,7 +22,7 @@ import { describe, expect, it } from "vitest";
  * BODY CONTENT — not a whole HTML document. That is checked too.
  */
 
-const DIR = join(process.cwd(), "docs/ward-flow/design/prototypes");
+const DIR = join(process.cwd(), "design/prototypes");
 const SOURCE = "statistics-language-v4.css";
 
 /**

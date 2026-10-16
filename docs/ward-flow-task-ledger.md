@@ -3212,7 +3212,7 @@ community-team screen control still not built pending an `Admission`-to-`Movemen
 ## §7.6 · Emergency Department Screen Third-Edition Alignment (17 Sept 2026)
 
 **Surface**: Emergency Department screen (`/mockups/ward-flow/ed/[edId]`, `src/components/ward-management/ed/ed-screen.tsx`, `src/components/ward-management/ed/ed.module.css`).
-**Source of truth**: `docs/ward-flow/mockups/emergency-department-third-edition.html`.
+**Source of truth**: `design/third-edition-mockups/emergency-department-third-edition.html`.
 
 **Work completed & verified**:
 
@@ -3314,11 +3314,11 @@ While the automated DOM test suites are completely green (95+ passing tests, 0 t
 ## §7.12 · Patient Record (Now) Journey Alignment & Privacy Recommendation (17 Sept 2026)
 
 **Surface**: Patient record screen (`/mockups/ward-flow/people/[patientId]`, `src/components/ward-management/patients/person-screen.tsx`).  
-**Reference Mockups**: `docs/ward-flow/mockups/patient-now-original-third-edition.html` (original comprehensive drawing) and `docs/ward-flow/mockups/patient-now-third-edition.html` (simplified reference).
+**Reference Mockups**: `design/third-edition-mockups/patient-now-original-third-edition.html` (original comprehensive drawing) and `design/third-edition-mockups/patient-now-third-edition.html` (simplified reference).
 
 ### 1. Context & Preservation
 
-- **Original drawing identified**: The original comprehensive Patient Now drawing (`docs/ward-flow/mockups/patient-now-original-third-edition.html`, 10,800 lines) was displaced during the 15 September visual restyle and replaced with a simplified static mockup (`patient-now-third-edition.html`). On 16 September, it was preserved intact as a reference drawing and registered on the mockup contact sheet.
+- **Original drawing identified**: The original comprehensive Patient Now drawing (`design/third-edition-mockups/patient-now-original-third-edition.html`, 10,800 lines) was displaced during the 15 September visual restyle and replaced with a simplified static mockup (`patient-now-third-edition.html`). On 16 September, it was preserved intact as a reference drawing and registered on the mockup contact sheet.
 - **Original capabilities**: The original drawing features a vertical 7-stage Journey progress stepper (`Placement requested` through `Arrived`) on the left, 5 clinical record tabs (`Now`, `History`, `Community`, `Details`, `Documents`), an active presentation event timeline ("This presentation"), and referral outcome tracking ("Referrals", "Worth asking again", "Settled").
 - **Current app implementation**: The live screen (`PersonScreen`) currently renders only demographic and placement details across 3 tabs (`Now`, `Details`, `Documents`). It omits the 7-stage journey stepper and event timeline.
 
@@ -3339,30 +3339,30 @@ Recorded evening of 17 September 2026 (Chat Archive & Transition Handover). Offl
 ### 1. High-Priority Screen Rebuilds (Owner-Approved Drawings)
 
 1. **Settings Screen (`/settings`) Rebuild**:
-   - **Target**: `docs/ward-flow/mockups/settings-perfected-third-edition.html`.
+   - **Target**: `design/third-edition-mockups/settings-perfected-third-edition.html`.
    - **Mandate**: Owner explicitly ruled on 17 Sept (Ruling 15 / item 168): _"Keep the Gemini rebuild of Settings if it is the most up-to-date one."_
    - **Work**: Rebuild `src/components/ward-management/settings/settings-screen.tsx` to match the perfected layout, category domain structure, and eliminate all legacy statutory countdown references.
 2. **Ward Overview (`/ward/[unitId]`) Panel Re-order**:
-   - **Target**: `docs/ward-flow/mockups/ward-perfected-third-edition.html`.
+   - **Target**: `design/third-edition-mockups/ward-perfected-third-edition.html`.
    - **Mandate**: Owner approved drawing swap on 17 Sept (item 12).
    - **Work**: Align live ward screen panel order with the perfected drawing, enforce the 20rem Today's Return panel dimensions, and synchronize bed tiles.
 3. **Shift Handover (`/handover`) Visual Parity**:
-   - **Target**: `docs/ward-flow/mockups/handover-perfected-third-edition.html`.
+   - **Target**: `design/third-edition-mockups/handover-perfected-third-edition.html`.
    - **Work**: Finalize alignment of live handover screen with the perfected drawing's huddle strip and service join.
 4. **Command Screen (`/`) Statewide Flow Density**:
-   - **Target**: `docs/ward-flow/mockups/command-third-edition.html`.
+   - **Target**: `design/third-edition-mockups/command-third-edition.html`.
    - **Work**: Ensure the Statewide Flow panel renders all real wards from the data (owner item 16) and Tier cells use bold, dark styling (owner item 13).
 
 ### 2. Sovereign Shell, Navigation & Quick-Action Drawers
 
 1. **Four Quick-Action Drawers**:
-   - Integrate the four popover drawers (Tasks `t`, Referrals `r`, Activity `a`, Tools `x`) and global keyboard shortcuts from `docs/ward-flow/mockups/sovereign-chrome-and-drawers-perfected.html` into `src/components/ward-management/shell/ward-bar.tsx`.
+   - Integrate the four popover drawers (Tasks `t`, Referrals `r`, Activity `a`, Tools `x`) and global keyboard shortcuts from `design/third-edition-mockups/sovereign-chrome-and-drawers-perfected.html` into `src/components/ward-management/shell/ward-bar.tsx`.
 2. **Compact Rail & 48px Tap Targets**:
    - Enforce 48px tap target minimum and compact rail collapse below 1000px viewport from `sovereign-sidebar-ultimate.html`.
 
 ### 3. Master Design System Specification Re-baseline
 
-- `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` remains frozen at 8 Sept 2026 (describing an obsolete 12-screen / 18-mockup estate).
+- `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` remains frozen at 8 Sept 2026 (describing an obsolete 12-screen / 18-mockup estate).
 - **Recommendation**: Update and re-baseline to the "17 September Edition":
   - Expand screen roster from 12 to the actual 34 build-contract screens across 4 navigation groups, plus the 8 companion live routes.
   - Codify standing clinical & legal rules (Rule D5: zero calculated statutory countdowns, clinician-typed form expiries, independent ED arrival clocks, mandatory manual bed releases).
@@ -3381,25 +3381,25 @@ Recorded evening of 17 September 2026 (Chat Archive & Transition Handover). Offl
 ### 1. Work Completed and Verified in this Session
 
 1. **Priority 1: Ward Screen (`/ward/[unitId]`) Alignment & Clinical Invariants**:
-   - Aligned with `docs/ward-flow/mockups/ward-perfected-third-edition.html`.
+   - Aligned with `design/third-edition-mockups/ward-perfected-third-edition.html`.
    - **Enforced Owner Rule 53**: Removed all instances of `"Occupied"` on bed tiles (changed to `"Inpatient"` or `"Ready Vacant"`).
    - **Legal Compliance**: Replaced Mental Health Act section numbers with `"Form 1A Involuntary"`.
    - Verified across desktop (1440px), tablet (820px), and mobile (390px) in both light and dark themes.
    - All 15 test suites in `tests/ward-screen*.ts*` (93 tests) passed 100%.
 
 2. **Priority 2: Handover Screen (`/handover`) Visual Parity & Next.js SSR Compatibility**:
-   - Aligned with `docs/ward-flow/mockups/handover-perfected-third-edition.html`.
+   - Aligned with `design/third-edition-mockups/handover-perfected-third-edition.html`.
    - Fixed App Router SSR/prerender failure by wrapping `<HandoverPage />` in `<Suspense fallback={null}>` in `src/app/mockups/ward-flow/handover/page.tsx`.
    - Tokenised `src/components/ward-management/handover/handover-third-edition.module.css` (0 raw hex/color violations in `tests/ward-raw-colour.test.ts`).
    - Verified in browser; all 8 handover test suites (83 tests) passed 100%.
 
 3. **Priority 3: Settings Screen (`/settings`) Gemini Rebuild Alignment**:
-   - Aligned with `docs/ward-flow/mockups/settings-third-edition.html`.
+   - Aligned with `design/third-edition-mockups/settings-third-edition.html`.
    - Preserved core clinical invariants: manual bed releases only (no auto-release), clinician-typed expirations.
    - Verified in browser at 1440px in light and dark themes.
 
 4. **Priority 4: Command Screen (`/`) Statewide Flow Alignment**:
-   - Aligned with `docs/ward-flow/mockups/command-third-edition.html`.
+   - Aligned with `design/third-edition-mockups/command-third-edition.html`.
    - Statewide Flow displays all real inpatient wards across North Metro, South Metro, East Metro, and WACHS.
    - Urgency tier indicators styled bold and dark. Verified in browser at 1440px.
 
@@ -3413,13 +3413,13 @@ Recorded evening of 17 September 2026 (Chat Archive & Transition Handover). Offl
 ### 2. Outstanding & Recommended Work for Subsequent Sessions
 
 1. **Next Wave Screen Alignments**:
-   - **Bed Board (`/mockups/ward-flow/board/[unitId]`)**: Audit and align with `docs/ward-flow/mockups/bed-board-third-edition.html` (verify side-scrolling columns on narrow viewports, bed status iconography, and HDU indicators).
-   - **Capacity Overview (`/mockups/ward-flow/capacity`)**: Audit and align with `docs/ward-flow/mockups/capacity-third-edition.html`.
+   - **Bed Board (`/mockups/ward-flow/board/[unitId]`)**: Audit and align with `design/third-edition-mockups/bed-board-third-edition.html` (verify side-scrolling columns on narrow viewports, bed status iconography, and HDU indicators).
+   - **Capacity Overview (`/mockups/ward-flow/capacity`)**: Audit and align with `design/third-edition-mockups/capacity-third-edition.html`.
    - **Patient Search & Detail (`/mockups/ward-flow/search` and `/mockups/ward-flow/people/[patientId]`)**: Align with `patient-search-third-edition.html` and `patient-now-perfected.html`.
      - _Owner Decision Note_: Awaiting owner direction on whether to reinstate the 7-stage patient journey stepper with Rule `FD-23` cross-ward privacy filtering.
 
 2. **Sovereign Chrome Drawer Integration**:
-   - Wire the four popover quick-action drawers (Tasks `t`, Referrals `r`, Activity `a`, Tools `x`) and global keyboard shortcuts from `docs/ward-flow/mockups/sovereign-chrome-and-drawers-perfected.html` into `src/components/ward-management/shell/ward-bar.tsx`.
+   - Wire the four popover quick-action drawers (Tasks `t`, Referrals `r`, Activity `a`, Tools `x`) and global keyboard shortcuts from `design/third-edition-mockups/sovereign-chrome-and-drawers-perfected.html` into `src/components/ward-management/shell/ward-bar.tsx`.
    - Enforce 48px tap targets and compact rail collapse under 1000px viewport.
 
 3. **Community Screen Transport Booking Affordance (`ISSUE-P2-88`)**:
@@ -3429,7 +3429,7 @@ Recorded evening of 17 September 2026 (Chat Archive & Transition Handover). Offl
    - Run the 12 browser-level Playwright specs (`npm run test:e2e:ward-journeys`) under a dedicated heavy test lease in Chromium to confirm all end-to-end user journeys across the prototype.
 
 5. **Design System Specification Re-baseline**:
-   - Update `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` from the obsolete 12-screen / 18-mockup version to the active 34-screen estate, codifying Rule D5 (no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release).
+   - Update `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` from the obsolete 12-screen / 18-mockup version to the active 34-screen estate, codifying Rule D5 (no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release).
 
 ## §7.13 · Full Estate Visual & Responsive Sweep Closeout and Core Workflow Recommendations (17 Sept 2026)
 
@@ -3553,7 +3553,7 @@ _All 232 tests across the affected test suites pass locally._
    - _Status_: 574/574 files, 6,828/6,828 tests passing cleanly with exit code 0.
 
 8. **Emergency Department Screen Layout Deduplication & Tab State (`src/components/ward-management/ed/ed-screen.tsx`)**:
-   - Removed duplicated `Expects` and `Referrals` sections from the left "Needs attention" column. The left column now cleanly terminates after `priorityFlags`, matching the authoritative Third-Edition design mockup (`docs/ward-flow/mockups/emergency-department-third-edition.html`).
+   - Removed duplicated `Expects` and `Referrals` sections from the left "Needs attention" column. The left column now cleanly terminates after `priorityFlags`, matching the authoritative Third-Edition design mockup (`design/third-edition-mockups/emergency-department-third-edition.html`).
    - Defaulted `departmentListTab` state to `"review"`, ensuring awaiting review referrals and patients render actively by default without hidden DOM query issues.
    - Preserved all required testids across all tabs and sections.
    - _Status_: `tests/ward-ed-screen.dom.test.tsx` (41/41) and `tests/ward-ed-psychiatry-hub.dom.test.tsx` (39/39) passing.
@@ -3597,7 +3597,7 @@ _All 232 tests across the affected test suites pass locally._
    - Ensure releasing a bed reservation (`RELEASE_PULL`) automatically cancels or prompts cancellation of any associated booked transport jobs.
 
 7. **Design System Specification Re-baseline**:
-   - Update `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` to document the active 34-screen estate and Rule D5 (no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release).
+   - Update `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` to document the active 34-screen estate and Rule D5 (no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release).
 
 8. **Clinical Workflow: Clear Accepted Unit on ED Referral Withdrawal (`P3-WD`)**:
    - `WITHDRAW_REFERRAL`'s post-acceptance branch in `src/components/ward-management/ward-flow-reducer.ts` does not clear `acceptedUnitId`, requiring client-side workarounds (`isEdInitiatedWithdrawal`) on the ED screen to avoid displaying a ward name beside a withdrawn record. The reducer should cleanly reset `acceptedUnitId` or record the assignment as voided when an ED withdrawal is processed.
@@ -3606,7 +3606,7 @@ _All 232 tests across the affected test suites pass locally._
    - The Third-Edition mockup (`emergency-department-third-edition.html`) defines an interactive listbox dropdown (`data-form-open`, `aria-haspopup="listbox"`, `ul.formMenu`) on the form pill to change or assign statutory forms directly from the board row. Currently, `ed-screen.tsx` provides form actions via the stacked Actions column. Wiring the inline dropdown would provide complete 1:1 interaction parity with the mockup drawing.
 
 10. **Visual Regression Baselines for ED Screen (`npm run test:visual`)**:
-    - Capture Playwright visual snapshots for `/mockups/ward-flow/ed/arm-ed` at 1440px desktop breakpoint now that the board table and dual-column layout have achieved parity with `docs/ward-flow/mockups/emergency-department-third-edition.html`.
+    - Capture Playwright visual snapshots for `/mockups/ward-flow/ed/arm-ed` at 1440px desktop breakpoint now that the board table and dual-column layout have achieved parity with `design/third-edition-mockups/emergency-department-third-edition.html`.
 
 ---
 
@@ -3649,7 +3649,7 @@ _All 232 tests across the affected test suites pass locally._
    - _Status_: Clean runtime execution without uncaught errors.
 
 6. **Authoritative Mockup Parity (`patient-now-perfected.html`)**:
-   - Updated standalone drawing `docs/ward-flow/mockups/patient-now-perfected.html` with the identical interactive journey accordions, 2-column definition grids, sleek barrier cards, and discreet footer.
+   - Updated standalone drawing `design/third-edition-mockups/patient-now-perfected.html` with the identical interactive journey accordions, 2-column definition grids, sleek barrier cards, and discreet footer.
    - _Status_: 100% design and behavioral parity with live component.
 
 ---
@@ -3665,7 +3665,7 @@ _All 232 tests across the affected test suites pass locally._
    - _Recommendation_: Audit with `accessibility` skill and add keyboard navigation tests for the 7 stage accordions.
 
 3. **Register Standalone Mockup in Pair Registry (`MOCKUP-PAIR-REGISTRY`)**:
-   - _Problem_: `patient-now-perfected.html` is authoritative but not yet indexed in `docs/ward-flow/mockups/MANIFEST.json` or `scripts/ward-flow/screen-pairs.mjs`.
+   - _Problem_: `patient-now-perfected.html` is authoritative but not yet indexed in `design/third-edition-mockups/MANIFEST.json` or `scripts/ward-flow/screen-pairs.mjs`.
    - _Recommendation_: Add it to the manifest paired with `/mockups/ward-flow/people/WF-009` so automated pair audits track it continuously.
 
 4. **Mobile Fold Height & Accordion Density Check (`PATIENT-NOW-MOBILE-DOCK`)**:
@@ -3968,7 +3968,7 @@ the mockups' own form mispairings, which sit outside every code guard.
 
 🔴 **CORRECTION, made after this entry was first written and before it reached the owner.**
 The path recorded here was `add-a-patient-third-edition.html:761`, and that string lives in
-`docs/ward-flow/mockups/reference/gemini-2026-09-15/` — an **archived snapshot**, not a live
+`design/third-edition-mockups/reference/gemini-2026-09-15/` — an **archived snapshot**, not a live
 drawing. The live drawings turn out to be **worse than the claim, not better**, so the correction
 widens the finding rather than withdrawing it. Nine strings across four live files:
 `legal-forms-third-edition.html` (six, including the form-catalogue tile at :705 and two worklist
@@ -4375,7 +4375,7 @@ the `Q-12` citation into the test whatever the answer.
 
 16. **Ruling 16 — Design System Documentation Update [APPROVED]**:
     - _Ruling_: **Approved** — update design system document to 34 screens + standing rules, noting ongoing design perfection.
-    - _Clinical Rationale_: Update `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` to reflect the full active 34-screen estate and standing rules (Rule D5: no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release), explicitly noting ongoing design perfection across the screen estate.
+    - _Clinical Rationale_: Update `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` to reflect the full active 34-screen estate and standing rules (Rule D5: no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release), explicitly noting ongoing design perfection across the screen estate.
     - _Status_: **Approved for Documentation Update**.
 
 17. **Ruling 17 — Aboriginal Cultural Safety Review [DEFERRED]**:
@@ -4522,7 +4522,7 @@ drawings and fixtures included. Then write one guard keyed on what the ruling is
 - Untouched and correct: _"Form 5A community treatment order breached. Involuntary admission …"_ —
   a breached CTO leading to admission is a real pathway — the `legalStatus: "Form 5A"` fixture rows
   behind it, and `<option value="Form 5A">` where the code is the value rather than a label.
-- `docs/ward-flow/mockups/reference/gemini-2026-09-15/` left alone: correcting a dated snapshot
+- `design/third-edition-mockups/reference/gemini-2026-09-15/` left alone: correcting a dated snapshot
   destroys the record of what that tool actually said.
 - `SCREEN-VERIFICATION.md` now marks `patient-search-third-edition.html` 🔴 STALE. **Correct, and
   left standing** — the change is one word in one option label, but nobody has LOOKED at the drawing
@@ -5083,8 +5083,8 @@ The 52 commits developed across feature and audit branches (culminating at `b93b
 ### § 7.20.2 Header & Sidebar Stale Version Alignment Across Routes and Mockups
 
 1. **HTML Mockups (22 drawings harmonized)**:
-   - Harmonized all 22 HTML mockups in `docs/ward-flow/mockups/` to the canonical Q005 navigation structure (4 groups: Operations, Service Hubs, Care Coordination, Oversight; 19 destinations).
-   - Generated and verified `docs/ward-flow/mockups/MANIFEST.json` across all 52 drawings (`node scripts/ward-flow/mockup-manifest.mjs --check` passes).
+   - Harmonized all 22 HTML mockups in `design/third-edition-mockups/` to the canonical Q005 navigation structure (4 groups: Operations, Service Hubs, Care Coordination, Oversight; 19 destinations).
+   - Generated and verified `design/third-edition-mockups/MANIFEST.json` across all 52 drawings (`node scripts/ward-flow/mockup-manifest.mjs --check` passes).
 
 2. **Elimination of Redundant Headers & Subheaders**:
    - Hidden legacy `ModeHeader` in `ward-management-modes.tsx` (preventing duplicate headers on `/network` and `/governance`).
@@ -5233,11 +5233,11 @@ The following high-value P1/P2 visual, structural, and ergonomic opportunities w
 ### § 7.23.1 Completed in this Session (Images 1–4 Perfection)
 
 1. **Standalone HTML Mockups Created and Verified**:
-   - `docs/ward-flow/mockups/perfected-activity-drawer.html`: Elevated the rectangular switcher to an ultra-modern 9999px curved pill container with floating micro-elevated active segment, tabular count chips, secondary filter chips, and timeline thread.
-   - `docs/ward-flow/mockups/perfected-tasks-drawer.html`: Elevated outstanding work cards to 12px squircle containers with tonal avatars (`--danger-soft`, `--warn-soft`), urgency pills (`[ ED Breach / Critical ]`), tactile checkmark acknowledge buttons, and batch acknowledge footer.
-   - `docs/ward-flow/mockups/perfected-tools-drawer.html`: Ultra-condensed curved appearance theme selector (`Dark | Light | System`), elevated interactive quick-action cards (`Handover sheet`, `Raise a referral`, `Settings`), demonstration time-travel controls, and state desk emergency hotlines.
-   - `docs/ward-flow/mockups/perfected-service-popover.html`: 16px radius floating popover card with dual diffuse shadow, colored service swatch dots, tabular open counts, and explanatory scope notice.
-   - `docs/ward-flow/mockups/perfected-drawers-showcase.html`: Unified 4-up interactive comparative showcase serving all 4 drawers side-by-side with live theme switching at `http://127.0.0.1:60178/perfected-drawers-showcase.html`.
+   - `design/third-edition-mockups/perfected-activity-drawer.html`: Elevated the rectangular switcher to an ultra-modern 9999px curved pill container with floating micro-elevated active segment, tabular count chips, secondary filter chips, and timeline thread.
+   - `design/third-edition-mockups/perfected-tasks-drawer.html`: Elevated outstanding work cards to 12px squircle containers with tonal avatars (`--danger-soft`, `--warn-soft`), urgency pills (`[ ED Breach / Critical ]`), tactile checkmark acknowledge buttons, and batch acknowledge footer.
+   - `design/third-edition-mockups/perfected-tools-drawer.html`: Ultra-condensed curved appearance theme selector (`Dark | Light | System`), elevated interactive quick-action cards (`Handover sheet`, `Raise a referral`, `Settings`), demonstration time-travel controls, and state desk emergency hotlines.
+   - `design/third-edition-mockups/perfected-service-popover.html`: 16px radius floating popover card with dual diffuse shadow, colored service swatch dots, tabular open counts, and explanatory scope notice.
+   - `design/third-edition-mockups/perfected-drawers-showcase.html`: Unified 4-up interactive comparative showcase serving all 4 drawers side-by-side with live theme switching at `http://127.0.0.1:60178/perfected-drawers-showcase.html`.
 
 2. **Live Shell & Component Elevation Applied**:
    - In `src/components/ward-management/shell/ward-bar.module.css`: Added `.segTrack` and `.segBtn` with 9999px pill containers, 34px height, compact 3px padding, and soft shadow active pills; updated `.servicePanel` to a 16px floating card with dual diffuse shadow.
@@ -5280,7 +5280,7 @@ The following high-value P1/P2 visual, structural, and ergonomic opportunities w
 
 ### Summary of Completed Implementation
 
-Per user request, the perfected Third Edition "Raise a referral" design mockup (`docs/ward-flow/mockups/raise-a-referral-third-edition.html`) was implemented into the live Next.js React application route (`/mockups/ward-flow/referrals/new` backed by `src/components/ward-management/referrals/referral-intake.tsx` and `referral-intake-third-edition.module.css`).
+Per user request, the perfected Third Edition "Raise a referral" design mockup (`design/third-edition-mockups/raise-a-referral-third-edition.html`) was implemented into the live Next.js React application route (`/mockups/ward-flow/referrals/new` backed by `src/components/ward-management/referrals/referral-intake.tsx` and `referral-intake-third-edition.module.css`).
 
 1. **Catchment Bed Radar (`data-testid="ward-referral-intake-progress"`)**:
    - Replaced the low-utility static intake progress meter with a live Catchment Bed Radar.
@@ -5682,8 +5682,8 @@ or deployment action was taken.
    - **Required outcome**: Establish an explicit clinical pattern for unidentified admissions that preserves bed safety and clinical audit trails without falling back to blank entries or synthetic database keys.
 
 2. **WF-IDENT-02 · P2 · Mockup Drawing Parity for Patient Name and UMRN Display**:
-   - **Files**: `docs/ward-flow/mockups/*.html`
-   - **Observed**: Several design drawings in `docs/ward-flow/mockups/` were authored with legacy synthetic placeholders prior to the universal adoption of Name, UMRN, and DOB across clinical UI components.
+   - **Files**: `design/third-edition-mockups/*.html`
+   - **Observed**: Several design drawings in `design/third-edition-mockups/` were authored with legacy synthetic placeholders prior to the universal adoption of Name, UMRN, and DOB across clinical UI components.
    - **Required outcome**: Audit served mockups to ensure drawings reflect clinical Name + UMRN formatting (e.g. `Talia Halloway · UM100001`) rather than legacy `PT-` badges.
 
 3. **WF-IDENT-03 · P2 · Privacy Default-Deny Scope Maintenance for Patient Identity Resolver**:
@@ -5771,7 +5771,7 @@ or deployment action was taken.
    - **Delivered**: Removed the bulky visible filter summary strip from visual page layout per user request ("remove that part"), while preserving `ward-handover-scope-summary` and `ward-handover-scope-excluded` test contracts and accessibility announcements.
 
 5. **Patient Search & Catchment Directory Elevation**:
-   - **Files**: `src/components/ward-management/search/patient-search.tsx`, `search.module.css`, `docs/ward-flow/mockups/header-text-perfected-specification.html`.
+   - **Files**: `src/components/ward-management/search/patient-search.tsx`, `search.module.css`, `design/third-edition-mockups/header-text-perfected-specification.html`.
    - **Delivered**: Elevated suburb catchment directory with frequent query chips (Albany, Belmont, Calista, Joondalup, Midland, Rockingham), dense mode two-line rows, legal status badges, and milestone audit timelines.
 
 ### § 7.32.2 Outstanding Findings & Unresolved Follow-ups Identified (Added to Ledger)
@@ -5833,7 +5833,7 @@ or deployment action was taken.
    - Retained exact text matching and branching for print-only view (`idPrefix === "ward-board-person"`) guaranteeing 100% test compatibility with DOM assertions.
 
 2. **Triage Metric Cards Overhaul**:
-   - **Files**: `docs/ward-flow/mockups/bed-board-third-edition.html`, `src/components/ward-management/board/board.module.css`.
+   - **Files**: `design/third-edition-mockups/bed-board-third-edition.html`, `src/components/ward-management/board/board.module.css`.
    - **Delivered**: Overhauled the 9 triage figures from flat 1px grid cells into mature, elevated telemetry KPI cards featuring semantic 3px top-accent borders (`good`, `warn`, `danger`, `accent`), soft tonal gradients, tabular monospace metrics, and interactive hover lifts.
 
 3. **Shift Alert Tiles Streamlining**:
@@ -5841,7 +5841,7 @@ or deployment action was taken.
    - **Delivered**: Streamlined the four "Needs you this shift" alert cards into low-profile, compact horizontal tiles with left accent borders and inline pill action controls, restoring immediate vertical prominence to the bed board grid.
 
 4. **Footnote Content Removal**:
-   - **Files**: `docs/ward-flow/mockups/bed-board-third-edition.html`.
+   - **Files**: `design/third-edition-mockups/bed-board-third-edition.html`.
    - **Delivered**: Removed `<details class="panel footNote" id="footNote">` test disclaimer block from the mockup HTML.
 
 5. **Sticky Detail Header Clearance**:
@@ -5861,7 +5861,7 @@ or deployment action was taken.
    - **Required outcome**: Connect `[Record a blocker]` and `[Move the date]` to dedicated inline prototype modals matching the delay/reschedule patterns in `delays-screen.tsx`, allowing ward coordinators to record barriers directly from the bed board detail panel.
 
 3. **WF-BOARD-05 · P2 · Bed Board Mockup Drawing Re-verification Parity**:
-   - **Files**: `docs/ward-flow/SCREEN-VERIFICATION.md`, `docs/ward-flow/mockups/bed-board-third-edition.html`.
+   - **Files**: `docs/ward-flow/SCREEN-VERIFICATION.md`, `design/third-edition-mockups/bed-board-third-edition.html`.
    - **Observed**: `bed-board-third-edition.html` was updated to overhaul the triage KPI cards and eliminate the footnote, rendering the existing verification entry in `SCREEN-VERIFICATION.md` formally stale.
    - **Required outcome**: Re-run the visual comparison at 1440px and update `SCREEN-VERIFICATION.md` to reflect the newly aligned KPI cards and structured patient panel.
 
@@ -5933,7 +5933,7 @@ or deployment action was taken.
 
 1. **Third Edition Sovereign Architecture for all Community Screens**:
    - **Files**: `src/components/ward-management/community/community-screen.tsx`, `community.module.css`.
-   - **Delivered**: Upgraded the live community team screens across all WA catchment routes (`/mockups/ward-flow/community/[teamSlug]`, e.g. Midland, Alma Street, Fremantle, Rockingham, Armadale) to match the Third Edition Sovereign Console standard (`docs/ward-flow/mockups/community-team-third-edition.html`).
+   - **Delivered**: Upgraded the live community team screens across all WA catchment routes (`/mockups/ward-flow/community/[teamSlug]`, e.g. Midland, Alma Street, Fremantle, Rockingham, Armadale) to match the Third Edition Sovereign Console standard (`design/third-edition-mockups/community-team-third-edition.html`).
    - **Features Delivered**:
      - Sovereign header with place title (`h1 className={styles.eyebrow}` and `h2 className={styles.pageTitle}`), catchment coordinator view subtitle, monospace metadata chip, universal search button (opens search popover with quick hits), service filter dropdown (`#svcMenu`), and header tools (Activity, Tasks, Tools, Theme toggle).
      - Action ribbon with primary high-contrast `Triage Referral Queue ({count} Waiting)` button, secondary `Intake Referral` modal, `Record Clinical Contact` modal, `CTO Statutory Register` tab-jump, `Print Catchment MDT` modal, and Catchment Team Switcher dropdown.
@@ -6033,7 +6033,7 @@ or deployment action was taken.
    - **Required outcome**: Ensure the local demonstrator remains 100% offline-first and testable without active clinical credentials or database dependencies.
 
 2. **WF-COMM-04 · P2 · Community Actions Book/Cancel Transport with Open Dossier Preservation**:
-   - **Files**: `src/components/ward-management/community/community-screen.tsx`, `docs/ward-flow/mockups/community-team-third-edition.html`, `tests/ward-community-transport.dom.test.tsx`.
+   - **Files**: `src/components/ward-management/community/community-screen.tsx`, `design/third-edition-mockups/community-team-third-edition.html`, `tests/ward-community-transport.dom.test.tsx`.
    - **Context**: Per Owner Decision 1 (committed on `ward/community-booking-20260922` at `66e1a8edf1`), the admitted-table Actions menu retains transport booking and cancellation while providing direct "Open Dossier" navigation when `patientId` is present.
    - **Required outcome**: Re-verify and maintain parity between the Third Edition community mockup and the live screen component.
 
@@ -6691,7 +6691,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.50 · Governance Workbench Elevation & Ledger Resolution (24 September 2026)
 
-**Recorded 24 September 2026.** Following elevation and visual perfection of the Clinical Governance Workbench (`/mockups/ward-flow/governance`, corresponding to `docs/ward-flow/mockups/governance-third-edition.html`).
+**Recorded 24 September 2026.** Following elevation and visual perfection of the Clinical Governance Workbench (`/mockups/ward-flow/governance`, corresponding to `design/third-edition-mockups/governance-third-edition.html`).
 
 ### Completed elevation work
 
@@ -6725,7 +6725,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.51 · Legal Forms Sovereign Elevation, 2-Column Workbench & Verification (24 September 2026)
 
-**Recorded 24 September 2026.** Following elevation, visual perfection, and independent audit of the Mental Health Act Orders & Forms Registry (`/mockups/ward-flow/legal-forms`, corresponding to `docs/ward-flow/mockups/legal-forms-third-edition.html`).
+**Recorded 24 September 2026.** Following elevation, visual perfection, and independent audit of the Mental Health Act Orders & Forms Registry (`/mockups/ward-flow/legal-forms`, corresponding to `design/third-edition-mockups/legal-forms-third-edition.html`).
 
 ### Completed elevation work
 
@@ -6761,7 +6761,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.52 · Out-of-Area Repatriation Ledger Elevation & Verification (24 September 2026)
 
-**Recorded 24 September 2026.** Following elevation, visual perfection, and independent adversarial audit of the Out-of-Area Repatriation Ledger (`/mockups/ward-flow/out-of-area`, corresponding to `docs/ward-flow/mockups/out-of-area-third-edition.html`).
+**Recorded 24 September 2026.** Following elevation, visual perfection, and independent adversarial audit of the Out-of-Area Repatriation Ledger (`/mockups/ward-flow/out-of-area`, corresponding to `design/third-edition-mockups/out-of-area-third-edition.html`).
 
 ### Completed elevation work
 
@@ -6959,7 +6959,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.55 · Alerts Screen Elevation, Micro-Typography & Responsive Perfection (24 September 2026)
 
-**Recorded 24 September 2026.** Following comprehensive elevation, visual perfection, and independent adversarial audit of the Clinical & Operational Alerts Screen (`/mockups/ward-flow/alerts`, corresponding to `docs/ward-flow/mockups/alerts-third-edition.html`).
+**Recorded 24 September 2026.** Following comprehensive elevation, visual perfection, and independent adversarial audit of the Clinical & Operational Alerts Screen (`/mockups/ward-flow/alerts`, corresponding to `design/third-edition-mockups/alerts-third-edition.html`).
 
 ### Completed elevation work
 
@@ -7004,7 +7004,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.56 · Movement Worklist, Transport & Shape of the Day Elevation (24 September 2026)
 
-**Recorded 24 September 2026.** Following elevation, visual perfection, and independent design review of the Movements & Transport Screen (`/mockups/ward-flow/movements`, corresponding to `docs/ward-flow/mockups/movement-third-edition.html`).
+**Recorded 24 September 2026.** Following elevation, visual perfection, and independent design review of the Movements & Transport Screen (`/mockups/ward-flow/movements`, corresponding to `design/third-edition-mockups/movement-third-edition.html`).
 
 ### Completed elevation work
 
@@ -7081,7 +7081,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.57 · Bed Board Triage Squares, Unified Command Header & Daily Sheet Elevation (24 September 2026)
 
-**Recorded 24 September 2026.** Following comprehensive elevation, visual perfection, and independent reviewer audit of the Ward Bed Board (`/mockups/ward-flow/board/[unitId]`, corresponding to `docs/ward-flow/mockups/bed-board-third-edition.html`).
+**Recorded 24 September 2026.** Following comprehensive elevation, visual perfection, and independent reviewer audit of the Ward Bed Board (`/mockups/ward-flow/board/[unitId]`, corresponding to `design/third-edition-mockups/bed-board-third-edition.html`).
 
 ### Completed elevation work
 
@@ -7127,7 +7127,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.58 · Ward Decisions & Morning Census Tab Third Edition Elevation (24 September 2026)
 
-**Recorded 24 September 2026.** Following comprehensive elevation, visual perfection, and independent reviewer audit of the Ward Screen Decisions & Census Tab (`/mockups/ward-flow/ward/[wardId]`, specifically Tab 5, corresponding to `docs/ward-flow/mockups/ward-decisions-perfected-third-edition.html` and `docs/ward-flow/mockups/ward-perfected-third-edition.html`).
+**Recorded 24 September 2026.** Following comprehensive elevation, visual perfection, and independent reviewer audit of the Ward Screen Decisions & Census Tab (`/mockups/ward-flow/ward/[wardId]`, specifically Tab 5, corresponding to `design/third-edition-mockups/ward-decisions-perfected-third-edition.html` and `design/third-edition-mockups/ward-perfected-third-edition.html`).
 
 ### Completed elevation work
 
@@ -7181,7 +7181,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.59 · Patient Now Sovereign Screen Verification, Server Repair & Clinical Observations (24 September 2026)
 
-**Recorded 24 September 2026.** Following dev server restoration, visual and behavioral inspection of the Patient Now Sovereign Screen (`/mockups/ward-flow/people/[personId]`, corresponding to `docs/ward-flow/mockups/patient-now-perfected.html`), and independent clinical verification across active patient journeys (`WF-009` and `WF-004`).
+**Recorded 24 September 2026.** Following dev server restoration, visual and behavioral inspection of the Patient Now Sovereign Screen (`/mockups/ward-flow/people/[personId]`, corresponding to `design/third-edition-mockups/patient-now-perfected.html`), and independent clinical verification across active patient journeys (`WF-009` and `WF-004`).
 
 ### Completed elevation and verification work
 
@@ -7278,7 +7278,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.61 · Out-of-Area Repatriation Ledger Explanatory Cleanup & Sovereign Elevation (24 September 2026)
 
-**Recorded 24 September 2026.** Removal of prototype disclaimers, data provenance boxes, and explanatory caveat text from the Out-of-Area Repatriation Ledger (`/mockups/ward-flow/out-of-area`, corresponding to `docs/ward-flow/mockups/out-of-area-third-edition.html`), establishing a clean, functional clinical workspace.
+**Recorded 24 September 2026.** Removal of prototype disclaimers, data provenance boxes, and explanatory caveat text from the Out-of-Area Repatriation Ledger (`/mockups/ward-flow/out-of-area`, corresponding to `design/third-edition-mockups/out-of-area-third-edition.html`), establishing a clean, functional clinical workspace.
 
 ### Completed elevation and cleanup work
 
@@ -7298,7 +7298,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
    - Preserves screen-reader accessibility and offline test contracts without distorting or cluttering the third-edition layout.
 
 4. **Verification & Audit:**
-   - Visual verification via Chrome DevTools screenshot matching `docs/ward-flow/mockups/out-of-area-third-edition.html`.
+   - Visual verification via Chrome DevTools screenshot matching `design/third-edition-mockups/out-of-area-third-edition.html`.
    - 100% passing tests across:
      - `tests/ward-out-of-area-upgrade.dom.test.tsx` (11/11 passing)
      - `tests/ward-out-of-area-figure-direction.dom.test.tsx` (2/2 passing)
@@ -7340,7 +7340,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
    - Cleaned rapid patient search placeholder to `(name, UMRN)...`.
    - Updated quick-add patient and search modal to validate and bind UMRNs.
 
-4. **Estate-Wide Design Mockup Alignment (`docs/ward-flow/mockups/`):**
+4. **Estate-Wide Design Mockup Alignment (`design/third-edition-mockups/`):**
    - Audited and updated all active third-edition mockups (`handover-perfected-third-edition.html`, `patient-now-perfected.html`, `patient-search-third-edition.html`, `patient-search-perfected-third-edition.html`, `sovereign-chrome-and-drawers-perfected.html`, `sovereign-sidebar-ultimate.html`, `settings-perfected-third-edition.html`, `perfected-tools-drawer.html`).
    - Replaced all legacy 7-digit numbers (e.g. `9482104`, `8371922`, `1049281`, `3881920`) and non-standard `UM-######` formats with standard WA UMRNs (`UM100001`–`UM100043`).
 
@@ -7429,7 +7429,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.64 · Delays & Bottlenecks Screen Elevation, Beeswarm Matrix & Spacing Polish (24 September 2026)
 
-**Recorded 24 September 2026.** Comprehensive visual, structural, and responsive elevation of the Delays & Bottlenecks Control screen (`/mockups/ward-flow/delays`, corresponding to `docs/ward-flow/mockups/delays-perfected-third-edition.html`), fixing jumbled/cramped spacing, resolving dot clustering on the radar matrix with dynamic 2D beeswarm dispersion, balancing the strategic pillars, and upgrading the systemic holds panel to production card styling.
+**Recorded 24 September 2026.** Comprehensive visual, structural, and responsive elevation of the Delays & Bottlenecks Control screen (`/mockups/ward-flow/delays`, corresponding to `design/third-edition-mockups/delays-perfected-third-edition.html`), fixing jumbled/cramped spacing, resolving dot clustering on the radar matrix with dynamic 2D beeswarm dispersion, balancing the strategic pillars, and upgrading the systemic holds panel to production card styling.
 
 ### Completed elevation and verification work
 
@@ -7488,7 +7488,7 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
 
 ## § 7.65 · Referral Intake Design Elevation, Simplified Patient Presentation & Dual-Column Sticky Layout (24 September 2026)
 
-**Recorded 24 September 2026.** Comprehensive visual, structural, and responsive elevation of the Raise a Referral Intake screen (`/mockups/ward-flow/referrals/new`, corresponding to `docs/ward-flow/mockups/raise-a-referral-third-edition.html`), transforming awkward stadium pill formatting into structured clinical guidance notes, simplifying Step 3 by removing verbose caution notice boxes, and enforcing dual-column sticky behavior across desktop and tablet viewports.
+**Recorded 24 September 2026.** Comprehensive visual, structural, and responsive elevation of the Raise a Referral Intake screen (`/mockups/ward-flow/referrals/new`, corresponding to `design/third-edition-mockups/raise-a-referral-third-edition.html`), transforming awkward stadium pill formatting into structured clinical guidance notes, simplifying Step 3 by removing verbose caution notice boxes, and enforcing dual-column sticky behavior across desktop and tablet viewports.
 
 ### Completed elevation and verification work
 

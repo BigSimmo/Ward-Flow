@@ -61,12 +61,12 @@ env -u MSYS2_ARG_CONV_EXCL bash ~/.claude/scripts/backup-work.sh
 
 **The Ward Flow drawings**, in two places:
 
-    docs/ward-flow/mockups/            standalone HTML — command-third-edition.html,
+    design/third-edition-mockups/            standalone HTML — command-third-edition.html,
                                        design-system-third-edition.html, ward-flow-digest.html,
                                        patient-search-console.html, patient-search-working.html
-    docs/ward-flow/design/prototypes/  the statistics language + its mockup carriers
+    design/prototypes/  the statistics language + its mockup carriers
 
-⚠️ **`docs/ward-flow/design/prototypes/` is in `.prettierignore` DELIBERATELY.** Those HTML files are
+⚠️ **`design/prototypes/` is in `.prettierignore` DELIBERATELY.** Those HTML files are
 compared **byte for byte** against `statistics-language-*.css`. A whole-tree `prettier --write`
 reflows the HTML as HTML and the CSS as CSS, they stop matching, and **ten guards go red.** That
 happened on 2026-09-10. **Do not remove that ignore entry.**

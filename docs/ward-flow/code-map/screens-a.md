@@ -694,7 +694,7 @@ scoping, independent decisions, waitlisting and receipt deduplication.
    (2026-09-01: "EVERY statement" narrowed to "a sweep of `REGISTERED_SURFACES`"). Treat any
    absolute claim in this file's prose as scoped to what it actually swept, not to the whole screen.
 9. **`/community` has a route and a screen but no mockup entry.** Unlike every other route in this
-   part, there is nothing in `docs/ward-flow/mockups/` a reviewer can check `community-index.tsx`
+   part, there is nothing in `design/third-edition-mockups/` a reviewer can check `community-index.tsx`
    against; SCREEN-MAP.md flags this explicitly rather than silently.
 10. **`community-screen.tsx:3846`'s "UNREACHABLE TODAY" comment is a live dead-branch note, not a
     component-reachability marker** — do not confuse it with the family of components carrying the

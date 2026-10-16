@@ -27,8 +27,8 @@ layout and owned by Ward Lead; a narrow facade owns the shell's figures and the 
 nothing else; four lanes own disjoint component directories and never edit a shared file; an
 integration phase proves the whole flows end to end; a fold protocol keeps one committer on the line.
 
-**Spec:** the sixteen drawings `docs/ward-flow/mockups/*-third-edition.html` and the standard
-`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`, **both read from the master line** (they are
+**Spec:** the sixteen drawings `design/third-edition-mockups/*-third-edition.html` and the standard
+`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`, **both read from the master line** (they are
 folded there; the copies on this branch are not newer). Where a drawing and an owner ruling disagree,
 **the ruling wins and the drawing is routed to Ward Mockups** — the drawings have re-committed two
 closed rulings already (three history boxes, FD-13; a two-hour tile with no clock, D-15).
@@ -314,12 +314,12 @@ PatientId | null` both exist at the SHA this edition pins itself to, and the enf
 | **Ward Builder Two** — lane B   | `D:/Worktrees/Database/ward-builder-two`        | `ward/lane-b-ward-board-ed-community-20260910`          | `ward/**`, `ward-table/**`, `wards/**`, `board/**`, `ed/**`, `community/**`, their tests                     | plan written; Ward and Community team partly built                                                                                                                    |
 | **Ward Builder Three** — lane C | `D:/Worktrees/Database/ward-builder-three`      | `ward/lane-c-search-patient-referral-20260910`          | `search/**`, `hub/**`, `patients/**`, `referrals/**`, their tests                                            | plan written plus `lane-c-drawing-facts.md`; Search hub and Patient search complete; Raise a referral partly; Patient blocked on §2.1                                 |
 | **Ward Builder Four** — lane D  | `D:/Worktrees/Database/ward-builder-four`       | to cut from the line: `ward/lane-d-statistics-2026091x` | `statistics/**`, `tests/ward-statistics*`                                                                    | **held pending the owner's direct word** — a blanket "go ahead with all recommendations" did not reach inside a direct "Hold" [L §BB]; Four asked for his word itself |
-| Ward Mockups                    | `D:/Worktrees/Database/ward-mockups`            | `ward/mockups-20260910`                                 | `docs/ward-flow/mockups/**`, `design/prototypes/**`                                                          | receives every drawing defect (§8)                                                                                                                                    |
+| Ward Mockups                    | `D:/Worktrees/Database/ward-mockups`            | `ward/mockups-20260910`                                 | `design/third-edition-mockups/**`, `design/prototypes/**`                                                    | receives every drawing defect (§8)                                                                                                                                    |
 | Ward Verifier                   | `D:/Worktrees/Database/ward-verifier-9afb82c6e` | —                                                       | assesses, never builds                                                                                       | Phase 3 review if open                                                                                                                                                |
 
 **Shared files nobody in a lane edits:** `layout.tsx`, `ward-nav.ts`, `shell/**`, the seeds,
 `ward-model.ts`, `ward-flow-reducer.ts`, `ward-flow-events.ts`, `ward-eligibility.ts`, any
-`*.module.css` outside the lane's directories, `docs/ward-flow/mockups/**`, the protection hook.
+`*.module.css` outside the lane's directories, `design/third-edition-mockups/**`, the protection hook.
 A change there is a four-line message to Ward Lead. **Before the first edit each lane writes its
 `.ward-session.json`, its `assignment-register.md` row (never the word _authorised_ in the status
 column), its `control/now.md` row and a `work-claims.md` row per defect.**

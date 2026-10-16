@@ -3,7 +3,7 @@
  * 🔴 **WF-35 — a screen reading "CURRENT" when only its DRAWING is unchanged.**
  *
  * `screen-verification.mjs`'s old `statusFor` compared the mockup's hash to
- * `docs/ward-flow/mockups/MANIFEST.json` and, on a match, printed the word "CURRENT". That word
+ * `design/third-edition-mockups/MANIFEST.json` and, on a match, printed the word "CURRENT". That word
  * was read as a claim about the BUILT screen — but a drawing hash match only proves the drawing
  * has not moved since somebody looked at it. It says nothing about `src/components/ward-management/`,
  * which nothing here compared at all. Several rows in `SCREEN-VERIFICATION.md` carried "deviates"
@@ -36,7 +36,7 @@ import { join, relative, sep } from "node:path";
  *   this function reads only `mockupSha256` and tolerates whatever else the object carries, so the
  *   type says so rather than rejecting a real entry as an unknown shape.
  * @param {string | null | undefined} manifestHash - the mockup's CURRENT hash, looked up by the
- *   caller from `docs/ward-flow/mockups/MANIFEST.json`. Pass `null` when the manifest file
+ *   caller from `design/third-edition-mockups/MANIFEST.json`. Pass `null` when the manifest file
  *   itself does not exist or could not be parsed — that is a different fact from "this mockup
  *   has no entry in an available manifest", which is `undefined` and falls through to STALE,
  *   matching the previous behaviour.

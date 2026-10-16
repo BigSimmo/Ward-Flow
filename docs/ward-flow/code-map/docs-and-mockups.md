@@ -343,7 +343,7 @@ in them as belonging to the tree named, never as current.
 - **`tools/`** — 1 file, `check-forward-composes.mjs`. Same situation: mentioned from
   `dev-server-failure-causes.md` and one archived note, not registered as an npm script.
 
-## `docs/ward-flow/mockups/` (135 files)
+## `design/third-edition-mockups/` (135 files)
 
 ### The folder's own documents
 

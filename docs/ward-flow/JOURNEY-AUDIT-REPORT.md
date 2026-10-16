@@ -27,7 +27,7 @@ An exhaustive automated end-to-end journey audit was executed across the 18 thir
 3. **Responsive Rigor & Design System Compliance**:
    - Mobile media query in `patient-now-third-edition.html` upgraded from `.rail { display: none; }` to the standard `position: sticky; top: 0; overflow-x: auto;` horizontal rail.
    - Zero horizontal overflow (`scrollWidth <= innerWidth`) across all screens at 390px mobile and 1440px desktop.
-   - Strict adherence to `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`: zero colored edge bars, canonical step-inward radii (`--r1: 10px`, `--r1i: 9px`, `--r2: 6px`, `--pill: 9999px`), and Geist / Geist Mono typography.
+   - Strict adherence to `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`: zero colored edge bars, canonical step-inward radii (`--r1: 10px`, `--r1i: 9px`, `--r2: 6px`, `--pill: 9999px`), and Geist / Geist Mono typography.
 
 ---
 

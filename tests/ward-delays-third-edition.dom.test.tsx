@@ -14,7 +14,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * TASK D1 — the Delays screen's panel names must read exactly as the approved Delays page mockup
- * (October 2026) draws them (it superseded `docs/ward-flow/mockups/delays-third-edition.html`, which
+ * (October 2026) draws them (it superseded `design/third-edition-mockups/delays-third-edition.html`, which
  * this file was first written against), and its two dangling-`originEdId`
  * sentences must name the RECORD as the fault rather than the network. Both halves are guarded
  * here because neither was reachable from an existing suite: the panel renames have no prior

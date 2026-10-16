@@ -1,7 +1,7 @@
 /**
  * Patient Now Clinical Scenario Data and Derivations.
  *
- * Authored from docs/ward-flow/mockups/patient-now-original-third-edition.html.
+ * Authored from design/third-edition-mockups/patient-now-original-third-edition.html.
  * Supplies rich clinical trajectories for demonstrated patients (WF-009 "Stuck" and WF-004 "Moving well"),
  * as well as dynamic fallback structures for any patient or movement in the system.
  */

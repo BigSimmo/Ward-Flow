@@ -39,7 +39,7 @@ function filesContaining(dir, pattern, filter = () => true) {
 }
 
 const isDrawing = (f) => f.endsWith("-third-edition.html");
-const MOCKUPS = "docs/ward-flow/mockups";
+const MOCKUPS = "design/third-edition-mockups";
 
 /**
  * Each entry: what the errata claims, and a check that RE-DERIVES it.

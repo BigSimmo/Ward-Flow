@@ -224,7 +224,7 @@ ward `.tsx` literals and JSX text for `Form \d[A-Z]` followed by a parenthesised
 not produced by the register helpers. Mutation: re-add "Form 3B/3D (Inpatient)" → red.
 
 **T6 · Drawings: no computed limits (S).** Waits: y7 fold. Owns
-`docs/ward-flow/mockups/legal-forms-third-edition.html` (`:646,698,670,892,907,996`) and
+`design/third-edition-mockups/legal-forms-third-edition.html` (`:646,698,670,892,907,996`) and
 `alerts-third-edition.html` (`:576,618,678`), plus regenerated `MANIFEST.json`/`SCREEN-VERIFICATION.md`.
 Replace invented periods and "Automatic release" with the §2 wording. **Coordinate with the screens planner,
 whose drawing work regenerates the same two files — one drawing task at a time.** Catcher: manifest

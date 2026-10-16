@@ -16,7 +16,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * silently break — the drawing's panel order and its per-state wording — never anything about
  * colour, radius or shadow, which no DOM test can see.
  *
- * Panels enumerated from `docs/ward-flow/mockups/command-third-edition.html` and from the source
+ * Panels enumerated from `design/third-edition-mockups/command-third-edition.html` and from the source
  * (grep over `title="..."|aria-label="..."|<h[123]`, never a confirm-shaped search for names
  * already believed), in the drawing's own top-to-bottom order:
  *

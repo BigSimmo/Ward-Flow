@@ -108,7 +108,7 @@ positively requires the old sentence to match. **Do not delete it — split it.*
 is still right; only the positive half is superseded. **That file is Ward Mockups' and nobody else
 touches it.**
 
-Measured spread: the old sentence appears in ~21 files under `docs/ward-flow/mockups/`, the new one
+Measured spread: the old sentence appears in ~21 files under `design/third-edition-mockups/`, the new one
 in 3. **Nothing in `src/` carries either form of the old sentence** — so this is entirely ahead of
 us. Cheap now, expensive after four lanes build to it. _(Found independently by Lane B and Lane C.)_
 
@@ -1744,7 +1744,7 @@ gets quietly edited by the thing meant to protect it.
 
 ## AE · 🔴 A DRAWING ASSERTS A CHAIN THAT DOES NOT EXIST — and two lanes found it from opposite ends
 
-`docs/ward-flow/mockups/bed-board-third-edition.html:5963` states:
+`design/third-edition-mockups/bed-board-third-edition.html:5963` states:
 
 > _"…chain from admission to referral to patient exists and resolves today."_
 
@@ -3017,7 +3017,7 @@ Related: _one word, two states_, and §X's second meaning.
 **Ward Builder Four measured this and could not write it down, because the hold caught it first. It
 existed in one cross-chat message and nowhere else.** Transcribed rather than paraphrased.
 
-    docs/ward-flow/mockups/_broken-copy.html
+    design/third-edition-mockups/_broken-copy.html
       untracked · 664,537 bytes · mtime 2026-09-09 18:34 · <title>Ward Flow Design System</title>
       a snapshot of design-system-third-edition.html in a broken state · 406 lines differ
 
@@ -5051,7 +5051,7 @@ there (PRs #2597 and #2654). The directory exists, the four named subdirectories
 agent is nowhere near the third-edition work it was sent to build.
 
 ⚠️ **Four agents were launched into worktrees cut from `main` and all four passed the check.**
-Measured afterwards: `docs/ward-flow/mockups/` held **3** third-edition drawings on those bases
+Measured afterwards: `design/third-edition-mockups/` held **3** third-edition drawings on those bases
 against **36** on the ward line. All four were killed before any of them wrote code.
 
 ### ✅ WHAT CAUGHT IT, AND IT WAS NOT THE CHECK
@@ -5072,7 +5072,7 @@ any verification, ask what it would have printed had the thing been broken.** He
 
 ✅ **The replacement discriminates by COUNT, not by existence:**
 
-    ls docs/ward-flow/mockups/ | grep -c third-edition     → 36 on the ward line, 3 on main
+    ls design/third-edition-mockups/ | grep -c third-edition     → 36 on the ward line, 3 on main
 
 **This is the same family as the extractor that could only ever return zero (§DT) and the guard that
 would have passed by construction had a storage key been exported. Three in two days.** ⚠️ **And the

@@ -44,7 +44,7 @@ const TICK_COUNT = 6;
  * lane land at the identical `left`. Before this fix every bar also shared the same `top` (a bare
  * `8px` in `movement-horizon.module.css`), so the second bar painted directly over the first —
  * only the DOM's first bar was visible or reachable by click/keyboard, and the one underneath was
- * neither. `docs/ward-flow/mockups/movement-gantt-third-edition.html`'s own fixture (`LANES_BY_WARD`)
+ * neither. `design/third-edition-mockups/movement-gantt-third-edition.html`'s own fixture (`LANES_BY_WARD`)
  * never exercises this case — every one of its invented events sits at a distinct `startH`, and its
  * own `.eventBar` (`top: 9px; bottom: 9px`) and `renderGantt` loop position every bar the same way
  * this chart did before the fix, with no per-row offset — so the drawing gives no layout to follow
