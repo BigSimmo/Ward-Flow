@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { test } from "node:test";
@@ -53,6 +54,7 @@ function signed(alg, kid, body = claims()) {
 }
 const legacy = (body = claims()) => `Bearer ${part({ alg: "HS256", typ: "JWT" })}.${part(body)}.c3ludGhldGlj`;
 
+/** @param {{ keys?: { keys: Array<Record<string, unknown>> } | null, user?: unknown, clock?: () => number }} [options] */
 function setup({ keys = published, user = { id: coordinator }, clock } = {}) {
   const calls = [];
   const verify = createSupabaseAuthenticator(config, {
@@ -86,7 +88,7 @@ test("a forged, altered or wrong-audience signed token is refused without asking
   for (const token of [forged, altered, crossAlg, signed("ES256", "ec-1", claims({ aud: "anon" }))])
     await assert.rejects(
       verify(token),
-      (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+      (/** @type {Error} */ error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
     );
   assert.deepEqual(calls, [JWKS]);
 });
@@ -96,7 +98,7 @@ test("a key missing from a list read after the token was issued is refused, with
   const issued = claims({ iat: Math.floor(Date.now() / 1000) - 60 });
   await assert.rejects(
     verify(signed("ES256", "ec-1", issued)),
-    (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+    (/** @type {Error} */ error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
   );
   await assert.rejects(verify(signed("ES256", "made-up", issued)), /Unauthorised/);
   assert.deepEqual(calls, [JWKS], "removed or made-up keys never reach /auth/v1/user");
@@ -418,6 +420,7 @@ test("a stalled role read never holds a sign-in check past the verifier's deadli
   let at = 1_000_000;
   let reads = 0;
   const subject = randomUUID();
+  /** @type {(holders: string[]) => void} */
   let finishFirst;
   const verify = createSupabaseAuthenticator(config, {
     now: () => at,

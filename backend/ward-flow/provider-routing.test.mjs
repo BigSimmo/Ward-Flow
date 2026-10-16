@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
@@ -242,6 +243,7 @@ test("shared HTTP authorisation and verifier outages never reach the store", asy
 test("the sign-in check reads which accounts hold a role from the shared workspace", async () => {
   const config = readConfig(environment("postgres", "supabase"));
   const nurse = randomUUID();
+  /** @type {() => Promise<unknown>} */
   let roleHolders;
   await createBackend(config, {
     database: {

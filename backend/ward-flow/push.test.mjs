@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateKeyPairSync } from "node:crypto";
@@ -247,7 +248,6 @@ function routes({
   const calls = [];
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: null, push },
-    store: {},
     sharedStore: {
       viewer,
       read: async () => ({ revision: 1, dataMode: "prototype" }),
