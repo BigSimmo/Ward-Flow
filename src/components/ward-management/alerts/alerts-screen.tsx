@@ -267,9 +267,35 @@ function AlertsWorkspace() {
   const [phoneToday, setPhoneToday] = useState(false);
   // A request to focus the release reason once the panel or sheet has drawn it.
   const [releaseRequest, setReleaseRequest] = useState(0);
+  const [queueFocusRequest, setQueueFocusRequest] = useState(0);
   const releasePending = useRef(false);
   const releaseRef = useRef<HTMLSelectElement | null>(null);
   const [notifyOn] = useActNowNotificationPreference();
+
+  // The ward bar may request the queue while another Alerts tab is selected. Switch tabs first,
+  // then focus the rendered queue row (or the queue card when it is empty).
+  useEffect(() => {
+    const requestQueueFocus = () => {
+      setTab("now");
+      setQueueFocusRequest((request) => request + 1);
+    };
+    document.addEventListener("ward-alerts-focus-queue", requestQueueFocus);
+    return () => document.removeEventListener("ward-alerts-focus-queue", requestQueueFocus);
+  }, []);
+
+  useEffect(() => {
+    if (queueFocusRequest === 0 || tab !== "now") return undefined;
+    const frame = requestAnimationFrame(() => {
+      const target =
+        document.querySelector<HTMLElement>('[data-alert-id] [data-testid="ward-alerts-open"]') ??
+        document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
+      if (target) {
+        if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+        target.focus();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [queueFocusRequest, tab]);
 
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastConfirmed, setBroadcastConfirmed] = useState(false);
