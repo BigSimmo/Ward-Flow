@@ -4141,6 +4141,12 @@
     position: absolute;
     inset: -6px;
   }
+
+  /* The hero title clips its overflow, which would clip the hit area too. The ward name keeps
+     its own ellipsis inside the title row. */
+  .wardHero :has(> .phoneHeroTitle) {
+    overflow: visible;
+  }
 }
 
 /* Phone (v10): the views pin under the stable header on the canvas, full
