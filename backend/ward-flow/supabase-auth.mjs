@@ -188,28 +188,37 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
-  const holders = { ids: new Set(), nextReadAt: -Infinity, pending: null };
+  const holders = { ids: new Set(), nextReadAt: -Infinity, pending: null, startedAt: -Infinity };
+  /** Start a read. Only the latest read may change the list, so an abandoned one that ends late is ignored. */
+  function startRead() {
+    /** @type {Promise<void>} */
+    const read = Promise.resolve()
+      .then(() => loadRoleHolders())
+      .then(
+        (ids) => {
+          if (holders.pending !== read) return;
+          holders.ids = new Set(Array.isArray(ids) ? ids : []);
+          holders.nextReadAt = now() + ROLE_HOLDERS_REFRESH_MS;
+        },
+        () => {
+          if (holders.pending === read) holders.nextReadAt = now() + ROLE_HOLDERS_RETRY_MS;
+        },
+      )
+      .finally(() => {
+        if (holders.pending === read) holders.pending = null;
+      });
+    holders.pending = read;
+    holders.startedAt = now();
+  }
   /**
    * Read the role holders at most once per refresh period, shared by every request waiting on it.
-   * A request waits no longer than the verifier's deadline, then uses the last list it has.
+   * A request waits no longer than the verifier's deadline, then uses the last list it has. A read
+   * still running after a whole refresh period is abandoned and a new one started.
    */
   async function holdsRole(subject) {
     if (coordinatorIds.has(subject)) return true;
-    if (now() >= holders.nextReadAt)
-      holders.pending ??= Promise.resolve()
-        .then(() => loadRoleHolders())
-        .then(
-          (ids) => {
-            holders.ids = new Set(Array.isArray(ids) ? ids : []);
-            holders.nextReadAt = now() + ROLE_HOLDERS_REFRESH_MS;
-          },
-          () => {
-            holders.nextReadAt = now() + ROLE_HOLDERS_RETRY_MS;
-          },
-        )
-        .finally(() => {
-          holders.pending = null;
-        });
+    const stalled = holders.pending !== null && now() - holders.startedAt >= ROLE_HOLDERS_REFRESH_MS;
+    if ((holders.pending === null && now() >= holders.nextReadAt) || stalled) startRead();
     if (holders.pending) {
       let timer;
       await Promise.race([holders.pending, new Promise((resolve) => (timer = setTimeout(resolve, timeoutMs)))]);
