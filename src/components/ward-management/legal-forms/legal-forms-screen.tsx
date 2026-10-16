@@ -1101,7 +1101,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               },
               {
                 success: `Form ${movement.legalForm?.code ?? ""} extended`,
-                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
                 undone: "Form extension undone.",
               },
             );

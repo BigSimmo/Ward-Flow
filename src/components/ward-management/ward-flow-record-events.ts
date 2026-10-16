@@ -1992,10 +1992,11 @@ export function reduceRecordedFactEvent(
       decision.reasonCode = "none";
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
-        at: event.now,
-        by: event.role,
-        homeHospital: event.homeHospital,
+        at: existingRecord?.at ?? event.now,
+        by: existingRecord?.by ?? event.role,
+        homeHospital: existingRecord?.homeHospital ?? event.homeHospital,
         receivingWardAgreed: event.receivingWardAgreed,
+        ...(event.receivingWardAgreed && existingRecord ? { agreedAt: event.now, agreedBy: event.role } : {}),
         mode: event.mode,
         provider: event.provider,
         cadNumber: event.cadNumber.trim(),

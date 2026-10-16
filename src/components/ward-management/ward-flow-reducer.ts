@@ -453,6 +453,8 @@ export type RepatriationRecord = {
   by: WardFlowRole;
   homeHospital: string;
   receivingWardAgreed: boolean;
+  agreedAt?: Instant;
+  agreedBy?: WardFlowRole;
   mode: RepatriationMode;
   provider: TransportProvider;
   cadNumber: string;
@@ -4498,7 +4500,14 @@ export function reduceClinicalEvent(
       const clearedReason: DischargeDelayClearReason = (event.reason ??
         "resolved_clinically") as DischargeDelayClearReason;
       const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
-      const linkedRelease = next.bedReleases.find((candidate) => candidate.admissionId === admission.id);
+      const linkedRelease = next.bedReleases.find(
+        (candidate) =>
+          candidate.admissionId === admission.id &&
+          candidate.state !== "discharged" &&
+          candidate.blocker !== null &&
+          candidate.unitId === event.actingUnitId &&
+          candidate.blocker === admission.blockReason,
+      );
       if (!linkedRelease) return next;
       return replaceBedRelease(next, linkedRelease.id, {
         ...linkedRelease,
@@ -5533,6 +5542,7 @@ export function reduceClinicalEvent(
           acceptedUnitId: unit.id,
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
+          declineReason: undefined,
           // Written unconditionally, so `...addressing` cannot carry an old reason onto a clean
           // acceptance.
           acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,

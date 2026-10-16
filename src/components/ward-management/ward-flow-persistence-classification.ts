@@ -552,7 +552,9 @@ export type _AssertNoUnreviewedRaiseReferralDraftFields = AssertNever<Unreviewed
 export function eventCarriesTypedTextPayload(event: WardFlowEvent): boolean {
   return (
     ("overrideSignOff" in event && event.overrideSignOff !== undefined) ||
-    ("reassessmentNote" in event && event.reassessmentNote !== undefined)
+    ("reassessmentNote" in event &&
+      typeof event.reassessmentNote === "string" &&
+      event.reassessmentNote.trim().length > 0)
   );
 }
 
