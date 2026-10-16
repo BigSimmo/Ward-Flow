@@ -53,8 +53,6 @@ const EXCEPTIONS: Record<string, string> = {
     "named for the Figma token tooling; Ward registry imports verify concrete mapped fixtures, not just route directories",
   "pressure-strip.dom.test.tsx":
     "named for PressureStrip, the coordinator component under test, not the ward-management area",
-  "synthetic-data-guard.test.ts":
-    "named for synthetic-data-guard.ts, the module under test; it only seeds a Ward Flow state to scan",
   "tracker-derivations.test.ts":
     "named for tracker-derivations.ts, the module under test, not the ward-management area",
 };

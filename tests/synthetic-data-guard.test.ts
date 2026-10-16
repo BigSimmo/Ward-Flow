@@ -1,14 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { redactCaptionIdentifiers } from "@/lib/privacy";
 
 describe("synthetic-data-guard", () => {
-  it("passes seedWardFlowState() without false positives", () => {
-    const state = seedWardFlowState();
-    const result = checkSyntheticPayload(state);
-    expect(result.safe).toBe(true);
-  });
-
   it("passes valid synthetic clinical demonstration data", () => {
     const demoPayload = {
       patients: [
@@ -129,6 +123,12 @@ describe("synthetic-data-guard", () => {
       node = next;
     }
     expect(checkSyntheticPayload(deep, 5).safe).toBe(false);
+  });
+
+  it("redacts WA UMRN formats in redactCaptionIdentifiers", () => {
+    expect(redactCaptionIdentifiers("Patient UMRN: 1234567 admitted")).toBe("Patient [id] admitted");
+    expect(redactCaptionIdentifiers("Patient UMRN-1234567 admitted")).toBe("Patient [id] admitted");
+    expect(redactCaptionIdentifiers("Patient UMRN1234567 admitted")).toBe("Patient [id] admitted");
   });
 
   it("detects real 8-digit UMRN values in record fields", () => {

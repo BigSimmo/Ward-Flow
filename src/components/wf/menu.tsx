@@ -245,7 +245,7 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
   );
 }
 
-export type PopoverCloseOptions = {
+type PopoverCloseOptions = {
   restoreFocus?: boolean;
 };
 
