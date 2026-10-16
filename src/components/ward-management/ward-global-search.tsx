@@ -1,6 +1,7 @@
 "use client";
 
-import { hasOpenSheet, lockPageScroll } from "@/components/wf/sheet-focus";
+import { lockPageScroll } from "@/components/wf/sheet-focus";
+import { isGlobalSearchShortcut } from "@/components/ward-management/search/search-shortcut";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 
 import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
@@ -178,6 +180,10 @@ export type WardGlobalSearchProps = {
   now?: number;
   label?: string;
   placeholder?: string;
+  /** Text typed into the phone's placeholder field before this loaded (`ward-global-search-lazy.tsx`). */
+  initialQuery?: string;
+  /** The phone's placeholder field: on mount this takes over its focus and caret, if it had them. */
+  takeFocusFrom?: RefObject<HTMLInputElement | null>;
 };
 
 /**
@@ -608,6 +614,8 @@ export function WardGlobalSearch({
   onNavigate,
   label = "Search",
   placeholder = "Search people and movements…",
+  initialQuery = "",
+  takeFocusFrom,
 }: WardGlobalSearchProps) {
   const id = useId();
   const listId = `${id}-list`;
@@ -621,7 +629,7 @@ export function WardGlobalSearch({
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -876,37 +884,30 @@ export function WardGlobalSearch({
     return () => document.removeEventListener("mousedown", onDocumentPointerDown);
   }, [open]);
 
-  /*
-   * THE ONE SHORTCUT, EVERYWHERE. Matches `universal-search-command-surface.tsx`'s own global
-   * shortcut exactly — same keys, same guard against hijacking a keystroke meant for another field
-   * — so this is the same habit a coordinator already has from the rest of the app, not a second
-   * one to learn for Ward Flow alone.
-   */
+  // "/" or Ctrl/Cmd K focuses this from anywhere (`search/search-shortcut.ts`).
   useEffect(() => {
     function onWindowKeyDown(event: globalThis.KeyboardEvent) {
-      const slashShortcut = event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey;
-      const commandShortcut = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey;
-      if (!slashShortcut && !commandShortcut) return;
-      // An open sheet keeps its own keys: the phone referral's "/" opens its patient step. Search
-      // stays live over that sheet (shell, `headerLiveOverSheet`) for a tap, not for the shortcut.
-      if (event.defaultPrevented || hasOpenSheet()) return;
-      if (slashShortcut && document.querySelector('[data-testid="ward-patient-typeahead-input"]')) return;
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
+      if (!isGlobalSearchShortcut(event)) return;
       event.preventDefault();
       inputRef.current?.focus();
     }
     window.addEventListener("keydown", onWindowKeyDown);
     return () => window.removeEventListener("keydown", onWindowKeyDown);
   }, []);
+
+  // Mount only: the phone's placeholder field had focus, so this one takes it (and opens, as a tap
+  // would) with the caret where it was. It runs before the placeholder is removed, so the focus
+  // moves straight from one field to the other and a phone keyboard stays open.
+  const [handOffFrom] = useState(takeFocusFrom);
+  useLayoutEffect(() => {
+    const from = handOffFrom?.current;
+    const input = inputRef.current;
+    if (!from || !input || document.activeElement !== from) return;
+    input.focus();
+    if (from.selectionStart !== null && from.selectionEnd !== null) {
+      input.setSelectionRange(from.selectionStart, from.selectionEnd, from.selectionDirection ?? undefined);
+    }
+  }, [handOffFrom]);
 
   function remember(href: string) {
     const item = options.find((option) => option.href === href);

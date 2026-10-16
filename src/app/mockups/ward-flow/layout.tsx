@@ -16,7 +16,7 @@ import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-de
 import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { WardRail } from "@/components/ward-management/shell/ward-rail-lazy";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { demoDayZero } from "@/components/ward-management/ward-clock";
 import {
