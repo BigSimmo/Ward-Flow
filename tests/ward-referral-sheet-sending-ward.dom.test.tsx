@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -9,6 +9,8 @@ import {
   forgetReferrerContact,
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 
@@ -33,6 +35,10 @@ vi.mock("next/link", () => ({
 
 afterEach(() => {
   cleanup();
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", null);
+    resetWardAccessStoreForTests();
+  });
   discardReferralDraft();
   forgetReferrerContact();
 });
@@ -124,5 +130,33 @@ describe("the New referral sheet on a ward page", () => {
     expect(send).toHaveAccessibleDescription(NO_SENDING_WARD);
     fireEvent.click(send);
     expect(screen.getByTestId("sent")).toHaveTextContent("[]");
+  }, 60_000);
+
+  it("off a ward page, a ward desk with one ward sends from that ward", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [sendingWard.id] } });
+    });
+    route.pathname = "/mockups/ward-flow/referrals/new";
+    await walkToConfirm();
+    fireEvent.submit(document.getElementById("referralConfirmForm")!);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
+    expect(screen.getByTestId("errors")).toBeEmptyDOMElement();
+    expect(JSON.parse(screen.getByTestId("sent").textContent!)).toEqual([
+      { source: "psychiatric_ward", originUnitId: sendingWard.id },
+    ]);
+  }, 60_000);
+
+  it("off a ward page, a desk covering two wards is asked to send from the ward's page", async () => {
+    const other = seedWardFlowState().units.find((unit) => unit.id !== DESTINATION && unit.id !== sendingWard.id)!;
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [sendingWard.id, other.id] } });
+    });
+    route.pathname = "/mockups/ward-flow/referrals/new";
+    await walkToConfirm();
+    const send = screen.getByRole("button", { name: "Confirm and send" });
+    expect(send).toHaveAttribute("aria-disabled", "true");
+    expect(send).toHaveAccessibleDescription(NO_SENDING_WARD);
   }, 60_000);
 });

@@ -4,6 +4,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole, type RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   ATS_CATEGORIES,
@@ -91,8 +92,10 @@ export const NO_SENDING_WARD = "Open New referral from your ward's page, so it i
 
 /**
  * Who the sheet sends as. On a ward page the referral comes from that ward, as source
- * psychiatric_ward. A ward page that names no real ward cannot send, and says why (the rail shows
- * the reason beside Confirm and send).
+ * psychiatric_ward. Off a ward page (the full referral form, for one), a ward desk with role access
+ * on sends from its own ward when it holds exactly one. A ward page that names no real ward, or a
+ * desk covering several wards off their pages, cannot send, and says why (the rail shows the
+ * reason beside Confirm and send).
  */
 function useSheetSender(
   gate: ReturnType<typeof useRoleGate>,
@@ -101,9 +104,11 @@ function useSheetSender(
   baseId: string,
 ): { sendGate: RoleGate; sendingWard: Unit | undefined } {
   const routeRole = useRouteRole();
+  const access = useEffectiveWardAccess();
   const roleSendGate = gate("RECEIVE_REFERRAL");
-  const routeUnitId = wardRouteUnitId(pathname);
-  const sendingWard = routeRole === "ward" ? units.find((unit) => unit.id === routeUnitId) : undefined;
+  const deskUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
+  const sendingUnitId = wardRouteUnitId(pathname) ?? (deskUnitIds.length === 1 ? deskUnitIds[0] : undefined);
+  const sendingWard = routeRole === "ward" ? units.find((unit) => unit.id === sendingUnitId) : undefined;
   if (routeRole !== "ward" || sendingWard) return { sendGate: roleSendGate, sendingWard };
   const id = `${baseId}-no-sending-ward`;
   return {
