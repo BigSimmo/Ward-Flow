@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
-import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
+import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
+
+/** Set once the shared client has loaded on the first sign-in. */
+let loadedClient: typeof SharedWorkspaceClient | null = null;
 import { SupabaseWardAuth, WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-supabase-auth";
 export type WardCredentialForm = {
   open: boolean;
@@ -93,6 +96,9 @@ export function useWardSupabaseShared(enabled: boolean) {
       setView((old) => ({ ...old, status: expired ? "ready" : "unavailable", error: message }));
     };
     const connect = async () => {
+      // The client loads only once someone signs in, so the local demo never carries it.
+      const { SharedWorkspaceClient } = await import("./ward-shared-client");
+      loadedClient = SharedWorkspaceClient;
       if (closed || !auth?.userId || auth.isRecovery) return;
       disconnect();
       setSignedIn(true);
@@ -222,8 +228,9 @@ export function useWardSupabaseShared(enabled: boolean) {
             // The next account on a shared phone never sees this one's act-now count, even when
             // the session has expired and the phone alert cleanup below cannot run.
             setActNowAppBadge(0);
-            if (token) {
-              const cleanup = new SharedWorkspaceClient({
+            // Signed in means the client has loaded, so this cleanup still runs in the click.
+            if (token && loadedClient) {
+              const cleanup = new loadedClient({
                 baseUrl: base.toString().replace(/\/$/, ""),
                 token: async () => token,
                 changed: () => {},
