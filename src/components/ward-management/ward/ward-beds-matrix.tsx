@@ -466,10 +466,9 @@ export function WardBedsMatrix({
     for (const bed of bedsList) {
       const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber);
       if (!Number.isFinite(bedNumber) || bedNumber <= 0) continue;
-      const isDueOut =
-        bed.pastDate === true ||
-        (typeof bed.expectedDays === "number" && bed.expectedDays <= 0) ||
-        bed.dischargeConfirmed === true;
+      // Due out means the discharge date has arrived or passed. A discharge confirmed for a later day is
+      // not "needs you this shift" yet, matching the ward board's own due-out list.
+      const isDueOut = bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays <= 0);
 
       if (bed.awayAtEdHours != null || bed.status === "leave") {
         const atEd = bed.awayAtEdHours != null;
@@ -508,19 +507,10 @@ export function WardBedsMatrix({
           typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
         const confirmed = bed.dischargeConfirmed === true;
         const isOverdue = Boolean(overdueDays) || bed.pastDate === true;
-        const isDueToday = bed.expectedDays === 0;
-        const badge = overdueDays
-          ? `${overdueDays}d overdue`
-          : bed.pastDate
-            ? "Past date"
-            : isDueToday || !confirmed
-              ? "Due today"
-              : "Confirmed";
+        const badge = overdueDays ? `${overdueDays}d overdue` : bed.pastDate ? "Past date" : "Due today";
         const statusPhrase = isOverdue
           ? `${confirmed ? "Confirmed" : "Expected"} discharge overdue`
-          : isDueToday || !confirmed
-            ? `${confirmed ? "Confirmed" : "Expected"} out today`
-            : "Confirmed discharge";
+          : `${confirmed ? "Confirmed" : "Expected"} out today`;
         items.push({
           key: `shift-due-${bed.bedLabel}-${bedNumber}`,
           group: "due-out",
