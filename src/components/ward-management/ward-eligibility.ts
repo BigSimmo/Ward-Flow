@@ -898,13 +898,6 @@ export function genderEligibility(
         detail: `Gender is not yet recorded, but ${unit.name} is undesignated and takes either gender`,
       };
     }
-    if (coveredByCoordinatorPlacement) {
-      return {
-        gate: "gender",
-        pass: true,
-        detail: `Coordinator gender placement recorded for ${unit.name}`,
-      };
-    }
     return {
       gate: "gender",
       pass: false,
