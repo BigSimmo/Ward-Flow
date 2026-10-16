@@ -232,6 +232,10 @@ describe("the New referral sheet on a ward page", () => {
     next("Next, referral");
     expect(screen.getByRole("alert")).toHaveTextContent(`This person already holds a bed on ${heldBedWard.name}`);
     expect(screen.queryByLabelText(/Patient story/)).not.toBeVisible();
+    // A community team takes no ward bed, so the same person is only asked why.
+    fireEvent.click(screen.getByTestId("ward-referral-refer-to-community"));
+    expect(screen.getByTestId("ward-referral-not-on-sending-ward")).not.toHaveTextContent("new admission");
+    expect(screen.getByLabelText("Why is the ward referring them?")).toBeVisible();
   });
 
   it("needs the reason for referral when the ward gives another reason, within the length left", () => {

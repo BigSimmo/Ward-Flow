@@ -409,7 +409,9 @@ export function ReferralPatientStep({
                   <small>
                     {heldBedWardName
                       ? `They already hold a bed on ${heldBedWardName}, so this ward cannot send them as a new admission.`
-                      : "A ward usually refers its own inpatients. This goes as a new admission, not a transfer."}
+                      : destType === "ward"
+                        ? "A ward usually refers its own inpatients. This goes as a new admission, not a transfer."
+                        : "A ward usually refers its own inpatients."}
                   </small>
                 </span>
               </div>

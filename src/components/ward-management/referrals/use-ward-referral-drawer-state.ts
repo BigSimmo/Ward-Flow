@@ -760,8 +760,11 @@ export function useWardReferralDrawerState({
   const patientOnSendingWard =
     !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
   const notOnSendingWard = !!sendingWard && !patientOnSendingWard;
+  // Only a ward bed is pulled, so only a ward referral meets the one-current-stay rule.
   const heldBedUnitId =
-    notOnSendingWard && patientRecord ? patientHeldBedUnitId(admissions, patientRecord.id) : undefined;
+    destType === "ward" && notOnSendingWard && patientRecord
+      ? patientHeldBedUnitId(admissions, patientRecord.id)
+      : undefined;
   const heldBedWardName = heldBedUnitId
     ? (units.find((unit) => unit.id === heldBedUnitId)?.name ?? "another ward")
     : "";
