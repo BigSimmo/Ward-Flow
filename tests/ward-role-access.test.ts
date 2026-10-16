@@ -405,6 +405,12 @@ describe("the scoped workspace", () => {
       expect(refused({ ...refusal, id: "record-rejection-3" })).toBe(false);
       expect(refused({ id: "rejection-x", movementId: unitId })).toBe(true);
       expect(refused({ id: "rejection-y", movementId: otherUnit.id })).toBe(false);
+      // A refused undo of a review on a seeded entry follows that entry, once the seeds are in the list.
+      const undo = { id: "audit-5", subject: { kind: "audit-event", eventId: "seeded" } as const };
+      expect(records.refusals([undo])({ ...refusal, id: "record-rejection-5" })).toBe(false);
+      expect(records.refusals([{ id: "seeded", subject: about }, undo])({ ...refusal, id: "record-rejection-5" })).toBe(
+        true,
+      );
     }
     expect(records.rejectionSubject("none")).toBe(true);
     expect(records.rejectionSubject(unitId)).toBe(true);

@@ -262,9 +262,13 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     // A refusal names its subject: a journey, ward, stay, release, leave bed, person or ED. A refused
     // record command names none, so it follows its own audit row and stays only when that row is in
     // scope, which lets the desk's screen hear its own refusal (reviews on PR #345).
+    // The audit log is read only when a refusal is paired with a row, and through the governance read
+    // so a refused undo of a review on a seeded entry is still heard.
     const rejectionInScope = (): ((rejection: Rejection) => boolean) => {
-      const read = context.readAuditEvents({ role: "coordinator" });
-      return scope.refusals(read.status === "allowed" ? read.value : []);
+      const paired = context.rejections.some((rejection) => rejection.id.startsWith("record-rejection-"));
+      const actor = { role: "coordinator" } as const;
+      const read = paired ? (context.readGovernanceAuditEvents?.(actor) ?? context.readAuditEvents(actor)) : null;
+      return scope.refusals(read?.status === "allowed" ? read.value : []);
     };
     const auditRead = <T,>(
       read: RecordRead<readonly T[]>,
