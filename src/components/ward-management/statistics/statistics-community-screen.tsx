@@ -22,7 +22,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -42,6 +42,7 @@ import {
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { figureText, isUnmeasured, type StatisticsFigure } from "./statistics-absence";
+import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
 import { countAxisMax } from "./statistics-axis";
 import { communityFigures, type CommunityFigures } from "./statistics-community-figures";
 import { csvCell } from "./statistics-csv";
@@ -79,7 +80,7 @@ import detail from "./statistics-detail.module.css";
  */
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
-  const small = useSmallNumber();
+  const { countsOnly, small, parts } = useStatisticsCounts();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlowSelect("dayZero");
@@ -152,17 +153,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
   const inBedCount = measuredValue(figures.admitted);
   const withDateCount = measuredValue(figures.expected);
-  // The two parts add up to the bed count, so when one part is worded as fewer than five the other
-  // is not shown either, or the hidden one could be worked back from the total (review on PR #345).
+  // The two parts add up to the bed count, so they are hidden together, or a hidden one could be
+  // worked back from the total (reviews on PR #345 and #354).
   const phoneParts = (() => {
-    if (inBedCount === null || withDateCount === null) return { withDate: "none", noDate: "none" } as const;
-    const withDate = small(withDateCount);
-    const noDate = small(inBedCount - withDateCount);
-    const partHidden = typeof withDate === "string" || typeof noDate === "string";
-    return {
-      withDate: partHidden && typeof withDate !== "string" ? "not shown" : withDate,
-      noDate: partHidden && typeof noDate !== "string" ? "not shown" : noDate,
-    };
+    if (inBedCount === null || withDateCount === null) {
+      return { withDate: figureText(figures.expected), noDate: figureText(figures.expected) };
+    }
+    const [withDate, noDate] = parts([withDateCount, inBedCount - withDateCount]);
+    return { withDate: withDate!, noDate: noDate! };
   })();
 
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
@@ -172,6 +170,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     { key: "other", label: "Left the ward another way", figure: figures.other },
   ];
   const measuredMax = Math.max(1, ...figureRows.map((row) => (row.figure.kind === "measured" ? row.figure.value : 0)));
+  // The due out and past date counts read the "with a discharge date" list, so when that figure is
+  // not measured they take its words, never a nought counted from an empty list.
+  const dueOutText = figures.expected.kind === "measured" ? small(dueOutWeek) : figureText(figures.expected);
+  const pastDateText = figures.expected.kind === "measured" ? small(pastDate) : figureText(figures.expected);
+  const countText = (figure: StatisticsFigure) =>
+    figure.kind === "measured" ? small(figure.value) : figureText(figure);
+  const notArrangedText =
+    figures.discharged.kind === "measured" ? small(notArranged.length) : figureText(figures.discharged);
 
   return (
     <StatisticsPage
@@ -219,14 +225,17 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure),
               ] as const,
           ),
-          ["No follow-up yet", figures.discharged.kind === "measured" ? small(notArranged.length) : "none"],
+          ["No follow-up yet", notArrangedText],
         ],
       }}
       phone={{
-        sub: `${small(dueOutWeek)} due out in the next 7 days`,
+        sub:
+          figures.expected.kind === "measured"
+            ? `${dueOutText} due out in the next 7 days`
+            : `Due out in the next 7 days: ${dueOutText}`,
         stats: (
           <>
-            <HeroStat value={inBedCount === null ? "none" : small(inBedCount)} label="In a bed" />
+            <HeroStat value={inBedCount === null ? figureText(figures.admitted) : small(inBedCount)} label="In a bed" />
             <HeroStat value={phoneParts.withDate} label="With a date" />
             <HeroStat value={phoneParts.noDate} label="No date" />
           </>
@@ -242,14 +251,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                   data-testid={`ward-statistics-community-kpi-${row.key}`}
                   data-unmeasured={isUnmeasured(row.figure) || undefined}
                 >
-                  {row.figure.kind === "measured" ? small(row.figure.value) : "none"}
+                  {row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure)}
                 </span>
               }
               label={HERO_LABELS[row.key]}
             />
           ))}
           <HeroStat
-            value={figures.discharged.kind === "measured" ? small(notArranged.length) : "none"}
+            value={notArrangedText}
             label={
               <span className={styles.flagged}>
                 {figures.discharged.kind === "measured" && notArranged.length > 0 ? (
@@ -264,23 +273,31 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     >
       {isPhone ? (
         <TeamPhone
-          people={lists.currentlyAdmitted}
+          people={countsOnly ? null : lists.currentlyAdmitted}
+          peopleCount={countText(figures.admitted)}
+          peopleMeasured={figures.admitted.kind === "measured"}
           unitName={unitName}
           now={now}
           dayZero={dayZero}
           inBedText={figureText(figures.admitted)}
           inBedMeasured={figures.admitted.kind === "measured"}
-          followUp={
-            figures.discharged.kind === "measured"
-              ? {
-                  discharged: lists.dischargedIntoTheArea.length,
-                  arranged: lists.dischargedIntoTheArea.length - notArranged.length,
-                  notArranged: notArranged.length,
-                }
-              : null
-          }
-          dueOutWeek={dueOutWeek}
+          followUp={(() => {
+            if (figures.discharged.kind !== "measured") return { text: figureText(figures.discharged) };
+            // Arranged and not arranged add up to the discharged count beside them, so they hide together.
+            const [arranged, notYet] = parts([
+              lists.dischargedIntoTheArea.length - notArranged.length,
+              notArranged.length,
+            ]);
+            return {
+              discharged: small(lists.dischargedIntoTheArea.length),
+              arranged: arranged!,
+              notArranged: notYet!,
+              flagged: notArranged.length > 0,
+            };
+          })()}
+          dueOutText={dueOutText}
           pastDate={pastDate}
+          pastDateText={pastDateText}
         />
       ) : (
         <>
@@ -318,7 +335,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                         <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
                           <th scope="row">{row.label}</th>
                           <td className={detail.meterCell}>
-                            {row.figure.kind === "measured" ? (
+                            {row.figure.kind === "measured" && typeof small(row.figure.value) === "number" ? (
                               <Meter
                                 value={row.figure.value}
                                 max={measuredMax}
@@ -333,7 +350,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                             data-testid={`ward-statistics-community-value-${row.key}`}
                             data-unmeasured={isUnmeasured(row.figure) || undefined}
                           >
-                            {figureText(row.figure)}
+                            {row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure)}
                           </td>
                         </tr>
                       ))}
@@ -345,25 +362,25 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     data-testid="ward-statistics-community-in-hospital-count"
                     data-unmeasured={isUnmeasured(figures.admitted) || undefined}
                   >
-                    {figureText(figures.admitted)} referred to this team and occupying or holding a bed now.
+                    {countText(figures.admitted)} referred to this team and occupying or holding a bed now.
                   </p>
                   <p
                     data-testid="ward-statistics-community-in-hospital-with-date"
                     data-unmeasured={isUnmeasured(figures.expected) || undefined}
                   >
-                    {figureText(figures.expected)} of those have a discharge date written down.
+                    {countText(figures.expected)} of those have a discharge date written down.
                   </p>
                   <p
                     data-testid="ward-statistics-community-hospital-discharges-count"
                     data-unmeasured={isUnmeasured(figures.discharged) || undefined}
                   >
-                    {figureText(figures.discharged)} discharged into the area this team serves.
+                    {countText(figures.discharged)} discharged into the area this team serves.
                   </p>
                   <p
                     data-testid="ward-statistics-community-other-departures-count"
                     data-unmeasured={isUnmeasured(figures.other) || undefined}
                   >
-                    {figureText(figures.other)} left a ward another way.
+                    {countText(figures.other)} left a ward another way.
                   </p>
                 </SrOnly>
                 <CardFoot meta="Discharge dates are a subset of people holding a bed">
@@ -379,7 +396,9 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
 
               <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
                 <CardBody className={styles.bodyStack}>
-                  {lists.dischargedIntoTheArea.length === 0 ? (
+                  {countsOnly ? (
+                    <PeopleNotListed testId="ward-statistics-community-follow-up-not-listed" />
+                  ) : lists.dischargedIntoTheArea.length === 0 ? (
                     <p className={styles.muted}>
                       {figures.discharged.kind === "measured"
                         ? "Nobody has been discharged into this area"
@@ -414,9 +433,11 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     </ul>
                   )}
                 </CardBody>
-                <CardFoot meta={`${unseen.length} of ${admissions.length} admissions have no community team`}>
+                <CardFoot
+                  meta={`${small(unseen.length)} of ${small(admissions.length)} admissions have no community team`}
+                >
                   <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
-                    {unseen.length} of {admissions.length} admissions without a community team
+                    {small(unseen.length)} of {small(admissions.length)} admissions without a community team
                   </span>
                   <Link
                     href={communityTeamHref(team)}
@@ -437,53 +458,59 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             title="Due out to this team"
             aside="With a discharge date"
           >
-            <div className={styles.tableWrap}>
-              <table className={`${tableClasses.table} ${styles.table}`}>
-                <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Admission</th>
-                    <th scope="col">Ward</th>
-                    <th scope="col">Discharge</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dueOut.length === 0 ? (
+            {countsOnly ? (
+              <CardBody>
+                <PeopleNotListed testId="ward-statistics-community-due-out-not-listed" />
+              </CardBody>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table className={`${tableClasses.table} ${styles.table}`}>
+                  <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
+                  <thead>
                     <tr>
-                      <td colSpan={3} className={styles.muted}>
-                        {figures.expected.kind === "measured"
-                          ? "Nobody in a bed has a discharge date written down"
-                          : figureText(figures.expected)}
-                      </td>
+                      <th scope="col">Admission</th>
+                      <th scope="col">Ward</th>
+                      <th scope="col">Discharge</th>
                     </tr>
-                  ) : null}
-                  {dueOut.map((admission) => (
-                    <tr key={admission.id}>
-                      <th scope="row">
-                        <span className={detail.primary}>{admission.id}</span>
-                      </th>
-                      <td>{unitName(admission.unitId)}</td>
-                      <td>
-                        {admission.expectedDischargeAt === null ? (
-                          <span className={styles.muted}>No date</span>
-                        ) : (
-                          <span className={styles.flagged}>
-                            {isPastDate(admission.expectedDischargeAt, now) ? (
-                              <StatusGlyph tone="warning" size={9} />
-                            ) : null}
-                            {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                            <span className={styles.muted}>
-                              {fromToday(admission.expectedDischargeAt, now)}
-                              {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                  </thead>
+                  <tbody>
+                    {dueOut.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className={styles.muted}>
+                          {figures.expected.kind === "measured"
+                            ? "Nobody in a bed has a discharge date written down"
+                            : figureText(figures.expected)}
+                        </td>
+                      </tr>
+                    ) : null}
+                    {dueOut.map((admission) => (
+                      <tr key={admission.id}>
+                        <th scope="row">
+                          <span className={detail.primary}>{admission.id}</span>
+                        </th>
+                        <td>{unitName(admission.unitId)}</td>
+                        <td>
+                          {admission.expectedDischargeAt === null ? (
+                            <span className={styles.muted}>No date</span>
+                          ) : (
+                            <span className={styles.flagged}>
+                              {isPastDate(admission.expectedDischargeAt, now) ? (
+                                <StatusGlyph tone="warning" size={9} />
+                              ) : null}
+                              {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                              <span className={styles.muted}>
+                                {fromToday(admission.expectedDischargeAt, now)}
+                                {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                              </span>
                             </span>
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </StatCard>
         </>
       )}
@@ -497,32 +524,48 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
  */
 function TeamPhone({
   people,
+  peopleCount,
+  peopleMeasured,
   unitName,
   now,
   dayZero,
   inBedText,
   inBedMeasured,
   followUp,
-  dueOutWeek,
+  dueOutText,
   pastDate,
+  pastDateText,
 }: {
-  people: readonly Admission[];
+  /** Null on the executive desk, where people are not listed. */
+  people: readonly Admission[] | null;
+  peopleCount: number | string;
+  /** False when the team cannot be linked, so the count is its words, never a nought. */
+  peopleMeasured: boolean;
   unitName: (unitId: string) => string;
   now: number;
   dayZero: Date;
   inBedText: string;
   inBedMeasured: boolean;
-  followUp: { discharged: number; arranged: number; notArranged: number } | null;
-  dueOutWeek: number;
+  /** The figures, or the words for an unmeasured follow-up count. */
+  followUp:
+    | { discharged: number | string; arranged: number | string; notArranged: number | string; flagged: boolean }
+    | { text: string };
+  dueOutText: number | string;
   pastDate: number;
+  pastDateText: number | string;
 }) {
-  const sorted = [...people].sort(
+  const sorted = [...(people ?? [])].sort(
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
   return (
     <PhoneBody testId="ward-statistics-community-phone">
-      <PhoneGroup title="Community handover" aside={`${people.length} ${people.length === 1 ? "person" : "people"}`}>
-        {sorted.length === 0 ? (
+      <PhoneGroup
+        title="Community handover"
+        aside={peopleMeasured ? `${peopleCount} ${peopleCount === 1 ? "person" : "people"}` : String(peopleCount)}
+      >
+        {people === null ? (
+          <PeopleNotListed testId="ward-statistics-community-phone-not-listed" />
+        ) : sorted.length === 0 ? (
           <p className={phone.note}>
             {inBedMeasured ? "Nobody referred to this team holds a bed now." : `In a bed: ${inBedText}`}
           </p>
@@ -574,19 +617,27 @@ function TeamPhone({
         <PhoneFacts
           label="Follow-up for people discharged into this area"
           facts={[
-            { id: "discharged", label: "Discharged here", value: followUp?.discharged ?? "none" },
-            { id: "arranged", label: "Follow-up arranged", value: followUp?.arranged ?? "none" },
+            {
+              id: "discharged",
+              label: "Discharged here",
+              value: "text" in followUp ? followUp.text : followUp.discharged,
+            },
+            {
+              id: "arranged",
+              label: "Follow-up arranged",
+              value: "text" in followUp ? followUp.text : followUp.arranged,
+            },
             {
               id: "not",
               label: (
                 <>
-                  {followUp && followUp.notArranged > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
                   No follow-up yet
                 </>
               ),
-              value: followUp?.notArranged ?? "none",
+              value: "text" in followUp ? followUp.text : followUp.notArranged,
             },
-            { id: "due", label: "Due out within 7 days", value: dueOutWeek },
+            { id: "due", label: "Due out within 7 days", value: dueOutText },
             {
               id: "past",
               label: (
@@ -595,7 +646,7 @@ function TeamPhone({
                   Past date
                 </>
               ),
-              value: pastDate,
+              value: pastDateText,
               testId: "ward-statistics-community-past-date",
             },
           ]}
@@ -658,6 +709,7 @@ function TeamComparison({
   const [sort, setSort] = useState<"highest" | "name">("highest");
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const { countsOnly, small } = useStatisticsCounts();
   const needle = query.trim().toLowerCase();
   const matching = rows.filter((row) => !needle || row.team.name.toLowerCase().includes(needle));
   const measured = matching.filter((row) => row.figures[measure].kind === "measured");
@@ -665,15 +717,26 @@ function TeamComparison({
     const figure = row.figures[measure];
     return figure.kind === "measured" ? figure.value : 0;
   };
+  const shownOf = (row: { figures: CommunityFigures }) => small(valueOf(row));
+  // On the executive desk a worded team sorts as nought, so the bar order cannot rank the hidden ones.
+  const sortValue = (row: { figures: CommunityFigures }) => {
+    const shownValue = shownOf(row);
+    return typeof shownValue === "number" ? shownValue : 0;
+  };
+  const cellText = (figure: StatisticsFigure) =>
+    figure.kind === "measured" ? small(figure.value) : figureText(figure);
   const sorted = [...measured].sort((a, b) =>
     sort === "name"
       ? a.team.name.localeCompare(b.team.name)
-      : valueOf(b) - valueOf(a) || a.team.name.localeCompare(b.team.name),
+      : sortValue(b) - sortValue(a) || a.team.name.localeCompare(b.team.name),
   );
   const shown = showAll || needle ? sorted : sorted.slice(0, TOP);
   const unlinked = matching.length - measured.length;
+  // The mean would give a hidden team's count back by subtraction, so the executive desk has none.
   const mean =
-    measured.length === 0 ? undefined : measured.reduce((sum, row) => sum + valueOf(row), 0) / measured.length;
+    measured.length === 0 || countsOnly
+      ? undefined
+      : measured.reduce((sum, row) => sum + valueOf(row), 0) / measured.length;
   const chart = MEASURES.find((entry) => entry.id === measure)!;
 
   function exportCsv() {
@@ -681,10 +744,10 @@ function TeamComparison({
       ["Team", "In a bed", "With a discharge date", "Discharged into the area", "Left another way"],
       ...matching.map((row) => [
         row.team.name,
-        figureText(row.figures.admitted),
-        figureText(row.figures.expected),
-        figureText(row.figures.discharged),
-        figureText(row.figures.other),
+        String(cellText(row.figures.admitted)),
+        String(cellText(row.figures.expected)),
+        String(cellText(row.figures.discharged)),
+        String(cellText(row.figures.other)),
       ]),
     ];
     const url = URL.createObjectURL(
@@ -755,7 +818,7 @@ function TeamComparison({
             <BarList
               label={chart.chart}
               axis
-              max={countAxisMax(shown.map(valueOf))}
+              max={countAxisMax(shown.map(sortValue))}
               mean={mean}
               meanLabel="Mean per team"
               labelWidth="12rem"
@@ -763,8 +826,8 @@ function TeamComparison({
                 id: row.team.id,
                 label: row.team.name,
                 sub: row.team.id === current.id ? "this team" : undefined,
-                value: valueOf(row),
-                display: String(valueOf(row)),
+                ...withheldBar(valueOf(row), shownOf(row)),
+                display: String(shownOf(row)),
               }))}
             />
           )}
@@ -842,7 +905,7 @@ function TeamComparison({
                       className={isUnmeasured(row.figures[key]) ? `${styles.num} ${styles.muted}` : styles.num}
                       data-unmeasured={isUnmeasured(row.figures[key]) || undefined}
                     >
-                      {figureText(row.figures[key])}
+                      {cellText(row.figures[key])}
                     </td>
                   ))}
                 </tr>

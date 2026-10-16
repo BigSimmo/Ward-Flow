@@ -36,6 +36,12 @@ const DEFINITION_FILES = new Set([
   // 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the reducer into these two files.
   `${WARD_ROOT}/ward-flow-record-events.ts`,
   `${WARD_ROOT}/ward-flow-undo-events.ts`,
+  // 16 Oct 2026: the referral, placement, transport and bed cases moved out the same way.
+  `${WARD_ROOT}/ward-flow-referral-send-events.ts`,
+  `${WARD_ROOT}/ward-flow-referral-answer-events.ts`,
+  `${WARD_ROOT}/ward-flow-placement-events.ts`,
+  `${WARD_ROOT}/ward-flow-transport-events.ts`,
+  `${WARD_ROOT}/ward-flow-bed-events.ts`,
   `${WARD_ROOT}/ward-flow-events.ts`,
   // Holds a classification list of every event name (which carry typed text vs. not), not dispatches.
   `${WARD_ROOT}/ward-flow-persistence-classification.ts`,

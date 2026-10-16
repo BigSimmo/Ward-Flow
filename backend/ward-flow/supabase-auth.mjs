@@ -22,6 +22,19 @@ const CONFIRMED_MAX = 1_000;
  */
 export const REMOTE_CHECKS_PER_ADDRESS = 30;
 export const REMOTE_CHECKS_TOTAL = 300;
+/**
+ * Accounts with no role here (no membership and not a bootstrap coordinator) share this much smaller
+ * allowance, apart from the one above. A forger choosing a new random account for every token uses
+ * up only this, never the checks real desks need.
+ */
+export const REMOTE_CHECKS_UNKNOWN_TOTAL = 30;
+/**
+ * How long the list of accounts holding a role here is reused. At most one database read per
+ * period, however many tokens arrive, and a new grant is recognised within this time.
+ */
+export const ROLE_HOLDERS_REFRESH_MS = 30_000;
+/** After a failed read, the next one is tried this soon, so a brief outage does not hold real desks back. */
+export const ROLE_HOLDERS_RETRY_MS = 5_000;
 const LIMIT_WINDOW_MS = 60_000;
 const LIMIT_ADDRESSES_MAX = 10_000;
 
@@ -51,6 +64,16 @@ function decodeJwt(token) {
   };
 }
 
+/** The optional not-before claim restricts a token only when present. No clock tolerance. */
+function validTokenTimes(claims, at) {
+  const seconds = at / 1000;
+  return (
+    Number.isFinite(claims.exp) &&
+    claims.exp > seconds &&
+    (claims.nbf === undefined || (Number.isFinite(claims.nbf) && claims.nbf <= seconds))
+  );
+}
+
 /**
  * Maps an Authorization header to the signed-in Supabase account's user ID, or throws:
  * InvalidCredentialError (401) for a bad token, VerifierUnavailableError (503) when Supabase cannot be reached and
@@ -59,12 +82,15 @@ function decodeJwt(token) {
  * Sign-in proves who the account is, nothing more: which role it holds, if any, is the shared
  * workspace's own record (`store.viewer`), checked on every request.
  *
- * A token is first checked here: shape, expiry and issuer, then its
+ * A token is first checked here: shape, validity times and issuer, then its
  * signature against Supabase's published keys (cached). A signed token naming a key that is not in
  * the current list is refused here. Every other token without a usable published key (a legacy
  * shared-secret token, no key ID, an unsupported or unreadable key, or the key list cannot be read)
- * is sent to /auth/v1/user, behind per-address, per-account and total limits. Junk tokens never
- * reach Supabase. A token verified locally stays valid until it expires
+ * is sent to /auth/v1/user, behind per-address and total limits. Before that call the account is
+ * checked against the cached role holders (`roleHolders`) and the bootstrap list: an account with no
+ * role here draws on its own small allowance, so made-up accounts cannot crowd out real desks.
+ * Malformed, expired, not-yet-valid and wrong-issuer tokens never reach Supabase. A token verified
+ * locally stays valid until it expires
  * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
  */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
@@ -73,6 +99,9 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   const fetch = dependencies.fetch ?? globalThis.fetch;
   const now = dependencies.now ?? Date.now;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
+  const coordinatorIds = new Set(config.coordinatorIds ?? []);
+  /** The accounts outside the bootstrap list that hold a role here. A failed read keeps the last list. */
+  const loadRoleHolders = dependencies.roleHolders ?? (async () => []);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
 
   /** One bounded GET to the approved project. Covers the body read too, not just the headers. */
@@ -170,28 +199,74 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
-  const limits = { windowStart: -Infinity, total: 0, addresses: new Map(), subjects: new Map() };
-  function allowRemoteCheck(address, subject) {
-    const at = now();
-    if (at - limits.windowStart >= LIMIT_WINDOW_MS) {
-      limits.windowStart = at;
-      limits.total = 0;
-      limits.addresses.clear();
-      limits.subjects.clear();
+  const holders = { ids: new Set(), nextReadAt: -Infinity, pending: null, startedAt: -Infinity };
+  /** Start a read. Only the latest read may change the list, so an abandoned one that ends late is ignored. */
+  function startRead() {
+    /** @type {Promise<void>} */
+    const read = Promise.resolve()
+      .then(() => loadRoleHolders())
+      .then(
+        (ids) => {
+          if (holders.pending !== read) return;
+          holders.ids = new Set(Array.isArray(ids) ? ids : []);
+          holders.nextReadAt = now() + ROLE_HOLDERS_REFRESH_MS;
+        },
+        () => {
+          if (holders.pending === read) holders.nextReadAt = now() + ROLE_HOLDERS_RETRY_MS;
+        },
+      )
+      .finally(() => {
+        if (holders.pending === read) holders.pending = null;
+      });
+    holders.pending = read;
+    holders.startedAt = now();
+  }
+  /**
+   * Read the role holders at most once per refresh period, shared by every request waiting on it.
+   * A request waits no longer than the verifier's deadline, then uses the last list it has. A read
+   * still running after a whole refresh period is abandoned and a new one started.
+   */
+  async function holdsRole(subject) {
+    if (coordinatorIds.has(subject)) return true;
+    const stalled = holders.pending !== null && now() - holders.startedAt >= ROLE_HOLDERS_REFRESH_MS;
+    if ((holders.pending === null && now() >= holders.nextReadAt) || stalled) startRead();
+    if (holders.pending) {
+      let timer;
+      await Promise.race([holders.pending, new Promise((resolve) => (timer = setTimeout(resolve, timeoutMs)))]);
+      clearTimeout(timer);
     }
-    const key = limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+    return holders.ids.has(subject);
+  }
+  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map() };
+  function startWindow() {
+    const at = now();
+    if (at - limits.windowStart < LIMIT_WINDOW_MS) return;
+    limits.windowStart = at;
+    limits.total = 0;
+    limits.unknown = 0;
+    limits.addresses.clear();
+  }
+  function addressKey(address) {
+    return limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
+  }
+  /**
+   * Charged before the account lookup, refused or not, so every lookup counts against the address
+   * and an address over its limit costs no database read.
+   */
+  function chargeAddress(address) {
+    startWindow();
+    const key = addressKey(address);
     const used = limits.addresses.get(key) ?? 0;
-    const subjectUsed = limits.subjects.get(subject) ?? 0;
-    // Keep one account's forged tokens from consuming the shared allowance for others.
-    if (
-      used >= REMOTE_CHECKS_PER_ADDRESS ||
-      subjectUsed >= REMOTE_CHECKS_PER_ADDRESS ||
-      limits.total >= REMOTE_CHECKS_TOTAL
-    )
-      return false;
+    if (used >= REMOTE_CHECKS_PER_ADDRESS) return false;
     limits.addresses.set(key, used + 1);
-    limits.subjects.set(subject, subjectUsed + 1);
-    limits.total += 1;
+    return true;
+  }
+  /** A claimed subject is unverified, so it picks the pool but never has a budget of its own to spend. */
+  function allowRemoteCheck(known) {
+    startWindow();
+    if (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL) return false;
+    if (known) limits.total += 1;
+    else limits.unknown += 1;
     return true;
   }
 
@@ -213,13 +288,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const subject = typeof claims?.sub === "string" ? claims.sub.toLowerCase() : "";
     // Free checks first: nothing below runs, and nothing leaves this server, for a token that is
     // malformed, expired or from another project.
-    if (
-      !jwt ||
-      typeof claims.exp !== "number" ||
-      claims.exp * 1000 <= now() ||
-      claims.iss !== ISSUER ||
-      !UUID.test(subject)
-    )
+    if (!jwt || !validTokenTimes(claims, now()) || claims.iss !== ISSUER || !UUID.test(subject))
       throw new InvalidCredentialError("Unauthorised");
     const algorithm = ALGORITHMS[jwt.header.alg];
     if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {
@@ -248,10 +317,10 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
         } catch {
           valid = false;
         }
-        // Expiry is checked again here: the token may have expired while the keys were read.
+        // Validity times are checked again after waiting for the published keys.
         if (
           !valid ||
-          claims.exp * 1000 <= now() ||
+          !validTokenTimes(claims, now()) ||
           !audience.includes("authenticated") ||
           claims.role !== "authenticated"
         )
@@ -263,7 +332,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const known = confirmed.get(tokenKey);
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
-    if (!allowRemoteCheck(clientAddress, subject)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(await holdsRole(subject))) throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);
@@ -271,7 +341,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       throw new VerifierUnavailableError("Token verifier unavailable");
     }
     // The server-returned account must be the token's own subject.
-    if (!userId || userId !== subject) throw new InvalidCredentialError("Unauthorised");
+    if (!userId || userId !== subject || !validTokenTimes(claims, now()))
+      throw new InvalidCredentialError("Unauthorised");
     if (confirmed.size >= CONFIRMED_MAX) confirmed.delete(confirmed.keys().next().value);
     confirmed.set(tokenKey, { userId, until: Math.min(now() + CONFIRMED_TTL_MS, claims.exp * 1000) });
     return userId;

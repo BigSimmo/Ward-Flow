@@ -80,11 +80,11 @@ to `005`. These source files do not establish a current hosted connection or dep
   `infra/postgres-settings.example.env` and `infra/postgres-runtime-role.sql`.
 - `auth.mjs`: the shared `VerifierUnavailableError` (a sign-in outage returns 503, a bad token 401)
   and `VerifierRateLimitedError` (too many sign-in checks from one address returns 429).
-- Sign-in checks (`supabase-auth.mjs`): a token's expiry and issuer are checked here,
+- Sign-in checks (`supabase-auth.mjs`): a token's finite expiry, optional finite not-before and issuer are checked here,
   then its signature against Supabase's published keys (cached 10 minutes, never used once older).
   A signed token naming a key that is not in the current list is refused here. Any other token
   without a usable published key (a legacy shared-secret token, no key ID, an unsupported or
-  unreadable key, or while the keys cannot be read) goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per client address, 30 per account and 300 in
+  unreadable key, or while the keys cannot be read) goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per client address and 300 in
   total, and a confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
   (`*` on Railway, which is reachable only through its proxy). A locally
@@ -118,7 +118,12 @@ to `005`. These source files do not establish a current hosted connection or dep
   service as approved clinical storage.
 - Request logs carry only event, generated request ID, route category, method category, status,
   outcome category and duration. They never carry tokens, user IDs, URLs, payloads or exception
-  text. Logger failures cannot change the API result.
+  text. HTTP, push and store failures share bounded error-name and protocol-code fields; unknown
+  values fall back to `Error` without copying exception text. Logger failures cannot change the
+  API result.
+- Configured PostgreSQL lock/query deadline failures return `503 storage_unavailable`; other
+  query/code faults remain `500`. A failed migration rollback preserves the original exception
+  and removes the failed connection from the pool.
 
 ## Local checks
 

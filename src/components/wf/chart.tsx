@@ -52,6 +52,8 @@ export type BarListRow = {
   value: number;
   /** Shown instead of the number ("12 fit"). Zero shows "none". */
   display?: ReactNode;
+  /** Read and shown instead of the number when the number is withheld ("fewer than 5"). */
+  valueText?: string;
   fill?: WfFill;
   /** Glyph before the value when it crosses a threshold. */
   flag?: WfTone;
@@ -155,7 +157,7 @@ export function BarList({
                   className={styles.barPick}
                   style={{ gridRow }}
                   aria-pressed={picked === row.id}
-                  aria-label={`${text}: ${row.value}`}
+                  aria-label={`${text}: ${row.valueText ?? row.value}`}
                   onClick={() => onPick(row.id)}
                   data-testid={row.testId}
                   data-dim={dim}
@@ -194,7 +196,7 @@ export function BarList({
                 aria-hidden={onPick ? true : undefined}
               >
                 {row.flag ? <StatusGlyph tone={row.flag} size={9} /> : null}
-                {row.display ?? (row.value === 0 ? "none" : row.value)}
+                {row.display ?? row.valueText ?? (row.value === 0 ? "none" : row.value)}
               </span>
             </div>
           );
@@ -210,7 +212,7 @@ export function BarList({
             ? null
             : rows.map((row) => (
                 <li key={row.id}>
-                  {row.labelText ?? (typeof row.label === "string" ? row.label : row.id)}: {row.value}
+                  {row.labelText ?? (typeof row.label === "string" ? row.label : row.id)}: {row.valueText ?? row.value}
                 </li>
               ))}
           {mean != null ? (
@@ -224,7 +226,15 @@ export function BarList({
   );
 }
 
-export type ColumnDatum = { id: string; label: string; value: number; display?: ReactNode; fill?: WfFill };
+export type ColumnDatum = {
+  id: string;
+  label: string;
+  value: number;
+  display?: ReactNode;
+  /** Read and shown instead of the number when the number is withheld ("fewer than 5"). */
+  valueText?: string;
+  fill?: WfFill;
+};
 
 export type ColumnChartProps = {
   columns: ColumnDatum[];
@@ -269,7 +279,7 @@ export function ColumnChart({
           ) : null}
           {columns.map((c) => (
             <div key={c.id} className={styles.col}>
-              <span className={styles.colValue}>{c.display ?? c.value}</span>
+              <span className={styles.colValue}>{c.display ?? c.valueText ?? c.value}</span>
               <span
                 className={styles.colBar}
                 style={{ height: `${(pct(c.value, max) / 100) * (height - 20)}px`, background: fillVar(c.fill) }}
@@ -292,7 +302,7 @@ export function ColumnChart({
         <ul>
           {columns.map((c) => (
             <li key={c.id}>
-              {c.label}: {c.value}
+              {c.label}: {c.valueText ?? c.value}
             </li>
           ))}
           {target ? (

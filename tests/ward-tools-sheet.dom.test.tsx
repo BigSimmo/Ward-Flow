@@ -2,10 +2,15 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
+import {
+  DEFAULT_BED_FINDER_FILTERS,
+  findBeds,
+  WardBedFinder,
+} from "@/components/ward-management/tools/ward-bed-finder";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/mockups/ward-flow/capacity",
@@ -52,6 +57,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     const { onNewReferral } = renderSheet();
     fireEvent.click(screen.getByRole("button", { name: /New referral/u }));
     expect(onNewReferral).toHaveBeenCalledTimes(1);
+    expect(onNewReferral).toHaveBeenCalledWith();
   });
 
   it("starts a community referral from a catchment result", () => {
@@ -73,6 +79,39 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     );
     fireEvent.click(toggle);
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
+  });
+
+  it.each([6, 7])("discloses the six-ward shortlist only when %i wards match", (count) => {
+    function MatchingWards() {
+      const flow = useWardFlow();
+      const template = findBeds(flow.units, [], DEFAULT_BED_FINDER_FILTERS)[0]?.unit;
+      if (!template) throw new Error("the fixture needs one matching adult ward");
+      const units = Array.from({ length: count }, (_, index) => ({
+        ...template,
+        id: `finder-${index + 1}`,
+        name: `Finder ward ${index + 1}`,
+      }));
+      return (
+        <WardFlowContext.Provider value={{ ...flow, units, bedReleases: [] }}>
+          <WardBedFinder onNavigate={vi.fn()} />
+        </WardFlowContext.Provider>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MatchingWards />
+      </WardFlowProvider>,
+    );
+    const finder = screen.getByTestId("ward-tools-bed-finder");
+    expect(within(finder).getByRole("status")).toHaveTextContent(`${count} wards`);
+    expect(
+      within(within(finder).getByRole("list", { name: "Wards with a free bed" })).getAllByRole("listitem"),
+    ).toHaveLength(6);
+    const disclosure = within(finder).queryByText(
+      `Showing 6 of ${count} matching wards. Narrow the filters to see other wards.`,
+    );
+    if (count > 6) expect(disclosure).toBeInTheDocument();
+    else expect(disclosure).not.toBeInTheDocument();
   });
 
   it("offers no unbuilt rows, and keeps Bed meeting TV off the phone", () => {

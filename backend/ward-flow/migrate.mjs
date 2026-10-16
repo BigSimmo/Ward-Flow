@@ -9,6 +9,7 @@ import { LATEST_MIGRATION, MIGRATIONS, readMigration } from "./migrations.mjs";
 export async function migrate(pool) {
   const sql = await Promise.all(MIGRATIONS.map(readMigration));
   const client = await pool.connect();
+  let rollbackFailure;
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(782322)");
@@ -21,9 +22,14 @@ export async function migrate(pool) {
       if (migration.version > version) await client.query(sql[index]);
     await client.query("COMMIT");
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      // Keep the migration error as the cause of failure; evict the unusable connection below.
+      rollbackFailure = rollbackError;
+    }
     throw error;
   } finally {
-    client.release();
+    client.release(rollbackFailure);
   }
 }

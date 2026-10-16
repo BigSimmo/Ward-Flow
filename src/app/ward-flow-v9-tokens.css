@@ -86,7 +86,8 @@
   /* Controls (Josh, 15 Oct 2026, refined buttons): buttons, chips, segments and icon buttons share
      one soft corner, about a third of their height, instead of a full pill. A track sits 2px rounder
      than its options so the corners nest, and a count or label tag uses the small corner. Dots,
-     avatars, progress bars and on/off switches stay round. Phone values are set below. */
+     avatars, progress bars, on/off switches and the phone dock's Create button stay round. Phone
+     values are set below. */
   --wf-r-ctl: 12px;
   --wf-r-track: 14px;
   --wf-r-seg-item: 10px;
