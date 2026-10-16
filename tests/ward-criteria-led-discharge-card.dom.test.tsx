@@ -49,6 +49,7 @@ describe("criteria led discharge card", () => {
       criteria: ["Accommodation confirmed", "Transport home arranged"],
       met: ["Accommodation confirmed", "Transport home arranged"],
       setByTreatingPsychiatrist: false,
+      tick: { criterion: "Transport home arranged", met: true },
     });
     const allMet = { ...RECORD, items: RECORD.items.map((item) => ({ ...item, metAt: NOW - 10 })) };
     rerender(<WardDischargeCriteriaCard record={allMet} eligibility="voluntary" now={NOW} onChange={onChange} />);

@@ -5,10 +5,12 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import {
+  CRITERIA_CTO_EXCLUDED,
   CRITERIA_STATUS_NOT_RECORDED,
   CRITERIA_VOLUNTARY_ONLY,
   criteriaEligibility,
   dischargeCriteriaStatus,
+  isDischargeCriteriaRecord,
   nextDischargeCriteria,
 } from "@/components/ward-management/ward-discharge-criteria";
 
@@ -60,7 +62,13 @@ describe("criteriaEligibility", () => {
     expect(criteriaEligibility("Voluntary", undefined)).toBe("voluntary");
     expect(criteriaEligibility(undefined, "Voluntary")).toBe("voluntary");
     expect(criteriaEligibility(undefined, undefined)).toBe("not_recorded");
-    expect(criteriaEligibility("Community treatment order", undefined)).toBe("not_recorded");
+  });
+
+  it("excludes a patient on a community treatment order, even with a voluntary movement", () => {
+    expect(criteriaEligibility("Community treatment order", "Voluntary")).toBe("cto");
+    expect(criteriaEligibility("Voluntary", "Voluntary", true)).toBe("cto");
+    const change = { criteria: ["Accommodation confirmed"], met: [], setByTreatingPsychiatrist: true };
+    expect(nextDischargeCriteria(null, change, "cto", 0)).toEqual({ refusal: CRITERIA_CTO_EXCLUDED });
   });
 
   it("excludes an involuntary patient whichever record says so", () => {
@@ -107,6 +115,66 @@ describe("nextDischargeCriteria and dischargeCriteriaStatus", () => {
     expect(ticked.record.items[0]!.metAt).toBe(now + 60);
     expect(dischargeCriteriaStatus(ticked.record, "voluntary", now + 60).kind).toBe("all_met");
     expect(dischargeCriteriaStatus(ticked.record, "involuntary", now + 60).kind).toBe("paused");
+  });
+
+  it("applies a single tick to the stored list, so two quick ticks both stick", () => {
+    const two = nextDischargeCriteria(
+      null,
+      { criteria: ["Accommodation confirmed", "Transport home arranged"], met: [], setByTreatingPsychiatrist: true },
+      "voluntary",
+      now,
+    );
+    if (!("record" in two) || !two.record) throw new Error("set refused");
+    // Both ticks were sent from the same screen, each carrying a stale met list of one.
+    const first = nextDischargeCriteria(
+      two.record,
+      {
+        criteria: ["Accommodation confirmed", "Transport home arranged"],
+        met: ["Accommodation confirmed"],
+        setByTreatingPsychiatrist: false,
+        tick: { criterion: "Accommodation confirmed", met: true },
+      },
+      "voluntary",
+      now + 1,
+    );
+    if (!("record" in first) || !first.record) throw new Error("first tick refused");
+    const second = nextDischargeCriteria(
+      first.record,
+      {
+        criteria: ["Accommodation confirmed", "Transport home arranged"],
+        met: ["Transport home arranged"],
+        setByTreatingPsychiatrist: false,
+        tick: { criterion: "Transport home arranged", met: true },
+      },
+      "voluntary",
+      now + 2,
+    );
+    if (!("record" in second) || !second.record) throw new Error("second tick refused");
+    expect(second.record.items.map((item) => item.metAt)).toEqual([now + 1, now + 2]);
+  });
+
+  it("clears earlier ticks when the psychiatrist reviews the list", () => {
+    if (!("record" in set) || !set.record) throw new Error("set refused");
+    const ticked = { ...set.record, items: set.record.items.map((item) => ({ ...item, metAt: now })) };
+    const reviewed = nextDischargeCriteria(
+      ticked,
+      { criteria: ["Accommodation confirmed"], met: ["Accommodation confirmed"], setByTreatingPsychiatrist: true },
+      "voluntary",
+      now + VALIDITY,
+    );
+    if (!("record" in reviewed) || !reviewed.record) throw new Error("review refused");
+    expect(dischargeCriteriaStatus(reviewed.record, "voluntary", now + VALIDITY).kind).toBe("in_progress");
+  });
+
+  it("accepts only a well formed stored record", () => {
+    expect(
+      isDischargeCriteriaRecord({ setAt: 1, items: [{ criterion: "Accommodation confirmed", metAt: null }] }),
+    ).toBe(true);
+    expect(isDischargeCriteriaRecord({ setAt: 1 })).toBe(false);
+    expect(isDischargeCriteriaRecord({ setAt: 1, items: [{ criterion: "Feeling better", metAt: null }] })).toBe(false);
+    expect(isDischargeCriteriaRecord({ setAt: 1, items: [{ criterion: "Accommodation confirmed", metAt: "x" }] })).toBe(
+      false,
+    );
   });
 
   it("lapses after the set time, refuses ticks then, and a psychiatrist review restarts it", () => {

@@ -6723,9 +6723,7 @@ export function reduceClinicalEvent(
       }
       if (admission.state !== "occupied")
         return reject(state, event, "Discharge criteria are for a patient on the ward.");
-      if (finiteInstant(event.now) === null || event.now < NOW_ANCHOR + state.clockOffsetMinutes) {
-        return reject(state, event, "Discharge criteria review time is invalid or before the ward clock.");
-      }
+      if (finiteInstant(event.now) === null) return reject(state, event, "Discharge criteria review time is invalid.");
       const eligibility = admissionCriteriaEligibility(state, admission);
       const next = nextDischargeCriteria(admission.dischargeCriteria, event, eligibility, event.now);
       if ("refusal" in next) return reject(state, event, next.refusal);

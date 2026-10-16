@@ -113,6 +113,7 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     criteria: z.array(z.unknown()).nullable(),
     met: z.array(z.unknown()),
     setByTreatingPsychiatrist: z.boolean(),
+    tick: z.looseObject({ criterion: z.unknown(), met: z.boolean() }).optional(),
     actingUnitId: id.optional(),
   }),
   REVIEW_AUDIT_EVENT: z.looseObject({

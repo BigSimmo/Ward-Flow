@@ -2032,6 +2032,8 @@ export type WardFlowEvent =
       met: DischargeCriterion[];
       /** The ward records that the treating psychiatrist set this list. Needed to set or change it. */
       setByTreatingPsychiatrist: boolean;
+      /** One criterion ticked or unticked, applied to the stored list rather than replacing it. */
+      tick?: { criterion: DischargeCriterion; met: boolean };
     }
   | {
       type: "RECORD_ED_MEDICAL_DETERIORATION";

@@ -49,7 +49,7 @@
   gap: var(--wf-s-2);
 }
 
-.hint {
+.note {
   margin: 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);

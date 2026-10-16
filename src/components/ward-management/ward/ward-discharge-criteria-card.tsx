@@ -18,6 +18,7 @@ export type DischargeCriteriaUpdate = {
   criteria: DischargeCriterion[] | null;
   met: DischargeCriterion[];
   setByTreatingPsychiatrist: boolean;
+  tick?: { criterion: DischargeCriterion; met: boolean };
 };
 
 /**
@@ -73,6 +74,7 @@ export function WardDischargeCriteriaCard({
       criteria: items.map((item) => item.criterion),
       met: met ? [...metList, criterion] : metList.filter((entry) => entry !== criterion),
       setByTreatingPsychiatrist: false,
+      tick: { criterion, met },
     });
   };
 
@@ -92,7 +94,7 @@ export function WardDischargeCriteriaCard({
           ) : null}
           <span>{summary}</span>
         </p>
-        {eligibility === "voluntary" ? <p className={styles.hint}>Legal status recorded as voluntary.</p> : null}
+        {eligibility === "voluntary" ? <p className={styles.note}>Legal status recorded as voluntary.</p> : null}
 
         {!editing && items.length > 0 ? (
           <ul className={styles.list}>
@@ -150,7 +152,7 @@ export function WardDischargeCriteriaCard({
                 onClick={() => {
                   onChange({
                     criteria: chosen,
-                    met: metList.filter((criterion) => chosen.includes(criterion)),
+                    met: [],
                     setByTreatingPsychiatrist: true,
                   });
                   setEditing(false);
@@ -163,7 +165,7 @@ export function WardDischargeCriteriaCard({
               </Button>
             </div>
             {chosen.length === 0 || !attested ? (
-              <p className={styles.hint}>
+              <p className={styles.note}>
                 Choose at least one criterion and confirm the treating psychiatrist set them.
               </p>
             ) : null}
