@@ -538,10 +538,16 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm" })}
-                    disabled={activeAnswerIndex === 0}
+                    aria-disabled={activeAnswerIndex === 0 ? "true" : undefined}
                     aria-describedby={activeAnswerIndex === 0 ? "ward-answer-prev-reason" : undefined}
                     title={activeAnswerIndex === 0 ? "Already on the first request." : undefined}
-                    onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
+                    onClick={(event) => {
+                      if (activeAnswerIndex === 0) {
+                        ignoreUnavailableActivation(event);
+                        return;
+                      }
+                      setAnswerIndex((current) => Math.max(0, current - 1));
+                    }}
                   >
                     <ChevronLeft size={14} aria-hidden="true" />
                     Previous
@@ -557,10 +563,16 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm" })}
-                    disabled={activeAnswerIndex >= incoming.length - 1}
+                    aria-disabled={activeAnswerIndex >= incoming.length - 1 ? "true" : undefined}
                     aria-describedby={activeAnswerIndex >= incoming.length - 1 ? "ward-answer-next-reason" : undefined}
                     title={activeAnswerIndex >= incoming.length - 1 ? "Already on the last request." : undefined}
-                    onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
+                    onClick={(event) => {
+                      if (activeAnswerIndex >= incoming.length - 1) {
+                        ignoreUnavailableActivation(event);
+                        return;
+                      }
+                      setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1));
+                    }}
                   >
                     Next
                     <ChevronRight size={14} aria-hidden="true" />
@@ -994,9 +1006,17 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <button
                               type="submit"
                               className={`${styles.btn} ${styles.btnGood}`}
-                              disabled={
+                              aria-disabled={
                                 !overrideReason ||
                                 (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                                  ? "true"
+                                  : undefined
+                              }
+                              onClick={
+                                !overrideReason ||
+                                (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                                  ? ignoreUnavailableActivation
+                                  : undefined
                               }
                               aria-describedby={
                                 !overrideReason ||
@@ -1182,7 +1202,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           </fieldset>
                           <button
                             type="submit"
-                            disabled={!declineReason}
+                            aria-disabled={!declineReason ? "true" : undefined}
+                            onClick={!declineReason ? ignoreUnavailableActivation : undefined}
                             aria-describedby={
                               !declineReason ? `ward-decline-submit-reason-${activeMovement.id}` : undefined
                             }

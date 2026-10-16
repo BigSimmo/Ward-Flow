@@ -157,13 +157,16 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <div className={styles.actionRow}>
             <button
               type="button"
-              disabled={!communityTeamChoice}
+              aria-disabled={!communityTeamChoice ? "true" : undefined}
               aria-describedby={!communityTeamChoice ? `ward-ed-cmht-reason-${movement.id}` : undefined}
               title={!communityTeamChoice ? "Choose a community mental health team first." : undefined}
               data-testid={`ward-ed-cmht-confirm-${movement.id}`}
               className={styles.declineButton}
-              onClick={() => {
-                if (!communityTeamChoice) return;
+              onClick={(event) => {
+                if (!communityTeamChoice) {
+                  ignoreUnavailableActivation(event);
+                  return;
+                }
                 raise("REFER_TO_COMMUNITY_TEAM", {
                   movementId: movement.id,
                   team: communityTeamChoice,
@@ -493,7 +496,8 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            disabled={legalFormExpirySaveBlocked}
+            aria-disabled={legalFormExpirySaveBlocked ? "true" : undefined}
+            onClick={legalFormExpirySaveBlocked ? ignoreUnavailableActivation : undefined}
             aria-describedby={
               legalFormExpirySaveBlocked ? `ward-ed-legal-form-expiry-reason-${movement.id}` : undefined
             }
@@ -541,7 +545,8 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            disabled={receiptCorrectionReasonDraft === undefined}
+            aria-disabled={receiptCorrectionReasonDraft === undefined ? "true" : undefined}
+            onClick={receiptCorrectionReasonDraft === undefined ? ignoreUnavailableActivation : undefined}
             aria-describedby={
               receiptCorrectionReasonDraft === undefined
                 ? `ed-correct-form-receipt-reason-hint-${movement.id}`

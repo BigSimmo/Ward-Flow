@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
@@ -266,7 +267,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </button>
             <button
               type="submit"
-              disabled={!fileAttached || simulatedSize <= 0}
+              aria-disabled={!fileAttached || simulatedSize <= 0 ? "true" : undefined}
+              onClick={!fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
               aria-describedby={!fileAttached || simulatedSize <= 0 ? "upload-forms-file-requirement" : undefined}
               title={
                 !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined

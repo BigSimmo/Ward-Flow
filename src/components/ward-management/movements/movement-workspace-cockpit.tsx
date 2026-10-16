@@ -494,12 +494,15 @@ export function MovementWorkspaceCockpit({
                   type="button"
                   data-testid="ward-console-record-gender-submit"
                   className={styles.controlButton}
-                  disabled={genderRecordDraft === undefined}
+                  aria-disabled={genderRecordDraft === undefined ? "true" : undefined}
                   aria-describedby={genderRecordDraft === undefined ? "ward-console-record-gender-blocked" : undefined}
                   title={genderRecordDraft === undefined ? "Choose a gender to record first." : undefined}
                   {...lock("RECORD_MOVEMENT_GENDER").buttonProps}
-                  onClick={() => {
-                    if (genderRecordDraft === undefined) return;
+                  onClick={(event) => {
+                    if (genderRecordDraft === undefined) {
+                      ignoreUnavailableActivation(event);
+                      return;
+                    }
                     raise("RECORD_MOVEMENT_GENDER", {
                       movementId: patient.id,
                       gender: genderRecordDraft,
@@ -1376,6 +1379,7 @@ export function MovementWorkspaceCockpit({
                   className={styles.controlRow}
                   onSubmit={(submitted) => {
                     submitted.preventDefault();
+                    if (blockerDraft.trim().length === 0) return;
                     raise("RECORD_MOVEMENT_BLOCKER", {
                       movementId: movement.id,
                       blocker: blockerDraft,
@@ -1399,7 +1403,8 @@ export function MovementWorkspaceCockpit({
                   <button
                     type="submit"
                     className={styles.controlButton}
-                    disabled={blockerDraft.trim().length === 0}
+                    aria-disabled={blockerDraft.trim().length === 0 ? "true" : undefined}
+                    onClick={blockerDraft.trim().length === 0 ? ignoreUnavailableActivation : undefined}
                     aria-describedby={blockerDraft.trim().length === 0 ? "ward-console-blocker-blocked" : undefined}
                     title={
                       blockerDraft.trim().length === 0 ? "Enter what is holding this movement up first." : undefined
