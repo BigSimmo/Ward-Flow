@@ -18,6 +18,7 @@ import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offlin
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { demoDayZero } from "@/components/ward-management/ward-clock";
 import {
   WardAccessBanner,
   WardAccessGate,
@@ -125,9 +126,11 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   // A1-17 (audit 13 Oct 2026): draw the phone layout first on a phone, so slow signal does not show
   // a different, desktop-shaped page for many seconds before the code loads.
   const phone = guessPhoneFromRequest(requestHeaders.get("user-agent"), requestHeaders.get("sec-ch-ua-mobile"));
+  // Serialize the calendar origin with the HTML so hydration does not choose a different Perth day.
+  const initialDayZero = demoDayZero(new Date()).getTime();
   return (
     <WfServerPhoneProvider phone={phone}>
-      <WardFlowProvider>
+      <WardFlowProvider initialDayZero={initialDayZero}>
         {/* Role access plan PR 1: everything below reads the workspace scoped to the desk's role and
           place, chrome included. Does nothing while the role-access flag is off (shell/ward-access.tsx). */}
         <WardAccessScope>
