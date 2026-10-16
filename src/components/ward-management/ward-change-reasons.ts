@@ -810,13 +810,3 @@ export const DISCHARGE_DELAY_CLEAR_REASONS = [
 ] as const;
 
 export type DischargeDelayClearReason = (typeof DISCHARGE_DELAY_CLEAR_REASONS)[number];
-
-export const dischargeDelayClearReasonLabels: Record<DischargeDelayClearReason, string> = {
-  resolved_clinically: "Resolved clinically",
-  package_confirmed: "Support package confirmed",
-  accommodation_secured: "Accommodation secured",
-  transport_arranged: "Transport arranged",
-  family_carer_ready: "Family or carer ready",
-  entered_in_error: "Entered in error",
-  other: "Other documented resolution",
-};

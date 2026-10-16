@@ -35,8 +35,6 @@ import {
  * the movement. Nothing computes a legal limit (D5): an expiry exists only when it was typed.
  */
 
-export const NOT_WIRED = "Not wired in this prototype.";
-
 /** Form codes this page may mark written or received. Other catalogue entries stay read-only. */
 const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "6A", "6B", "6C", "5A", "5B"] as const;
 export type OwnedLegalFormCode = (typeof OWNED_LEGAL_FORM_CODES)[number];
