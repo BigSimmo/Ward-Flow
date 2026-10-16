@@ -112,6 +112,11 @@ describe("clinical values file", () => {
       wardHandoffWindow: 7,
       idleLock: 15,
       smallNumberHidden: 5,
+      // Role access later pass (Josh, 16 Oct 2026): cover, step-up sign-in and the access review.
+      coverLength: 12,
+      stepUpWindow: 10,
+      accessExpiringSoon: 14,
+      accessUnused: 90,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

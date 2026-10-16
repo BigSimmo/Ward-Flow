@@ -191,7 +191,8 @@
   gap: 0.25rem;
 }
 
-.credentials input {
+.credentials input,
+.credentials select {
   min-height: 2.75rem;
   padding: 0.5rem;
   border: 1px solid var(--line-strong);
@@ -201,7 +202,17 @@
   font: inherit;
 }
 
-.credentials input:focus-visible {
+.credentials input:focus-visible,
+.credentials select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* The roles an account may work as (role access plan, later pass). */
+.choices {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }

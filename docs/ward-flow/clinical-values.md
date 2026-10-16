@@ -76,6 +76,10 @@ governance sign-off before real patient use (D-54).
 | Access and privacy | Ward keeps sight of a patient after they leave, for the follow up, for | 7 days | Synthetic value | No decision recorded (role access plan, 15 Oct 2026); the same figure as the 7 day follow up | None recorded | `wardHandoffWindow` |
 | Access and privacy | A shared computer locks after no use for | 15 minutes | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `idleLock` |
 | Access and privacy | Executive headline counts of people below this show as fewer than this | 5 | Synthetic value | No decision recorded (role access plan, 15 Oct 2026) | None recorded | `smallNumberHidden` |
+| Access and privacy | Cover for a second ward or ED, given for one shift, lasts at most | 12 hours | Synthetic value | No decision recorded (role access plan feature 2, Josh's go 16 Oct 2026) | None recorded | `coverLength` |
+| Access and privacy | Granting access or opening a record outside your care needs a sign-in within the last | 10 minutes | Synthetic value | No decision recorded (role access plan feature 9, Josh's go 16 Oct 2026) | None recorded | `stepUpWindow` |
+| Access and privacy | Access review lists a role ending within | 14 days | Synthetic value | No decision recorded (role access plan feature 8) | None recorded | `accessExpiringSoon` |
+| Access and privacy | A role not used for this long is switched off by itself | 90 days | Synthetic value | No decision recorded (role access plan feature 8) | None recorded | `accessUnused` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->

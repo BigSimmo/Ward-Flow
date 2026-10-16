@@ -52,6 +52,34 @@ describe("scoped browser auth", () => {
     expect(fetcher.mock.calls.filter(([u]) => String(u).includes("grant_type=refresh_token"))).toHaveLength(1);
     auth.dispose();
   });
+  it("signs the same account in again for a step-up, and refuses a different account", async () => {
+    const store = storage();
+    let next = user;
+    let tokens = 0;
+    const fetcher = vi.fn(async (u: RequestInfo | URL, init?: RequestInit) => {
+      if (String(u).endsWith("/user")) return Response.json({ ...next, email: "synthetic@example.invalid" });
+      if (String(init?.body).includes("wrong-password")) return Response.json({ error: "invalid" }, { status: 400 });
+      tokens++;
+      return Response.json(session(`access-${tokens}`));
+    });
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+    await expect(auth.reauthenticate("private-test-password")).rejects.toMatchObject({ kind: "session" });
+    await auth.signIn("synthetic@example.invalid", "private-test-password");
+    await auth.reauthenticate("private-test-password");
+    expect(await auth.token()).toBe("access-2");
+    const body = JSON.parse(String(fetcher.mock.calls.at(-2)?.[1]?.body));
+    expect(body).toEqual({ email: "synthetic@example.invalid", password: "private-test-password" });
+    // A wrong password is a form answer: the session is kept.
+    await expect(auth.reauthenticate("wrong-password")).rejects.toMatchObject({ kind: "credentials" });
+    expect(await auth.token()).toBe("access-2");
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("private-test-password");
+    // The email is used for the step-up but is never written to browser storage.
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("synthetic@example.invalid");
+    next = { id: "87654321-4321-4321-4321-cba987654321" };
+    await expect(auth.reauthenticate("private-test-password")).rejects.toMatchObject({ kind: "session" });
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+    auth.dispose();
+  });
   it("suppresses and aborts a late login after disposal", async () => {
     let finish!: (v: Response) => void;
     let signal: AbortSignal | null | undefined;

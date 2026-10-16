@@ -313,7 +313,8 @@ describe("Frontend-to-backend shared workspace contract", () => {
     expect(unauthView?.snapshot).toBeNull();
     unauthClient.dispose();
 
-    // 2. 403 Non-coordinator account transitions client to not-authorised
+    // 2. 403 An account with no role reaches the no-role state, where it may ask for access
+    //    (role access later pass).
     let forbiddenView: SharedView | undefined;
     const forbiddenClient = new SharedWorkspaceClient({
       baseUrl: "https://ward-flow.example.test",
@@ -324,7 +325,7 @@ describe("Frontend-to-backend shared workspace contract", () => {
       fetch: inProcessFetch,
     });
     await forbiddenClient.refresh();
-    expect(forbiddenView?.status).toBe("not-authorised");
+    expect(forbiddenView?.status).toBe("no-role");
     expect(forbiddenView?.snapshot).toBeNull();
     forbiddenClient.dispose();
 
