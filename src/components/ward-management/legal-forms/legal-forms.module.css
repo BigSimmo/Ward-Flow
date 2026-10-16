@@ -1252,7 +1252,7 @@ button.taskLabel[aria-pressed="true"] {
 
   /* DataRow sets its columns inline, so the phone layout has to override them. */
   .rowList > .row:not(.checkRow) {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto !important;
     row-gap: 4px;
     padding-top: var(--wf-s-2);
     padding-bottom: var(--wf-s-2);
@@ -1286,7 +1286,7 @@ button.taskLabel[aria-pressed="true"] {
 
   /* Checklist rows: name and form on top, the three facts below, each with its own label. */
   .rowList > .checkRow {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     row-gap: 4px;
     padding-top: var(--wf-s-2);
     padding-bottom: var(--wf-s-2);

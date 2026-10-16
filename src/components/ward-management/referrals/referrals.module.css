@@ -4473,7 +4473,7 @@
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }
 
-/* Answers the base rule's !important: a zero count is quiet ink, not a colour. */
+/* Outranks the base count colour by specificity: a zero count is quiet ink, not a colour. */
 .screen[data-ward-design="v6"] .unifiedTriageBannerZero .triageLargeCount {
   color: var(--wf-ink-2);
 }

@@ -144,6 +144,9 @@
   border-radius: 7px;
   background: var(--surface-2);
   color: var(--ink);
+}
+/* `.popover input { font: inherit }` is (0,1,1), so the plan input's size names the element. */
+input.planInput {
   font-size: 13px;
 }
 .planOption {
@@ -330,7 +333,7 @@
 }
 
 @media (max-width: 48rem), (pointer: coarse) {
-  .planInput,
+  input.planInput,
   .dialog textarea {
     font-size: max(1rem, 16px);
   }

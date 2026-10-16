@@ -36,6 +36,23 @@ function isLiteral(node: ts.Expression): boolean {
   );
 }
 
+/** Looks through `( ... )`, `as` and `satisfies` wrappers, as in `style={{ ... } as CSSProperties}`. */
+function unwrap(node: ts.Expression): ts.Expression {
+  while (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) {
+    node = node.expression;
+  }
+  return node;
+}
+
+function isStaticStyleObject(node: ts.Expression): boolean {
+  const object = unwrap(node);
+  return (
+    ts.isObjectLiteralExpression(object) &&
+    object.properties.length > 0 &&
+    object.properties.every((property) => ts.isPropertyAssignment(property) && isLiteral(property.initializer))
+  );
+}
+
 function countStaticInlineStyles(fileName: string, text: string): number {
   const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let count = 0;
@@ -46,11 +63,7 @@ function countStaticInlineStyles(fileName: string, text: string): number {
       node.initializer &&
       ts.isJsxExpression(node.initializer) &&
       node.initializer.expression &&
-      ts.isObjectLiteralExpression(node.initializer.expression) &&
-      node.initializer.expression.properties.length > 0 &&
-      node.initializer.expression.properties.every(
-        (property) => ts.isPropertyAssignment(property) && isLiteral(property.initializer),
-      )
+      isStaticStyleObject(node.initializer.expression)
     ) {
       count += 1;
     }
@@ -77,7 +90,8 @@ describe("fixed inline styles live in CSS Modules", () => {
   it("control: counts only all-literal style objects", () => {
     const text = `const a = <div style={{ margin: 0, color: "red" }} />;
 const b = <div style={{ width: \`\${pct}%\` }} />;
-const c = <div style={{ margin: 0, width }} />;`;
-    expect(countStaticInlineStyles("control.tsx", text)).toBe(1);
+const c = <div style={{ margin: 0, width }} />;
+const d = <div style={{ "--x": "1px" } as React.CSSProperties} />;`;
+    expect(countStaticInlineStyles("control.tsx", text)).toBe(2);
   });
 });
