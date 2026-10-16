@@ -81,6 +81,9 @@ export class SharedWorkspaceClient {
   private queue: WardFlowEvent[] = [];
   private disposed = false;
   private busy = false;
+  private needsRefresh = false;
+  /** Bumped when the working role ends, so a reply to a request sent under it is not adopted. */
+  private roleEpoch = 0;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
   private readonly lifetime = new AbortController();
@@ -159,6 +162,7 @@ export class SharedWorkspaceClient {
       return new Error("Access denied");
     };
     const gate = (update: Partial<SharedView>) => {
+      // The person must choose or ask for a role first, so work made under the last one goes.
       this.pending = null;
       this.queue = [];
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
@@ -166,8 +170,29 @@ export class SharedWorkspaceClient {
     };
     let answer = await send(workingAs);
     if (answer.noRole && workingAs) {
-      // The role this tab was working as has ended or been removed. Forget it and ask again.
+      // The role this tab was working as has ended or been removed. Forget it and ask again on reads;
+      // never re-send a write under whichever remaining role the server would pick by default.
       this.options.workingAs?.set(null);
+      if (body) {
+        // Commands queued or awaiting retry were made under the ended role, so they go too. The desk
+        // is cleared, so nothing more can be queued, and read again in full before any change.
+        this.pending = null;
+        this.queue = [];
+        this.roleEpoch += 1;
+        this.publish({ snapshot: null, eventLog: [] });
+        this.needsRefresh = true;
+        queueMicrotask(() => {
+          if (!this.busy && this.needsRefresh) {
+            this.needsRefresh = false;
+            void this.refresh();
+          }
+        });
+        const ended = {
+          code: "role-ended",
+          error: "The role this tab was working as has ended. Review the current desk before making changes.",
+        };
+        return { response: new Response(JSON.stringify(ended), { status: 422 }), value: ended };
+      }
       answer = await send(null);
     }
     const { response, value, noRole } = answer;
@@ -206,10 +231,13 @@ export class SharedWorkspaceClient {
     this.busy = true;
     try {
       const current = this.view.snapshot;
+      const epoch = this.roleEpoch;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
+      // The role ended while this read was out: drop its desk, and the follow-up read replaces it.
+      if (epoch !== this.roleEpoch) return;
       if (!response.ok) throw new Error("Workspace unavailable");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
@@ -235,6 +263,10 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
+      if (!this.disposed && this.needsRefresh) {
+        this.needsRefresh = false;
+        void this.refresh();
+      }
       if (this.queue.length && this.view.status === "ready") void this.drain();
     }
   }
@@ -263,9 +295,10 @@ export class SharedWorkspaceClient {
         }
         this.publish({ status: "saving", error: null });
         const command = this.pending;
+        const epoch = this.roleEpoch;
         const { response, value } = await this.request("/v1/workspace/commands", command);
         if (response.status >= 500) throw new Error("Save not confirmed");
-        if (value.snapshot) this.adopt(value.snapshot);
+        if (value.snapshot && epoch === this.roleEpoch) this.adopt(value.snapshot);
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
           this.headRevision = Math.max(this.headRevision, value.commandRevision);
         const previousLog = this.view.eventLog ?? [];
@@ -289,9 +322,11 @@ export class SharedWorkspaceClient {
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
-                  : command.event.role === "demo" && value.snapshot?.demoControls === false
-                    ? "Demo controls are switched off on the shared workspace. Nothing was changed."
-                    : "The action was not applied. Review the workflow requirements.",
+                  : value?.code === "role-ended" && typeof value.error === "string"
+                    ? value.error
+                    : command.event.role === "demo" && value.snapshot?.demoControls === false
+                      ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                      : "The action was not applied. Review the workflow requirements.",
           });
           break;
         }
@@ -305,9 +340,14 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
-      // A run that ended on a revision-only reply reads the board once to catch up.
-      if (!this.disposed && this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready")
+      // A run that ended on a revision-only reply or an ended role reads the board once to catch up.
+      if (
+        !this.disposed &&
+        (this.needsRefresh || (this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready"))
+      ) {
+        this.needsRefresh = false;
         void this.refresh();
+      }
     }
   }
   /**
