@@ -17,6 +17,25 @@ export type WardCredentialForm = {
   cancel: () => void;
 };
 const emptyView: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
+/** Which of this account's roles this tab works as: a membership id or "bootstrap", nothing else. */
+export const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
+const workingAs = {
+  get: () => {
+    try {
+      return window.sessionStorage.getItem(WARD_WORKING_AS_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set: (id: string | null) => {
+    try {
+      if (id) window.sessionStorage.setItem(WARD_WORKING_AS_KEY, id);
+      else window.sessionStorage.removeItem(WARD_WORKING_AS_KEY);
+    } catch {
+      // Storage refused: the server asks again next time.
+    }
+  },
+};
 export function useWardSupabaseShared(enabled: boolean) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
@@ -37,6 +56,7 @@ export function useWardSupabaseShared(enabled: boolean) {
     updatePassword: (password: string) => Promise<void>;
     signOut: () => Promise<void>;
     retry: () => Promise<void>;
+    reauthenticate: (password: string) => Promise<void>;
   } | null>(null);
   useEffect(() => {
     if (!enabled) return;
@@ -78,6 +98,7 @@ export function useWardSupabaseShared(enabled: boolean) {
       const client = new SharedWorkspaceClient({
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: () => instance.token(),
+        workingAs,
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
@@ -182,8 +203,13 @@ export function useWardSupabaseShared(enabled: boolean) {
               await auth!.updatePassword(password);
               await connect();
             }),
+          reauthenticate: async (password) => {
+            await auth!.reauthenticate(password);
+          },
           signOut: async () => {
             const token = auth!.captureAccessTokenForSignOut();
+            // The next person at this device chooses their own role.
+            workingAs.set(null);
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
             setForm({ open: false, recovery: false, busy: false, message: null });
@@ -272,6 +298,15 @@ export function useWardSupabaseShared(enabled: boolean) {
     },
     retry: () => {
       void actions.current?.retry();
+    },
+    /** Work as one of this account's roles, when it holds more than one. */
+    chooseRole: (id: string) => connection.current?.chooseRole(id),
+    /** Forget the role worked as, so the account's roles are listed again. */
+    switchRole: () => connection.current?.switchRole(),
+    /** The step-up sign-in with the account's own password. */
+    reauthenticate: async (password: string) => {
+      if (!actions.current) throw new WardAuthError("session", "Sign in again to carry on.");
+      await actions.current.reauthenticate(password);
     },
     credentials: {
       ...form,

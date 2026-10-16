@@ -40,6 +40,13 @@ export const ACCESS_ENDING_SOON_MINUTES = CLINICAL_VALUES.accessExpiringSoon.val
 /** A role not used for this long stops working by itself (synthetic). */
 export const ACCESS_UNUSED_MINUTES = CLINICAL_VALUES.accessUnused.value * MINUTES_PER_DAY;
 
+/**
+ * Who hears phone alerts by role (feature 10): a coordinator, a site bed manager, a nurse in
+ * charge or an ED clinician, each for the act-now rows inside their own place only. An executive
+ * sees counts, an access admin no patients, so neither is sent alerts.
+ */
+export const PUSH_ROLES: readonly WardAccessRole[] = ["coordinator", "bed_manager", "ward", "ed"];
+
 export type AccessMembershipKind = "role" | "cover";
 
 /** One person's role at one place, as the access admin sees it. */

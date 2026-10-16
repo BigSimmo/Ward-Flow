@@ -1,0 +1,185 @@
+"use client";
+
+/**
+ * **WHO TO WORK AS, AND ASKING FOR ACCESS — the shared workspace before the board opens (role
+ * access plan, later pass, Josh's go 16 Oct 2026).**
+ *
+ * An account with more than one role picks which one to work as for this tab (the working-as
+ * picker). The choice is the membership id only, kept in this tab's session storage, and the
+ * server checks it on every request. An account with no role can ask an access admin for one.
+ * Nothing typed here is stored: the role and place are picked from lists.
+ */
+import { useEffect, useMemo, useState } from "react";
+
+import { ACCESS_ROLE_LABELS, WARD_ACCESS_ROLES, type WardAccess, type WardAccessRole } from "./ward-role-access";
+import type { SharedAccessRequest, SharedChangeResult, SharedRoleChoice } from "./ward-shared-client";
+import { STANDARD_WARD_SITES } from "./ward-sites";
+import { parseStoredAccess } from "./shell/ward-access-store";
+import { accessPlaceLabel, placeOptions } from "./shell/ward-access-labels";
+import styles from "./ward-shared-access.module.css";
+
+/** The standard network's wards, for naming places before the board is read. */
+const SEED_UNITS = STANDARD_WARD_SITES.flatMap((site) => site.units);
+
+/** A role and place in words, for the status line and the picker. */
+export function sharedDeskLabel(access: WardAccess): string {
+  return `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, SEED_UNITS)}`;
+}
+
+export function WardRolePicker({
+  choices,
+  onChoose,
+  onSignOut,
+}: {
+  choices: readonly SharedRoleChoice[];
+  onChoose: (workingAs: string) => void;
+  onSignOut: () => void;
+}) {
+  const named = choices
+    .map((choice) => ({ id: choice.workingAs, access: parseStoredAccess(JSON.stringify(choice)) }))
+    .filter((choice): choice is { id: string; access: WardAccess } => choice.access !== null);
+  return (
+    <main id="main-content" className={styles.notice} aria-label="Choose a role" data-testid="ward-role-picker">
+      <h1>Which role are you working as?</h1>
+      <p>This account holds more than one role. You see only what the role you pick needs. You can switch later.</p>
+      {named.length === 0 ? (
+        <p role="alert">None of this account&apos;s roles can be opened here. Ask your access admin.</p>
+      ) : (
+        <ul className={styles.choices}>
+          {named.map((choice) => (
+            <li key={choice.id}>
+              <button type="button" onClick={() => onChoose(choice.id)}>
+                {sharedDeskLabel(choice.access)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button type="button" onClick={onSignOut}>
+        Sign out
+      </button>
+    </main>
+  );
+}
+
+type RequestApi = {
+  ownRequest(): Promise<SharedAccessRequest | null>;
+  requestAccess(role: string, scope: unknown): Promise<SharedChangeResult>;
+};
+
+/** Roles a person may ask for. The access admin and coordinator roles are given, not asked for. */
+const ASKABLE: readonly WardAccessRole[] = WARD_ACCESS_ROLES.filter(
+  (role) => role !== "admin" && role !== "coordinator",
+);
+
+export function WardAskForAccess({
+  canRequest,
+  api,
+  onRetry,
+  onSignOut,
+}: {
+  canRequest: boolean;
+  api: RequestApi | null;
+  onRetry: () => void;
+  onSignOut: () => void;
+}) {
+  const live = canRequest && api !== null;
+  const [asked, setAsked] = useState<{ access: WardAccess | null } | null>(null);
+  const [role, setRole] = useState<WardAccessRole>(ASKABLE[0] ?? "ward");
+  const options = useMemo(() => placeOptions(role, SEED_UNITS), [role]);
+  const [placeKey, setPlaceKey] = useState("");
+  const place = options.find((option) => option.key === placeKey) ?? options[0];
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    api.ownRequest().then(
+      (request) => {
+        if (!cancelled && request)
+          setAsked({ access: parseStoredAccess(JSON.stringify({ role: request.role, scope: request.scope })) });
+      },
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [live, api]);
+
+  return (
+    <main id="main-content" className={styles.notice} aria-label="Ask for access" data-testid="ward-ask-for-access">
+      <h1>No Ward Flow role yet</h1>
+      <p>You are signed in, but no role is assigned to this account. An access admin gives roles.</p>
+      {asked ? (
+        <p role="status">
+          You have asked for {asked.access ? sharedDeskLabel(asked.access) : "a role"}. An access admin will answer it.
+          Check again once they have.
+        </p>
+      ) : live ? (
+        <form
+          className={styles.credentials}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!place || busy) return;
+            const access: WardAccess = { role, scope: place.scope };
+            setBusy(true);
+            setMessage(null);
+            api.requestAccess(role, place.scope).then(
+              (refusal) => {
+                setBusy(false);
+                if (refusal === null) setAsked({ access });
+                else setMessage(refusal);
+              },
+              () => {
+                setBusy(false);
+                setMessage("The server was not reached. Nothing was sent.");
+              },
+            );
+          }}
+        >
+          <h2>Ask for access</h2>
+          <label>
+            Role
+            <select
+              value={role}
+              onChange={(event) => {
+                setRole(event.target.value as WardAccessRole);
+                setPlaceKey("");
+              }}
+              disabled={busy}
+            >
+              {ASKABLE.map((option) => (
+                <option key={option} value={option}>
+                  {ACCESS_ROLE_LABELS[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Place
+            <select value={place?.key ?? ""} onChange={(event) => setPlaceKey(event.target.value)} disabled={busy}>
+              {options.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {message && <p role="alert">{message}</p>}
+          <button type="submit" disabled={busy || !place}>
+            {busy ? "Please wait…" : "Ask for access"}
+          </button>
+        </form>
+      ) : (
+        <p>Asking for access from here is not wired in this prototype. Ask your access admin directly.</p>
+      )}
+      <button type="button" onClick={onRetry}>
+        Check again
+      </button>
+      <button type="button" onClick={onSignOut}>
+        Sign out
+      </button>
+    </main>
+  );
+}

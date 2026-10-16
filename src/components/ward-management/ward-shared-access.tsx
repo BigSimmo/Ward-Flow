@@ -2,11 +2,20 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { SharedView } from "./ward-shared-client";
+import type { SharedChangeResult, SharedView, SharedWorkspaceClient } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
+import { PUSH_ROLES } from "./ward-access-admin";
+import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
+import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
+import { StepUpReauthContext } from "./shell/ward-step-up-context";
+import { SharedAccessContext, type SharedAccessApi } from "./settings/access-shared-source";
+import { WardAskForAccess, WardRolePicker, sharedDeskLabel } from "./ward-shared-role-gate";
 import styles from "./ward-shared-access.module.css";
+
+/** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
+export type WardSharedAccessApi = SharedAccessApi & Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess">;
 
 export type WardSharedConnection = SharedView & {
   credentials?: WardCredentialForm;
@@ -18,6 +27,13 @@ export type WardSharedConnection = SharedView & {
   dispatch: (event: WardFlowEvent) => void;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
+  /** Roles, cover and requests for access through the signed-in connection. */
+  accessApi?: WardSharedAccessApi;
+  /** Work as one of this account's roles, or list them again. */
+  chooseRole?: (workingAs: string) => void;
+  switchRole?: () => void;
+  /** The step-up sign-in with the account's own password. */
+  reauthenticate?: (password: string) => Promise<void>;
 };
 
 /**
@@ -67,6 +83,23 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
     };
   }, [supabase.client]);
+  const accessApi = useMemo<WardSharedAccessApi>(() => {
+    const connected = () => {
+      if (!supabase.client.current) throw new Error("Shared workspace not connected");
+      return supabase.client.current;
+    };
+    return {
+      listAccess: async () => connected().listAccess(),
+      listCovers: async () => connected().listCovers(),
+      grantAccess: async (input): Promise<SharedChangeResult> => connected().grantAccess(input),
+      approveAccess: async (id) => connected().approveAccess(id),
+      revokeAccess: async (id) => connected().revokeAccess(id),
+      giveCover: async (input) => connected().giveCover(input),
+      decideRequest: async (id, decision, minutes) => connected().decideRequest(id, decision, minutes),
+      ownRequest: async () => connected().ownRequest(),
+      requestAccess: async (role, scope) => connected().requestAccess(role, scope),
+    };
+  }, [supabase.client]);
   if (!supabaseMode)
     return {
       ...supabase,
@@ -84,6 +117,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     ...supabase,
     enabled,
     pushApi,
+    accessApi,
     dispatch: (event) => supabase.client.current?.dispatch(event),
     signOut: supabase.signOut,
   };
@@ -201,15 +235,34 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+  // The server's role and place for this account. Checked against the access table, never widened.
+  const accessKey = connection.enabled && connection.snapshot ? JSON.stringify(connection.access ?? null) : null;
+  const serverAccess = useMemo(() => (accessKey ? parseStoredAccess(accessKey) : null), [accessKey]);
+  // The desk follows the server's role, so every screen is scoped to it (a coordinator's preview
+  // of another role is left alone until it ends).
+  useEffect(() => {
+    if (!serverAccess) return;
+    const { desk, previewOf } = readWardAccessSnapshot();
+    if (!sameDesk(previewOf ?? desk, serverAccess)) setWardAccess(serverAccess);
+  }, [serverAccess]);
+  const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
   const pushKind = !connection.enabled
     ? "local"
     : connection.signedIn && connection.snapshot && connection.status !== "not-authorised"
-      ? "connected"
+      ? hearsAlerts
+        ? "connected"
+        : "role"
       : "signed-out";
   const { pushApi } = connection;
   const pushAccess = useMemo<PhonePushAccess>(
     () => (pushKind === "connected" ? { kind: "connected", api: pushApi } : { kind: pushKind }),
     [pushKind, pushApi],
+  );
+  const { accessApi, reauthenticate } = connection;
+  const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
+  const sharedAccess = useMemo(
+    () => (connected && accessApi ? { api: accessApi, actorId } : null),
+    [connected, accessApi, actorId],
   );
   // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
   useEffect(() => {
@@ -231,36 +284,42 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const dataMode = useMemo<WardDataMode>(() => ({ detail, openHospitalRecords: openLiveInfo }), [detail, openLiveInfo]);
   return (
     <PhonePushAccessContext.Provider value={pushAccess}>
-      <DataModeSlotContext.Provider value={setSlot}>
-        <DataModeContext.Provider value={dataMode}>
-          {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-          {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
-          {showLiveInfo && (
-            <section className={styles.notice} aria-label="Hospital records unavailable">
-              <h1>Hospital records are not connected</h1>
-              <p>
-                Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode uses
-                invented records, including when it connects to a shared database.
-              </p>
-              <p>
-                Hospital approval, a separate clinical database and the data connection must be configured before that
-                mode can open. Selecting this option does not connect or relabel any data.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLiveInfo(false);
-                }}
-              >
-                Return to prototype
-              </button>
-            </section>
-          )}
-          <div hidden={showLiveInfo} inert={showLiveInfo}>
-            <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
-          </div>
-        </DataModeContext.Provider>
-      </DataModeSlotContext.Provider>
+      <StepUpReauthContext.Provider value={connected && reauthenticate ? reauthenticate : null}>
+        <SharedAccessContext.Provider value={sharedAccess}>
+          <DataModeSlotContext.Provider value={setSlot}>
+            <DataModeContext.Provider value={dataMode}>
+              {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
+              {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
+              {showLiveInfo && (
+                <section className={styles.notice} aria-label="Hospital records unavailable">
+                  <h1>Hospital records are not connected</h1>
+                  <p>
+                    Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode
+                    uses invented records, including when it connects to a shared database.
+                  </p>
+                  <p>
+                    Hospital approval, a separate clinical database and the data connection must be configured before
+                    that mode can open. Selecting this option does not connect or relabel any data.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLiveInfo(false);
+                    }}
+                  >
+                    Return to prototype
+                  </button>
+                </section>
+              )}
+              <div hidden={showLiveInfo} inert={showLiveInfo}>
+                <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
+                  {children}
+                </WardSharedWorkspaceContent>
+              </div>
+            </DataModeContext.Provider>
+          </DataModeSlotContext.Provider>
+        </SharedAccessContext.Provider>
+      </StepUpReauthContext.Provider>
     </PhonePushAccessContext.Provider>
   );
 }
@@ -319,12 +378,31 @@ function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospita
 
 function WardSharedWorkspaceContent({
   connection,
+  access,
   children,
 }: {
   connection: WardSharedConnection;
+  access: WardAccess | null;
   children: ReactNode;
 }) {
   if (!connection.enabled) return children;
+  if (connection.signedIn && connection.status === "choose-role")
+    return (
+      <WardRolePicker
+        choices={connection.choices ?? []}
+        onChoose={(id) => connection.chooseRole?.(id)}
+        onSignOut={connection.signOut}
+      />
+    );
+  if (connection.signedIn && connection.status === "no-role")
+    return (
+      <WardAskForAccess
+        canRequest={connection.canRequest === true}
+        api={connection.accessApi ?? null}
+        onRetry={connection.retry}
+        onSignOut={connection.signOut}
+      />
+    );
   if (!connection.signedIn || !connection.snapshot)
     return (
       <main id="main-content" className={styles.notice} aria-label="Coordinator sign-in">
@@ -368,8 +446,13 @@ function WardSharedWorkspaceContent({
           ? "Saving shared changes…"
           : connection.status === "unavailable"
             ? "Connection unavailable — changes are disabled."
-            : "Coordinator · shared synthetic workspace"}
+            : `${access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"} · shared synthetic workspace`}
         {connection.error && <span> {connection.error}</span>}
+        {connection.canSwitch && connection.switchRole && (
+          <button type="button" onClick={connection.switchRole}>
+            Switch role
+          </button>
+        )}
         {connection.status === "unavailable" && (
           <button type="button" onClick={connection.retry}>
             Retry

@@ -1,6 +1,7 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
+  PUSH_ROLES,
   ACCESS_UNUSED_MINUTES as ACCESS_UNUSED_RULE_MINUTES,
   STEP_UP_MINUTES as STEP_UP_RULE_MINUTES,
   coverAccess as coverAccessRule,
@@ -335,12 +336,8 @@ export function revokeRefusal(
   });
 }
 
-/**
- * Who hears phone alerts by role (feature 10): a coordinator, a site bed manager, a nurse in
- * charge or an ED clinician, each for the act-now rows inside their own place only. An executive
- * sees counts, an access admin no patients, so neither is sent alerts.
- */
-export const PUSH_ROLES: readonly WardAccess["role"][] = ["coordinator", "bed_manager", "ward", "ed"];
+/** Who hears phone alerts by role (feature 10). One list, in the access admin's rules. */
+export { PUSH_ROLES };
 
 /** The act-now rows this desk may hear about: `actNowAlerts` on its own scoped workspace. */
 export function scopedActNowAlerts(

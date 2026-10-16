@@ -1263,7 +1263,9 @@ export function SettingsScreen() {
                     ? "Notifications are blocked for this site in the browser."
                     : answer === "server-off"
                       ? "Phone alerts are not set up on the server yet."
-                      : "Phone alerts could not be changed. Try again.",
+                      : answer === "role"
+                        ? "Phone alerts are not part of your role."
+                        : "Phone alerts could not be changed. Try again.",
             );
           });
         }}

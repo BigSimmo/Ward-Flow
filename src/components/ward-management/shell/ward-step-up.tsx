@@ -12,13 +12,14 @@
  *
  * The password is held only while the dialog is open and is never stored.
  */
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { useCallback, useContext, useState, type ReactNode } from "react";
 
 import { Dialog, Field, TextInput } from "@/components/wf";
 import { STEP_UP_MINUTES } from "@/components/ward-management/ward-access-admin";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useUnscopedWardFlow } from "./ward-access-context";
 import { sameDesk, useWardAccessSnapshot } from "./ward-access-store";
+import { StepUpReauthContext } from "./ward-step-up-context";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 /** What an action returns when the server wants a fresh sign-in first. */
@@ -27,10 +28,7 @@ export const STEP_UP_NEEDED = "step-up";
 /** What an action returns: why it was refused, `null` when it was done, or `STEP_UP_NEEDED`. */
 export type StepUpResult = string | null;
 
-/** The shared workspace's fresh sign-in with the account's own password. Absent in the local demo. */
-export type StepUpReauthenticate = (password: string) => Promise<void>;
-
-export const StepUpReauthContext = createContext<StepUpReauthenticate | null>(null);
+export { StepUpReauthContext, type StepUpReauthenticate } from "./ward-step-up-context";
 
 /** The local demo's last confirm, for one desk, on the demo clock. Memory only. */
 let confirmed: { desk: WardAccess; at: Instant } | null = null;

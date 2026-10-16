@@ -38,7 +38,7 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import type { Rejection, Unit } from "@/components/ward-management/ward-model";
+import type { Rejection } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import {
@@ -54,7 +54,6 @@ import {
   type BreakGlassReasonId,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import {
   breakGlass,
@@ -70,30 +69,12 @@ export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from 
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
+import { accessPlaceLabel } from "./ward-access-labels";
 import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
-/** Where the desk is, in words: "Ward 6B", "Fiona Stanley ED", "South Metro". */
-export function accessPlaceLabel(access: WardAccess, units: readonly Unit[]): string {
-  const scope = access.scope;
-  switch (scope.kind) {
-    case "statewide":
-      return "Statewide";
-    case "service":
-      return scope.service;
-    case "site":
-      return siteByCode(scope.siteCode)?.name ?? scope.siteCode;
-    case "ward":
-      return scope.unitIds.map((id) => units.find((unit) => unit.id === id)?.name ?? id).join(", ");
-    case "ed":
-      return edById(scope.edId)?.name ?? scope.edId;
-    case "team":
-      return scope.teamName;
-    case "jobs":
-      return "Assigned transport jobs";
-  }
-}
+export { accessPlaceLabel } from "./ward-access-labels";
 
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());

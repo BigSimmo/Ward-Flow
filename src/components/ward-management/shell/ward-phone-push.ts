@@ -2,7 +2,9 @@
  * PHONE ALERTS — feature 4, 10 Oct 2026.
  *
  * Standard Web Push through the shared backend, so a coordinator's phone or browser shows a
- * new act-now (red) item while Ward Flow is closed. Off by default, turned on per device in
+ * new act-now (red) item while Ward Flow is closed. From migration 9 a site bed manager, nurse in
+ * charge or ED clinician hears the act-now items inside their own place too (role access plan,
+ * later pass); other roles see "Not part of your role". Off by default, turned on per device in
  * Settings, and only available when the shared workspace is signed in: the local
  * demonstration has no server to send from. The server writes the words: a count, the hospital
  * site and a link to Alerts, never a patient name, record number, Ward Flow id or typed text.
@@ -32,19 +34,26 @@ export type PhonePushApi = {
   pushSubscribe(subscription: {
     endpoint?: string;
     keys?: Record<string, string>;
-  }): Promise<"subscribed" | "limit" | "in-use">;
+  }): Promise<"subscribed" | "limit" | "in-use" | "role">;
   /** True when the signed-in account's record was revoked; false when it owned none. */
   pushUnsubscribe(endpoint: string): Promise<boolean>;
 };
 
 /** Whether this screen is on the shared workspace, and signed in. */
-export type PhonePushAccess = { kind: "local" } | { kind: "signed-out" } | { kind: "connected"; api: PhonePushApi };
+export type PhonePushAccess =
+  | { kind: "local" }
+  | { kind: "signed-out" }
+  // Signed in as a role that is not sent alerts (an executive, an access admin, community, transport).
+  | { kind: "role" }
+  | { kind: "connected"; api: PhonePushApi };
 
 export const PhonePushAccessContext = createContext<PhonePushAccess>({ kind: "local" });
 
 export type PhonePushState =
   | "local"
   | "signed-out"
+  // This role is not sent alerts.
+  | "role"
   | "checking"
   | "unsupported"
   | "install"
@@ -74,6 +83,8 @@ export function phonePushRow(state: PhonePushState): { checked: boolean; unavail
       return unavailable("Needs the shared workspace");
     case "signed-out":
       return unavailable("Sign in to the shared workspace first");
+    case "role":
+      return unavailable("Not part of your role");
     case "checking":
       return unavailable("Checking this device…");
     case "unsupported":

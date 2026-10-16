@@ -10,20 +10,18 @@
  * of one ward or ED for one shift at most, and end it early. Every change goes behind the step-up
  * check and through the same rules the server uses (`ward-access-admin.ts`).
  *
- * The local demo works on made-up staff held for this tab only. The shared workspace passes its
- * own source, read from the server, through `AccessSourcesContext`.
+ * The local demo works on made-up staff held for this tab only. The shared workspace reads its
+ * lists from the server (`access-shared-source.ts`, through `SharedAccessContext`).
  */
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { useContext, useMemo, useState, type ReactNode } from "react";
 import { KeyRound, ShieldCheck, UserPlus, Users } from "lucide-react";
 
 import { Badge, Button, Card, CardBody, CardHead, Field, Select, TextInput, type WfTone } from "@/components/wf";
 import {
   ACCESS_ROLE_LABELS,
-  ROLE_SCOPE_KINDS,
   WARD_ACCESS_ROLES,
   type WardAccess,
   type WardAccessRole,
-  type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 import {
   COVER_MAX_MINUTES,
@@ -39,10 +37,9 @@ import {
 import { wardAccessPlaces } from "@/components/ward-management/ward-access-places";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { MINUTES_PER_DAY, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
-import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
-import { accessPlaceLabel, useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access";
+import type { Unit } from "@/components/ward-management/ward-model";
+import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access";
+import { accessPlaceLabel, placeOptions } from "@/components/ward-management/shell/ward-access-labels";
 import {
   endCover,
   giveCover,
@@ -60,6 +57,7 @@ import {
   useLocalAccessAdmin,
 } from "@/components/ward-management/shell/ward-access-admin-store";
 import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
+import { SharedAccessContext, useSharedAdminSource, useSharedCoverSource } from "./access-shared-source";
 
 import styles from "./access-settings.module.css";
 
@@ -79,10 +77,9 @@ export type AccessAdminSource = {
   readonly approve: (id: string) => Promise<StepUpResult>;
   readonly revoke: (id: string) => Promise<StepUpResult>;
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
+  /** Why the lists may be out of date (the server was not reached). */
+  readonly problem?: string | null;
 };
-
-/** The shared workspace's sources. Absent in the local demo. */
-export const AccessSourcesContext = createContext<{ admin: AccessAdminSource | null } | null>(null);
 
 const GRANT_DAYS = [30, 90, 180, 365] as const;
 const COVER_HOURS = [4, 8, 12].filter((hours) => hours * 60 <= COVER_MAX_MINUTES);
@@ -110,29 +107,7 @@ const STATUS: Record<MembershipStatus, { label: string; tone: WfTone }> = {
   ended: { label: "Ended", tone: "neutral" },
 };
 
-/** Every place a role may hold, in words. Built from the workspace, never a literal list of wards. */
-export function placeOptions(
-  role: WardAccessRole,
-  units: readonly Unit[],
-): { key: string; label: string; scope: WardAccessScope }[] {
-  const options: WardAccessScope[] = [];
-  for (const kind of ROLE_SCOPE_KINDS[role]) {
-    if (kind === "statewide") options.push({ kind: "statewide" });
-    if (kind === "jobs") options.push({ kind: "jobs" });
-    if (kind === "service") for (const service of HEALTH_SERVICES) options.push({ kind: "service", service });
-    if (kind === "site")
-      for (const siteCode of [...new Set(units.map((unit) => unit.siteCode))]) options.push({ kind: "site", siteCode });
-    if (kind === "ward") for (const unit of units) options.push({ kind: "ward", unitIds: [unit.id] });
-    if (kind === "ed") for (const ed of allEmergencyDepartments()) options.push({ kind: "ed", edId: ed.id });
-    if (kind === "team")
-      for (const teamName of Object.values(COMMUNITY_TEAMS)) options.push({ kind: "team", teamName });
-  }
-  return options.map((scope) => ({
-    key: JSON.stringify(scope),
-    label: accessPlaceLabel({ role, scope }, units),
-    scope,
-  }));
-}
+export { placeOptions };
 
 function useLocalAdminSource(desk: WardAccess, now: Instant, places: AccessPlaces): AccessAdminSource {
   const { memberships, requests } = useLocalAccessAdmin(now);
@@ -175,8 +150,8 @@ function AccessAdminPanel() {
   const { units, now } = useUnscopedWardFlow();
   const places = useMemo(() => wardAccessPlaces(units), [units]);
   const local = useLocalAdminSource(desk, now, places);
-  const shared = useContext(AccessSourcesContext)?.admin ?? null;
-  const source = shared ?? local;
+  const shared = useSharedAdminSource(useContext(SharedAccessContext), now, true);
+  const source: AccessAdminSource = shared ?? local;
   const { guard, dialog } = useStepUp();
   const [result, say] = useResult();
 
@@ -193,6 +168,11 @@ function AccessAdminPanel() {
         You give and remove roles. You see no patients from this desk. Nobody grants themselves a role, and a
         coordinator or access admin role works only once a second person approves it.
       </p>
+      {source.problem ? (
+        <p className={styles.result} role="alert">
+          {source.problem}
+        </p>
+      ) : null}
       {result}
 
       <Card data-testid="ward-access-requests">
@@ -411,6 +391,8 @@ function CoverPanel() {
   const { desk, covers } = useWardAccessSnapshot();
   const { units, now } = useUnscopedWardFlow();
   const places = useMemo(() => wardAccessPlaces(units), [units]);
+  const shared = useSharedCoverSource(useContext(SharedAccessContext), now, true);
+  const [account, setAccount] = useState("");
   const { guard, dialog } = useStepUp();
   const [result, say] = useResult();
   const deskId = JSON.stringify(desk);
@@ -444,6 +426,14 @@ function CoverPanel() {
   const label = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
 
   const give = () => {
+    if (shared) {
+      if (!place) return;
+      const actorId = account;
+      void guard(() => shared.give({ actorId, scope: place.scope, minutes: hours * 60 })).then((r) =>
+        say(r, `Cover given: ${shared.label(actorId)} holds ${place.label} for ${plural(hours, "hour")}.`),
+      );
+      return;
+    }
     if (!place || !recipient) return;
     const access = coverAccess(place.scope);
     const recipientAccess = coverAccess(recipient.scope);
@@ -488,15 +478,25 @@ function CoverPanel() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Held by">
-                <Select value={recipient?.key ?? ""} onChange={(event) => setRecipientKey(event.target.value)}>
-                  {recipients.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.scope.kind === "ed" ? "ED clinician" : "Nurse in charge"}, {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              {shared ? (
+                <Field label="Held by (account id)">
+                  <TextInput
+                    value={account}
+                    onChange={(event) => setAccount(event.target.value.trim())}
+                    autoComplete="off"
+                  />
+                </Field>
+              ) : (
+                <Field label="Held by">
+                  <Select value={recipient?.key ?? ""} onChange={(event) => setRecipientKey(event.target.value)}>
+                    {recipients.map((option) => (
+                      <option key={option.key} value={option.key}>
+                        {option.scope.kind === "ed" ? "ED clinician" : "Nurse in charge"}, {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
               <Field label="For">
                 <Select value={String(hours)} onChange={(event) => setHours(Number(event.target.value))}>
                   {COVER_HOURS.map((option) => (
@@ -508,48 +508,115 @@ function CoverPanel() {
               </Field>
             </div>
             <div className={styles.formFoot}>
-              <Button variant="pri" size="sm" onClick={give} data-testid="ward-access-cover-submit">
+              <Button
+                variant="pri"
+                size="sm"
+                onClick={give}
+                disabledReason={shared && !account ? "Enter the account id first." : undefined}
+                data-testid="ward-access-cover-submit"
+              >
                 Give cover
               </Button>
             </div>
           </>
         )}
       </Card>
-      <Card data-testid="ward-access-cover-list">
-        <CardHead title="Cover now" icon={Users} meta={plural(mine.length, "cover")} />
-        <CardBody flush>
-          {mine.length === 0 ? (
-            <p className={styles.empty}>No cover given or held by this desk.</p>
-          ) : (
-            <ul className={styles.list}>
-              {mine.map((cover) => (
-                <li key={cover.id} className={styles.row}>
-                  <span className={styles.who}>
-                    <span className={styles.name}>{accessPlaceLabel({ role: "ward", scope: cover.scope }, units)}</span>
-                    <span className={styles.meta}>
-                      Held by {label(cover.recipient)} until {formatInstantWithDay(cover.until, now)}. Given by{" "}
-                      {label(cover.givenBy)}.
+      {shared ? (
+        <SharedCoverList source={shared} units={units} now={now} coordinator={desk.role === "coordinator"} say={say} />
+      ) : (
+        <Card data-testid="ward-access-cover-list">
+          <CardHead title="Cover now" icon={Users} meta={plural(mine.length, "cover")} />
+          <CardBody flush>
+            {mine.length === 0 ? (
+              <p className={styles.empty}>No cover given or held by this desk.</p>
+            ) : (
+              <ul className={styles.list}>
+                {mine.map((cover) => (
+                  <li key={cover.id} className={styles.row}>
+                    <span className={styles.who}>
+                      <span className={styles.name}>
+                        {accessPlaceLabel({ role: "ward", scope: cover.scope }, units)}
+                      </span>
+                      <span className={styles.meta}>
+                        Held by {label(cover.recipient)} until {formatInstantWithDay(cover.until, now)}. Given by{" "}
+                        {label(cover.givenBy)}.
+                      </span>
                     </span>
-                  </span>
-                  {sameDesk(cover.givenBy, desk) || desk.role === "coordinator" ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        endCover(cover.id);
-                        say(null, "Cover ended.");
-                      }}
-                    >
-                      End cover
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+                    {sameDesk(cover.givenBy, desk) || desk.role === "coordinator" ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          endCover(cover.id);
+                          say(null, "Cover ended.");
+                        }}
+                      >
+                        End cover
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      )}
       {dialog}
     </>
+  );
+}
+
+/** The shared workspace's cover list: given or held by this account, or inside a coordinator's place. */
+function SharedCoverList({
+  source,
+  units,
+  now,
+  coordinator,
+  say,
+}: {
+  source: NonNullable<ReturnType<typeof useSharedCoverSource>>;
+  units: readonly Unit[];
+  now: Instant;
+  coordinator: boolean;
+  say: (message: string | null, done: string) => void;
+}) {
+  const { guard, dialog } = useStepUp();
+  return (
+    <Card data-testid="ward-access-cover-list">
+      <CardHead title="Cover now" icon={Users} meta={plural(source.covers.length, "cover")} />
+      <CardBody flush>
+        {source.problem ? (
+          <p className={styles.empty} role="alert">
+            {source.problem}
+          </p>
+        ) : source.covers.length === 0 ? (
+          <p className={styles.empty}>No cover given or held by this account.</p>
+        ) : (
+          <ul className={styles.list}>
+            {source.covers.map((cover) => (
+              <li key={cover.id} className={styles.row}>
+                <span className={styles.who}>
+                  <span className={styles.name}>{accessPlaceLabel({ role: "ward", scope: cover.scope }, units)}</span>
+                  <span className={styles.meta}>
+                    Held by {source.label(cover.actorId)} until {formatInstantWithDay(cover.until, now)}. Given by{" "}
+                    {source.label(cover.grantedBy)}.
+                  </span>
+                </span>
+                {cover.grantedBy === source.self || coordinator ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void guard(() => source.end(cover.id)).then((r) => say(r, "Cover ended."))}
+                  >
+                    End cover
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+      {dialog}
+    </Card>
   );
 }

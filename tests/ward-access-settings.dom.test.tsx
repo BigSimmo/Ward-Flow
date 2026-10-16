@@ -26,7 +26,8 @@ import {
   setWardAccess,
 } from "@/components/ward-management/shell/ward-access-store";
 import { resetLocalAccessAdminForTests } from "@/components/ward-management/shell/ward-access-admin-store";
-import { forgetStepUp } from "@/components/ward-management/shell/ward-step-up";
+import { StepUpReauthContext, forgetStepUp } from "@/components/ward-management/shell/ward-step-up";
+import { SharedAccessContext, type SharedAccessApi } from "@/components/ward-management/settings/access-shared-source";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /**
@@ -49,6 +50,20 @@ function settings() {
     <ToastProvider>
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
+  );
+}
+
+function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string) => Promise<void>) {
+  return render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StepUpReauthContext.Provider value={reauthenticate}>
+          <SharedAccessContext.Provider value={{ api, actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4" }}>
+            <SettingsScreen />
+          </SharedAccessContext.Provider>
+        </StepUpReauthContext.Provider>
       </WardFlowProvider>
     </ToastProvider>,
   );
@@ -116,5 +131,57 @@ describe("the Access tab", () => {
     const list = screen.getByTestId("ward-access-cover-list");
     fireEvent.click(within(list).getByRole("button", { name: "End cover" }));
     expect(readWardAccessSnapshot().covers).toHaveLength(0);
+  });
+
+  it("in the shared workspace reads roles from the server and asks for the password when it says step-up", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const grants = ["step-up", null];
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({
+        memberships: [
+          {
+            id: "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d",
+            actorId: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            role: "executive",
+            scope: { kind: "statewide" },
+            kind: "role" as const,
+            grantedBy: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4",
+            approved: true,
+            approvedBy: null,
+            minutes: { granted: -60, expires: 1440, lastUsed: -5 },
+          },
+        ],
+        requests: [],
+      })),
+      listCovers: vi.fn(async () => []),
+      grantAccess: vi.fn(async () => grants.shift() ?? null),
+      approveAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+    };
+    const reauthenticate = vi.fn(async () => {});
+    sharedSettings(api, reauthenticate);
+    const roles = await screen.findByTestId("ward-access-role-row");
+    expect(roles).toHaveTextContent("Account 1a2b3c4d");
+    expect(roles).toHaveTextContent("Ends in 1 day. Last used 5 minutes ago.");
+    const grant = screen.getByTestId("ward-access-grant");
+    fireEvent.change(within(grant).getByLabelText("Account id"), {
+      target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
+    });
+    fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
+    const dialog = await screen.findByTestId("ward-step-up");
+    fireEvent.change(within(dialog).getByLabelText("Password"), { target: { value: "synthetic-password" } });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and carry on" }));
+    });
+    expect(reauthenticate).toHaveBeenCalledWith("synthetic-password");
+    expect(api.grantAccess).toHaveBeenCalledTimes(2);
+    expect(await screen.findByTestId("ward-access-result")).toHaveTextContent("Given: Account 1a2b3c4d");
+    // A change reads the list again.
+    expect(api.listAccess).toHaveBeenCalledTimes(2);
   });
 });

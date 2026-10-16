@@ -42,6 +42,8 @@ export class SupabaseWardAuth {
   private disposed = false;
   private requests = new Set<AbortController>();
   private refreshTask: Promise<void> | null = null;
+  /** The signed-in account's email, for the step-up sign-in. Memory only, never stored. */
+  private email: string | null = null;
   constructor(
     private readonly options: {
       url: string;
@@ -70,6 +72,7 @@ export class SupabaseWardAuth {
   }
   private clear() {
     this.session = null;
+    this.email = null;
     this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
   }
   private invalidate() {
@@ -165,6 +168,27 @@ export class SupabaseWardAuth {
     }
     this.assert(generation);
     this.save({ ...session, user });
+    const email = (user as { email?: unknown }).email;
+    this.email = typeof email === "string" && email ? email : null;
+  }
+  /**
+   * The step-up sign-in (role access plan feature 9): the same account signs in again with its
+   * password, so the server sees a recent sign-in. A different account, or none, is refused and
+   * the session is cleared. A wrong password is a form answer and keeps the session.
+   */
+  async reauthenticate(password: string) {
+    const id = this.userId;
+    const email = this.email;
+    if (!this.session || this.isRecovery || !id || !email)
+      throw new WardAuthError("session", "Sign in again to carry on.");
+    const generation = this.generation;
+    const value = await this.request(
+      "/token?grant_type=password",
+      { method: "POST", body: JSON.stringify({ email, password }) },
+      undefined,
+      generation,
+    );
+    await this.verify({ ...this.readSession(value, false), user: { id } }, generation);
   }
   async restore(recovery: Session | null = null) {
     if (recovery) {
