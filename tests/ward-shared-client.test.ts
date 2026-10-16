@@ -266,11 +266,13 @@ describe("shared workspace connection", () => {
     let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
     let releaseRead: (() => void) | undefined;
     let reads = 0;
+    const seen: number[] = [];
     const client = new SharedWorkspaceClient({
       baseUrl: "https://example.test",
       token: async () => "test",
       changed: (next) => {
         view = next;
+        if (next.snapshot) seen.push(next.snapshot.revision);
       },
       workingAs: { get: () => stored, set: (id) => (stored = id) },
       fetch: async (_url, options) => {
@@ -295,6 +297,7 @@ describe("shared workspace connection", () => {
     await stale;
     await vi.waitFor(() => expect(reads).toBe(3));
     await vi.waitFor(() => expect(view?.snapshot?.revision).toBe(3));
+    expect(seen).not.toContain(2);
     client.dispose();
   });
   it("hands back step-up and role refusals on access steps instead of signing out", async () => {
