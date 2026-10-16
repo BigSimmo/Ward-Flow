@@ -1460,6 +1460,32 @@ export function dischargeMovement(state: Pick<WardFlowState, "movements">, admis
   );
 }
 
+/**
+ * The legal status the bed panel shows for a stay, read from the same two records as
+ * `admissionCriteriaEligibility`, so the Legal tile and the criteria led discharge card agree.
+ */
+export function admissionLegalStatus(
+  state: Pick<WardFlowState, "movements" | "patients">,
+  admission: Admission,
+): string | undefined {
+  const patient = uniqueRecord(state.patients, admission.patientId);
+  const patientStatus = patient?.legalStatus;
+  // A Form 5A in force excludes criteria led discharge even when the typed status was not changed.
+  if (activeCommunityTreatmentOrder(patient) !== undefined) {
+    return patientStatus !== undefined && /community treatment order/i.test(patientStatus)
+      ? patientStatus
+      : "Community treatment order, Form 5A";
+  }
+  // A patient record that excludes criteria led discharge outranks the movement, as it does there.
+  if (
+    patientStatus !== undefined &&
+    (/community treatment order/i.test(patientStatus) || patientRecordIsInvoluntary(patientStatus))
+  ) {
+    return patientStatus;
+  }
+  return dischargeMovement(state, admission)?.legalStatus ?? patientStatus;
+}
+
 /** The single legal-status lookup used by both the ward card and the command reducer. */
 export function admissionCriteriaEligibility(
   state: Pick<WardFlowState, "movements" | "patients">,

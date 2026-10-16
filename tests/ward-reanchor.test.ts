@@ -30,6 +30,8 @@ const MODEL_FILES = [
   "src/components/ward-management/alerts/ward-broadcast-model.ts",
   // D-38: the community treatment order on the patient record holds instants too.
   "src/components/ward-management/ward-patients.ts",
+  // D-60: discharge criteria on an admission hold when they were set and when each was met.
+  "src/components/ward-management/ward-discharge-criteria.ts",
 ];
 
 /**

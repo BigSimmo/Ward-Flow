@@ -506,9 +506,11 @@ export function WardHomeTab({
                   : "Expected out today"
                 : bed.isSpecialling
                   ? "1:1 specialling"
-                  : free
-                    ? "Free to offer"
-                    : stateWord;
+                  : bed.criteriaLedChip && bed.status === "occupied"
+                    ? bed.criteriaLedChip.label
+                    : free
+                      ? "Free to offer"
+                      : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
@@ -536,7 +538,9 @@ export function WardHomeTab({
       free ? "" : (bed.patientAlias ?? ""),
       stateWord,
       days ? `day ${bed.stayDays}` : "",
-      note,
+      // A tile showing the short CLD chip is read out in full; otherwise the CLD state is added.
+      bed.criteriaLedChip && note === bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : note,
+      bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : "",
     ]
       .filter(Boolean)
       .join(", ");
