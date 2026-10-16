@@ -410,7 +410,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!isPhone) setPhonePanel(null);
   }
   const [phoneTodoCount, setPhoneTodoCount] = useState<number | undefined>(undefined);
-  const [dismissedBuzzes, setDismissedBuzzes] = useState<number[]>([]);
+  const [dismissedBuzzes, setDismissedBuzzes] = useState<string[]>([]);
   // Item 44, build plan task F3 (§2 "Bed board, ward page and all seven statistics screens: a
   // sentence only."). A hook, so it is read unconditionally, before the not-found early return
   // below — the same discipline this file's own comment already gives for `overrideReason`.
@@ -1256,8 +1256,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
-  function handleDismissBuzz(buzzIndex: number) {
-    setDismissedBuzzes((current) => [...current, buzzIndex]);
+  function handleDismissBuzz(buzzKey: string) {
+    setDismissedBuzzes((current) => (current.includes(buzzKey) ? current : [...current, buzzKey]));
   }
 
   const unreadAlertsCount = (() => {
@@ -1265,7 +1265,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
     const activeBuzzes = (refreshRequests ?? []).filter(
-      (r, idx) => r.unitId === unit.id && !dismissedBuzzes.includes(idx),
+      (r) =>
+        r.unitId === unit.id &&
+        !dismissedBuzzes.includes(`${r.unitId}:${r.at}:${r.byRole}:${r.message ?? ""}:${r.urgent === true}`),
     );
     count += activeBuzzes.length;
     const overdueArrivals = movements.filter(

@@ -37,7 +37,7 @@ export interface WardNotificationCenterProps {
   morningRollupDeadlineMinutes?: number;
   onConfirmMorningRollup?: () => void;
   onAcknowledgeNotice?: (noticeId: string) => void;
-  onDismissBuzz?: (buzzIndex: number) => void;
+  onDismissBuzz?: (buzzKey: string) => void;
   onClose?: () => void;
 }
 
@@ -138,7 +138,7 @@ export function WardNotificationCenter({
 
   // 1. Coordinator Buzzes matching unitId
   const matchingBuzzes = refreshRequests
-    .map((buzz, originalIndex) => ({ buzz, originalIndex }))
+    .map((buzz) => ({ buzz, buzzKey: `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}` }))
     .filter(({ buzz }) => buzz.unitId === unitId);
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
@@ -155,11 +155,11 @@ export function WardNotificationCenter({
     setSoundEnabled(next);
   };
 
-  const handleAcknowledgeBuzz = (originalIndex: number, isUrgent?: boolean) => {
+  const handleAcknowledgeBuzz = (buzzKey: string, isUrgent?: boolean) => {
     if (isUrgent) {
       triggerUrgentBuzzAlert();
     }
-    onDismissBuzz?.(originalIndex);
+    onDismissBuzz?.(buzzKey);
   };
 
   // 2. Urgent Tasks
@@ -310,7 +310,7 @@ export function WardNotificationCenter({
               <p className={styles.emptyState}>No coordinator buzzes for {unitName}.</p>
             ) : (
               <div className={styles.feed}>
-                {matchingBuzzes.map(({ buzz, originalIndex }) => {
+                {matchingBuzzes.map(({ buzz, buzzKey }) => {
                   const roleLabel =
                     buzz.byRole === "coordinator"
                       ? "State Bed Flow Coordinator"
@@ -319,7 +319,7 @@ export function WardNotificationCenter({
 
                   return (
                     <div
-                      key={`buzz-${originalIndex}`}
+                      key={`buzz-${buzzKey}`}
                       className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}
                     >
                       <div className={styles.cardBody}>
@@ -334,7 +334,7 @@ export function WardNotificationCenter({
                       <button
                         type="button"
                         className={styles.actionButton}
-                        onClick={() => handleAcknowledgeBuzz(originalIndex, buzz.urgent)}
+                        onClick={() => handleAcknowledgeBuzz(buzzKey, buzz.urgent)}
                       >
                         Acknowledge Buzz
                       </button>
