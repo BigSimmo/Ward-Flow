@@ -292,6 +292,27 @@ test("the account lookup is skipped for an address over its limit, and a failed 
   );
 });
 
+test("refused checks still count against the address, so one address cannot cause endless lookups", async () => {
+  let lookups = 0;
+  const verify = createSupabaseAuthenticator(config, {
+    knownSubject: async () => {
+      lookups += 1;
+      return false;
+    },
+    fetch: async () => Response.json({ id: randomUUID() }),
+  });
+  // Spend the no-role allowance from other addresses first.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` }).catch(() => {});
+  lookups = 0;
+  for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS * 3; index += 1)
+    await assert.rejects(
+      verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.90" }),
+      VerifierRateLimitedError,
+    );
+  assert.equal(lookups, REMOTE_CHECKS_PER_ADDRESS);
+});
+
 test("without a lookup, only the bootstrap coordinator list counts as having a role", async () => {
   const { verify } = setup({ user: { id: coordinator } });
   for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)

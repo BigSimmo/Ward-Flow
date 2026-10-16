@@ -194,24 +194,27 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   function addressKey(address) {
     return limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
   }
-  /** Checked before the account lookup, so an address over its limit costs no database read. */
-  function addressSpent(address) {
-    startWindow();
-    return (limits.addresses.get(addressKey(address)) ?? 0) >= REMOTE_CHECKS_PER_ADDRESS;
-  }
-  function allowRemoteCheck(address, subject, known) {
+  /**
+   * Charged before the account lookup, refused or not, so every lookup counts against the address
+   * and an address over its limit costs no database read.
+   */
+  function chargeAddress(address) {
     startWindow();
     const key = addressKey(address);
     const used = limits.addresses.get(key) ?? 0;
+    if (used >= REMOTE_CHECKS_PER_ADDRESS) return false;
+    limits.addresses.set(key, used + 1);
+    return true;
+  }
+  function allowRemoteCheck(subject, known) {
+    startWindow();
     const subjectUsed = limits.subjects.get(subject) ?? 0;
     // Keep one account's forged tokens from consuming the shared allowance for others.
     if (
-      used >= REMOTE_CHECKS_PER_ADDRESS ||
       subjectUsed >= REMOTE_CHECKS_PER_ADDRESS ||
       (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL)
     )
       return false;
-    limits.addresses.set(key, used + 1);
     limits.subjects.set(subject, subjectUsed + 1);
     if (known) limits.total += 1;
     else limits.unknown += 1;
@@ -286,15 +289,14 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const known = confirmed.get(tokenKey);
     if (known && known.until > now()) return known.userId;
     confirmed.delete(tokenKey);
-    if (addressSpent(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
     const hasRole =
       coordinatorIds.has(subject) ||
       (await Promise.resolve()
         .then(() => knownSubject(subject))
         .then((value) => value === true)
         .catch(() => false));
-    if (!allowRemoteCheck(clientAddress, subject, hasRole))
-      throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(subject, hasRole)) throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);
