@@ -92,7 +92,9 @@ to `005`. These source files do not establish a current hosted connection or dep
   A signed token naming a key that is not in the current list is refused here. Any other token
   without a usable published key (a legacy shared-secret token, no key ID, an unsupported or
   unreadable key, or while the keys cannot be read) goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per client address and 300 in
-  total, and a confirmed token is reused for a minute. The client address is the socket's, or
+  total. Each account named by a role holder's token takes at most 10 of the 300, then shares the 30 left for
+  accounts with no role, so forged tokens naming one real account cannot use up the checks other desks need.
+  A confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
   (`*` on Railway, which is reachable only through its proxy). A locally
   verified token stays valid until it expires, even after sign-out.

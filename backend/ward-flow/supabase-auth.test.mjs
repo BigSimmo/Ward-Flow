@@ -5,6 +5,7 @@ import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { clientAddress, createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import {
+  REMOTE_CHECKS_PER_ACCOUNT,
   REMOTE_CHECKS_PER_ADDRESS,
   REMOTE_CHECKS_TOTAL,
   REMOTE_CHECKS_UNKNOWN_TOTAL,
@@ -250,22 +251,52 @@ test("forged subjects from one address do not lock out another address's genuine
 });
 
 test("distributed forged subjects remain bounded by the total remote budget", async () => {
+  const holders = Array.from({ length: REMOTE_CHECKS_TOTAL / REMOTE_CHECKS_PER_ACCOUNT + 1 }, () => randomUUID());
   const verify = createSupabaseAuthenticator(config, {
+    roleHolders: async () => holders,
     fetch: async () => new Response(null, { status: 401 }),
   });
   for (let index = 0; index < REMOTE_CHECKS_TOTAL; index += 1)
     await assert.rejects(
-      verify(legacy(claims({ jti: `forged-${index}` })), {
+      verify(legacy(claims({ sub: holders[index % (holders.length - 1)], jti: `forged-${index}` })), {
         clientAddress: `synthetic-source-${index}`,
       }),
       /Unauthorised/,
     );
   await assert.rejects(
-    verify(legacy(claims({ jti: "over-total" })), {
+    verify(legacy(claims({ sub: holders.at(-1), jti: "over-total" })), {
       clientAddress: "synthetic-new-source",
     }),
     VerifierRateLimitedError,
   );
+});
+
+test("forged tokens naming one real role holder spend only that account's share of the main allowance", async () => {
+  const nurse = randomUUID();
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    roleHolders: async () => [nurse],
+    fetch: async (url, init) => {
+      calls.push(url);
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      const { sub, jti } = JSON.parse(Buffer.from(token, "base64url").toString());
+      return jti?.startsWith("forged") ? new Response(null, { status: 401 }) : Response.json({ id: sub });
+    },
+  });
+  // Every forged token names the bootstrap coordinator, each from a new address.
+  const forged = REMOTE_CHECKS_PER_ACCOUNT + REMOTE_CHECKS_UNKNOWN_TOTAL;
+  for (let index = 0; index < forged; index += 1)
+    await assert.rejects(
+      verify(legacy(claims({ jti: `forged-${index}` })), { clientAddress: `198.51.100.${index}` }),
+      /Unauthorised/,
+    );
+  await assert.rejects(
+    verify(legacy(claims({ jti: "forged-over" })), { clientAddress: "203.0.113.90" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(calls.length, forged);
+  // Another role holder still has the rest of the main allowance.
+  assert.equal(await verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.91" }), nurse);
 });
 
 test("made-up accounts share one small allowance, so they never use up the checks real desks need", async () => {
