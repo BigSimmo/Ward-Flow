@@ -87,6 +87,18 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// The facade states the Tasks words. With the `alerts-one-queue` flag on (dev and demo, D-61) the bar
+// relabels Tasks as Alerts on the bed coordinator desk, which tests/ward-alerts-one-queue.dom.test.tsx
+// covers. Pin the flag off here, as production ships, so the drawer renders the words the facade states.
+vi.mock("@/components/ward-management/shell/ward-feature-flag-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/shell/ward-feature-flag-store")>();
+  return {
+    ...actual,
+    useWardFeatureFlag: (name: Parameters<typeof actual.useWardFeatureFlag>[0]) =>
+      name === "alerts-one-queue" ? false : actual.useWardFeatureFlag(name),
+  };
+});
+
 const world = vi.hoisted(() => ({ current: null as unknown }));
 
 vi.mock("@/components/ward-management/ward-flow-provider", () => ({
