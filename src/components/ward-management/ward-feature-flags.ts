@@ -69,6 +69,16 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
+  "top25-criteria-led-discharge": {
+    label: "Criteria led discharge",
+    description:
+      "For a voluntary patient, the treating psychiatrist sets discharge criteria and the ward can confirm the discharge once all are met.",
+    owner: "Josh",
+    added: "2026-10-15",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen:
+      "Josh signs off the item in the real screens after review, and clinical governance agrees the criteria list.",
+  },
   "top25-discharge-notices": {
     label: "Discharge support notices",
     description: "Confirming a discharge offers pharmacy, transport and cleaning notices to send in one go.",

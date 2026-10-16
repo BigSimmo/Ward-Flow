@@ -191,7 +191,7 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { GENDERS } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, GENDERS } from "@/components/ward-management/ward-patients";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
 import {
@@ -215,6 +215,7 @@ import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
+import { criteriaEligibility, nextDischargeCriteria } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
  * Stages `REFER_TO_UNITS` accepts, exported so a UI can pre-check referability before dispatching
@@ -670,6 +671,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
     case "SET_DISCHARGE_BARRIER":
+    case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;
     case "RECORD_SUPPORT_NOTIFICATION":
       return event.movementId ?? event.admissionId ?? "none";
@@ -1490,7 +1492,7 @@ export function patientRecordIsInvoluntary(legalStatus: string | undefined): boo
 }
 
 /** A previous stay must never decide this admission's discharge or transport state. */
-export function dischargeMovement(state: WardFlowState, admission: Admission): Movement | undefined {
+export function dischargeMovement(state: Pick<WardFlowState, "movements">, admission: Admission): Movement | undefined {
   return (
     state.movements.find((movement) => movement.admissionId === admission.id) ??
     state.movements.find(
@@ -1500,6 +1502,20 @@ export function dischargeMovement(state: WardFlowState, admission: Admission): M
         movement.admissionId === undefined &&
         movement.closure === undefined,
     )
+  );
+}
+
+/** The single legal-status lookup used by both the ward card and the command reducer. */
+export function admissionCriteriaEligibility(
+  state: Pick<WardFlowState, "movements" | "patients">,
+  admission: Admission,
+) {
+  const movement = dischargeMovement(state, admission);
+  const patient = uniqueRecord(state.patients, admission.patientId);
+  return criteriaEligibility(
+    patient?.legalStatus,
+    movement?.legalStatus,
+    activeCommunityTreatmentOrder(patient) !== undefined,
   );
 }
 
@@ -3717,6 +3733,7 @@ export function reduceClinicalEvent(
         followUp: null,
         careJourney: emptyCareJourney(),
         dischargeBarrier: null,
+        dischargeCriteria: null,
         stepDownCandidate: false,
       };
 
@@ -6695,6 +6712,24 @@ export function reduceClinicalEvent(
       return {
         ...state,
         admissions: state.admissions.map((a) => (a.id === admission.id ? updatedAdmission : a)),
+      };
+    }
+
+    case "SET_DISCHARGE_CRITERIA": {
+      const admission = state.admissions.find((a) => a.id === event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
+        return reject(state, event, "Discharge criteria can only be set by the patient's own ward.");
+      }
+      if (admission.state !== "occupied")
+        return reject(state, event, "Discharge criteria are for a patient on the ward.");
+      if (finiteInstant(event.now) === null) return reject(state, event, "Discharge criteria review time is invalid.");
+      const eligibility = admissionCriteriaEligibility(state, admission);
+      const next = nextDischargeCriteria(admission.dischargeCriteria, event, eligibility, event.now);
+      if ("refusal" in next) return reject(state, event, next.refusal);
+      return {
+        ...state,
+        admissions: state.admissions.map((a) => (a.id === admission.id ? { ...a, dischargeCriteria: next.record } : a)),
       };
     }
 

@@ -625,6 +625,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_ARRIVAL_DETAILS: false,
     SET_STEP_DOWN_CANDIDATE: false,
     SET_DISCHARGE_BARRIER: false,
+    SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
     RECORD_ED_MEDICAL_DETERIORATION: false,
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: false,

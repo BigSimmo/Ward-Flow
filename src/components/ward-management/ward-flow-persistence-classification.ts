@@ -255,6 +255,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "WITHDRAW_WARD_REQUEST",
   "SET_STEP_DOWN_CANDIDATE",
   "SET_DISCHARGE_BARRIER",
+  // D-60: criteria are a closed list chosen from checkboxes, never typed text.
+  "SET_DISCHARGE_CRITERIA",
   // D-34 carries only originating ED/movement ids, role and time; the audit reason is fixed by the reducer.
   "RECORD_ED_MEDICAL_DETERIORATION",
   "RECORD_MOVEMENT_MEDICAL_CLEARANCE",

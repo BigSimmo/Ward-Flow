@@ -24,6 +24,7 @@ import {
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
+import { isDischargeCriteriaRecord } from "./ward-discharge-criteria";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
@@ -317,6 +318,8 @@ const admission = z.looseObject({
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
   dischargeBarrier: z.custom(isDischargeBarrier).nullable().optional(),
+  // Criteria are fixed-list values with finite times, never typed text (D-60).
+  dischargeCriteria: z.custom(isDischargeCriteriaRecord).nullable().optional(),
   careJourney: z.custom(validCareJourney).optional(),
   followUp: z
     .looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text })
