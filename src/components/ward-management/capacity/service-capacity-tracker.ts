@@ -168,16 +168,18 @@ export function deriveBedCapacityTone(
     };
   }
 
-  const remainingPercent = roundOneDecimal((freeBeds / totalBeds) * 100);
+  const rawRemainingPercent = (freeBeds / totalBeds) * 100;
   const occupiedBeds = Math.max(0, totalBeds - freeBeds);
-  const occupancyPercent = roundOneDecimal((occupiedBeds / totalBeds) * 100);
+  const rawOccupancyPercent = (occupiedBeds / totalBeds) * 100;
+  const remainingPercent = roundOneDecimal(rawRemainingPercent);
+  const occupancyPercent = roundOneDecimal(rawOccupancyPercent);
 
   let code: CapacityAlertCode = "green";
-  if (occupancyPercent >= OCCUPANCY_CRITICAL_PERCENT || freeBeds <= 1) {
+  if (rawOccupancyPercent >= OCCUPANCY_CRITICAL_PERCENT || freeBeds <= 1) {
     code = "black";
-  } else if (occupancyPercent >= OCCUPANCY_SURGE_PERCENT || remainingPercent <= 100 - OCCUPANCY_SURGE_PERCENT) {
+  } else if (rawOccupancyPercent >= OCCUPANCY_SURGE_PERCENT || rawRemainingPercent <= 100 - OCCUPANCY_SURGE_PERCENT) {
     code = "red";
-  } else if (occupancyPercent >= OCCUPANCY_ALERT_PERCENT || remainingPercent <= 100 - OCCUPANCY_ALERT_PERCENT) {
+  } else if (rawOccupancyPercent >= OCCUPANCY_ALERT_PERCENT || rawRemainingPercent <= 100 - OCCUPANCY_ALERT_PERCENT) {
     code = "yellow";
   }
 

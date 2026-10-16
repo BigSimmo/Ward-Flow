@@ -71,6 +71,7 @@ import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
   isOpen,
+  isArrivalLate,
   isStoppedTransportAwaitingRelease,
   overridesAgainstUnit,
   stageCopy,
@@ -101,7 +102,6 @@ import {
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import {
-  LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
   UNDO_TOAST_MS,
@@ -280,9 +280,7 @@ function originPlaceLabel(originEdId: string): string {
 }
 
 function arrivalIsLate(movement: Movement, now: Instant): boolean {
-  const estimatedArrivalAt = movement.arrivalDetails?.estimatedArrivalAt;
-  if (estimatedArrivalAt === undefined) return false;
-  return now > estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES;
+  return isOpen(movement) && isArrivalLate(movement, now);
 }
 
 /**
@@ -1201,12 +1199,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (r, idx) => r.unitId === unit.id && !dismissedBuzzes.includes(idx),
     );
     count += activeBuzzes.length;
-    const overdueArrivals = movements.filter(
-      (m) =>
-        m.acceptedUnitId === unit.id &&
-        m.arrivalDetails?.estimatedArrivalAt &&
-        now > m.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES,
-    );
+    const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
     return count;
   })();

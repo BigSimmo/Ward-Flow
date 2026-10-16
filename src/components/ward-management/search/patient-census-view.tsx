@@ -45,6 +45,7 @@ import {
   useMediaQuery,
 } from "@/components/wf";
 import {
+  dayOf,
   formatInstant,
   formatInstantWithDay,
   MINUTES_PER_DAY,
@@ -772,7 +773,7 @@ export function ShiftSummary(props: ShiftSummaryProps) {
 }
 
 function when(at: Instant, now: Instant): string {
-  const startOfToday = now - (now % MINUTES_PER_DAY);
+  const startOfToday = dayOf(now) * MINUTES_PER_DAY;
   if (at >= startOfToday) return formatInstantWithDay(at, now);
   const days = Math.ceil((startOfToday - at) / MINUTES_PER_DAY);
   return days === 1 ? "Yday" : `${days}d`;
