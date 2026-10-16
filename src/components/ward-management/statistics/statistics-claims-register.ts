@@ -631,7 +631,9 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     // written using the same phrase. The register caught it and said so by name. A locator that
     // matches a comment as well as the page cannot say which paragraph makes the claim.
     rendered: "one shared timestamp that later release actions overwrite",
-    claim: "`BedRelease` carries a single `confirmedAt`, not one instant per act on the release.",
+    claim:
+      "`BedRelease` carries a single `confirmedAt` that every readiness act overwrites, not one instant per act. " +
+      "Only cleared discharge blockers keep their own instants, in `clearedBlockHistory`.",
     sourceFile: WARD_MODEL,
     evidence: BED_RELEASE_BODY,
     falsifiedBy: {

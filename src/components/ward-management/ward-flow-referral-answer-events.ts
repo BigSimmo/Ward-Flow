@@ -712,10 +712,14 @@ export function reduceReferralAnswerEvent(
       }
       // Per-destination, not per-referral: another destination having declined leaves this one
       // free to answer (FD-24). Only THIS destination being already decided is a refusal, unless
-      // a clinical reassessment or updated clearance is being recorded.
+      // a clinical reassessment or updated clearance is being recorded. Turning a decline into an
+      // acceptance needs the explicit reassessment flag: a note or update alone never reverses it.
       if (
         addressing.state !== "queued" &&
-        !(hasClinicalReassessment && (addressing.state === "declined" || addressing.state === "accepted"))
+        !(
+          (hasClinicalReassessment && addressing.state === "accepted") ||
+          (event.reassessment === true && addressing.state === "declined")
+        )
       ) {
         return reject(
           state,

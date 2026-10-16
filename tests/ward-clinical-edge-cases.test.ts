@@ -116,6 +116,34 @@ describe("Clinical state-machine edge cases", () => {
     expect(undone.referrals).toEqual(quickReassessment.referrals);
   });
 
+  it("never turns a decline into an acceptance on a note or update alone", () => {
+    const initial = seedWardFlowState();
+    const referral = initial.referrals.find((candidate) =>
+      candidate.destinations.some(
+        (dest) => dest.destination.kind === "emergency_department" && dest.state === "queued",
+      ),
+    )!;
+    const declined = wardFlowReducer(initial, {
+      type: "DECLINE_REFERRAL",
+      role: "ed",
+      now: NOW + 5,
+      referralId: referral.id,
+      destinationKind: "emergency_department",
+      reason: "belongs_to_another_service",
+    });
+    const noteOnly = wardFlowReducer(declined, {
+      type: "ACCEPT_REFERRAL",
+      role: "ed",
+      now: NOW + 20,
+      referralId: referral.id,
+      destinationKind: "emergency_department",
+      clinicalUpdate: true,
+      reassessmentNote: "Update only.",
+    });
+    expect(noteOnly.referrals).toEqual(declined.referrals);
+    expect(noteOnly.rejections.length).toBe(declined.rejections.length + 1);
+  });
+
   it("writes a reassessment into the journey only when it is the ED answer that raised the journey", () => {
     const seeded = seedWardFlowState();
     const referral = seeded.referrals.find((candidate) =>
