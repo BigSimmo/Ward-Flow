@@ -2733,6 +2733,7 @@ const REFERRAL_SEND_EVENT_HELPERS = {
   referralReferrer,
   reject,
   releasePulledBedAndAdmission,
+  withoutReferralBedHold,
   replaceMovement,
   replaceReferral,
   withdrawAllLiveRequestsForReferrer,

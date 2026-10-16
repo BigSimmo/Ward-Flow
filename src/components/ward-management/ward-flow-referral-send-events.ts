@@ -81,6 +81,7 @@ export function reduceReferralSendEvent(
     replaceMovement,
     replaceReferral,
     withdrawAllLiveRequestsForReferrer,
+    withoutReferralBedHold,
   } = helpers;
   switch (event.type) {
     case "RAISE_REFERRAL": {
@@ -361,7 +362,10 @@ export function reduceReferralSendEvent(
           `movement ${movement.id} is on a legal form; a conclusive examination outcome must be recorded before referring to a community team`,
         );
       }
-      const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPulledBed = withoutReferralBedHold(
+        releasePulledBedAndAdmission(state, movement, event.now),
+        movement,
+      );
       const linkedReferral = withoutPulledBed.referrals.find((r) => r.id === movement.referralId);
       const originEd = allEmergencyDepartments().find((d) => d.id === movement.originEdId);
       const originSite = originEd ? siteByCode(originEd.siteCode) : undefined;
@@ -820,7 +824,10 @@ export function reduceReferralSendEvent(
 
         // Gives back a pulled bed and its admission, or does nothing if none was pulled. Shared
         // with `RELEASE_PULL`.
-        const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+        const withoutPulledBed = withoutReferralBedHold(
+          releasePulledBedAndAdmission(state, movement, event.now),
+          movement,
+        );
         const revokedByCoordinator = event.role === "coordinator";
         const acceptingUnitId = movement.acceptedUnitId;
         const liveTransport =

@@ -31,6 +31,7 @@ import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 
 const NOW = NOW_ANCHOR;
 const OFF_LIST = "not-a-value-this-model-knows";
@@ -285,6 +286,8 @@ describe("heldBedNumber is cleared when acceptance is unwound or overwritten", (
   it.each([
     ["RELEASE_AND_REOPEN_SEARCH", "RELEASE_AND_REOPEN_SEARCH"],
     ["RECORD_ED_OUTCOME", "RECORD_ED_OUTCOME"],
+    ["WITHDRAW_REFERRAL", "WITHDRAW_REFERRAL"],
+    ["REFER_TO_COMMUNITY_TEAM", "REFER_TO_COMMUNITY_TEAM"],
   ] as const)("frees the bed the linked referral arm held when %s releases it", (_name, release) => {
     const seeded = seedWardFlowState();
     const unitId = "scgh-adult-open";
@@ -323,7 +326,14 @@ describe("heldBedNumber is cleared when acceptance is unwound or overwritten", (
           ],
         } as WardFlowState["referrals"][number],
       ],
-      movements: accepted.movements.map((m) => (m.id === "WF-001" ? { ...m, referralId: "RF-0991" } : m)),
+      movements: accepted.movements.map((m) =>
+        m.id !== "WF-001"
+          ? m
+          : release === "REFER_TO_COMMUNITY_TEAM"
+            ? // A community referral needs a voluntary patient or a conclusive examination.
+              { ...m, referralId: "RF-0991", legalForm: undefined, legalStatus: "Voluntary" as const }
+            : { ...m, referralId: "RF-0991" },
+      ),
     };
     const unit = linked.units.find((u) => u.id === unitId)!;
     expect(heldBedRefusal(linked, unit, bed)).not.toBeNull();
@@ -338,7 +348,23 @@ describe("heldBedNumber is cleared when acceptance is unwound or overwritten", (
             actingUnitId: unitId,
             reason: RELEASE_PULL_REASONS[0],
           }
-        : { type: "RECORD_ED_OUTCOME", role: "ed", now: ++t, movementId: "WF-001", outcome: "for_community_follow_up" },
+        : release === "RECORD_ED_OUTCOME"
+          ? {
+              type: "RECORD_ED_OUTCOME",
+              role: "ed",
+              now: ++t,
+              movementId: "WF-001",
+              outcome: "for_community_follow_up",
+            }
+          : release === "WITHDRAW_REFERRAL"
+            ? { type: "WITHDRAW_REFERRAL", role: "coordinator", now: ++t, movementId: "WF-001" }
+            : {
+                type: "REFER_TO_COMMUNITY_TEAM",
+                role: "coordinator",
+                now: ++t,
+                movementId: "WF-001",
+                team: communityTeamOptions()[0]!,
+              },
     ]);
     expect(reopened.rejections).toHaveLength(linked.rejections.length);
     expect(reopened.referrals.find((r) => r.id === "RF-0991")?.destinations[0]?.heldBedNumber).toBeUndefined();
