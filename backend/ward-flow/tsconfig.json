@@ -8,6 +8,7 @@
     "checkJs": true,
     "noEmit": true,
     "strict": true,
+    // Temporary compatibility opt-outs; remove after the existing .mjs diagnostics are remediated.
     "noImplicitAny": false,
     "strictNullChecks": false,
     "useUnknownInCatchVariables": false,
