@@ -22,6 +22,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -78,6 +79,7 @@ import detail from "./statistics-detail.module.css";
  */
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlowSelect("dayZero");
@@ -150,6 +152,18 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
   const inBedCount = measuredValue(figures.admitted);
   const withDateCount = measuredValue(figures.expected);
+  // The two parts add up to the bed count, so when one part is worded as fewer than five the other
+  // is not shown either, or the hidden one could be worked back from the total (review on PR #345).
+  const phoneParts = (() => {
+    if (inBedCount === null || withDateCount === null) return { withDate: "none", noDate: "none" } as const;
+    const withDate = small(withDateCount);
+    const noDate = small(inBedCount - withDateCount);
+    const partHidden = typeof withDate === "string" || typeof noDate === "string";
+    return {
+      withDate: partHidden && typeof withDate !== "string" ? "not shown" : withDate,
+      noDate: partHidden && typeof noDate !== "string" ? "not shown" : noDate,
+    };
+  })();
 
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
     { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
@@ -198,20 +212,23 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         stem: team.id,
         scope: team.name,
         figures: () => [
-          ...figureRows.map((row) => [HERO_LABELS[row.key], figureText(row.figure)] as const),
-          ["No follow-up yet", figures.discharged.kind === "measured" ? notArranged.length : "none"],
+          ...figureRows.map(
+            (row) =>
+              [
+                HERO_LABELS[row.key],
+                row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure),
+              ] as const,
+          ),
+          ["No follow-up yet", figures.discharged.kind === "measured" ? small(notArranged.length) : "none"],
         ],
       }}
       phone={{
-        sub: `${dueOutWeek} due out in the next 7 days`,
+        sub: `${small(dueOutWeek)} due out in the next 7 days`,
         stats: (
           <>
-            <HeroStat value={inBedCount ?? "none"} label="In a bed" />
-            <HeroStat value={withDateCount ?? "none"} label="With a date" />
-            <HeroStat
-              value={inBedCount === null || withDateCount === null ? "none" : inBedCount - withDateCount}
-              label="No date"
-            />
+            <HeroStat value={inBedCount === null ? "none" : small(inBedCount)} label="In a bed" />
+            <HeroStat value={phoneParts.withDate} label="With a date" />
+            <HeroStat value={phoneParts.noDate} label="No date" />
           </>
         ),
       }}
@@ -225,14 +242,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                   data-testid={`ward-statistics-community-kpi-${row.key}`}
                   data-unmeasured={isUnmeasured(row.figure) || undefined}
                 >
-                  {row.figure.kind === "measured" ? row.figure.value : "none"}
+                  {row.figure.kind === "measured" ? small(row.figure.value) : "none"}
                 </span>
               }
               label={HERO_LABELS[row.key]}
             />
           ))}
           <HeroStat
-            value={figures.discharged.kind === "measured" ? notArranged.length : "none"}
+            value={figures.discharged.kind === "measured" ? small(notArranged.length) : "none"}
             label={
               <span className={styles.flagged}>
                 {figures.discharged.kind === "measured" && notArranged.length > 0 ? (

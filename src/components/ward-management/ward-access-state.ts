@@ -16,6 +16,7 @@
 import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/alerts/ward-broadcast-model";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   bookingPersonShown,
@@ -78,6 +79,17 @@ function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * The seeded governance entries (`ward-governance-seed.ts`) a coordinator's own screens show. They
+ * are derived, never stored, and the browser derives them from the workspace it was sent, from its
+ * own first journeys, referral and stay. The server derives them the same way, so a review is sent,
+ * and may be made, exactly when the desk's screens show its entry. The ids are fixed, so every desk
+ * that shows an entry shares its reviews.
+ */
+function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "admissions">, state: WardFlowState) {
+  return new Set(syntheticGovernanceAuditEvents({ ...state, ...sent }).map((event) => event.id));
 }
 
 /** Is this team id or name the community desk's own team. */
@@ -148,10 +160,9 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   auditEvents: (context) => context.auditEvents,
   auditReviews: (context) => {
     if (!context.coordinator) return [];
-    const kept = new Set(context.auditEvents.map((event) => event.id));
-    return context.state.auditReviews.filter(
-      (review: AuditReview) => kept.has(review.eventId) || review.eventId.startsWith("audit-seed-"),
-    );
+    const kept = seededAuditIds(context.scoped, context.state);
+    for (const event of context.auditEvents) kept.add(event.id);
+    return context.state.auditReviews.filter((review: AuditReview) => kept.has(review.eventId));
   },
   // Coordinator records, narrowed to the coordinator's own service.
   rejections: () => [],
@@ -343,6 +354,10 @@ export function commandScopeRefusal(
     referrals: scoped.referrals.filter((referral) => !glass(referral)),
   });
   const all = recordIds(state);
+  // A seeded governance entry can be reviewed, so its id counts as a record too. A coordinator may
+  // name only the ones its own screens show.
+  for (const event of syntheticGovernanceAuditEvents(state)) all.add(event.id);
+  if (access.role === "coordinator") for (const id of seededAuditIds(scoped, state)) writable.add(id);
   for (const text of commandStrings(command)) {
     if (all.has(text) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));

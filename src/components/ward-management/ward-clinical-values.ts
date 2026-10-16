@@ -374,6 +374,14 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: `${NO_DECISION} (Top 25 discharge prep, 15 Oct 2026)`,
   },
+  dischargeCriteriaValidity: {
+    ...SYNTHETIC,
+    name: "Criteria led discharge criteria need a fresh psychiatrist review after",
+    group: "Discharge, leave and absence",
+    value: 72 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: `${NO_DECISION} (D-60, criteria led discharge, 15 Oct 2026)`,
+  },
   leaveOpenWarning: {
     ...SIGNED_BY_JOSH,
     name: "Leave bed flagged to consider opening after",
@@ -474,7 +482,7 @@ export const CLINICAL_VALUES = {
   },
   smallNumberHidden: {
     ...SYNTHETIC,
-    name: "Planned, not applied yet: executive figures below this to show as fewer than this",
+    name: "Executive headline counts of people below this show as fewer than this",
     group: "Access and privacy",
     value: 5,
     unit: "count",

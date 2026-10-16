@@ -428,6 +428,7 @@ describe("who may raise which event", () => {
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+    SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],

@@ -23,6 +23,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
@@ -85,6 +86,7 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { movements: liveMovements, units } = live.state;
   const isPhone = useIsPhone();
   const now = live.now;
@@ -229,21 +231,21 @@ export function StatisticsEdScreen({
         stem: department.id,
         scope: department.name,
         figures: () => [
-          ["Waiting", onTheList],
+          ["Waiting", small(onTheList)],
           ["Longest wait", longestWait ? splitDuration(longestWait.waitMinutes) : "none"],
           ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
-          ["Urgent", urgent],
-          [`Over ${longHours}h`, over24h],
-          ["No ward yet", unplaced],
+          ["Urgent", small(urgent)],
+          [`Over ${longHours}h`, small(over24h)],
+          ["No ward yet", small(unplaced)],
         ],
       }}
       phone={{
         eyebrow: site ? `${department.siteCode} · ${site.service}` : department.siteCode,
         title: `${shortName(department.name)} ED`,
-        sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${urgent} urgent`,
+        sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} urgent`,
         stats: (
           <>
-            <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
+            <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>} label="Waiting" />
             <HeroStat
               value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
               label="Longest"
@@ -255,13 +257,13 @@ export function StatisticsEdScreen({
                     : undefined
               }
             />
-            <HeroStat value={unplaced} label="No ward yet" />
+            <HeroStat value={small(unplaced)} label="No ward yet" />
           </>
         ),
       }}
       stats={
         <>
-          <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />
+          <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>} label="Waiting" />
           <HeroStat
             value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
             label={
@@ -276,8 +278,8 @@ export function StatisticsEdScreen({
             }
           />
           <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
-          <HeroStat value={urgent} label="Urgent" />
-          <HeroStat value={over24h} label={`Over ${longHours}h`} />
+          <HeroStat value={small(urgent)} label="Urgent" />
+          <HeroStat value={small(over24h)} label={`Over ${longHours}h`} />
           {/* Five figures at most (v10). No ward yet is the wait list's own No ward filter count,
               so the hero leaves it out; the export still carries it. */}
         </>

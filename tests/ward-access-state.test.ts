@@ -8,6 +8,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { INBOX_CATEGORIES } from "../src/components/ward-management/ward-inbox-reducer";
+import { syntheticGovernanceAuditEvents } from "../src/components/ward-management/ward-governance-seed";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "../src/components/ward-management/ward-role-access";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
 import { unitHealthService } from "../src/components/ward-management/ward-service-scope";
@@ -316,6 +317,47 @@ describe("a command from a desk", () => {
     expect(send({ type: "REVIEW_AUDIT_EVENT", eventId: "audit-out" })).toMatch(/outside/);
     expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-in" })).toBeNull();
     expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-out" })).toMatch(/outside/);
+  });
+
+  it("lets a service coordinator see and review just the seeded governance entries its own screens show", () => {
+    const withReviews = (world: WardFlowState): WardFlowState => ({
+      ...world,
+      auditReviews: syntheticGovernanceAuditEvents(world).map((event, index) => ({
+        id: `review-seed-${index}`,
+        eventId: event.id,
+        generation: world.worldGeneration,
+        at: NOW_ANCHOR,
+        byRole: "coordinator",
+        decision: "reviewed",
+      })),
+    });
+    const verdicts = (world: WardFlowState, access: WardAccess) => {
+      const sent = scopeWardFlowState(world, access, options).state;
+      // The browser derives its seeded entries from the workspace it was sent.
+      const shown = new Set(syntheticGovernanceAuditEvents(sent).map((event) => event.id));
+      return syntheticGovernanceAuditEvents(world).map((event) => {
+        const allowed =
+          commandScopeRefusal(
+            world,
+            access,
+            { type: "REVIEW_AUDIT_EVENT", role: "coordinator", eventId: event.id },
+            options,
+          ) === null;
+        expect(sent.auditReviews.some((review) => review.eventId === event.id)).toBe(shown.has(event.id));
+        expect(allowed).toBe(shown.has(event.id));
+        return { id: event.id, allowed };
+      });
+    };
+    const services = [...new Set(state.units.map((unit) => unitHealthService(unit)!))];
+    for (const service of services)
+      verdicts(withReviews(state), { role: "coordinator", scope: { kind: "service", service } });
+    // A service with no referral of its own shows no referral entry, so it is neither sent its review
+    // nor may it review it, though the whole network still has one.
+    const service = services[0];
+    const access: WardAccess = { role: "coordinator", scope: { kind: "service", service } };
+    const own = new Set(scopeWardFlowState(state, access, options).state.referrals.map((referral) => referral.id));
+    const world = withReviews({ ...state, referrals: state.referrals.filter((referral) => !own.has(referral.id)) });
+    expect(verdicts(world, access)).toContainEqual({ id: "audit-seed-referral-override", allowed: false });
   });
 
   it("is never refused for the statewide coordinator", () => {

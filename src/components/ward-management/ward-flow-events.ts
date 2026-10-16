@@ -8,6 +8,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DischargeCriterion } from "@/components/ward-management/ward-discharge-criteria";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
   SupportNotificationOccasion,
@@ -2025,6 +2026,22 @@ export type WardFlowEvent =
       barrier: DischargeBarrier | "None" | null;
     }
   | {
+      /** D-60: sets, ticks or clears a voluntary patient's discharge criteria. */
+      type: "SET_DISCHARGE_CRITERIA";
+      role: WardFlowRole;
+      now: Instant;
+      actingUnitId?: string;
+      admissionId: string;
+      /** The chosen criteria in order, or null to clear them. */
+      criteria: DischargeCriterion[] | null;
+      /** The chosen criteria now met. */
+      met: DischargeCriterion[];
+      /** The ward records that the treating psychiatrist set this list. Needed to set or change it. */
+      setByTreatingPsychiatrist: boolean;
+      /** One criterion ticked or unticked, applied to the stored list rather than replacing it. */
+      tick?: { criterion: DischargeCriterion; met: boolean };
+    }
+  | {
       type: "RECORD_ED_MEDICAL_DETERIORATION";
       role: WardFlowRole;
       now: Instant;
@@ -2995,6 +3012,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+  SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
