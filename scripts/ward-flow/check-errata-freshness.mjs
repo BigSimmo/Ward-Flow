@@ -154,9 +154,9 @@ const CLAIMS = [
       // cycle, and the facade re-exports it, so the facade is still the one place screens import from.
       const patientHome = read("src/components/ward-management/shell/ward-patient-href.ts") || "";
       const patientExported =
-        /export function patientHref\s*\(/.test(facade) ||
-        (/export \{ patientHref \} from "@\/components\/ward-management\/shell\/ward-patient-href";/.test(facade) &&
-          /export function patientHref\s*\(/.test(patientHome));
+        !/function patientHref\s*\(/.test(facade) &&
+        /export \{ patientHref \} from "@\/components\/ward-management\/shell\/ward-patient-href";/.test(facade) &&
+        /export function patientHref\s*\(/.test(patientHome);
       const communityExported = /export function communityTeamHref\s*\(/.test(facade);
       const search = read("src/components/ward-management/ward-global-search.tsx") || "";
       const community = read("src/components/ward-management/community/community-screen.tsx") || "";
