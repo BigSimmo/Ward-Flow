@@ -132,6 +132,14 @@ describe("Handover page", () => {
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
   });
 
+  it("keeps the J shortcut working when nothing is focused, as after a fresh load", () => {
+    renderHandover();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    fireEvent.keyDown(window, { key: "j" });
+    expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
+  });
+
   it.each(["j", "p", "m"])("ignores the %s shortcut when focus is outside the handover", async (key) => {
     const user = userEvent.setup();
     renderHandover();

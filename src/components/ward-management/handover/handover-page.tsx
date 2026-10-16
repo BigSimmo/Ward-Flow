@@ -719,8 +719,10 @@ export function HandoverPage() {
         return;
       }
       // Character shortcuts belong to this handover, not the surrounding shell or another widget.
-      if (!singleKeyShortcutsEnabled || isPhoneWidth || !shortcutScopeRef.current?.contains(document.activeElement))
-        return;
+      // Nothing focused (the document body, as after a fresh load) counts as this handover.
+      const active = document.activeElement;
+      const inScope = active === null || active === document.body || shortcutScopeRef.current?.contains(active);
+      if (!singleKeyShortcutsEnabled || isPhoneWidth || !inScope) return;
       if (key === "p") {
         event.preventDefault();
         setSheetOpen(true);
