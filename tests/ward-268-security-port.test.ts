@@ -87,10 +87,7 @@ describe("A4-7: root public/*.html mockups", () => {
       expect(html, file).not.toContain("gstatic.com/antigravity");
       expect(html, file).not.toContain("cdn.tailwindcss.com");
       expect(html, file).toMatch(/<meta\s+name="robots"\s+content="noindex,\s*nofollow"\s*\/?>/i);
-      for (const [, src] of html.matchAll(/<script[^>]*\bsrc="(https?:[^"]+)"/g)) {
-        expect(src, file).toMatch(/\d+\.\d+\.\d+/);
-      }
-      expect([...html.matchAll(/<script[^>]*\bsrc="(https?:[^"]+)"/gi)], file).toHaveLength(0);
+      expect(html, file).not.toMatch(/<script\b[^>]*\bsrc\s*=\s*["']?\s*(?:https?:)?\/\//i);
     }
   });
 });

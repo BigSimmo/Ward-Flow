@@ -1,6 +1,6 @@
 # Ward Flow — status
 
-**Current baseline (16 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `5394102122ef` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–16 October remediation and architecture wave across PRs #283–#316). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the [8 October remediation receipt](reports/remediation-2026-10-08.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.80). Local checks, hosted CI, and deployment each require separate evidence.
+**Current baseline (15 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `5394102122ef` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–15 October remediation and architecture wave across PRs #283–#316). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the [8 October remediation receipt](reports/remediation-2026-10-08.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.80). Local checks, hosted CI, and deployment each require separate evidence.
 
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
@@ -19,7 +19,7 @@ for real patient data or clinical deployment.
 
 The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
 (9 files / 146 tests skipped, plus 24 backend mock tests; expanded to 936 files /
-10,881 tests during remediation). The estate now spans **53 total routes** (**51
+10,881 tests during remediation). The estate now spans **52 total routes** (**50
 Next.js page routes under `/mockups/ward-flow/*`**, including `/mockups/ward-flow/bed-meeting`
 and **12 Statistics routes**,
 plus `/mockups/ward-flow-sign-in` and the `/mockups/ward-flow-digest` route handler,
@@ -34,7 +34,7 @@ from end-to-end application verification.
 
 ## What is built
 
-**Screens** (**51 page routes** under `src/app/mockups/ward-flow/`, plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **53 total routes**; engine and components under
+**Screens** (**50 page routes** under `src/app/mockups/ward-flow/`, plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 total routes**; engine and components under
 `src/components/ward-management/` and `src/components/wf/`):
 
 | Area                   | Screens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |

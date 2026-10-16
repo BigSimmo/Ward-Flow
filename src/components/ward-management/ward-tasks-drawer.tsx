@@ -277,7 +277,7 @@ export function WardTasksDrawer({
   function handleEscape() {
     if (escalating !== null) {
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
-        'li[data-expanded] button[data-escalate], button[data-escalate][aria-expanded="true"]',
+        'button[data-escalate][aria-expanded="true"]',
       );
       setEscalating(null);
       setContact("");
@@ -285,7 +285,11 @@ export function WardTasksDrawer({
       return;
     }
     if (contacting !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        'button[aria-label="Contact"][aria-expanded="true"]',
+      );
       setContacting(null);
+      trigger?.focus();
       return;
     }
     onClose();

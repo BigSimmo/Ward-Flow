@@ -78,7 +78,7 @@ describe("the tasks drawer", () => {
   });
 
   it("AUD-13: does not trap focus or hijack global Escape without a backdrop, while local Escape collapses open sub-forms first and then closes the drawer", () => {
-    const { drawer, onClose } = renderDrawer({ withBackdrop: false });
+    const { drawer, onClose } = renderDrawer({ withBackdrop: false, records: seed });
     expect(drawer).toHaveAttribute("role", "complementary");
     expect(drawer).not.toHaveAttribute("aria-modal");
 
@@ -86,15 +86,25 @@ describe("the tasks drawer", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).not.toHaveBeenCalled();
 
-    // If an inline Escalate sub-form is open, pressing Escape inside it collapses the sub-form first:
-    const escalateButtons = within(drawer).queryAllByRole("button", { name: /Escalate/i });
-    if (escalateButtons.length > 0) {
-      fireEvent.click(escalateButtons[0]!);
-      const input = within(drawer).getByPlaceholderText("Contact name or service");
-      fireEvent.keyDown(input, { key: "Escape" });
-      expect(onClose).not.toHaveBeenCalled();
-      expect(within(drawer).queryByPlaceholderText("Contact name or service")).toBeNull();
-    }
+    // If an inline Escalate sub-form is open (even on a non-first row), pressing Escape inside it collapses the sub-form and restores focus to that row's Escalate button:
+    const escalateButtons = within(drawer).getAllByRole("button", { name: /^Escalate$/i });
+    const targetEscalateBtn = escalateButtons[1] ?? escalateButtons[0]!;
+    fireEvent.click(targetEscalateBtn);
+    const input = within(drawer).getByPlaceholderText("Contact name or service");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(within(drawer).queryByPlaceholderText("Contact name or service")).toBeNull();
+    expect(document.activeElement).toBe(targetEscalateBtn);
+
+    // If an inline Contact panel is open, pressing Escape inside it collapses the panel and restores focus to the Contact button:
+    const contactButtons = within(drawer).getAllByRole("button", { name: /^Contact$/i });
+    const targetContactBtn = contactButtons[0]!;
+    fireEvent.click(targetContactBtn);
+    expect(targetContactBtn).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(targetContactBtn, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(targetContactBtn).toHaveAttribute("aria-expanded", "false");
+    expect(document.activeElement).toBe(targetContactBtn);
 
     // Pressing Escape while focused inside the complementary drawer honours the visible Esc badge:
     const closeBtn = within(drawer).getByRole("button", { name: "Close tasks panel" });

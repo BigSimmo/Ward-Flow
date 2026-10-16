@@ -1,10 +1,10 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 16 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.80) record PRs landed on `origin/main` up through commit `53941021` (PR #307 / PR #316), plus the 16 October Part 1 closeout.
+> **Current task navigation — 15 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.80) record PRs landed on `origin/main` up through commit `53941021` (PR #307 / PR #316), plus the 15 October Part 1 closeout.
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
-> 🟢 **STATUS AS OF 16 OCTOBER 2026, ESTATE RECONCILIATION & OPEN ISSUES: read this first.** The latest session closeout,
+> 🟢 **STATUS AS OF 15 OCTOBER 2026, ESTATE RECONCILIATION & OPEN ISSUES: read this first.** The latest session closeout,
 > landed estate baseline across PRs #261–#316 on `origin/main` (now `53941021`, including merged PRs #284–#316 and #307), and the remaining open backlog are tracked in **§7.78–§7.80** at the end of this file.
 > Prior elevations are tracked through **§7.70–§7.77**.
 > Broader task state remains tracked across §7.8 to §7.69.
@@ -14,7 +14,7 @@
 >   current.
 > - Where the 13 September master ledger marks a family `Unassigned / Untriaged`, and where §6 says a
 >   ruling was "executed", §7 replaces them.
-> - Estate baseline reconciled on 16 October 2026 across PRs #1–#316.
+> - Estate baseline reconciled on 15 October 2026 across PRs #1–#316.
 
 ## ⚠️ WHAT THIS IS NOT — read this before editing anything
 
@@ -8809,10 +8809,10 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L6-05 (AUD-NAV-01 / Same-View Deep-Link Hash Navigation)**: Complete `useStatisticsView` reactive `hash` tracking so internal anchor navigation between cards within the same view (e.g. `#journey-overview` to `#journey-stages`) automatically triggers smooth scrolling and `MutationObserver` card resolution without requiring a full `view` state switch.
 - **TASK-L6-06 (AUD-TEST-01 / Dynamic Import Loading State Harness)**: Extend `tests/setup/jsdom.setup.ts` with a controlled deferred-resolution test helper to verify intermediate loading states, accessible skeleton landmarks, and headings for dynamic components (`WardAnswerView`, lazy tab panes) prior to chunk load.
 - **TASK-L6-07 (AUD-A11Y-02 / Explanatory Button Automated Regression Floor)**: Add automated static regression check (`scripts/ward-flow/check-explanatory-buttons.mjs` or custom ESLint rule) ensuring no interactive control combines native `disabled` with `aria-describedby`, enforcing the `aria-disabled="true"` + `ignoreUnavailableActivation` standard repository-wide.
-- **TASK-L6-08 (AUD-SITEMAP / App Router Route Map Reachability)**: Audit all 53 Next.js App Router routes under `src/app/mockups/ward-flow/` to ensure every route is reachable via top navigation, phone menu, breadcrumbs, or deep links, eliminating orphan routes.
+- **TASK-L6-08 (AUD-SITEMAP / App Router Route Map Reachability)**: Audit all 50 Next.js App Router page routes under `src/app/mockups/ward-flow/` (52 total `/mockups` routes) to ensure every route is reachable via top navigation, phone menu, breadcrumbs, or deep links, eliminating orphan routes.
 - **TASK-L6-09 (AUD-PERF-05 / Dynamic Import Loading Skeletons)**: Add dimension-matched skeleton loaders to dynamic code-split views (`WardAnswerView`, lazy statistics tabs) to eliminate Cumulative Layout Shift (CLS) on slow network chunk arrivals.
 
-## §7.79 — Engine Fixes (PR #284) & Open Task Inventory (14 October 2026)
+## §7.79 — Engine Fixes (PR #284) & Audit Task Inventory (14–15 October 2026)
 
 Branch: [PR #284](https://github.com/BigSimmo/Ward-Flow/pull/284) (`feat/engine-and-screen-fixes`), merged to `origin/main` as `36e68bf`.
 
@@ -8899,7 +8899,7 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 ---
 
-## §7.80 — Post-#316 Estate Reconciliation & 16 October Part 1 Remediations (16 October 2026)
+## §7.80 — Post-#316 Estate Reconciliation & 15 October Part 1 Remediations (15 October 2026)
 
 ### 1. Merged PRs Since §7.79 (#286–#316 + #307, `HEAD` `5394102122ef`)
 
@@ -8909,7 +8909,7 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 - **PR #291 (`dc3b2b49`)**: Audit usability, accessibility, and reliability fixes (`WF-23` mandatory discharge blocker reason, dirty-state navigation guards `TASK-L6-01`, `M-WARD-ANSWER`).
 - **PR #292 (`740446a2`)**: Top 25 clinical, operational, and UX improvements across Ward Flow screens.
 - **PR #294 (`e5979207`)**: Source-generated `docs/FACTS.md` markers (`npm run docs:facts`) and `docs/retired-terms.json` enforcement.
-- **PR #298 (`2c2f0fb6`)**: Wallboard TV mode for Board, Capacity, ED, and Command plus dedicated `/mockups/ward-flow/bed-meeting` page route (bringing Ward Flow to **51 page routes** / **53 total app routes**).
+- **PR #298 (`2c2f0fb6`)**: Wallboard TV mode for Board, Capacity, ED, and Command plus dedicated `/mockups/ward-flow/bed-meeting` page route (part of Ward Flow's **50 page routes** / **52 total app routes**).
 - **PR #299 (`0bd40774`) & PR #307 (`53941021`)**: Random event sequence replay property/fuzz tests for reducer invariants, undo safety (`UNDO_LAST_ACTION`), delivering-stage arrival guard, and `aria-disabled` explanatory button conversion.
 - **PR #300 (`85f6f7da`) & PR #316 (`9e1e2ff4`)**: End-to-end Playwright release gates for ED and inpatient transfer bed-flow journeys, plus fix for incoming transfer double-counting on Capacity (`A3-1`).
 - **PR #303 (`395b2009`)**: Extracted 16 record and undo action handlers from `ward-flow-reducer.ts` into `ward-flow-record-handlers.ts` (`TASK-L6-03`).
@@ -8921,11 +8921,11 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 ### 2. Part 1 Remaining Fixes Completed on `feat/part1-remaining-fixes-20261016`
 
 1. **`S2-9` (`ward-eligibility.ts` & `tests/ward-eligibility.test.ts`)**: Reconciled stale doc comments and pinned the intentional two-stage security gate contract between `eligibility()` (checks `unitHasLockedBeds(unit)` for `ACCEPT_IN_PRINCIPLE` waitlist capability while `PULL_PATIENT` enforces `lockedBedsFree(unit) > 0` via `locked_bed_capacity`) and `referralEligibility()` (requires `unitHasLockedBeds(unit) && lockedBedsFree(unit) > 0` for immediate placement matching).
-2. **`M-TIME-01` (`global-search-preview.tsx`, `ward-global-search.tsx`, `record-preview.tsx`, `ward-mha-calculator.tsx`, `tests/ward-simulation-clock-fallbacks.dom.test.tsx`)**: Connected `GlobalSearchPreview`, `RecordPreview`, and `WardMhaCalculator` (`useResolvedClock`) to the simulation's `dayZero` and `now` clock via `useOptionalWardFlow()` and `calendarDateOf(now, dayZero)` instead of raw browser wall-clock `new Date()`.
+2. **`M-TIME-01` (`global-search-preview.tsx`, `ward-global-search.tsx`, `record-preview.tsx`, `ward-form-times.tsx`, `tests/ward-simulation-clock-fallbacks.dom.test.tsx`)**: Connected `GlobalSearchPreview`, `RecordPreview`, and `WardFormTimes` to the simulation's `dayZero` and `now` clock via `useOptionalWardFlow()` and `perthCalendarDay(calendarDateOf(now, dayZero))` instead of raw browser wall-clock `new Date()`.
 3. **`D5 / TASK-L1-03` (`src/app/manifest.ts` & `tests/ward-pwa-manifest.test.ts`)**: Enriched Ward Flow's PWA launcher shortcuts (`New referral`, `Alerts`, `Referrals`) with explicit `short_name` and `description` metadata and pinned them in `tests/ward-pwa-manifest.test.ts`.
 4. **`AUD-12` (`ward-management-modes.tsx` & `tests/ward-landmarks.test.ts`)**: Moved `<h1 className="sr-only">{modeCopy[mode].title}</h1>` inside `<main id="main-content">` on `/network` and `/governance` so skip-link navigation reaches the page's primary heading landmark.
 5. **`AUD-13` (`ward-tasks-drawer.tsx` & `tests/ward-tasks-drawer.dom.test.tsx`)**: Added scoped `Escape` key dismissal on the `<aside>` when `withBackdrop={false}` (`role="complementary"`) so the visible `Esc` badge works when focused inside the inline drawer without trapping Tab focus or hijacking global `window` Escape events.
 6. **`WF-ACT-03 / A4-7` (`public/capacity-table-mockup.html`, `public/referral-board-mockup.html`, `tests/ward-268-security-port.test.ts`)**: Removed the external `<script src="https://cdn.tailwindcss.com/3.4.17"></script>` tag from `public/capacity-table-mockup.html`, replaced it with self-contained inline CSS rules, added `<meta name="robots" content="noindex, nofollow" />` to both static HTML mockups, and tightened `tests/ward-268-security-port.test.ts` to forbid any external third-party `<script src="http...">` tag.
 7. **`PERF-01 / TASK-L4-09` (`statistics/*.module.css` audit note)**: Verified that `statistics-polish.module.css` is actively imported by `src/app/mockups/ward-flow/statistics/layout.tsx:3` (already trimmed to 22 lines / 596 bytes in PR #304), while `statistics-v4.module.css` is pinned by 6 design-token contract test suites (`tests/statistics-v4-primitives-tokens.test.ts` asserts `raw.length > 8_000`) and the 4 `*-third-edition.module.css` files are touched by open PR #318 (`tests/statistics-third-edition-css.test.ts`).
 8. **`AUD-A11Y-02 / TASK-L6-07` (`scripts/ward-flow/check-explanatory-buttons.mjs`, `package.json`, `tests/ward-explanatory-buttons-guard.test.ts`)**: Added the static regression guard script (`npm run check:explanatory-buttons`) and unit test suite ensuring no `<button>` combines native `disabled` with `aria-describedby`.
-9. **`M-STATUS / M-HOSTING` (`docs/ward-flow/STATUS.md`, `docs/ward-flow/audit-2026-10-13-issue-triage.md`, `docs/ward-flow-task-ledger.md`)**: Reconciled baseline commits, route counts (**51** Ward Flow page routes / **53** total app routes per `docs/FACTS.md`), and merged PR status through PR #316 (`53941021`).
+9. **`M-STATUS / M-HOSTING` (`docs/ward-flow/STATUS.md`, `docs/ward-flow/audit-2026-10-13-issue-triage.md`, `docs/ward-flow-task-ledger.md`)**: Reconciled baseline commits, route counts (**50** Ward Flow page routes / **52** total app routes per `docs/FACTS.md`), and merged PR status through PR #316 (`53941021`).

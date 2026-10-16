@@ -2,16 +2,16 @@
 
 Every issue from the 8 October core-engine review ([`audit-2026-10-08-issue-list.md`](audit-2026-10-08-issue-list.md)), the follow-up honesty and UI audits, and the design and unverified-item lists, re-sorted by **how complex and how risky each fix is**. Synthetic data only. This file records triage; it does not change behaviour.
 
-**Checked against `origin/main` at `53941021` (16 October 2026, through PR #316; initial triage checked at `30b1803`).** Items fixed by PRs #256–#316 since the first triage on 11 October are marked fixed and kept for the record. Items marked ✓ were re-read in the code at `30b1803`; subsequent merges (#283–#316) resolved the vast majority of groups 1 through 5 as summarized below.
+**Checked against `origin/main` at `53941021` (15 October 2026, through PR #316; initial triage checked at `30b1803`).** Items fixed by PRs #256–#316 since the first triage on 11 October are marked fixed and kept for the record. Items marked ✓ were re-read in the code at `30b1803`; subsequent merges (#283–#316) resolved the vast majority of groups 1 through 5 as summarized below.
 
 **Evidence key.** ✓ confirmed in code at `30b1803`. R reproduced, C code- or script-confirmed, U unverified (in the 8 October list). – from the follow-up audits, not re-checked. **Reproduce every U and – item before fixing it.**
 
 **Corrections to the circulated summary (and post-#303/#290 state).** At `30b1803`, the autosave ran every 30 seconds (subsequently decoupled from navigation churn in #285 and debounced in #290), and `ward-flow-reducer.ts` was ~10,200 lines (subsequently partitioned in #303 by extracting record/undo handlers into `ward-flow-record-handlers.ts`). A4-5 was an owner decision on 28 September, not a defect. `LiveChip` took a state prop; its callers passed `"live"`.
 
-**Reconciliation summary through PR #316 (`53941021`) + 16 October Part 1 branch:**
+**Reconciliation summary through PR #316 (`53941021`) + 15 October Part 1 branch:**
 
 - **Group 1 (Quick & Low Risk):** R7 (#287), R9 (#290), R14 (#290), M-WARD-ANSWER (#290/#291), D7 (#290), `governance-screen.tsx` removal (#306), and M-STATUS/M-HOSTING are **Fixed**.
-- **Group 2 (Contained, Moderate Risk):** S2-14, S2-15, A3-1..A3-15, A1-4, A1-6, A1-11, A1-12, A2-4, A2-6..A2-8, A2-10..A2-15, A4-1, A4-2, A4-6, A4-7, A4-9..A4-15 are **Fixed** across PRs #284, #285, #290, #291, #305, #316, and the 16 October Part 1 branch (removing the external `cdn.tailwindcss.com` script from `public/capacity-table-mockup.html`).
+- **Group 2 (Contained, Moderate Risk):** S2-14, S2-15, A3-1..A3-15, A1-4, A1-6, A1-11, A1-12, A2-4, A2-6..A2-8, A2-10..A2-15, A4-1, A4-2, A4-6, A4-7, A4-9..A4-15 are **Fixed** across PRs #284, #285, #290, #291, #305, #316, and the 15 October Part 1 branch (removing the external `cdn.tailwindcss.com` script from `public/capacity-table-mockup.html`).
 - **Group 3 (Engine Fixes in Reducer):** S2-3, S2-5, S2-6, S2-7, S2-13, S1-3, S1-6, S1-8, S1-12, A1-7, A1-9 are **Fixed** across PRs #284, #285, and #290.
 - **Group 4 (Cross-Cutting):** Shared close helper (S1-4, S2-4, S1-5, S1-7), tighter load validator (A2-3, A2-5, S1-9..S1-11), eligibility security gate contract (`S2-9`), clock provider alignment (`A2-14` / `M-TIME-01`), token consolidation (`M-TOKENS`, `D2`), and reducer handler extraction (#303) are **Fixed**.
 - **Group 5 (Owner Decisions):** DEC-L5-01 (`S2-2`), DEC-L5-02 (`A1-1`, `A1-3`, `S2-11`, `A1-8`, `A1-10`, `S2-10`, `A1-13`, `A1-14`), DEC-L5-03 (`A1-2`), DEC-L5-04 (`CAP-REV`), DEC-L5-05 (`SPEC-005`), `A1-5`, `S1-14`, `D2`, `D3`, `D4`, `D5`, `D7` were **Ruled and Fixed** in PRs #284, #285, #290, and #304.
