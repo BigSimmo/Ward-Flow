@@ -1,6 +1,6 @@
 // @ts-check
 import { randomUUID } from "node:crypto";
-import { parseSubscription } from "./push.mjs";
+import { errorFields, parseSubscription } from "./push.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -27,10 +27,10 @@ const STORAGE_MESSAGES =
 /**
  * PostgreSQL SQLSTATEs that mean the database could not do the work now: connection (08),
  * insufficient resources (53), operator intervention such as a shutdown (57), system error (58),
- * a serialization failure or a deadlock. Any other SQLSTATE is a query fault that retrying will not
- * clear, so it is a code fault.
+ * a serialization failure, a deadlock or an unavailable lock. Any other SQLSTATE is a query fault
+ * that retrying will not clear, so it is a code fault.
  */
-const STORAGE_SQLSTATE = /^(?:(?:08|53|57|58)[0-9A-Z]{3}|40001|40P01)$/;
+const STORAGE_SQLSTATE = /^(?:(?:08|53|57|58)[0-9A-Z]{3}|40001|40P01|55P03)$/;
 /** Node network error codes for a database that cannot be reached. */
 const NETWORK_CODES = new Set([
   "ECONNREFUSED",
@@ -53,21 +53,9 @@ export function storageFailure(error) {
   const code = error?.code;
   return (
     (typeof code === "string" && (STORAGE_SQLSTATE.test(code) || NETWORK_CODES.has(code))) ||
+    error?.message === "Query read timeout" ||
     STORAGE_MESSAGES.test(String(error?.message ?? ""))
   );
-}
-
-/**
- * Closed diagnostic fields for an unexpected error: its name and code only. No message, since a
- * PostgreSQL or engine message can quote values from the request. The request ID ties the entry
- * to the response the caller saw.
- */
-function failureFields(error) {
-  const code = error?.code;
-  return {
-    errorName: typeof error?.name === "string" ? error.name.slice(0, 60) : "Error",
-    ...(typeof code === "string" || typeof code === "number" ? { errorCode: String(code).slice(0, 40) } : {}),
-  };
 }
 
 export function createSharedHandler({
@@ -341,7 +329,7 @@ export function createSharedHandler({
       if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
       const storage = storageFailure(error);
-      note.failure = failureFields(error);
+      note.failure = errorFields(error);
       return storage
         ? reply(
             503,
