@@ -3,7 +3,7 @@ import { URL as NodeURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
-import { downloadBlob } from "@/lib/download-blob";
+import { downloadBlob } from "@/components/ward-management/ward-download";
 
 describe("download URL lifetime", () => {
   const urls: string[] = [];

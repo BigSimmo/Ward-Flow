@@ -1,6 +1,6 @@
 "use client";
 
-import { downloadBlob } from "@/lib/download-blob";
+import { downloadBlob } from "@/components/ward-management/ward-download";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-derivations";
 import { useState, type FormEvent, type ReactNode } from "react";
 import {

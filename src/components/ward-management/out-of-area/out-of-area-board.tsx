@@ -1,6 +1,6 @@
 "use client";
 
-import { downloadBlob } from "@/lib/download-blob";
+import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";

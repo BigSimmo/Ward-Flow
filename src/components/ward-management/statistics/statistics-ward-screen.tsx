@@ -1,6 +1,6 @@
 "use client";
 
-import { downloadBlob } from "@/lib/download-blob";
+import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";

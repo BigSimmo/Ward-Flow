@@ -1,4 +1,4 @@
-import { downloadBlob } from "@/lib/download-blob";
+import { downloadBlob } from "@/components/ward-management/ward-download";
 
 /**
  * Quote one CSV cell. Text starting with = + - @ tab or CR is prefixed with an apostrophe so a
