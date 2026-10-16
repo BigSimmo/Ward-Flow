@@ -338,5 +338,11 @@ and [complete per-issue resolution receipt](superpowers/plans/2026-10-16-audit-r
 The local branch `codex/resolve-audit-20261016` starts at `c9f271a9`, which already includes
 PRs #365 and #366. It implements 34 findings, rechecks nine already-merged findings and retains
 R43 as an upstream-blocked braces advisory. The receipt distinguishes focused regressions,
-integrated verification and unavailable browser evidence. No hosted PR status, CI verdict,
-publication or deployment is implied.
+integrated verification and unavailable browser evidence. Final implementation/test head
+`ed060984` passes the eight corrected suites (215 tests) and changed-file lint/typechecking hooks.
+Full lint/typechecking passed on `9aca1c31`; that evidence and the separately recorded backend/HTTP
+checks are reused, with only the eight reviewed test corrections afterward. A complete passing unit receipt remains outstanding: guarded reuse
+was refused, and a fresh attempt was stopped after two unchanged tests timed out. The pinned
+browser download and dashboard readiness also block required browser verification. R43 and these
+verification limits remain explicit; no hosted PR status, CI verdict, publication or deployment
+is implied.

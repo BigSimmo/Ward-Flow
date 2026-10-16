@@ -114,9 +114,16 @@
 
 - [x] Revalidate each worker's diff, red/green logs and exact commits; serialize local cherry-picks into `codex/resolve-audit-20261016`. Obtain claim releases before touching a worker-owned file.
 - [x] Resolve integration type/interface differences without overwriting peers; maintain a 44-ID closure table with fixed, already fixed, upstream-blocked or concrete evidence-gap status.
-- [ ] Run relevant changed-file formatting/lint, typecheck, full unit population and selected offline backend/browser gates once against the candidate tree. Run `npm run ensure` before browser QA and verify `/api/local-project-id`; stop owned processes afterward.
+- [x] Execute relevant formatting/lint, typecheck, full unit population and selected offline backend/browser checks; record each result separately in the receipt. Run `npm run ensure` before browser QA and verify `/api/local-project-id`; stop owned processes afterward. Checks were executed, but the complete unit and required browser gates are not passing; see the open verification items below.
 - [x] Dispatch a fresh review agent over the complete branch. Fix material regressions with discriminating tests and rerun the affected checks; do not count optional uncommissioned concerns as blockers.
-- [ ] Check diff integrity, documentation/index/manifest acceptance and a clean owned working tree. Commit each coherent result as it becomes ready.
-- [ ] Deliver the detailed per-issue closure receipt, exact branch/commits, decisive checks and any upstream/provider/browser limits. Do not claim merge, publication, deployment or clinical approval.
+- [x] Check diff integrity, documentation/index/manifest acceptance and a clean owned working tree. Commit each coherent result as it becomes ready.
+- [x] Deliver the detailed per-issue closure receipt, exact branch/commits, decisive checks and upstream/provider/browser limits. Do not claim merge, publication, deployment or clinical approval.
 
 Progress and per-ID evidence: [audit-resolution-results](2026-10-16-audit-resolution-results.md). An implemented fix and a completed verification gate are recorded separately.
+
+## Open verification and upstream work
+
+- [ ] R43: adopt a supported patched upstream braces release when available; bounded exception review is due 22 October 2026.
+- [ ] Obtain a passing complete unit receipt on the final head. The first complete run reported 16 failures across eight corrected suites; those eight suites then passed all 215 tests. Guarded reuse was refused. A new full attempt reported two timing failures in unchanged tests and was stopped after two completed batches to avoid continuing a known-failed run. No passing full-suite receipt is claimed.
+- [ ] Investigate the citation-scan and capacity-observation timeouts without weakening assertions, populations or budgets. Their cause is unproven; both passed the earlier complete run.
+- [ ] Complete required browser/build verification after the pinned Chromium download and dashboard readiness blockers are resolved. HTTP-only evidence is separate. Hosted CI, physical Safari and installed-PWA acceptance remain unobserved.
