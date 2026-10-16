@@ -11,6 +11,8 @@ import {
   coordinatorRecordScope,
   scopeBroadcastAlerts,
   scopeWorkspace,
+  SMALL_NUMBER_NOT_SHOWN,
+  smallNumberParts,
   smallNumberText,
 } from "../src/components/ward-management/ward-access-scope";
 import {
@@ -423,12 +425,32 @@ describe("the scoped workspace", () => {
     expect(withLeave.rejectionSubject("leave-own")).toBe(true);
     expect(withLeave.rejectionSubject("leave-other")).toBe(false);
     expect(withLeave.rejectionSubject(scoped.patients[0]?.id ?? "synthetic-person")).toBe(false);
+    // A refused community treatment order names only the person, so it stays when this desk already
+    // sees that person, and never for anyone else or for any other command.
+    const seen = scoped.patients[0]!.id;
+    const unseen = state.patients.find((patient) => !scoped.patients.some((kept) => kept.id === patient.id))!.id;
+    const cto = records.refusals([]);
+    const ctoRefusal = { id: "rejection-cto", movementId: seen, attempted: "RECORD_COMMUNITY_TREATMENT_ORDER" };
+    expect(cto(ctoRefusal)).toBe(true);
+    expect(cto({ ...ctoRefusal, attempted: "END_COMMUNITY_TREATMENT_ORDER" })).toBe(true);
+    expect(cto({ ...ctoRefusal, movementId: unseen })).toBe(false);
+    expect(cto({ ...ctoRefusal, attempted: "PULL_PATIENT" })).toBe(false);
   });
 
   it("hides counts below the small-number threshold", () => {
     expect(smallNumberText(0)).toBe("0");
     expect(smallNumberText(3)).toMatch(/fewer than/i);
     expect(smallNumberText(40)).toBe("40");
+  });
+
+  it("hides a breakdown's parts together, so a hidden part cannot be worked back from the total", () => {
+    // One worded part: the smallest other part above zero is not shown either.
+    expect(smallNumberParts([3, 12, 7, 0])).toEqual(["fewer than 5", 12, SMALL_NUMBER_NOT_SHOWN, 0]);
+    // Two worded parts already hide each other.
+    expect(smallNumberParts([3, 2, 9])).toEqual(["fewer than 5", "fewer than 5", 9]);
+    // Nothing worded, nothing hidden. A lone part beside noughts equals the total, worded on its own.
+    expect(smallNumberParts([5, 0, 8])).toEqual([5, 0, 8]);
+    expect(smallNumberParts([4, 0])).toEqual(["fewer than 5", 0]);
   });
 });
 

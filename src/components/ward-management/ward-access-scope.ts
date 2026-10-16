@@ -583,14 +583,36 @@ export function scopeBroadcastAlerts(
 
 /**
  * Executive figures (Josh's yes, 15 Oct 2026): a count of people under the small number line words
- * as "fewer than N". `useSmallNumber` applies it to the Statistics headline figures and their
- * export. Tables and charts below the headline still show exact counts, and totals are not rounded,
- * so a hidden part can still be worked back from them. That is a later pass.
+ * as "fewer than N". `useStatisticsCounts` applies it to every Statistics figure, table and chart
+ * of people and to their export. Beds and bed states stay exact.
  */
 export function smallNumberText(count: number): string {
   const line = CLINICAL_VALUES.smallNumberHidden.value;
   if (count > 0 && count < line) return `fewer than ${line}`;
   return String(count);
+}
+
+/** A part withheld only so a hidden part beside it cannot be worked back from their total. */
+export const SMALL_NUMBER_NOT_SHOWN = "not shown";
+
+/**
+ * The parts of a breakdown whose total is on screen (role access plan, high finding 8). Each part
+ * under the line words as "fewer than N". When exactly one part is worded, the smallest other part
+ * above zero reads "not shown" too, or the hidden one could be worked back by subtraction. A worded
+ * part is a string and an exact one stays a number.
+ */
+export function smallNumberParts(counts: readonly number[]): (number | string)[] {
+  const parts: (number | string)[] = counts.map((count) => {
+    const text = smallNumberText(count);
+    return text === String(count) ? count : text;
+  });
+  if (parts.filter((part) => typeof part === "string").length !== 1) return parts;
+  let pick = -1;
+  counts.forEach((count, index) => {
+    if (typeof parts[index] === "number" && count > 0 && (pick < 0 || count < counts[pick]!)) pick = index;
+  });
+  if (pick >= 0) parts[pick] = SMALL_NUMBER_NOT_SHOWN;
+  return parts;
 }
 
 type ScopedAuditEvent = {
@@ -599,6 +621,15 @@ type ScopedAuditEvent = {
   actor?: { actingUnitId: string | null };
   details?: unknown;
 };
+
+/**
+ * Commands about the person alone, with no stay, journey or ward: the reducer refuses a community
+ * treatment order while the person holds a bed or has an open placement, so it can name nothing else.
+ */
+const PERSON_REFUSALS: ReadonlySet<string> = new Set([
+  "RECORD_COMMUNITY_TREATMENT_ORDER",
+  "END_COMMUNITY_TREATMENT_ORDER",
+]);
 
 /**
  * Which coordinator records a service coordinator keeps (Josh's yes, 15 Oct 2026): those about its
@@ -610,6 +641,7 @@ export function coordinatorRecordScope(
     movements: readonly { id: string }[];
     referrals: readonly { id: string }[];
     admissions: readonly { id: string }[];
+    patients?: readonly { id: string }[];
   },
   bedReleases: readonly { id: string; unitId: string }[],
   unitIn: (unitId: string) => boolean,
@@ -632,9 +664,13 @@ export function coordinatorRecordScope(
   /**
    * Which refusals are in scope. A refused record command names no subject ("none"), so it follows
    * the audit row the reducer writes with it (`record-rejection-N` with `audit-N`), and another
-   * service's refused record command is left out.
+   * service's refused record command is left out. A refused community treatment order names only the
+   * person, and nothing in the record ties a community patient or team to a service, so it is kept
+   * when this desk's own scope already shows that person and their order (`PERSON_REFUSALS`).
    */
-  refusals(auditEvents: readonly ScopedAuditEvent[]): (rejection: { id: string; movementId: string }) => boolean;
+  refusals(
+    auditEvents: readonly ScopedAuditEvent[],
+  ): (rejection: { id: string; movementId: string; attempted?: string }) => boolean;
   logEntry(entry: EventLogEntry): boolean;
 } {
   const movementIds = new Set(scoped.movements.map((movement) => movement.id));
@@ -642,6 +678,7 @@ export function coordinatorRecordScope(
   const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
   const releaseIds = new Set(bedReleases.filter((release) => unitIn(release.unitId)).map((release) => release.id));
   const leaveBedIds = new Set(leaveBeds.filter((bed) => unitIn(bed.unitId)).map((bed) => bed.id));
+  const patientIds = new Set((scoped.patients ?? []).map((patient) => patient.id));
   const subject = (record: AuditSubject): boolean => {
     switch (record.kind) {
       case "admission":
@@ -706,9 +743,13 @@ export function coordinatorRecordScope(
     edIn(id);
   const refusals = (events: readonly ScopedAuditEvent[]) => {
     const kept = new Set(auditEvents(events).map((event) => event.id));
-    return (rejection: { id: string; movementId: string }) => {
+    return (rejection: { id: string; movementId: string; attempted?: string }) => {
       const paired = /^record-rejection-(\d+)$/.exec(rejection.id);
-      return paired ? kept.has(`audit-${paired[1]}`) : rejectionSubject(rejection.movementId);
+      if (paired) return kept.has(`audit-${paired[1]}`);
+      if (rejection.attempted !== undefined && PERSON_REFUSALS.has(rejection.attempted)) {
+        return patientIds.has(rejection.movementId);
+      }
+      return rejectionSubject(rejection.movementId);
     };
   };
   return { movementIds, subject, auditEvents, rejectionSubject, refusals, logEntry };
