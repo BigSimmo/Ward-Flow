@@ -729,6 +729,21 @@ test(
         /permission denied/,
       );
       // From 9 it may also note when a role was last used, and answer a request once, nothing more.
+      // A grant missing or too wide either way fails the startup check.
+      for (const [change, undo] of [
+        ["GRANT UPDATE (kind) ON ward_flow.memberships", "REVOKE UPDATE (kind) ON ward_flow.memberships"],
+        ["GRANT UPDATE (role) ON ward_flow.access_requests", "REVOKE UPDATE (role) ON ward_flow.access_requests"],
+        [
+          "REVOKE UPDATE (last_used_at) ON ward_flow.memberships",
+          "GRANT UPDATE (last_used_at) ON ward_flow.memberships",
+        ],
+        ["REVOKE INSERT ON ward_flow.access_requests", "GRANT INSERT ON ward_flow.access_requests"],
+      ]) {
+        await owner.query(`${change} ${change.startsWith("GRANT") ? "TO" : "FROM"} wardflow_backend`);
+        await assert.rejects(runtimeOk(runtime), /unsafe/, change);
+        await owner.query(`${undo} ${undo.startsWith("GRANT") ? "TO" : "FROM"} wardflow_backend`);
+      }
+      await runtimeOk(runtime);
       await runtime.query("UPDATE ward_flow.memberships SET last_used_at=now() WHERE false");
       await assert.rejects(
         runtime.query("UPDATE ward_flow.memberships SET kind='cover' WHERE false"),
@@ -1307,6 +1322,33 @@ test(
       await store.sweepPush();
       assert.equal(sent.includes("n1"), false);
       assert.equal(await pending(), 1, "left pending, not sent");
+
+      // The admin's list is read in pages, with no row shown twice and at most 500 shown.
+      await pool.query(
+        "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at) SELECT gen_random_uuid(), $1, gen_random_uuid(), 'ward', $2, $3, $4, $5 FROM generate_series(1, 600)",
+        [workspaceId, JSON.stringify(wardB), lead, at, later],
+      );
+      const paged = (await store.listAccess(leadView)).body.memberships;
+      assert.equal(paged.length, 500);
+      assert.equal(new Set(paged.map((row) => row.id)).size, 500);
+      await pool.query(
+        "DELETE FROM ward_flow.memberships WHERE workspace_id=$1 AND granted_by=$2 AND role='ward' AND scope=$3 AND actor_id <> ALL($4::uuid[])",
+        [workspaceId, lead, JSON.stringify(wardB), [nurseA, nurseB, asker, declined, relief]],
+      );
+
+      // A bootstrap coordinator who also holds a role picks which to work as, like anyone else.
+      const extra = await grant(second, "ward", wardB);
+      const picking = await store.viewer(second, { bootstrap: true });
+      assert.equal(picking.status, "choose");
+      assert.deepEqual(
+        picking.choices.map((choice) => choice.workingAs),
+        ["bootstrap", extra.id],
+      );
+      assert.deepEqual(
+        (await store.viewer(second, { bootstrap: true, workingAs: "bootstrap" })).access,
+        engine.STATEWIDE,
+      );
+      assert.equal((await store.revokeAccess(leadView, extra.id)).status, 200);
 
       // A role not used for the set time stops working by itself; cover is too short to.
       at = new Date(start + (engine.ACCESS_UNUSED_MINUTES + 1) * 60_000);

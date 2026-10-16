@@ -400,6 +400,25 @@ export class SharedWorkspaceClient {
       expiresAt: new Date(Date.now() + expiresInMinutes * 60_000).toISOString(),
     });
   }
+  /**
+   * Open one record outside this desk's care, read only, for the set window. The server checks
+   * the reason (from the list, never typed text), records it, and answers with the board as the
+   * desk now sees it, so the record shows at once.
+   */
+  async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
+    const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
+    if (response.ok) {
+      try {
+        if (value?.snapshot) this.adopt(value.snapshot);
+      } catch {
+        // The next poll reads the board again.
+      }
+      return null;
+    }
+    if (response.status === 401 && value?.code === "step-up") return "step-up";
+    if (response.status >= 500) throw new Error("Change not confirmed");
+    return typeof value?.error === "string" ? value.error : "The record was not opened.";
+  }
   /** This account's own open request for access, if any. Open to an account with no role. */
   async ownRequest(): Promise<SharedAccessRequest | null> {
     const { response, value } = await this.request("/v1/workspace/access/request");

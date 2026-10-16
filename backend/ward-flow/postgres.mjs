@@ -392,8 +392,9 @@ export function createWorkspaceStore(
   /**
    * Who this account is working as. The role always comes from here, never from the browser.
    * An account named in WARD_COORDINATOR_USER_IDS (the bootstrap) works as the statewide
-   * coordinator unless it asks for one of its memberships. Any other account needs one active
-   * membership: none is refused, and more than one must say which with `workingAs`. Checked on
+   * coordinator; one that also holds memberships picks, as any account with more than one role
+   * does. Any other account needs one active membership: none is refused, and more than one must
+   * say which with `workingAs`. Checked on
    * every request, so a removed or expired role stops at once.
    */
   async function viewer(actorId, { bootstrap = false, workingAs = null } = {}) {
@@ -446,7 +447,7 @@ export function createWorkspaceStore(
     }
     const chosen = workingAs
       ? choices.find((choice) => (choice.membershipId ?? "bootstrap") === workingAs)
-      : bootstrap || choices.length === 1
+      : choices.length === 1
         ? choices[0]
         : undefined;
     if (!chosen)
@@ -817,10 +818,21 @@ export function createWorkspaceStore(
         const access = engine.parseAccess(row.role, row.scope);
         return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
       };
-      const { rows } = await pool.query(
-        "SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2 ORDER BY granted_at, id LIMIT 500",
-        [workspaceId, at],
-      );
+      // The place filter runs here, so read in pages (by id, which keeps its full value through
+      // the driver) until this admin's own 500 are found: roles elsewhere never crowd them out. At
+      // most ten pages, to bound one request. Shown oldest grant first.
+      const memberships = [];
+      let last = null;
+      for (let page = 0; page < 10 && memberships.length < 500; page += 1) {
+        const { rows } = await pool.query(
+          `SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2${last ? " AND id > $3" : ""} ORDER BY id LIMIT 500`,
+          last ? [workspaceId, at, last] : [workspaceId, at],
+        );
+        memberships.push(...rows.filter(inside));
+        if (rows.length < 500) break;
+        last = rows[rows.length - 1].id;
+      }
+      memberships.sort((a, b) => a.granted_at - b.granted_at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
       const requests =
         view.version >= ACCESS_COVER_MIGRATION
           ? (
@@ -833,7 +845,7 @@ export function createWorkspaceStore(
       return {
         status: 200,
         body: {
-          memberships: rows.filter(inside).map((row) => presentMembership(row, at)),
+          memberships: memberships.slice(0, 500).map((row) => presentMembership(row, at)),
           requests: requests.filter(inside).map((row) => presentRequest(row, at)),
         },
       };
@@ -931,6 +943,10 @@ export function createWorkspaceStore(
      * it is checked hard: a real place, one open request each, and a cap on open requests. A
      * request is not a role, so it never counts as a role holder for the sign-in pre-check.
      */
+    /** Whether this database takes requests for access yet (from migration 9). */
+    async takesRequests() {
+      return (await schemaVersion()) >= ACCESS_COVER_MIGRATION;
+    },
     async requestAccess(actorId, request) {
       if ((await schemaVersion()) < ACCESS_COVER_MIGRATION)
         return refused(409, "Asking for access is not set up on this database yet.");

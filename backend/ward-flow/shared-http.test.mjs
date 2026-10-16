@@ -435,8 +435,18 @@ test("the powerful steps need a recent sign-in, and say so with their own code",
       seen.push("breakGlass");
       return { status: 200, body: {} };
     },
+    ...Object.fromEntries(
+      ["approveAccess", "revokeAccess", "giveCover", "decideRequest"].map((name) => [
+        name,
+        async () => {
+          seen.push(name);
+          return { status: 200, body: {} };
+        },
+      ]),
+    ),
     listAccess: async () => ({ status: 200, body: { memberships: [] } }),
   });
+  const membershipId = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
   const grant = {
     actorId: other,
     role: "ward",
@@ -445,6 +455,10 @@ test("the powerful steps need a recent sign-in, and say so with their own code",
   };
   for (const [path, data] of [
     ["/access/grant", grant],
+    ["/access/approve", { membershipId }],
+    ["/access/revoke", { membershipId }],
+    ["/access/cover", { actorId: other, scope: { kind: "ward", unitIds: ["unit-a"] }, minutes: 60 }],
+    ["/access/decide", { requestId: membershipId, decision: "approved", expiresAt: "2027-01-01T00:00:00.000Z" }],
     ["/break-glass", { patientId: "p-1", reason: "handover" }],
   ]) {
     const response = await handler(request(path, data, "Bearer stale"));
@@ -527,4 +541,11 @@ test("cover, requests and answers check their fields; asking for access needs no
     ["request", other, { role: "ward", scope }],
     ["own", other],
   ]);
+  // Before migration 9 the screen says asking is not wired, rather than offering a form that fails.
+  const early = setup(other, "prototype", {
+    viewer: async () => ({ status: "none" }),
+    requestAccess: answer("request"),
+    takesRequests: async () => false,
+  });
+  assert.equal((await (await early.handler(request("/access"))).json()).canRequest, false);
 });

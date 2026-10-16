@@ -9,7 +9,7 @@
  * server sends times as minutes from its own now, so they are placed on the demo clock here and
  * the browser's clock is never compared with the server's. Nothing here is stored.
  */
-import { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AccessMembership, AccessRequest } from "@/components/ward-management/ward-access-admin";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -18,19 +18,10 @@ import type {
   SharedAccessRequest,
   SharedChangeResult,
   SharedMembership,
-  SharedWorkspaceClient,
 } from "@/components/ward-management/ward-shared-client";
+import type { SharedAccessApi } from "@/components/ward-management/shell/ward-shared-access-context";
 import { parseStoredAccess } from "@/components/ward-management/shell/ward-access-store";
 import type { StepUpResult } from "@/components/ward-management/shell/ward-step-up";
-
-/** The shared workspace's access calls (`SharedWorkspaceClient`). */
-export type SharedAccessApi = Pick<
-  SharedWorkspaceClient,
-  "listAccess" | "listCovers" | "grantAccess" | "approveAccess" | "revokeAccess" | "giveCover" | "decideRequest"
->;
-
-/** The signed-in shared workspace, for the Access tab. Absent in the local demo. */
-export const SharedAccessContext = createContext<{ api: SharedAccessApi; actorId: string | null } | null>(null);
 
 const NOT_REACHED = "The server was not reached. Nothing was confirmed.";
 
@@ -72,25 +63,39 @@ function present<T>(value: T | null): value is T {
   return value !== null;
 }
 
-/** Reads a list once per `round`, so a change can ask for a fresh read. */
-function useServerList<T>(api: SharedAccessApi | null, read: ((api: SharedAccessApi) => Promise<T>) | null) {
-  const [loaded, setLoaded] = useState<{ api: SharedAccessApi; round: number; value: T | null } | null>(null);
+/**
+ * Reads a list once per `round`, so a change can ask for a fresh read. `at` is the demo clock when
+ * the list arrived: the server's minutes are placed from it, so times age as the clock runs.
+ */
+function useServerList<T>(
+  api: SharedAccessApi | null,
+  read: ((api: SharedAccessApi) => Promise<T>) | null,
+  now: Instant,
+) {
+  const [loaded, setLoaded] = useState<{
+    api: SharedAccessApi;
+    round: number;
+    value: T | null;
+    at: Instant | null;
+  } | null>(null);
   const [round, setRound] = useState(0);
   useEffect(() => {
     if (!api || !read) return;
     let cancelled = false;
     read(api).then(
       (value) => {
-        if (!cancelled) setLoaded({ api, round, value });
+        if (!cancelled) setLoaded({ api, round, value, at: null });
       },
       () => {
-        if (!cancelled) setLoaded({ api, round, value: null });
+        if (!cancelled) setLoaded({ api, round, value: null, at: null });
       },
     );
     return () => {
       cancelled = true;
     };
   }, [api, read, round]);
+  // Stamped with the clock on the first render after it arrives.
+  if (loaded && loaded.at === null) setLoaded({ ...loaded, at: now });
   const current = loaded?.api === api ? loaded : null;
   const after = useCallback((result: SharedChangeResult): StepUpResult => {
     if (result === null) setRound((value) => value + 1);
@@ -98,6 +103,7 @@ function useServerList<T>(api: SharedAccessApi | null, read: ((api: SharedAccess
   }, []);
   return {
     value: current?.value ?? null,
+    at: current?.at ?? now,
     problem: current && current.value === null ? "The list could not be read from the server." : null,
     after,
   };
@@ -126,13 +132,13 @@ export function useSharedAdminSource(
 ): SharedAdminSource | null {
   const api = enabled ? (shared?.api ?? null) : null;
   const self = shared?.actorId ?? null;
-  const { value, problem, after } = useServerList(api, api ? readAccess : null);
+  const { value, at, problem, after } = useServerList(api, api ? readAccess : null, now);
   return useMemo(() => {
     if (!api) return null;
     const settle = (change: Promise<SharedChangeResult>) => change.then(after, () => NOT_REACHED);
     return {
-      memberships: (value?.memberships ?? []).map((row) => sharedMembership(row, now)).filter(present),
-      requests: (value?.requests ?? []).map((row) => sharedRequest(row, now)).filter(present),
+      memberships: (value?.memberships ?? []).map((row) => sharedMembership(row, at)).filter(present),
+      requests: (value?.requests ?? []).map((row) => sharedRequest(row, at)).filter(present),
       people: null,
       problem,
       label: (actorId) => accountLabel(actorId, self),
@@ -142,7 +148,7 @@ export function useSharedAdminSource(
       revoke: (id) => settle(api.revokeAccess(id)),
       decide: (id, decision, expiresAt) => settle(api.decideRequest(id, decision, expiresAt - now)),
     };
-  }, [api, value, problem, now, self, after]);
+  }, [api, value, at, problem, now, self, after]);
 }
 
 /** One cover from the server, on the demo clock. */
@@ -170,14 +176,14 @@ export function useSharedCoverSource(
 ): SharedCoverSource | null {
   const api = enabled ? (shared?.api ?? null) : null;
   const self = shared?.actorId ?? null;
-  const { value, problem, after } = useServerList(api, api ? readCovers : null);
+  const { value, at, problem, after } = useServerList(api, api ? readCovers : null, now);
   return useMemo(() => {
     if (!api) return null;
     const settle = (change: Promise<SharedChangeResult>) => change.then(after, () => NOT_REACHED);
     return {
       covers: (value ?? [])
         .map((row) => {
-          const membership = sharedMembership(row, now);
+          const membership = sharedMembership(row, at);
           return membership
             ? {
                 id: membership.id,
@@ -195,5 +201,5 @@ export function useSharedCoverSource(
       give: (input) => settle(api.giveCover(input)),
       end: (id) => settle(api.revokeAccess(id)),
     };
-  }, [api, value, problem, now, self, after]);
+  }, [api, value, at, problem, self, after]);
 }

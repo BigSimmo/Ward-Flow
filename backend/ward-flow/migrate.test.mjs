@@ -129,7 +129,11 @@ test("migration 9 adds cover, requests and alerts by role without dropping anyth
   assert.match(sql, /ENABLE ROW LEVEL SECURITY/);
   // Every role held when 9 runs starts its "not used" count then, so none switches off at once.
   assert.match(sql, /UPDATE ward_flow\.memberships SET last_used_at = now\(\) WHERE revoked_at IS NULL;/);
-  assert.ok(undo.indexOf("kind = 'cover' AND revoked_at IS NULL") < undo.indexOf("DROP COLUMN kind"));
+  const endCover = undo.indexOf(
+    "UPDATE ward_flow.memberships SET revoked_at = now(), revoked_by = granted_by WHERE kind = 'cover' AND revoked_at IS NULL;",
+  );
+  const dropKind = undo.indexOf("ALTER TABLE ward_flow.memberships DROP COLUMN kind;");
+  assert.ok(endCover >= 0 && dropKind >= 0 && endCover < dropKind);
   assert.match(undo, /IS DISTINCT FROM 9/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 9;/);
 });

@@ -19,20 +19,24 @@ export type WardCredentialForm = {
 const emptyView: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
 /** Which of this account's roles this tab works as: a membership id or "bootstrap", nothing else. */
 const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
+// Held in memory too, so a tab whose storage refuses the write still keeps the role it picked
+// until it reloads, rather than being shown the picker again.
+let workingAsInMemory: string | null = null;
 const workingAs = {
   get: () => {
     try {
-      return window.sessionStorage.getItem(WARD_WORKING_AS_KEY);
+      return window.sessionStorage.getItem(WARD_WORKING_AS_KEY) ?? workingAsInMemory;
     } catch {
-      return null;
+      return workingAsInMemory;
     }
   },
   set: (id: string | null) => {
+    workingAsInMemory = id;
     try {
       if (id) window.sessionStorage.setItem(WARD_WORKING_AS_KEY, id);
       else window.sessionStorage.removeItem(WARD_WORKING_AS_KEY);
     } catch {
-      // Storage refused: the server asks again next time.
+      // Storage refused: the copy in memory serves this tab.
     }
   },
 };
@@ -208,7 +212,9 @@ export function useWardSupabaseShared(enabled: boolean) {
           },
           signOut: async () => {
             const token = auth!.captureAccessTokenForSignOut();
-            // The next person at this device chooses their own role.
+            // The next person at this device chooses their own role. The cleanup below still
+            // speaks as the role worked as, so an account with several roles can turn alerts off.
+            const chosen = workingAs.get();
             workingAs.set(null);
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
@@ -221,6 +227,7 @@ export function useWardSupabaseShared(enabled: boolean) {
                 baseUrl: base.toString().replace(/\/$/, ""),
                 token: async () => token,
                 changed: () => {},
+                workingAs: { get: () => chosen, set: () => {} },
               });
               let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
               void Promise.race([

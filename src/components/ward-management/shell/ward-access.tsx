@@ -70,6 +70,7 @@ import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-cont
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
 import { accessPlaceLabel } from "./ward-access-labels";
+import { SharedAccessContext } from "./ward-shared-access-context";
 import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
@@ -490,6 +491,7 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
   const ready = reason !== null && (reason !== "other" || other.trim().length > 0);
   // Opening a record outside your care needs a recent sign-in (feature 9).
   const { guard, dialog } = useStepUp();
+  const shared = useContext(SharedAccessContext);
   return (
     <section className={styles.glass} aria-labelledby="ward-break-glass-title">
       <h2 id="ward-break-glass-title">Open this record anyway</h2>
@@ -529,18 +531,24 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
         data-testid="ward-break-glass-open"
         onClick={() =>
           reason &&
-          void guard(async () =>
-            breakGlass({
+          void guard(async () => {
+            // In the shared workspace the server opens the record, asks for a fresh sign-in and
+            // keeps the review record (the reason from the list only, never the typed words).
+            if (shared) {
+              const refusal = await shared.api.breakGlass(patientId, reason);
+              if (refusal !== null) return refusal;
+            }
+            return breakGlass({
               patientId,
               now,
               windowMinutes: minutes,
               reason,
               otherText: other,
               placeLabel: accessPlaceLabel(access, units),
-            })
+            }) || shared
               ? null
-              : "Not opened.",
-          )
+              : "Not opened.";
+          })
         }
       >
         Open read only

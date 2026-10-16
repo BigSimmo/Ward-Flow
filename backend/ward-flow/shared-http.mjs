@@ -207,7 +207,10 @@ export function createSharedHandler({
           403,
           {
             error: "No Ward Flow role is assigned to this account",
-            ...(store.requestAccess ? { code: "no-role", canRequest: true } : {}),
+            // The form is offered only where a request can be filed, so not before migration 9.
+            ...(store.requestAccess
+              ? { code: "no-role", canRequest: store.takesRequests ? await store.takesRequests() : true }
+              : {}),
           },
           "auth_denied",
         );

@@ -29,6 +29,7 @@ import {
   coverRefusal,
   membershipStatus,
   reviewNotes,
+  scopeWithinScope,
   type AccessMembership,
   type AccessPlaces,
   type AccessRequest,
@@ -57,7 +58,8 @@ import {
   useLocalAccessAdmin,
 } from "@/components/ward-management/shell/ward-access-admin-store";
 import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
-import { SharedAccessContext, useSharedAdminSource, useSharedCoverSource } from "./access-shared-source";
+import { useSharedAdminSource, useSharedCoverSource } from "./access-shared-source";
+import { SharedAccessContext } from "../shell/ward-shared-access-context";
 
 import styles from "./access-settings.module.css";
 
@@ -420,7 +422,13 @@ function CoverPanel() {
   const [recipientKey, setRecipientKey] = useState("");
   const recipient = recipients.find((option) => option.key === recipientKey) ?? recipients[0];
   const [hours, setHours] = useState<number>(COVER_HOURS[COVER_HOURS.length - 1] ?? 1);
-  const mine = covers.filter((cover) => sameDesk(cover.givenBy, desk) || sameDesk(cover.recipient, desk));
+  // A desk sees the cover it gave or holds; a coordinator also sees any cover inside its place.
+  const mine = covers.filter(
+    (cover) =>
+      sameDesk(cover.givenBy, desk) ||
+      sameDesk(cover.recipient, desk) ||
+      (desk.role === "coordinator" && scopeWithinScope(cover.scope, desk.scope, places)),
+  );
   const label = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
 
   const give = () => {

@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import {
@@ -27,7 +27,10 @@ import {
 } from "@/components/ward-management/shell/ward-access-store";
 import { resetLocalAccessAdminForTests } from "@/components/ward-management/shell/ward-access-admin-store";
 import { StepUpReauthContext, forgetStepUp } from "@/components/ward-management/shell/ward-step-up";
-import { SharedAccessContext, type SharedAccessApi } from "@/components/ward-management/settings/access-shared-source";
+import {
+  SharedAccessContext,
+  type SharedAccessApi,
+} from "@/components/ward-management/shell/ward-shared-access-context";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /**
@@ -55,10 +58,24 @@ function settings() {
   );
 }
 
+function AdvanceClock() {
+  const { dispatch, now } = useWardFlow();
+  return (
+    <button
+      type="button"
+      data-testid="test-advance-clock"
+      onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 120 })}
+    >
+      advance clock
+    </button>
+  );
+}
+
 function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string) => Promise<void>) {
   return render(
     <ToastProvider>
       <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AdvanceClock />
         <StepUpReauthContext.Provider value={reauthenticate}>
           <SharedAccessContext.Provider value={{ api, actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4" }}>
             <SettingsScreen />
@@ -129,6 +146,12 @@ describe("the Access tab", () => {
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover given");
     expect(readWardAccessSnapshot().covers).toHaveLength(1);
     const list = screen.getByTestId("ward-access-cover-list");
+    // A statewide coordinator sees cover given by a ward inside its place, and may end it.
+    act(() => setWardAccess({ role: "coordinator", scope: { kind: "statewide" } }));
+    expect(
+      within(screen.getByTestId("ward-access-cover-list")).getByRole("button", { name: "End cover" }),
+    ).toBeInTheDocument();
+    act(() => setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } }));
     // Ending it goes through the same confirm, still fresh here, so it asks nothing more.
     await act(async () => fireEvent.click(within(list).getByRole("button", { name: "End cover" })));
     expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
@@ -165,12 +188,16 @@ describe("the Access tab", () => {
       revokeAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
     };
     const reauthenticate = vi.fn(async () => {});
     sharedSettings(api, reauthenticate);
     const roles = await screen.findByTestId("ward-access-role-row");
     expect(roles).toHaveTextContent("Account 1a2b3c4d");
     expect(roles).toHaveTextContent("Ends in 1 day. Last used 5 minutes ago.");
+    // The server's times are placed once, when the list arrives, so they age with the demo clock.
+    act(() => fireEvent.click(screen.getByTestId("test-advance-clock")));
+    expect(screen.getByTestId("ward-access-role-row")).not.toHaveTextContent("Last used 5 minutes ago.");
     const grant = screen.getByTestId("ward-access-grant");
     fireEvent.change(within(grant).getByLabelText("Account id"), {
       target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
@@ -186,5 +213,39 @@ describe("the Access tab", () => {
     expect(await screen.findByTestId("ward-access-result")).toHaveTextContent("Given: Account 1a2b3c4d");
     // A change reads the list again.
     expect(api.listAccess).toHaveBeenCalledTimes(2);
+  });
+
+  it("makes no change when the password dialog is cancelled while the sign-in is still running", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({ memberships: [], requests: [] })),
+      listCovers: vi.fn(async () => []),
+      grantAccess: vi.fn(async () => "step-up" as const),
+      approveAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
+    };
+    let signedIn = () => {};
+    const reauthenticate = vi.fn(() => new Promise<void>((resolve) => (signedIn = resolve)));
+    sharedSettings(api, reauthenticate);
+    const grant = await screen.findByTestId("ward-access-grant");
+    fireEvent.change(within(grant).getByLabelText("Account id"), {
+      target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
+    });
+    fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
+    const dialog = await screen.findByTestId("ward-step-up");
+    fireEvent.change(within(dialog).getByLabelText("Password"), { target: { value: "synthetic-password" } });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and carry on" }));
+    });
+    await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" })));
+    await act(async () => signedIn());
+    expect(api.grantAccess).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cancelled. Nothing was changed.");
   });
 });

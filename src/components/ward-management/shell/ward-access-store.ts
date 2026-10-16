@@ -227,20 +227,30 @@ export function useAccessShellRole(fallback: WardChromeRole): WardChromeRole {
   return access.role === "coordinator" ? fallback : chromeRoleForAccess(access);
 }
 
-/** Take a desk. A new person at the desk loses the last person's grants and session keys. */
-export function setWardAccess(access: WardAccess): void {
+/**
+ * Take a desk. A new person at the desk loses the last person's grants and session keys. In the
+ * shared workspace (`fromServer`) the server's access already carries any cover, so the local
+ * demo's covers are dropped and never widen it.
+ */
+export function setWardAccess(access: WardAccess, { fromServer = false }: { fromServer?: boolean } = {}): void {
   if (!accessIsValid(access)) return;
   load();
   persist(access);
   clearPersonalKeys();
-  emit({ desk: access, records: expireGrants(snapshot.records), previewOf: null, covers: snapshot.covers });
+  emit({
+    desk: access,
+    records: expireGrants(snapshot.records),
+    previewOf: null,
+    covers: fromServer ? [] : snapshot.covers,
+  });
 }
 
 /** The coordinator previews another role, read only, and can return in one tap (feature 4). */
 export function startAccessPreview(access: WardAccess): void {
   load();
   if (snapshot.access.role !== "coordinator" || !accessIsValid(access)) return;
-  emit({ ...snapshot, desk: access, previewOf: snapshot.desk });
+  // A preview started from another preview still returns to the coordinator who began it.
+  emit({ ...snapshot, desk: access, previewOf: snapshot.previewOf ?? snapshot.desk });
 }
 
 export function endAccessPreview(): void {

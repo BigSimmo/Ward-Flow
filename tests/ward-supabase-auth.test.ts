@@ -73,6 +73,8 @@ describe("scoped browser auth", () => {
     await expect(auth.reauthenticate("wrong-password")).rejects.toMatchObject({ kind: "credentials" });
     expect(await auth.token()).toBe("access-2");
     expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("private-test-password");
+    // The email is used for the step-up but is never written to browser storage.
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("synthetic@example.invalid");
     next = { id: "87654321-4321-4321-4321-cba987654321" };
     await expect(auth.reauthenticate("private-test-password")).rejects.toMatchObject({ kind: "session" });
     expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();

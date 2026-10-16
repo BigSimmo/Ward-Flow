@@ -4,6 +4,11 @@
 -- role on phone alert devices. Devices turned on by membership are revoked, because the backend
 -- before 9 sends alerts to the WARD_COORDINATOR_USER_IDS accounts only. The backend accepts
 -- versions 5 to 9, so it keeps working. Refuses unless the database is at exactly 9.
+-- A role 9 switched off for not being used has no end of its own before 9, so it works again after
+-- this. To keep such roles off, end them first, with the not used window from the clinical values
+-- module (ACCESS_UNUSED_MINUTES), for example:
+--   UPDATE ward_flow.memberships SET revoked_at = now(), revoked_by = granted_by WHERE kind = 'role'
+--     AND revoked_at IS NULL AND coalesce(last_used_at, granted_at) < now() - interval '<that window>';
 -- Takes migrate()'s lock first, so a migration running at the same moment cannot slip in.
 SELECT pg_advisory_xact_lock(782322);
 DO $$ BEGIN

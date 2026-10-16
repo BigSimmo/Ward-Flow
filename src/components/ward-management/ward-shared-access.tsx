@@ -11,7 +11,7 @@ import { PUSH_ROLES } from "./ward-access-admin";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
-import { SharedAccessContext, type SharedAccessApi } from "./settings/access-shared-source";
+import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
 
@@ -110,6 +110,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       decideRequest: async (id, decision, minutes) => connected().decideRequest(id, decision, minutes),
       ownRequest: async () => connected().ownRequest(),
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
+      breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
     };
   }, [supabase.client]);
   if (!supabaseMode)
@@ -254,8 +255,9 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   // of another role is left alone until it ends).
   useEffect(() => {
     if (!serverAccess) return;
-    const { desk, previewOf } = readWardAccessSnapshot();
-    if (!sameDesk(previewOf ?? desk, serverAccess)) setWardAccess(serverAccess);
+    const { desk, previewOf, covers } = readWardAccessSnapshot();
+    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0)
+      setWardAccess(serverAccess, { fromServer: true });
   }, [serverAccess]);
   const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
   const pushKind = !connection.enabled

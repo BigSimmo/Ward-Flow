@@ -12,7 +12,7 @@
  *
  * The password is held only while the dialog is open and is never stored.
  */
-import { useCallback, useContext, useState, type ReactNode } from "react";
+import { useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
 import { Dialog, Field, TextInput } from "@/components/wf";
 import { STEP_UP_MINUTES } from "@/components/ward-management/ward-access-admin";
@@ -74,7 +74,11 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
     [reauthenticate, desk, now],
   );
 
+  // Bumped whenever the dialog closes, so a sign-in still running when it was cancelled never
+  // goes on to make the change.
+  const attempt = useRef(0);
   const close = (result: StepUpResult) => {
+    attempt.current += 1;
     pending?.resolve(result);
     setPending(null);
     setPassword("");
@@ -84,6 +88,7 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
 
   const carryOn = async () => {
     if (!pending || busy) return;
+    const mine = attempt.current;
     setBusy(true);
     setError(null);
     try {
@@ -92,6 +97,7 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
         setPassword("");
         await reauthenticate?.(entered);
       } else confirmed = { desk, at: now };
+      if (attempt.current !== mine) return;
       const result = await pending.run();
       if (result === STEP_UP_NEEDED) {
         setError("The sign-in was not accepted. Try again.");

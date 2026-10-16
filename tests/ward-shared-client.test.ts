@@ -220,6 +220,38 @@ describe("shared workspace connection", () => {
     expect(typeof (bodies[0] as { expiresAt: string }).expiresAt).toBe("string");
     client.dispose();
   });
+  it("opens a record through the server's break glass, and shows the board it answers with", async () => {
+    let view: SharedView | undefined;
+    const bodies: unknown[] = [];
+    const answers = [
+      Response.json({ code: "step-up", error: "Sign in again to carry on." }, { status: 401 }),
+      Response.json({ error: "Opening a record outside your care is not part of your role." }, { status: 422 }),
+      Response.json({ until: "2026-10-07T11:00:00Z", pattern: false, snapshot: snapshot(1) }),
+    ];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url, options) => {
+        if (!options?.body) return Response.json({ snapshot: snapshot(1) });
+        expect(String(url)).toBe("https://example.test/v1/workspace/break-glass");
+        bodies.push(JSON.parse(String(options.body)));
+        return answers.shift()!;
+      },
+    });
+    await client.refresh();
+    const before = view?.snapshot;
+    await expect(client.breakGlass("P-1", "handover")).resolves.toBe("step-up");
+    await expect(client.breakGlass("P-1", "handover")).resolves.toMatch(/not part of your role/);
+    await expect(client.breakGlass("P-1", "handover")).resolves.toBeNull();
+    expect(view?.snapshot).not.toBe(before);
+    expect(view?.status).toBe("ready");
+    // Only the patient and the reason from the list are sent.
+    expect(bodies[0]).toEqual({ patientId: "P-1", reason: "handover" });
+    client.dispose();
+  });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
     for (const dataMode of [undefined, "live"]) {
       let view: SharedView | undefined;

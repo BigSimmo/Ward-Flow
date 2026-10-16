@@ -11,7 +11,9 @@ import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-sc
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import {
+  giveCover,
   readWardAccessSnapshot,
+  setWardAccess,
   resetWardAccessStoreForTests,
 } from "../src/components/ward-management/shell/ward-access-store";
 import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
@@ -191,6 +193,22 @@ describe("shared provider boundary", () => {
     rerender(tree());
     fireEvent.click(screen.getByRole("button", { name: "Switch role" }));
     expect(switchRole).toHaveBeenCalledOnce();
+    resetWardAccessStoreForTests();
+  });
+  it("drops the local demo's covers once the server's role is taken, so they never widen it", () => {
+    const [unitA, unitB] = seedWardFlowStateAt(0).units.map((unit) => unit.id);
+    const access = { role: "ward", scope: { kind: "ward", unitIds: [unitA!] } } as const;
+    setWardAccess(access);
+    giveCover({ recipient: access, scope: { kind: "ward", unitIds: [unitB!] }, now: 0, until: 10_000 });
+    expect(readWardAccessSnapshot().access.scope).toEqual({ kind: "ward", unitIds: [unitA, unitB] });
+    fake.connection = { ...fake.connection!, access };
+    render(
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    expect(readWardAccessSnapshot().covers).toEqual([]);
+    expect(readWardAccessSnapshot().access).toEqual(access);
     resetWardAccessStoreForTests();
   });
   it("adopts server state without reading or writing browser demo storage", () => {

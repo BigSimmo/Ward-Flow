@@ -167,7 +167,8 @@ export class SupabaseWardAuth {
       throw new WardAuthError("session", "The signed-in account changed. Sign in again.");
     }
     this.assert(generation);
-    this.save({ ...session, user });
+    // Only the id is kept in the saved session. The email stays in memory, for the step-up.
+    this.save({ ...session, user: { id: user.id } });
     const email = (user as { email?: unknown }).email;
     this.email = typeof email === "string" && email ? email : null;
   }
