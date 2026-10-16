@@ -257,7 +257,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Instantly, Ward Flow executes three coordinated transactions across the network:
   > First, Dabakarn’s allocatable bed count drops from 1 to 0 across every dashboard in WA.
   > Second, a 4-hour countdown hold is stamped on the bed, preventing any other hospital from double-booking it while ED prepares Callum.
-  > Third, an auditable clinical log is generated: who held the bed, at what minute, and against what clinical criteria.
+  > Third, the session event log records the action type, role, time, selected record IDs and whether it was accepted, without typed text. The separate governance audit records selected reviewable actions. A routine bed hold or acceptance appears there only when it includes an override; it does not record every hold as a clinical audit entry.
   >
   > The bed is secured. Now, we must coordinate safe inter-hospital logistics."
 - **Presenter Action:** Transition via navigation to `/mockups/ward-flow/movements`.
@@ -408,9 +408,11 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 | 2. HUMAN CLINICIAN SUPREMACY| No Autonomous Allocation · Clinician in the Loop for All Actions    |
 | 3. STATUTORY RECORDING ONLY | No Computed Expiry Dates · Only Explicitly Entered Clinician Times   |
 | 4. HONEST DENOMINATORS      | Explicit Separation of Unrecorded vs Zero · Feed vs Ward Integrity  |
-| 5. AUDIT TRAIL IMMUTABILITY | Every Override, Hold, and Movement Logged with Role and Reason       |
+| 5. SELECTIVE GOVERNANCE    | Session Event Metadata · Selected Governance Actions and Overrides |
 +----------------------------------------------------------------------------------------------------+
 ```
+
+Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-management/ward-audit.ts`: ordinary `PULL_PATIENT`, `ACCEPT_IN_PRINCIPLE` and `ACCEPT_REFERRAL` return no governance category unless `overrideReason` is present. The separate `eventLogEntryFor()` in `src/components/ward-management/ward-event-log.ts` keeps action metadata and acceptance status without typed payloads; it does not supply a reason history. Local dispatches append this log in `ward-flow-provider.tsx`; shared commands append on a received command response in `ward-shared-client.ts`. This prototype evidence does not establish an immutable clinical record or complete logging of network failures.
 
 ### 1. The Synthetic Isolation Guarantee
 
@@ -420,7 +422,7 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 ### 2. Clinician Supremacy & Anti-Automation Bias
 
 - Ward Flow **never** makes an autonomous clinical decision.
-- It does not automatically admit, transfer, discharge, or place a patient. Every state transition requires a licensed health practitioner or authorized bed coordinator to click, confirm, and provide an auditable clinical rationale.
+- It does not automatically admit, transfer, discharge, or place a patient. User actions are checked against the acting prototype role. Selected actions require a structured reason or override; routine transitions do not all require or retain a clinical rationale. Prototype role checks do not establish professional licensure.
 
 ### 3. Statutory Fidelity (WA _Mental Health Act 2014_)
 

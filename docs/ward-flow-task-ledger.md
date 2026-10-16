@@ -16,15 +16,13 @@
 
 **This file is ONLY for the Ward Flow prototype.**
 
-| File                                            | What it is                                                                                    | Touch it here?                     |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **`docs/ward-flow-task-ledger.md`** — this file | **Ward Flow tasks**                                                                           | **yes**                            |
-| `docs/outstanding-issues.md`                    | **the REPOSITORY's ledger** — 529 rows, its own `/issues` system, its own reconcile interlock | **NEVER from Ward Flow work**      |
-| `docs/ward-flow-ledger.md` (including its §B)   | **the DECISIONS register** — what was decided and by whom                                     | **no** — cite it, never restate it |
+The [task/receipt workflow](task-receipts.md) identifies the canonical Ward Flow task source and
+project-filtered view. This file supplies local task detail and dated history. The decision register
+is [ward-flow-ledger.md](ward-flow-ledger.md); cite decisions rather than copying them.
 
-> **The owner flagged this explicitly.** Confusing the Ward Flow task list with the repository's
-> outstanding-issues ledger would put prototype tasks into a system that has 529 rows, a serialized
-> reconcile branch, and nothing to do with this project.
+`docs/outstanding-issues.md` is an inherited, retired PsychSift ledger. Its former 529-row count and
+reconciliation process do not describe the dedicated Ward Flow repository or its current task system.
+Do not add Ward Flow tasks there.
 
 **Merged from:** `ward-flow-remaining-work.md` (the running record and the reasoning — still the place
 to read WHY), `ward-flow-hubs-and-patient-plan.md`, `ward-flow-roadmap.md`, the 17-task plan
@@ -319,3 +317,16 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 - **Merged PRs #317–#364 (`origin/main` at `5ddeb7d5`, PR #363, which merged after #364)**: Landed role-access scoping and shared desk idle lock (`WardAccessScope`, `WardIdleLock`), screen monolith decompositions across ED, Community, Referral Drawer, and Ward Screen (`fix list 2.5 and 9.6`), third-edition statistics CSS consolidation, and ledger/archive history split (`docs/ward-flow/archive/task-ledger-history-2026-08-to-2026-10-13.md`).
 - **Adversarial Audit Remediation (`feat/adversarial-swarm-fixes-20261016`)**: Resolved the 10 verified defects and 4 hardening improvements across reducer undo/capacity/discharge-criteria invariants, `EdPatientDialog` top-layer closure before `ArrivalTimeModal`, `WardIdleLock` focus trapping (Escape no longer unlocks; only its button does), `CommunityScreen` `FD-13` contact modal honesty and keyboard shortcut guards, `ReferralConfirmation` drawer close on navigation, `WardBoard` `dispatchAndReport` wrapping and `resolveSubjectPatient` fallback, `.claude` worktree test guards, and baseline documentation sync through `5ddeb7d5` (PR #363). PR #365 review fixes: arrival support notifications stay with the receiving ward, a released bed also frees the referral arm's hold, cut arrivals leave the sex mix from their own recorded sex only, service desks see referrals from ED-only sites, and the role picker and break glass client from PR #363 replace this branch's duplicate.
+
+### Audit-resolution documentation follow-up (R21, R28, R29, R30; 16 October 2026)
+
+Local work from `c9f271a9` corrects the testing command/cadence and receipt claims, HAZ-05 source
+references and the demonstration's selective governance-audit promise. The reference-pack checker
+now verifies recursive membership as well as listed hashes, with only its own manifest excluded.
+The two stale prose hashes were reviewed against #349's source diff (annotation/table formatting
+changes only); reference/clinical facts and approval flags were not changed.
+
+Focused omission tests fail on the old checker and pass after the repair. The read-only documentation
+aggregate verified links, commands, facts, generated indexes and reference compilation; staleness
+is advisory and not evidence of semantic correctness. These are local engineering observations,
+not hosted CI, deployment, clinical approval or closure of unrelated audit findings.
