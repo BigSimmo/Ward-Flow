@@ -6,7 +6,7 @@ import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { WardDemoReset } from "../demo-reset/ward-demo-reset";
 import { formatInstant } from "../ward-clock";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../ward-flow-raise";
 import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels } from "../ward-scenarios";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
@@ -19,7 +19,12 @@ import styles from "./ward-tools-sheet.module.css";
  * raised with `role: "demo"` exactly as before, and every string says demo, never clinical.
  */
 export function WardDemoPanel() {
-  const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlow();
+  const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice } = useWardFlowSelect(
+    "scenario",
+    "saveScenarioFile",
+    "loadScenarioFile",
+    "savingOnDevice",
+  );
   const now = useWardFlowClock();
   const raise = useWardRaise("demo");
   const demoOn = useDemoControlsAvailable();

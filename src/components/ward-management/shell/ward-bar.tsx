@@ -61,7 +61,7 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
-import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
+import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,

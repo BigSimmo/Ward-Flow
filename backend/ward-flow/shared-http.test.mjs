@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHandler } from "./server.mjs";
@@ -51,8 +52,8 @@ function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
   };
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
-    store: {},
     sharedStore,
+    /** @param {string} token @param {{ session?: { signedInAt?: number } }} [context] */
     authenticate: async (token, { session } = {}) => {
       if (!token) throw new Error("Unauthorized");
       // "Bearer stale" stands for a sign-in older than the step-up window.
@@ -191,7 +192,8 @@ test("every shared request is logged with its request ID and closed fields only"
 test("a database outage is a 503 and a code fault is a 500, and both are logged", async () => {
   const outage = Object.assign(new Error('relation "x" does not exist: secret value'), { code: "57P01" });
   const fault = new TypeError("Cannot read properties of undefined (reading 'state')");
-  for (const [error, status, outcome, fields] of [
+  /** @type {Array<[Error, number, string, Record<string, string>]>} */
+  const failures = [
     [outage, 503, "storage_unavailable", { errorName: "Error", errorCode: "57P01" }],
     [new Error("Connection terminated unexpectedly"), 503, "storage_unavailable", { errorName: "Error" }],
     [
@@ -208,7 +210,8 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
       "server_error",
       { errorName: "Error", errorCode: "42703" },
     ],
-  ]) {
+  ];
+  for (const [error, status, outcome, fields] of failures) {
     const { logs, handler } = setup(coordinator, "prototype", {
       command: async () => {
         throw error;
@@ -410,7 +413,7 @@ test("access and break glass routes check their fields and pass the store's answ
     ["revoke", view, membershipId],
     ["breakGlass", view, "p-1", "handover"],
   ]);
-  for (const [path, data] of [
+  for (const [path, data] of /** @type {Array<[string, unknown]>} */ ([
     ["/access/grant", { ...grant, actorId: "someone" }],
     ["/access/grant", { ...grant, expiresAt: "soon" }],
     ["/access/grant", { ...grant, scope: { kind: "team", teamName: "x".repeat(5000) } }],
@@ -418,7 +421,7 @@ test("access and break glass routes check their fields and pass the store's answ
     ["/access/revoke", {}],
     ["/break-glass", { patientId: 7, reason: "handover" }],
     ["/break-glass", { patientId: "p".repeat(101), reason: "handover" }],
-  ])
+  ]))
     assert.equal((await handler(request(path, data))).status, 400, path);
   assert.equal((await handler(request("/access/grant"))).status, 405);
   assert.equal(seen.length, 5);
@@ -453,14 +456,14 @@ test("the powerful steps need a recent sign-in, and say so with their own code",
     scope: { kind: "ward", unitIds: ["unit-a"] },
     expiresAt: "2027-01-01T00:00:00.000Z",
   };
-  for (const [path, data] of [
+  for (const [path, data] of /** @type {Array<[string, unknown]>} */ ([
     ["/access/grant", grant],
     ["/access/approve", { membershipId }],
     ["/access/revoke", { membershipId }],
     ["/access/cover", { actorId: other, scope: { kind: "ward", unitIds: ["unit-a"] }, minutes: 60 }],
     ["/access/decide", { requestId: membershipId, decision: "approved", expiresAt: "2027-01-01T00:00:00.000Z" }],
     ["/break-glass", { patientId: "p-1", reason: "handover" }],
-  ]) {
+  ])) {
     const response = await handler(request(path, data, "Bearer stale"));
     assert.equal(response.status, 401, path);
     assert.equal((await response.json()).code, "step-up");
@@ -508,12 +511,12 @@ test("cover, requests and answers check their fields; asking for access needs no
     ["decide", view, requestId, "approved", new Date(decided.expiresAt)],
     ["decide", view, requestId, "declined", null],
   ]);
-  for (const [path, data] of [
+  for (const [path, data] of /** @type {Array<[string, unknown]>} */ ([
     ["/access/cover", { actorId: "x", scope, minutes: 480 }],
     ["/access/cover", { actorId: other, scope, minutes: "8h" }],
     ["/access/decide", { ...decided, decision: "maybe" }],
     ["/access/decide", { ...decided, requestId: "x" }],
-  ])
+  ]))
     assert.equal((await handler(request(path, data))).status, 400, path);
   // An account that already holds a role is not the one that asks.
   assert.equal((await handler(request("/access/request", { role: "ward", scope }))).status, 403);

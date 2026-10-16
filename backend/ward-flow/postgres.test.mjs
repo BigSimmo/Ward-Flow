@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -544,6 +545,7 @@ test(
         ]);
       });
       await t.test("a slow push service does not hold the save response", async () => {
+        /** @type {(value: unknown) => void} */
         let release;
         const held = new Promise((resolve) => {
           release = resolve;
@@ -1539,8 +1541,8 @@ test(
               expiresAt,
             })
             .then(
-              (response) => ({ response }),
-              (error) => ({ error }),
+              (response) => ({ response, error: undefined }),
+              (error) => ({ response: undefined, error }),
             );
           await waiting;
           f.advance(2);

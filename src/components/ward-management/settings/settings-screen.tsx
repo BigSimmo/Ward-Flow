@@ -38,7 +38,7 @@ import {
   useAppearanceStore,
   useGlareStore,
 } from "@/components/ward-management/shell/ward-bar";
-import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
+import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail-preferences";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   playSyntheticUrgentChime,

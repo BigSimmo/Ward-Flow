@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Badge } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -28,6 +29,7 @@ export function LongStaySummary({
   nameFor: (admission: Admission) => string;
   wardFor: (unitId: string) => string;
 }) {
+  const baseId = useId();
   const summaries = longStaySummaries(admissions, now, bedReleases);
   if (summaries.length === 0) return null;
   const byId = new Map(admissions.map((admission) => [admission.id, admission]));
@@ -35,10 +37,10 @@ export function LongStaySummary({
   return (
     <section
       className={styles.panel}
-      aria-labelledby="ward-long-stay-summary-heading"
+      aria-labelledby={`${baseId}-ward-long-stay-summary-heading`}
       data-testid="ward-long-stay-summary"
     >
-      <h3 id="ward-long-stay-summary-heading" className={styles.heading}>
+      <h3 id={`${baseId}-ward-long-stay-summary-heading`} className={styles.heading}>
         Long stays and delayed discharges ({summaries.length})
       </h3>
       <ul className={styles.list}>

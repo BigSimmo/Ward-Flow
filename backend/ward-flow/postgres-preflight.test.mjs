@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -267,6 +268,7 @@ function withPostgresTextDeparse(catalog) {
   return catalog;
 }
 
+/** @param {Array<number | string>} [versions] Strings stand for unsafe recorded versions. */
 function pool(catalog, versions = ALL_VERSIONS) {
   const queries = [];
   return {

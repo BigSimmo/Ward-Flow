@@ -11,6 +11,7 @@ import { cx, type WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
  * Top 25 item 21: the badge for a discharge date the ward has moved several times. The "several"
@@ -57,7 +58,7 @@ export interface BedItem {
   expectedDays?: number | null;
   legalStatusLabel?: string;
   /** Criteria led discharge on the tile (D-64), set only when the flag is on and criteria exist. */
-  criteriaLedChip?: { label: string; tone: "success" | "warning" | "neutral"; phrase: string } | null;
+  criteriaLedChip?: CriteriaLedChip | null;
   admissionId?: string;
   /**
    * The admission whose stay this bed shows, including a live pull (which `admissionId` leaves

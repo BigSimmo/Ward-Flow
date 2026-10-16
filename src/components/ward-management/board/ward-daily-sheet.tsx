@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Copy, FileText, Printer, X } from "lucide-react";
 import {
@@ -454,6 +454,7 @@ export function WardDailySheet({
   embedded,
 }: WardDailySheetProps) {
   const isEmbedded = embedded ?? onClose !== undefined;
+  const baseId = useId();
   const clockNow = useWardFlowClock(WARD_ADMISSIONS_ANCHOR);
   const currentNow =
     now !== undefined && Number.isFinite(now) ? now : Number.isFinite(clockNow) ? clockNow : WARD_ADMISSIONS_ANCHOR;
@@ -525,11 +526,11 @@ export function WardDailySheet({
     <section
       id="ward-daily-sheet"
       className={`${styles.sheet} ${isEmbedded ? styles.embedded : styles.standalone}`}
-      aria-labelledby="ward-daily-sheet-heading"
+      aria-labelledby={`${baseId}-ward-daily-sheet-heading`}
       data-testid="ward-daily-sheet"
       style={TNUM}
     >
-      <h2 id="ward-daily-sheet-heading" className={isEmbedded ? styles.visuallyHidden : styles.heading}>
+      <h2 id={`${baseId}-ward-daily-sheet-heading`} className={isEmbedded ? styles.visuallyHidden : styles.heading}>
         Shift brief
       </h2>
       {isEmbedded ? null : (
@@ -567,11 +568,15 @@ export function WardDailySheet({
           a pulled bed is already gone from this ward's count while a waitlisted person holds
           nothing, and one undifferentiated "incoming" number would let a meeting plan against a bed
           that is already spoken for. */}
-        <Card className={styles.group} aria-labelledby="ward-daily-sheet-in-heading" data-testid="ward-daily-sheet-in">
+        <Card
+          className={styles.group}
+          aria-labelledby={`${baseId}-ward-daily-sheet-in-heading`}
+          data-testid="ward-daily-sheet-in"
+        >
           <CardHead
             level={3}
             eyebrow
-            id="ward-daily-sheet-in-heading"
+            id={`${baseId}-ward-daily-sheet-in-heading`}
             title="Who came in"
             meta={<CountBubble n={incomingTotal} />}
             className={styles.groupHead}
@@ -616,13 +621,13 @@ export function WardDailySheet({
           these beds are expected to head, which is the part a community team is waiting for. */}
         <Card
           className={styles.group}
-          aria-labelledby="ward-daily-sheet-out-heading"
+          aria-labelledby={`${baseId}-ward-daily-sheet-out-heading`}
           data-testid="ward-daily-sheet-out"
         >
           <CardHead
             level={3}
             eyebrow
-            id="ward-daily-sheet-out-heading"
+            id={`${baseId}-ward-daily-sheet-out-heading`}
             title="Who is going"
             meta={<CountBubble n={resolvedOutgoingCount} />}
             className={styles.groupHead}
@@ -686,7 +691,7 @@ export function WardDailySheet({
 
         <SheetGroup
           heading="Who is stuck"
-          headingId="ward-daily-sheet-stuck-heading"
+          headingId={`${baseId}-ward-daily-sheet-stuck-heading`}
           testId="ward-daily-sheet-stuck"
           emptyText="Nobody on this ward is recorded as held up."
           people={groups.heldUp}
@@ -696,7 +701,7 @@ export function WardDailySheet({
 
         <SheetGroup
           heading="Who is overdue"
-          headingId="ward-daily-sheet-overdue-heading"
+          headingId={`${baseId}-ward-daily-sheet-overdue-heading`}
           testId="ward-daily-sheet-overdue"
           emptyText="Nobody on this ward is past the ward's own expected date."
           people={groups.overdue}
@@ -706,7 +711,7 @@ export function WardDailySheet({
 
         <SheetGroup
           heading="Nobody has said when they are going"
-          headingId="ward-daily-sheet-no-date-heading"
+          headingId={`${baseId}-ward-daily-sheet-no-date-heading`}
           testId="ward-daily-sheet-no-date"
           emptyText="Everybody in a bed on this ward has an expected date."
           people={groups.noDate}
@@ -818,6 +823,7 @@ const clipboardAvailable = () =>
 export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const scrimPressRef = useRef(false);
+  const dialogId = useId();
   // Read on the client only; the server snapshot says no clipboard, so nothing is offered blind.
   const canCopy = useSyncExternalStore(subscribeNever, clipboardAvailable, () => false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
@@ -882,14 +888,14 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
         className={styles.dialog}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="ward-daily-sheet-dialog-title"
+        aria-labelledby={`${dialogId}-ward-daily-sheet-dialog-title`}
         tabIndex={-1}
         data-testid="ward-daily-sheet-modal"
       >
         <div className={styles.dialogHead}>
           <Icon icon={FileText} size={20} className={styles.dialogIcon} />
           <div className={styles.dialogTitleWrap}>
-            <h2 id="ward-daily-sheet-dialog-title" className={styles.dialogTitle}>
+            <h2 id={`${dialogId}-ward-daily-sheet-dialog-title`} className={styles.dialogTitle}>
               {title}
             </h2>
             {stampLine ? (
