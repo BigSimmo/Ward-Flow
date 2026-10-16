@@ -169,7 +169,7 @@ export function reduceReferralAnswerEvent(
       const updated: Movement = {
         ...movement,
         acceptedUnitId: event.unitId,
-        ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
+        heldBedNumber: event.bedNumber,
         waitlistedUnitIds: undefined,
         // OD-3 (2026-09-02): an overridden acceptance is made accountable, never impossible — the
         // reason that bought the gate past is recorded, exactly as REFER_TO_UNITS records its own.
@@ -1115,6 +1115,7 @@ export function reduceReferralAnswerEvent(
         ...movement,
         acceptedUnitId: undefined,
         acceptedAt: undefined,
+        heldBedNumber: undefined,
         stage: "destination_review",
         // Not pushed back into `referredUnitIds` (owner ruling 3): withdrawing an acceptance is not
         // re-referring.

@@ -3,6 +3,17 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
+import type { BreakGlassGrant } from "./ward-access-scope";
+import type { BreakGlassReasonId, WardAccessRole, WardAccessScope } from "./ward-role-access";
+
+export type { BreakGlassGrant, BreakGlassReasonId, WardAccessRole, WardAccessScope };
+
+export interface SharedWorkspaceMembership {
+  id: string;
+  role: WardAccessRole;
+  scope: WardAccessScope;
+  label: string;
+}
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -11,7 +22,14 @@ export type SharedSnapshot = {
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
   /** False when the server refuses the demonstration controls (clock, reset and scenario). */
   demoControls?: boolean;
+  role?: WardAccessRole;
+  membershipId?: string;
+  memberships?: readonly SharedWorkspaceMembership[];
+  grants?: readonly BreakGlassGrant[];
 };
+
+export type SharedWorkspaceEnvelope = SharedSnapshot;
+
 type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
 export type SharedView = {
   snapshot: SharedSnapshot | null;
@@ -19,6 +37,10 @@ export type SharedView = {
   status: SharedStatus;
   error: string | null;
   eventLog?: readonly EventLogEntry[];
+  role?: WardAccessRole;
+  membershipId?: string;
+  memberships?: readonly SharedWorkspaceMembership[];
+  grants?: readonly BreakGlassGrant[];
 };
 type PendingCommand = {
   dataMode: "prototype";
@@ -30,6 +52,17 @@ type PendingCommand = {
   reply?: "revision";
 };
 
+type RawEnvelope =
+  | SharedSnapshot
+  | {
+      snapshot?: SharedSnapshot;
+      role?: WardAccessRole;
+      membershipId?: string;
+      workingAs?: string;
+      memberships?: readonly SharedWorkspaceMembership[];
+      grants?: readonly BreakGlassGrant[];
+    };
+
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
@@ -38,6 +71,7 @@ export class SharedWorkspaceClient {
   private busy = false;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
+  private workingAs: string | null = null;
   private readonly lifetime = new AbortController();
   private accessDenied() {
     return this.view.status === "not-authorised";
@@ -56,20 +90,54 @@ export class SharedWorkspaceClient {
     this.view = { ...this.view, ...update };
     this.options.changed(this.view);
   }
-  private adopt(snapshot: SharedSnapshot) {
+  private adopt(raw: RawEnvelope): SharedSnapshot {
+    const hasNested = Boolean(raw && typeof raw === "object" && "snapshot" in raw && raw.snapshot !== undefined);
+    const base = (hasNested ? (raw as { snapshot: SharedSnapshot }).snapshot : raw) as SharedSnapshot;
+    const outer = (hasNested ? raw : undefined) as
+      | {
+          role?: WardAccessRole;
+          membershipId?: string;
+          workingAs?: string;
+          memberships?: readonly SharedWorkspaceMembership[];
+          grants?: readonly BreakGlassGrant[];
+        }
+      | undefined;
     if (
-      !snapshot ||
-      snapshot.dataMode !== "prototype" ||
-      !Number.isSafeInteger(snapshot.revision) ||
-      snapshot.revision < 1 ||
-      !Number.isFinite(snapshot.now) ||
-      snapshot.payload?.version !== 1 ||
-      !isValidSharedWardFlowState(snapshot.payload.state) ||
-      !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
-      !Number.isFinite(Date.parse(snapshot.payload.startedAt))
+      !base ||
+      base.dataMode !== "prototype" ||
+      !Number.isSafeInteger(base.revision) ||
+      base.revision < 1 ||
+      !Number.isFinite(base.now) ||
+      base.payload?.version !== 1 ||
+      !isValidSharedWardFlowState(base.payload.state) ||
+      !Number.isFinite(Date.parse(base.payload.dayZero)) ||
+      !Number.isFinite(Date.parse(base.payload.startedAt))
     )
       throw new Error("Incompatible workspace data");
-    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
+    const role = base.role ?? outer?.role ?? this.view.role;
+    const membershipId =
+      base.membershipId ?? outer?.membershipId ?? outer?.workingAs ?? this.workingAs ?? this.view.membershipId;
+    const memberships = base.memberships ?? outer?.memberships ?? this.view.memberships;
+    const sameMembership = membershipId === undefined || membershipId === this.view.membershipId;
+    const grants = base.grants ?? outer?.grants ?? (sameMembership ? this.view.grants : undefined);
+    const snapshot: SharedSnapshot = {
+      ...base,
+      ...(role !== undefined ? { role } : {}),
+      ...(membershipId !== undefined ? { membershipId } : {}),
+      ...(memberships !== undefined ? { memberships } : {}),
+      ...(grants !== undefined ? { grants } : {}),
+    };
+    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) {
+      this.publish({
+        snapshot,
+        receivedAt: Date.now(),
+        ...(role !== undefined ? { role } : {}),
+        ...(membershipId !== undefined ? { membershipId } : {}),
+        ...(memberships !== undefined ? { memberships } : {}),
+        grants,
+      });
+    }
+    return snapshot;
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
     let token: string;
@@ -87,7 +155,11 @@ export class SharedWorkspaceClient {
     const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
       method: body ? "POST" : "GET",
       cache: "no-store",
-      headers: { authorization: `Bearer ${token}`, ...(body ? { "content-type": "application/json" } : {}) },
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(this.workingAs ? { "x-ward-working-as": this.workingAs } : {}),
+        ...(body ? { "content-type": "application/json" } : {}),
+      },
       ...(body ? { body: JSON.stringify(body) } : {}),
       signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal]),
     });
@@ -124,7 +196,7 @@ export class SharedWorkspaceClient {
           throw new Error("Incompatible workspace data");
         if (this.view.snapshot === current)
           this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
-      } else this.adopt(value.snapshot);
+      } else this.adopt(value);
       this.publish({ status: "ready", error: this.view.status === "unavailable" ? null : this.view.error });
     } catch {
       if (!this.accessDenied())
@@ -244,6 +316,49 @@ export class SharedWorkspaceClient {
     const { response, value } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
     if (!response.ok) throw new Error("Phone alerts were not turned off");
     return value?.revoked === true;
+  }
+  async selectMembership(membershipId: string): Promise<SharedWorkspaceEnvelope> {
+    if (!membershipId || !membershipId.trim()) throw new Error("A role is required");
+    const chosenId = membershipId.trim();
+    const previousWorkingAs = this.workingAs;
+    this.workingAs = chosenId;
+    try {
+      const { response, value } = await this.request("/v1/workspace");
+      if (!response.ok) {
+        this.workingAs = previousWorkingAs;
+        throw new Error(typeof value?.error === "string" ? value.error : "Role selection was not applied");
+      }
+      const adopted = this.adopt({
+        ...value,
+        membershipId: value?.membershipId ?? value?.workingAs ?? chosenId,
+      });
+      this.publish({ status: "ready", error: null });
+      return adopted;
+    } catch (error) {
+      this.workingAs = previousWorkingAs;
+      throw error;
+    }
+  }
+  async breakGlass({
+    patientId,
+    reason,
+  }: {
+    patientId: string;
+    reason: BreakGlassReasonId;
+    otherText?: string;
+  }): Promise<SharedWorkspaceEnvelope> {
+    const trimmedPatientId = typeof patientId === "string" ? patientId.trim() : "";
+    if (!trimmedPatientId) throw new Error("A patient is required");
+    const { response, value } = await this.request("/v1/workspace/break-glass", {
+      patientId: trimmedPatientId,
+      reason,
+    });
+    if (!response.ok) {
+      throw new Error(typeof value?.error === "string" ? value.error : "Break-glass access was refused");
+    }
+    const adopted = this.adopt(value);
+    this.publish({ status: "ready", error: null });
+    return adopted;
   }
   retry = async () => {
     if (this.pending) await this.drain();

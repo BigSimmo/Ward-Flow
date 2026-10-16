@@ -432,4 +432,116 @@ describe("a command from a desk", () => {
       commandScopeRefusal(state, STATEWIDE_COORDINATOR, { type: "X", admissionId: otherAdmission.id }, options),
     ).toBeNull();
   });
+
+  it("clamps unit.sexMix when closeReferences drops another ward's arrivalCapacityConflicts", () => {
+    const targetUnit = state.units.find(
+      (unit) =>
+        unit.id !== ownUnit &&
+        state.admissions.some((admission) => admission.unitId === unit.id && admission.state === "occupied"),
+    )!;
+    const targetAdmission = state.admissions.find(
+      (admission) => admission.unitId === targetUnit.id && admission.state === "occupied",
+    )!;
+    const arrivedAt = targetAdmission.arrivedAt ?? NOW_ANCHOR - 10;
+    const syntheticMovementId = "WF-99999" as const;
+    const baseTemplate = state.movements[0];
+    const syntheticConflictMovement = {
+      ...baseTemplate,
+      id: syntheticMovementId,
+      patientId: targetAdmission.patientId ?? undefined,
+      referralId: targetAdmission.referralId ?? undefined,
+      referralAbsence: targetAdmission.referralId ? undefined : { reason: "not_asked" as const, at: arrivedAt },
+      acceptedUnitId: targetUnit.id,
+      referredUnitIds: [targetUnit.id],
+      stage: "arrived" as const,
+      closure: { outcome: "arrived" as const, reason: "Arrived on ward", at: arrivedAt },
+      admissionId: targetAdmission.id,
+    };
+    const overCapacityState: WardFlowState = {
+      ...state,
+      movements: [...state.movements, syntheticConflictMovement],
+      admissions: state.admissions.map((admission) =>
+        admission.id === targetAdmission.id
+          ? {
+              ...admission,
+              movementId: syntheticMovementId,
+              arrivedAt,
+            }
+          : admission,
+      ),
+      units: state.units.map((unit) =>
+        unit.id === targetUnit.id
+          ? {
+              ...unit,
+              sexMix: { Female: unit.beds, Male: 1 },
+              arrivalCapacityConflicts: [
+                {
+                  movementId: syntheticMovementId,
+                  admissionId: targetAdmission.id,
+                  at: arrivedAt,
+                },
+              ],
+            }
+          : unit,
+      ),
+    };
+    expect(isValidSharedWardFlowState(overCapacityState)).toBe(true);
+    const { state: scopedState } = scopeWardFlowState(overCapacityState, ward, options);
+    const scopedTarget = scopedState.units.find((unit) => unit.id === targetUnit.id)!;
+    expect(scopedTarget.sexMix.Female + scopedTarget.sexMix.Male).toBeLessThanOrEqual(
+      scopedTarget.beds + (scopedTarget.arrivalCapacityConflicts?.length ?? 0),
+    );
+    expect(isValidSharedWardFlowState(scopedState)).toBe(true);
+  });
+
+  it("validates and accepts supportNotifications in isValidSharedWardFlowState", () => {
+    const arrivedMovementId = "WF-99998" as const;
+    const arrivedMovement = {
+      ...state.movements[0],
+      id: arrivedMovementId,
+      patientId: occupied.patientId ?? undefined,
+      referralId: occupied.referralId ?? undefined,
+      referralAbsence: occupied.referralId ? undefined : { reason: "not_asked" as const, at: NOW_ANCHOR - 10 },
+      acceptedUnitId: ownUnit,
+      referredUnitIds: [ownUnit],
+      legalStatus: "Involuntary inpatient" as const,
+      stage: "arrived" as const,
+      closure: { outcome: "arrived" as const, reason: "Arrived on ward", at: NOW_ANCHOR - 10 },
+      admissionId: occupied.id,
+    };
+    const arrivedSeed: WardFlowState = {
+      ...state,
+      movements: [...state.movements, arrivedMovement],
+      admissions: state.admissions.map((admission) =>
+        admission.id === occupied.id ? { ...admission, movementId: arrivedMovementId } : admission,
+      ),
+    };
+    const withNotification = wardFlowReducer(arrivedSeed, {
+      type: "RECORD_SUPPORT_NOTIFICATION",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId: arrivedMovementId,
+      occasion: "admission",
+      party: "carer",
+      outcome: "told",
+      who: "Primary carer",
+      contactedAt: NOW_ANCHOR - 5,
+    });
+    expect(withNotification.supportNotifications?.length).toBeGreaterThan(0);
+    expect(isValidSharedWardFlowState(withNotification)).toBe(true);
+    const { state: scopedWithNotification } = scopeWardFlowState(withNotification, ward, options);
+    expect(scopedWithNotification.supportNotifications?.length).toBeGreaterThan(0);
+    expect(isValidSharedWardFlowState(scopedWithNotification)).toBe(true);
+
+    const malformed: WardFlowState = {
+      ...withNotification,
+      supportNotifications: [
+        {
+          ...withNotification.supportNotifications![0],
+          who: "",
+        },
+      ],
+    };
+    expect(isValidSharedWardFlowState(malformed)).toBe(false);
+  });
 });

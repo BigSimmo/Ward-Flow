@@ -455,4 +455,78 @@ describe("shared workspace traffic", () => {
     expect(reads).toEqual(["https://example.test/v1/workspace"]);
     client.dispose();
   });
+
+  it("preserves optional role, membershipId, memberships, and grants metadata across selectMembership and breakGlass", async () => {
+    let view: SharedView | undefined;
+    const requests: { url: string; body?: unknown; headers?: Record<string, string> }[] = [];
+    const memberships = [
+      {
+        id: "mem-ward-1",
+        role: "ward" as const,
+        scope: { kind: "ward" as const, unitIds: ["ward-test"] },
+        label: "Ward 1A",
+      },
+    ];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url, options) => {
+        requests.push({
+          url: String(url),
+          body: options?.body ? JSON.parse(String(options.body)) : undefined,
+          headers: options?.headers as Record<string, string> | undefined,
+        });
+        const workingAsHeader = (options?.headers as Record<string, string> | undefined)?.["x-ward-working-as"];
+        if (String(url).endsWith("/v1/workspace/break-glass")) {
+          return Response.json({
+            snapshot: {
+              ...snapshot(3),
+              role: "ward",
+              membershipId: "mem-ward-1",
+              memberships,
+              grants: [{ patientId: "P-1", until: 700 }],
+            },
+          });
+        }
+        if (workingAsHeader === "mem-ward-1") {
+          return Response.json({
+            snapshot: {
+              ...snapshot(2),
+              role: "ward",
+              membershipId: "mem-ward-1",
+              memberships,
+            },
+          });
+        }
+        return Response.json({
+          role: "coordinator",
+          workingAs: "bootstrap",
+          memberships,
+          snapshot: snapshot(1),
+        });
+      },
+    });
+
+    await client.refresh();
+    expect(view?.role).toBe("coordinator");
+    expect(view?.membershipId).toBe("bootstrap");
+    expect(view?.memberships).toEqual(memberships);
+
+    const selected = await client.selectMembership("mem-ward-1");
+    expect(selected.role).toBe("ward");
+    expect(selected.membershipId).toBe("mem-ward-1");
+    expect(view?.role).toBe("ward");
+    expect(view?.membershipId).toBe("mem-ward-1");
+
+    const granted = await client.breakGlass({ patientId: "P-1", reason: "handover" });
+    expect(granted.grants).toEqual([{ patientId: "P-1", until: 700 }]);
+    expect(view?.grants).toEqual([{ patientId: "P-1", until: 700 }]);
+    expect(requests.at(-1)?.headers?.["x-ward-working-as"]).toBe("mem-ward-1");
+    expect(requests.at(-1)?.body).toEqual({ patientId: "P-1", reason: "handover" });
+
+    client.dispose();
+  });
 });

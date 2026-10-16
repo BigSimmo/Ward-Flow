@@ -22,6 +22,7 @@
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -168,5 +169,202 @@ describe("RELEASE_AND_REOPEN_SEARCH refuses an unlisted reason and a ward acting
       `RELEASE_AND_REOPEN_SEARCH was raised acting as unit rph-adult-secure but movement ${movementUmrn("WF-004", seeded)}'s bed is at ${heldAt}`,
     ]);
     expect(added(seeded, wardFlowReducer(seeded, { ...asWard, actingUnitId: heldAt } as never))).toEqual([]);
+  });
+});
+
+describe("heldBedNumber is cleared when acceptance is unwound or overwritten", () => {
+  function freeBedNumber(state: WardFlowState, unitId: string): number {
+    const unit = state.units.find((u) => u.id === unitId)!;
+    const taken = new Set(
+      state.admissions
+        .filter((a) => a.unitId === unitId && a.state !== "departed" && a.bedNumber !== undefined)
+        .map((a) => a.bedNumber),
+    );
+    for (let b = 1; b <= unit.beds; b++) {
+      if (!taken.has(b)) return b;
+    }
+    throw new Error(`no free bed number on ${unitId}`);
+  }
+
+  it("clears heldBedNumber on WITHDRAW_ACCEPTANCE and does not carry a stale bed number into a later ACCEPT_IN_PRINCIPLE", () => {
+    const seeded = seedWardFlowState();
+    const bed = freeBedNumber(seeded, "scgh-adult-open");
+    let t = NOW;
+    const after = walk(seeded, [
+      {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: ++t,
+        movementId: "WF-001",
+        unitIds: ["scgh-adult-open", "arm-adult-open"],
+      },
+      {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now: ++t,
+        movementId: "WF-001",
+        unitId: "scgh-adult-open",
+        actingUnitId: "scgh-adult-open",
+        bedNumber: bed,
+      },
+    ]);
+    expect(after.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBe(bed);
+
+    const withdrawn = walk(after, [
+      {
+        type: "WITHDRAW_ACCEPTANCE",
+        role: "coordinator",
+        now: ++t,
+        movementId: "WF-001",
+        reason: "recorded_in_error",
+      },
+    ]);
+    expect(withdrawn.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBeUndefined();
+
+    const reaccepted = walk(withdrawn, [
+      { type: "REFER_TO_UNITS", role: "coordinator", now: ++t, movementId: "WF-001", unitIds: ["arm-adult-open"] },
+      {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now: ++t,
+        movementId: "WF-001",
+        unitId: "arm-adult-open",
+        actingUnitId: "arm-adult-open",
+      },
+    ]);
+    expect(reaccepted.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBeUndefined();
+  });
+
+  it("clears heldBedNumber on RELEASE_AND_REOPEN_SEARCH and RECORD_ED_MEDICAL_DETERIORATION", () => {
+    const seeded = seedWardFlowState();
+    const bed = freeBedNumber(seeded, "scgh-adult-open");
+    let t = NOW;
+    const accepted = walk(seeded, [
+      { type: "REFER_TO_UNITS", role: "coordinator", now: ++t, movementId: "WF-001", unitIds: ["scgh-adult-open"] },
+      {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now: ++t,
+        movementId: "WF-001",
+        unitId: "scgh-adult-open",
+        actingUnitId: "scgh-adult-open",
+        bedNumber: bed,
+      },
+    ]);
+    expect(accepted.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBe(bed);
+
+    const reopened = walk(accepted, [
+      {
+        type: "RELEASE_AND_REOPEN_SEARCH",
+        role: "coordinator",
+        now: ++t,
+        movementId: "WF-001",
+        actingUnitId: "scgh-adult-open",
+        reason: RELEASE_PULL_REASONS[0],
+      },
+    ]);
+    expect(reopened.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBeUndefined();
+
+    const originEdId = accepted.movements.find((m) => m.id === "WF-001")!.originEdId;
+    const deteriorated = walk(accepted, [
+      {
+        type: "RECORD_ED_MEDICAL_DETERIORATION",
+        role: "ed",
+        now: ++t,
+        movementId: "WF-001",
+        actingPlaceId: originEdId,
+      },
+    ]);
+    expect(deteriorated.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBeUndefined();
+  });
+});
+
+describe("RECORD_ADMISSION_CARE (transfer.arrived) strips sending-ward bedNumber and resets discharge fields", () => {
+  it("omits bedNumber and clears dischargeCriteria, dischargeBarrier, and stepDownCandidate on the receiving admission", () => {
+    const state = seedWardFlowState();
+    const candidate = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
+    const base = state.movements.find((m) => m.cohort === state.units.find((u) => u.id === candidate.unitId)?.cohort)!;
+    base.admissionId = candidate.id;
+    base.patientId = candidate.patientId!;
+    base.stage = "arrived";
+    base.acceptedUnitId = candidate.unitId;
+    candidate.movementId = base.id;
+    state.units = state.units.map((u) => ({
+      ...u,
+      allocatable: { ...u.allocatable, confirmedAt: NOW },
+      empty: { ...u.empty, confirmedAt: NOW },
+    }));
+    const receivingUnit = state.units.find(
+      (u) => u.id !== candidate.unitId && eligibility(base, u, NOW).eligible && u.allocatableLocked > 0,
+    )!;
+    expect(receivingUnit).toBeDefined();
+
+    let t = NOW;
+    const withSendingFields: WardFlowState = {
+      ...state,
+      admissions: state.admissions.map((a) =>
+        a.id === candidate.id
+          ? {
+              ...a,
+              bedNumber: 1,
+              dischargeBarrier: "Accommodation / Housing",
+              dischargeCriteria: {
+                setAt: t,
+                items: [{ criterion: "Accommodation confirmed", metAt: null }],
+              },
+              stepDownCandidate: true,
+            }
+          : a,
+      ),
+    };
+    const baseRev = withSendingFields.dischargeRevisions[candidate.id] ?? 0;
+    const gen = withSendingFields.worldGeneration;
+
+    const transferred = walk(withSendingFields, [
+      {
+        type: "RECORD_ADMISSION_CARE",
+        role: "coordinator",
+        now: ++t,
+        admissionId: candidate.id,
+        patientId: candidate.patientId,
+        expectedGeneration: gen,
+        expectedRevision: baseRev,
+        change: { kind: "transfer", receivingUnitId: receivingUnit.id, step: "accepted" },
+      },
+      {
+        type: "RECORD_ADMISSION_CARE",
+        role: "coordinator",
+        now: ++t,
+        admissionId: candidate.id,
+        patientId: candidate.patientId,
+        expectedGeneration: gen,
+        expectedRevision: baseRev + 1,
+        change: { kind: "transfer", receivingUnitId: receivingUnit.id, step: "handover" },
+      },
+      {
+        type: "RECORD_ADMISSION_CARE",
+        role: "coordinator",
+        now: ++t,
+        admissionId: candidate.id,
+        patientId: candidate.patientId,
+        expectedGeneration: gen,
+        expectedRevision: baseRev + 2,
+        change: { kind: "transfer", receivingUnitId: receivingUnit.id, step: "arrived" },
+      },
+    ]);
+
+    const departedSending = transferred.admissions.find((a) => a.id === candidate.id)!;
+    expect(departedSending.state).toBe("departed");
+    expect(departedSending.dischargeCriteria).toBeNull();
+
+    const receivingAdmission = transferred.admissions.find(
+      (a) => a.id.startsWith(`transfer-${candidate.id}-`) && a.unitId === receivingUnit.id,
+    )!;
+    expect(receivingAdmission).toBeDefined();
+    expect("bedNumber" in receivingAdmission).toBe(false);
+    expect(receivingAdmission.bedNumber).toBeUndefined();
+    expect(receivingAdmission.dischargeBarrier).toBeNull();
+    expect(receivingAdmission.dischargeCriteria).toBeNull();
+    expect(receivingAdmission.stepDownCandidate).toBe(false);
   });
 });

@@ -298,11 +298,17 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
   if (!canBreakGlass(access.role)) return "Opening a record outside your care is not part of your role.";
   if (typeof patientId !== "string" || !world.state.patients.some((patient) => patient.id === patientId))
     return "That patient is not in the workspace.";
-  const { state } = scopeWardFlowState(world.state, access, {
+  const { state, scoped } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
     places: wardPlaceLookup(world.state.units),
   });
-  if (state.patients.some((patient) => patient.id === patientId)) return "That patient is already in your care.";
+  const inFullCare =
+    state.movements.some((movement) => movement.patientId === patientId) ||
+    state.referrals.some((referral) => referral.patientId === patientId) ||
+    state.admissions.some(
+      (admission) => admission.patientId === patientId && !scoped.datesOnlyAdmissionIds.has(admission.id),
+    );
+  if (inFullCare) return "That patient is already in your care.";
   return null;
 }
 

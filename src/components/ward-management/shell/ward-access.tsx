@@ -39,6 +39,7 @@ import {
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import {
@@ -344,7 +345,14 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         saveScenarioFile: wholeNetwork ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
-        supportNotifications: coordinator ? context.supportNotifications : [],
+        supportNotifications:
+          coordinator || access.role === "ward"
+            ? (context.supportNotifications ?? []).filter((record) =>
+                record.occasion === "discharge"
+                  ? admissionIds.has(record.subjectId) && !scoped.datesOnlyAdmissionIds.has(record.subjectId)
+                  : scoped.movements.some((movement) => movement.id === record.subjectId),
+              )
+            : [],
         wardReferralInbox: (unitId: string) => (unitIn(unitId) ? context.wardReferralInbox(unitId) : []),
         resolvePatientIdentity: (subject) => resolveSubjectPatient(subject, resolveIndex),
       },
@@ -618,7 +626,9 @@ export function WardIdleLock() {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const [locked, setLocked] = useState(false);
+  const lockRef = useRef<HTMLDivElement | null>(null);
   const minutes = CLINICAL_VALUES.idleLock.value;
+  useWardModalFocus(locked, lockRef, () => setLocked(false));
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (!on) return;
@@ -639,7 +649,7 @@ export function WardIdleLock() {
   }, [on, access, minutes]);
   if (!locked) return null;
   return (
-    <div className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
+    <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
       <div className={styles.lockCard}>
         <h1 id="ward-idle-lock-title">Locked after {minutes} minutes</h1>
         <p>

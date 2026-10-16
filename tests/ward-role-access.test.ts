@@ -7,6 +7,8 @@ import type { BroadcastAlert } from "../src/components/ward-management/alerts/wa
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
+import { commandScopeRefusal, scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
+import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
 import {
   coordinatorRecordScope,
   scopeBroadcastAlerts,
@@ -103,7 +105,7 @@ function appRoutes(): string[] {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) walk(path);
-      else if (name === "page.tsx") found.push(relative(root, dir));
+      else if (name === "page.tsx") found.push(relative(root, dir).replace(/\\/g, "/"));
     }
   };
   walk(root);
@@ -584,5 +586,172 @@ describe("the desk store", () => {
     });
     expect(record).toBeNull();
     expect(readWardAccessSnapshot().records).toHaveLength(0);
+  });
+
+  it("retains outbound referrals and write access for sending wards, EDs, and community teams while keeping FD-23 trimming for receiving wards", () => {
+    const sendingUnit = state.units[0];
+    const receivingUnitA = state.units[1];
+    const receivingUnitB = state.units[2];
+    const baseReferral = state.referrals.find((r) =>
+      r.destinations.some((d) => d.destination.kind === "psychiatric_ward"),
+    )!;
+    const wardLine = baseReferral.destinations.find((d) => d.destination.kind === "psychiatric_ward")!;
+    const wardDest = (targetUnitId: string) => ({
+      kind: "psychiatric_ward" as const,
+      unitId: targetUnitId,
+      sex: "Female" as const,
+      secureBedNeeded: false,
+      involuntaryBedNeeded: false,
+      highAcuityNursingNeeded: false,
+    });
+    const wardOutboundReferral = {
+      ...baseReferral,
+      id: "ref-outbound-ward-1",
+      source: "psychiatric_ward" as const,
+      originUnitId: sendingUnit.id,
+      originSiteCode: sendingUnit.siteCode,
+      raisedAt: NOW_ANCHOR - 10,
+      destinations: [
+        {
+          ...wardLine,
+          id: "dest-a",
+          acceptedUnitId: undefined,
+          destination: wardDest(receivingUnitA.id),
+          state: "queued" as const,
+        },
+        {
+          ...wardLine,
+          id: "dest-b",
+          acceptedUnitId: undefined,
+          destination: wardDest(receivingUnitB.id),
+          state: "queued" as const,
+        },
+      ],
+    };
+    const edId = state.movements[0].originEdId;
+    const edSiteCode = places.edSiteCode(edId) ?? sendingUnit.siteCode;
+    const edOutboundReferral = {
+      ...baseReferral,
+      id: "ref-outbound-ed-1",
+      source: "ed_medical" as const,
+      originSiteCode: edSiteCode,
+      raisedAt: NOW_ANCHOR - 10,
+      destinations: [
+        {
+          ...wardLine,
+          id: "dest-ed-a",
+          acceptedUnitId: undefined,
+          destination: wardDest(receivingUnitA.id),
+          state: "queued" as const,
+        },
+      ],
+    };
+    const communityOutboundReferral = {
+      ...baseReferral,
+      id: "ref-outbound-comm-1",
+      source: "community" as const,
+      sendingTeamName: "Midland Community Team",
+      raisedAt: NOW_ANCHOR - 10,
+      destinations: [
+        {
+          ...wardLine,
+          id: "dest-comm-a",
+          acceptedUnitId: undefined,
+          destination: wardDest(receivingUnitA.id),
+          state: "queued" as const,
+        },
+      ],
+    };
+    const customState = {
+      ...state,
+      edDepartments: [{ id: edId, siteCode: edSiteCode }],
+      referrals: [...state.referrals, wardOutboundReferral, edOutboundReferral, communityOutboundReferral],
+    };
+    const opts = { now: NOW_ANCHOR, places };
+
+    const sendingWardDesk: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [sendingUnit.id] } };
+    const receivingWardADesk: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [receivingUnitA.id] } };
+    const edDesk: WardAccess = { role: "ed", scope: { kind: "ed", edId } };
+    const communityDesk: WardAccess = { role: "community", scope: { kind: "team", teamName: "Midland" } };
+
+    const sendingScoped = scopeWorkspace(customState, sendingWardDesk, opts);
+    expect(sendingScoped.referrals.find((r) => r.id === wardOutboundReferral.id)?.destinations).toHaveLength(2);
+    expect(
+      commandScopeRefusal(
+        customState,
+        sendingWardDesk,
+        { type: "RECORD_REFERRER_WITHDRAWAL", role: "ward", referralId: wardOutboundReferral.id },
+        opts,
+      ),
+    ).toBeNull();
+
+    // Receiving ward A only sees its own destination line (FD-23 preserved)
+    const receivingScoped = scopeWorkspace(customState, receivingWardADesk, opts);
+    expect(receivingScoped.referrals.find((r) => r.id === wardOutboundReferral.id)?.destinations).toHaveLength(1);
+
+    const edScoped = scopeWorkspace(customState, edDesk, opts);
+    expect(edScoped.referrals.some((r) => r.id === edOutboundReferral.id)).toBe(true);
+    expect(
+      commandScopeRefusal(
+        customState,
+        edDesk,
+        { type: "RECORD_REFERRER_WITHDRAWAL", role: "ed", referralId: edOutboundReferral.id },
+        opts,
+      ),
+    ).toBeNull();
+
+    const communityScoped = scopeWorkspace(customState, communityDesk, opts);
+    expect(communityScoped.referrals.some((r) => r.id === communityOutboundReferral.id)).toBe(true);
+    expect(
+      commandScopeRefusal(
+        customState,
+        communityDesk,
+        { type: "RECORD_REFERRER_WITHDRAWAL", role: "community", referralId: communityOutboundReferral.id },
+        opts,
+      ),
+    ).toBeNull();
+  });
+
+  it("upgrades a community catchment datesOnlyAdmission to full details on break-glass and marks it read-only", () => {
+    const catchmentPatient = state.patients.find((p) => p.catchmentCommunityTeam)!;
+    const fullAdmission = {
+      ...state.admissions.find((a) => a.patientId !== null)!,
+      id: "adm-catchment-bg-1",
+      patientId: catchmentPatient.id,
+      referralId: null,
+      movementId: null,
+      tentativeDiagnosis: "F30–F39" as const,
+    };
+    const customState = {
+      ...state,
+      admissions: [...state.admissions.filter((a) => a.patientId !== catchmentPatient.id), fullAdmission],
+      movements: state.movements.filter((m) => m.patientId !== catchmentPatient.id),
+      referrals: state.referrals.filter((r) => r.patientId !== catchmentPatient.id),
+    };
+    const communityDesk: WardAccess = {
+      role: "community",
+      scope: { kind: "team", teamName: catchmentPatient.catchmentCommunityTeam! },
+    };
+    const withoutGrant = scopeWardFlowState(customState, communityDesk, { now: NOW_ANCHOR, places });
+    expect(withoutGrant.scoped.datesOnlyAdmissionIds.has(fullAdmission.id)).toBe(true);
+    expect(withoutGrant.state.admissions.find((a) => a.id === fullAdmission.id)?.tentativeDiagnosis).toBeNull();
+
+    const withGrant = scopeWardFlowState(customState, communityDesk, {
+      now: NOW_ANCHOR,
+      places,
+      grants: [{ patientId: catchmentPatient.id, until: NOW_ANCHOR + 60 }],
+    });
+    expect(withGrant.scoped.datesOnlyAdmissionIds.has(fullAdmission.id)).toBe(false);
+    expect(withGrant.state.admissions.find((a) => a.id === fullAdmission.id)?.tentativeDiagnosis).toBe("F30–F39");
+    expect(withGrant.breakGlassPatientIds.has(catchmentPatient.id)).toBe(true);
+    expect(isValidSharedWardFlowState(withGrant.state)).toBe(true);
+    expect(
+      commandScopeRefusal(
+        customState,
+        communityDesk,
+        { type: "RECORD_ADMISSION_FOLLOW_UP", role: "community", admissionId: fullAdmission.id },
+        { now: NOW_ANCHOR, places, grants: [{ patientId: catchmentPatient.id, until: NOW_ANCHOR + 60 }] },
+      ),
+    ).toMatch(/outside/);
   });
 });

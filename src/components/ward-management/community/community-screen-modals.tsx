@@ -155,58 +155,10 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
         </div>
         <div className={styles.modalBody}>
           {activeModalType === "contact" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-              }}
-              style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-            >
-              <p className={styles.footnote}>
-                Log a formal face-to-face or telehealth clinical contact against catchment caseload.
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <p className={styles.footnote} data-testid="ward-community-last-contact">
+                Logs a team-level contact timestamp for {teamConfig.name} in this session.
               </p>
-              <div>
-                <label
-                  htmlFor="community-contact-patient"
-                  style={{
-                    display: "block",
-                    fontSize: "var(--t-1)",
-                    fontWeight: 600,
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Patient ID
-                </label>
-                <input
-                  id="community-contact-patient"
-                  type="text"
-                  required
-                  defaultValue=""
-                  className={styles.searchInput}
-                  style={{ width: "100%", height: "2.25rem", padding: "0 0.5rem" }}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="community-contact-modality"
-                  style={{
-                    display: "block",
-                    fontSize: "var(--t-1)",
-                    fontWeight: 600,
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Contact Modality
-                </label>
-                <select
-                  id="community-contact-modality"
-                  className={styles.declineSelect}
-                  style={{ width: "100%", height: "2.25rem" }}
-                >
-                  <option value="home">Home Visit (Community Outreach)</option>
-                  <option value="clinic">Clinic Appointment</option>
-                  <option value="phone">Telephone Review</option>
-                </select>
-              </div>
               <div className={styles.modalFoot} style={{ margin: 0, padding: 0, border: "none", background: "none" }}>
                 <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
                   Cancel
@@ -231,7 +183,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   ? `Contact recorded as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
                   : "Clinical contact is not recorded yet."}
               </p>
-            </form>
+            </div>
           )}
 
           {activeModalType === "handover" && (
@@ -350,7 +302,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   borderRadius: "var(--r2)",
                 }}
               >
-                <b>Current Deployment:</b> Urgent joint assessment PT-4620 with MHERT / WA Police co-response. En-route{" "}
+                <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
                 {teamConfig.campus} to catchment residence. Duress beacon: not wired in this prototype.
               </div>
 

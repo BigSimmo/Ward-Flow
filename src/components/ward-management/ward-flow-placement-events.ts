@@ -530,6 +530,7 @@ export function reducePlacementEvent(
       const released: Movement = {
         ...movement,
         admissionId: undefined,
+        heldBedNumber: undefined,
         ...(isRevokedExamHold || awaitingRelease
           ? {
               acceptedUnitId: undefined,
@@ -585,6 +586,7 @@ export function reducePlacementEvent(
       const released: Movement = {
         ...movement,
         admissionId: undefined,
+        heldBedNumber: undefined,
         transport: {
           ...movement.transport,
           cancelledAt: event.now,
@@ -708,6 +710,7 @@ export function reducePlacementEvent(
         stage: "placement_requested",
         acceptedUnitId: undefined,
         acceptedAt: undefined,
+        heldBedNumber: undefined,
         admissionId: undefined,
         allocatedBed: undefined,
         pullExpiresAt: undefined,

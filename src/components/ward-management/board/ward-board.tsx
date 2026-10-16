@@ -757,7 +757,7 @@ function PersonEntry({
   // Detail panel view (idPrefix === "ward-board-selected-person")
   const patient = resolvedPatient?.patient;
   const age = patient ? patientAgeYears(patient, displayDate ?? new Date()) : null;
-  const displayName = resolvedPatient?.formalName || occupant.key;
+  const displayName = resolvedPatient?.formalName || resolveSubjectPatient({ id: occupant.key }, {}).formalName;
 
   return (
     <>
@@ -2924,10 +2924,15 @@ export function WardBoard({
                                 data-tone="good"
                                 data-testid="ward-board-record-returned-submit"
                                 onClick={() =>
-                                  raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
-                                    admissionId: selectedTile.key,
-                                    actingUnitId: unit.id,
-                                  })
+                                  dispatchAndReport(
+                                    () =>
+                                      raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
+                                        admissionId: selectedTile.key,
+                                        actingUnitId: unit.id,
+                                      }),
+                                    `Returned to ward: ${nameFor(selectedTile.key)} marked back from the emergency department.`,
+                                    "Returned to ward: this patient marked back from the emergency department.",
+                                  )
                                 }
                               >
                                 Record that they are back on the ward
@@ -2945,17 +2950,18 @@ export function WardBoard({
                               data-tone={selectedOccupant.stepDownCandidate ? "good" : undefined}
                               data-testid="ward-board-stepdown-toggle"
                               onClick={() => {
-                                raise("SET_STEP_DOWN_CANDIDATE", {
-                                  actingUnitId: unit.id,
-                                  admissionId: selectedOccupant.key,
-                                  stepDownCandidate: !selectedOccupant.stepDownCandidate,
-                                });
-                                const msg = !selectedOccupant.stepDownCandidate
-                                  ? `Marked ${nameFor(selectedOccupant.key)} as step-down candidate for subacute care.`
-                                  : `Removed step-down candidate flag for ${nameFor(selectedOccupant.key)}.`;
-                                setToastMessage(msg);
-                                announceToWardShell(
-                                  !selectedOccupant.stepDownCandidate
+                                const nextStepDown = !selectedOccupant.stepDownCandidate;
+                                dispatchAndReport(
+                                  () =>
+                                    raise("SET_STEP_DOWN_CANDIDATE", {
+                                      actingUnitId: unit.id,
+                                      admissionId: selectedOccupant.key,
+                                      stepDownCandidate: nextStepDown,
+                                    }),
+                                  nextStepDown
+                                    ? `Marked ${nameFor(selectedOccupant.key)} as step-down candidate for subacute care.`
+                                    : `Removed step-down candidate flag for ${nameFor(selectedOccupant.key)}.`,
+                                  nextStepDown
                                     ? "Marked this patient as step-down candidate for subacute care."
                                     : "Removed step-down candidate flag for this patient.",
                                 );
@@ -2983,14 +2989,16 @@ export function WardBoard({
                                   value={selectedOccupant.dischargeBarrier ?? "None"}
                                   onChange={(e) => {
                                     const val = e.target.value;
-                                    raise("SET_DISCHARGE_BARRIER", {
-                                      actingUnitId: unit.id,
-                                      admissionId: selectedOccupant.key,
-                                      barrier: val === "None" ? null : (val as DischargeBarrier),
-                                    });
-                                    const msg = `Discharge barrier for ${nameFor(selectedOccupant.key)}: ${val}`;
-                                    setToastMessage(msg);
-                                    announceToWardShell(`Discharge barrier for this patient: ${val}`);
+                                    dispatchAndReport(
+                                      () =>
+                                        raise("SET_DISCHARGE_BARRIER", {
+                                          actingUnitId: unit.id,
+                                          admissionId: selectedOccupant.key,
+                                          barrier: val === "None" ? null : (val as DischargeBarrier),
+                                        }),
+                                      `Discharge barrier for ${nameFor(selectedOccupant.key)}: ${val}`,
+                                      `Discharge barrier for this patient: ${val}`,
+                                    );
                                   }}
                                 >
                                   <option value="None">None / Clear barrier</option>

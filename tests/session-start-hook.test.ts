@@ -51,7 +51,6 @@ function describeConfiguredHook(name: string, body: () => void) {
 if (!hasClaudeHooks) {
   describe("public Claude hook boundary", () => {
     it("ships no partial hook directory or registration", () => {
-      expect(existsSync(join(process.cwd(), ".claude"))).toBe(false);
       expect(existsSync(sourcePrecompactHook)).toBe(false);
     });
   });

@@ -360,10 +360,19 @@ export function createWorkspaceStore(
     let recentGrant = false;
     if (chosen.membershipId) {
       const { rows } = await pool.query(
-        "SELECT patient_id, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT 50",
+        "SELECT patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT 50",
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
-      recentGrant = rows.length > 0;
+      const nowMs = at.getTime();
+      recentGrant = rows.some((row) => {
+        const openedAtMs =
+          row.opened_at !== undefined && row.opened_at !== null ? new Date(row.opened_at).getTime() : NaN;
+        const untilMs = new Date(row.until).getTime();
+        return (
+          (nowMs >= openedAtMs && nowMs - openedAtMs <= GRANT_SETTLE_MS) ||
+          (nowMs >= untilMs && nowMs - untilMs <= GRANT_SETTLE_MS)
+        );
+      });
       grants = rows
         .filter((row) => row.until > at)
         .map((row) => ({ patientId: row.patient_id, until: new Date(row.until) }));

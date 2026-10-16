@@ -1344,7 +1344,14 @@ export function departAdmission(
         };
   // Leaving ends any discharge blocker too: the stay is over, so it must not carry a "held up" reason
   // into history, the same way its bed release loses its blocker below.
-  const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination, blockReason: null };
+  const departed: Admission = {
+    ...admission,
+    state: "departed",
+    leftAt: now,
+    leavingDestination,
+    blockReason: null,
+    dischargeCriteria: null,
+  };
   const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
   // Owner ruling: a leave bed belongs to one stay, so leaving ends it in the same write. No bed
   // figure moves here.
@@ -1730,12 +1737,14 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
         allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
+      const { bedNumber: _sendingBedNumber, ...admissionWithoutBedNumber } = admission;
+      void _sendingBedNumber;
       next = {
         ...next,
         admissions: [
           ...next.admissions,
           {
-            ...admission,
+            ...admissionWithoutBedNumber,
             id,
             unitId: receiving.id,
             movementId,
@@ -1752,6 +1761,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
             dischargeConfirmedBy: null,
             dischargeDateMoves: 0,
             blockReason: null,
+            dischargeBarrier: null,
+            dischargeCriteria: null,
+            stepDownCandidate: false,
             awayAtEmergencyDepartmentSince: null,
             careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
           },
@@ -2440,6 +2452,16 @@ export function reduceClinicalEvent(
           state,
           event,
           `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+        );
+      }
+      const divertedHoldingBed =
+        movement.transport?.diversion !== undefined ||
+        movement.blocker === STAGE_TRANSITION_BLOCKERS.divertedAwaitingRelease;
+      if (divertedHoldingBed) {
+        return reject(
+          state,
+          event,
+          `cannot clear diversion hold on movement ${movement.id}: patient was diverted while holding a bed — requires bed release (RELEASE_DIVERTED_BED)`,
         );
       }
       // Refused rather than a no-op: a control must not report success for an act that changed

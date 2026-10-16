@@ -473,21 +473,29 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
+        if (e.defaultPrevented) return;
         setActiveModal(null);
         setActiveModalType(null);
         setActiveDrawer(null);
-      } else if (
-        e.key === "/" &&
-        (e.target as HTMLElement)?.tagName !== "INPUT" &&
-        (e.target as HTMLElement)?.tagName !== "TEXTAREA"
-      ) {
-        e.preventDefault();
-        // The hero's search popover opens from its own trigger and focuses its input itself.
-        if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
-        document.getElementById("q")?.focus();
-      } else if (e.key === "[") {
-        const current = document.documentElement.getAttribute("data-rail");
-        document.documentElement.setAttribute("data-rail", current === "closed" ? "open" : "closed");
+      } else if (e.key === "/" || e.key === "[") {
+        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+        const target = e.target;
+        const inEditable =
+          target instanceof HTMLElement &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.tagName === "SELECT" ||
+            target.isContentEditable);
+        if (inEditable) return;
+        if (e.key === "/") {
+          e.preventDefault();
+          // The hero's search popover opens from its own trigger and focuses its input itself.
+          if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
+          document.getElementById("q")?.focus();
+        } else {
+          const current = document.documentElement.getAttribute("data-rail");
+          document.documentElement.setAttribute("data-rail", current === "closed" ? "open" : "closed");
+        }
       }
     }
     window.addEventListener("keydown", handleKeyDown);

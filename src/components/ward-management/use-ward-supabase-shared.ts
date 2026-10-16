@@ -264,8 +264,20 @@ export function useWardSupabaseShared(enabled: boolean) {
   }, [enabled]);
   return {
     ...view,
+    role: view.role ?? view.snapshot?.role,
+    membershipId: view.membershipId ?? view.snapshot?.membershipId,
+    memberships: view.memberships ?? view.snapshot?.memberships,
+    grants: view.grants ?? view.snapshot?.grants,
     signedIn,
     client: connection,
+    selectMembership: async (membershipId: string) => {
+      if (!connection.current) throw new Error("Shared connection is not active");
+      return connection.current.selectMembership(membershipId);
+    },
+    breakGlass: async (input: Parameters<SharedWorkspaceClient["breakGlass"]>[0]) => {
+      if (!connection.current) throw new Error("Shared connection is not active");
+      return connection.current.breakGlass(input);
+    },
     signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
     signOut: () => {
       void actions.current?.signOut();
@@ -295,3 +307,5 @@ export function useWardSupabaseShared(enabled: boolean) {
     } satisfies WardCredentialForm,
   };
 }
+
+export type UseWardSupabaseSharedResult = ReturnType<typeof useWardSupabaseShared>;

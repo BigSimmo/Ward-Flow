@@ -1,16 +1,16 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 15 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.80) record PRs landed on `origin/main` up through commit `53941021` (PR #307 / PR #316), plus the 15 October Part 1 closeout.
+> **Current task navigation — 16 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.81) record PRs landed on `origin/main` up through commit `1bf561ef` (PR #360), plus the 16 October adversarial audit remediation.
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
 > 🟢 **STATUS AS OF 16 OCTOBER 2026: read this first.** This file now holds only the open backlog,
-> **§7.78 to §7.80** below. The 30 August to 13 October record (§6, §7.8 to §7.77 and the
+> **§7.78 to §7.81** below. The 30 August to 13 October record (§6, §7.8 to §7.77 and the
 > 13 September master ledger) moved to
 > [the task ledger history](ward-flow/archive/task-ledger-history-2026-08-to-2026-10-13.md) on
 > 16 October 2026. Keep it for the reasoning, but do not treat its status lists as current.
 >
-> - Estate baseline reconciled on 15 October 2026 across PRs #1–#316.
+> - Estate baseline reconciled on 16 October 2026 across PRs #1–#360 (`1bf561ef`).
 
 ## ⚠️ WHAT THIS IS NOT — read this before editing anything
 
@@ -284,9 +284,9 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 ---
 
-## §7.80 — Post-#316 Estate Reconciliation & 15 October Part 1 Remediations (15 October 2026)
+## §7.80 — Post-#316 Estate Reconciliation & 15 October Part 1 Remediations (15–16 October 2026)
 
-### 1. Merged PRs Since §7.79 (#286–#316 + #307, `HEAD` `5394102122ef`)
+### 1. Merged PRs Since §7.79 (#286–#360, `HEAD` `1bf561ef`)
 
 - **PR #287 (`b8fd53d1`)**: Automated documentation maintenance pipeline (`npm run docs:maintain`) and `manifest.ts` `background_color` (`R7`).
 - **PR #289 (`7debf591`) & PR #295 (`ef302b7e`)**: Cut `backend/ward-flow/` default primary store over to Supabase (`D-55`) and removed retired Azure runtime code.
@@ -314,3 +314,8 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 7. **`PERF-01 / TASK-L4-09` (`statistics/*.module.css` audit note)**: Verified that `statistics-polish.module.css` is actively imported by `src/app/mockups/ward-flow/statistics/layout.tsx:3` (already trimmed to 22 lines / 596 bytes in PR #304), while `statistics-v4.module.css` is pinned by 6 design-token contract test suites (`tests/statistics-v4-primitives-tokens.test.ts` asserts `raw.length > 8_000`) and the 4 `*-third-edition.module.css` files are touched by open PR #318 (`tests/statistics-third-edition-css.test.ts`).
 8. **`AUD-A11Y-02 / TASK-L6-07` (`scripts/ward-flow/check-explanatory-buttons.mjs`, `package.json`, `tests/ward-explanatory-buttons-guard.test.ts`)**: Added the static regression guard script (`npm run check:explanatory-buttons`) and unit test suite ensuring no `<button>` combines native `disabled` with `aria-describedby`.
 9. **`M-STATUS / M-HOSTING` (`docs/ward-flow/STATUS.md`, `docs/ward-flow/audit-2026-10-13-issue-triage.md`, `docs/ward-flow-task-ledger.md`)**: Reconciled baseline commits, route counts (**50** Ward Flow page routes / **52** total app routes per `docs/FACTS.md`), and merged PR status through PR #316 (`53941021`).
+
+### 7.81 — Post-#360 Estate Reconciliation & 16 October Adversarial Audit Remediations (16 October 2026)
+
+- **Merged PRs #317–#360 (`origin/main` at `1bf561ef`)**: Landed role-access scoping and shared desk idle lock (`WardAccessScope`, `WardIdleLock`), screen monolith decompositions across ED, Community, Referral Drawer, and Ward Screen (`fix list 2.5 and 9.6`), third-edition statistics CSS consolidation, and ledger/archive history split (`docs/ward-flow/archive/task-ledger-history-2026-08-to-2026-10-13.md`).
+- **Adversarial Audit Remediation (`feat/adversarial-swarm-fixes-20261016`)**: Resolved the 10 verified defects and 4 hardening improvements across reducer undo/capacity/discharge-criteria invariants, `EdPatientDialog` top-layer closure before `ArrivalTimeModal`, `WardIdleLock` modal focus trapping (`useWardModalFocus`), `CommunityScreen` `FD-13` contact modal honesty and keyboard shortcut guards, `ReferralConfirmation` drawer close on navigation, `WardBoard` `dispatchAndReport` wrapping and `resolveSubjectPatient` fallback, `.claude` worktree test guards, and baseline documentation sync through `1bf561ef` (PR #360).
