@@ -137,7 +137,7 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
         <div className={styles.empty}>
           <p>No matching {NOUNS[kind]}</p>
           {query.trim() ? (
-            <button type="button" onClick={() => setQuery("")}>
+            <button className={styles.resetButton} type="button" onClick={() => setQuery("")}>
               Clear search
             </button>
           ) : null}

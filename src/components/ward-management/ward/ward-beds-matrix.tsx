@@ -470,8 +470,8 @@ export function WardBedsMatrix({
           actions: [{ label: "Mark them back", primary: false }],
           borderTone: tone,
         });
-      } else if (bed.status === "incoming" || bed.isPulled === true || Boolean(bed.heldFor)) {
-        const person = bed.heldFor ?? bed.patientAlias ?? "incoming transfer";
+      } else if (bed.status === "incoming" || bed.isPulled === true) {
+        const person = bed.patientAlias ?? "incoming transfer";
         items.push({
           key: `shift-transit-${bed.bedLabel}-${bedNumber}`,
           group: "in-transit",
@@ -736,7 +736,7 @@ export function WardBedsMatrix({
             {(activeFilter !== "all" || selectedPod !== "all") && (
               <button
                 type="button"
-                className={styles.btnShiftAction}
+                className={`${styles.btnShiftAction} ${styles.resetButton}`}
                 onClick={() => {
                   setActiveFilter("all");
                   setSelectedPod("all");

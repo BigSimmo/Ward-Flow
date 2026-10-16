@@ -354,6 +354,7 @@ export function PatientHistoryTab({
                   </p>
                   {(query || filter !== "all") && (
                     <button
+                      className={legacy.resetButton}
                       type="button"
                       onClick={() => {
                         setQuery("");

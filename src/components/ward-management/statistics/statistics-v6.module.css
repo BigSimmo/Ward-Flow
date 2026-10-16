@@ -437,6 +437,12 @@
   color: var(--wf-ink-3);
 }
 
+@media (max-width: 48rem) {
+  .resetButton {
+    min-height: 48px;
+  }
+}
+
 .headLink {
   font-weight: 500;
 }
