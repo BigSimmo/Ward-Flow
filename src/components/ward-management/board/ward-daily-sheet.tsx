@@ -691,7 +691,7 @@ export function WardDailySheet({
 
         <SheetGroup
           heading="Who is stuck"
-          headingId="ward-daily-sheet-stuck-heading"
+          headingId={`${baseId}-ward-daily-sheet-stuck-heading`}
           testId="ward-daily-sheet-stuck"
           emptyText="Nobody on this ward is recorded as held up."
           people={groups.heldUp}
@@ -701,7 +701,7 @@ export function WardDailySheet({
 
         <SheetGroup
           heading="Who is overdue"
-          headingId="ward-daily-sheet-overdue-heading"
+          headingId={`${baseId}-ward-daily-sheet-overdue-heading`}
           testId="ward-daily-sheet-overdue"
           emptyText="Nobody on this ward is past the ward's own expected date."
           people={groups.overdue}
@@ -711,7 +711,7 @@ export function WardDailySheet({
 
         <SheetGroup
           heading="Nobody has said when they are going"
-          headingId="ward-daily-sheet-no-date-heading"
+          headingId={`${baseId}-ward-daily-sheet-no-date-heading`}
           testId="ward-daily-sheet-no-date"
           emptyText="Everybody in a bed on this ward has an expected date."
           people={groups.noDate}

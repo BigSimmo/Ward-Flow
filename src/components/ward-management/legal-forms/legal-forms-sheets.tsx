@@ -259,7 +259,7 @@ export function RecordFormSheet({
       }
     >
       <div key={formKey} className={styles.recordForm}>
-        <Field label="Form type" id="legal-forms-new-instrument">
+        <Field label="Form type" id={`${baseId}-legal-forms-new-instrument`}>
           <Select
             ref={typeRef}
             value={draft.form}
@@ -272,7 +272,7 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
-        <Field label="Movement" id="legal-forms-new-movement">
+        <Field label="Movement" id={`${baseId}-legal-forms-new-movement`}>
           <Select value={draft.movement} onChange={(event) => onDraft({ ...draft, movement: event.target.value })}>
             <option value="">Choose a movement</option>
             {openMovements.map((movement) => (
@@ -286,7 +286,7 @@ export function RecordFormSheet({
           <Field label="Clinician" id={`${baseId}-legal-forms-new-clinician`}>
             <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
           </Field>
-          <Field label="Time on form" id="legal-forms-new-time">
+          <Field label="Time on form" id={`${baseId}-legal-forms-new-time`}>
             <TextInput
               icon={Clock}
               placeholder="HH:MM"

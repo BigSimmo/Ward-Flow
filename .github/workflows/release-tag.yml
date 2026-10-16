@@ -15,6 +15,11 @@ on:
 permissions:
   contents: read
 
+# Runs for one commit queue rather than race, so a re-run never sees a tag the other run is creating.
+concurrency:
+  group: release-tag-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
 jobs:
   tag:
     name: Tag the CI-passed main commit

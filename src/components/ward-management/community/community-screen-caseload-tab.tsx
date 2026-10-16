@@ -103,14 +103,20 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                   <circle cx="8" cy="8" r="6" />
                   <path d="M8 5v3l2 2" />
                 </svg>
-                <span>Community Treatment Orders (Form 5A) &amp; High Acuity Caseload</span>
+                <span id={`${baseId}-demo-caseloadTitle`}>
+                  Community Treatment Orders (Form 5A) &amp; High Acuity Caseload
+                </span>
               </h2>
               <span className={styles.badgePill} id={`${baseId}-demo-caseloadHeadBadge`}>
                 {demoVisibleCaseload.length} Active Records
               </span>
             </div>
             <div className={styles.tableScroll}>
-              <table className={styles.table} id={`${baseId}-demo-caseloadTable`}>
+              <table
+                className={styles.table}
+                id={`${baseId}-demo-caseloadTable`}
+                aria-labelledby={`${baseId}-demo-caseloadTitle`}
+              >
                 <thead>
                   <tr>
                     <th scope="col">UMRN / Patient</th>
@@ -179,7 +185,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
         >
           <div className={styles.caseloadHead}>
             <h3 className={styles.caseloadTitle}>
-              <span>Catchment Active Caseload &amp; Statutory Register</span>
+              <span id={`${baseId}-caseloadTitle`}>Catchment Active Caseload &amp; Statutory Register</span>
               <span id={`${baseId}-caseloadHeadBadge`} className={styles.badgePill}>
                 {caseloadRows.length} Patients
               </span>
@@ -228,7 +234,12 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
             </div>
           </div>
           <div className={styles.tableScroll}>
-            <table id={`${baseId}-caseloadTable`} className={styles.table} data-testid="ward-community-caseload-table">
+            <table
+              id={`${baseId}-caseloadTable`}
+              className={styles.table}
+              aria-labelledby={`${baseId}-caseloadTitle`}
+              data-testid="ward-community-caseload-table"
+            >
               <thead>
                 <tr>
                   <th scope="col">Person</th>
