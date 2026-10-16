@@ -1894,6 +1894,11 @@ button.gLaneL:hover {
 /* Print: the global print sheet hides every <button>, but these buttons carry the board's facts
  * (names, group headings, counts, dots), so they are kept. Action-only controls stay hidden. */
 @media print {
+  .split[data-person-open] > .side {
+    max-height: none;
+    overflow: visible;
+  }
+
   .candidates {
     max-height: none;
     overflow: visible;
