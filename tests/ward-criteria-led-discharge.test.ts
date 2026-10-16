@@ -312,4 +312,24 @@ describe("criteria led discharge on boards and at departure (D-64)", () => {
     }
     expect(voluntary).toBeGreaterThan(0);
   });
+
+  it("shows a community treatment order in force on the Legal tile even when the typed status says voluntary", () => {
+    const seeded = seedWardFlowState();
+    const admissionId = voluntaryStay(seeded);
+    const admission = seeded.admissions.find((a) => a.id === admissionId)!;
+    const state: WardFlowState = {
+      ...seeded,
+      patients: seeded.patients.map((p) =>
+        p.id === admission.patientId
+          ? {
+              ...p,
+              legalStatus: "Voluntary",
+              communityTreatmentOrder: { form: "5A", recordedAt: NOW_ANCHOR, recordedBy: "coordinator" },
+            }
+          : p,
+      ),
+    };
+    expect(admissionCriteriaEligibility(state, admission)).toBe("cto");
+    expect(admissionLegalStatus(state, admission)).toMatch(/community treatment order/i);
+  });
 });

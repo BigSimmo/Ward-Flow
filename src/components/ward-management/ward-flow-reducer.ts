@@ -1468,7 +1468,14 @@ export function admissionLegalStatus(
   state: Pick<WardFlowState, "movements" | "patients">,
   admission: Admission,
 ): string | undefined {
-  const patientStatus = uniqueRecord(state.patients, admission.patientId)?.legalStatus;
+  const patient = uniqueRecord(state.patients, admission.patientId);
+  const patientStatus = patient?.legalStatus;
+  // A Form 5A in force excludes criteria led discharge even when the typed status was not changed.
+  if (activeCommunityTreatmentOrder(patient) !== undefined) {
+    return patientStatus !== undefined && /community treatment order/i.test(patientStatus)
+      ? patientStatus
+      : "Community treatment order, Form 5A";
+  }
   // A patient record that excludes criteria led discharge outranks the movement, as it does there.
   if (
     patientStatus !== undefined &&
