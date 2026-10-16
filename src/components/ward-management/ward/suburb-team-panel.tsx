@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
   type CatchmentAnswer,
@@ -39,8 +39,6 @@ import styles from "./ward.module.css";
  * out of area — something to CHECK. A suburb present with an empty cell is a real place whose mapping
  * was never written down — something to FILL IN. **Neither is called "Unknown."**
  */
-
-const HEADING_ID = "ward-suburb-team-heading";
 
 /**
  * ⚠️ **THIS SENTENCE IS RENDERED IN EVERY STATE, NOT ONLY THE EMPTY ONE.** An honest qualifier that
@@ -184,6 +182,8 @@ function Answer({ found }: { found: CatchmentLookup }) {
 }
 
 export function SuburbTeamPanel() {
+  const baseId = useId();
+  const headingId = `${baseId}-ward-suburb-team-heading`;
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
 
@@ -196,7 +196,7 @@ export function SuburbTeamPanel() {
 
   return (
     <section
-      aria-labelledby={HEADING_ID}
+      aria-labelledby={headingId}
       className={`${styles.listSection} ${styles.suburbLookupCard}`}
       data-testid="ward-suburb-team-panel"
     >
@@ -209,7 +209,7 @@ export function SuburbTeamPanel() {
             </svg>
           </div>
           <div className={styles.suburbHeaderTitles}>
-            <h2 id={HEADING_ID} className={styles.suburbHeaderMainTitle}>
+            <h2 id={headingId} className={styles.suburbHeaderMainTitle}>
               The team for this suburb
             </h2>
             <p className={styles.suburbHeaderSubText}>
@@ -232,7 +232,7 @@ export function SuburbTeamPanel() {
           setSubmitted(query);
         }}
       >
-        <label className="sr-only" htmlFor="ward-suburb-team-input">
+        <label className="sr-only" htmlFor={`${baseId}-ward-suburb-team-input`}>
           Patient&rsquo;s suburb
         </label>
         <div className={styles.suburbSearchRow}>
@@ -250,7 +250,7 @@ export function SuburbTeamPanel() {
               <path d="M10.5 10.5L14 14" />
             </svg>
             <input
-              id="ward-suburb-team-input"
+              id={`${baseId}-ward-suburb-team-input`}
               className={styles.suburbSearchInput}
               value={query}
               onChange={(event) => setQuery(event.target.value)}

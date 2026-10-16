@@ -7,6 +7,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { useId } from "react";
 import { NAME_NOT_RECORDED, UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import styles from "./community.module.css";
@@ -16,6 +17,7 @@ import type { CommunityScreenView } from "./community-screen";
 
 /** Tab 4: the caseload and recorded community treatment orders. */
 export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView }) {
+  const baseId = useId();
   const {
     now,
     team,
@@ -51,7 +53,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("all")}
               >
                 <span>All Active Caseload</span>
-                <span className={styles.badgePill} id="chipAllCaseloadBadge">
+                <span className={styles.badgePill} id={`${baseId}-demo-chipAllCaseloadBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.length}
                 </span>
               </button>
@@ -62,7 +64,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("cto")}
               >
                 <span>Active CTO (Form 5A)</span>
-                <span className={`${styles.badgePill} ${styles.inkGood}`} id="chipCtoBadge">
+                <span className={`${styles.badgePill} ${styles.inkGood}`} id={`${baseId}-demo-chipCtoBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("cto")).length}
                 </span>
               </button>
@@ -73,7 +75,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("high")}
               >
                 <span>High Acuity / Assertive Outreach</span>
-                <span className={styles.badgePill} id="chipHighAcuityBadge">
+                <span className={styles.badgePill} id={`${baseId}-demo-chipHighAcuityBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("high")).length}
                 </span>
               </button>
@@ -84,13 +86,13 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("depot")}
               >
                 <span>Depot Clinic Due</span>
-                <span className={styles.badgePill} id="chipDepotBadge">
+                <span className={styles.badgePill} id={`${baseId}-demo-chipDepotBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("depot")).length}
                 </span>
               </button>
             </div>
             <div className={styles.filterMeta}>
-              <span id="caseloadSectorNote">{team.name} / Sector Catchment</span>
+              <span id={`${baseId}-demo-caseloadSectorNote`}>{team.name} / Sector Catchment</span>
             </div>
           </div>
 
@@ -103,12 +105,12 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 </svg>
                 <span>Community Treatment Orders (Form 5A) &amp; High Acuity Caseload</span>
               </h2>
-              <span className={styles.badgePill} id="caseloadHeadBadge">
+              <span className={styles.badgePill} id={`${baseId}-demo-caseloadHeadBadge`}>
                 {demoVisibleCaseload.length} Active Records
               </span>
             </div>
             <div className={styles.tableScroll}>
-              <table className={styles.table} id="caseloadTable">
+              <table className={styles.table} id={`${baseId}-demo-caseloadTable`}>
                 <thead>
                   <tr>
                     <th scope="col">UMRN / Patient</th>
@@ -178,16 +180,16 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
           <div className={styles.caseloadHead}>
             <h3 className={styles.caseloadTitle}>
               <span>Catchment Active Caseload &amp; Statutory Register</span>
-              <span id="caseloadHeadBadge" className={styles.badgePill}>
+              <span id={`${baseId}-caseloadHeadBadge`} className={styles.badgePill}>
                 {caseloadRows.length} Patients
               </span>
-              <span id="caseloadSectorNote" className={styles.displayNone}>
+              <span id={`${baseId}-caseloadSectorNote`} className={styles.displayNone}>
                 {team.name}
               </span>
-              <span id="chipDepotBadge" className={styles.displayNone}>
+              <span id={`${baseId}-chipDepotBadge`} className={styles.displayNone}>
                 Depot
               </span>
-              <span id="chipHighAcuityBadge" className={styles.displayNone}>
+              <span id={`${baseId}-chipHighAcuityBadge`} className={styles.displayNone}>
                 High Acuity
               </span>
             </h3>
@@ -199,7 +201,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("all")}
               >
                 <span>All Active</span>
-                <span id="chipAllCaseloadBadge" className={styles.badgePill}>
+                <span id={`${baseId}-chipAllCaseloadBadge`} className={styles.badgePill}>
                   {caseloadRows.length}
                 </span>
               </button>
@@ -210,7 +212,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 onClick={() => setCaseloadFilter("5A")}
               >
                 <span>Recorded Form 5A</span>
-                <span id="chipCtoBadge" className={styles.badgePill}>
+                <span id={`${baseId}-chipCtoBadge`} className={styles.badgePill}>
                   {form5ACount}
                 </span>
               </button>
@@ -226,7 +228,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
             </div>
           </div>
           <div className={styles.tableScroll}>
-            <table id="caseloadTable" className={styles.table} data-testid="ward-community-caseload-table">
+            <table id={`${baseId}-caseloadTable`} className={styles.table} data-testid="ward-community-caseload-table">
               <thead>
                 <tr>
                   <th scope="col">Person</th>
