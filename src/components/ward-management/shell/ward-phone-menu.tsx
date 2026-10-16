@@ -9,7 +9,6 @@ import {
   BedSingle,
   House,
   Inbox,
-  ChevronRight,
   Clock3,
   Bell,
   ListChecks,
@@ -49,6 +48,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
+import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
@@ -331,8 +331,6 @@ function RowBody({ icon: Icon, label, meta }: { icon: typeof Plus; label: string
   );
 }
 
-export const Chevron = () => <ChevronRight aria-hidden="true" className={styles.chevron} strokeWidth={1.75} />;
-
 function PageRow({
   entry,
   count,
@@ -535,15 +533,6 @@ function PhoneDock({
   );
 }
 
-export function Section({ label, rich, children }: { label: string; rich?: boolean; children: ReactNode }) {
-  return (
-    <section aria-label={label} className={styles.section}>
-      <p className={styles.heading}>{label}</p>
-      <ul className={rich ? `${styles.list} ${styles.rich}` : styles.list}>{children}</ul>
-    </section>
-  );
-}
-
 function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; onClose: () => void }) {
   return (
     <section aria-label="More" className={styles.section}>
@@ -731,17 +720,6 @@ function CreateSheet({
 }
 
 type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
-
-export type PageRowRender = (entry: RailEntry, count?: WardNavCount, withMeta?: boolean) => ReactNode;
-
-/** Shown while the menu search is still working out its results, or still loading. */
-export function MenuSearching() {
-  return (
-    <Section label="Searching">
-      <li className={styles.empty}>Searching…</li>
-    </Section>
-  );
-}
 
 /**
  * Repo score follow-up (16 October 2026): the menu's search results need the app's whole search

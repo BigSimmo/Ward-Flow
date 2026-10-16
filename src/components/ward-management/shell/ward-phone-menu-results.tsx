@@ -16,7 +16,7 @@ import {
   type SearchResultItem,
 } from "@/components/ward-management/ward-global-search";
 
-import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu";
+import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import type { RailEntry } from "./ward-rail-entries";
 

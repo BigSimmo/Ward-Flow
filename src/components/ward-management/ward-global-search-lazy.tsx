@@ -135,7 +135,6 @@ function SearchField({
       <span className={styles.guidance} id={hintId}>
         Press <kbd>/</kbd> or <kbd>Ctrl K</kbd> to search from anywhere. <kbd>Esc</kbd> clears.
       </span>
-      <p className="sr-only" role="status" aria-live="polite" />
     </div>
   );
 }
