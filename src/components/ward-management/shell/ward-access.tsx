@@ -31,7 +31,7 @@ import type { AuditReview } from "@/components/ward-management/ward-audit";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   WardFlowOverride,
@@ -661,8 +661,8 @@ export function WardPrintAttribution({ at, className }: { at?: Instant; classNam
   const { units, now } = useUnscopedWardFlow();
   return (
     <span className={className} data-testid="ward-print-attribution">
-      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at {formatInstant(at ?? now)}.
-      Synthetic data.
+      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
+      {formatInstantWithDay(at ?? now, now)}. Synthetic data.
     </span>
   );
 }

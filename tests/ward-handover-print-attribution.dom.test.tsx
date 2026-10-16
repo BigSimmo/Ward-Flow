@@ -20,7 +20,8 @@ afterEach(() => {
 it("prints the current desk and full place on every sheet, using the copy generation time", () => {
   setWardFeatureFlagOnDevice("role-access", true);
   setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
-  const earlier = NOW_ANCHOR - 30;
+  // The same clock face one day earlier must identify the older copy as yesterday.
+  const earlier = NOW_ANCHOR - 24 * 60;
   function Sheet() {
     const [takenAt, setTakenAt] = useState<Instant | null>(earlier);
     return (
@@ -58,7 +59,7 @@ it("prints the current desk and full place on every sheet, using the copy genera
   expect(stamps().length).toBeGreaterThan(1);
   for (const stamp of stamps()) {
     expect(stamp).toHaveTextContent("Printed by Nurse in charge, Mabu Liyan / Broome Mental Health Unit");
-    expect(stamp).toHaveTextContent(`at ${formatInstant(earlier)}. Synthetic data.`);
+    expect(stamp).toHaveTextContent(`at ${formatInstant(earlier)} yesterday. Synthetic data.`);
   }
   const print = vi.spyOn(window, "print").mockImplementation(() => {
     // flushSync must update the paper before the native print dialog is opened.
