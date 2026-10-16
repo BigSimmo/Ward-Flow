@@ -101,30 +101,51 @@ export function dischargeCriteriaStatus(
  * Led Discharge Guideline (16 Apr 2026, s 2.4 and 2.5) asks for a patient's criteria led discharge
  * status to be noted on journey boards, whiteboards and handover, not only in the record.
  */
-export function criteriaLedTileChip(
-  status: DischargeCriteriaStatus,
-): { label: string; tone: "success" | "warning" | "neutral"; phrase: string } | null {
+export function criteriaLedTileChip(status: DischargeCriteriaStatus): CriteriaLedChip | null {
   switch (status.kind) {
     case "none":
       return null;
     case "all_met":
-      return { label: "CLD ready", tone: "success", phrase: "Criteria led discharge, all criteria met" };
+      return {
+        label: "CLD ready",
+        short: `CLD ${status.total}/${status.total}`,
+        tone: "success",
+        phrase: "Criteria led discharge, all criteria met",
+      };
     case "in_progress":
       return {
         label: `CLD ${status.met}/${status.total}`,
+        short: `CLD ${status.met}/${status.total}`,
         tone: "neutral",
         phrase: `Criteria led discharge, ${status.met} of ${status.total} criteria met`,
       };
     case "lapsed":
-      return { label: "CLD review", tone: "warning", phrase: "Criteria led discharge lapsed, review needed" };
+      return {
+        label: "CLD review",
+        short: "CLD",
+        tone: "warning",
+        phrase: "Criteria led discharge lapsed, review needed",
+      };
     case "paused":
       return {
         label: "CLD paused",
+        short: "CLD",
         tone: "warning",
         phrase: "Criteria led discharge paused, legal status no longer allows it",
       };
   }
 }
+
+/**
+ * A tile's criteria led discharge chip. `short` fits a Bed board cell, where the glyph tells ready
+ * (tick) from review or paused (warning); the cell's spoken name and tooltip carry `phrase`.
+ */
+export type CriteriaLedChip = {
+  label: string;
+  short: string;
+  tone: "success" | "warning" | "neutral";
+  phrase: string;
+};
 
 /**
  * What the bed panel says beside "Record that they have left", or null when no criteria are set.

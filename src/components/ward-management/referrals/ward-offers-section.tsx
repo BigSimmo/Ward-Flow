@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -35,15 +35,16 @@ export function WardOffersSection({
   const offers = useMemo(() => wardOffersOutsideQueue(movements, referrals), [movements, referrals]);
   const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const nameFor = usePatientNameDisplay();
+  const baseId = useId();
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => (units.find((unit) => unit.id === unitId)?.name ?? unitId).split(" — ")[0];
   return (
     <section
       className={`${styles.v6Section} ${o.section}`}
       data-testid="ward-referral-board-ward-offers"
-      aria-labelledby="ward-referral-board-ward-offers-title"
+      aria-labelledby={`${baseId}-ward-referral-board-ward-offers-title`}
     >
-      <h2 id="ward-referral-board-ward-offers-title" className={`${styles.v6Eyebrow} ${o.title}`}>
+      <h2 id={`${baseId}-ward-referral-board-ward-offers-title`} className={`${styles.v6Eyebrow} ${o.title}`}>
         Offered to wards <Count n={offers.length} />
       </h2>
       <ul className={o.list}>

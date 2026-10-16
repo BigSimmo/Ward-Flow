@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { useDueSoonThresholds, useWardFlow, useWardFlowClock, useWardNetwork } from "../ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import { WardRoleSwitcher } from "../ward-role-switcher";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
@@ -151,7 +151,13 @@ function ToolRow({
 }
 
 function BedSummary() {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlow();
+  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "movements",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();

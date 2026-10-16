@@ -37,6 +37,7 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reduce
 import {
   WardFlowOverride,
   useWardFlow,
+  useWardFlowSelect,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
 import type { Rejection } from "@/components/ward-management/ward-model";
@@ -347,6 +348,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
         supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
           coordinator,
+          wholeNetwork,
           unitIn,
           role: access.role,
           movements: scoped.movements,
@@ -432,7 +434,7 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const on = useWardFeatureFlag("role-access");
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
-  const scoped = useWardFlow();
+  const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
   if (!on || accessIsWholeNetwork(access)) return <>{children}</>;

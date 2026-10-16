@@ -153,6 +153,7 @@ import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
 import { WardDischargeNotices } from "./ward-discharge-notices";
 import {
+  buildBuzzKey,
   canSubmitDecline,
   canSubmitOverride,
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
@@ -161,7 +162,6 @@ import {
   type WardShiftView,
   wardActNowCount,
 } from "./ward-home-tab";
-import { buildBuzzKey } from "./ward-notification-center";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
 
 const WardDailySheetDialog = dynamic(

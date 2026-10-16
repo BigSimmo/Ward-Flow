@@ -51,9 +51,32 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { edById } from "@/components/ward-management/ward-sites";
-import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import type { BedItem } from "./ward-beds-matrix";
+import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { pullBlockedReason } from "./ward-arrivals-corridor";
+
+export function bedGlyphTone(bed: BedItem): WfTone | null {
+  if (bed.status === "ready") return bed.preparing ? "neutral" : "success";
+  if (bed.status === "closed") return "closed";
+  if (bed.status === "leave" && bed.statusText === "Absent without leave") return "danger";
+  if (bed.blockReason) return "danger";
+  if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
+  const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);
+  if (bed.status === "incoming" && bed.bedHold?.state === "lapsed") return "danger";
+  if (bed.status === "incoming" && bed.bedHold?.state === "at-risk") return "warning";
+  if (leaving || bed.status === "incoming") return "info";
+  return bed.status === "leave" ? "neutral" : null;
+}
+
+export function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
+  if (movement.acceptedUnitId !== unit.id) {
+    return `${who ?? "This patient"} was accepted at a different unit, not ${unit.name}.`;
+  }
+  if (unit.allocatable.value <= 0) {
+    return `No allocatable bed remains at ${unit.name}.`;
+  }
+  return undefined;
+}
 import {
   useWalkRound,
   WalkRoundRowMarks,
@@ -77,6 +100,16 @@ export function canSubmitOverride(
 
 export function canSubmitDecline(declineReason: DeclineReason | "" | undefined): declineReason is DeclineReason {
   return Boolean(declineReason);
+}
+
+export function buildBuzzKey(
+  buzz: { unitId: string; at: Instant; byRole: string; message?: string; urgent?: boolean },
+  occurrenceCounts: Map<string, number>,
+): string {
+  const base = `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}`;
+  const occurrence = occurrenceCounts.get(base) ?? 0;
+  occurrenceCounts.set(base, occurrence + 1);
+  return occurrence === 0 ? base : `${base}#${occurrence}`;
 }
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
@@ -530,6 +563,8 @@ export function WardHomeTab({
                   : "Due out"
                 : note;
     const glyph = bedGlyphTone(bed);
+    // D-64: when a higher note takes the tile (Past date, Due out), the CLD state still shows as a tag.
+    const criteriaTag = bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip : null;
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
     // The occupant's name is shown on the tile, so a screen reader hears it too.
@@ -554,6 +589,7 @@ export function WardHomeTab({
       days,
       note,
       tileNote,
+      criteriaTag,
       glyph,
       number,
       name,
@@ -729,6 +765,7 @@ export function WardHomeTab({
                                   : row.stateWord
                               : row.note}
                         </span>
+                        {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
                       </span>
                     </span>
                     <span className={styles.phoneRowDays} aria-hidden="true">
@@ -1933,6 +1970,7 @@ export function WardHomeTab({
                   >
                     <span className={styles.bedTileTop} aria-hidden="true">
                       <b>{row.number}</b>
+                      {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
                     </span>
                     <span className={styles.bedTileName} aria-hidden="true">

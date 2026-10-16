@@ -171,7 +171,7 @@ const VISIBLE_BANNER_ALLOWLIST = [
   },
   {
     file: "src/components/ward-management/ward/ward-discharge-notices.tsx",
-    testIdPattern: /aria-describedby=\{`ward-discharge-notice-\$\{service\}`\}/,
+    testIdPattern: /aria-describedby=\{`(?:\$\{baseId\}-)?ward-discharge-notice-\$\{service\}`\}/,
   },
   {
     file: "src/components/ward-management/capacity/step-down-board.tsx",

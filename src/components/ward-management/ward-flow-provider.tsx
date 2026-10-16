@@ -1396,7 +1396,7 @@ export function useWardFlow(): WardFlowContextValue {
  * its referrals from here and never from `useWardFlow()`, so it never holds another destination.
  */
 export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
-  const { referrals } = useWardFlow();
+  const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => communityScopedReferrals(referrals), [referrals]);
 }
 
@@ -1405,7 +1405,7 @@ export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
  * record here so the community page can tell a broken link from a referral it may not see (FD-23).
  */
 export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
-  const { referrals } = useWardFlow();
+  const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => {
     const known = new Set(referrals.map((referral) => referral.id));
     return new Set(

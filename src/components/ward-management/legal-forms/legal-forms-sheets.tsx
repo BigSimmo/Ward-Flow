@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ChevronLeft, Clock } from "lucide-react";
 
 import {
@@ -202,6 +202,7 @@ export function RecordFormSheet({
   const [formKey, setFormKey] = useState(0);
   const [timeOnForm, setTimeOnForm] = useState("");
   const typeRef = useRef<HTMLSelectElement | null>(null);
+  const baseId = useId();
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
   // Dismissing without saving drops the typed time, so it never greets the next patient's form.
@@ -266,7 +267,7 @@ export function RecordFormSheet({
       }
     >
       <div key={formKey} className={styles.recordForm}>
-        <Field label="Form type" id="legal-forms-new-instrument">
+        <Field label="Form type" id={`${baseId}-legal-forms-new-instrument`}>
           <Select
             ref={typeRef}
             value={draft.form}
@@ -279,7 +280,7 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
-        <Field label="Movement" id="legal-forms-new-movement">
+        <Field label="Movement" id={`${baseId}-legal-forms-new-movement`}>
           <Select value={draft.movement} onChange={(event) => onDraft({ ...draft, movement: event.target.value })}>
             <option value="">Choose a movement</option>
             {openMovements.map((movement) => (
@@ -290,10 +291,10 @@ export function RecordFormSheet({
           </Select>
         </Field>
         <div className={styles.fieldPair}>
-          <Field label="Clinician" id="legal-forms-new-clinician">
+          <Field label="Clinician" id={`${baseId}-legal-forms-new-clinician`}>
             <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
           </Field>
-          <Field label="Time on form" id="legal-forms-new-time">
+          <Field label="Time on form" id={`${baseId}-legal-forms-new-time`}>
             <TextInput
               icon={Clock}
               placeholder="HH:MM"
@@ -305,7 +306,7 @@ export function RecordFormSheet({
             />
           </Field>
         </div>
-        <Field label="Notes" id="legal-forms-new-notes">
+        <Field label="Notes" id={`${baseId}-legal-forms-new-notes`}>
           <Textarea
             readOnly
             disabled
@@ -340,6 +341,7 @@ export function ExtendSheet({
   onExtendForm?: (movement: Movement, dueAt: Instant) => boolean;
 }) {
   const thresholds = useDueSoonThresholds();
+  const baseId = useId();
   const standing = target ? clockStanding(target, now, thresholds) : "none";
   const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
   const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
@@ -398,14 +400,14 @@ export function ExtendSheet({
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
           ) : null}
-          <Field label="Target movement" id="legal-forms-renew-movement">
+          <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />
           </Field>
           <div className={styles.fieldPair}>
-            <Field label="Authorising specialist" id="legal-forms-renew-specialist">
+            <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
               <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
             </Field>
-            <Field label="New expiry time" id="legal-forms-renew-expiry">
+            <Field label="New expiry time" id={`${baseId}-legal-forms-renew-expiry`}>
               <TextInput
                 data-testid="ward-legal-forms-renew-expiry"
                 icon={Clock}
@@ -424,7 +426,7 @@ export function ExtendSheet({
               Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
             </p>
           ) : null}
-          <Field label="Justification" id="legal-forms-renew-justification">
+          <Field label="Justification" id={`${baseId}-legal-forms-renew-justification`}>
             <Textarea
               readOnly
               disabled

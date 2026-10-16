@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import { useId, type KeyboardEvent } from "react";
 
 import { cx } from "@/components/wf";
 
@@ -312,6 +312,7 @@ export function StatisticsWaMap({
   onSelect: (code: string) => void;
   label: string;
 }) {
+  const baseId = useId();
   const max = Math.max(1, ...nodes.filter((node) => node.applies).map((node) => node.value));
   const wide: Scale = { rMin: 13, rMax: 27, max };
   const narrow: Scale = { rMin: 10, rMax: 19, max };
@@ -355,10 +356,10 @@ export function StatisticsWaMap({
         />
         <rect x={perth[0] - 9} y={perth[1] - 9} width={18} height={18} rx={9} className={styles.perth} />
         <rect x={INSET.x} y={INSET.y} width={INSET_W} height={INSET_H} rx={22} className={styles.inset} />
-        <clipPath id="ward-statistics-wa-map-inset">
+        <clipPath id={`${baseId}-ward-statistics-wa-map-inset`}>
           <rect x={INSET.x} y={INSET.y} width={INSET_W} height={INSET_H} rx={22} />
         </clipPath>
-        <g clipPath="url(#ward-statistics-wa-map-inset)">
+        <g clipPath={`url(#${baseId}-ward-statistics-wa-map-inset)`}>
           <path d={insetCoast} className={styles.sea} />
           <path d={river} className={styles.river} />
         </g>

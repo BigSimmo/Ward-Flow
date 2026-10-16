@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { useDueSoonThresholds, useWardFlow, useWardFlowClock, useWardNetwork } from "../ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
@@ -22,7 +22,13 @@ const root = "/mockups/ward-flow";
  * look across the service, under the Service now strip at the top of the sheet.
  */
 export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {}) {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlow();
+  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "movements",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();

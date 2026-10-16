@@ -1203,7 +1203,7 @@ export function createWorkspaceStore(
      * the end. A refused or stale command always carries the snapshot. `options.view` is the
      * sender's desk from `viewer()`: the command is checked against its role and place, and the
      * reply carries only its part of the workspace.
-     * @param {{ revisionOnly?: boolean, view?: { actorId?: string, version?: number, membershipId?: string | null, access: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
+     * @param {{ revisionOnly?: boolean, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view } = options;

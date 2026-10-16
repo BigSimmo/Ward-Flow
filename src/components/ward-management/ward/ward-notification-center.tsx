@@ -55,15 +55,9 @@ const TABS: TabDefinition[] = [
   { id: "notices", label: "Notices" },
 ];
 
-export function buildBuzzKey(
-  buzz: { unitId: string; at: Instant; byRole: string; message?: string; urgent?: boolean },
-  occurrenceCounts: Map<string, number>,
-): string {
-  const base = `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}`;
-  const occurrence = occurrenceCounts.get(base) ?? 0;
-  occurrenceCounts.set(base, occurrence + 1);
-  return occurrence === 0 ? base : `${base}#${occurrence}`;
-}
+import { buildBuzzKey } from "./ward-home-tab";
+
+export { buildBuzzKey };
 
 /* Walkthrough code-read, 25 Sept 2026: this called the resolver with movements only, so every
    patient — linked or not — came back "Unknown Patient". Inside the provider it now uses the

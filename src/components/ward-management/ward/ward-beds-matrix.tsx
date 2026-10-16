@@ -7,10 +7,11 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { cx, type WfTone } from "@/components/wf";
+import { cx } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
  * Top 25 item 21: the badge for a discharge date the ward has moved several times. The "several"
@@ -57,7 +58,7 @@ export interface BedItem {
   expectedDays?: number | null;
   legalStatusLabel?: string;
   /** Criteria led discharge on the tile (D-64), set only when the flag is on and criteria exist. */
-  criteriaLedChip?: { label: string; tone: "success" | "warning" | "neutral"; phrase: string } | null;
+  criteriaLedChip?: CriteriaLedChip | null;
   admissionId?: string;
   /**
    * The admission whose stay this bed shows, including a live pull (which `admissionId` leaves
@@ -169,25 +170,9 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
 
-/**
- * One shape per tone for a bed, shared by the Every bed tile and the bed drawer badge so the two
- * always agree: act now only for a held-up discharge, at risk for a bed past its date, away at an
- * ED or with a discharge barrier, moving for a bed on its way in or out, waiting for leave, done
- * for a free bed.
- */
-export function bedGlyphTone(bed: BedItem): WfTone | null {
-  if (bed.status === "ready") return bed.preparing ? "neutral" : "success";
-  if (bed.status === "closed") return "closed";
-  // Audit A3-1 (13 Oct 2026): a missing person is act now, never a neutral "On leave".
-  if (bed.status === "leave" && bed.statusText === "Absent without leave") return "danger";
-  if (bed.blockReason) return "danger";
-  if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
-  const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);
-  if (bed.status === "incoming" && bed.bedHold?.state === "lapsed") return "danger";
-  if (bed.status === "incoming" && bed.bedHold?.state === "at-risk") return "warning";
-  if (leaving || bed.status === "incoming") return "info";
-  return bed.status === "leave" ? "neutral" : null;
-}
+import { bedGlyphTone } from "./ward-home-tab";
+
+export { bedGlyphTone };
 
 interface WardBedCardProps {
   bed: BedItem;
