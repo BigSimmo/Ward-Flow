@@ -23,7 +23,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { OverlayRoot } from "@/components/ui/overlay-root";
+import { OverlayRoot } from "@/components/wf/overlay-root";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";

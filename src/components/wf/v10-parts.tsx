@@ -12,7 +12,7 @@ import styles from "./v10-parts.module.css";
 /*
  * Design system v9 shared parts (10 Oct 2026, historically named `v10-parts.tsx`).
  * Specification: `design/v9/design-system-v9.md` (Sections 8 to 14; there is no separate `design/v10/` directory).
- * Tokens: `src/app/ward-flow-v9-tokens.css` (layered over `src/app/ward-flow-v6-tokens.css`).
+ * Tokens: `src/app/ward-flow-v9-tokens.css`.
  * Tone lives in glyphs and edges, words stay neutral ink, the 12px floor holds, and a dimmed part
  * uses data-dim (see `src/app/ward-flow-v9-tokens.css`), never opacity or filter.
  */

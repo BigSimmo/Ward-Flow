@@ -1,6 +1,6 @@
 /**
  * Ward Flow design-system primitives (`src/components/wf`). Build every page from these; never copy a primitive into a screen.
- * Contract: `design/v9/design-system-v9.md` (Sections 8–14). Tokens: `src/app/ward-flow-v9-tokens.css` (and base `src/app/ward-flow-v6-tokens.css`).
+ * Contract: `design/v9/design-system-v9.md` (Sections 8–14). Tokens: `src/app/ward-flow-v9-tokens.css`.
  */
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
@@ -129,8 +129,8 @@ export {
   useToast,
   type ToastApi,
   type ToastInput,
-} from "@/components/ui/toast";
-export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
+} from "./toast-provider";
+export { Tooltip, type TooltipProps } from "./tooltip";
 export {
   LiveChip,
   Timer,

@@ -229,12 +229,10 @@ const cssFiles = stylesheets(WARD_ROOT);
 const PHONE_ONLY_STYLESHEET = /-phone[^/\\]*\.module\.css$/u;
 const tsFiles = scripts(WARD_ROOT);
 
-// The retired ClinicalRail stylesheet is still on disk, but no route mounts its phoneBar.
-// The assertion below protects that prerequisite rather than counting dormant CSS as chrome.
-const legacySidebar = path.join(WARD_ROOT, "ward-sidebar.module.css");
-const perFileChrome = cssFiles
-  .filter((file) => file !== legacySidebar)
-  .map((file) => ({ file, ...findChromeSelectors(readModule(file), PHONE_ONLY_STYLESHEET.test(file)) }));
+const perFileChrome = cssFiles.map((file) => ({
+  file,
+  ...findChromeSelectors(readModule(file), PHONE_ONLY_STYLESHEET.test(file)),
+}));
 const allTopAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.topAnchored))).sort();
 const allBottomAnchored = Array.from(new Set(perFileChrome.flatMap((f) => f.bottomAnchored))).sort();
 
@@ -362,7 +360,6 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
 
   it("found the Ward Flow stylesheets and scripts, or every assertion below is vacuous", () => {
     expect(cssFiles.length).toBeGreaterThan(20);
-    expect(cssFiles).toContain(path.join(WARD_ROOT, "ward-sidebar.module.css"));
     expect(cssFiles).toContain(path.join(WARD_ROOT, "ward-management.module.css"));
     expect(cssFiles).toContain(path.join(WARD_ROOT, "ward-management-modes.module.css"));
     expect(tsFiles.length).toBeGreaterThan(20);

@@ -233,9 +233,6 @@ describe("the Ward Flow `.table` rule set is declared in exactly one file", () =
     "src/components/ward-management/ward-management-network.module.css",
     // governance-third-edition.module.css left this list on 7 Oct 2026: the v6 rebuild moved
     // `.govTable` onto the wf table primitive (`tableClasses.table`), so it no longer redeclares the cell rule.
-    // Recorded 2026-09-25 (test fixer). `.dataTable` uses its own padding and divider; moving it onto
-    // the canonical table would change how it looks, which is a design decision for Josh.
-    "src/components/ward-management/statistics/statistics-ward-third-edition.module.css",
     // Recorded 2026-09-30 (test fixer). Patient Trajectory in-place refinement module.
     "src/components/ward-management/patients/patient-now.module.css",
     // Recorded 2026-10-15. The bed meeting TV view is read from across a meeting room: its cells

@@ -242,6 +242,9 @@ const COMMUNITY_INDEX = "src/components/ward-management/community/community-inde
 const WARD_NAV = "src/components/ward-management/ward-nav.ts";
 const COMMUNITY_DERIVATIONS = "src/components/ward-management/community/community-derivations.ts";
 const COMMUNITY_SCREEN = "src/components/ward-management/community/community-screen.tsx";
+/** The team screen's hero section, where its "Other community teams" switcher now lives (the
+ *  screen was split into sections on 15 Oct 2026, fix list 2.5 and 9.6). */
+const COMMUNITY_SCREEN_HERO = "src/components/ward-management/community/community-screen-hero.tsx";
 const WARD_FACADE = "src/components/ward-management/shell/ward-facade.ts";
 const DESTINATION_OPTIONS = "src/components/ward-management/referrals/referral-destination-options.ts";
 
@@ -2140,7 +2143,9 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     renderedIn: COMMUNITY_INDEX,
     rendered: 'renders an "Other community teams" switcher',
     claim: "The team screen does render an 'Other community teams' switcher, as this page says it does.",
-    sourceFile: COMMUNITY_SCREEN,
+    // ⚠️ RE-POINTED 15 Oct 2026 AFTER READING THE CODE: the screen was split into sections as a pure
+    // refactor, and the switcher's markup moved unchanged into the hero section the screen renders.
+    sourceFile: COMMUNITY_SCREEN_HERO,
     /*
      * ⚠️ **RE-POINTED 2026-09-05 AFTER READING THE CODE, WHICH IS THE STEP THIS GATE EXISTS TO FORCE
      * — not to turn a red test green.** The third-edition port moved the switcher into a native

@@ -460,7 +460,7 @@ export function PatientNowScreen({
   const displayCadNumber = liveMovement?.transport?.cadNumber;
   const displayEta =
     liveMovement?.transport?.estimatedAt !== undefined
-      ? `${clock(liveMovement.transport.estimatedAt)} AWST`
+      ? `${formatInstantWithDay(liveMovement.transport.estimatedAt, now)} AWST`
       : undefined;
   const displayProvider = liveMovement?.transport?.provider ?? "Not recorded";
   const displayLegalStatus = liveMovement?.transport?.transportLegalStatus
@@ -1338,7 +1338,10 @@ export function PatientNowScreen({
                 {hasArrivalPlan ? (
                   <span className={styles.pulledClockBadge}>
                     <Clock size={14} aria-hidden="true" />
-                    <span>ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST</span>
+                    <span>
+                      ETA: {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120, now)}{" "}
+                      AWST
+                    </span>
                   </span>
                 ) : pullExpiresAt !== undefined ? (
                   <span
@@ -1366,7 +1369,8 @@ export function PatientNowScreen({
                   />
                   <div>
                     <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
-                    estimated arrival time ({clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST).
+                    estimated arrival time (
+                    {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now, now)} AWST).
                     Notification is not recorded here.
                   </div>
                 </div>

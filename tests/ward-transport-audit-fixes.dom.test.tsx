@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { ToastProvider } from "@/components/ui/toast";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";

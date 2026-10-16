@@ -70,7 +70,7 @@
  *   95      popovers that must beat overlays (source preview)
  *   100     modal layer — the Sheet primitive — and the skip link
  *   max     mockup-only diagnostics; never in live routes
- * New overlays go through components/ui/sheet.tsx rather than a new layer.
+ * New overlays go through components/wf/sheet.tsx rather than a new layer.
  */
 @theme {
   /* Device-band names. These carry NO product call sites and that is not a

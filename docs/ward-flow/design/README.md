@@ -12,6 +12,6 @@ For active design authority, token contracts, and component primitives:
 
 - **Active design system & owner rulings (Sections 1–15, including Sections 8–14 v10 component specifications):** [`design/v9/design-system-v9.md`](../../../design/v9/design-system-v9.md)
 - **Active React primitives (`src/components/wf/v10-parts.tsx`):** [`src/components/wf/v10-parts.tsx`](../../../src/components/wf/v10-parts.tsx)
-- **Active CSS token sheets:** [`src/app/ward-flow-v9-tokens.css`](../../../src/app/ward-flow-v9-tokens.css) and [`src/app/ward-flow-v6-tokens.css`](../../../src/app/ward-flow-v6-tokens.css)
+- **Active CSS token sheet:** [`src/app/ward-flow-v9-tokens.css`](../../../src/app/ward-flow-v9-tokens.css) (the v6 baseline was folded into it on 15 October 2026)
 
 <!-- docs-script-refs:historical-end -->

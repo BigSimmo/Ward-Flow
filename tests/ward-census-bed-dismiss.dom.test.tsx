@@ -25,12 +25,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { CensusDetail } from "@/components/ward-management/search/patient-census-view";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { SHEET_INERT_MARKER } from "@/components/ui/sheet-focus";
+import { SHEET_INERT_MARKER } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";

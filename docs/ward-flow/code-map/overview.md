@@ -67,7 +67,7 @@ Screen ──dispatch(event)──▶ wardFlowReducer ──▶ new WardFlowStat
 
 All in the root of `src/components/ward-management/`. The engine is almost entirely
 self-contained: only three engine files import anything from outside Ward Flow
-(`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/ui/sheet-focus`).
+(`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/wf/sheet-focus`).
 
 ### 2.1 Engine files
 
@@ -200,7 +200,7 @@ monotonic id counters (never array length).
 6. Screens read through the provider and the pure derivation modules.
 
 Other browser storage: `shell/ward-service-store.ts` (chosen health service, sessionStorage),
-`use-ward-sidebar-collapsed.ts` and hub "recents" (localStorage via `createBrowserStore`).
+hub "recents" (localStorage via `createBrowserStore`).
 
 ### 2.5 Roles
 
@@ -305,10 +305,8 @@ Activity/Tasks/Tools drawers and the primary action), `ward-broadcast-banner.tsx
 open drawers), `ward-command-activity.ts`, `ward-service-bed-alerts.ts`, small stores for sound,
 wallboard and service.
 
-**Retired chrome still on disk, not mounted:** `ward-management-navigation.tsx` (`WardModeNavigation`),
-`ward-chrome-header.tsx`, `ward-chrome-search.tsx`,
-`ward-standing-strip.tsx`, the `WardShellHeader` export in `ward-shell.tsx`,
-`use-ward-sidebar-collapsed.ts`, and `shell/ward-shell-tokens.module.css` (empty stub). No
+**Retired chrome still on disk, not mounted:** `ward-chrome-header.tsx`, `ward-chrome-search.tsx`,
+`ward-standing-strip.tsx` and the `WardShellHeader` export in `ward-shell.tsx`. No
 production file draws PsychSift's `BrandMark` since `ClinicalRail` was removed on 15 Oct 2026.
 
 **Shared UI primitives** at the root: `ward-panel`, `ward-chip` (six worded states; throws
@@ -337,7 +335,7 @@ events the screen dispatches.
 | `referrals/`                             |      9,260 | Referral board, match view, referral slide-out (the one place a referral is written since 8 Oct 2026)                                        | 10 types                           |
 | `community/`                             |      7,093 | Team directory and one team's caseload, referrals, transport                                                                                 | 7 types                            |
 | `ward/`                                  |      6,924 | The per-ward operational screen (`ward-screen.tsx` 5,034): bed release, pulls, morning roll-up, intake constraints                           | **20 types, 29 call sites (most)** |
-| `ed/`                                    |      6,409 | ED index (`ed-index.tsx`) and ED board (`ed-screen.tsx` 5,810, the largest file): referral, legal forms, clearance, transport, outcomes      | 20 types                           |
+| `ed/`                                    |      6,409 | ED index (`ed-index.tsx`) and ED board (`ed-screen.tsx`, split into sections 15 Oct 2026): referral, legal forms, clearance, outcomes        | 20 types                           |
 | `search/`                                |      4,924 | Patient search, typeahead, record preview                                                                                                    | none                               |
 | `shell/`                                 |      4,719 | See §3.3                                                                                                                                     | —                                  |
 | `coordinator/`                           |      4,565 | Home: ED pressure, priority queue, flow diagram, shortlist panel (2,093), exception drawer                                                   | 7 types                            |
@@ -504,9 +502,9 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 | `@/components/ui-primitives`                                                        |         14 | shared control recipes                                     |
 | `@/lib/client-store-factory`                                                        |          7 | SSR-safe browser stores                                    |
 | `@/lib/form-register`                                                               |          4 | legal form titles                                          |
-| `@/components/ui/sheet`                                                             |          4 | drawers                                                    |
-| `@/components/ui/missing-value`, `contextual-back-link`, `clinical-dashboard/brand` |     2 each | empty values, back links, brand mark (retired chrome only) |
-| `@/components/ui/tooltip`, `ui/sheet-focus`                                         |     1 each | rail tooltips, dialog focus                                |
+| `@/components/wf/sheet`                                                             |          4 | drawers                                                    |
+| `@/components/wf/missing-value`, `contextual-back-link`, `clinical-dashboard/brand` |     2 each | empty values, back links, brand mark (retired chrome only) |
+| `@/components/wf/tooltip`, `ui/sheet-focus`                                         |     1 each | rail tooltips, dialog focus                                |
 
 **Reverse direction:** no file in `src/` outside Ward Flow imports Ward Flow (grep re-checked).
 

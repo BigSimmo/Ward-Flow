@@ -5,7 +5,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Dialog, useModalFocus, type UseModalFocusOptions } from "@/components/wf";
-import { hasOpenSheet } from "@/components/ui/sheet-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";

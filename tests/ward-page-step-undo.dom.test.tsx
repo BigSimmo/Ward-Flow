@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { ToastProvider } from "@/components/ui/toast";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
