@@ -92,6 +92,7 @@ export function Button(props: ButtonProps) {
   const reasonId = useId();
   const off = Boolean(disabledReason);
   const isAriaDisabled = off || ariaDisabled === true || ariaDisabled === "true";
+  const restProps = isAriaDisabled ? rest : disabled !== undefined ? { ...rest, disabled } : rest;
   const iconSize = size === "lg" ? 16 : size === "sm" ? 14 : 16;
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -104,10 +105,9 @@ export function Button(props: ButtonProps) {
 
   const button = (
     <button
-      {...rest}
+      {...restProps}
       type={type}
       className={buttonClass({ variant, size, iconOnly: Boolean(iconOnly), className })}
-      disabled={off ? undefined : disabled}
       aria-disabled={isAriaDisabled || undefined}
       aria-busy={loading || undefined}
       aria-describedby={cx(describedBy, off && reasonId) || undefined}
