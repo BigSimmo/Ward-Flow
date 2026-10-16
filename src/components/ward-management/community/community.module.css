@@ -1537,40 +1537,40 @@
 /* ── Action Toasts ───────────────────────────────────────────────────────── */
 
 .actionToast {
-  position: fixed !important;
-  bottom: 28px !important;
-  left: 50% !important;
-  right: auto !important;
-  transform: translateX(-50%) translateY(120%) !important;
-  background: var(--surface) !important;
-  color: var(--ink) !important;
-  border: 1px solid var(--line-strong) !important;
-  border-radius: var(--wf-r-lg) !important;
-  padding: 8px 18px !important;
-  font-size: var(--t-1, 13px) !important;
-  font-weight: 600 !important;
-  box-shadow: 0 10px 30px rgb(var(--ward-shadow-rgb) / 0.22) !important;
-  z-index: 120 !important;
-  opacity: 0 !important;
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%) translateY(120%);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--wf-r-lg);
+  padding: 8px 18px;
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgb(var(--ward-shadow-rgb) / 0.22);
+  z-index: 120;
+  opacity: 0;
   transition:
     background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  pointer-events: none !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  white-space: nowrap !important;
+    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
 }
 
 .actionToast.show,
 .actionToastVisible {
-  transform: translateX(-50%) translateY(0) !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .toastIcon {
@@ -1939,7 +1939,7 @@ button.searchBox:hover {
   font-family: var(--mono);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap !important;
+  white-space: nowrap;
   flex-shrink: 0;
   line-height: 1.25;
   border: 1px solid transparent;
@@ -1992,7 +1992,7 @@ button.searchBox:hover {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  white-space: nowrap !important;
+  white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -2003,7 +2003,7 @@ button.searchBox:hover {
 }
 
 .tabPanelHidden {
-  display: none !important;
+  display: none;
 }
 
 .glanceCard {
@@ -2224,7 +2224,7 @@ button.searchBox:hover {
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 600;
-  white-space: nowrap !important;
+  white-space: nowrap;
 }
 
 .refWait[data-breach="true"] {
@@ -2825,7 +2825,7 @@ button.searchBox:hover {
 }
 
 .patientIdWrap {
-  white-space: nowrap !important;
+  white-space: nowrap;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
@@ -2866,17 +2866,17 @@ button.searchBox:hover {
 
 /* Hide legacy figure strip and team switcher globally across all viewports */
 .legacyFigureStrip {
-  display: none !important;
+  display: none;
 }
 
 .teamSwitcher {
-  display: none !important;
+  display: none;
 }
 
 @media (max-width: 40rem) {
   /* Hide legacy figure strip on mobile to guarantee first fold Y <= 420px */
   .legacyFigureStrip {
-    display: none !important;
+    display: none;
   }
 
   /* Compact Single-Row Action Bar on Mobile */
@@ -3214,39 +3214,282 @@ button.searchBox:hover {
     );
     --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
     --toast-ring: light-dark(transparent, var(--wf-line-2));
-    position: fixed !important;
-    top: auto !important;
-    right: 12px !important;
-    bottom: 92px !important;
-    left: 12px !important;
-    width: fit-content !important;
-    max-width: calc(100% - 24px) !important;
-    margin: 0 auto !important;
-    transform: none !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    min-height: 44px !important;
-    box-sizing: border-box !important;
-    padding: 0 14px !important;
-    border: 0 !important;
-    border-radius: var(--wf-r-lg) !important;
-    background: var(--toast-bg) !important;
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 92px;
+    left: 12px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-lg);
+    background: var(--toast-bg);
     box-shadow:
       0 0 0 1px var(--toast-ring),
-      var(--wf-e2) !important;
-    color: var(--toast-ink) !important;
-    font: 500 var(--wf-fs-13) / 18px var(--wf-font) !important;
-    text-align: left !important;
-    white-space: normal !important;
+      var(--wf-e2);
+    color: var(--toast-ink);
+    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+    text-align: left;
+    white-space: normal;
   }
 
   .actionToast.show,
   .actionToastVisible {
-    transform: none !important;
+    transform: none;
   }
   /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
   :global(html:has([role="dialog"][aria-modal="true"])) .actionToast {
-    bottom: 136px !important;
+    bottom: 136px;
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.inkDanger {
+  color: var(--danger-ink);
+}
+
+.inkDangerStrong {
+  color: var(--danger-ink);
+  font-weight: 700;
+}
+
+.inkGood {
+  color: var(--good);
+}
+
+.filterMeta {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+/* Compound with the table class: the shared `.table th, .table td` rule (0,1,1) sets
+   `text-align: left`, so a bare class would lose to it. */
+.table th.cellEnd,
+.table td.cellEnd {
+  text-align: right;
+}
+
+.table td.cellNowrap {
+  white-space: nowrap;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.displayNone {
+  display: none;
+}
+
+.titleMd {
+  font-size: var(--t-2);
+}
+
+.bodyText {
+  font-size: var(--t-1);
+}
+
+.bodyProse {
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.factGridLoose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+}
+
+.timeline {
+  font-size: var(--t-1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.timelineEntry {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.375rem;
+}
+
+.microMuted {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.bodyStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.stackMd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stackLg {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activityEntry {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-1);
+}
+
+.entryLabel {
+  color: var(--muted);
+  font-size: var(--t-0);
+  display: block;
+}
+
+.toolsHeading {
+  margin: 0 0 0.5rem;
+  font-size: var(--t-1);
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.footButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chipsSpaced {
+  margin-bottom: 0.75rem;
+}
+
+.summaryNote {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.refSummaryText {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  margin: 0.5rem 0;
+}
+
+.roomDetail {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+}
+
+.contactLabel {
+  display: block;
+  font-size: var(--t-1);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.contactInput {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 0.5rem;
+}
+
+.contactSelect {
+  width: 100%;
+  height: 2.25rem;
+}
+
+.modalFootInline {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.mdtSummary {
+  background: var(--surface-2);
+  padding: 1rem;
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+}
+
+.mdtSummaryLine {
+  margin: 0.5rem 0 0;
+}
+
+.vehicleCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.875rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+
+.vehicleName {
+  font-weight: 700;
+  font-size: var(--t-3);
+  color: var(--ink);
+}
+
+.vehicleMeta {
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.contactGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.dutyCard {
+  padding: 0.625rem;
+  background: var(--sunk, var(--surface-2));
+  border-radius: var(--r2);
+}
+
+.dutyRole {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.dutyName {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+.deploymentNote {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.5;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
 }

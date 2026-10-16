@@ -1268,7 +1268,7 @@
 }
 
 .formMenu[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .formMenu button {
@@ -3267,7 +3267,7 @@
 .sectionHeading {
   width: 100%;
   padding: 10px 16px;
-  margin: 0 !important;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -5284,4 +5284,16 @@
     background: CanvasText;
     forced-color-adjust: none;
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.inboxName {
+  font-size: 0.85rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.umrnNote {
+  font-size: 0.82rem;
+  color: var(--muted);
 }

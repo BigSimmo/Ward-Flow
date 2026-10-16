@@ -100,9 +100,7 @@ export function WardDischargesMatrix({
       {/* Scheduled Departures Stream */}
       {(subTab === "all" || subTab === "scheduled") && (
         <div className={styles.dischargeStream}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-            Scheduled Today ({releasesCountedToday.length})
-          </div>
+          <div className={styles.streamHeading}>Scheduled Today ({releasesCountedToday.length})</div>
           <p data-testid="ward-waiting-on-longest">{WAITING_ON_LONGEST}</p>
           {releasesCountedToday.length === 0 ? (
             <p className={styles.placeholder}>No bed release is currently scheduled for today at {unit.name}.</p>
@@ -116,15 +114,10 @@ export function WardDischargesMatrix({
               >
                 <div className={styles.dischargeLeft}>
                   <div className={styles.dischargePatientTitle}>
-                    <span
-                      data-testid={`ward-today-release-state-${release.id}`}
-                      style={{ fontFamily: "var(--mono)", fontWeight: 700 }}
-                    >
+                    <span data-testid={`ward-today-release-state-${release.id}`} className={styles.releaseStateLabel}>
                       {bedReleaseStateLabels[release.state]}
                     </span>
-                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                      Expected {formatInstant(release.expectedAt)}
-                    </span>
+                    <span className={styles.metaMuted}>Expected {formatInstant(release.expectedAt)}</span>
                   </div>
                   <div className={styles.dischargeMetaRow}>
                     <span>
@@ -167,9 +160,7 @@ export function WardDischargesMatrix({
       {/* Leave Monitoring Stream */}
       {(subTab === "all" || subTab === "leave") && (
         <div className={styles.dischargeStream}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-            Leave Monitoring ({unitLeaveBeds.length})
-          </div>
+          <div className={styles.streamHeading}>Leave Monitoring ({unitLeaveBeds.length})</div>
           {unitLeaveBeds.length === 0 ? (
             <p className={styles.placeholder}>No leave bed is recorded at {unit.name}.</p>
           ) : (
@@ -183,7 +174,7 @@ export function WardDischargesMatrix({
                 <div className={styles.dischargeLeft}>
                   <div className={styles.dischargePatientTitle}>
                     <span>{leaveBed.absentWithoutLeave ? "Absent without leave" : "Bed on leave"}</span>
-                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                    <span className={styles.metaMuted}>
                       {leaveBed.absentWithoutLeave
                         ? `Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
                         : `Expected return ${formatInstant(leaveBed.expectedReturn)}`}
@@ -219,9 +210,7 @@ export function WardDischargesMatrix({
       {/* Discharge Barriers Stream */}
       {(subTab === "all" || subTab === "barriers") && (
         <div className={styles.dischargeStream}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-            Active Discharge Barriers ({blockedReleases.length})
-          </div>
+          <div className={styles.streamHeading}>Active Discharge Barriers ({blockedReleases.length})</div>
           {blockedReleases.length === 0 ? (
             <p className={styles.placeholder}>No discharge blocker is currently recorded at {unit.name}.</p>
           ) : (
@@ -234,11 +223,9 @@ export function WardDischargesMatrix({
               >
                 <div className={styles.dischargeLeft}>
                   <div className={styles.dischargePatientTitle}>
-                    <span style={{ color: "var(--danger)" }}>{BED_RELEASE_BLOCKED_LABEL}</span>
+                    <span className={styles.blockedLabel}>{BED_RELEASE_BLOCKED_LABEL}</span>
                     <span>&middot; {bedReleaseStateLabels[release.state]}</span>
-                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                      Expected {formatInstant(release.expectedAt)}
-                    </span>
+                    <span className={styles.metaMuted}>Expected {formatInstant(release.expectedAt)}</span>
                   </div>
                   <div className={styles.dischargeMetaRow}>
                     <span>
@@ -264,20 +251,20 @@ export function WardDischargesMatrix({
 
       {/* Catchment Suburb Lookup */}
       {(subTab === "all" || subTab === "suburb") && (
-        <div style={{ marginTop: "10px" }}>
+        <div className={styles.suburbWrap}>
           <SuburbTeamPanel />
         </div>
       )}
 
       {/* Terminal Clean Status Strip */}
       <div className={styles.cleaningBox}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ color: "var(--good)" }}>
+        <div className={styles.cleaningRow}>
+          <div className={styles.cleaningIcon}>
             <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 8 7 12 13 4" />
             </svg>
           </div>
-          <div style={{ fontSize: "12.5px" }}>
+          <div className={styles.cleaningText}>
             <strong>Bed 01 (Bay 1):</strong> Terminal room clean completed at 09:50 by Environmental Services. Bed is
             verified clean and ready for allocation.
           </div>

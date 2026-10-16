@@ -977,7 +977,7 @@ export function PatientNowScreen({
                 <circle cx="18.5" cy="18.5" r="2.5" />
               </svg>
             </span>
-            <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
+            <h3 id="pnTransportHeading" className={`${styles.secH} ${styles.secHFlush}`}>
               {liveMovement ? "Transport dispatch" : "Transport"}
             </h3>
           </div>
@@ -1069,7 +1069,7 @@ export function PatientNowScreen({
                   role="group"
                   aria-label="Quick ETA presets"
                   data-testid="ward-patient-eta-presets"
-                  style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}
+                  className={styles.etaPresets}
                 >
                   {(
                     [
@@ -1362,11 +1362,7 @@ export function PatientNowScreen({
                   data-testid="ward-patient-overdue-alert"
                   title={OPERATIONAL_DEFAULT_LABEL}
                 >
-                  <AlertCircle
-                    size={18}
-                    style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
-                    aria-hidden="true"
-                  />
+                  <AlertCircle size={18} className={styles.overdueIcon} aria-hidden="true" />
                   <div>
                     <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
                     estimated arrival time (
@@ -1426,7 +1422,7 @@ export function PatientNowScreen({
                 </div>
 
                 {hasArrivalPlan && liveMovement?.arrivalDetails && (
-                  <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted)" }}>
+                  <span className={styles.recordedNote}>
                     Updated by {liveMovement.arrivalDetails.recordedBy} at{" "}
                     {clock(liveMovement.arrivalDetails.recordedAt)}
                   </span>
@@ -1439,10 +1435,10 @@ export function PatientNowScreen({
                     <FileText size={14} aria-hidden="true" />
                     <span>Transport document details ({uploadedForms.length}) — file contents not stored</span>
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <div className={styles.formChipRow}>
                     {uploadedForms.map((form) => (
                       <div key={form.id} className={styles.pulledFormChip}>
-                        <span style={{ fontWeight: 600 }}>{form.formName}</span>
+                        <span className={styles.formChipName}>{form.formName}</span>
                         <span className={styles.pulledFormChipMeta}>
                           {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
                         </span>

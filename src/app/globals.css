@@ -1670,8 +1670,8 @@ summary::-webkit-details-marker {
 
   .chat-composer-icon-button,
   .chat-send-button {
-    height: 2.75rem !important;
-    width: 2.75rem !important;
+    height: 2.75rem;
+    width: 2.75rem;
     min-height: 2.75rem;
     min-width: 2.75rem;
   }
@@ -2932,7 +2932,7 @@ html.theme-transitioning *:after {
 
 @media (max-width: 640px) {
   [data-therapy-paper] {
-    padding: 28px 22px !important;
+    padding: 28px 22px;
   }
 }
 

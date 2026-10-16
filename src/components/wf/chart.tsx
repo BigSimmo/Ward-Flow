@@ -107,7 +107,7 @@ export function BarList({
   const style = labelWidth ? ({ "--wf-bar-label": labelWidth } as CSSProperties) : undefined;
 
   return (
-    <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
+    <figure className={cx(styles.chart, styles.chartFlush, className)}>
       <div
         className={styles.barGrid}
         style={style}
@@ -116,8 +116,7 @@ export function BarList({
         {showTop ? (
           <div
             aria-hidden="true"
-            className={styles.axisRow}
-            style={{ gridRow: 1 }}
+            className={cx(styles.axisRow, styles.axisRowTop)}
             data-two-lines={ticks.length > 0 && mean != null ? "true" : undefined}
           >
             {ticks.map((t) => (
@@ -151,7 +150,7 @@ export function BarList({
           const dim = onPick && picked != null && picked !== row.id ? "true" : undefined;
           const text = row.labelText ?? (typeof row.label === "string" ? row.label : row.id);
           return (
-            <div key={row.id} style={{ display: "contents" }}>
+            <div key={row.id} className={styles.rowContents}>
               {onPick ? (
                 <button
                   type="button"
@@ -265,7 +264,7 @@ export function ColumnChart({
   const ticks = gridlines ? niceTicks(maxProp ?? dataMax, 4, maxProp) : [];
   const max = maxProp ?? (gridlines ? ticks[ticks.length - 1]! : dataMax * 1.12);
   return (
-    <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
+    <figure className={cx(styles.chart, styles.chartFlush, className)}>
       <div aria-hidden="true">
         <div className={styles.columns} style={{ height }}>
           {ticks
@@ -449,7 +448,7 @@ export function LineChart({
   const last = points[points.length - 1];
 
   return (
-    <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
+    <figure className={cx(styles.chart, styles.chartFlush, className)}>
       <div ref={ref}>
         <svg
           className={styles.svg}

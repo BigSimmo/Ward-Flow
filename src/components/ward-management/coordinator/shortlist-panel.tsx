@@ -1588,9 +1588,8 @@ export function ShortlistPanel({
           {movement.arrivalDetails?.estimatedArrivalAt !== undefined &&
           now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
             <div
-              className={styles.queueTransitOverdue}
+              className={`${styles.queueTransitOverdue} ${styles.transitOverdueSpaced}`}
               data-testid="ward-shortlist-transit-overdue"
-              style={{ marginTop: "var(--ward-space-8, 0.5rem)" }}
             >
               ⚠ Overdue alert: arrival is +{Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h past
               estimated arrival time.

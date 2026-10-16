@@ -62,7 +62,7 @@ function ModeHeader({
   const now = useWardFlowClock();
   const copy = modeCopy[mode];
   return (
-    <header className={styles.modeHeader} hidden style={{ display: "none" }}>
+    <header className={`${styles.modeHeader} ${styles.modeHeaderHidden}`} hidden>
       <div className={styles.modeIdentity}>
         {/* Ward Flow's own identity, not the host application's. This once showed the former
             clinical app's name and its "Source-backed clinical search" tagline on every board of a
