@@ -23,15 +23,49 @@ type NavigationGuardEntry = { isDirty: boolean; message: string };
 const navigationGuards = new Set<NavigationGuardEntry>();
 let suppressNextPopState = false;
 let lastHistoryIndex: number | null = null;
+let historyTrackingInstalled = false;
+let lastNavigationIndex: number | null = null;
+
+function navigationIndex(): number | null {
+  const index = window.navigation?.currentEntry?.index;
+  return typeof index === "number" && index >= 0 ? index : null;
+}
+
+/**
+ * Keep our own position alongside Next's opaque tree, from the first client import onwards.
+ * The App Router does not supply numeric indices. Tracking survives clean/hidden routes so a
+ * later dirty form can reverse either traversal without inventing an index for its destination.
+ */
+function installHistoryTracking(): void {
+  if (historyTrackingInstalled || typeof window === "undefined") return;
+  historyTrackingInstalled = true;
+  lastHistoryIndex = readHistoryIndex(window.history.state) ?? 0;
+  lastNavigationIndex = navigationIndex();
+  const push = window.history.pushState.bind(window.history);
+  const replace = window.history.replaceState.bind(window.history);
+  const stateAt = (data: unknown, index: number) => ({
+    ...(data && typeof data === "object" ? data : {}),
+    __wfHistoryIndex: index,
+  });
+  replace(stateAt(window.history.state, lastHistoryIndex), "");
+  window.history.pushState = (data: unknown, title: string, url?: string | URL | null) => {
+    const index = (lastHistoryIndex ?? 0) + 1;
+    push(stateAt(data, index), title, url);
+    lastHistoryIndex = index;
+    lastNavigationIndex = navigationIndex();
+  };
+  window.history.replaceState = (data: unknown, title: string, url?: string | URL | null) => {
+    replace(stateAt(data, lastHistoryIndex ?? 0), title, url);
+  };
+  // Capture runs before Next's bubble listener: otherwise the router can hide the form and
+  // clean up its dirty guard before our confirmation listener is reached.
+  window.addEventListener("popstate", handleGuardedPopState, true);
+}
 
 function readHistoryIndex(state: unknown): number | null {
   if (!state || typeof state !== "object") return null;
-  const record = state as Record<string, unknown>;
-  for (const key of ["__wfHistoryIndex", "idx", "index", "page"]) {
-    const val = record[key];
-    if (typeof val === "number" && Number.isFinite(val)) return val;
-  }
-  return null;
+  const index = (state as Record<string, unknown>).__wfHistoryIndex;
+  return typeof index === "number" && Number.isFinite(index) ? index : null;
 }
 
 function hasAnyDirtyGuard(): boolean {
@@ -52,20 +86,33 @@ function confirmNavigationAcrossGuards(): boolean {
 function handleGuardedPopState(event: PopStateEvent): void {
   if (suppressNextPopState) {
     suppressNextPopState = false;
+    lastNavigationIndex = navigationIndex();
+    event.stopImmediatePropagation();
     return;
   }
   const targetIndex = readHistoryIndex(event.state);
-  if (!hasAnyDirtyGuard()) {
+  const targetNavigationIndex = navigationIndex();
+  // Native hash entries copy the current state; they do not leave the form.
+  if (targetIndex === lastHistoryIndex || !hasAnyDirtyGuard()) {
     lastHistoryIndex = targetIndex ?? lastHistoryIndex;
+    lastNavigationIndex = targetNavigationIndex;
     return;
   }
   if (confirmNavigationAcrossGuards()) {
     lastHistoryIndex = targetIndex ?? lastHistoryIndex;
+    lastNavigationIndex = targetNavigationIndex;
     return;
   }
   // Undo the browser traversal in the opposite direction (Back -> go(1), Forward -> go(-1))
   // and ignore the compensating popstate event fired by `history.go(...)`.
-  const reverseDelta = lastHistoryIndex !== null && targetIndex !== null && targetIndex > lastHistoryIndex ? -1 : 1;
+  // Navigation API indices also cover old entries made before this code was loaded. Otherwise
+  // use our position on Next's history entries; both are numeric metadata, never draft text.
+  const reverseDelta =
+    lastNavigationIndex !== null && targetNavigationIndex !== null
+      ? lastNavigationIndex - targetNavigationIndex
+      : lastHistoryIndex !== null && targetIndex !== null
+        ? lastHistoryIndex - targetIndex
+        : 1;
   suppressNextPopState = true;
   window.history.go(reverseDelta);
   event.stopImmediatePropagation();
@@ -76,20 +123,13 @@ function syncNavigationConfirm(): void {
   const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
   if (navigationGuards.size > 0) {
     globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
-    if (lastHistoryIndex === null) {
-      lastHistoryIndex = readHistoryIndex(window.history.state);
-    }
-    if (!hasAnyDirtyGuard()) {
-      suppressNextPopState = false;
-    }
-    if (navigationGuards.size === 1) window.addEventListener("popstate", handleGuardedPopState);
   } else {
     delete globalWindow.__wardFlowConfirmNavigation;
     suppressNextPopState = false;
-    lastHistoryIndex = null;
-    window.removeEventListener("popstate", handleGuardedPopState);
   }
 }
+
+installHistoryTracking();
 
 /** Removes legacy typed drafts without reading their contents. */
 export function clearWardFlowDraftCaches(): void {

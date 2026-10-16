@@ -298,8 +298,24 @@ describe("useDirtyStateGuard", () => {
     ).toBeUndefined();
   });
 
+  it("cancels native traversal before an earlier router listener can hide the dirty form", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    let unmount = () => {};
+    const router = vi.fn(() => unmount());
+    window.addEventListener("popstate", router);
+    const hook = renderHook(() => useDirtyStateGuard({ isDirty: true }));
+    unmount = hook.unmount;
+    window.dispatchEvent(new PopStateEvent("popstate", { state: { __NA: true } }));
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(router).not.toHaveBeenCalled();
+    hook.unmount();
+    window.removeEventListener("popstate", router);
+  });
+
   it("intercepts popstate when dirty, undoes back/forward traversal, and suppresses the compensating popstate", () => {
-    window.history.replaceState({ page: 2 }, "", "/mockups/ward-flow/board");
+    window.history.replaceState({ __NA: true }, "", "/mockups/ward-flow/board");
+    const index = window.history.state.__wfHistoryIndex as number;
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     const pushStateSpy = vi.spyOn(window.history, "pushState");
     const goSpy = vi.spyOn(window.history, "go").mockImplementation(() => undefined);
@@ -312,7 +328,7 @@ describe("useDirtyStateGuard", () => {
     );
 
     // 1. Back traversal (page 2 -> page 1) cancelled: undoes with history.go(1)
-    const backPopEvent = new PopStateEvent("popstate", { state: { page: 1 } });
+    const backPopEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index - 1 } });
     const stopImmediateSpy = vi.spyOn(backPopEvent, "stopImmediatePropagation");
     window.dispatchEvent(backPopEvent);
 
@@ -323,19 +339,19 @@ describe("useDirtyStateGuard", () => {
     expect(stopImmediateSpy).toHaveBeenCalled();
 
     // 2. Compensating popstate fired by history.go(1) is ignored without re-prompting
-    const compensatingBackEvent = new PopStateEvent("popstate", { state: { page: 2 } });
+    const compensatingBackEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index } });
     window.dispatchEvent(compensatingBackEvent);
     expect(confirmSpy).toHaveBeenCalledTimes(1);
     expect(goSpy).toHaveBeenCalledTimes(1);
 
     // 3. Forward traversal (page 2 -> page 3) cancelled: undoes with history.go(-1)
-    const forwardPopEvent = new PopStateEvent("popstate", { state: { page: 3 } });
+    const forwardPopEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index + 1 } });
     window.dispatchEvent(forwardPopEvent);
     expect(confirmSpy).toHaveBeenCalledTimes(2);
     expect(goSpy).toHaveBeenLastCalledWith(-1);
 
     // 4. Compensating popstate fired by history.go(-1) is ignored
-    const compensatingForwardEvent = new PopStateEvent("popstate", { state: { page: 2 } });
+    const compensatingForwardEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index } });
     window.dispatchEvent(compensatingForwardEvent);
     expect(confirmSpy).toHaveBeenCalledTimes(2);
 
