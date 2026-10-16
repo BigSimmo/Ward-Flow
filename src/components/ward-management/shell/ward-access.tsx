@@ -246,8 +246,12 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     // Audit, governance, refusals and the event log are the coordinator's. A service coordinator
     // keeps only the records about its own service's wards, journeys and referrals (Josh's yes,
     // 15 Oct 2026), so a whole network record or another service's never reaches it.
-    const scope = coordinatorRecordScope(scoped, context.bedReleases, unitIn, (edId) =>
-      edInScope(access.scope, edId, places),
+    const scope = coordinatorRecordScope(
+      scoped,
+      context.bedReleases,
+      unitIn,
+      (edId) => edInScope(access.scope, edId, places),
+      context.leaveBeds,
     );
     const reviewInScope = (actor: WardRecordActor) => {
       // A review can be of a seeded governance entry, so the governance read is the fuller list.
@@ -255,9 +259,9 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
       return (review: AuditReview) => kept.has(review.eventId);
     };
-    // A refusal names its subject: a journey, ward, stay, release or ED. A refused record command
-    // names none, so it follows its own audit row and stays only when that row is in scope, which
-    // lets the desk's screen hear its own refusal (reviews on PR #345).
+    // A refusal names its subject: a journey, ward, stay, release, leave bed, person or ED. A refused
+    // record command names none, so it follows its own audit row and stays only when that row is in
+    // scope, which lets the desk's screen hear its own refusal (reviews on PR #345).
     const rejectionInScope = (): ((rejection: Rejection) => boolean) => {
       const read = context.readAuditEvents({ role: "coordinator" });
       return scope.refusals(read.status === "allowed" ? read.value : []);

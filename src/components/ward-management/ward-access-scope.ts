@@ -610,10 +610,12 @@ export function coordinatorRecordScope(
     movements: readonly { id: string }[];
     referrals: readonly { id: string }[];
     admissions: readonly { id: string }[];
+    patients?: readonly { id: string }[];
   },
   bedReleases: readonly { id: string; unitId: string }[],
   unitIn: (unitId: string) => boolean,
   edIn: (edId: string) => boolean = () => false,
+  leaveBeds: readonly { id: string; unitId: string }[] = [],
 ): {
   movementIds: ReadonlySet<string>;
   subject(subject: AuditSubject): boolean;
@@ -623,7 +625,10 @@ export function coordinatorRecordScope(
    * follows the event it is about.
    */
   auditEvents<E extends ScopedAuditEvent>(events: readonly E[]): E[];
-  /** A refusal's subject id: a journey, referral, stay, release, ward or ED in scope, or "none". */
+  /**
+   * A refusal's subject id: a journey, referral, stay, release, leave bed, person, ward or ED in
+   * scope, or "none".
+   */
   rejectionSubject(id: string): boolean;
   /**
    * Which refusals are in scope. A refused record command names no subject ("none"), so it follows
@@ -637,6 +642,8 @@ export function coordinatorRecordScope(
   const referralIds = new Set(scoped.referrals.map((referral) => referral.id));
   const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
   const releaseIds = new Set(bedReleases.filter((release) => unitIn(release.unitId)).map((release) => release.id));
+  const leaveBedIds = new Set(leaveBeds.filter((bed) => unitIn(bed.unitId)).map((bed) => bed.id));
+  const patientIds = new Set((scoped.patients ?? []).map((patient) => patient.id));
   const subject = (record: AuditSubject): boolean => {
     switch (record.kind) {
       case "admission":
@@ -696,6 +703,8 @@ export function coordinatorRecordScope(
     referralIds.has(id) ||
     admissionIds.has(id) ||
     releaseIds.has(id) ||
+    leaveBedIds.has(id) ||
+    patientIds.has(id) ||
     unitIn(id) ||
     edIn(id);
   const refusals = (events: readonly ScopedAuditEvent[]) => {
