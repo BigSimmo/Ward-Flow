@@ -5,8 +5,10 @@
 // machine. On 16 October 2026 Home had crept from 500 KB (after #334) to 588 KB unnoticed, which is
 // why this exists. Raise a budget only with a reason in the PR.
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
+import { createServer } from "node:net";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
 
 const PHONE_UA =
@@ -20,6 +22,18 @@ export function overBudget(measured, budgets) {
   return Object.entries(budgets)
     .filter(([route, limit]) => measured[route] > limit)
     .map(([route, limit]) => ({ route, kb: measured[route], limit }));
+}
+
+// Asks the operating system for a free port, so a busy local port cannot make the check fail.
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
 }
 
 async function waitForServer(base, attempts = 60) {
@@ -41,6 +55,7 @@ async function routeKb(base, route) {
   let bytes = 0;
   for (const src of scriptSources(await response.text())) {
     const script = await fetch(base + src);
+    if (!script.ok) throw new Error(`${route}: ${src} answered ${script.status}, so its size cannot be counted`);
     bytes += gzipSync(Buffer.from(await script.arrayBuffer()), { level: 9 }).length;
   }
   return Math.round(bytes / 1024);
@@ -48,7 +63,7 @@ async function routeKb(base, route) {
 
 async function main() {
   const { budgets } = JSON.parse(readFileSync(join(process.cwd(), "script-budget.json"), "utf8"));
-  const port = 41000 + Math.floor(Math.random() * 2000);
+  const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   const server = spawn(
     process.execPath,
@@ -73,7 +88,7 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   main().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

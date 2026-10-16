@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compareToBaseline, entriesFromReport } from "../scripts/check-knip-baseline.mjs";
+import { baselineGrowth, compareToBaseline, entriesFromReport } from "../scripts/check-knip-baseline.mjs";
 
 describe("knip baseline ratchet", () => {
   const report = {
@@ -36,5 +36,15 @@ describe("knip baseline ratchet", () => {
       added: [],
       fixed: [],
     });
+  });
+
+  it("names baseline entries the base commit did not have", () => {
+    expect(baselineGrowth(["a", "b", "c"], ["a", "c", "z"])).toEqual(["b"]);
+    expect(baselineGrowth(["a"], ["a", "b"])).toEqual([]);
+  });
+
+  it("counts catalog findings", () => {
+    const report = { issues: [{ file: "package.json", catalog: [{ name: "react" }] }] };
+    expect(entriesFromReport(report)).toEqual(["catalog:package.json:react"]);
   });
 });

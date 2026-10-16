@@ -155,6 +155,8 @@ jobs:
       # on a new unused item, and on a fixed one until the baseline is shrunk, so the list only shrinks.
       - name: Check for new unused code
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          KNIP_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: npm run check:knip
       # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
       # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
