@@ -202,7 +202,7 @@ export function RecordFormSheet({
       : !isOwnedLegalFormCode(draft.form)
         ? `Form ${draft.form} written time is not recorded on this sheet.`
         : parsedWrittenAt === null
-          ? "Enter a valid 24-hour time (HH:MM)."
+          ? "Enter a valid time in HH:MM format."
           : undefined;
   return (
     <Sheet
@@ -210,7 +210,7 @@ export function RecordFormSheet({
       onClose={onClose}
       initialFocusRef={typeRef}
       title="Record a form"
-      description="Attach an MHA 2014 form to an open movement and record the time written on the paper"
+      description="Attach a form to an open movement and record the time written on the paper"
       portal={false}
       testId="ward-legal-record"
       footer={

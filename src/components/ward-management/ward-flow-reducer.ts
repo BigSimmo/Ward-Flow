@@ -4485,20 +4485,14 @@ export function reduceClinicalEvent(
       if (admission.blockReason === null) {
         return reject(state, event, `admission ${admission.id} carries no discharge blocker to clear`);
       }
-      if (
-        event.reason !== undefined &&
-        (typeof event.reason !== "string" ||
-          event.reason.trim().length === 0 ||
-          !(DISCHARGE_DELAY_CLEAR_REASONS as readonly string[]).includes(event.reason))
-      ) {
+      if (event.reason !== undefined && !DISCHARGE_DELAY_CLEAR_REASONS.includes(event.reason)) {
         return reject(
           state,
           event,
           `CLEAR_STAY_DISCHARGE_BLOCKER reason must be chosen from DISCHARGE_DELAY_CLEAR_REASONS`,
         );
       }
-      const clearedReason: DischargeDelayClearReason = (event.reason ??
-        "resolved_clinically") as DischargeDelayClearReason;
+      const clearedReason: DischargeDelayClearReason = event.reason ?? "resolved_clinically";
       const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
       const linkedRelease = next.bedReleases.find(
         (candidate) =>
@@ -4807,16 +4801,10 @@ export function reduceClinicalEvent(
       if (release.blocker === null) {
         return reject(state, event, `release ${release.id} carries no blocked flag to clear`);
       }
-      if (
-        event.reason !== undefined &&
-        (typeof event.reason !== "string" ||
-          event.reason.trim().length === 0 ||
-          !(DISCHARGE_DELAY_CLEAR_REASONS as readonly string[]).includes(event.reason))
-      ) {
+      if (event.reason !== undefined && !DISCHARGE_DELAY_CLEAR_REASONS.includes(event.reason)) {
         return reject(state, event, `CLEAR_BED_RELEASE_BLOCK reason must be chosen from DISCHARGE_DELAY_CLEAR_REASONS`);
       }
-      const clearedReason: DischargeDelayClearReason = (event.reason ??
-        "resolved_clinically") as DischargeDelayClearReason;
+      const clearedReason: DischargeDelayClearReason = event.reason ?? "resolved_clinically";
       const unblocked: BedRelease = {
         ...release,
         blocker: null,
@@ -5377,56 +5365,42 @@ export function reduceClinicalEvent(
         );
       }
 
-      const nextAddressingReassessmentHistory: ReadonlyArray<ClinicalReassessmentEntry> | undefined =
+      const appendReassessment = (
+        existing: ReadonlyArray<ClinicalReassessmentEntry> | undefined,
+        seedNote: string | undefined,
+        seedAt: Instant,
+      ): ReadonlyArray<ClinicalReassessmentEntry> | undefined =>
         reassessmentEntry === undefined
-          ? addressing.reassessmentHistory
-          : [
-              ...(addressing.reassessmentHistory ??
-                (addressing.reassessmentNote
-                  ? [
-                      {
-                        at: addressing.decidedAt ?? referral.raisedAt,
-                        by: event.role,
-                        note: addressing.reassessmentNote,
-                      },
-                    ]
-                  : [])),
-              reassessmentEntry,
-            ];
+          ? existing
+          : [...(existing ?? (seedNote ? [{ at: seedAt, by: event.role, note: seedNote }] : [])), reassessmentEntry];
+      const nextAddressingReassessmentHistory = appendReassessment(
+        addressing.reassessmentHistory,
+        addressing.reassessmentNote,
+        addressing.decidedAt ?? referral.raisedAt,
+      );
+      const nextReferralHistory = appendReassessment(
+        referral.reassessmentHistory,
+        referral.reassessmentNote,
+        referral.raisedAt,
+      );
+      const latestNotePatch =
+        reassessmentEntry?.note !== undefined
+          ? { reassessmentNote: reassessmentEntry.note }
+          : addressing.reassessmentNote !== undefined
+            ? { reassessmentNote: addressing.reassessmentNote }
+            : {};
+      const historyPatch =
+        nextAddressingReassessmentHistory === undefined
+          ? {}
+          : { reassessmentHistory: nextAddressingReassessmentHistory };
 
       if (hasClinicalReassessment && addressing.state === "accepted" && reassessmentEntry !== undefined) {
-        const updatedAddressing: ReferralAddressing = {
-          ...addressing,
-          ...(nextAddressingReassessmentHistory === undefined
-            ? {}
-            : { reassessmentHistory: nextAddressingReassessmentHistory }),
-          ...(reassessmentEntry.note !== undefined
-            ? { reassessmentNote: reassessmentEntry.note }
-            : addressing.reassessmentNote !== undefined
-              ? { reassessmentNote: addressing.reassessmentNote }
-              : {}),
-        };
-        const updatedDestinations = referral.destinations.map((candidate) =>
-          candidate === addressing ? updatedAddressing : candidate,
-        );
-        const existingReferralHistory = referral.reassessmentHistory;
-        const nextReferralHistory: ReadonlyArray<ClinicalReassessmentEntry> = [
-          ...(existingReferralHistory ??
-            (referral.reassessmentNote
-              ? [
-                  {
-                    at: referral.raisedAt,
-                    by: event.role,
-                    note: referral.reassessmentNote,
-                  },
-                ]
-              : [])),
-          reassessmentEntry,
-        ];
+        const updatedAddressing: ReferralAddressing = { ...addressing, ...historyPatch, ...latestNotePatch };
+        const updatedDestinations = referral.destinations.map((c) => (c === addressing ? updatedAddressing : c));
         let nextState = replaceReferral(state, referral.id, {
           ...referral,
           destinations: updatedDestinations,
-          reassessmentHistory: nextReferralHistory,
+          ...(nextReferralHistory === undefined ? {} : { reassessmentHistory: nextReferralHistory }),
           ...(reassessmentEntry.note !== undefined ? { reassessmentNote: reassessmentEntry.note } : {}),
         });
         const linkedMovement = nextState.movements.find((m) => m.referralId === referral.id && !m.closure);
@@ -5442,8 +5416,6 @@ export function reduceClinicalEvent(
       }
 
       let accepted: ReferralAddressing;
-      // T12 (item 9): set only inside the ward branch below, when this acceptance is the FIRST
-      // thing to clear a `Non-binary` referral for this specific unit.
       let genderPlacementAddition:
         | {
             at: Instant;
@@ -5454,11 +5426,7 @@ export function reduceClinicalEvent(
           }
         | undefined;
       if (addressing.destination.kind === "psychiatric_ward") {
-        /**
-         * P2-6 (Ward Lead audit): a ward must not accept this referral into a bed while a movement
-         * raised from its ED arm is still under way for the same patient. `isOpen` is inlined to
-         * avoid a circular import, as in `RAISE_REFERRAL`.
-         */
+        // P2-6: do not accept into a bed while an ED movement for this referral is still open.
         const openLinkedMovement = state.movements.find(
           (movement) => movement.referralId === referral.id && !movement.closure && movement.stage !== "arrived",
         );
@@ -5469,7 +5437,6 @@ export function reduceClinicalEvent(
             `referral ${referral.id} already has an open movement (${openLinkedMovement.id}); it cannot also be accepted into a ward while that movement is open`,
           );
         }
-        // Only a ward acceptance names a unit, and only a ward acceptance runs the bed gates.
         if (!event.unitId) {
           return reject(state, event, `ACCEPT_REFERRAL into a psychiatric ward must name a unit`);
         }
@@ -5479,19 +5446,16 @@ export function reduceClinicalEvent(
           const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, undefined);
           if (bedRefusal) return reject(state, event, bedRefusal);
         }
-        /**
-         * T12 (owner answer 9): the front door's half of the `REFER_TO_UNITS` rule (see
-         * `GenderPlacement` in `ward-model.ts`). Checked before the eligibility gate and refuses
-         * the whole acceptance.
-         */
+        // T12: front-door half of the REFER_TO_UNITS gender-placement rule, checked before eligibility.
         if (
           genderReviewNeeded(addressing.destination.gender, addressing.destination.sex) &&
           !(referral.genderPlacements ?? []).some((record) => record.unitIds.includes(unit.id))
         ) {
-          if (event.role !== "coordinator") {
-            return reject(state, event, GENDER_PLACEMENT_REFUSAL);
-          }
-          if (event.genderPlacementReason === undefined || event.genderPlacementChecked !== true) {
+          if (
+            event.role !== "coordinator" ||
+            event.genderPlacementReason === undefined ||
+            event.genderPlacementChecked !== true
+          ) {
             return reject(state, event, GENDER_PLACEMENT_REFUSAL);
           }
           if (!GENDER_PLACEMENT_REASONS.includes(event.genderPlacementReason)) {
@@ -5506,17 +5470,10 @@ export function reduceClinicalEvent(
             by: event.role,
             unitIds: [unit.id],
             reason: event.genderPlacementReason,
-            // Same discipline as `REFER_TO_UNITS`'s own write above: the tick is validated `true`
-            // two lines up, and `wardChecked` stores it on the record rather than the reason text.
             wardChecked: true,
           };
         }
-        // The rejection names the failing gate, reusing `referralEligibility`'s per-gate detail so
-        // it reads the same as the match view.
-        //
-        // Owner reversal, item 2: the `gender_designation` gate must see this event's pending
-        // gender-placement write, so both can be cleared in one acceptance. Only this local
-        // eligibility read is widened; `referral` is committed unchanged.
+        // Allow gender_designation gate to see this event's pending gender-placement write.
         const referralForEligibility: Referral =
           genderPlacementAddition === undefined
             ? referral
@@ -5543,22 +5500,12 @@ export function reduceClinicalEvent(
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
           declineReason: undefined,
-          // Written unconditionally, so `...addressing` cannot carry an old reason onto a clean
-          // acceptance.
           acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,
           ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
-          ...(nextAddressingReassessmentHistory === undefined
-            ? {}
-            : { reassessmentHistory: nextAddressingReassessmentHistory }),
-          ...(reassessmentEntry?.note !== undefined
-            ? { reassessmentNote: reassessmentEntry.note }
-            : addressing.reassessmentNote !== undefined
-              ? { reassessmentNote: addressing.reassessmentNote }
-              : {}),
+          ...historyPatch,
+          ...latestNotePatch,
         };
       } else {
-        // An ED, medical ward or community team has no bed and no unit, so a `unitId` here is a
-        // caller's mistake.
         if (event.unitId) {
           return reject(
             state,
@@ -5574,66 +5521,24 @@ export function reduceClinicalEvent(
           state: "accepted",
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
-          ...(nextAddressingReassessmentHistory === undefined
-            ? {}
-            : { reassessmentHistory: nextAddressingReassessmentHistory }),
-          ...(reassessmentEntry?.note !== undefined
-            ? { reassessmentNote: reassessmentEntry.note }
-            : addressing.reassessmentNote !== undefined
-              ? { reassessmentNote: addressing.reassessmentNote }
-              : {}),
+          ...historyPatch,
+          ...latestNotePatch,
         };
       }
 
-      // FD-22: the first acceptance automatically cancels every destination still waiting. A
-      // declined destination keeps its refusal, time and reason (FD-24).
-      //
-      // Before changing what this cancels: making a leaving acceptance cancel nothing (owner
-      // question 7) interacts with `coordinatorWorklistReferrals` and Branch 2's lone-accepted-arm
-      // reading; together they can hide a patient still awaiting a psychiatric decision. It would
-      // also turn red the `"cancelled"` positive control in
-      // `tests/ward-referral-visibility.test.ts`'s `multiDestinationReferral()`. Do not weaken that
-      // privacy sweep's markers; split the fixture in that test file instead. No test yet drives a
-      // community acceptance; write it with that change.
+      // FD-22: first non-community acceptance cancels queued non-community destinations; declined keeps reason (FD-24).
       const destinations = referral.destinations.map((candidate) => {
         if (candidate === addressing) return accepted;
         if (candidate.state !== "queued") return candidate;
-        /**
-         * RB5 (item 16): a community acceptance cancels nothing. It decides nothing about the bed,
-         * so FD-22 does not apply to it.
-         */
-        if (accepted.destination.kind === "community_team") return candidate;
-        /**
-         * A community team is never cancelled by somebody else's acceptance (owner ruling:
-         * "Community referral means a patient is about to be discharged"). It does not compete with
-         * a bed, so cancelling it would cancel discharge planning when admission is confirmed.
-         */
-        if (candidate.destination.kind === "community_team") return candidate;
+        if (accepted.destination.kind === "community_team" || candidate.destination.kind === "community_team") {
+          return candidate;
+        }
         return { ...candidate, state: "cancelled" as const, decidedAt: event.now };
       });
-      const existingReferralHistory = referral.reassessmentHistory;
-      const nextReferralHistory: ReadonlyArray<ClinicalReassessmentEntry> | undefined =
-        reassessmentEntry === undefined
-          ? existingReferralHistory
-          : [
-              ...(existingReferralHistory ??
-                (referral.reassessmentNote
-                  ? [
-                      {
-                        at: referral.raisedAt,
-                        by: event.role,
-                        note: referral.reassessmentNote,
-                      },
-                    ]
-                  : [])),
-              reassessmentEntry,
-            ];
-      // Spec D14: acceptance creates no `Movement`. That seam is deliberate;
-      // `tests/ward-referral-reducer.test.ts` asserts it.
+      // Spec D14: acceptance creates no Movement.
       const next = replaceReferral(state, referral.id, {
         ...referral,
         destinations,
-        // T12: appended only when this acceptance supplied a fresh clearance.
         genderPlacements:
           genderPlacementAddition === undefined
             ? referral.genderPlacements
@@ -5641,12 +5546,7 @@ export function reduceClinicalEvent(
         ...(nextReferralHistory === undefined ? {} : { reassessmentHistory: nextReferralHistory }),
         ...(reassessmentEntry?.note !== undefined ? { reassessmentNote: reassessmentEntry.note } : {}),
       });
-      /**
-       * Addendum §1.3: "ACCEPT_REFERRAL — the referrer and the receiving ward — both sides of a
-       * commitment." Two optional notices, each with its own `NoticeKind`: the referrer only when
-       * `referralReferrer` resolves one safely, and the receiving ward only for a psychiatric-ward
-       * acceptance. The referrer's sentence names the actual unit whenever one is known.
-       */
+      // Addendum §1.3: notify referrer (when resolved) and receiving psychiatric ward.
       const referralNotices: Notice[] = [];
       const referrer = referralReferrer(referral);
       if (referrer !== undefined) {

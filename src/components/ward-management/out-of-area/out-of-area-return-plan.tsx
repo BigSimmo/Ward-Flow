@@ -28,7 +28,7 @@ import {
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
-import { NOW_ANCHOR, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
+import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import {
   PLAN_STEPS,
@@ -43,15 +43,15 @@ import {
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
-export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = NOW_ANCHOR): string[] {
+export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
   return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
 }
 
-export function canSendReturnPlan(draft: RepatDraft, now: Instant = NOW_ANCHOR): boolean {
+export function canSendReturnPlan(draft: RepatDraft, now: Instant = 0): boolean {
   return returnPlanMissingToSend(draft, now).length === 0;
 }
 
-export function returnPlanBlockReason(draft: RepatDraft, now: Instant = NOW_ANCHOR): string | undefined {
+export function returnPlanBlockReason(draft: RepatDraft, now: Instant = 0): string | undefined {
   const missing = returnPlanMissingToSend(draft, now);
   return missing.length ? `Answer the ${missing.length} left first.` : undefined;
 }

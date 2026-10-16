@@ -783,7 +783,8 @@ function NoStatewideDelays({ holdRecorded = false }: { holdRecorded?: boolean })
     <p className={styles.empty}>
       <Glyph tone="success" />
       <span>
-        <b>No statewide delays recorded.</b> This model records delays against patient movements and service-wide holds.
+        <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
+        transport outages are not represented.
       </span>
     </p>
   );
