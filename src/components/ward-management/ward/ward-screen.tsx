@@ -137,7 +137,6 @@ import {
   useIsPhone,
   useOptionalToast,
 } from "@/components/wf";
-import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 import styles from "./ward.module.css";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
@@ -152,7 +151,6 @@ import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
 import { buzzKeys } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
-import { WardDischargeNotices } from "./ward-discharge-notices";
 import {
   canSubmitDecline,
   canSubmitOverride,
@@ -196,6 +194,14 @@ const WardDischargesMatrix = dynamic(() => import("./ward-discharges-matrix").th
   ssr: false,
 });
 const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), { ssr: false });
+// Client-only like the other ward sections below; it renders nothing until the store has entries.
+const WardReferralInbox = dynamic(() => import("../referrals/ward-referral-inbox").then((m) => m.WardReferralInbox), {
+  ssr: false,
+});
+// Shown only after a confirmed discharge, so it loads when first needed.
+const WardDischargeNotices = dynamic(() => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices), {
+  ssr: false,
+});
 const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) => m.WardBedBoard), { ssr: false });
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
