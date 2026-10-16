@@ -59,7 +59,7 @@ import {
   REFERRAL_RISK_FLAGS,
   referralContactError,
   referralIntakeError,
-  REFERRAL_REASON_LIMIT,
+  REFERRAL_REASON_MAX_CHARACTERS,
   type ClearanceChecklist,
   type ReferralContact,
   type ReferralIntakeDetails,
@@ -773,7 +773,7 @@ export function useWardReferralDrawerState({
       ? `Not in a bed on ${sendingWard.name}: ${notOnWardReason}.`
       : "";
   const referralReason = notOnWardNote ? `${notOnWardNote} ${doctorNote}` : doctorNote;
-  const reasonRoom = REFERRAL_REASON_LIMIT - (notOnWardNote ? notOnWardNote.length + 1 : 0);
+  const reasonRoom = REFERRAL_REASON_MAX_CHARACTERS - (notOnWardNote ? notOnWardNote.length + 1 : 0);
   const reasonNoteRequired = notOnWardReason === NOT_ON_SENDING_WARD_OTHER;
   function patientError() {
     if (!patientRecord && unidentified === null)
