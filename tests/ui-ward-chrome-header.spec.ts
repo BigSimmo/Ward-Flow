@@ -4,6 +4,16 @@ import { personPath } from "./helpers/ward-record-url";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/ward-management/ward-nav";
 
+// This file pins the Tasks drawer on every width, including the phone dock's Tasks button. The One
+// Alerts queue flag (on in development) turns that button into a link to the Alerts screen; its
+// behaviour is covered by tests/ward-alerts-one-queue.dom.test.tsx.
+test.beforeEach(async ({ page }) => {
+  // `WARD_FEATURE_FLAGS_STORAGE_KEY` in ward-feature-flag-store.ts.
+  await page.addInitScript(() =>
+    window.localStorage.setItem("ward_flow_feature_flags", JSON.stringify({ "alerts-one-queue": false })),
+  );
+});
+
 /**
  * BROWSER COVERAGE OF THE WARD FLOW SHELL BAR (`WardBar`, `shell/ward-bar.tsx`, mounted with
  * `WardRail` in `src/app/mockups/ward-flow/layout.tsx` above every ward route).

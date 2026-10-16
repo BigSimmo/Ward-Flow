@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 const REGISTRY_PATH = join(ROOT, "docs", "ward-flow", "design-test-registry.json");
-const MOCKUPS_DIR = join(ROOT, "docs", "ward-flow", "mockups");
+const MOCKUPS_DIR = join(ROOT, "design", "third-edition-mockups");
 
 function sha256(filePath) {
   if (!existsSync(filePath)) return null;
@@ -66,7 +66,7 @@ export async function checkRegistryCompleteness() {
 
     const mockupPath = join(MOCKUPS_DIR, screen.mockup);
     if (!existsSync(mockupPath)) {
-      errors.push(`Screen "${screen.id}": mockup file does not exist at docs/ward-flow/mockups/${screen.mockup}`);
+      errors.push(`Screen "${screen.id}": mockup file does not exist at design/third-edition-mockups/${screen.mockup}`);
     }
 
     if (!Array.isArray(screen.testFiles) || screen.testFiles.length === 0) {

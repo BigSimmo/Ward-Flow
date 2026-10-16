@@ -3,7 +3,7 @@
  * 🔴 **ONE PAGE SHOWING ALL 38 DRAWINGS AT ONCE — LIVE, NOT AS SCREENSHOTS.**
  *
  *     node scripts/ward-flow/contact-sheet.mjs
- *     then open docs/ward-flow/mockups/CONTACT-SHEET.html in a browser
+ *     then open design/third-edition-mockups/CONTACT-SHEET.html in a browser
  *
  * ⚠️ **SCREENSHOTS WERE THE OBVIOUS ANSWER AND THEY ARE THE WRONG ONE, TWICE OVER.** A screenshot
  * goes stale the moment a drawing is edited, silently — the defect this whole estate keeps
@@ -19,7 +19,7 @@
 import { readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const DIR = join(process.cwd(), "docs", "ward-flow", "mockups");
+const DIR = join(process.cwd(), "design", "third-edition-mockups");
 const OUT = join(DIR, "CONTACT-SHEET.html");
 
 /** Not current — kept for reference, never built from. Shown last and marked. */
@@ -92,9 +92,13 @@ const html = `<!doctype html>
 </p>
 <div class="grid">${current.map((f) => tile(f, false)).join("")}
 </div>
-${old.length ? `<h2>Superseded — kept for reference, never build from these</h2>
+${
+  old.length
+    ? `<h2>Superseded — kept for reference, never build from these</h2>
 <div class="grid">${old.map((f) => tile(f, true)).join("")}
-</div>` : ""}
+</div>`
+    : ""
+}
 </body></html>
 `;
 

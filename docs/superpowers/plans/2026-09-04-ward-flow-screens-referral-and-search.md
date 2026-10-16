@@ -165,7 +165,7 @@ The token is declared nowhere, so **every person result is outlined in `currentC
 - Modify: `src/components/ward-management/referrals/referral-match.tsx`
 - Test: `tests/ward-referral-destination-purpose.dom.test.tsx`
 
-- [ ] **Step 1: Read the approved prototype first.** `docs/ward-flow/design/prototypes/mockup-referral.html` — the destination panel, its group headings and its row copy. **Take the wording from there, not from this plan.**
+- [ ] **Step 1: Read the approved prototype first.** `design/prototypes/mockup-referral.html` — the destination panel, its group headings and its row copy. **Take the wording from there, not from this plan.**
 
 - [ ] **Step 2: Write the failing test.** Assert every rendered emergency-department destination row contains the output of `referralPurposeLabel` for its own purpose — **called, not respelled**, so the test fails if the screen hardcodes "For psychiatric review" and the label later changes. And assert the negative, by name: no row contains "declines", "cannot decline", "will not decline" or "not a bed request".
 

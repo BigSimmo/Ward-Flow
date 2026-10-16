@@ -7,7 +7,7 @@
 > selected repository gates. Copy/punctuation prescriptions here do not govern typed narrative or
 > ordinary documentation. Keep status understandable, measured zeros numeric and absence truthful.
 
-> **DESIGN AUTHORITY:** The authoritative token dictionary and rules standard is [`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`](mockups/WARD-FLOW-DESIGN-SYSTEM.md) (Third Edition). Where tokens or palette hex codes below conflict, the Third Edition standard governs.
+> **DESIGN AUTHORITY:** The authoritative token dictionary and rules standard is [`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`](../../design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md) (Third Edition). Where tokens or palette hex codes below conflict, the Third Edition standard governs.
 > **Owner Ruling (9 September 2026):** Coloured bars along edges of rows, cards, or candidates and top highlights on panels are strictly banned. Radii follow `--r1` (10px panel) and `--r2` (6px controls).
 
 This document is a reference specification for building, styling, and verifying mockups across the Ward Flow suite.

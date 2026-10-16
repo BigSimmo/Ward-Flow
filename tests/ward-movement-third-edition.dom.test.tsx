@@ -26,7 +26,7 @@ import { dayOf } from "@/components/ward-management/ward-clock";
  * quotation from the drawing. ⚠️ **A comment whose whole job was "do not think the drawing was
  * ignored" misdescribed the drawing.**
  *
- * **What `docs/ward-flow/mockups/movement-third-edition.html` actually names, measured from its own
+ * **What `design/third-edition-mockups/movement-third-edition.html` actually names, measured from its own
  * `aria-label`s:** *The day, and what is severe in it* · *Today's traffic* (containing *Corridors,
  * ranked*) · *Open movements* · *The shape of the same day* · *What reconciles*.
  *

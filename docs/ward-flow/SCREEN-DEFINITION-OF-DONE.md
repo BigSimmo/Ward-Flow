@@ -90,7 +90,7 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
       open the file directly.
 - [ ] 🔴 **Write it down in [`screen-verification.json`](screen-verification.json)** — date, who,
       which widths, which themes, the verdict, and the drawing's hash from
-      [`mockups/MANIFEST.json`](mockups/MANIFEST.json). Then regenerate
+      [`mockups/MANIFEST.json`](../../design/third-edition-mockups/MANIFEST.json). Then regenerate
       [`SCREEN-VERIFICATION.md`](SCREEN-VERIFICATION.md).
 
   ⚠️ **Recording the drawing's hash is what makes the verification age honestly.** Without it,
@@ -125,7 +125,7 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
       screen (in the commit or a note in this folder) — not left for someone to rediscover later.
 - [ ] 🔴 **Owner ruling, 25 September 2026: The app as rendered from the latest accepted Ward Flow
       build is authoritative on design; the working engine is authoritative on behaviour.** The
-      drawings in `docs/ward-flow/mockups/` are background reference only; disregard older mockup
+      drawings in `design/third-edition-mockups/` are background reference only; disregard older mockup
       discrepancies where the live code has advanced. Write down any intentional behavioral or layout
       changes and why they were made.
 

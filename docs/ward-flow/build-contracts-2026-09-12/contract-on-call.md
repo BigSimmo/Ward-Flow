@@ -1,6 +1,6 @@
 # Build contract — Ward Flow "On-call and contacts"
 
-Drawing: `docs/ward-flow/mockups/on-call-third-edition.html` (8,627 lines)
+Drawing: `design/third-edition-mockups/on-call-third-edition.html` (8,627 lines)
 Route measured: does not exist under `src/app` — this is a genuine new build, not a reskin.
 
 ## Current interface — owner-requested simplification, 3 October 2026

@@ -137,7 +137,7 @@ describe("C1: admission is separate from reviewed ownership", () => {
       admission: "admitted",
     });
     expect(classifyEntry(entry("unregistered/new-feature.ts"), installed).admission).toBe("excluded");
-    expect(classifyEntry(entry("docs/ward-flow/mockups/new-drawing.html"), installed)).toMatchObject({
+    expect(classifyEntry(entry("design/third-edition-mockups/new-drawing.html"), installed)).toMatchObject({
       owner: "design-reference",
       system: null,
       admission: "excluded",
@@ -584,37 +584,49 @@ describe("C3: CLI checkpoints and coherent filesystem publication", () => {
     return { f, directory, first: selectedReport(directory) };
   }
 
-  it("checks without writes and publishes a matching pair", () => {
-    const f = fixture();
-    const directory = reportDirectory(f.root);
-    expect(runCli(f.root, "--check").status).toBe(0);
-    expect(fs.existsSync(directory)).toBe(false);
-    expect(runCli(f.root).status).toBe(0);
-    const first = selectedReport(directory);
-    expect(first.report.generation).toBe(first.pointer.generation);
-    expect(first.markdown).toContain(first.pointer.generation);
-    expect(first.markdown).toContain(first.report.snapshot.fingerprint);
-    expect(first.markdown).toContain("Last checked");
-  }, C3_TIMEOUT_MS);
+  it(
+    "checks without writes and publishes a matching pair",
+    () => {
+      const f = fixture();
+      const directory = reportDirectory(f.root);
+      expect(runCli(f.root, "--check").status).toBe(0);
+      expect(fs.existsSync(directory)).toBe(false);
+      expect(runCli(f.root).status).toBe(0);
+      const first = selectedReport(directory);
+      expect(first.report.generation).toBe(first.pointer.generation);
+      expect(first.markdown).toContain(first.pointer.generation);
+      expect(first.markdown).toContain(first.report.snapshot.fingerprint);
+      expect(first.markdown).toContain("Last checked");
+    },
+    C3_TIMEOUT_MS,
+  );
 
-  it("publishes a new generation that catches an edit", () => {
-    const { f, directory, first } = publishedFixture();
-    f.write("ward/model.ts", "export const value = 2;");
-    expect(runCli(f.root).status).toBe(0);
-    const second = selectedReport(directory);
-    expect(second.pointer.generation).not.toBe(first.pointer.generation);
-    expect(second.report.changes.changed).toContain("ward/model.ts");
-  }, C3_TIMEOUT_MS);
+  it(
+    "publishes a new generation that catches an edit",
+    () => {
+      const { f, directory, first } = publishedFixture();
+      f.write("ward/model.ts", "export const value = 2;");
+      expect(runCli(f.root).status).toBe(0);
+      const second = selectedReport(directory);
+      expect(second.pointer.generation).not.toBe(first.pointer.generation);
+      expect(second.report.changes.changed).toContain("ward/model.ts");
+    },
+    C3_TIMEOUT_MS,
+  );
 
-  it("does not accept unknowns by repetition", () => {
-    const { f, directory } = publishedFixture();
-    f.write("ward/model.ts", "export const value = 2;");
-    expect(runCli(f.root).status).toBe(0);
-    f.write("shared/new.ts", "Unknown source");
-    expect(runCli(f.root).status).toBe(1);
-    expect(runCli(f.root).status).toBe(1);
-    expect(selectedReport(directory).report.exitCode).toBe(1);
-  }, C3_TIMEOUT_MS);
+  it(
+    "does not accept unknowns by repetition",
+    () => {
+      const { f, directory } = publishedFixture();
+      f.write("ward/model.ts", "export const value = 2;");
+      expect(runCli(f.root).status).toBe(0);
+      f.write("shared/new.ts", "Unknown source");
+      expect(runCli(f.root).status).toBe(1);
+      expect(runCli(f.root).status).toBe(1);
+      expect(selectedReport(directory).report.exitCode).toBe(1);
+    },
+    C3_TIMEOUT_MS,
+  );
 
   it("returns incomplete without replacing the selected report for unavailable registry or source", () => {
     const f = fixture();
@@ -658,38 +670,42 @@ describe("C3: CLI checkpoints and coherent filesystem publication", () => {
     C3_TIMEOUT_MS,
   );
 
-  it("rejects a simultaneous writer without removing its lock or changing the selected generation", async () => {
-    const f = fixture();
-    expect(runCli(f.root).status).toBe(0);
-    const directory = reportDirectory(f.root);
-    const first = selectedReport(directory).pointer;
-    const preload = path.join(f.root, "hold.mjs");
-    fs.writeFileSync(
-      preload,
-      `import fs from 'node:fs'; const open=fs.openSync; fs.openSync=function(p,...rest){ const fd=open.call(this,p,...rest); if(String(p).endsWith('publication.lock')) { process.stdout.write('LOCKED\\n'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,12000); } return fd; };`,
-    );
-    const child = spawn(
-      process.execPath,
-      ["--import", pathToFileURL(preload).href, cli, "--write-report", "--root", f.root, "--source", "working-tree"],
-      { stdio: ["ignore", "pipe", "pipe"] },
-    );
-    try {
-      await new Promise<void>((resolve, reject) => {
-        let output = "";
-        child.stdout.on("data", (data) => {
-          output += data;
-          if (output.includes("LOCKED")) resolve();
+  it(
+    "rejects a simultaneous writer without removing its lock or changing the selected generation",
+    async () => {
+      const f = fixture();
+      expect(runCli(f.root).status).toBe(0);
+      const directory = reportDirectory(f.root);
+      const first = selectedReport(directory).pointer;
+      const preload = path.join(f.root, "hold.mjs");
+      fs.writeFileSync(
+        preload,
+        `import fs from 'node:fs'; const open=fs.openSync; fs.openSync=function(p,...rest){ const fd=open.call(this,p,...rest); if(String(p).endsWith('publication.lock')) { process.stdout.write('LOCKED\\n'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,12000); } return fd; };`,
+      );
+      const child = spawn(
+        process.execPath,
+        ["--import", pathToFileURL(preload).href, cli, "--write-report", "--root", f.root, "--source", "working-tree"],
+        { stdio: ["ignore", "pipe", "pipe"] },
+      );
+      try {
+        await new Promise<void>((resolve, reject) => {
+          let output = "";
+          child.stdout.on("data", (data) => {
+            output += data;
+            if (output.includes("LOCKED")) resolve();
+          });
+          child.once("error", reject);
+          child.once("exit", () => reject(new Error("holder exited before lock")));
         });
-        child.once("error", reject);
-        child.once("exit", () => reject(new Error("holder exited before lock")));
-      });
-      const contender = runCli(f.root);
-      expect(contender.status).toBe(2);
-      expect(contender.stderr).toContain("publication-locked");
-      expect(fs.existsSync(path.join(directory, "publication.lock"))).toBe(true);
-      expect(selectedReport(directory).pointer).toEqual(first);
-    } finally {
-      child.kill();
-    }
-  }, C3_TIMEOUT_MS);
+        const contender = runCli(f.root);
+        expect(contender.status).toBe(2);
+        expect(contender.stderr).toContain("publication-locked");
+        expect(fs.existsSync(path.join(directory, "publication.lock"))).toBe(true);
+        expect(selectedReport(directory).pointer).toEqual(first);
+      } finally {
+        child.kill();
+      }
+    },
+    C3_TIMEOUT_MS,
+  );
 });

@@ -9,7 +9,7 @@
 **Date:** 2026-09-16  
 **Architect:** Antigravity React & Systems Architecture Suite  
 **Target Codebase:** `src/components/ward-management/` and `src/app/mockups/ward-flow/`  
-**Reference Source of Truth:** Authoritative Third-Edition HTML Mockups (`docs/ward-flow/mockups/`)  
+**Reference Source of Truth:** Authoritative Third-Edition HTML Mockups (`design/third-edition-mockups/`)  
 **Repository Constraint:** 🔴 **WARD FLOW IS STRICTLY LOCAL DISK ONLY — NEVER PUSHED TO ORIGIN/MAIN**
 
 ---
@@ -21,9 +21,9 @@
 🟢 **RECOMMENDED: Proceed with Option B via a Three-Phase Incremental Synchronization Pipeline.**
 
 **Rationale:**
-The 18 HTML mockups in `docs/ward-flow/mockups/` have achieved **100/100 visual perfection and complete interactive wiring**. However, `docs/ward-flow/README.md` establishes that:
+The 18 HTML mockups in `design/third-edition-mockups/` have achieved **100/100 visual perfection and complete interactive wiring**. However, `docs/ward-flow/README.md` establishes that:
 
-> _"The drawings in `docs/ward-flow/mockups/` are authoritative on design; the working engine is authoritative on behaviour."_
+> _"The drawings in `design/third-edition-mockups/` are authoritative on design; the working engine is authoritative on behaviour."_
 
 The Next.js React codebase (`src/app/mockups/ward-flow/` and `src/components/ward-management/`) already has an extensive foundation of **36 routes and 152 component files**. Synchronizing the React codebase with the third-edition mockups is entirely feasible and high-value, but attempting a single monolithic rewrite would risk breaking passing DOM tests and regression guards. A disciplined, three-phase approach allows us to update the design system tokens, shell layout, and interactive modal state machines while keeping the test suite green at every step.
 
@@ -74,7 +74,7 @@ The component tree is organized into 27 functional subdirectories:
 
 - **Objective**: Ensure the shared container, typography, and navigation match the third-edition mockups across all 36 routes.
 - **Tasks**:
-  1. Audit and update `ward-tokens.module.css` to match `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` byte-for-byte.
+  1. Audit and update `ward-tokens.module.css` to match `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` byte-for-byte.
   2. Update `src/components/ward-management/ward-nav.ts` and `ward-sidebar-content.tsx` to match the exact 13-screen third-edition navigation hierarchy.
   3. Implement the `<1000px` sticky horizontal rail in `ward-sidebar.module.css` and `ward-shell.module.css`.
   4. Run `npm run test` on `tests/ward-nav.test.ts` and `tests/ward-shell-third-edition.dom.test.tsx`.

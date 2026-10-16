@@ -38,7 +38,7 @@ Three consequences you are fixing:
 `npx vitest run tests/ward-statistics-v3-language.test.ts`
 
 1. **Your `<style>` element must BEGIN with the entire content of
-   `docs/ward-flow/design/prototypes/statistics-language-v3.css`, byte for byte.** Copy it
+   `design/prototypes/statistics-language-v3.css`, byte for byte.** Copy it
    programmatically — read the file and write it in — never retype or hand-copy. Append your own
    rules **below** it under a marker comment; never above.
 2. **Never edit `statistics-language-v3.css`** and never edit the test. If the language is missing

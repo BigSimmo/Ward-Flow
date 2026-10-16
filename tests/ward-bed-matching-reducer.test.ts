@@ -13,7 +13,13 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import type { Movement, ReferralAddressing, ReferralGender, Sex, Unit } from "../src/components/ward-management/ward-model";
+import type {
+  Movement,
+  ReferralAddressing,
+  ReferralGender,
+  Sex,
+  Unit,
+} from "../src/components/ward-management/ward-model";
 import { referralState } from "../src/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -384,26 +390,33 @@ describe("BM-34 a trans woman leaving a full mixed ward frees the bed exactly as
   it("the next patients get the same answers after either departure", () => {
     for (const leaver of [CW, TW]) {
       const ward = afterLeaving(leaver);
-      expect(sexMixPasses(eligibility(awaitingBed(CW), ward, NOW)), `cis woman after the ${leaver.label} left`).toBe(false);
-      expect(sexMixPasses(eligibility(awaitingBed(CM), ward, NOW)), `cis man after the ${leaver.label} left`).toBe(true);
-      expect(sexMixPasses(eligibility(awaitingBed(TM), ward, NOW)), `trans man after the ${leaver.label} left`).toBe(true);
+      expect(sexMixPasses(eligibility(awaitingBed(CW), ward, NOW)), `cis woman after the ${leaver.label} left`).toBe(
+        false,
+      );
+      expect(sexMixPasses(eligibility(awaitingBed(CM), ward, NOW)), `cis man after the ${leaver.label} left`).toBe(
+        true,
+      );
+      expect(sexMixPasses(eligibility(awaitingBed(TM), ward, NOW)), `trans man after the ${leaver.label} left`).toBe(
+        true,
+      );
     }
   });
 });
 
 describe("BM-34 every leaver leaves the count they were counted in", () => {
-  it.each(EVERYONE)("$label leaves their gender-identity count, or their recorded-sex count if non-binary", (leaver) => {
-    const before: Unit["sexMix"] = { Female: 3, Male: 3 };
-    const withLeaver = { ...before, [bucketOf(leaver)]: before[bucketOf(leaver)] + 1 };
-    expect(afterLeaving(leaver, withLeaver).sexMix).toEqual(before);
-  });
+  it.each(EVERYONE)(
+    "$label leaves their gender-identity count, or their recorded-sex count if non-binary",
+    (leaver) => {
+      const before: Unit["sexMix"] = { Female: 3, Male: 3 };
+      const withLeaver = { ...before, [bucketOf(leaver)]: before[bucketOf(leaver)] + 1 };
+      expect(afterLeaving(leaver, withLeaver).sexMix).toEqual(before);
+    },
+  );
 });
 
 /** A movement on the MX-F ward whose bed is pulled, with no transport needed, ready to arrive. */
 function readyToArrive(person: Person): WardFlowState {
-  return bench([
-    { ...awaitingBed(person), stage: "pulled", transportNeed: { needed: false, at: NOW - 10 } },
-  ]);
+  return bench([{ ...awaitingBed(person), stage: "pulled", transportNeed: { needed: false, at: NOW - 10 } }]);
 }
 
 describe("arrivals are counted by gender identity, or recorded sex if non-binary", () => {

@@ -194,7 +194,9 @@ describe.each(PATHS)("bed matching by gender identity, $path", ({ verdict }) => 
     );
     expect(failing(mine)).toEqual(failing(twin));
     const flagged = gate(mine, "sex_mix").detail.includes(FLAG);
-    expect(flagged, `flag on ${person.label} at ${unit.name}`).toBe(person.gender !== "Female" && person.gender !== "Male");
+    expect(flagged, `flag on ${person.label} at ${unit.name}`).toBe(
+      person.gender !== "Female" && person.gender !== "Male",
+    );
     return mine;
   }
 

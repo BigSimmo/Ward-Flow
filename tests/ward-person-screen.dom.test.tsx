@@ -390,7 +390,7 @@ describe("a person's own screen", () => {
    * person's own name; Ward Lead confirmed the `<h1>` stays the name, with "Patient" becoming the
    * page's name everywhere else.
    *
-   * "Patient Now" is the drawing's title (`docs/ward-flow/mockups/patient-now-third-edition.html`,
+   * "Patient Now" is the drawing's title (`design/third-edition-mockups/patient-now-third-edition.html`,
    * Ward Mockups' file, never edited from here) and must never reach the built screen's own text.
    */
   it("is called Patient, and never Patient Now", () => {

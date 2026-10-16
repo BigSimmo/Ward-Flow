@@ -582,7 +582,7 @@
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════════════════════
- * Rebuilt to `docs/ward-flow/design/prototypes/mockup-ward-entry.html` (2026-09-04). The hero
+ * Rebuilt to `design/prototypes/mockup-ward-entry.html` (2026-09-04). The hero
  * and the confirm panel below are the whole point of that design: the way in ("Open bed list")
  * must never wait on the form, and the confirm panel is where the form actually lives.
  *
@@ -4128,16 +4128,25 @@
   }
 }
 
-/* F-18: the phone's 32px ward switch reaches 44px on touch through a hit area, not a bigger face. */
+/* F-18: the phone's 32px ward switch reaches 48px on touch through a hit area, not a bigger face. */
 @media (max-width: 48rem) and (pointer: coarse) {
+  /* Above the ward name and meta line, so their text does not swallow the hit area. */
   .phoneHeroTitle .wardSwitch {
     position: relative;
+    z-index: 1;
   }
 
   .phoneHeroTitle .wardSwitch::after {
     content: "";
     position: absolute;
-    inset: -6px;
+    /* The inset counts from inside the 1px border, so take that off too. */
+    inset: calc((32px - var(--spacing-tap, 3rem)) / 2 - 1px);
+  }
+
+  /* The hero title clips its overflow, which would clip the hit area too. The ward name keeps
+     its own ellipsis inside the title row. */
+  .wardHero :has(> .phoneHeroTitle) {
+    overflow: visible;
   }
 }
 

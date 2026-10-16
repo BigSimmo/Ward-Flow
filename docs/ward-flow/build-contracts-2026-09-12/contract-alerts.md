@@ -1,6 +1,6 @@
 # Build contract — Alerts screen
 
-Drawing: `docs/ward-flow/mockups/alerts-third-edition.html` (9,454 lines).
+Drawing: `design/third-edition-mockups/alerts-third-edition.html` (9,454 lines).
 Route confirmed absent: no `src/app/mockups/ward-flow/alerts/` directory exists.
 
 ## 0. Design or reproduction?
@@ -13,7 +13,7 @@ The drawing's own comment (`alerts-third-edition.html:7930-7933`, inside `alertR
 > "Nothing here is a new component: the panel and the register row are the standard's own,
 > sections 6.3 and 6.10."
 
-`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md:523` (§6.3 "Panel, header, note and stated
+`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md:523` (§6.3 "Panel, header, note and stated
 absence") and `:569` (§6.10 "Register rows") confirm these are existing shared visual patterns
 already used across the sixteen built screens — a builder reuses those component contracts rather
 than inventing new CSS. That claim is about **appearance only**. Nowhere does the drawing claim its

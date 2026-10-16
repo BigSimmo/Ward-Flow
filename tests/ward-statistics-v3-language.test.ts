@@ -19,7 +19,7 @@ import { describe, expect, it } from "vitest";
  * the first thing inside its `<style>` element and appends its own rules below.
  */
 
-const DIR = join(process.cwd(), "docs/ward-flow/design/prototypes");
+const DIR = join(process.cwd(), "design/prototypes");
 const SOURCE = "statistics-language-v3.css";
 
 /**

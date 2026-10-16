@@ -1,13 +1,13 @@
 # BUILD CONTRACT — Governance screen
 
-Drawing: `docs/ward-flow/mockups/governance-third-edition.html` (8,878 lines)
+Drawing: `design/third-edition-mockups/governance-third-edition.html` (8,878 lines)
 Route today: `/mockups/ward-flow/governance` — `src/app/mockups/ward-flow/governance/page.tsx`
 No repository file was edited, created, or deleted to produce this contract. Read-only, static.
 
 ## 0. Design, or reproduction? — DESIGN. Proceed.
 
 The drawing's own comment block says it keeps "the Live edition's content, behaviour, engine,
-data, layout and rigour" and carries a new _visual identity_ (`docs/ward-flow/mockups/
+data, layout and rigour" and carries a new _visual identity_ (`design/third-edition-mockups/
 governance-third-edition.html:31-36`). That is a claim about **restyling a previous edition of
 this same mockup lineage**, not about reproducing the shipped React component. Nowhere in this
 file does it say it was "reproduced exactly" from `GovernanceView` or from any named `src/`
@@ -202,7 +202,7 @@ code as it stands:
   remaining lines (styles, the rail/search/Activity/Tasks/Tools popover bodies, the synthetic data
   generator feeding `unreviewed()`/`reviewed()`/`accessRows()`). A field or claim outside those
   four functions could exist unseen.
-- I did not open `docs/ward-flow/mockups/third-edition-kit/check-standard.mjs` or the "standard"
+- I did not open `design/third-edition-mockups/third-edition-kit/check-standard.mjs` or the "standard"
   document the drawing cites by section number (6.10, 6.11, 5.6.10, 5.7, 14.1, 14.2, 8.4) — I could
   not confirm those section numbers say what the drawing's comments claim they say.
   `docs/ward-flow/plans/2026-09-11-standard-clause-draft-every-layer-carries-the-words.md` looked

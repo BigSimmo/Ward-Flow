@@ -49,8 +49,7 @@ const RETIRED_BY_TITLE: readonly {
   {
     canonical: "held",
     retired: ["pull", "expired"],
-    ruling:
-      "2026-09-22: reserved time has passed, bed still held — not 'Bed pull expired' / 'the pull lapsed'",
+    ruling: "2026-09-22: reserved time has passed, bed still held — not 'Bed pull expired' / 'the pull lapsed'",
   },
 ];
 

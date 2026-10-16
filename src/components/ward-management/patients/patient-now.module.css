@@ -1,7 +1,7 @@
 .screen {
   /*
    * `tests/ward-css-token-references-resolve.test.ts` caught `var(--gap)` below and at `.pnGrid`:
-   * the mockup this screen was authored from (`docs/ward-flow/mockups/patient-now-original-third-
+   * the mockup this screen was authored from (`design/third-edition-mockups/patient-now-original-third-
    * edition.html`) declared `--gap: 14px` at its own `:root`, and that declaration never travelled
    * into this module. `--ward-space-14` (`ward-tokens.module.css`) is the existing token for the
    * same 14px value — composed here, the same discipline `search.module.css`/`community.module.css`/

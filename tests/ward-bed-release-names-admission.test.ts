@@ -5,10 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowStateAt, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
-import {
-  capacityBreakdown,
-  openBedsNow,
-} from "../src/components/ward-management/ward-bed-availability";
+import { capacityBreakdown, openBedsNow } from "../src/components/ward-management/ward-bed-availability";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import type { WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 
@@ -43,18 +40,20 @@ function admission(state: WardFlowState, id: string) {
  *  hard-coded so a seed change cannot silently make a test exercise a different case than it names. */
 function anUnreleasedOccupant(state: WardFlowState) {
   const found = state.admissions.find(
-    (a) =>
-      a.state === "occupied" &&
-      !state.bedReleases.some((r) => r.admissionId === a.id && r.state !== "discharged"),
+    (a) => a.state === "occupied" && !state.bedReleases.some((r) => r.admissionId === a.id && r.state !== "discharged"),
   );
   if (!found) throw new Error("the seed contains nobody occupying a bed with no live release");
   return found;
 }
 
-function flag(state: WardFlowState, person: { id: string; unitId: string }, extra: Partial<{
-  waitingOn: "Nothing outstanding";
-  blocker: "Awaiting clean";
-}> = {}) {
+function flag(
+  state: WardFlowState,
+  person: { id: string; unitId: string },
+  extra: Partial<{
+    waitingOn: "Nothing outstanding";
+    blocker: "Awaiting clean";
+  }> = {},
+) {
   return wardFlowReducer(state, {
     type: "FLAG_BED_RELEASE",
     role: "ward",
@@ -375,14 +374,24 @@ describe("a bed release names its admission (owner decision, 2026-09-25)", () =>
       releaseId: release1.id,
       actingUnitId: p1.unitId,
     });
-    const breakdown1 = capacityBreakdown(unit(afterConfirm1, p1.unitId), afterConfirm1.bedReleases, afterConfirm1.leaveBeds, NOW);
+    const breakdown1 = capacityBreakdown(
+      unit(afterConfirm1, p1.unitId),
+      afterConfirm1.bedReleases,
+      afterConfirm1.leaveBeds,
+      NOW,
+    );
     expect(breakdown1.confirmedToday).toBeGreaterThanOrEqual(1);
     expect(breakdown1.blockedToday).toBeGreaterThanOrEqual(1);
 
     // Expected and blocked, on a different occupant so it does not collide with p1's release.
     const p2 = anUnreleasedOccupant(afterConfirm1);
     const afterFlag2 = flag(afterConfirm1, p2, { blocker: "Awaiting clean" });
-    const breakdown2 = capacityBreakdown(unit(afterFlag2, p2.unitId), afterFlag2.bedReleases, afterFlag2.leaveBeds, NOW);
+    const breakdown2 = capacityBreakdown(
+      unit(afterFlag2, p2.unitId),
+      afterFlag2.bedReleases,
+      afterFlag2.leaveBeds,
+      NOW,
+    );
     expect(breakdown2.expectedToday).toBeGreaterThanOrEqual(1);
     expect(breakdown2.blockedToday).toBeGreaterThanOrEqual(1);
 

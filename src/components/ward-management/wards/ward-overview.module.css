@@ -7,7 +7,7 @@
  * explicit approval this task did not seek) so whoever resolves that decision has the card CSS
  * ready rather than starting over. Do not import this file until that decision is made.
  *
- * Rebuilt to `docs/ward-flow/design/prototypes/mockup-ward-home.html` (2026-09-04) — cards, not
+ * Rebuilt to `design/prototypes/mockup-ward-home.html` (2026-09-04) — cards, not
  * rows, one per ward, grouped by health service. The layout/card classes live here, separate
  * from `ward-index.module.css`'s screen chrome (governance banner, page header, `.screen` root)
  * so a screen-level change and a card-level change never touch the same file.

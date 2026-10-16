@@ -7,7 +7,10 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 
-function dispatchAlert(state: ReturnType<typeof seedWardFlowState>, overrides: Partial<WardFlowEvent & { type: "DISPATCH_BROADCAST_ALERT" }> = {}) {
+function dispatchAlert(
+  state: ReturnType<typeof seedWardFlowState>,
+  overrides: Partial<WardFlowEvent & { type: "DISPATCH_BROADCAST_ALERT" }> = {},
+) {
   const event: WardFlowEvent = {
     type: "DISPATCH_BROADCAST_ALERT",
     role: "coordinator",

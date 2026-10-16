@@ -7,7 +7,7 @@
 
 # 06 — Cross-Project Onboarding & Execution Runbook
 
-> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
+> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
 > Kept for historical reference. The "Sovereign" tokens, 100-point numerical scoring rubric, and 4-tier ladder described herein are retired. All visual work follows the 3rd Edition Design System and the September 17 & 21 speed rules in `docs/ward-flow/HOW-WE-WORK.md`.
 
 ## The Turnkey Integration Guide for Future Projects

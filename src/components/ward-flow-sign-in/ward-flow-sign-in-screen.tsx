@@ -35,7 +35,7 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * (Actions, and Limits and safety). The mockup's "Waiting for you" figures and AWST clock are left
  * out on purpose: this screen reads no live Ward Flow state (see below), so it has none to show.
  *
- * Drawing: `docs/ward-flow/mockups/sign-in-third-edition.html`. Contract:
+ * Drawing: `design/third-edition-mockups/sign-in-third-edition.html`. Contract:
  * `docs/ward-flow/build-contracts-2026-09-12/contract-sign-in.md`. **No route existed for this
  * screen anywhere in the app before this change** (measured: `src/app` and `ward-nav.ts` both came
  * back empty for "sign-in"/"signin") — this is a genuinely new build, not an upgrade, so there is

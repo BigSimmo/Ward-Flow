@@ -1,0 +1,10 @@
+{
+  "$comment": "Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB. Lower a budget when a route shrinks. Raise one only with a reason in the PR.",
+  "budgets": {
+    "/mockups/ward-flow": 585,
+    "/mockups/ward-flow/referrals": 600,
+    "/mockups/ward-flow/ed": 555,
+    "/mockups/ward-flow/ward/rph-adult-secure": 610,
+    "/mockups/ward-flow/movements/WF-001": 650
+  }
+}

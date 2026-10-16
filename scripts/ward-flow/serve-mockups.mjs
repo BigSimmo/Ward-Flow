@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const PORT = Number(process.env.PORT || process.argv[2] || 60178);
-const MOCKUPS_DIR = path.join(process.cwd(), "docs", "ward-flow", "mockups");
+const MOCKUPS_DIR = path.join(process.cwd(), "design", "third-edition-mockups");
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",

@@ -47,7 +47,7 @@ The two parts that carry the weight:
   as having had it checked.** The escape route when no reply comes is **ask the owner directly**,
   never "proceed anyway". The 30-minute wait is the Verifier's proposed default, not the owner's.
 
-⚠️ **This reaches the mockups hardest: every file under `docs/ward-flow/mockups/**` is protected work,
+⚠️ **This reaches the mockups hardest: every file under `design/third-edition-mockups/**` is protected work,
 including every SUPERSEDED drawing.** A drawing replaced by a third edition is exactly the sort of
 file that looks safe to tidy and is not — and drawings sit outside every gate, so nothing goes red.
 
