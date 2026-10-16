@@ -444,14 +444,19 @@ describe("the scoped workspace", () => {
   });
 
   it("hides a breakdown's parts together, so a hidden part cannot be worked back from the total", () => {
+    const NS = SMALL_NUMBER_NOT_SHOWN;
     // One worded part: the smallest other part above zero is not shown either.
-    expect(smallNumberParts([3, 12, 7, 0])).toEqual(["fewer than 5", 12, SMALL_NUMBER_NOT_SHOWN, 0]);
-    // Two worded parts still hide one more, or a sum of 2 (or 8) would pin them at 1 and 1 (4 and 4).
-    expect(smallNumberParts([1, 1, 6])).toEqual(["fewer than 5", "fewer than 5", SMALL_NUMBER_NOT_SHOWN]);
-    // With only noughts beside them, a nought is not shown instead.
-    expect(smallNumberParts([4, 4, 0])).toEqual(["fewer than 5", "fewer than 5", SMALL_NUMBER_NOT_SHOWN]);
-    // Every part hidden beside a shown total: none is said to be under the line, or 4 and 4 of 8 shows.
-    expect(smallNumberParts([4, 4])).toEqual([SMALL_NUMBER_NOT_SHOWN, SMALL_NUMBER_NOT_SHOWN]);
+    expect(smallNumberParts([3, 12, 7, 0])).toEqual(["fewer than 5", 12, NS, 0]);
+    // Two worded parts whose gap pins them (2 is only 1 and 1, 8 only 4 and 4) hide one more.
+    expect(smallNumberParts([6, 1, 1])).toEqual([NS, "fewer than 5", "fewer than 5"]);
+    expect(smallNumberParts([4, 4, 10])).toEqual(["fewer than 5", "fewer than 5", NS]);
+    // A gap of 6 beside a withheld 5 is only 1 and 5, so the 9 goes too.
+    expect(smallNumberParts([1, 5, 9])).toEqual(["fewer than 5", NS, NS]);
+    // A gap that can split more than one way stays as it is.
+    expect(smallNumberParts([3, 2, 9])).toEqual(["fewer than 5", "fewer than 5", 9]);
+    // Nothing left to withhold: none is said to be under the line.
+    expect(smallNumberParts([4, 4, 0])).toEqual([NS, NS, 0]);
+    expect(smallNumberParts([4, 4])).toEqual([NS, NS]);
     // Nothing worded, nothing hidden. A total under the line is worded itself, so nothing more hides.
     expect(smallNumberParts([5, 0, 8])).toEqual([5, 0, 8]);
     expect(smallNumberParts([1, 2, 0])).toEqual(["fewer than 5", "fewer than 5", 0]);

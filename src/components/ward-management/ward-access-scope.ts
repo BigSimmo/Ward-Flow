@@ -597,31 +597,47 @@ export const SMALL_NUMBER_NOT_SHOWN = "not shown";
 
 /**
  * The parts of a breakdown whose total is on screen (role access plan, high finding 8). Each part
- * under the line words as "fewer than N". When any part is worded, one exact part reads "not shown"
- * too (the smallest above zero, else a nought), so the hidden parts' sum is never known: a single
- * hidden part would be worked back by subtraction, and two whose sum allows one split (1 and 1, or
- * 4 and 4) would be too (review on PR #354). Not needed when the parts' total is itself under the
- * line, since that total is worded too. A worded part is a string and an exact one a number.
+ * under the line words as "fewer than N". While the hidden parts' sum (the total less the exact
+ * parts) can be split only one way, the smallest exact part above zero reads "not shown" too: one
+ * hidden part is its own sum, and 1 and 1 of a gap of 2, or 1 and 5 of 6, are pinned at the ends of
+ * their ranges (reviews on PR #354). When no exact part is left to withhold, none of the hidden parts
+ * is said to be under the line. A total under the line is worded itself, so nothing more hides then.
+ * A worded part is a string and an exact one a number.
  */
 export function smallNumberParts(counts: readonly number[]): (number | string)[] {
+  const line = CLINICAL_VALUES.smallNumberHidden.value;
   const parts: (number | string)[] = counts.map((count) => {
     const text = smallNumberText(count);
     return text === String(count) ? count : text;
   });
   if (!parts.some((part) => typeof part === "string")) return parts;
-  // A total under the line is worded itself, so the hidden parts' sum is not known.
   const total = counts.reduce((sum, count) => sum + count, 0);
   if (smallNumberText(total) !== String(total)) return parts;
-  let pick = -1;
-  counts.forEach((count, index) => {
-    if (typeof parts[index] !== "number") return;
-    const better = pick < 0 || (count > 0 && (counts[pick] === 0 || count < counts[pick]!));
-    if (better) pick = index;
-  });
-  if (pick >= 0) parts[pick] = SMALL_NUMBER_NOT_SHOWN;
-  // Every part hidden beside a shown total (4 and 4 of 8): "fewer than 5" would pin them, so none
-  // is said to be under the line.
-  else return parts.map(() => SMALL_NUMBER_NOT_SHOWN);
+  // What a reader knows: a worded part is 1 to N - 1, and a withheld one is at least N and at most
+  // the smallest part still shown. A sum at either end of its range, or one hidden part, is pinned.
+  const exactLeft = () => counts.filter((count, index) => typeof parts[index] === "number" && count > 0);
+  const pinned = () => {
+    const cap = Math.min(...exactLeft());
+    let hidden = 0;
+    let gap = 0;
+    let low = 0;
+    let high = 0;
+    counts.forEach((count, index) => {
+      if (typeof parts[index] === "number") return;
+      hidden += 1;
+      gap += count;
+      low += parts[index] === SMALL_NUMBER_NOT_SHOWN ? line : 1;
+      high += parts[index] === SMALL_NUMBER_NOT_SHOWN ? cap : line - 1;
+    });
+    return hidden === 1 || gap === low || gap === high;
+  };
+  while (pinned()) {
+    const left = exactLeft();
+    if (left.length === 0) return parts.map((part) => (typeof part === "string" ? SMALL_NUMBER_NOT_SHOWN : part));
+    const smallest = Math.min(...left);
+    parts[counts.findIndex((count, index) => typeof parts[index] === "number" && count === smallest)] =
+      SMALL_NUMBER_NOT_SHOWN;
+  }
   return parts;
 }
 

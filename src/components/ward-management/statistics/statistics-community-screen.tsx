@@ -274,7 +274,8 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       {isPhone ? (
         <TeamPhone
           people={countsOnly ? null : lists.currentlyAdmitted}
-          peopleCount={small(lists.currentlyAdmitted.length)}
+          peopleCount={countText(figures.admitted)}
+          peopleMeasured={figures.admitted.kind === "measured"}
           unitName={unitName}
           now={now}
           dayZero={dayZero}
@@ -524,6 +525,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
 function TeamPhone({
   people,
   peopleCount,
+  peopleMeasured,
   unitName,
   now,
   dayZero,
@@ -537,6 +539,8 @@ function TeamPhone({
   /** Null on the executive desk, where people are not listed. */
   people: readonly Admission[] | null;
   peopleCount: number | string;
+  /** False when the team cannot be linked, so the count is its words, never a nought. */
+  peopleMeasured: boolean;
   unitName: (unitId: string) => string;
   now: number;
   dayZero: Date;
@@ -555,7 +559,10 @@ function TeamPhone({
   );
   return (
     <PhoneBody testId="ward-statistics-community-phone">
-      <PhoneGroup title="Community handover" aside={`${peopleCount} ${peopleCount === 1 ? "person" : "people"}`}>
+      <PhoneGroup
+        title="Community handover"
+        aside={peopleMeasured ? `${peopleCount} ${peopleCount === 1 ? "person" : "people"}` : String(peopleCount)}
+      >
         {people === null ? (
           <PeopleNotListed testId="ward-statistics-community-phone-not-listed" />
         ) : sorted.length === 0 ? (

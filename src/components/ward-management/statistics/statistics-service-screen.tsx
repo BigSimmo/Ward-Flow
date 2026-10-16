@@ -572,10 +572,20 @@ function ServicePhone({
         entry.unit.beds > 0 ? Math.round(((entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100) : 0,
     }))
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
-  const busiest = [...eds].sort((a, b) => b.figures.onTheList - a.figures.onTheList || a.name.localeCompare(b.name));
+  // On the executive desk a department worded as fewer than 5 sorts as nought, so the order cannot
+  // rank the hidden ones (review on PR #354).
+  const sortValue = (count: number) => {
+    const shown = small(count);
+    return typeof shown === "number" ? shown : 0;
+  };
+  const busiest = [...eds].sort(
+    (a, b) => sortValue(b.figures.onTheList) - sortValue(a.figures.onTheList) || a.name.localeCompare(b.name),
+  );
   // Executive: the departments add up to the "waiting" total above them, so they hide together.
   const waitingShown = parts(busiest.map((entry) => entry.figures.onTheList));
   const bedDays = outOfArea.reduce((total, entry) => total + Math.max(0, entry.sinceArrival), 0) / MINUTES_PER_DAY;
+  // Bed days add up each person's stay, so beside a worded count they would give the people back.
+  const bedDaysText = typeof outOfAreaShown === "string" ? "bed days not shown" : `${bedDays.toFixed(1)} bed days`;
   return (
     <PhoneBody testId="ward-statistics-service-phone">
       <PhoneFacts
@@ -640,7 +650,7 @@ function ServicePhone({
       <PhoneSheetRow
         icon={MapPin}
         title="Far from home and out of area"
-        sub={`${outOfAreaShown} ${outOfAreaShown === 1 ? "person" : "people"} out of area · ${bedDays.toFixed(1)} bed days`}
+        sub={`${outOfAreaShown} ${outOfAreaShown === 1 ? "person" : "people"} out of area · ${bedDaysText}`}
         testId="ward-statistics-service-phone-out-of-area"
       >
         {outOfArea.length === 0 ? (

@@ -69,9 +69,7 @@ describe("Overview on the executive desk, counts only", () => {
 
     // Seed: one no-bed decline, from two of the movements, two escalated.
     expect(text("ward-statistics-overview-decline-no_bed")).toBe("fewer than 5");
-    // Every reason above nought is under five and the total of 6 is shown, so one nought is not
-    // shown either, or the hidden reasons' sum would be known.
-    expect(text("ward-statistics-overview-decline-sex_mix")).toBe("not shown");
+    expect(text("ward-statistics-overview-decline-sex_mix")).toBe("none");
     expect(text("ward-statistics-overview-declines-total")).toBe("6");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("fewer than 5");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("fewer than 5");
@@ -147,6 +145,8 @@ describe("one health service on the executive desk, counts only", () => {
 
     const row = screen.getByTestId("ward-statistics-service-phone-out-of-area");
     expect(row).toHaveTextContent("fewer than 5 people out of area");
+    // Bed days add up each stay, so beside a worded count they are not shown either.
+    expect(row).toHaveTextContent("bed days not shown");
     fireEvent.click(row);
     expect(screen.getByTestId("ward-statistics-service-phone-out-of-area-not-listed")).toBeInTheDocument();
   });
