@@ -146,12 +146,21 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
 /** How many records of each kind the seeded entries take their subjects from (see above). */
 const SEEDED_SUBJECT_POSITIONS = 3;
 
-/** The list with one record moved to each position a seeded entry may take its subject from. */
+/**
+ * The list with one record moved to each position a seeded entry may take its subject from. A desk's
+ * part keeps the whole workspace's order, so a record never sits further forward there than it does
+ * in the whole workspace.
+ */
 function placements<T extends { readonly id: string }>(records: readonly T[], id: string): T[][] {
-  const record = records.find((candidate) => candidate.id === id);
-  if (!record) return [];
+  const index = records.findIndex((candidate) => candidate.id === id);
+  if (index < 0) return [];
+  const record = records[index];
   const rest = records.filter((candidate) => candidate !== record);
-  return Array.from({ length: SEEDED_SUBJECT_POSITIONS }, (_, at) => [...rest.slice(0, at), record, ...rest.slice(at)]);
+  return Array.from({ length: Math.min(SEEDED_SUBJECT_POSITIONS, index + 1) }, (_, at) => [
+    ...rest.slice(0, at),
+    record,
+    ...rest.slice(at),
+  ]);
 }
 
 /**
