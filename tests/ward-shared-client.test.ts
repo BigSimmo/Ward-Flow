@@ -51,7 +51,7 @@ describe("shared workspace connection", () => {
     client.dispatch(typedEvent);
     await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
     expect(view?.eventLog).toEqual([
-      { type: "DISPATCH_BROADCAST_ALERT", role: "coordinator", now: 642, accepted: status === 200 },
+      { type: "DISPATCH_BROADCAST_ALERT", role: "coordinator", now: 642, accepted: status === 200, sequence: 0 },
     ]);
     expect(view?.snapshot?.revision).toBe(status === 400 ? 1 : 2);
     client.dispose();

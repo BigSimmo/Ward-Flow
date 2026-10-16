@@ -51,7 +51,9 @@ describe("18-skill audit remediation invariants", () => {
     expect(healthRes.headers.get("Cache-Control")).toBe("no-store");
     expect(healthRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
 
-    const projectRes = getLocalProjectId();
+    const projectRes = getLocalProjectId(
+      new Request("http://localhost:3000/api/local-project-id", { headers: { host: "localhost:3000" } }),
+    );
     expect(projectRes.headers.get("Cache-Control")).toBe("no-store");
     expect(projectRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });

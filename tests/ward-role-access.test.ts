@@ -367,6 +367,7 @@ describe("the scoped workspace", () => {
           now: undefined,
           accepted: true,
           movementId: scoped.movements[0].id,
+          sequence: 0,
         }),
       ).toBe(true);
     }
@@ -375,7 +376,7 @@ describe("the scoped workspace", () => {
       expect(records.movementIds.has(outside.id)).toBe(false);
     }
     expect(records.subject({ kind: "configuration" })).toBe(false);
-    const entry = { type: "PULL_PATIENT", role: "coordinator", now: undefined, accepted: true } as const;
+    const entry = { type: "PULL_PATIENT", role: "coordinator", now: undefined, accepted: true, sequence: 0 } as const;
     expect(records.logEntry({ ...entry, unitId })).toBe(true);
     expect(records.logEntry({ ...entry, unitId: otherUnit.id })).toBe(false);
     expect(records.logEntry({ ...entry, unitId, actingUnitId: otherUnit.id })).toBe(false);

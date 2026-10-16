@@ -62,6 +62,8 @@ export type SharedAccessRequest = {
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
+const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
 type PendingCommand = {
   dataMode: "prototype";
@@ -267,11 +269,15 @@ export class SharedWorkspaceClient {
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
           this.headRevision = Math.max(this.headRevision, value.commandRevision);
         const previousLog = this.view.eventLog ?? [];
+        const logged = {
+          ...eventLogEntryFor(command.event, response.ok),
+          sequence: (previousLog.at(-1)?.sequence ?? -1) + 1,
+        };
         this.publish({
-          eventLog: [
-            ...previousLog,
-            { ...eventLogEntryFor(command.event, response.ok), sequence: (previousLog.at(-1)?.sequence ?? -1) + 1 },
-          ],
+          eventLog:
+            previousLog.length >= MAX_SHARED_EVENT_LOG_ENTRIES
+              ? [...previousLog.slice(-(MAX_SHARED_EVENT_LOG_ENTRIES - 1)), logged]
+              : [...previousLog, logged],
         });
         this.pending = null;
         if (!response.ok) {
