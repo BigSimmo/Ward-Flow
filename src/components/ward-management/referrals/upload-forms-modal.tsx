@@ -142,7 +142,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
           </div>
 
           {/* Form Type */}
-          <div className={styles.field}>
+          <div className={styles.uploadField}>
             <label htmlFor="form-type-select" className={styles.fieldLabel}>
               Document / Statutory Form Type
             </label>
