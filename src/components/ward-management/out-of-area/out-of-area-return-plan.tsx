@@ -508,7 +508,7 @@ export function ReturnPlan({
               reasonDisplay="tooltip"
               onClick={onSendToWard}
             >
-              Send to ward
+              Record sent to ward
             </Button>
             <Button
               variant="pri"
