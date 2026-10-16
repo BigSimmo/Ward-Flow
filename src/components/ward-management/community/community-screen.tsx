@@ -1212,5 +1212,3 @@ export function CommunityScreen(props: CommunityScreenProps) {
     </div>
   );
 }
-
-/** Re-exported for any reader of this module's old surface; the type now lives with the helpers. */

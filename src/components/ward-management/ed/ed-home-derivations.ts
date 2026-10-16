@@ -265,7 +265,6 @@ export function groupByHealthService(summaries: readonly EdSummary[]): ServiceBa
   }));
 }
 
-/** The RowSpark window lives with the other operational defaults. */
 /**
  * How many people were waiting at one department at each 2 hour point over the last 12 hours,
  * oldest first, the last point now. Read from the record only: a movement counts at a point when it

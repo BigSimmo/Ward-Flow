@@ -141,7 +141,7 @@ export type HeroStatProps = {
   label: ReactNode;
   /** Glyph before the label. Red (danger) only when it needs action now. */
   tone?: WfTone;
-  /** A small trend beside the value, such as a `Sparkline`. */
+  /** A small trend beside the value. */
   trend?: ReactNode;
   /** Makes the stat a toggle that shows or hides the panel named by `controls`. */
   onToggle?: () => void;

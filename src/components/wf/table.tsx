@@ -43,7 +43,7 @@ export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
    * ward-flow-v9-tokens.css). It stays in place, in order and focusable.
    */
   dim?: boolean;
-  /** Header row: 36px, surface-2. Use `Th` and `SortHeader` cells inside. */
+  /** Header row: 36px, surface-2. Use `tableClasses.th` on header cells. */
   head?: boolean;
   as?: "div" | "li";
   style?: CSSProperties;
