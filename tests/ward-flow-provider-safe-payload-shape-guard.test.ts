@@ -93,10 +93,10 @@ describe("WARD_FLOW_TEXT_SAFE payload-shape compile-time guard", () => {
     // sentinel also proves THAT specific failure mode — not only the `expectTypeOf` one above — fires
     // for a widened real event.
     // The @ts-expect-error above is the entire proof; nothing references this alias afterward.
+    // Kept on one line so the @ts-expect-error above lands on the line that errors.
+    // prettier-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile-time assertion
-    type _RealEventWidenedSentinelMustNotCompile = AssertNever<
-      UnreviewedStringOrUnknownKeys<WidenedRealSafeEventPayload>
-    >;
+    type _RealEventWidenedSentinelMustNotCompile = AssertNever<UnreviewedStringOrUnknownKeys<WidenedRealSafeEventPayload>>;
   });
 
   it("sentinel 3 — importing the REAL assertions by name: deleting them from the source file is a compile error, not a silent gap", () => {
