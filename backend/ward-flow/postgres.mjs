@@ -62,6 +62,7 @@ export function createWorkspaceStore(
     revision: Number(row.revision),
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
     now: engine.worldNow(row.payload, at),
+    ...(view ? { grants: view.grants ?? [] } : {}),
   });
   let known = { version: 0, until: 0 };
   async function schemaVersion() {
@@ -734,6 +735,16 @@ export function createWorkspaceStore(
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view } = options;
+      // A community sender's team is authenticated by the selected membership, not by the
+      // browser-supplied label. Bind it before applying the event so scope can safely recognise
+      // the sender as the owner of the referral later.
+      if (
+        view?.access?.role === "community" &&
+        view.access.scope.kind === "team" &&
+        event.type === "RECEIVE_REFERRAL"
+      ) {
+        event = { ...event, sendingTeamName: view.access.scope.teamName };
+      }
       if (!engine.validCommand(event)) throw new Error("invalid-command");
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprint = createHash("sha256")
