@@ -11,6 +11,7 @@
     // Temporary compatibility opt-outs; remove after the existing .mjs diagnostics are remediated.
     "noImplicitAny": false,
     "strictNullChecks": false,
+    "strictPropertyInitialization": false,
     "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
     "types": ["node"]

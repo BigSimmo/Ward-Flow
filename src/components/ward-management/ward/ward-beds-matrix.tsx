@@ -463,7 +463,8 @@ export function WardBedsMatrix({
     }> = [];
 
     for (const bed of bedsList) {
-      const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber) || 1;
+      const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber);
+      if (!Number.isFinite(bedNumber) || bedNumber <= 0) continue;
       const isDueOut =
         bed.pastDate === true ||
         (typeof bed.expectedDays === "number" && bed.expectedDays <= 0) ||
@@ -506,15 +507,28 @@ export function WardBedsMatrix({
           typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
         const confirmed = bed.dischargeConfirmed === true;
         const isOverdue = Boolean(overdueDays) || bed.pastDate === true;
+        const isDueToday = bed.expectedDays === 0;
+        const badge = overdueDays
+          ? `${overdueDays}d overdue`
+          : bed.pastDate
+            ? "Past date"
+            : isDueToday || !confirmed
+              ? "Due today"
+              : "Confirmed";
+        const statusPhrase = isOverdue
+          ? `${confirmed ? "Confirmed" : "Expected"} discharge overdue`
+          : isDueToday || !confirmed
+            ? `${confirmed ? "Confirmed" : "Expected"} out today`
+            : "Confirmed discharge";
         items.push({
           key: `shift-due-${bed.bedLabel}-${bedNumber}`,
           group: "due-out",
           bedNumber,
           title: confirmed ? "Confirmed discharge" : "Expected discharge",
-          badge: overdueDays ? `${overdueDays}d overdue` : bed.pastDate ? "Past date" : "Due today",
+          badge,
           badgeTone: confirmed ? "warn" : "danger",
           tag: "Discharge",
-          desc: `${confirmed ? "Confirmed" : "Expected"} ${isOverdue ? "discharge overdue" : "out today"}, still here.${bed.blockReason ? ` ${bed.blockReason}.` : ""}`,
+          desc: `${statusPhrase}, still here.${bed.blockReason ? ` ${bed.blockReason}.` : ""}`,
           actions: [
             { label: "They have left", primary: false },
             { label: bed.blockReason ? "Update blocker" : "Record a blocker", primary: false },

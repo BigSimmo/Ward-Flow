@@ -87,7 +87,12 @@ import {
   scenarioWardNetwork,
   type WardScenario,
 } from "@/components/ward-management/ward-scenarios";
-import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
+import {
+  eventLogEntryFor,
+  getEventLogSequence,
+  withEventLogSequence,
+  type EventLogEntry,
+} from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
   eventCarriesTypedTextPayload,
@@ -538,11 +543,17 @@ const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
   const accepted = nextWorld.rejections.length === container.world.rejections.length;
-  const logged = { ...eventLogEntryFor(event, accepted), sequence: (container.eventLog?.at(-1)?.sequence ?? -1) + 1 };
-  if (nextWorld.worldGeneration !== container.world.worldGeneration) {
-    return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [{ ...logged, sequence: 0 }] };
-  }
   const previousLog = container.eventLog ?? [];
+  const nextSequence = getEventLogSequence(previousLog.at(-1), previousLog.length - 1) + 1;
+  const logged = withEventLogSequence(eventLogEntryFor(event, accepted), nextSequence);
+  if (nextWorld.worldGeneration !== container.world.worldGeneration) {
+    return {
+      ...container,
+      world: nextWorld,
+      typedTextSeen: false,
+      eventLog: [withEventLogSequence(eventLogEntryFor(event, accepted), 0)],
+    };
+  }
   const eventLog =
     previousLog.length >= MAX_CLIENT_EVENT_LOG_ENTRIES
       ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]

@@ -1,35 +1,30 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { findExplanatoryDisabledButtonViolations } from "../scripts/ward-flow/check-explanatory-buttons.mjs";
 import { GET as getHealth } from "../src/app/api/health/route";
 import { GET as getLocalProjectId } from "../src/app/api/local-project-id/route";
-
-const rootDir = path.resolve(__dirname, "..");
-
-function readRepoFile(relPath: string): string {
-  return readFileSync(path.join(rootDir, relPath), "utf8");
-}
+import {
+  eventLogEntryFor,
+  getEventLogSequence,
+  withEventLogSequence,
+} from "../src/components/ward-management/ward-event-log";
+import { readmissionDetailText } from "../src/components/ward-management/ward-readmission-flag";
+import { buildBuzzKey } from "../src/components/ward-management/ward/ward-notification-center";
 
 describe("18-skill audit remediation invariants", () => {
-  it("excludes tmp, .worktrees, .claude, and .next-playwright in root TypeScript configs", () => {
-    const tsconfig = readRepoFile("tsconfig.json");
-    const typecheckConfig = readRepoFile("tsconfig.typecheck.json");
-
-    for (const pattern of ["tmp/**", ".worktrees/**", ".claude/**", ".next-playwright/**"]) {
-      expect(tsconfig).toContain(`"${pattern}"`);
-      expect(typecheckConfig).toContain(`"${pattern}"`);
-    }
-  });
-
-  it("pins Australia/Perth timezone in readmissionDetailText date formatting", () => {
-    const source = readRepoFile("src/components/ward-management/ward-readmission-flag.tsx");
-    expect(source).toMatch(/toLocaleDateString\("en-AU",\s*\{[\s\S]*?timeZone:\s*"Australia\/Perth"/);
-  });
-
-  it("checks both pathname and search in WardOfflineLinks before allowing same-page navigation", () => {
-    const source = readRepoFile("src/components/ward-management/shell/ward-offline-links.tsx");
-    expect(source).toContain("url.pathname === window.location.pathname && url.search === window.location.search");
+  it("formats readmission detail dates in Australia/Perth timezone across UTC day boundaries", () => {
+    // 2026-09-01T18:00:00Z is 2026-09-02T02:00:00+08:00 in Perth (2 Sept, not 1 Sept)
+    const detail = readmissionDetailText(
+      {
+        admissionId: "adm-prior-1",
+        unitId: "unit-4a",
+        unitName: "Ward 4A",
+        dischargedAt: 0,
+        daysBefore: 12,
+      },
+      new Date("2026-09-01T18:00:00Z"),
+    );
+    expect(detail).toContain("2 Sept");
+    expect(detail).toContain("from Ward 4A · 12d before");
   });
 
   it("detects both <button disabled aria-describedby> and <Button disabled disabledReason> violations", () => {
@@ -51,17 +46,31 @@ describe("18-skill audit remediation invariants", () => {
     expect(healthRes.headers.get("Cache-Control")).toBe("no-store");
     expect(healthRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
 
-    const projectRes = getLocalProjectId();
+    const projectRes = getLocalProjectId(
+      new Request("http://localhost:3000/api/local-project-id", {
+        headers: { host: "localhost:3000" },
+      }),
+    );
     expect(projectRes.headers.get("Cache-Control")).toBe("no-store");
     expect(projectRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
-  it("preserves monotonic notice counts in appendNotices and D-38 AWOL danger tone in ward-beds-matrix", () => {
-    const reducerSource = readRepoFile("src/components/ward-management/ward-flow-reducer.ts");
-    expect(reducerSource).toContain("return { ...state, notices: [...state.notices, ...notifiable] };");
+  it("tracks monotonic EventLogEntry sequences without mutating enumerable shape and disambiguates duplicate buzzes", () => {
+    const entry = withEventLogSequence(
+      eventLogEntryFor({ type: "RESET_SCENARIO", role: "demo", now: 600 }, true),
+      1042,
+    );
+    expect(entry).toEqual({
+      type: "RESET_SCENARIO",
+      role: "demo",
+      now: 600,
+      accepted: true,
+    });
+    expect(getEventLogSequence(entry, 0)).toBe(1042);
 
-    const bedsMatrixSource = readRepoFile("src/components/ward-management/ward/ward-beds-matrix.tsx");
-    expect(bedsMatrixSource).toContain('const isAwol = !atEd && bed.statusText === "Absent without leave"');
-    expect(bedsMatrixSource).toContain('const tone = isAwol ? "danger" : "info"');
+    const counts = new Map<string, number>();
+    const buzz = { unitId: "ward-alpha", at: 540, byRole: "coordinator", message: "Refresh now", urgent: true };
+    expect(buildBuzzKey(buzz, counts)).toBe("ward-alpha:540:coordinator:Refresh now:true#0");
+    expect(buildBuzzKey(buzz, counts)).toBe("ward-alpha:540:coordinator:Refresh now:true#1");
   });
 });

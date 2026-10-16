@@ -55,6 +55,16 @@ const TABS: TabDefinition[] = [
   { id: "notices", label: "Notices" },
 ];
 
+export function buildBuzzKey(
+  buzz: { unitId: string; at: Instant; byRole: string; message?: string; urgent?: boolean },
+  occurrenceCounts: Map<string, number>,
+): string {
+  const base = `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}`;
+  const occurrence = occurrenceCounts.get(base) ?? 0;
+  occurrenceCounts.set(base, occurrence + 1);
+  return `${base}#${occurrence}`;
+}
+
 /* Walkthrough code-read, 25 Sept 2026: this called the resolver with movements only, so every
    patient — linked or not — came back "Unknown Patient". Inside the provider it now uses the
    provider's identity projection, exactly as the ward screen does; it never reads the full referral
@@ -137,9 +147,12 @@ export function WardNotificationCenter({
   };
 
   // 1. Coordinator Buzzes matching unitId
-  const matchingBuzzes = refreshRequests
-    .map((buzz) => ({ buzz, buzzKey: `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}` }))
-    .filter(({ buzz }) => buzz.unitId === unitId);
+  const matchingBuzzes = useMemo(() => {
+    const counts = new Map<string, number>();
+    return refreshRequests
+      .map((buzz) => ({ buzz, buzzKey: buildBuzzKey(buzz, counts) }))
+      .filter(({ buzz }) => buzz.unitId === unitId);
+  }, [refreshRequests, unitId]);
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
 
@@ -318,10 +331,7 @@ export function WardNotificationCenter({
                   const messageText = buzz.message || "Capacity refresh requested";
 
                   return (
-                    <div
-                      key={`buzz-${buzzKey}`}
-                      className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}
-                    >
+                    <div key={`buzz-${buzzKey}`} className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}>
                       <div className={styles.cardBody}>
                         <div className={styles.cardHeader}>
                           <time className={styles.cardTime}>{formatInstantWithDay(buzz.at, now)}</time>

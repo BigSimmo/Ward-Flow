@@ -161,6 +161,7 @@ import {
   type WardShiftView,
   wardActNowCount,
 } from "./ward-home-tab";
+import { buildBuzzKey } from "./ward-notification-center";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
 
 const WardDailySheetDialog = dynamic(
@@ -1266,11 +1267,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit) return 0;
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const activeBuzzes = (refreshRequests ?? []).filter(
-      (r) =>
-        r.unitId === unit.id &&
-        !dismissedBuzzes.includes(`${r.unitId}:${r.at}:${r.byRole}:${r.message ?? ""}:${r.urgent === true}`),
-    );
+    const buzzCounts = new Map<string, number>();
+    const activeBuzzes = (refreshRequests ?? []).filter((r) => {
+      const key = buildBuzzKey(r, buzzCounts);
+      return r.unitId === unit.id && !dismissedBuzzes.includes(key);
+    });
     count += activeBuzzes.length;
     const overdueArrivals = movements.filter(
       (m) =>

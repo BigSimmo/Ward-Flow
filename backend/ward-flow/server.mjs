@@ -213,7 +213,8 @@ export function registerShutdown(server, pool, signals = process) {
     const { errorName, errorCode } = errorFields(error);
     console.error(JSON.stringify({ event: "ward_backend_unhandled_rejection", errorName, errorCode }));
     signals.exitCode = 1;
-    void close();
+    const forceExit = setTimeout(() => signals.exit(1), 5_000);
+    void close().finally(() => clearTimeout(forceExit));
   });
   signals.on("uncaughtException", (error) => {
     const { errorName, errorCode } = errorFields(error);

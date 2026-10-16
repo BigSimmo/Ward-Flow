@@ -1,7 +1,9 @@
 import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
+import { eventLogEntryFor, getEventLogSequence, withEventLogSequence, type EventLogEntry } from "./ward-event-log";
+
+const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
 
 export type SharedSnapshot = {
@@ -300,12 +302,13 @@ export class SharedWorkspaceClient {
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
           this.headRevision = Math.max(this.headRevision, value.commandRevision);
         const previousLog = this.view.eventLog ?? [];
-        this.publish({
-          eventLog: [
-            ...previousLog,
-            { ...eventLogEntryFor(command.event, response.ok), sequence: (previousLog.at(-1)?.sequence ?? -1) + 1 },
-          ],
-        });
+        const nextSequence = getEventLogSequence(previousLog.at(-1), previousLog.length - 1) + 1;
+        const logged = withEventLogSequence(eventLogEntryFor(command.event, response.ok), nextSequence);
+        const eventLog =
+          previousLog.length >= MAX_CLIENT_EVENT_LOG_ENTRIES
+            ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]
+            : [...previousLog, logged];
+        this.publish({ eventLog });
         this.pending = null;
         if (!response.ok) {
           this.queue = [];

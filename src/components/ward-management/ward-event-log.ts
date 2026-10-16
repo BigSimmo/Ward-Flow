@@ -8,8 +8,6 @@ import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/w
  * written to storage. `acceptedEventsForHistory` shapes it for the history selectors.
  */
 export type EventLogEntry = {
-  /** Monotonic within a scenario, so consumers can track entries across retention trims. */
-  sequence: number;
   type: WardFlowEvent["type"];
   role: WardFlowRole | undefined;
   now: Instant | undefined;
@@ -27,6 +25,18 @@ export type EventLogEntry = {
   plannedAdmissionId?: string;
 };
 
+const EVENT_LOG_SEQUENCE = new WeakMap<EventLogEntry, number>();
+
+export function withEventLogSequence(entry: EventLogEntry, sequence: number): EventLogEntry {
+  EVENT_LOG_SEQUENCE.set(entry, sequence);
+  return entry;
+}
+
+export function getEventLogSequence(entry: EventLogEntry | undefined, fallbackIndex = -1): number {
+  if (!entry) return fallbackIndex;
+  return EVENT_LOG_SEQUENCE.get(entry) ?? fallbackIndex;
+}
+
 const ID_FIELDS = [
   "movementId",
   "admissionId",
@@ -42,7 +52,6 @@ export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): Event
   const role = "role" in event && typeof event.role === "string" ? (event.role as WardFlowRole) : undefined;
   const now = "now" in event && typeof event.now === "number" ? event.now : undefined;
   const entry: EventLogEntry = {
-    sequence: 0,
     type: event.type,
     role,
     now,

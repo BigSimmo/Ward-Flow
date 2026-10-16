@@ -32,6 +32,7 @@ import {
 } from "@/components/ward-management/ward-inbox-snooze";
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { getEventLogSequence } from "@/components/ward-management/ward-event-log";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -299,14 +300,20 @@ function AlertsWorkspace() {
     scopeLabel: string;
   } | null>(null);
   const broadcastResult = broadcastRequest
-    ? state.eventLog?.find((entry) => entry.sequence > broadcastRequest.logSequence && entry.type === broadcastRequest.type)
+    ? state.eventLog?.find(
+        (entry, index) =>
+          getEventLogSequence(entry, index) > broadcastRequest.logSequence && entry.type === broadcastRequest.type,
+      )
     : undefined;
   const broadcastAccepted = broadcastResult?.accepted === true;
   const broadcastRefused = broadcastResult?.accepted === false;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
   const actionResult = actionRequest
-    ? state.eventLog?.find((entry) => entry.sequence > actionRequest.logSequence && entry.type === actionRequest.type)
+    ? state.eventLog?.find(
+        (entry, index) =>
+          getEventLogSequence(entry, index) > actionRequest.logSequence && entry.type === actionRequest.type,
+      )
     : undefined;
 
   // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
@@ -554,7 +561,10 @@ function AlertsWorkspace() {
     (request: Omit<ActionRequest, "logSequence">) => {
       setBroadcastRequest(null);
       setBroadcastSuccessNotice(null);
-      setActionRequest({ ...request, logSequence: state.eventLog?.at(-1)?.sequence ?? -1 });
+      setActionRequest({
+        ...request,
+        logSequence: getEventLogSequence(state.eventLog?.at(-1), (state.eventLog?.length ?? 0) - 1),
+      });
     },
     [state.eventLog],
   );
@@ -891,7 +901,7 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "DISPATCH_BROADCAST_ALERT",
-      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
+      logSequence: getEventLogSequence(state.eventLog?.at(-1), (state.eventLog?.length ?? 0) - 1),
       title: broadcastTitle.trim(),
       scope: broadcastScope,
       scopeLabel: targetScopeLabel,
@@ -920,7 +930,7 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "STAND_DOWN_BROADCAST_ALERT",
-      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
+      logSequence: getEventLogSequence(state.eventLog?.at(-1), (state.eventLog?.length ?? 0) - 1),
       title: alert?.title ?? "Directive",
       scope: alert?.targetScope ?? "all",
       scopeLabel: alert?.targetScopeLabel ?? "the selected scope",

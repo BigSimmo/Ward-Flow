@@ -96,7 +96,7 @@ export function Button(props: ButtonProps) {
   const iconSize = size === "lg" ? 16 : size === "sm" ? 14 : 16;
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (isAriaDisabled || loading) {
+    if (off || loading) {
       event.preventDefault();
       return;
     }
