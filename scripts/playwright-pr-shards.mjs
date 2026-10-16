@@ -221,7 +221,9 @@ export function projectsForPrUiShard(shard, groups = prUiShardGroups, profiles =
 }
 
 export function playwrightArgsForPrUiShard(shard, { excludeCritical = false } = {}) {
-  const grepInvert = excludeCritical ? "@critical|@quarantine|@mockup" : "@quarantine|@mockup";
+  // Ward journey specs belong to chromium-mockups and are intentionally tagged @mockup.
+  // Do not exclude that tag or the mockup project shards collect no Ward tests.
+  const grepInvert = excludeCritical ? "@critical|@quarantine" : "@quarantine";
   return [
     "scripts/run-playwright.mjs",
     ...filesForPrUiShard(shard),
