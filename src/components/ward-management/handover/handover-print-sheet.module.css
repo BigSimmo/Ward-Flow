@@ -430,3 +430,29 @@
     background: var(--wf-accent-tint);
   }
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+/* Sheet table column widths (table-layout: fixed). In beds and Past EDD share the narrow width. */
+.colNarrow {
+  width: 70px;
+}
+
+.colReady {
+  width: 56px;
+}
+
+.colUpdated {
+  width: 80px;
+}
+
+.colHeld {
+  width: 50px;
+}
+
+.colWard {
+  width: 150px;
+}
+
+.colHold {
+  width: 180px;
+}

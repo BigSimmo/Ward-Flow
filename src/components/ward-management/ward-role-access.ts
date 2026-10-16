@@ -381,6 +381,8 @@ export type PlaceLookup = {
   edSiteCode(edId: string): string | undefined;
   edService(edId: string): HealthService | undefined;
   teamSlug(teamName: string): string;
+  /** A site's health service, from the registry: an ED-only site has no ward to read it from. */
+  siteService?(siteCode: string): HealthService | undefined;
 };
 
 export function unitInScope(scope: WardAccessScope, unitId: string, places: PlaceLookup): boolean {

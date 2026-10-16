@@ -6,13 +6,13 @@ Main line: `f57435cd45`. Read-only git analysis, no files touched, no branches s
 
 ## 1. `ward/mockups-20260910` — 35 commits ahead
 
-**Files touched:** all 46 files are under `docs/ward-flow/mockups/**` (grouped: 43 `.html`
+**Files touched:** all 46 files are under `design/third-edition-mockups/**` (grouped: 43 `.html`
 drawings + `README.md`, `WARD-FLOW-DESIGN-SYSTEM.md`, `WARD-MOCKUPS-HANDOVER-2026-09-11.md`,
 plus `third-edition-kit/{AGENT-BRIEF.md, inputs/*, shell/*}`). Two large new files
 (`ward-answer-third-edition.html` +7,497 lines, `wards-third-edition.html` +11,847 lines).
 
-**Out-of-scope paths:** none. Nothing outside `docs/ward-flow/mockups/**`; it does not touch
-`docs/ward-flow/design/prototypes/**` at all (in-scope but unused), and does **not** touch
+**Out-of-scope paths:** none. Nothing outside `design/third-edition-mockups/**`; it does not touch
+`design/prototypes/**` at all (in-scope but unused), and does **not** touch
 `.prettierignore`.
 
 **Supersession check:** merge-base `4b92d03e87`. Checked every one of the 46 touched files

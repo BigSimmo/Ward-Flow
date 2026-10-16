@@ -83,7 +83,7 @@
  *                possible.) The cost of the ruling is paid by authors in good faith, so the reason
  *                for it needs to be findable, and this is where it is findable.
  *   NOT counted  anything outside `src/components/ward-management/` — this excludes the flow-map
- *                mockups under `docs/ward-flow/mockups/`, which D-3 explicitly leaves unchanged
+ *                mockups under `design/third-edition-mockups/`, which D-3 explicitly leaves unchanged
  *                (its 10.5/11.5px stands, and it is a drawing rather than shipped ward CSS to begin
  *                with, so it was never in this population). It also excludes every other CSS module
  *                in the app outside ward-management, `check-type-scale.mjs`'s Tailwind-arbitrary-

@@ -43,6 +43,7 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
   const onSelectMovement = vi.fn();
   render(
     <WardTasksDrawer
+      alertsScreenOpen={false}
       items={items}
       acknowledgements={{}}
       completions={{}}
@@ -62,6 +63,7 @@ describe("the tasks drawer", () => {
   it("is announced as a modal dialog when it opens over a backdrop", () => {
     render(
       <WardTasksDrawer
+        alertsScreenOpen={false}
         items={items}
         acknowledgements={{}}
         completions={{}}
@@ -380,6 +382,7 @@ describe("carer, PSP and MHAS rows open the right checklist", () => {
     const onSelectDischarge = vi.fn();
     render(
       <WardTasksDrawer
+        alertsScreenOpen={false}
         items={notificationItems}
         acknowledgements={{}}
         completions={{}}

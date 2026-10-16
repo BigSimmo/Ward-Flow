@@ -107,7 +107,16 @@ export function useEdRowPanels() {
   // only one panel is open at a time, so one draft cannot be read against the wrong patient. The
   // draft starts BLANK and is reset to blank on every toggle; see `ESCORT_ANSWERS`.
   const [transportOpenFor, setTransportOpenFor] = useState<string | undefined>(undefined);
-  const [arrivalPlanOpenFor, setArrivalPlanOpenFor] = useState<string | undefined>(undefined);
+  // `fromRecord` is set only when the patient record opened the plan, so closing the plan goes back to
+  // that record and not to a record nobody opened (review on PR #365).
+  const [arrivalPlan, setArrivalPlan] = useState<{ id: string; fromRecord: boolean } | undefined>(undefined);
+  const arrivalPlanOpenFor = arrivalPlan?.id;
+  const arrivalPlanFromRecord = arrivalPlan?.fromRecord === true;
+  const setArrivalPlanOpenFor = useCallback(
+    (id: string | undefined) => setArrivalPlan(id === undefined ? undefined : { id, fromRecord: false }),
+    [],
+  );
+  const openArrivalPlanFromRecord = useCallback((id: string) => setArrivalPlan({ id, fromRecord: true }), []);
   const [transportDraft, setTransportDraft] = useState<TransportDraftState>(BLANK_TRANSPORT_DRAFT);
   // Owner's third ruling, 2026-09-17: the booking control is a popup (dialog), never an inline
   // panel — `role="dialog"`, focus moved in on open, trapped while open, and released on Escape.
@@ -217,6 +226,8 @@ export function useEdRowPanels() {
     setTransportOpenFor,
     arrivalPlanOpenFor,
     setArrivalPlanOpenFor,
+    arrivalPlanFromRecord,
+    openArrivalPlanFromRecord,
     transportDraft,
     setTransportDraft,
     setTransportDialogNode,

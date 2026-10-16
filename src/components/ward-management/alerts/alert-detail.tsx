@@ -1,12 +1,11 @@
 "use client";
 
-import { NotWiredButton } from "../not-wired-button";
 import { useState, type Ref } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { PLANNED_ADMISSION_REASON_LABELS } from "@/components/ward-management/ward-admissions";
@@ -32,6 +31,7 @@ import {
   alertDetail,
   alertGroupOf,
   alertKindOf,
+  escalationAppliesTo,
   minutesText,
   raisedAt,
   type AlertSubject,
@@ -46,6 +46,7 @@ export type AlertDetailHandlers = {
   onSnooze: (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => void;
   onReturn: (item: InboxItem) => void;
   onRelease: (item: InboxItem, reason: ReleasePullReason) => void;
+  onEscalate?: (item: InboxItem) => void;
 };
 
 /**
@@ -71,7 +72,7 @@ export function AlertDetail({
   item: InboxItem;
   movement: Movement | undefined;
   subject: AlertSubject;
-  units: readonly { id: string; name: string }[];
+  units: readonly Unit[];
   now: Instant;
   mine: boolean;
   acknowledgements: readonly { at: Instant; by: string }[] | undefined;
@@ -86,6 +87,10 @@ export function AlertDetail({
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [activityOpen, setActivityOpen] = useState(false);
+  // Whether Escalate means anything for THIS alert comes first: a movement's escalation record belongs
+  // to its bed search, so an unrelated alert on the same movement must not claim it was escalated.
+  const escalationApplies = escalationAppliesTo(item, movement, units, now);
+  const isEscalated = escalationApplies && Boolean(movement?.escalation);
   const isPhone = useIsPhone();
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
@@ -238,7 +243,27 @@ export function AlertDetail({
             onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
           />
         )}
-        <NotWiredButton size="sm" variant="ghost" icon={ArrowUpRight} label="Escalate" />
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={isEscalated ? Check : ArrowUpRight}
+          disabledReason={
+            !movement
+              ? "This alert has no movement to escalate"
+              : !escalationApplies
+                ? "Escalation records that the bed search is exhausted, which is not the case for this alert"
+                : isEscalated
+                  ? "Already escalated"
+                  : undefined
+          }
+          reasonDisplay="tooltip"
+          aria-label={isEscalated ? `Escalated ${subjectLine}` : `Escalate ${subjectLine}`}
+          onClick={() => {
+            if (movement && escalationApplies && !isEscalated) handlers.onEscalate?.(item);
+          }}
+        >
+          {isEscalated ? "Escalated" : "Escalate"}
+        </Button>
       </div>
     </details>
   );

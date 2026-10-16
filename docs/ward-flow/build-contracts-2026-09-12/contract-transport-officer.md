@@ -1,6 +1,6 @@
 # Build contract — Ward Flow "Transport officer"
 
-Drawing: `docs/ward-flow/mockups/transport-officer-third-edition.html` (7,060 lines)
+Drawing: `design/third-edition-mockups/transport-officer-third-edition.html` (7,060 lines)
 Route measured: `src/app/mockups/ward-flow/transport/officer/page.tsx` → `OfficerScreen`
 (`src/components/ward-management/officer/officer-screen.tsx`). **This screen already exists** —
 this is a three-way diff, not a from-scratch build.

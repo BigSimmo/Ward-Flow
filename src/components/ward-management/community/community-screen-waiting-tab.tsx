@@ -105,7 +105,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     onClick={() => setTriageFilter("p1")}
                   >
                     <span>Priority 1 Immediate</span>
-                    <span className={styles.badgePill} id="chipP1Badge" style={{ color: "var(--danger-ink)" }}>
+                    <span className={`${styles.badgePill} ${styles.inkDanger}`} id="chipP1Badge">
                       {demoTeamReferrals.filter((r) => r.urgency === 1).length}
                     </span>
                   </button>
@@ -150,9 +150,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     </span>
                   </button>
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                  Sorted by Longest Wait
-                </div>
+                <div className={styles.filterMeta}>Sorted by Longest Wait</div>
               </div>
               {demoVisibleReferrals.length === 0 ? (
                 <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
@@ -164,7 +162,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
                     <li
                       key={referral.id}
-                      className={styles.refCard}
+                      className={`${styles.refCard} ${styles.clickable}`}
                       data-testid={`ward-community-waiting-${referral.id}`}
                       data-ref-id={referral.id}
                       data-prio={`p${referral.urgency}`}
@@ -172,7 +170,6 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         setSelectedPatientId(referral.patientId);
                         setActiveDrawer("pxDrawer");
                       }}
-                      style={{ cursor: "pointer" }}
                     >
                       <div className={styles.refCardHead}>
                         <span className={styles.refId}>Referral · {referral.priorityLabel}</span>
@@ -199,12 +196,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                           {referral.legalStatus}
                         </span>
                       </div>
-                      <p
-                        className={styles.refSummaryText}
-                        style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)", margin: "0.5rem 0" }}
-                      >
-                        {referral.clinicalSummary}
-                      </p>
+                      <p className={styles.refSummaryText}>{referral.clinicalSummary}</p>
                       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
                       <div className={styles.refActionsRow} onClick={(e) => e.stopPropagation()}>
                         <button
@@ -251,7 +243,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
             </p>
           ) : (
             <>
-              <div className={styles.filterChipsGroup} style={{ marginBottom: "0.75rem" }}>
+              <div className={`${styles.filterChipsGroup} ${styles.chipsSpaced}`}>
                 <button
                   type="button"
                   className={styles.chipFilterBtn}
@@ -270,7 +262,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   onClick={() => setTriageFilter("p1")}
                 >
                   <span>Priority 1 Immediate</span>
-                  <span className={styles.badgePill} id="chipP1Badge" style={{ color: "var(--danger-ink)" }}>
+                  <span className={`${styles.badgePill} ${styles.inkDanger}`} id="chipP1Badge">
                     {p1ReferralsCount}
                   </span>
                 </button>
@@ -358,13 +350,13 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                             `${referral.ageBand} · ${referral.homeRegion}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
                         </div>
                         <ReferralIntakeSummary intake={referral.intake} />
-                        <p className={styles.cardDetail} style={{ display: "none" }}>
+                        <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referralWaitLine(referral, now)}
                         </p>
-                        <p className={styles.cardDetail} style={{ display: "none" }}>
+                        <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referral.ageBand} · {referral.homeRegion} · {referralOriginLabel(referral)}
                         </p>
-                        <p className={styles.cardDetail} style={{ display: "none" }}>
+                        <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referral.transportNeeded ? "Transport needed" : "No transport recorded"}
                         </p>
                         <div className={styles.cardActionsGroup}>

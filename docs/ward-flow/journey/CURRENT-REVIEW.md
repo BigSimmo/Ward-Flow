@@ -28,10 +28,10 @@ prototype, and no clinical or screen behaviour was changed by this review.
 
 ## Source-confirmed product gaps
 
-| Gap | Evidence and consequence |
-| --- | --- |
-| **Record leave bed cannot submit** | `ward-screen.tsx` `submitLeaveBed` assigns `chosenAdmissionId` to `undefined` and returns before `RECORD_LEAVE_BED` dispatch. The visible ward control cannot create a leave-bed record. |
-| **Fabricated inbox ID can be completed** | `ward-flow-reducer.ts` `COMPLETE_INBOX_ITEM` checks the commitment prefix but does not verify that the ID names a real inbox row. Real fact rows remain uncompletable. |
+| Gap                                               | Evidence and consequence                                                                                                                                                                 |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Record leave bed cannot submit**                | `ward-screen.tsx` `submitLeaveBed` assigns `chosenAdmissionId` to `undefined` and returns before `RECORD_LEAVE_BED` dispatch. The visible ward control cannot create a leave-bed record. |
+| **Fabricated inbox ID can be completed**          | `ward-flow-reducer.ts` `COMPLETE_INBOX_ITEM` checks the commitment prefix but does not verify that the ID names a real inbox row. Real fact rows remain uncompletable.                   |
 | **Broadcast acknowledgement loses ward identity** | `layout.tsx` mounts `WardBroadcastBanner` without `currentUnitId`; the banner then acknowledges as the coordinator desk. Its global Acknowledge button does not record the viewing ward. |
 
 The Explorer's **What's wrong** tab contains the other mapped route and record gaps. The **Every

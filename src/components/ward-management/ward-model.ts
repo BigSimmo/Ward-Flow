@@ -24,6 +24,7 @@ import type { LegalClock } from "@/components/ward-management/ward-legal-clock";
 import type {
   BedPreparationNote,
   BedReleaseBlocker,
+  DischargeDelayClearReason,
   GenderPlacementReason,
   LegalFormReceiptCorrectionReason,
   LegalStatusChangeReason,
@@ -1809,6 +1810,23 @@ export type Movement = {
   allocatedBed?: string | number;
   /** Statutory examination revoked flag, protected from generic clear. */
   examRevoked?: boolean;
+  /** Append-only log of evolving clinical reassessments recorded while awaiting placement. */
+  reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>;
+  reassessmentNote?: string;
+};
+
+/**
+ * Timestamped clinical reassessment entry recorded when an ED or referring clinician updates
+ * a referral or movement's presentation, medical clearance, or acuity while awaiting bed placement.
+ */
+export type ClinicalReassessmentEntry = {
+  readonly at: Instant;
+  readonly by: WardFlowRole;
+  readonly note?: string;
+  readonly clinicalUpdate?: boolean;
+  readonly clearanceUpdated?: boolean;
+  readonly urgency?: UrgencyLevel;
+  readonly highAcuity?: boolean;
 };
 
 /** A transition the reducer refused, surfaced on the coordinator screen rather than swallowed. */
@@ -1981,6 +1999,16 @@ export type BedRelease = {
   confirmedAt: Instant;
   /** A role — a unit or service label. Never a personal name. */
   confirmedBy: string;
+  /** Reason the most recent discharge blocker was cleared, chosen from `DISCHARGE_DELAY_CLEAR_REASONS`. */
+  lastClearedBlockReason?: DischargeDelayClearReason;
+  /** Append-only history of cleared discharge blockers on this bed release. */
+  clearedBlockHistory?: ReadonlyArray<{
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+    /** Absent when the clearing event named no reason; never defaulted. */
+    readonly reason?: DischargeDelayClearReason;
+    readonly blocker?: BedReleaseBlocker | null;
+  }>;
 };
 
 /**
@@ -2573,6 +2601,9 @@ export type ReferralAddressing = {
    * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward's act, not the person.
    */
   heldBedNumber?: number;
+  /** Append-only log of evolving clinical reassessments recorded on this destination addressing. */
+  reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>;
+  reassessmentNote?: string;
 };
 
 /** The ward arm, named so signatures can require it. */
@@ -3119,6 +3150,8 @@ export type Referral = {
     cleared: boolean;
     at: Instant;
   };
+  readonly [key: `reassessmentHistory${string}`]: ReadonlyArray<ClinicalReassessmentEntry> | undefined;
+  readonly [key: `reassessmentNote${string}`]: string | undefined;
 };
 
 /**

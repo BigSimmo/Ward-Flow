@@ -123,6 +123,20 @@ export function patientInBedOnUnit(
   return admissions.some((stay) => stay.patientId === patientId && stay.unitId === unitId && stay.state === "occupied");
 }
 
+/**
+ * The ward where a person already holds a bed, pulled or occupied. `PULL_PATIENT` refuses a second
+ * current stay unless it is the referral's recorded sending-ward stay, so a ward cannot send someone
+ * who holds a bed anywhere else as a new admission.
+ */
+export function patientHeldBedUnitId(
+  admissions: readonly Pick<Admission, "patientId" | "unitId" | "state">[],
+  patientId: string,
+): string | undefined {
+  return admissions.find(
+    (stay) => stay.patientId === patientId && (stay.state === "pulled" || stay.state === "occupied"),
+  )?.unitId;
+}
+
 export const NAME_NOT_RECORDED = "Name not recorded";
 export const UMRN_NOT_RECORDED = "UMRN not recorded";
 

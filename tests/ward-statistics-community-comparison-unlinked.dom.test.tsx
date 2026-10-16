@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 }));
 
 /**
- * WF-47 — **THE COMPARISON TABLE PRINTS BARE ZEROS WHEN MEMBERSHIP CANNOT BE WORKED OUT.**
+ * **THE COMPARISON TABLE PRINTS BARE ZEROS WHEN MEMBERSHIP CANNOT BE WORKED OUT.**
  *
  * `statistics-community-screen.tsx`'s "Where this team sits" table rendered
  * `row.lists.currentlyAdmitted.length` (and the two counts beside it) directly, with no gate on
@@ -177,6 +177,17 @@ describe("the comparison table, when the join cannot run for some admissions", (
     expect(cells[1]?.textContent?.trim()).toBe("8");
     for (const cell of cells) {
       expect(cell).not.toHaveAttribute("data-unmeasured");
+    }
+  });
+});
+
+describe("the team's own page, when the join cannot run for it", () => {
+  it("words each headline figure as not linked, never a bare none", () => {
+    renderScreen(MEMBERLESS_TEAM!.id);
+    for (const key of ["admitted", "expected", "discharged", "other"]) {
+      const figure = screen.getByTestId(`ward-statistics-community-kpi-${key}`);
+      expect(figure.textContent).toBe("not linked to this team");
+      expect(figure).toHaveAttribute("data-unmeasured", "true");
     }
   });
 });

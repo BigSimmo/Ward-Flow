@@ -54,6 +54,11 @@ describe("legal-form authorship across delegated reducer handlers", () => {
         path.normalize("src/components/ward-management/alerts/ward-broadcast-reducer.ts"),
         path.normalize("src/components/ward-management/ward-flow-record-events.ts"),
         path.normalize("src/components/ward-management/ward-flow-undo-events.ts"),
+        path.normalize("src/components/ward-management/ward-flow-referral-send-events.ts"),
+        path.normalize("src/components/ward-management/ward-flow-referral-answer-events.ts"),
+        path.normalize("src/components/ward-management/ward-flow-placement-events.ts"),
+        path.normalize("src/components/ward-management/ward-flow-transport-events.ts"),
+        path.normalize("src/components/ward-management/ward-flow-bed-events.ts"),
       ]),
     );
     for (const file of sources) {

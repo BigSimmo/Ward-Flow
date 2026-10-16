@@ -1,4 +1,4 @@
-# Build contract — Legal forms (drawing: `docs/ward-flow/mockups/legal-forms-third-edition.html`)
+# Build contract — Legal forms (drawing: `design/third-edition-mockups/legal-forms-third-edition.html`)
 
 ## 1. Does this screen already exist? NO — as a screen. Parts of its DATA are wired elsewhere.
 

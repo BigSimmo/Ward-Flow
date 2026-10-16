@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**541 rulings/items extracted, across 30 of 35 files.**
+**544 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 315 distinct IDs
+## ID index — 318 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -223,12 +223,15 @@ safe global key across 30 files.
 | `D-52` | `decisions.md`:630 | D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026) |
 | `D-53` | `decisions.md`:636 | D-53. Elevate design language and Glare mode adopted for Design System v9 (10 October 2026) |
 | `D-54` | `decisions.md`:643 | D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026) |
-| `D-55` | `decisions.md`:650 | D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026) |
-| `D-56` | `decisions.md`:656 | D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026) |
-| `D-57` | `decisions.md`:662 | D-57. Twenty Top 25 items move from the showcase into the real screens, each behind its own flag (15 October 2026) |
-| `D-58` | `decisions.md`:689 | D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026) |
-| `D-59` | `decisions.md`:695 | D-59. Each role sees only what it needs, from one access table (15 October 2026) |
-| `D-60` | `decisions.md`:701 | D-60. Criteria led discharge, for voluntary patients only (15 October 2026) |
+| `D-55` | `decisions.md`:651 | D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026) |
+| `D-56` | `decisions.md`:657 | D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026) |
+| `D-57` | `decisions.md`:663 | D-57. Twenty Top 25 items move from the showcase into the real screens, each behind its own flag (15 October 2026) |
+| `D-58` | `decisions.md`:690 | D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026) |
+| `D-59` | `decisions.md`:696 | D-59. Each role sees only what it needs, from one access table (15 October 2026) |
+| `D-60` | `decisions.md`:702 | D-60. Criteria led discharge, for voluntary patients only (15 October 2026) |
+| `D-61` | `decisions.md`:709 | D-61. Tasks and Alerts are one queue called Alerts (16 October 2026) |
+| `D-62` | `decisions.md`:715 | D-62. The one Alerts queue is signed off and its flag removed (16 October 2026) |
+| `D-63` | `decisions.md`:721 | D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -497,13 +500,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 30 files
 
-### `decisions.md` (2026-09-07 – 2026-10-15 (mixed, see file))
+### `decisions.md` (2026-09-07 – 2026-10-16 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-60 item(s):
+63 item(s):
 
 - `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 24, heading: "D-2. Railway is disconnected"
@@ -559,12 +562,15 @@ safe global key across 30 files.
 - `D-52` — line 630, heading: "D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026)"
 - `D-53` — line 636, heading: "D-53. Elevate design language and Glare mode adopted for Design System v9 (10 October 2026)"
 - `D-54` — line 643, heading: "D-54. Tier time thresholds remain synthetic demo values requiring clinical sign-off (10 October 2026)"
-- `D-55` — line 650, heading: "D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026)"
-- `D-56` — line 656, heading: "D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026)"
-- `D-57` — line 662, heading: "D-57. Twenty Top 25 items move from the showcase into the real screens, each behind its own flag (15 October 2026)"
-- `D-58` — line 689, heading: "D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026)"
-- `D-59` — line 695, heading: "D-59. Each role sees only what it needs, from one access table (15 October 2026)"
-- `D-60` — line 701, heading: "D-60. Criteria led discharge, for voluntary patients only (15 October 2026)"
+- `D-55` — line 651, heading: "D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026)"
+- `D-56` — line 657, heading: "D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026)"
+- `D-57` — line 663, heading: "D-57. Twenty Top 25 items move from the showcase into the real screens, each behind its own flag (15 October 2026)"
+- `D-58` — line 690, heading: "D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026)"
+- `D-59` — line 696, heading: "D-59. Each role sees only what it needs, from one access table (15 October 2026)"
+- `D-60` — line 702, heading: "D-60. Criteria led discharge, for voluntary patients only (15 October 2026)"
+- `D-61` — line 709, heading: "D-61. Tasks and Alerts are one queue called Alerts (16 October 2026)"
+- `D-62` — line 715, heading: "D-62. The one Alerts queue is signed off and its flag removed (16 October 2026)"
+- `D-63` — line 721, heading: "D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 
@@ -572,10 +578,10 @@ safe global key across 30 files.
 
 18 item(s):
 
-- #1 (no owner-issued ID, this file's own numbering) — line 35, heading: "1. Non-transport handover progression (`WF-16`)"
-- #2 (no owner-issued ID, this file's own numbering) — line 40, heading: "2. Bed cancellation automatically cancels or prompts cancellation of linked booked transport (`WF-37`)"
-- #3 (no owner-issued ID, this file's own numbering) — line 45, heading: "3. CRITICAL CLINICAL RULING: Involuntary bed matching and zero vacant locked bed handling (`WF-01`, `WF-10`)"
-- #4 (no owner-issued ID, this file's own numbering) — line 54, heading: "4. Terminal state on referral withdrawal (`WF-13`, `P3-WD`)"
+- #1 (no owner-issued ID, this file's own numbering) — line 35, heading: "1. Non-transport handover progression"
+- #2 (no owner-issued ID, this file's own numbering) — line 40, heading: "2. Bed cancellation automatically cancels or prompts cancellation of linked booked transport"
+- #3 (no owner-issued ID, this file's own numbering) — line 45, heading: "3. CRITICAL CLINICAL RULING: Involuntary bed matching and zero vacant locked bed handling"
+- #4 (no owner-issued ID, this file's own numbering) — line 54, heading: "4. Terminal state on referral withdrawal (`P3-WD`)"
 - #5 (no owner-issued ID, this file's own numbering) — line 59, heading: "5. Network-wide search privacy and cross-ward referral lookup (`D-14`)"
 - #6 (no owner-issued ID, this file's own numbering) — line 64, heading: "6. Community screen transport booking affordance (`ISSUE-P2-88`)"
 - #7 (no owner-issued ID, this file's own numbering) — line 69, heading: "7. Mobile drawer responsive sheet adaptation (`DRAWER-RESPONSIVE-SHEET`)"

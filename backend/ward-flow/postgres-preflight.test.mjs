@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+import { LATEST_MIGRATION } from "./migrations.mjs";
 
 const sqlFiles = [
   "001-shared-workspace",
@@ -12,6 +13,7 @@ const sqlFiles = [
   "006-row-level-security",
   "007-prototype-only",
   "008-role-access",
+  "009-access-cover-requests",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -46,7 +48,9 @@ function checkExpressions(sql) {
   return result;
 }
 
-function fixture(version = 8) {
+const ALL_VERSIONS = Array.from({ length: LATEST_MIGRATION }, (_, index) => index + 1);
+
+function fixture(version = LATEST_MIGRATION) {
   const owner = "migration_admin";
   const catalog = {
     owner,
@@ -158,8 +162,10 @@ function fixture(version = 8) {
       if (composite) foreign(name, composite[1].split(/,\s*/), composite[2], composite[3].split(/,\s*/));
       checks(name, body);
     }
-    for (const match of sql.matchAll(/CREATE INDEX (\w+) ON ward_flow\.(\w+)\(([^)]+)\)(?: WHERE ([^;]+))?;/g))
-      addIndex(match[1], match[2], match[3], false, match[4]);
+    for (const match of sql.matchAll(
+      /CREATE (UNIQUE )?INDEX (\w+) ON ward_flow\.(\w+)\(([^)]+)\)(?: WHERE ([^;]+))?;/g,
+    ))
+      addIndex(match[2], match[3], match[4], !!match[1], match[5]);
     for (const match of sql.matchAll(
       /CREATE FUNCTION ward_flow\.(\w+)\(\) RETURNS trigger LANGUAGE plpgsql AS \$\$([\s\S]*?)\$\$;/g,
     ))
@@ -207,6 +213,17 @@ function fixture(version = 8) {
     catalog.objects.find((o) => o.name === "audit").columns.push(column("actor_scope", scope));
     checks("audit", scope);
   }
+  if (version >= 9) {
+    // Columns and a check added to tables that 008 and 003 made.
+    for (const match of sqlFiles[8].matchAll(/ALTER TABLE ward_flow\.(\w+) ADD COLUMN (\w+) ([^;]+);/g)) {
+      catalog.objects.find((o) => o.name === match[1]).columns.push(column(match[2], match[3]));
+      checks(match[1], match[3]);
+      const reference = /REFERENCES ward_flow\.(\w+)\((\w+)\)/.exec(match[3]);
+      if (reference) foreign(match[1], [match[2]], reference[1], [reference[2]]);
+    }
+    for (const match of sqlFiles[8].matchAll(/ALTER TABLE ward_flow\.(\w+) ADD CONSTRAINT \w+ (CHECK [^;]+);/g))
+      checks(match[1], match[2]);
+  }
   if (version >= 7)
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
@@ -250,13 +267,13 @@ function withPostgresTextDeparse(catalog) {
   return catalog;
 }
 
-function pool(catalog, versions = [1, 2, 3, 4, 5, 6, 7, 8]) {
+function pool(catalog, versions = ALL_VERSIONS) {
   const queries = [];
   return {
     queries,
     query: async (sql) => {
       queries.push(sql);
-      if (sql === "SELECT version FROM ward_flow.migrations ORDER BY version LIMIT 9")
+      if (sql === `SELECT version FROM ward_flow.migrations ORDER BY version LIMIT ${LATEST_MIGRATION + 1}`)
         return { rows: versions.map((version) => ({ version })) };
       assert.match(sql, /^WITH namespace/);
       assert.doesNotMatch(sql, /(?:ALTER|INSERT INTO|UPDATE ward_flow|DELETE FROM|DROP|CREATE SCHEMA|CREATE TABLE)/);
@@ -271,7 +288,7 @@ test("absent namespace is accepted by one read-only catalogue query", async () =
   assert.equal(db.queries.length, 1);
 });
 
-for (const version of [1, 2, 3, 4, 5, 6, 7, 8])
+for (const version of ALL_VERSIONS)
   test(`known migration ${version} namespace permits the separate migration stage`, async () => {
     const db = pool(
       fixture(version),
@@ -279,7 +296,7 @@ for (const version of [1, 2, 3, 4, 5, 6, 7, 8])
     );
     await verifyPostgresNamespace(db);
     assert.equal(db.queries.length, 2);
-    assert.match(db.queries[1], /LIMIT 9$/);
+    assert.match(db.queries[1], new RegExp(`LIMIT ${LATEST_MIGRATION + 1}$`));
   });
 
 test("PostgreSQL text-literal casts in defaults, checks and index predicates permit the known schema", async () => {
@@ -346,7 +363,7 @@ test("noncontiguous, empty, unsupported and malformed versions refuse migration"
     [2],
     [1, 3],
     [1, 2, 3, 5],
-    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [...ALL_VERSIONS, LATEST_MIGRATION + 1],
     [1, 2, 2],
     [1, 2, 3, 4, "5"],
   ])
@@ -596,6 +613,41 @@ test("from migration 8 memberships, break glass and the widened audit role are e
     },
     (c) => {
       c.policies = c.policies.filter((p) => p.table_name !== "break_glass");
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
+
+test("from migration 9 cover, requests for access and alerts by role are exact; before it they are refused", async () => {
+  await assert.rejects(verifyPostgresNamespace(pool(fixture(9), [1, 2, 3, 4, 5, 6, 7, 8])), /Unrecognised or unsafe/);
+  for (const alter of [
+    (c) => {
+      c.objects.find((o) => o.name === "memberships").columns.pop();
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "push_subscriptions").columns.pop();
+    },
+    (c) => {
+      c.constraints = c.constraints.filter((k) => !k.definition.includes("kind = 'role' OR"));
+    },
+    (c) => {
+      c.constraints = c.constraints.filter(
+        (k) => !(k.table_name === "push_subscriptions" && k.foreign_table === "memberships"),
+      );
+    },
+    (c) => {
+      c.objects = c.objects.filter((o) => o.name !== "access_requests_one_open");
+    },
+    (c) => {
+      c.objects.find((o) => o.name === "access_requests_one_open").definition = c.objects
+        .find((o) => o.name === "access_requests_one_open")
+        .definition.replace("UNIQUE ", "");
+    },
+    (c) => {
+      c.policies = c.policies.filter((p) => p.table_name !== "access_requests");
     },
   ]) {
     const catalog = fixture();

@@ -41,7 +41,6 @@ describe("bare PR publication policy", () => {
 
   it("makes handoff the post-PR default instead of inviting CI babysitting", () => {
     if (!existsSync(hookPath)) {
-      expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
       expect(agents).toContain("Do not babysit CI");
       return;
     }

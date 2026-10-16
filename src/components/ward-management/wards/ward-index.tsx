@@ -39,6 +39,7 @@ import {
   unitHasLockedBeds,
   wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
@@ -411,9 +412,18 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "/") return;
+      if (event.key !== "/" || event.defaultPrevented) return;
+      if (hasOpenSheet() || document.querySelector('[aria-modal="true"]')) return;
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
       event.preventDefault();
       searchRef.current?.focus();
     }
@@ -1068,7 +1078,7 @@ function WardProfileBody({
   row: WardRow;
   meta: WardMetadata;
   forms: string[];
-  close?: () => void;
+  close?: (options?: { restoreFocus?: boolean }) => void;
   /** In the phone sheet, whose footer already holds Enter ward. */
   inSheet?: boolean;
 }) {
@@ -1136,7 +1146,7 @@ function WardProfileBody({
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}
             href={`/mockups/ward-flow/board/${unit.id}`}
-            onClick={close}
+            onClick={() => close?.({ restoreFocus: false })}
           >
             Bed board
           </Link>
@@ -1145,7 +1155,7 @@ function WardProfileBody({
           <Link
             className={buttonClass({ variant: "pri", size: "sm" })}
             href={`/mockups/ward-flow/ward/${unit.id}`}
-            onClick={close}
+            onClick={() => close?.({ restoreFocus: false })}
           >
             Enter ward
           </Link>

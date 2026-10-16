@@ -53,7 +53,7 @@ describe("Command activity from current records", () => {
     expect(added!.text).toContain(movementUmrn(movement, state));
   });
 
-  it("shows the opening urgency tier on past events, not the current tier (WF-49)", () => {
+  it("shows the opening urgency tier on past events, not the current tier", () => {
     const state = seedWardFlowState();
     const target = state.movements.find((movement) => isOpen(movement) && movement.urgencyChanges.length === 0)!;
     expect(target).toBeDefined();
@@ -103,7 +103,7 @@ describe("Command activity from current records", () => {
     );
   });
 
-  it("shows the current tier for a movement whose urgency has never changed (WF-49)", () => {
+  it("shows the current tier for a movement whose urgency has never changed", () => {
     const state = seedWardFlowState();
     const target = state.movements.find((movement) => movement.urgencyChanges.length === 0)!;
     expect(target).toBeDefined();

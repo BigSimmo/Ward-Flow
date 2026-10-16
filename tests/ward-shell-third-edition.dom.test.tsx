@@ -303,7 +303,8 @@ function focusableWithin(container: HTMLElement): HTMLElement[] {
 describe("assertion 3 — drawer focus trap and Escape order", () => {
   it.each([
     ["Activity", "ward-bar-activity-trigger"],
-    ["Tasks", "ward-bar-tasks-trigger"],
+    // The bed coordinator's Tasks button is the Alerts quick look (D-61).
+    ["Alerts", "ward-bar-tasks-trigger"],
     ["Tools", "ward-bar-tools-trigger"],
   ])(
     "%s opens as a modal dialog and traps focus inside its panel",

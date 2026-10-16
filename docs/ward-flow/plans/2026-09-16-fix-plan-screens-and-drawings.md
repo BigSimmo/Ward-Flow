@@ -12,12 +12,12 @@ MANIFEST.json, CONTACT-SHEET.html, screen-verification.json and SCREEN-VERIFICAT
   `reference/gemini-2026-09-15/`; settings was further rebuilt by Gemini (ae908cdd1b, 6ad62eb63c,
   f0e5ea88f9); movement was rewritten earlier by 7567c47720. SCREEN-VERIFICATION recorded "matches" on
   16 Sept for add-a-patient, patient-search and patient-now **against rewritten drawings** (invalid).
-- WF-50: design standard §14 row 6 (WARD-FLOW-DESIGN-SYSTEM.md:1157,1205) says the Community teams
+- Community role label: design standard §14 row 6 (WARD-FLOW-DESIGN-SYSTEM.md:1157,1205) says the Community teams
   screen is the coordinator's view, so "Bed coordinator" is correct; the real contradiction was the
   page dispatching as `community` (now Not wired by gemfix 938a05da4a).
-- WF-27 Delays verified defect: pressing an owner card or cause leaves a chip showing pressed while it
+- Delays verified defect: pressing an owner card or cause leaves a chip showing pressed while it
   marks nothing (delays-screen.tsx:148-153, 358-359, 404, 470-471). Capacity sort box, demo reset untested.
-- WF-28: "owner ruling D9" in the redirect-stub guard is Phase 6 **spec** D9; a 12 Sept closing ruling
+- Redirect-stub citation: "owner ruling D9" in the redirect-stub guard is Phase 6 **spec** D9; a 12 Sept closing ruling
   is cited only in a test comment (tests/ward-capacity-absorbed-morning-coverage.dom.test.tsx:18-21).
 - Top bar: Record a decision / Contact a team / Export the figures only announce to screen readers;
   drawings show menus with a visible "Not wired in this prototype." Service chooser changes its label
@@ -41,7 +41,7 @@ MANIFEST.json, CONTACT-SHEET.html, screen-verification.json and SCREEN-VERIFICAT
 - **Lane G (drawings):** G1 restore the 13 approved drawings + movement from `1ef9ed3975` in one recorded
   commit (after H1/H2) · G2 calibrate checker on Command (EDGE_BAR_ALLOWED), per-file/per-rule count,
   flag R2 hits that are script values · G3 (Opus) checker rule R14 for D5 · G4 NEW-LOOK-SPEC.md · G5
-  Discharges pilot (D1: owner compares before any other screen) · G6 Command shell + WF-44 "subset of the
+  Discharges pilot (D1: owner compares before any other screen) · G6 Command shell + "subset of the
   network" sentence computed from UNITS and restate the standard (Q5) · G7 shell to every drawing (solo) ·
   G8 waves of three screens per worktree, one Opus adversarial review per batch: A plan Tasks 6-9, B
   11-19 (settings waits H1), C 20-21 (waits H2), D the uncovered bodies (command/capacity/delays;

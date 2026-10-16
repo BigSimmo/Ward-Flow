@@ -155,59 +155,11 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
         </div>
         <div className={styles.modalBody}>
           {activeModalType === "contact" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-              }}
-              style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-            >
-              <p className={styles.footnote}>
-                Log a formal face-to-face or telehealth clinical contact against catchment caseload.
+            <div className={styles.stackLg}>
+              <p className={styles.footnote} data-testid="ward-community-last-contact">
+                Logs a team-level contact timestamp for {teamConfig.name} in this session.
               </p>
-              <div>
-                <label
-                  htmlFor="community-contact-patient"
-                  style={{
-                    display: "block",
-                    fontSize: "var(--t-1)",
-                    fontWeight: 600,
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Patient ID
-                </label>
-                <input
-                  id="community-contact-patient"
-                  type="text"
-                  required
-                  defaultValue=""
-                  className={styles.searchInput}
-                  style={{ width: "100%", height: "2.25rem", padding: "0 0.5rem" }}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="community-contact-modality"
-                  style={{
-                    display: "block",
-                    fontSize: "var(--t-1)",
-                    fontWeight: 600,
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Contact Modality
-                </label>
-                <select
-                  id="community-contact-modality"
-                  className={styles.declineSelect}
-                  style={{ width: "100%", height: "2.25rem" }}
-                >
-                  <option value="home">Home Visit (Community Outreach)</option>
-                  <option value="clinic">Clinic Appointment</option>
-                  <option value="phone">Telephone Review</option>
-                </select>
-              </div>
-              <div className={styles.modalFoot} style={{ margin: 0, padding: 0, border: "none", background: "none" }}>
+              <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>
                 <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
                   Cancel
                 </button>
@@ -231,27 +183,20 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   ? `Contact recorded as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
                   : "Clinical contact is not recorded yet."}
               </p>
-            </form>
+            </div>
           )}
 
           {activeModalType === "handover" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div className={styles.stackLg}>
               <p className={styles.footnote}>Catchment MDT summary print view for clinical huddle.</p>
-              <div
-                style={{
-                  background: "var(--surface-2)",
-                  padding: "1rem",
-                  borderRadius: "var(--r2)",
-                  fontSize: "var(--t-1)",
-                }}
-              >
+              <div className={styles.mdtSummary}>
                 <b>{team.name} · Morning MDT Summary</b>
-                <p style={{ margin: "0.5rem 0 0" }}>
+                <p className={styles.mdtSummaryLine}>
                   {caseloadRows.length} Active Caseload · {waitingReferrals.length} Waiting Referrals ·{" "}
                   {recordedCtoCount} recorded Form 5A/5B
                 </p>
               </div>
-              <div className={styles.modalFoot} style={{ margin: 0, padding: 0, border: "none", background: "none" }}>
+              <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>
                 <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
                   Close
                 </button>
@@ -269,92 +214,36 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
           )}
 
           {activeModalType === "crisis" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0.75rem 0.875rem",
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--r2)",
-                }}
-              >
+            <div className={styles.stackLg}>
+              <div className={styles.vehicleCard}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: "var(--t-3)", color: "var(--ink)" }}>
-                    Mobile Outreach Vehicle 2 (Car 2)
-                  </div>
-                  <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
+                  <div className={styles.vehicleName}>Mobile Outreach Vehicle 2 (Car 2)</div>
+                  <div className={styles.vehicleMeta}>
                     Catchment: {team.name} · {teamConfig.campus} · {teamConfig.service}
                   </div>
                 </div>
                 <span className={styles.telemetryPillGood}>Active in Field</span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                <div
-                  style={{
-                    padding: "0.625rem",
-                    background: "var(--sunk, var(--surface-2))",
-                    borderRadius: "var(--r2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      textTransform: "uppercase",
-                      fontWeight: 700,
-                      color: "var(--muted)",
-                    }}
-                  >
-                    Duty Consultant
-                  </div>
-                  <div style={{ fontSize: "var(--t-2)", fontWeight: 600, color: "var(--ink)", marginTop: "2px" }}>
-                    {teamConfig.consultant} (MBBS, FRANZCP)
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Direct Mobile: 0411 902 441</div>
+              <div className={styles.contactGrid}>
+                <div className={styles.dutyCard}>
+                  <div className={styles.dutyRole}>Duty Consultant</div>
+                  <div className={styles.dutyName}>{teamConfig.consultant} (MBBS, FRANZCP)</div>
+                  <div className={styles.microMuted}>Direct Mobile: 0411 902 441</div>
                 </div>
-                <div
-                  style={{
-                    padding: "0.625rem",
-                    background: "var(--sunk, var(--surface-2))",
-                    borderRadius: "var(--r2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      textTransform: "uppercase",
-                      fontWeight: 700,
-                      color: "var(--muted)",
-                    }}
-                  >
-                    Crisis Clinical Specialist
-                  </div>
-                  <div style={{ fontSize: "var(--t-2)", fontWeight: 600, color: "var(--ink)", marginTop: "2px" }}>
-                    CNS E. Kowalski (RN, Cred. MHN)
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Vehicle Satellite: Channel 4B</div>
+                <div className={styles.dutyCard}>
+                  <div className={styles.dutyRole}>Crisis Clinical Specialist</div>
+                  <div className={styles.dutyName}>CNS E. Kowalski (RN, Cred. MHN)</div>
+                  <div className={styles.microMuted}>Vehicle Satellite: Channel 4B</div>
                 </div>
               </div>
 
-              <div
-                style={{
-                  fontSize: "var(--t-1)",
-                  color: "var(--ink-soft)",
-                  lineHeight: 1.5,
-                  padding: "0.625rem 0.75rem",
-                  background: "var(--surface)",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--r2)",
-                }}
-              >
-                <b>Current Deployment:</b> Urgent joint assessment PT-4620 with MHERT / WA Police co-response. En-route{" "}
+              <div className={styles.deploymentNote}>
+                <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
                 {teamConfig.campus} to catchment residence. Duress beacon: not wired in this prototype.
               </div>
 
-              <div className={styles.modalFoot} style={{ margin: 0, padding: 0, border: "none", background: "none" }}>
+              <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>
                 <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
                   Close
                 </button>

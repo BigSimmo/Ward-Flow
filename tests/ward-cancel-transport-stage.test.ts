@@ -134,12 +134,12 @@ describe("CANCEL_TRANSPORT leaves the movement's stage exactly where it found it
     expect(after.stageChanges.some((entry) => entry.to === "handover_ready")).toBe(false);
   });
 
-  it("(b) RELEASE_PULL clears transport and stage stays accepted_awaiting_bed (WF-37 / Ruling 2)", () => {
+  it("(b) RELEASE_PULL clears transport and stage stays accepted_awaiting_bed (Ruling 2)", () => {
     const { state: booked, movementId } = pulledAndBookedMovement();
 
     // Owner ruling 2026-09-25: RELEASE_PULL refuses while a transport job is booked ("...has a
     // transport job booked; cancel it (CANCEL_TRANSPORT) before releasing the pull") — until this
-    // ruling RELEASE_PULL cleared a linked job automatically (WF-37 / Ruling 2). Cancel first.
+    // ruling RELEASE_PULL cleared a linked job automatically (Ruling 2). Cancel first.
     const cancelled = wardFlowReducer(booked, {
       type: "CANCEL_TRANSPORT",
       role: "coordinator",
@@ -158,7 +158,7 @@ describe("CANCEL_TRANSPORT leaves the movement's stage exactly where it found it
     });
     expect(released.rejections).toEqual([]);
     expect(movement(released, movementId).stage).toBe("accepted_awaiting_bed");
-    // The job stays cleared through the release — the same end state WF-37 / Ruling 2 pinned.
+    // The job stays cleared through the release — the same end state Ruling 2 pinned.
     expect(movement(released, movementId).transport).toBeUndefined();
   });
 

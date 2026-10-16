@@ -1,6 +1,6 @@
 # Build contract — Wards (the ward index)
 
-Drawing: `docs/ward-flow/mockups/wards-third-edition.html`
+Drawing: `design/third-edition-mockups/wards-third-edition.html`
 Built screen under review: `src/app/mockups/ward-flow/wards/page.tsx` → `src/components/ward-management/wards/ward-index.tsx`
 
 ## 1. Does this screen already exist?

@@ -475,7 +475,7 @@ describe("withdrawing an accepted referral — WLQ-38 (owner, 2026-09-15)", () =
     expect(after.closure?.reason).toBe("The referrer withdrew the referral");
   });
 
-  describe("enforcing referring-site ownership on referral cancellation (WF-A1-02)", () => {
+  describe("enforcing referring-site ownership on referral cancellation", () => {
     describe("sender authorization", () => {
       it.each([undefined, "", "another-ed"])(
         "refuses ED withdrawal with place claim %s before and after a pull without releasing anything",

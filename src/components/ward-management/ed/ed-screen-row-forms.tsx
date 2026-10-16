@@ -49,6 +49,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     legalFormExpiryOpen,
     legalFormExpiryIsExtension,
     legalFormExpirySaveBlocked,
+    legalFormExpirySaveBlockedReason,
     receiptCorrectionOpen,
   } = row;
   const {
@@ -156,11 +157,16 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <div className={styles.actionRow}>
             <button
               type="button"
-              disabled={!communityTeamChoice}
+              aria-disabled={!communityTeamChoice ? "true" : undefined}
+              aria-describedby={!communityTeamChoice ? `ward-ed-cmht-reason-${movement.id}` : undefined}
+              title={!communityTeamChoice ? "Choose a community mental health team first." : undefined}
               data-testid={`ward-ed-cmht-confirm-${movement.id}`}
               className={styles.declineButton}
-              onClick={() => {
-                if (!communityTeamChoice) return;
+              onClick={(event) => {
+                if (!communityTeamChoice) {
+                  ignoreUnavailableActivation(event);
+                  return;
+                }
                 raise("REFER_TO_COMMUNITY_TEAM", {
                   movementId: movement.id,
                   team: communityTeamChoice,
@@ -171,6 +177,11 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             >
               Confirm CMHT referral
             </button>
+            {!communityTeamChoice ? (
+              <span id={`ward-ed-cmht-reason-${movement.id}`} className="sr-only">
+                Choose a community mental health team first.
+              </span>
+            ) : null}
             <button
               type="button"
               data-testid={`ward-ed-cmht-cancel-${movement.id}`}
@@ -485,11 +496,21 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            disabled={legalFormExpirySaveBlocked}
+            aria-disabled={legalFormExpirySaveBlocked ? "true" : undefined}
+            onClick={legalFormExpirySaveBlocked ? ignoreUnavailableActivation : undefined}
+            aria-describedby={
+              legalFormExpirySaveBlocked ? `ward-ed-legal-form-expiry-reason-${movement.id}` : undefined
+            }
+            title={legalFormExpirySaveBlockedReason}
             data-testid={`ward-ed-legal-form-expiry-save-${movement.id}`}
           >
             {legalFormExpiryIsExtension ? "Save extension" : "Save expiry"}
           </button>
+          {legalFormExpirySaveBlocked ? (
+            <span id={`ward-ed-legal-form-expiry-reason-${movement.id}`} className="sr-only">
+              {legalFormExpirySaveBlockedReason}
+            </span>
+          ) : null}
         </form>
       ) : null}
 
@@ -524,11 +545,27 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            disabled={receiptCorrectionReasonDraft === undefined}
+            aria-disabled={receiptCorrectionReasonDraft === undefined ? "true" : undefined}
+            onClick={receiptCorrectionReasonDraft === undefined ? ignoreUnavailableActivation : undefined}
+            aria-describedby={
+              receiptCorrectionReasonDraft === undefined
+                ? `ed-correct-form-receipt-reason-hint-${movement.id}`
+                : undefined
+            }
+            title={
+              receiptCorrectionReasonDraft === undefined
+                ? "Choose a reason for the receipt correction first."
+                : undefined
+            }
             data-testid={`ed-correct-form-receipt-save-${movement.id}`}
           >
             Save correction
           </button>
+          {receiptCorrectionReasonDraft === undefined ? (
+            <span id={`ed-correct-form-receipt-reason-hint-${movement.id}`} className="sr-only">
+              Choose a reason for the receipt correction first.
+            </span>
+          ) : null}
         </form>
       ) : null}
     </>

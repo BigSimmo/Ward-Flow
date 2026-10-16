@@ -68,6 +68,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
     decisionDueAt,
     letterInput,
     copyText,
+    onClose,
   } = s;
   return (
     <form
@@ -112,7 +113,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 ))}
               </ul>
               <div className={styles.cardActions}>
-                <Link className={styles.btn} href="/mockups/ward-flow/referrals">
+                <Link className={styles.btn} href="/mockups/ward-flow/referrals" onClick={onClose}>
                   <Users aria-hidden="true" />
                   View referrals board
                 </Link>

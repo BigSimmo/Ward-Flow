@@ -90,6 +90,23 @@ export function useCommunityScreenWindowBridge({
         window.location.href = communityTeamHref(target);
       }
     };
+    // Remove only the functions this effect installed, so leaving the screen leaves no stale
+    // callbacks on `window` that would act on an unmounted screen's state.
+    return () => {
+      for (const name of [
+        "switchTab",
+        "openReferralDrawer",
+        "openPatientDrawer",
+        "acceptReferral",
+        "declineReferral",
+        "completeContact",
+        "openCrisisModal",
+        "openModal",
+        "openDrawer",
+        "selectTeam",
+      ])
+        delete win[name];
+    };
   }, [
     referrals,
     liveReferrals,

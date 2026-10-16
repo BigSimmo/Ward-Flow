@@ -6,43 +6,43 @@ Josh reviewed and ruled on the 18 outstanding questions, architectural decisions
 
 ## Summary of rulings
 
-| #    | Item                                                                  | Ruling              | Status / Impact                                                                                          |
-| ---- | --------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1    | Non-transport handover progression (`WF-16`)                          | **Yes**             | Approved — departure prerequisite satisfied when no transport needed.                                    |
-| 2    | Bed cancellation cancels/prompts linked transport (`WF-37`)           | **Yes**             | Approved — releasing a bed pull cancels or prompts transport cancellation.                               |
-| 3    | Involuntary bed matching / zero vacant locked beds (`WF-01`, `WF-10`) | **NO to rejecting** | **CRITICAL CLINICAL RULING** — patients must be waitlisted; 3-tier prioritisation hierarchy established. |
-| 4    | Terminal state on referral withdrawal (`WF-13`, `P3-WD`)              | **Yes**             | Approved — withdrawal is terminal; clears queues and resets `acceptedUnitId`.                            |
-| 5    | Network-wide search privacy / cross-ward referral lookup (`D-14`)     | **Leave for now**   | Prototyping full system; future role-based logins will govern access.                                    |
-| 6    | Community screen transport booking affordance (`ISSUE-P2-88`)         | **Yes**             | Approved — link `Admission` to `Movement` to provide transport affordance.                               |
-| 7    | Mobile drawer sheet adaptation (`DRAWER-RESPONSIVE-SHEET`)            | **Approved**        | Responsive full-screen / bottom sheet on viewports <640px.                                               |
-| 8    | 44px minimum tap targets (`P2` touch ergonomics)                      | **Approved**        | Enforce 44×44px interactive tap target minimum across mobile/tablet.                                     |
-| 9    | ED board table inline legal form dropdown (`ED-FORM-DROPDOWN`)        | **Approved**        | Mockup parity for listbox dropdown directly on `.formPill`.                                              |
-| 10   | Patient journey accordion keyboard accessibility                      | **Approved**        | Ensure roving tabindex, Enter/Space toggling, and `aria-expanded` compliance.                            |
-| 11   | Global drawer keyboard shortcuts (`SOVEREIGN-KEYBOARD-BUS`)           | **Approved**        | Bind `Shift+T` (Tasks), `Shift+R` (Referrals), `Shift+A` (Activity), and Escape.                         |
-| 12   | Referral drawer live capacity binding (`REFERRAL-DRAWER-CAPACITY`)    | **Approved**        | Bind Stage 3 dynamically to live network capacity records.                                               |
-| 13   | Community contact information unlinked until verified                 | **Approved**        | Keep community service contact numbers unlinked until verified.                                          |
-| 14   | Playwright browser journey test prompt (`test:e2e:ward-journeys`)     | **Approved**        | Prompt created for running browser journey suite in a separate chat.                                     |
-| 15   | Visual regression snapshot baseline capture (`npm run test:visual`)   | **Approved**        | Capture baselines for ED (1440px) and sovereign rail across themes.                                      |
-| 16   | Design system documentation update (`WARD-FLOW-DESIGN-SYSTEM.md`)     | **Approved**        | Update to 34 screens + standing rules (Rule D5), noting ongoing perfection.                              |
-| 17   | Aboriginal cultural safety review                                     | **Defer**           | Stays deferred on task ledger; mandatory pre-clinical gate.                                              |
-| 18   | Outside compliance and governance gates                               | **Defer**           | Regulatory and compliance reviews remain deferred during prototype phase.                                |
-| Note | Dedicated patient transport section                                   | **Build now**       | Interface for tracking booked transport, logging bookings, CAD numbers, and ETAs.                        |
+| #    | Item                                                                | Ruling              | Status / Impact                                                                                          |
+| ---- | ------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1    | Non-transport handover progression                                  | **Yes**             | Approved — departure prerequisite satisfied when no transport needed.                                    |
+| 2    | Bed cancellation cancels/prompts linked transport                   | **Yes**             | Approved — releasing a bed pull cancels or prompts transport cancellation.                               |
+| 3    | Involuntary bed matching / zero vacant locked beds                  | **NO to rejecting** | **CRITICAL CLINICAL RULING** — patients must be waitlisted; 3-tier prioritisation hierarchy established. |
+| 4    | Terminal state on referral withdrawal (`P3-WD`)                     | **Yes**             | Approved — withdrawal is terminal; clears queues and resets `acceptedUnitId`.                            |
+| 5    | Network-wide search privacy / cross-ward referral lookup (`D-14`)   | **Leave for now**   | Prototyping full system; future role-based logins will govern access.                                    |
+| 6    | Community screen transport booking affordance (`ISSUE-P2-88`)       | **Yes**             | Approved — link `Admission` to `Movement` to provide transport affordance.                               |
+| 7    | Mobile drawer sheet adaptation (`DRAWER-RESPONSIVE-SHEET`)          | **Approved**        | Responsive full-screen / bottom sheet on viewports <640px.                                               |
+| 8    | 44px minimum tap targets (`P2` touch ergonomics)                    | **Approved**        | Enforce 44×44px interactive tap target minimum across mobile/tablet.                                     |
+| 9    | ED board table inline legal form dropdown (`ED-FORM-DROPDOWN`)      | **Approved**        | Mockup parity for listbox dropdown directly on `.formPill`.                                              |
+| 10   | Patient journey accordion keyboard accessibility                    | **Approved**        | Ensure roving tabindex, Enter/Space toggling, and `aria-expanded` compliance.                            |
+| 11   | Global drawer keyboard shortcuts (`SOVEREIGN-KEYBOARD-BUS`)         | **Approved**        | Bind `Shift+T` (Tasks), `Shift+R` (Referrals), `Shift+A` (Activity), and Escape.                         |
+| 12   | Referral drawer live capacity binding (`REFERRAL-DRAWER-CAPACITY`)  | **Approved**        | Bind Stage 3 dynamically to live network capacity records.                                               |
+| 13   | Community contact information unlinked until verified               | **Approved**        | Keep community service contact numbers unlinked until verified.                                          |
+| 14   | Playwright browser journey test prompt (`test:e2e:ward-journeys`)   | **Approved**        | Prompt created for running browser journey suite in a separate chat.                                     |
+| 15   | Visual regression snapshot baseline capture (`npm run test:visual`) | **Approved**        | Capture baselines for ED (1440px) and sovereign rail across themes.                                      |
+| 16   | Design system documentation update (`WARD-FLOW-DESIGN-SYSTEM.md`)   | **Approved**        | Update to 34 screens + standing rules (Rule D5), noting ongoing perfection.                              |
+| 17   | Aboriginal cultural safety review                                   | **Defer**           | Stays deferred on task ledger; mandatory pre-clinical gate.                                              |
+| 18   | Outside compliance and governance gates                             | **Defer**           | Regulatory and compliance reviews remain deferred during prototype phase.                                |
+| Note | Dedicated patient transport section                                 | **Build now**       | Interface for tracking booked transport, logging bookings, CAD numbers, and ETAs.                        |
 
 ---
 
 ## Rulings and clinical rationale
 
-### 1. Non-transport handover progression (`WF-16`)
+### 1. Non-transport handover progression
 
 - **Ruling**: **Yes** — non-transport handover progression approved.
 - **Clinical rationale**: When mental health transfers do not require transport vehicles (such as family transport, walking escorts between adjacent facilities, or internal campus transfers), `HANDOVER_READY` previously dead-ended because it still required an artificial transport booking. In clinical practice, non-vehicular transfers are common. The handover readiness logic must allow `transport.needed === false` to satisfy the departure prerequisite, enabling direct progression to ward arrival.
 
-### 2. Bed cancellation automatically cancels or prompts cancellation of linked booked transport (`WF-37`)
+### 2. Bed cancellation automatically cancels or prompts cancellation of linked booked transport
 
 - **Ruling**: **Yes** — bed cancellation automatically cancels or prompts cancellation of linked booked transport.
 - **Clinical rationale**: Releasing or cancelling a bed reservation (`RELEASE_PULL`) must automatically cancel or prompt the cancellation of any linked booked transport job. Leaving an active ambulance or transport booking after a bed has been cancelled causes severe operational waste, dispatches transport crews for unavailable beds, and risks patient arrival at wards with zero capacity to receive them.
 
-### 3. CRITICAL CLINICAL RULING: Involuntary bed matching and zero vacant locked bed handling (`WF-01`, `WF-10`)
+### 3. CRITICAL CLINICAL RULING: Involuntary bed matching and zero vacant locked bed handling
 
 - **Ruling**: **NO to rejecting wards with 0 vacant locked beds. Patients often need to be waitlisted!**
 - **Clinical rationale**: It is clinically incorrect to hide or reject wards from referral matching simply because they have zero currently unoccupied locked beds. In real psychiatric bed coordination, patients requiring secure/locked inpatient care frequently need to be waitlisted for a bed in their home catchment rather than immediately diverted out-of-catchment or rejected from the triage queue. A ward with zero current vacancies must remain selectable so coordinators can queue referrals, hold priority candidates, and manage bed flow as discharges occur.
@@ -51,7 +51,7 @@ Josh reviewed and ruled on the 18 outstanding questions, architectural decisions
   2. **2nd: Available with beds** — Alternative out-of-catchment or general services that have available beds.
   3. **3rd: In catchment with no beds** — Wards in the patient's home catchment with zero current bed vacancies (allowing waitlisting and proactive queue management).
 
-### 4. Terminal state on referral withdrawal (`WF-13`, `P3-WD`)
+### 4. Terminal state on referral withdrawal (`P3-WD`)
 
 - **Ruling**: **Yes** — terminal state on referral withdrawal.
 - **Clinical rationale**: `WITHDRAW_REFERRAL` must be a definitive terminal state that cleanly removes the referral from active triage queues and prevents subsequent decision events from acting on it. On post-acceptance withdrawals (`P3-WD`), the engine must cleanly reset `acceptedUnitId` (or void the accepted assignment) so withdrawn records do not display an accepted ward name or retain ghost allocations in the UI.
@@ -114,7 +114,7 @@ Josh reviewed and ruled on the 18 outstanding questions, architectural decisions
 ### 16. Design system documentation update (`WARD-FLOW-DESIGN-SYSTEM.md`)
 
 - **Ruling**: **Approved** — update design system document to 34 screens + standing rules, noting ongoing design perfection.
-- **Clinical rationale**: Update `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` to reflect the full active 34-screen estate and standing rules (specifically Rule D5: no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release), explicitly acknowledging that design perfection is continuous across screens.
+- **Clinical rationale**: Update `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` to reflect the full active 34-screen estate and standing rules (specifically Rule D5: no calculated statutory countdowns, clinician-typed expiries, independent ED clocks, manual bed release), explicitly acknowledging that design perfection is continuous across screens.
 
 ### 17. Aboriginal cultural safety review
 

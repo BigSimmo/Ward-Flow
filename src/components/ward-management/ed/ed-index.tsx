@@ -1,5 +1,6 @@
 "use client";
 
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -211,9 +212,18 @@ export function EdIndex() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "/") return;
+      if (event.key !== "/" || event.defaultPrevented) return;
+      if (hasOpenSheet() || document.querySelector('[aria-modal="true"]')) return;
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
       event.preventDefault();
       searchRef.current?.focus();
     }

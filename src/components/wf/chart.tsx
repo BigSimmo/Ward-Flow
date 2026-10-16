@@ -52,6 +52,8 @@ export type BarListRow = {
   value: number;
   /** Shown instead of the number ("12 fit"). Zero shows "none". */
   display?: ReactNode;
+  /** Read and shown instead of the number when the number is withheld ("fewer than 5"). */
+  valueText?: string;
   fill?: WfFill;
   /** Glyph before the value when it crosses a threshold. */
   flag?: WfTone;
@@ -105,7 +107,7 @@ export function BarList({
   const style = labelWidth ? ({ "--wf-bar-label": labelWidth } as CSSProperties) : undefined;
 
   return (
-    <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
+    <figure className={cx(styles.chart, styles.chartFlush, className)}>
       <div
         className={styles.barGrid}
         style={style}
@@ -114,8 +116,7 @@ export function BarList({
         {showTop ? (
           <div
             aria-hidden="true"
-            className={styles.axisRow}
-            style={{ gridRow: 1 }}
+            className={cx(styles.axisRow, styles.axisRowTop)}
             data-two-lines={ticks.length > 0 && mean != null ? "true" : undefined}
           >
             {ticks.map((t) => (
@@ -149,14 +150,14 @@ export function BarList({
           const dim = onPick && picked != null && picked !== row.id ? "true" : undefined;
           const text = row.labelText ?? (typeof row.label === "string" ? row.label : row.id);
           return (
-            <div key={row.id} style={{ display: "contents" }}>
+            <div key={row.id} className={styles.rowContents}>
               {onPick ? (
                 <button
                   type="button"
                   className={styles.barPick}
                   style={{ gridRow }}
                   aria-pressed={picked === row.id}
-                  aria-label={`${text}: ${row.value}`}
+                  aria-label={`${text}: ${row.valueText ?? row.value}`}
                   onClick={() => onPick(row.id)}
                   data-testid={row.testId}
                   data-dim={dim}
@@ -195,7 +196,7 @@ export function BarList({
                 aria-hidden={onPick ? true : undefined}
               >
                 {row.flag ? <StatusGlyph tone={row.flag} size={9} /> : null}
-                {row.display ?? (row.value === 0 ? "none" : row.value)}
+                {row.display ?? row.valueText ?? (row.value === 0 ? "none" : row.value)}
               </span>
             </div>
           );
@@ -211,7 +212,7 @@ export function BarList({
             ? null
             : rows.map((row) => (
                 <li key={row.id}>
-                  {row.labelText ?? (typeof row.label === "string" ? row.label : row.id)}: {row.value}
+                  {row.labelText ?? (typeof row.label === "string" ? row.label : row.id)}: {row.valueText ?? row.value}
                 </li>
               ))}
           {mean != null ? (
@@ -225,7 +226,15 @@ export function BarList({
   );
 }
 
-export type ColumnDatum = { id: string; label: string; value: number; display?: ReactNode; fill?: WfFill };
+export type ColumnDatum = {
+  id: string;
+  label: string;
+  value: number;
+  display?: ReactNode;
+  /** Read and shown instead of the number when the number is withheld ("fewer than 5"). */
+  valueText?: string;
+  fill?: WfFill;
+};
 
 export type ColumnChartProps = {
   columns: ColumnDatum[];
@@ -255,7 +264,7 @@ export function ColumnChart({
   const ticks = gridlines ? niceTicks(maxProp ?? dataMax, 4, maxProp) : [];
   const max = maxProp ?? (gridlines ? ticks[ticks.length - 1]! : dataMax * 1.12);
   return (
-    <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
+    <figure className={cx(styles.chart, styles.chartFlush, className)}>
       <div aria-hidden="true">
         <div className={styles.columns} style={{ height }}>
           {ticks
@@ -270,7 +279,7 @@ export function ColumnChart({
           ) : null}
           {columns.map((c) => (
             <div key={c.id} className={styles.col}>
-              <span className={styles.colValue}>{c.display ?? c.value}</span>
+              <span className={styles.colValue}>{c.display ?? c.valueText ?? c.value}</span>
               <span
                 className={styles.colBar}
                 style={{ height: `${(pct(c.value, max) / 100) * (height - 20)}px`, background: fillVar(c.fill) }}
@@ -293,7 +302,7 @@ export function ColumnChart({
         <ul>
           {columns.map((c) => (
             <li key={c.id}>
-              {c.label}: {c.value}
+              {c.label}: {c.valueText ?? c.value}
             </li>
           ))}
           {target ? (
@@ -439,7 +448,7 @@ export function LineChart({
   const last = points[points.length - 1];
 
   return (
-    <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
+    <figure className={cx(styles.chart, styles.chartFlush, className)}>
       <div ref={ref}>
         <svg
           className={styles.svg}

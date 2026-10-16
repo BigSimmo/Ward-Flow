@@ -33,7 +33,7 @@ const localRulesPlugin = {
 // routes, the `*-mockups/` component directories, and the `*-mockup(s).tsx`
 // singletons — instead of a broad `*mockup*` substring, which would also exempt
 // arbitrary production files whose name merely contains "mockup".
-const MOCKUP_IGNORES = ["src/app/mockups/**", "**/*-mockups/**", "**/*-mockups.tsx", "**/*-mockup.tsx"];
+const MOCKUP_IGNORES = ["**/*-mockups/**", "**/*-mockups.tsx", "**/*-mockup.tsx"];
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -253,6 +253,11 @@ const eslintConfig = defineConfig([
     ".tmp-visual/**",
     "sample-documents/**",
     "scratch/**",
+    // Archived design artefacts moved out of docs/. The kit's shell browser scripts are copied
+    // into the third edition drawings, so editing them to satisfy lint would make the drawings
+    // drift. The prototypes are byte-pinned. The kit's .mjs check scripts stay linted.
+    "design/third-edition-mockups/third-edition-kit/shell/*.js",
+    "design/prototypes/**",
     // Recursive `**/` variants cover nested worktrees; the bare globs above already
     // ignore the repo-root dirs, so only the recursive forms are kept here.
     "**/.claude/**",

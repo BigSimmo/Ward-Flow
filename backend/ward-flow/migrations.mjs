@@ -51,20 +51,30 @@ export const MIGRATIONS = Object.freeze([
     file: "008-role-access.sql",
     sha256: "0b65ef63500d8ba6e074d1a501bb22f8810c21a4e565dfffe639f98383f788f2",
   },
+  {
+    version: 9,
+    file: "009-access-cover-requests.sql",
+    sha256: "b00a48946cbe64298019d0c5a4734d4fd4d9157af5636fc075656e7a08c65cb2",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
- * (7) and role access (8) are applied to a live database separately, so the backend runs on 5 to
- * 8: it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts
- * take the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in.
+ * (7), role access (8) and cover with requests (9) are applied to a live database separately, so
+ * the backend runs on 5 to 9: it can deploy before those migrations, and keeps running if their
+ * infra/rollback-*.sql scripts take the database back. Before 8 only the WARD_COORDINATOR_USER_IDS
+ * accounts can sign in. Before 9 there is no cover, no request for access, no "not used" switch-off
+ * and no phone alert by role.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
 /** The first schema with memberships and break glass records (migration 8). */
 export const ROLE_ACCESS_MIGRATION = 8;
+
+/** The first schema with cover, requests for access, last used times and alerts by role (migration 9). */
+export const ACCESS_COVER_MIGRATION = 9;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

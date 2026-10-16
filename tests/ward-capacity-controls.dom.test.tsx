@@ -15,7 +15,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
- * WF-27 — the Wards panel's own controls: the sort box that orders rows inside each health-service
+ * the Wards panel's own controls: the sort box that orders rows inside each health-service
  * fold (`wardSort`, ~capacity-screen.tsx:175-183), the highlight-chip group that marks rows but
  * never removes them (`networkFilters`, ~126-132 / the panel at ~457-466), the "Highlight wards"
  * attention shortcut (~415-424), and ward selection's tie to the demo reset count (~69-96). None of

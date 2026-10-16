@@ -33,6 +33,7 @@ import {
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -40,7 +41,7 @@ import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
-import type { ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
+import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -75,6 +76,7 @@ import {
   alertGroupOf,
   alertKindOf,
   byOldest,
+  escalationAppliesTo,
   effectiveOwner,
   isQueueItem,
   minutesText,
@@ -198,6 +200,7 @@ function AlertsWorkspace() {
   } = state;
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
   const live = usePageLive();
   const now = live.now;
   // Top 25 item 12: name a stuck handover once the transport booked target has passed.
@@ -608,6 +611,23 @@ function AlertsWorkspace() {
         refused: "Release was not accepted. The bed is still held.",
       });
       dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
+    },
+    onEscalate: (item) => {
+      setChosenId(item.id);
+      const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+      if (item.movementId && escalationAppliesTo(item, movement, units, now)) {
+        track({
+          type: "RECORD_ESCALATION",
+          ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
+          refused: "Escalation was not accepted.",
+        });
+        raise("RECORD_ESCALATION", {
+          movementId: item.movementId,
+          triedUnitIds: movement?.declines.map((decline) => decline.unitId) ?? [],
+          contact: ESCALATION_CONTACTS[0],
+        });
+      }
+      // An alert with no movement, or not about a bed search, has nothing to escalate: the button is disabled, so no notice is made.
     },
   };
   const queueHandlers: QueueHandlers = {
@@ -1673,8 +1693,16 @@ function AlertsWorkspace() {
                           <Button
                             size="sm"
                             icon={Clock}
-                            disabledReason="Not wired in this prototype."
-                            reasonDisplay="tooltip"
+                            onClick={() => {
+                              // The notice reads the reducer's verdict from the event log, as every
+                              // other act on this page does, so a refused extension is not reported.
+                              track({
+                                type: "EXTEND_BROADCAST_ALERT",
+                                ok: `Extended "${activeBroadcast.title}".`,
+                                refused: "Extension was not accepted.",
+                              });
+                              raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id });
+                            }}
                           >
                             Extend
                           </Button>

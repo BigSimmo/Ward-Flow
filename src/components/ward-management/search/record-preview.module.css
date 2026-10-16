@@ -696,3 +696,9 @@
   color: var(--ink);
   border-color: var(--ink-soft);
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.statItemValue.statItemValueStrong {
+  font-weight: 600;
+  color: var(--ink);
+}

@@ -9,7 +9,7 @@ import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
- * WF-13 T11 — THE TWO FIGURES THAT COUNT A WITHDRAWN REFERRAL AS STILL OPEN.
+ * THE TWO FIGURES THAT COUNT A WITHDRAWN REFERRAL AS STILL OPEN.
  *
  * Both `wardNavCounts`'s "referrals" chip and `searchPatients`'s referral half filter on
  * `referralState(referral) === "queued"` alone. `referralState` never reads `withdrawnAt` — it
@@ -55,7 +55,7 @@ function searchReferralCount(state: WardFlowState): number {
   ).length;
 }
 
-describe("WF-13 T11 — the nav count drops when a referral is withdrawn", () => {
+describe("the nav count drops when a referral is withdrawn", () => {
   it("counts RF-014 before withdrawal, or the drop below would be vacuous", () => {
     const seed = seedWardFlowState();
     expect(seed.referrals.some((referral) => referral.id === REFERRAL_ID)).toBe(true);
@@ -72,7 +72,7 @@ describe("WF-13 T11 — the nav count drops when a referral is withdrawn", () =>
   });
 });
 
-describe("WF-13 T11 — the patient-search referral figure drops when a referral is withdrawn", () => {
+describe("the patient-search referral figure drops when a referral is withdrawn", () => {
   it("counts RF-014 in searchPatients before withdrawal, or the drop below would be vacuous", () => {
     const seed = seedWardFlowState();
     const ids = searchPatients(seed.movements, seed.referrals, seed.units, { text: "" })

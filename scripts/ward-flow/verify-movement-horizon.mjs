@@ -64,7 +64,7 @@ for (const swatch of SWATCHES) {
   const pass = ratio >= 4.5;
   if (!pass) failures++;
   console.log(
-    `  [${pass ? "PASS" : "FAIL"}] ${swatch.name.padEnd(14)}: Ratio ${ratio.toFixed(2)}:1 (Min 4.5:1) | BG: ${swatch.bg}, Text: ${swatch.text}`
+    `  [${pass ? "PASS" : "FAIL"}] ${swatch.name.padEnd(14)}: Ratio ${ratio.toFixed(2)}:1 (Min 4.5:1) | BG: ${swatch.bg}, Text: ${swatch.text}`,
   );
 }
 
@@ -79,7 +79,9 @@ for (const zoom of ZOOM_LEVELS) {
       bounded = false;
     }
   }
-  console.log(`  [${bounded ? "PASS" : "FAIL"}] Zoom ${zoom}h: Scrubber strictly bounded to [0.0, 1.0] track fraction.`);
+  console.log(
+    `  [${bounded ? "PASS" : "FAIL"}] Zoom ${zoom}h: Scrubber strictly bounded to [0.0, 1.0] track fraction.`,
+  );
   if (!bounded) failures++;
 }
 
@@ -97,7 +99,7 @@ for (const t of testDurations) {
   const pass = category === t.expected;
   if (!pass) failures++;
   console.log(
-    `  [${pass ? "PASS" : "FAIL"}] Dur ${t.dur}h at Zoom ${t.zoom}h: Width ${pct.toFixed(1)}% -> Mode "${category}"`
+    `  [${pass ? "PASS" : "FAIL"}] Dur ${t.dur}h at Zoom ${t.zoom}h: Width ${pct.toFixed(1)}% -> Mode "${category}"`,
   );
 }
 

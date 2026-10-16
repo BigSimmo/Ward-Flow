@@ -189,6 +189,9 @@ const DATA_NOUNS = [
   "movements",
   "task",
   "tasks",
+  // One Alerts queue (D-61): the bed coordinator's Tasks rows are called alerts.
+  "alert",
+  "alerts",
   "data",
 ];
 

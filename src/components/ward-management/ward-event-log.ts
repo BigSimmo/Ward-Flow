@@ -37,16 +37,19 @@ const ID_FIELDS = [
 ] as const;
 
 export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): EventLogEntry {
-  const fields = event as unknown as Record<string, unknown>;
+  const role = "role" in event && typeof event.role === "string" ? (event.role as WardFlowRole) : undefined;
+  const now = "now" in event && typeof event.now === "number" ? event.now : undefined;
   const entry: EventLogEntry = {
     type: event.type,
-    role: typeof fields.role === "string" ? (fields.role as WardFlowRole) : undefined,
-    now: typeof fields.now === "number" ? fields.now : undefined,
+    role,
+    now,
     accepted,
   };
   for (const field of ID_FIELDS) {
-    const value = fields[field];
-    if (typeof value === "string" && value.length > 0) entry[field] = value;
+    if (field in event) {
+      const value = Reflect.get(event, field);
+      if (typeof value === "string" && value.length > 0) entry[field] = value;
+    }
   }
   return entry;
 }

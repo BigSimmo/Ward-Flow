@@ -4,7 +4,7 @@
  * The query lives in React state only and is never written to browser storage.
  */
 
-export type SettingsTab = "rules" | "alerts" | "display" | "profile" | "data";
+export type SettingsTab = "rules" | "alerts" | "display" | "profile" | "data" | "access";
 
 export const SETTINGS_TABS: readonly { readonly id: SettingsTab; readonly label: string }[] = [
   { id: "rules", label: "Rules" },
@@ -12,6 +12,8 @@ export const SETTINGS_TABS: readonly { readonly id: SettingsTab; readonly label:
   { id: "display", label: "Display" },
   { id: "profile", label: "Profile and shift" },
   { id: "data", label: "Data and about" },
+  // Shown only with the role-access flag on, to the desks that give access or cover.
+  { id: "access", label: "Access" },
 ];
 
 export interface SettingsSearchEntry {

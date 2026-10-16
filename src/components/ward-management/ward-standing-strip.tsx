@@ -308,7 +308,7 @@ function placeIdFrom(pathname: string): string | undefined {
  * `WardChromeHeader` owns the open state and places each half; `WardStandingStrip` below composes
  * them for anything that wants the pair on its own.
  */
-export function WardStatsToggle({
+function WardStatsToggle({
   figures,
   open,
   onToggle,
@@ -343,7 +343,7 @@ export function WardStatsToggle({
   );
 }
 
-export function WardStatsPanel({ figures, open }: { figures: StandingFigure[]; open: boolean }) {
+function WardStatsPanel({ figures, open }: { figures: StandingFigure[]; open: boolean }) {
   return (
     <div className={styles.wrap} data-testid="ward-standing-strip">
       {/*
