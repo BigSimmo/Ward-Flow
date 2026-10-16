@@ -16,7 +16,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Button, buttonClass } from "@/components/wf";
+import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -38,8 +38,7 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import type { Rejection, Unit } from "@/components/ward-management/ward-model";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import type { Rejection } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import {
@@ -55,11 +54,11 @@ import {
   type BreakGlassReasonId,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import {
   breakGlass,
   endAccessPreview,
+  endDueCovers,
   lockWardDesk,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
@@ -69,30 +68,14 @@ import {
 export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from "./ward-access-store";
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
 import { announceToWardShell } from "./ward-live-region";
+import { forgetStepUp, useStepUp } from "./ward-step-up";
+import { accessPlaceLabel } from "./ward-access-labels";
+import { SharedAccessContext } from "./ward-shared-access-context";
 import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
-/** Where the desk is, in words: "Ward 6B", "Fiona Stanley ED", "South Metro". */
-export function accessPlaceLabel(access: WardAccess, units: readonly Unit[]): string {
-  const scope = access.scope;
-  switch (scope.kind) {
-    case "statewide":
-      return "Statewide";
-    case "service":
-      return scope.service;
-    case "site":
-      return siteByCode(scope.siteCode)?.name ?? scope.siteCode;
-    case "ward":
-      return scope.unitIds.map((id) => units.find((unit) => unit.id === id)?.name ?? id).join(", ");
-    case "ed":
-      return edById(scope.edId)?.name ?? scope.edId;
-    case "team":
-      return scope.teamName;
-    case "jobs":
-      return "Assigned transport jobs";
-  }
-}
+export { accessPlaceLabel } from "./ward-access-labels";
 
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
@@ -192,6 +175,8 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
   const { records, previewOf } = useWardAccessSnapshot();
   const previewing = previewOf !== null;
   const now = context.now;
+  // Cover ends by itself at its time, on the demo clock (feature 2).
+  useEffect(() => endDueCovers(now), [now]);
   const activeGrants = useMemo(
     () => records.filter((record) => record.role === access.role && record.until > now),
     [records, access.role, now],
@@ -350,7 +335,12 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
             ? (context.supportNotifications ?? []).filter((record) =>
                 record.occasion === "discharge"
                   ? admissionIds.has(record.subjectId) && !scoped.datesOnlyAdmissionIds.has(record.subjectId)
-                  : scoped.movements.some((movement) => movement.id === record.subjectId),
+                  : scoped.movements.some(
+                      (movement) =>
+                        movement.id === record.subjectId &&
+                        (coordinator ||
+                          (typeof movement.acceptedUnitId === "string" && unitIn(movement.acceptedUnitId))),
+                    ),
               )
             : [],
         wardReferralInbox: (unitId: string) => (unitIn(unitId) ? context.wardReferralInbox(unitId) : []),
@@ -511,6 +501,9 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
   const [other, setOther] = useState("");
   const minutes = CLINICAL_VALUES.breakGlassWindow.value;
   const ready = reason !== null && (reason !== "other" || other.trim().length > 0);
+  // Opening a record outside your care needs a recent sign-in (feature 9).
+  const { guard, dialog } = useStepUp();
+  const shared = useContext(SharedAccessContext);
   return (
     <section className={styles.glass} aria-labelledby="ward-break-glass-title">
       <h2 id="ward-break-glass-title">Open this record anyway</h2>
@@ -550,18 +543,29 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
         data-testid="ward-break-glass-open"
         onClick={() =>
           reason &&
-          breakGlass({
-            patientId,
-            now,
-            windowMinutes: minutes,
-            reason,
-            otherText: other,
-            placeLabel: accessPlaceLabel(access, units),
+          void guard(async () => {
+            // In the shared workspace the server opens the record, asks for a fresh sign-in and
+            // keeps the review record (the reason from the list only, never the typed words).
+            if (shared) {
+              const refusal = await shared.api.breakGlass(patientId, reason);
+              if (refusal !== null) return refusal;
+            }
+            return breakGlass({
+              patientId,
+              now,
+              windowMinutes: minutes,
+              reason,
+              otherText: other,
+              placeLabel: accessPlaceLabel(access, units),
+            }) || shared
+              ? null
+              : "Not opened.";
           })
         }
       >
         Open read only
       </Button>
+      {dialog}
     </section>
   );
 }
@@ -628,12 +632,21 @@ export function WardIdleLock() {
   const [locked, setLocked] = useState(false);
   const lockRef = useRef<HTMLDivElement | null>(null);
   const minutes = CLINICAL_VALUES.idleLock.value;
-  useWardModalFocus(locked, lockRef, () => setLocked(false));
+  // Escape must not unlock: only the visible button does, so the cover stays until someone acts on it.
+  useModalFocus({
+    open: locked,
+    onClose: () => undefined,
+    panelRef: lockRef,
+    closeOnEscape: false,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (!on) return;
     const lock = () => {
       lockWardDesk();
+      forgetStepUp();
       setLocked(true);
     };
     let timer = window.setTimeout(lock, minutes * 60_000);

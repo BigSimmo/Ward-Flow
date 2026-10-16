@@ -20,6 +20,7 @@ import {
   Database,
   Gavel,
   History,
+  KeyRound,
   Layers,
   Palette,
   Search,
@@ -110,6 +111,9 @@ import {
   type WfTone,
 } from "@/components/wf";
 
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
+import { AccessSettings, showsAccessTab } from "./access-settings";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
 import {
@@ -154,6 +158,7 @@ const TAB_ICONS = {
   display: Palette,
   profile: UserRound,
   data: Database,
+  access: KeyRound,
 } as const;
 
 /** 24-hour clock time, `HH:MM`, for the morning count. */
@@ -378,7 +383,20 @@ export function SettingsScreen() {
    * everything that reads it, stays put until Save dispatches `SET_CONFIGURATION`.
    */
   const [draft, setDraft] = useState<WardConfiguration>(configuration);
-  const [tab, setTab] = useState<SettingsTab>("rules");
+  const [chosenTab, setTab] = useState<SettingsTab | null>(null);
+  // The Access tab is for the desks that give access or cover, with the role-access flag on. An
+  // Access admin desk opens on it, because giving roles is all that desk does.
+  const { desk } = useWardAccessSnapshot();
+  const accessOn = useWardFeatureFlag("role-access") && showsAccessTab(desk);
+  const tabs = accessOn ? SETTINGS_TABS : SETTINGS_TABS.filter((item) => item.id !== "access");
+  const tab: SettingsTab =
+    chosenTab === null
+      ? accessOn && desk.role === "admin"
+        ? "access"
+        : "rules"
+      : !accessOn && chosenTab === "access"
+        ? "rules"
+        : chosenTab;
   // Phone only: the area whose tall sheet is open. The desktop never reads it.
   const isPhone = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<SettingsTab | null>(null);
@@ -614,7 +632,13 @@ export function SettingsScreen() {
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("Configuration file exceeds 10 MB limit.");
+      event.target.value = "";
+      return;
+    }
     const reader = new FileReader();
+
     reader.onload = (loaded) => {
       try {
         const parsed: unknown = JSON.parse(loaded.target?.result as string);
@@ -1245,7 +1269,9 @@ export function SettingsScreen() {
                     ? "Notifications are blocked for this site in the browser."
                     : answer === "server-off"
                       ? "Phone alerts are not set up on the server yet."
-                      : "Phone alerts could not be changed. Try again.",
+                      : answer === "role"
+                        ? "Phone alerts are not part of your role."
+                        : "Phone alerts could not be changed. Try again.",
             );
           });
         }}
@@ -1391,6 +1417,7 @@ export function SettingsScreen() {
       display: `Motion ${reducedMotion ? "reduced" : "on"} · contrast ${highContrast ? "high" : "standard"}`,
       profile: `${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`,
       data: "Export, restore, about this prototype",
+      access: desk.role === "admin" ? "Roles, approvals and requests" : "Cover for a second ward or ED",
     };
     const sheetTab = phoneSheet;
     const sheetContent: Record<SettingsTab, ReactNode> = {
@@ -1399,6 +1426,7 @@ export function SettingsScreen() {
       display: displayContent,
       profile: profileContent,
       data: dataContent,
+      access: accessOn ? <AccessSettings /> : null,
     };
     return (
       <div
@@ -1499,7 +1527,7 @@ export function SettingsScreen() {
               All settings
             </h2>
             <ul className={styles.phoneList}>
-              {SETTINGS_TABS.map((item) => {
+              {tabs.map((item) => {
                 const Icon = TAB_ICONS[item.id];
                 return (
                   <PhoneListRow
@@ -1618,7 +1646,7 @@ export function SettingsScreen() {
               label="Settings areas"
               value={tab}
               onChange={chooseTab}
-              items={SETTINGS_TABS.map((item) => {
+              items={tabs.map((item) => {
                 const Icon = TAB_ICONS[item.id];
                 return {
                   id: item.id,
@@ -1668,6 +1696,13 @@ export function SettingsScreen() {
         <div className={styles.pane} hidden={tab !== "data"} data-pane="data">
           {dataContent}
         </div>
+
+        {/* Mounted only while open, so its server reads wait until the tab is chosen (review on PR #363). */}
+        {accessOn && tab === "access" ? (
+          <div className={styles.pane} data-pane="access">
+            <AccessSettings />
+          </div>
+        ) : null}
 
         {saveBar}
 

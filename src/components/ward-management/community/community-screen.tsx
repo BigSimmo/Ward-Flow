@@ -471,13 +471,15 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   }, [toastMessage]);
 
   useEffect(() => {
+    // Escape runs last (window), after any open layer has handled it.
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      setActiveModal(null);
+      setActiveModalType(null);
+      setActiveDrawer(null);
+    }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        if (e.defaultPrevented) return;
-        setActiveModal(null);
-        setActiveModalType(null);
-        setActiveDrawer(null);
-      } else if (e.key === "/" || e.key === "[") {
+      if (e.key === "/" || e.key === "[") {
         if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
         const target = e.target;
         const inEditable =
@@ -489,6 +491,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
         if (inEditable) return;
         if (e.key === "/") {
           e.preventDefault();
+          // Claimed here, on the document, before the shared header's window listener takes it
+          // for the global search (as `community-index.tsx` does).
+          e.stopPropagation();
           // The hero's search popover opens from its own trigger and focuses its input itself.
           if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
           document.getElementById("q")?.focus();
@@ -498,8 +503,12 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
         }
       }
     }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   function handleToggleDecline(referralId: string) {

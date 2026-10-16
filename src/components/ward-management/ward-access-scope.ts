@@ -362,7 +362,11 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     const edSite = places.edSiteCode(scope.edId);
     if (edSite) siteCodesInScope.add(edSite);
   }
-  const siteIn = (siteCode: string | undefined) => siteCode !== undefined && siteCodesInScope.has(siteCode);
+  // A service desk also owns sites with only an ED (no ward to read the service from), so the
+  // registry names their service (review on PR #365).
+  const siteIn = (siteCode: string | undefined) =>
+    siteCode !== undefined &&
+    (siteCodesInScope.has(siteCode) || (scope.kind === "service" && places.siteService?.(siteCode) === scope.service));
   const edWindow = CLINICAL_VALUES.edHandoffWindow.value * MINUTES_PER_HOUR;
   const wardWindow = CLINICAL_VALUES.wardHandoffWindow.value * MINUTES_PER_DAY;
 

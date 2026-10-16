@@ -66,6 +66,13 @@ DO $$ BEGIN
     GRANT SELECT, INSERT ON ward_flow.break_glass TO wardflow_backend;
     GRANT USAGE, SELECT ON SEQUENCE ward_flow.break_glass_id_seq TO wardflow_backend;
   END IF;
+  -- Migration 9: when each role was last used, and requests for access, which are added and
+  -- answered once.
+  IF to_regclass('ward_flow.access_requests') IS NOT NULL THEN
+    GRANT UPDATE (last_used_at) ON ward_flow.memberships TO wardflow_backend;
+    GRANT SELECT, INSERT ON ward_flow.access_requests TO wardflow_backend;
+    GRANT UPDATE (decision, decided_by, decided_at) ON ward_flow.access_requests TO wardflow_backend;
+  END IF;
 END $$;
 -- Remove explicit per-schema browser defaults for future tables/sequences.
 -- After each migration repeat the explicit REVOKE ALL ON ALL FUNCTIONS above and

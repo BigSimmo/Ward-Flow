@@ -103,7 +103,19 @@ const tableColumns = {
     "id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,role:text!,scope:jsonb!,granted_by:uuid!,granted_at:timestamp with time zone!=now(),expires_at:timestamp with time zone!,approved_by:uuid,approved_at:timestamp with time zone,revoked_by:uuid,revoked_at:timestamp with time zone",
   break_glass:
     "id:bigint!@,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,membership_id:uuid!,patient_id:text!,reason:text!,opened_at:timestamp with time zone!=now(),until:timestamp with time zone!",
+  access_requests:
+    "id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,role:text!,scope:jsonb!,requested_at:timestamp with time zone!=now(),decision:text,decided_by:uuid,decided_at:timestamp with time zone",
 };
+
+/** Columns later migrations added to an existing table, in the order they were added. */
+const addedColumns = [
+  [2, "workspaces", "data_mode:text!='prototype'"],
+  [2, "commands", "data_mode:text!='prototype'"],
+  [2, "audit", "data_mode:text!='prototype'"],
+  [8, "audit", "actor_scope:jsonb"],
+  [9, "memberships", "kind:text!='role',last_used_at:timestamp with time zone"],
+  [9, "push_subscriptions", "membership_id:uuid"],
+];
 
 /** The migration that created each table; a table missing from here has been there since 1. */
 const tableSince = {
@@ -112,6 +124,7 @@ const tableSince = {
   push_deliveries: 3,
   memberships: 8,
   break_glass: 8,
+  access_requests: 9,
 };
 
 const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
@@ -158,7 +171,21 @@ const checks = {
     "reason = ANY (ARRAY['handover','bed-search','transport-safety','other'])",
     "until > opened_at",
   ],
+  access_requests: [
+    "data_mode = 'prototype'",
+    `role = ANY (${ACCESS_ROLES})`,
+    "jsonb_typeof(scope) = 'object' AND octet_length(scope::text) <= 4096",
+    "decision = ANY (ARRAY['approved','declined'])",
+    "decided_by <> actor_id",
+    "(decision IS NULL) = (decided_by IS NULL) AND (decision IS NULL) = (decided_at IS NULL)",
+  ],
 };
+
+/** Migration 9 added cover to memberships: a kind, and cover only of a ward or an ED. */
+const membershipChecksFrom9 = [
+  "kind = ANY (ARRAY['role','cover'])",
+  "kind = 'role' OR role = ANY (ARRAY['ward','ed'])",
+];
 
 /** Migration 8 widened the audit role check and added the sender's place. */
 const auditChecksFrom8 = [
@@ -177,6 +204,7 @@ const primaryKeys = {
   push_deliveries: ["subscription_id", "item_id"],
   memberships: ["id"],
   break_glass: ["id"],
+  access_requests: ["id"],
 };
 
 const indexes = [
@@ -198,6 +226,8 @@ const indexes = [
   [8, "memberships_actor_active", "memberships", "workspace_id, actor_id", false, "revoked_at IS NULL"],
   [8, "break_glass_pkey", "break_glass", "id", true],
   [8, "break_glass_actor", "break_glass", "workspace_id, actor_id, until DESC", false],
+  [9, "access_requests_pkey", "access_requests", "id", true],
+  [9, "access_requests_one_open", "access_requests", "workspace_id, actor_id", true, "decision IS NULL"],
 ];
 
 const protectors = {
@@ -242,7 +272,10 @@ function expectedConstraints(version, tables) {
   const result = [];
   for (const table of tables) {
     result.push({ table, type: "p", keys: primaryKeys[table] });
-    for (const check of (version >= 8 && table === "audit" ? auditChecksFrom8 : checks[table]) ?? [])
+    for (const check of [
+      ...((version >= 8 && table === "audit" ? auditChecksFrom8 : checks[table]) ?? []),
+      ...(version >= 9 && table === "memberships" ? membershipChecksFrom9 : []),
+    ])
       result.push({ table, type: "c", check: expression("CHECK (" + check + ")") });
   }
   for (const table of ["commands", "audit"])
@@ -306,6 +339,24 @@ function expectedConstraints(version, tables) {
       deletion: "a",
     });
   }
+  if (version >= 9) {
+    result.push({
+      table: "access_requests",
+      type: "f",
+      keys: ["workspace_id", "data_mode"],
+      target: "workspaces",
+      foreign: ["id", "data_mode"],
+      deletion: "a",
+    });
+    result.push({
+      table: "push_subscriptions",
+      type: "f",
+      keys: ["membership_id"],
+      target: "memberships",
+      foreign: ["id"],
+      deletion: "a",
+    });
+  }
   return result;
 }
 
@@ -336,9 +387,8 @@ function verifyCatalog(catalog, version, runtimeRole) {
     if (tables.includes(object.name)) {
       if (object.kind !== "r") refuse();
       const expected = columns(tableColumns[object.name]);
-      if (version >= 2 && ["workspaces", "commands", "audit"].includes(object.name))
-        expected.push(...columns("data_mode:text!='prototype'"));
-      if (version >= 8 && object.name === "audit") expected.push(...columns("actor_scope:jsonb"));
+      for (const [minimum, table, spec] of addedColumns)
+        if (version >= minimum && table === object.name) expected.push(...columns(spec));
       verifyColumns(object.columns, expected);
     } else if (object.name.endsWith("_seq")) {
       if (object.kind !== "S") refuse();

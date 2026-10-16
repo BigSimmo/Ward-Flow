@@ -1,6 +1,6 @@
 // tests/ward-declined-by-all-precedence.test.ts
 //
-// WF-23: an accepted movement carrying an earlier decline read as "declined by all".
+// an accepted movement carrying an earlier decline read as "declined by all".
 //
 // `handoverSnapshot`'s `declinedByAll` filter (ward-derivations.ts) used to class a movement as
 // declined by all whenever it was open, not escalated, had no live referrals, and carried at
@@ -58,7 +58,7 @@ function findMovement(state: ReturnType<typeof seedWardFlowState>, id: string) {
   return found;
 }
 
-describe("WF-23: declined-by-all precedence against acceptance", () => {
+describe("declined-by-all precedence against acceptance", () => {
   it("A declines, B accepts in principle: no rejections, one decline kept, the movement is not declined-by-all, and the statistics count is unchanged", () => {
     const seeded = seedWardFlowState();
     const before = refusedAndNothingPending(seeded.movements, seeded.units, NOW);
@@ -121,7 +121,7 @@ describe("WF-23: declined-by-all precedence against acceptance", () => {
   // Item 20 / owner decision 2026-09-17 (WF-R2): a referral or movement whose only acceptance was
   // later withdrawn is not "declined by all". `WITHDRAW_ACCEPTANCE` clears `acceptedUnitId`
   // without reviving `referredUnitIds` (owner ruling 3 of 2026-09-04), which is exactly the same
-  // shape the earlier `ACCEPT_IN_PRINCIPLE` bug (WF-23, the test above) left behind — so the same
+  // shape the earlier `ACCEPT_IN_PRINCIPLE` bug (the test above) left behind — so the same
   // three-clause reading misclassified a withdrawal as a network-wide refusal.
   it("A declines, B accepts, the acceptance is withdrawn: reads acceptance_withdrawn, not counted, until a fresh decline lands", () => {
     const seeded = seedWardFlowState();

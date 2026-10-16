@@ -37,6 +37,7 @@ import {
   resetWardAccessStoreForTests,
   setWardAccess,
   startAccessPreview,
+  endAccessPreview,
 } from "../src/components/ward-management/shell/ward-access-store";
 
 /**
@@ -573,6 +574,17 @@ describe("the desk store", () => {
     startAccessPreview(wardDesk);
     expect(readWardAccessSnapshot().access).toEqual(wardDesk);
     expect(readWardAccessSnapshot().previewOf).toEqual(STATEWIDE_COORDINATOR);
+  });
+
+  it("returns to the coordinator who began it, even after a preview of another coordinator desk", () => {
+    const service = { role: "coordinator", scope: { kind: "service", service: "North Metro" } } as const;
+    setWardAccess(service);
+    startAccessPreview(STATEWIDE_COORDINATOR);
+    startAccessPreview(wardDesk);
+    expect(readWardAccessSnapshot().previewOf).toEqual(service);
+    endAccessPreview();
+    expect(readWardAccessSnapshot().access).toEqual(service);
+    expect(readWardAccessSnapshot().previewOf).toBeNull();
   });
 
   it("never breaks glass during a preview, so nothing is logged as the previewed desk", () => {

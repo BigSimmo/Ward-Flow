@@ -5,7 +5,7 @@
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
 export { useMinuteNow } from "./use-minute-now";
-export { guessPhoneFromRequest } from "./phone-guess";
+export { guessPhoneFromRequest, guessTabletFromRequest } from "./phone-guess";
 export {
   WfServerPhoneProvider,
   useIsPhone,

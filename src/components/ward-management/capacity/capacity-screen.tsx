@@ -397,137 +397,138 @@ export function CapacityScreen() {
   const excludedBeyondToday = useMemo(() => releasesBeyondToday(bedReleases, now), [bedReleases, now]);
 
   // Option A: the ward table is the bed map's Table layout, not a second list under the map.
-  const wardTable = (
-    <div
-      id="capacity-wards"
-      ref={tableDialog}
-      className={`${styles.wardsSection} ${tableFullscreen ? styles.tableFullscreen : ""}`}
-      role={tableFullscreen ? "dialog" : undefined}
-      aria-modal={tableFullscreen ? true : undefined}
-      aria-label={tableFullscreen ? "Ward capacity full screen" : undefined}
-      tabIndex={-1}
-    >
-      <WardPanel
-        title="Wards"
-        count={`${scopedNetworkRows.length} ${scopedNetworkRows.length === 1 ? "ward" : "wards"} ${service === null ? "in the network" : `in ${service}`}, ${matchingNetworkRows.length} matching`}
+  const wardTable =
+    mapLayout === "table" ? (
+      <div
+        id="capacity-wards"
+        ref={tableDialog}
+        className={`${styles.wardsSection} ${tableFullscreen ? styles.tableFullscreen : ""}`}
+        role={tableFullscreen ? "dialog" : undefined}
+        aria-modal={tableFullscreen ? true : undefined}
+        aria-label={tableFullscreen ? "Ward capacity full screen" : undefined}
+        tabIndex={-1}
       >
-        <div className={styles.filters}>
-          <div className={styles.tableToolbar}>
-            <button
-              type="button"
-              className={styles.fullscreenButton}
-              aria-pressed={showAllColumns}
-              onClick={() => setShowAllColumns(!showAllColumns)}
-            >
-              {showAllColumns ? "Key columns" : "More columns"}
-            </button>
-            <button
-              type="button"
-              className={styles.fullscreenButton}
-              aria-expanded={tableFullscreen}
-              onClick={() => setTableFullscreen(!tableFullscreen)}
-            >
-              {tableFullscreen ? "Close full screen" : "Full screen"}
-            </button>
-          </div>
-          <WardFilters
-            legend="Highlight wards"
-            activeId={networkFilterId}
-            onChange={setNetworkFilterId}
-            options={networkFilters.map((option) => ({
-              id: option.id,
-              label: option.label,
-              count: scopedNetworkRows.filter(option.predicate).length,
-            }))}
-          />
-          <label className={styles.sortControl}>
-            <span className={styles.sortLabel}>Order</span>
-            <div className={styles.sortSelectWrap}>
-              <select
-                id="capacity-ward-sort"
-                name="wardSort"
-                aria-label="Sort wards"
-                value={wardSort}
-                onChange={(event) => {
-                  setWardSort(event.target.value);
-                }}
-              >
-                <option value="name">Ward A–Z</option>
-                <option value="ready">Most ready</option>
-                <option value="confirmation">Oldest confirmation</option>
-              </select>
-              <span className={styles.sortChevron} aria-hidden="true">
-                ▾
-              </span>
-            </div>
-          </label>
-        </div>
-        <div
-          ref={networkBody}
-          className={styles.networkBody}
-          role="region"
-          aria-label="Ward capacity table"
-          aria-describedby={networkOverflow && !showAllColumns ? "capacity-table-scroll-notice" : undefined}
-          tabIndex={0}
+        <WardPanel
+          title="Wards"
+          count={`${scopedNetworkRows.length} ${scopedNetworkRows.length === 1 ? "ward" : "wards"} ${service === null ? "in the network" : `in ${service}`}, ${matchingNetworkRows.length} matching`}
         >
-          {networkOverflow && !showAllColumns ? (
-            <p id="capacity-table-scroll-notice" className={styles.tableScrollNotice}>
-              Scroll sideways to see more ward details.
-            </p>
-          ) : null}
-          <WardTable
-            className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
-            wrapperClassName={styles.networkTableScroll}
-            testId="ward-capacity-network-table"
-            hasScrollThreshold={showAllColumns}
-            overflowing={networkOverflow}
-            ariaLabel="Scrollable ward capacity table"
+          <div className={styles.filters}>
+            <div className={styles.tableToolbar}>
+              <button
+                type="button"
+                className={styles.fullscreenButton}
+                aria-pressed={showAllColumns}
+                onClick={() => setShowAllColumns(!showAllColumns)}
+              >
+                {showAllColumns ? "Key columns" : "More columns"}
+              </button>
+              <button
+                type="button"
+                className={styles.fullscreenButton}
+                aria-expanded={tableFullscreen}
+                onClick={() => setTableFullscreen(!tableFullscreen)}
+              >
+                {tableFullscreen ? "Close full screen" : "Full screen"}
+              </button>
+            </div>
+            <WardFilters
+              legend="Highlight wards"
+              activeId={networkFilterId}
+              onChange={setNetworkFilterId}
+              options={networkFilters.map((option) => ({
+                id: option.id,
+                label: option.label,
+                count: scopedNetworkRows.filter(option.predicate).length,
+              }))}
+            />
+            <label className={styles.sortControl}>
+              <span className={styles.sortLabel}>Order</span>
+              <div className={styles.sortSelectWrap}>
+                <select
+                  id="capacity-ward-sort"
+                  name="wardSort"
+                  aria-label="Sort wards"
+                  value={wardSort}
+                  onChange={(event) => {
+                    setWardSort(event.target.value);
+                  }}
+                >
+                  <option value="name">Ward A–Z</option>
+                  <option value="ready">Most ready</option>
+                  <option value="confirmation">Oldest confirmation</option>
+                </select>
+                <span className={styles.sortChevron} aria-hidden="true">
+                  ▾
+                </span>
+              </div>
+            </label>
+          </div>
+          <div
+            ref={networkBody}
+            className={styles.networkBody}
+            role="region"
+            aria-label="Ward capacity table"
+            aria-describedby={networkOverflow && !showAllColumns ? "capacity-table-scroll-notice" : undefined}
+            tabIndex={0}
           >
-            <thead>
-              <tr className={styles.stickyHeaderRow}>
-                <th scope="col">Ward</th>
-                <th scope="col">Bed kinds</th>
-                <th scope="col">Ready</th>
-                <th scope="col">Locked</th>
-                <th scope="col">Freeing</th>
-                <th scope="col">{bedReleaseStateLabels.confirmed}</th>
-                <th scope="col">{bedReleaseStateLabels.expected}</th>
-                <th scope="col">{BED_RELEASE_BLOCKED_FIGURE_LABEL}</th>
-                <th scope="col">Discharges due today</th>
-                <th scope="col">Transfers today</th>
-                <th scope="col">{BED_STATE_LABELS.pulled}</th>
-                <th scope="col">{BED_STATE_LABELS.closed}</th>
-                <th scope="col">{BED_STATE_LABELS.occupied}</th>
-                <th scope="col">Sex mix</th>
-                <th scope="col">Specialling</th>
-                <th scope="col">Involuntary-capable</th>
-                <th scope="col">Confirmed</th>
-                <th scope="col">Ask for an update</th>
-              </tr>
-            </thead>
-            {/* Scoped by rendering only the chosen service's groups, never by re-deriving them, so
-              no other service reads as having no ward (see `bed-map.tsx`'s `BedMap`). */}
-            {(service === null
-              ? networkServiceGroups
-              : networkServiceGroups.filter((group) => group.service === service)
-            ).map((group) => (
-              <NetworkServiceGroupRows
-                key={group.service}
-                group={group}
-                now={now}
-                activeNetworkFilter={activeNetworkFilter}
-                selectedUnitId={selectedUnitId}
-                onSelectWard={selectWard}
-                onRequestRefresh={(unitId) =>
-                  dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId })
-                }
-              />
-            ))}
-          </WardTable>
-        </div>
-      </WardPanel>
-    </div>
-  );
+            {networkOverflow && !showAllColumns ? (
+              <p id="capacity-table-scroll-notice" className={styles.tableScrollNotice}>
+                Scroll sideways to see more ward details.
+              </p>
+            ) : null}
+            <WardTable
+              className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
+              wrapperClassName={styles.networkTableScroll}
+              testId="ward-capacity-network-table"
+              hasScrollThreshold={showAllColumns}
+              overflowing={networkOverflow}
+              ariaLabel="Scrollable ward capacity table"
+            >
+              <thead>
+                <tr className={styles.stickyHeaderRow}>
+                  <th scope="col">Ward</th>
+                  <th scope="col">Bed kinds</th>
+                  <th scope="col">Ready</th>
+                  <th scope="col">Locked</th>
+                  <th scope="col">Freeing</th>
+                  <th scope="col">{bedReleaseStateLabels.confirmed}</th>
+                  <th scope="col">{bedReleaseStateLabels.expected}</th>
+                  <th scope="col">{BED_RELEASE_BLOCKED_FIGURE_LABEL}</th>
+                  <th scope="col">Discharges due today</th>
+                  <th scope="col">Transfers today</th>
+                  <th scope="col">{BED_STATE_LABELS.pulled}</th>
+                  <th scope="col">{BED_STATE_LABELS.closed}</th>
+                  <th scope="col">{BED_STATE_LABELS.occupied}</th>
+                  <th scope="col">Sex mix</th>
+                  <th scope="col">Specialling</th>
+                  <th scope="col">Involuntary-capable</th>
+                  <th scope="col">Confirmed</th>
+                  <th scope="col">Ask for an update</th>
+                </tr>
+              </thead>
+              {/* Scoped by rendering only the chosen service's groups, never by re-deriving them, so
+                no other service reads as having no ward (see `bed-map.tsx`'s `BedMap`). */}
+              {(service === null
+                ? networkServiceGroups
+                : networkServiceGroups.filter((group) => group.service === service)
+              ).map((group) => (
+                <NetworkServiceGroupRows
+                  key={group.service}
+                  group={group}
+                  now={now}
+                  activeNetworkFilter={activeNetworkFilter}
+                  selectedUnitId={selectedUnitId}
+                  onSelectWard={selectWard}
+                  onRequestRefresh={(unitId) =>
+                    dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId })
+                  }
+                />
+              ))}
+            </WardTable>
+          </div>
+        </WardPanel>
+      </div>
+    ) : null;
 
   const railAside = (
     <aside className={styles.secondary} aria-label="Network summary and ward detail">
@@ -988,7 +989,7 @@ export function CapacityScreen() {
               <div className={styles.capacityPanelBody} role="region" aria-label="Bed map details" tabIndex={0}>
                 <BedMap
                   initialLayout="grid"
-                  onLayoutChange={(nextLayout) => startTransition(() => setMapLayout(nextLayout))}
+                  onLayoutChange={setMapLayout}
                   table={wardTable}
                   initialBedDetail={false}
                   units={units}

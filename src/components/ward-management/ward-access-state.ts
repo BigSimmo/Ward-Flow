@@ -17,7 +17,9 @@ import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/a
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
+import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
+import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
   bookingPersonShown,
   scopeBroadcastAlerts,
@@ -96,6 +98,16 @@ function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "a
 function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boolean {
   const scope = access.scope;
   return scope.kind === "team" && (teamId === scope.teamName || teamId === places.teamSlug(scope.teamName));
+}
+
+/**
+ * An admission or transfer notification belongs to the ward the person arrived on. A sending ward
+ * still sees its outbound move, but never the receiving ward's notes about it (review on PR #365).
+ */
+function notifiesOnArrival(context: Context, movement: { acceptedUnitId?: string | null }): boolean {
+  return (
+    context.coordinator || (typeof movement.acceptedUnitId === "string" && context.unitIn(movement.acceptedUnitId))
+  );
 }
 
 /** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
@@ -179,7 +191,9 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
       ? (context.state.supportNotifications ?? []).filter((record) =>
           record.occasion === "discharge"
             ? wholeStay(context, record.subjectId)
-            : context.scoped.movements.some((movement) => movement.id === record.subjectId),
+            : context.scoped.movements.some(
+                (movement) => movement.id === record.subjectId && notifiesOnArrival(context, movement),
+              ),
         )
       : [],
   // Whole before and after records: the statewide desk's only.
@@ -247,10 +261,38 @@ export function scopeWardFlowState(
   if (state.supportNotifications === undefined) delete next.supportNotifications;
   if (state.undoRecords === undefined) delete next.undoRecords;
   return {
-    state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds),
+    state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state),
     breakGlassPatientIds: scoped.breakGlassPatientIds,
     scoped,
   };
+}
+
+/**
+ * A ward over its beds lists each arrival that took it over (`arrivalCapacityConflicts`), and the
+ * saved-state check allows one occupant over `beds` per listed arrival. When the desk is not sent
+ * an arrival's movement, its entry is cut, so the counts would break that check. The authoritative
+ * counts are kept whenever they still fit. Otherwise each cut arrival is taken out of the bucket of
+ * its own recorded sex (the bucket its arrival added to), never a guessed one, until they fit. The
+ * server still checks every placement against the whole workspace.
+ */
+function withinArrivalAllowance(
+  unit: Unit,
+  kept: readonly { movementId: string }[] | undefined,
+  sexOfArrival: (movementId: string) => Sex | undefined,
+): Unit["sexMix"] {
+  let excess = unit.sexMix.Female + unit.sexMix.Male - (unit.beds + (kept?.length ?? 0));
+  if (excess <= 0) return unit.sexMix;
+  const keptIds = new Set((kept ?? []).map((conflict) => conflict.movementId));
+  let mix = unit.sexMix;
+  for (const conflict of unit.arrivalCapacityConflicts ?? []) {
+    if (excess <= 0) break;
+    if (keptIds.has(conflict.movementId)) continue;
+    const sex = sexOfArrival(conflict.movementId);
+    if (sex === undefined || mix[sex] <= 0) continue;
+    mix = adjustSexMix(mix, sex, -1);
+    excess -= 1;
+  }
+  return mix;
 }
 
 /** A copy without the optional link fields that point at a record the desk is not sent. */
@@ -268,7 +310,18 @@ function withoutLinks<T extends object>(record: T, links: readonly (keyof T)[], 
  * browser refuses a workspace whose links dangle, so they are cut here. The desk loses nothing it
  * could have opened.
  */
-function closeReferences(scoped: WardFlowState, datesOnlyAdmissionIds: ReadonlySet<string>): WardFlowState {
+function closeReferences(
+  scoped: WardFlowState,
+  datesOnlyAdmissionIds: ReadonlySet<string>,
+  whole: WardFlowState,
+): WardFlowState {
+  const wholeMovements = new Map<string, WardFlowState["movements"][number]>(
+    whole.movements.map((movement) => [movement.id, movement]),
+  );
+  const sexOfArrival = (movementId: string) => {
+    const movement = wholeMovements.get(movementId);
+    return movement ? mixSexOf(movement.gender, movement.sex) : undefined;
+  };
   const ids = (items: readonly { id: string }[]) => new Set(items.map((item) => item.id));
   const movements = ids(scoped.movements);
   const admissions = ids(scoped.admissions);
@@ -288,22 +341,7 @@ function closeReferences(scoped: WardFlowState, datesOnlyAdmissionIds: ReadonlyS
           ?.filter((conflict) => movements.has(conflict.movementId))
           .map((conflict) => withoutLinks(conflict, ["admissionId"], has(fullAdmissions)));
       const keptArrivalConflicts = own(unit.arrivalCapacityConflicts);
-      const maxOccupants = Math.max(0, unit.beds + (keptArrivalConflicts?.length ?? 0));
-      let female = unit.sexMix.Female;
-      let male = unit.sexMix.Male;
-      let excess = female + male - maxOccupants;
-      while (excess > 0 && (female > 0 || male > 0)) {
-        if (female >= male && female > 0) {
-          female -= 1;
-        } else if (male > 0) {
-          male -= 1;
-        }
-        excess -= 1;
-      }
-      const sexMix =
-        female === unit.sexMix.Female && male === unit.sexMix.Male
-          ? unit.sexMix
-          : { ...unit.sexMix, Female: female, Male: male };
+      const sexMix = withinArrivalAllowance(unit, keptArrivalConflicts, sexOfArrival);
       return {
         ...unit,
         sexMix,
@@ -405,6 +443,18 @@ export function commandScopeRefusal(
   // (`governanceAuditEntry`), so every seeded id counts as a record. A coordinator may name only the
   // ones its own screens show.
   if (access.role === "coordinator") for (const id of seededAuditIds(scopedWithoutGrants, state)) writable.add(id);
+  if (
+    access.role === "ward" &&
+    (command.type === "RECORD_SUPPORT_NOTIFICATION" || command.type === "UNDO_SUPPORT_NOTIFICATION") &&
+    typeof command.movementId === "string"
+  ) {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (
+      movement &&
+      !(typeof movement.acceptedUnitId === "string" && unitInScope(access.scope, movement.acceptedUnitId, places))
+    )
+      return outside;
+  }
   for (const text of commandStrings(command)) {
     if ((all.has(text) || text.startsWith("audit-seed-")) && !writable.has(text)) return outside;
     const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));

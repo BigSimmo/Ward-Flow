@@ -1,5 +1,19 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
-import { wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import {
+  PUSH_ROLES,
+  ACCESS_UNUSED_MINUTES as ACCESS_UNUSED_RULE_MINUTES,
+  STEP_UP_MINUTES as STEP_UP_RULE_MINUTES,
+  coverAccess as coverAccessRule,
+  coverRefusal as coverRefusalRule,
+  managesAccess as managesAccessRule,
+  requestRefusal as requestRefusalRule,
+  revokeRefusal as revokeRefusalRule,
+  scopeNamesPlace,
+  scopeWithinScope,
+  withCover as withCoverRule,
+  type AccessPlaces,
+} from "../../src/components/ward-management/ward-access-admin";
 import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
 import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
@@ -24,13 +38,16 @@ import {
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
+import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+
+export { checkSyntheticPayload };
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
 /** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
 const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 /** A known type, an explicit allowed role and well-formed fields: see command-schemas.ts. */
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
-  return validSharedCommand(value);
+  return validSharedCommand(value) && checkSyntheticPayload(value).safe;
 }
 
 /** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */
@@ -239,50 +256,100 @@ export function commandRefusal(
 
 /** Who may grant, approve and remove roles: the access admin, and the statewide coordinator. */
 export function managesAccess(access: WardAccess): boolean {
-  return access.role === "admin" || accessIsWholeNetwork(access);
+  return managesAccessRule(access);
+}
+
+/** The place answers the access admin's rules need, read from this workspace's wards. */
+export function accessPlaces(world: SharedWorld): AccessPlaces {
+  return wardAccessPlaces(world.state.units);
 }
 
 /**
  * Whether a place names something in this workspace, so a grant never points at a ward, ED or
- * site that does not exist. A team is any name: one with no patients simply shows nobody.
+ * site that does not exist (`scopeNamesPlace`, shared with the Access admin screen).
  */
 export function scopeExists(world: SharedWorld, scope: WardAccessScope): boolean {
-  const places = wardPlaceLookup(world.state.units);
-  switch (scope.kind) {
-    case "site":
-      return world.state.units.some((unit) => places.unitSiteCode(unit.id) === scope.siteCode);
-    case "ward":
-      return scope.unitIds.every((id) => places.unitSiteCode(id) !== undefined);
-    case "ed":
-      return places.edSiteCode(scope.edId) !== undefined;
-    default:
-      return true;
-  }
+  return scopeNamesPlace(scope, accessPlaces(world));
 }
 
 /**
  * Whether `inner` lies wholly inside `outer`, so an access admin never grants, approves or removes
- * a role wider than their own. A service admin covers that service's sites, wards and EDs only;
- * statewide, team and jobs scopes need a statewide admin.
+ * a role wider than their own (`scopeWithinScope`, shared with the Access admin screen).
  */
 export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: WardAccessScope): boolean {
-  if (outer.kind === "statewide") return true;
-  if (outer.kind !== "service") return false;
-  const places = wardPlaceLookup(world.state.units);
-  switch (inner.kind) {
-    case "service":
-      return inner.service === outer.service;
-    case "site": {
-      const units = world.state.units.filter((unit) => places.unitSiteCode(unit.id) === inner.siteCode);
-      return units.length > 0 && units.every((unit) => places.unitService(unit.id) === outer.service);
-    }
-    case "ward":
-      return inner.unitIds.every((id) => places.unitService(id) === outer.service);
-    case "ed":
-      return places.edService(inner.edId) === outer.service;
-    default:
-      return false;
-  }
+  return scopeWithinScope(inner, outer, accessPlaces(world));
+}
+
+/** Granting access, cover or breaking glass needs a sign-in this recent (synthetic). */
+export const STEP_UP_MINUTES = STEP_UP_RULE_MINUTES;
+/** A role not worked as for this long stops working by itself (synthetic). */
+export const ACCESS_UNUSED_MINUTES = ACCESS_UNUSED_RULE_MINUTES;
+
+/**
+ * Why this cover may not be given, or `null` (feature 2): the same rule the Access tab uses. The
+ * role it carries comes from `coverAccess`: a ward's cover is a nurse in charge's, an ED's an ED
+ * clinician's.
+ */
+export function coverRefusal(
+  world: SharedWorld,
+  giver: WardAccess,
+  giverId: string,
+  recipientId: string,
+  scope: WardAccessScope,
+  minutes: number,
+): string | null {
+  return coverRefusalRule({ giver, giverId, recipientId, scope, minutes, places: accessPlaces(world) });
+}
+
+export function coverAccess(scope: WardAccessScope): WardAccess | null {
+  return coverAccessRule(scope);
+}
+
+/** A ward desk with cover of more wards works them as one desk. ED cover is never merged. */
+export function withCover(access: WardAccess, covers: readonly WardAccessScope[]): WardAccess {
+  return withCoverRule(access, covers);
+}
+
+/** Why a person with no role may not ask for this one, or `null` (feature 7). */
+export function requestRefusal(world: SharedWorld, access: WardAccess, openRequests: number): string | null {
+  return requestRefusalRule({ access, openRequests, places: accessPlaces(world) });
+}
+
+/** Why this person may not end this role or cover, or `null`. A cover's giver ends it too. */
+export function revokeRefusal(
+  world: SharedWorld,
+  remover: WardAccess,
+  removerId: string,
+  membership: { kind: "role" | "cover"; grantedBy: string; access: WardAccess },
+): string | null {
+  return revokeRefusalRule({
+    remover,
+    removerId,
+    membership: {
+      id: "",
+      actorId: "",
+      grantedAt: 0,
+      expiresAt: 0,
+      approvedBy: null,
+      lastUsedAt: null,
+      revokedAt: null,
+      ...membership,
+    },
+    places: accessPlaces(world),
+  });
+}
+
+/** Who hears phone alerts by role (feature 10). One list, in the access admin's rules. */
+export { PUSH_ROLES };
+
+/** The act-now rows this desk may hear about: `actNowAlerts` on its own scoped workspace. */
+export function scopedActNowAlerts(
+  world: SharedWorld,
+  access: WardAccess,
+  at: Date,
+): { id: string; site: string | null }[] {
+  if (!validWorld(world) || !PUSH_ROLES.includes(access.role)) return [];
+  return accessIsWholeNetwork(access) ? actNowAlerts(world, at) : actNowAlerts(scopeWorld(world, access, at), at);
 }
 
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
@@ -302,11 +369,21 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
     now: worldNow(world, at),
     places: wardPlaceLookup(world.state.units),
   });
+  // In care means a live record the desk sees in full. A finished move, an answered referral or a
+  // past stay kept only for the hand-off window is history, so break glass stays open for that
+  // person's current care elsewhere (review on PR #365).
   const inFullCare =
-    state.movements.some((movement) => movement.patientId === patientId) ||
-    state.referrals.some((referral) => referral.patientId === patientId) ||
+    state.movements.some((movement) => movement.patientId === patientId && movement.closure === undefined) ||
+    state.referrals.some(
+      (referral) =>
+        referral.patientId === patientId &&
+        referral.destinations.some((line) => line.state === "queued" && line.withdrawnAt === undefined),
+    ) ||
     state.admissions.some(
-      (admission) => admission.patientId === patientId && !scoped.datesOnlyAdmissionIds.has(admission.id),
+      (admission) =>
+        admission.patientId === patientId &&
+        admission.state !== "departed" &&
+        !scoped.datesOnlyAdmissionIds.has(admission.id),
     );
   if (inFullCare) return "That patient is already in your care.";
   return null;

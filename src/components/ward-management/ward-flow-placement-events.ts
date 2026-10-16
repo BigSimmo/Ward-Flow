@@ -526,7 +526,7 @@ export function reducePlacementEvent(
           `RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
         );
       }
-      const withoutHeldBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutHeldBed = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       const released: Movement = {
         ...movement,
         admissionId: undefined,
@@ -581,7 +581,7 @@ export function reducePlacementEvent(
           `RELEASE_DIVERTED_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
         );
       }
-      const withoutHeldBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutHeldBed = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       const diversionReason = movement.transport.diversion.reason;
       const released: Movement = {
         ...movement,
@@ -700,7 +700,7 @@ export function reducePlacementEvent(
           `RELEASE_AND_REOPEN_SEARCH was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is at ${movement.acceptedUnitId}`,
         );
       }
-      const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPhantom = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       // A stepped-back movement keeps its bed and admission at `accepted_awaiting_bed` (same rule
       // as `releasePulledBedAndAdmission`).
       const heldBed = movement.stage === "pulled" || movement.admissionId !== undefined;
@@ -768,4 +768,32 @@ export function reducePlacementEvent(
       return appendNotices(next, notices);
     }
   }
+}
+
+/**
+ * A released bed is free again only once the accepted referral arm that held it lets go too:
+ * `heldBedRefusal` reads both the movement's and the arm's `heldBedNumber` (review on PR #365).
+ */
+function withoutReferralBedHold(state: WardFlowState, movement: Movement): WardFlowState {
+  const unitId = movement.acceptedUnitId;
+  if (movement.referralId === undefined || unitId === undefined) return state;
+  let changed = false;
+  const referrals = state.referrals.map((referral) => {
+    if (referral.id !== movement.referralId) return referral;
+    const destinations = referral.destinations.map((arm) => {
+      if (
+        arm.state !== "accepted" ||
+        arm.heldBedNumber === undefined ||
+        arm.destination.kind !== "psychiatric_ward" ||
+        (arm.acceptedUnitId ?? arm.destination.unitId) !== unitId
+      )
+        return arm;
+      changed = true;
+      const { heldBedNumber: _heldBed, ...released } = arm;
+      void _heldBed;
+      return released;
+    });
+    return changed ? { ...referral, destinations } : referral;
+  });
+  return changed ? { ...state, referrals } : state;
 }

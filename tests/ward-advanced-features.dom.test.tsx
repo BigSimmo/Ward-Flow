@@ -96,11 +96,11 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
 
       // Submit form
       const submitBtn = screen.getByTestId("confirm-upload-form-button");
-      expect(submitBtn).toBeDisabled();
+      expect(submitBtn).toHaveAttribute("aria-disabled", "true");
       fireEvent.change(within(dialog).getByLabelText("Upload document file"), {
         target: { files: [new File(["synthetic"], "synthetic-transfer.pdf", { type: "application/pdf" })] },
       });
-      expect(submitBtn).toBeEnabled();
+      expect(submitBtn).not.toHaveAttribute("aria-disabled", "true");
       fireEvent.click(submitBtn);
 
       // Verify attached forms section updated

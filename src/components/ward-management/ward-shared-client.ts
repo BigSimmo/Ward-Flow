@@ -3,17 +3,6 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
-import type { BreakGlassGrant } from "./ward-access-scope";
-import type { BreakGlassReasonId, WardAccessRole, WardAccessScope } from "./ward-role-access";
-
-export type { BreakGlassGrant, BreakGlassReasonId, WardAccessRole, WardAccessScope };
-
-export interface SharedWorkspaceMembership {
-  id: string;
-  role: WardAccessRole;
-  scope: WardAccessScope;
-  label: string;
-}
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -22,26 +11,58 @@ export type SharedSnapshot = {
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
   /** False when the server refuses the demonstration controls (clock, reset and scenario). */
   demoControls?: boolean;
-  role?: WardAccessRole;
-  membershipId?: string;
-  memberships?: readonly SharedWorkspaceMembership[];
-  grants?: readonly BreakGlassGrant[];
 };
-
-export type SharedWorkspaceEnvelope = SharedSnapshot;
-
-type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised";
+/**
+ * `choose-role`: the account holds more than one role and must say which to work as.
+ * `no-role`: signed in, but no role is assigned. Neither signs the person out.
+ */
+type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised" | "choose-role" | "no-role";
+/** One role this account may work as: the membership id (or "bootstrap") and its role and place. */
+export type SharedRoleChoice = { workingAs: string; role: string; scope: unknown };
 export type SharedView = {
   snapshot: SharedSnapshot | null;
   receivedAt: number;
   status: SharedStatus;
   error: string | null;
   eventLog?: readonly EventLogEntry[];
-  role?: WardAccessRole;
-  membershipId?: string;
-  memberships?: readonly SharedWorkspaceMembership[];
-  grants?: readonly BreakGlassGrant[];
+  /** The role and place the server says this account is working as now. Checked by the caller. */
+  access?: unknown;
+  /** The membership id worked as, or "bootstrap" for a WARD_COORDINATOR_USER_IDS account. */
+  workingAs?: string | null;
+  /** With `choose-role`: the roles to choose from. */
+  choices?: readonly SharedRoleChoice[];
+  /** With `no-role`: whether this server takes requests for access. */
+  canRequest?: boolean;
+  /** The signed-in account's id, to say "You" in the access lists. */
+  actorId?: string | null;
+  /** This tab chose its role, so it can go back and choose another. */
+  canSwitch?: boolean;
 };
+/** A role or cover as the server lists it. Times are minutes from the server's now. */
+export type SharedMembership = {
+  id: string;
+  actorId: string;
+  role: string;
+  scope: unknown;
+  kind: "role" | "cover";
+  grantedBy: string;
+  approved: boolean;
+  approvedBy: string | null;
+  minutes: { granted: number | null; expires: number | null; lastUsed: number | null };
+};
+/** A request for access as the server lists it. */
+export type SharedAccessRequest = {
+  id: string;
+  actorId: string;
+  role: string;
+  scope: unknown;
+  decision: "approved" | "declined" | null;
+  minutes: { requested: number | null };
+};
+/** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
+export type SharedChangeResult = string | null;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NO_ROLE = "No Ward Flow role is assigned to this account";
 type PendingCommand = {
   dataMode: "prototype";
   classification: "synthetic";
@@ -52,17 +73,6 @@ type PendingCommand = {
   reply?: "revision";
 };
 
-type RawEnvelope =
-  | SharedSnapshot
-  | {
-      snapshot?: SharedSnapshot;
-      role?: WardAccessRole;
-      membershipId?: string;
-      workingAs?: string;
-      memberships?: readonly SharedWorkspaceMembership[];
-      grants?: readonly BreakGlassGrant[];
-    };
-
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
@@ -71,12 +81,10 @@ export class SharedWorkspaceClient {
   private busy = false;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
-  private workingAs: string | null = null;
-  /** Responses started under an earlier membership must not update the newly selected desk. */
-  private membershipGeneration = 0;
   private readonly lifetime = new AbortController();
-  private accessDenied() {
-    return this.view.status === "not-authorised";
+  /** Refused, or waiting on the person: no polling or saving until they act. */
+  private gated() {
+    return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
   }
   constructor(
     private readonly options: {
@@ -85,6 +93,8 @@ export class SharedWorkspaceClient {
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
+      /** Which of this account's roles to work as. The membership id only, never a name. */
+      workingAs?: { get: () => string | null; set: (id: string | null) => void };
     },
   ) {}
   private publish(update: Partial<SharedView>) {
@@ -92,54 +102,20 @@ export class SharedWorkspaceClient {
     this.view = { ...this.view, ...update };
     this.options.changed(this.view);
   }
-  private adopt(raw: RawEnvelope): SharedSnapshot {
-    const hasNested = Boolean(raw && typeof raw === "object" && "snapshot" in raw && raw.snapshot !== undefined);
-    const base = (hasNested ? (raw as { snapshot: SharedSnapshot }).snapshot : raw) as SharedSnapshot;
-    const outer = (hasNested ? raw : undefined) as
-      | {
-          role?: WardAccessRole;
-          membershipId?: string;
-          workingAs?: string;
-          memberships?: readonly SharedWorkspaceMembership[];
-          grants?: readonly BreakGlassGrant[];
-        }
-      | undefined;
+  private adopt(snapshot: SharedSnapshot) {
     if (
-      !base ||
-      base.dataMode !== "prototype" ||
-      !Number.isSafeInteger(base.revision) ||
-      base.revision < 1 ||
-      !Number.isFinite(base.now) ||
-      base.payload?.version !== 1 ||
-      !isValidSharedWardFlowState(base.payload.state) ||
-      !Number.isFinite(Date.parse(base.payload.dayZero)) ||
-      !Number.isFinite(Date.parse(base.payload.startedAt))
+      !snapshot ||
+      snapshot.dataMode !== "prototype" ||
+      !Number.isSafeInteger(snapshot.revision) ||
+      snapshot.revision < 1 ||
+      !Number.isFinite(snapshot.now) ||
+      snapshot.payload?.version !== 1 ||
+      !isValidSharedWardFlowState(snapshot.payload.state) ||
+      !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
+      !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
       throw new Error("Incompatible workspace data");
-    const role = base.role ?? outer?.role ?? this.view.role;
-    const membershipId =
-      base.membershipId ?? outer?.membershipId ?? outer?.workingAs ?? this.workingAs ?? this.view.membershipId;
-    const memberships = base.memberships ?? outer?.memberships ?? this.view.memberships;
-    const sameMembership = membershipId === undefined || membershipId === this.view.membershipId;
-    const grants = base.grants ?? outer?.grants ?? (sameMembership ? this.view.grants : undefined);
-    const snapshot: SharedSnapshot = {
-      ...base,
-      ...(role !== undefined ? { role } : {}),
-      ...(membershipId !== undefined ? { membershipId } : {}),
-      ...(memberships !== undefined ? { memberships } : {}),
-      ...(grants !== undefined ? { grants } : {}),
-    };
-    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) {
-      this.publish({
-        snapshot,
-        receivedAt: Date.now(),
-        ...(role !== undefined ? { role } : {}),
-        ...(membershipId !== undefined ? { membershipId } : {}),
-        ...(memberships !== undefined ? { memberships } : {}),
-        grants,
-      });
-    }
-    return snapshot;
+    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
     let token: string;
@@ -154,58 +130,103 @@ export class SharedWorkspaceClient {
       throw error;
     }
     if (this.disposed) throw new Error("Connection closed");
-    const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
-      method: body ? "POST" : "GET",
-      cache: "no-store",
-      headers: {
-        authorization: `Bearer ${token}`,
-        ...(this.workingAs ? { "x-ward-working-as": this.workingAs } : {}),
-        ...(body ? { "content-type": "application/json" } : {}),
-      },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-      signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal]),
-    });
-    if (this.disposed) throw new Error("Connection closed");
+    const stored = this.options.workingAs?.get() ?? null;
+    const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
+    const send = async (as: string | null) => {
+      const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
+        method: body ? "POST" : "GET",
+        cache: "no-store",
+        headers: {
+          authorization: `Bearer ${token}`,
+          ...(body ? { "content-type": "application/json" } : {}),
+          ...(as ? { "x-ward-working-as": as } : {}),
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+        signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal]),
+      });
+      if (this.disposed) throw new Error("Connection closed");
+      const value = await response.json().catch(() => null);
+      if (this.disposed) throw new Error("Connection closed");
+      const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);
+      return { response, value, noRole };
+    };
     const denied = (error: string) => {
       this.pending = null;
       this.queue = [];
       this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });
       return new Error("Access denied");
     };
+    const gate = (update: Partial<SharedView>) => {
+      this.pending = null;
+      this.queue = [];
+      this.publish({ snapshot: null, eventLog: [], error: null, ...update });
+      return new Error("Waiting on the person");
+    };
+    let answer = await send(workingAs);
+    if (answer.noRole && workingAs) {
+      // The role this tab was working as has ended or been removed. Forget it and ask again.
+      this.options.workingAs?.set(null);
+      answer = await send(null);
+    }
+    const { response, value, noRole } = answer;
+    // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
+    if (response.status === 401 && value?.code === "step-up") return { response, value };
+    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
+    // A role refusal on an access step comes back as its reason, not as a sign-out.
+    if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
     if (response.status === 401 || response.status === 403)
       throw denied("Sign in with an account assigned a Ward Flow role.");
-    const value = await response.json();
-    if (this.disposed) throw new Error("Connection closed");
     // The server holds more than one role for this account and needs to be told which.
-    if (response.status === 409 && value?.code === "choose-role")
-      throw denied(
-        "This account holds more than one role. Choosing which one to work as is not wired in this prototype.",
-      );
+    if (response.status === 409 && value?.code === "choose-role") {
+      const choices: SharedRoleChoice[] = Array.isArray(value.choices)
+        ? value.choices
+            .filter(
+              (choice: unknown): choice is SharedRoleChoice =>
+                !!choice &&
+                typeof (choice as SharedRoleChoice).workingAs === "string" &&
+                typeof (choice as SharedRoleChoice).role === "string",
+            )
+            // The server sends up to 20 roles, plus the bootstrap statewide desk.
+            .slice(0, 21)
+            .map((choice: SharedRoleChoice) => ({
+              workingAs: choice.workingAs,
+              role: choice.role,
+              scope: choice.scope,
+            }))
+        : [];
+      throw gate({ status: "choose-role", choices });
+    }
+    if (value === null) throw new Error("Workspace unavailable");
     return { response, value };
   }
   async refresh() {
-    if (this.busy || this.pending || this.disposed || this.view.status === "not-authorised") return;
+    if (this.busy || this.pending || this.disposed || this.gated()) return;
     this.busy = true;
     try {
       const current = this.view.snapshot;
-      const membershipGeneration = this.membershipGeneration;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
-      // A role switch may have completed while this request was in flight. Its response belongs
-      // to the old desk, even when it has the same revision as the new desk.
-      if (membershipGeneration !== this.membershipGeneration) return;
       if (!response.ok) throw new Error("Workspace unavailable");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
         if (this.view.snapshot === current)
           this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
-      } else this.adopt(value);
-      this.publish({ status: "ready", error: this.view.status === "unavailable" ? null : this.view.error });
+      } else this.adopt(value.snapshot);
+      this.publish({
+        status: "ready",
+        error: this.view.status === "unavailable" ? null : this.view.error,
+        access: value.access,
+        workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
+        actorId: typeof value.actorId === "string" ? value.actorId : null,
+        canSwitch: !!this.options.workingAs?.get(),
+        choices: undefined,
+        canRequest: undefined,
+      });
     } catch {
-      if (!this.accessDenied())
+      if (!this.gated())
         this.publish({
           status: "unavailable",
           error: "The shared board could not be refreshed. Reconnect before making changes.",
@@ -216,13 +237,7 @@ export class SharedWorkspaceClient {
     }
   }
   dispatch = (event: WardFlowEvent) => {
-    if (
-      !this.view.snapshot ||
-      this.view.status === "unavailable" ||
-      this.view.status === "not-authorised" ||
-      this.disposed
-    )
-      return;
+    if (!this.view.snapshot || this.view.status === "unavailable" || this.gated() || this.disposed) return;
     this.queue.push(event);
     void this.drain();
   };
@@ -246,15 +261,7 @@ export class SharedWorkspaceClient {
         }
         this.publish({ status: "saving", error: null });
         const command = this.pending;
-        const membershipGeneration = this.membershipGeneration;
         const { response, value } = await this.request("/v1/workspace/commands", command);
-        if (membershipGeneration !== this.membershipGeneration) {
-          // Do not apply an old desk's command response (or carry its queued actions into the
-          // newly selected desk).
-          this.pending = null;
-          this.queue = [];
-          continue;
-        }
         if (response.status >= 500) throw new Error("Save not confirmed");
         if (value.snapshot) this.adopt(value.snapshot);
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
@@ -279,7 +286,7 @@ export class SharedWorkspaceClient {
         this.publish({ status: "ready", error: null });
       }
     } catch {
-      if (this.view.status !== "not-authorised")
+      if (!this.gated())
         this.publish({
           status: "unavailable",
           error: "Save is not confirmed. Retry reconnects using the same command ID, so the action cannot run twice.",
@@ -310,12 +317,13 @@ export class SharedWorkspaceClient {
   async pushSubscribe(subscription: {
     endpoint?: string;
     keys?: Record<string, string>;
-  }): Promise<"subscribed" | "limit" | "in-use"> {
+  }): Promise<"subscribed" | "limit" | "in-use" | "role"> {
     const { endpoint, keys } = subscription;
     const { response, value } = await this.request("/v1/workspace/push-subscribe", {
       subscription: { endpoint, keys },
     });
     if (response.status === 409 && (value?.code === "limit" || value?.code === "in-use")) return value.code;
+    if (response.status === 422 && value?.code === "role") return "role";
     if (!response.ok) throw new Error("Phone alerts were not turned on");
     return "subscribed";
   }
@@ -331,51 +339,101 @@ export class SharedWorkspaceClient {
     if (!response.ok) throw new Error("Phone alerts were not turned off");
     return value?.revoked === true;
   }
-  async selectMembership(membershipId: string): Promise<SharedWorkspaceEnvelope> {
-    if (!membershipId || !membershipId.trim()) throw new Error("A role is required");
-    const chosenId = membershipId.trim();
-    const previousWorkingAs = this.workingAs;
-    this.membershipGeneration += 1;
-    this.workingAs = chosenId;
-    try {
-      const { response, value } = await this.request("/v1/workspace");
-      if (!response.ok) {
-        this.workingAs = previousWorkingAs;
-        throw new Error(typeof value?.error === "string" ? value.error : "Role selection was not applied");
-      }
-      const adopted = this.adopt({
-        ...value,
-        membershipId: value?.membershipId ?? value?.workingAs ?? chosenId,
-      });
-      this.publish({ status: "ready", error: null });
-      return adopted;
-    } catch (error) {
-      this.workingAs = previousWorkingAs;
-      throw error;
-    }
+  /** Work as one of this account's roles (`choose-role`), then read the board again. */
+  chooseRole = (workingAs: string) => {
+    if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
+    this.options.workingAs?.set(workingAs);
+    this.publish({ status: "loading", choices: undefined, error: null });
+    void this.refresh();
+  };
+  /** Forget the role worked as, so the server lists this account's roles again. */
+  switchRole = () => {
+    if (this.busy || this.pending) return;
+    this.options.workingAs?.set(null);
+    this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
+    void this.refresh();
+  };
+  /** A change on an access route: done, a fresh sign-in first, or the server's reason. */
+  private async change(path: string, body: Record<string, unknown>): Promise<SharedChangeResult> {
+    const { response, value } = await this.request(path, body);
+    if (response.ok) return null;
+    if (response.status === 401 && value?.code === "step-up") return "step-up";
+    if (response.status >= 500) throw new Error("Change not confirmed");
+    return typeof value?.error === "string" ? value.error : "The change was not made.";
   }
-  async breakGlass({
-    patientId,
-    reason,
-  }: {
-    patientId: string;
-    reason: BreakGlassReasonId;
-    otherText?: string;
-  }): Promise<SharedWorkspaceEnvelope> {
-    const trimmedPatientId = typeof patientId === "string" ? patientId.trim() : "";
-    if (!trimmedPatientId) throw new Error("A patient is required");
-    const { response, value } = await this.request("/v1/workspace/break-glass", {
-      patientId: trimmedPatientId,
-      reason,
+  /** Roles and open requests inside this access admin's own place. */
+  async listAccess(): Promise<{ memberships: SharedMembership[]; requests: SharedAccessRequest[] }> {
+    const { response, value } = await this.request("/v1/workspace/access");
+    if (!response.ok) throw new Error(typeof value?.error === "string" ? value.error : "Roles could not be read");
+    return {
+      memberships: Array.isArray(value.memberships) ? value.memberships : [],
+      requests: Array.isArray(value.requests) ? value.requests : [],
+    };
+  }
+  /** Cover given or held by this account, and, for a coordinator, inside its place. */
+  async listCovers(): Promise<SharedMembership[]> {
+    const { response, value } = await this.request("/v1/workspace/access/cover");
+    if (!response.ok) throw new Error(typeof value?.error === "string" ? value.error : "Cover could not be read");
+    return Array.isArray(value.covers) ? value.covers : [];
+  }
+  grantAccess(input: { actorId: string; role: string; scope: unknown; expiresInMinutes: number }) {
+    return this.change("/v1/workspace/access/grant", {
+      actorId: input.actorId,
+      role: input.role,
+      scope: input.scope,
+      expiresAt: new Date(Date.now() + input.expiresInMinutes * 60_000).toISOString(),
     });
-    if (!response.ok) {
-      throw new Error(typeof value?.error === "string" ? value.error : "Break-glass access was refused");
+  }
+  approveAccess(membershipId: string) {
+    return this.change("/v1/workspace/access/approve", { membershipId });
+  }
+  /** Removes a role, or ends cover early (its giver may too). */
+  revokeAccess(membershipId: string) {
+    return this.change("/v1/workspace/access/revoke", { membershipId });
+  }
+  giveCover(input: { actorId: string; scope: unknown; minutes: number }) {
+    return this.change("/v1/workspace/access/cover", input);
+  }
+  decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
+    return this.change("/v1/workspace/access/decide", {
+      requestId,
+      decision,
+      expiresAt: new Date(Date.now() + expiresInMinutes * 60_000).toISOString(),
+    });
+  }
+  /**
+   * Open one record outside this desk's care, read only, for the set window. The server checks
+   * the reason (from the list, never typed text), records it, and answers with the board as the
+   * desk now sees it, so the record shows at once.
+   */
+  async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
+    const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
+    if (response.ok) {
+      try {
+        if (value?.snapshot) this.adopt(value.snapshot);
+      } catch {
+        // The next poll reads the board again.
+      }
+      return null;
     }
-    const adopted = this.adopt(value);
-    this.publish({ status: "ready", error: null });
-    return adopted;
+    if (response.status === 401 && value?.code === "step-up") return "step-up";
+    if (response.status >= 500) throw new Error("Change not confirmed");
+    return typeof value?.error === "string" ? value.error : "The record was not opened.";
+  }
+  /** This account's own open request for access, if any. Open to an account with no role. */
+  async ownRequest(): Promise<SharedAccessRequest | null> {
+    const { response, value } = await this.request("/v1/workspace/access/request");
+    if (!response.ok) throw new Error("Your request could not be read");
+    return value?.request ?? null;
+  }
+  /** Ask an access admin for a role at a place. The answer is the server's reason, or `null`. */
+  async requestAccess(role: string, scope: unknown): Promise<SharedChangeResult> {
+    return this.change("/v1/workspace/access/request", { role, scope });
   }
   retry = async () => {
+    // "Check again" from the role picker or the ask for access screen reads the account again.
+    if (this.view.status === "no-role" || this.view.status === "choose-role")
+      this.publish({ status: "loading", error: null });
     if (this.pending) await this.drain();
     else await this.refresh();
   };

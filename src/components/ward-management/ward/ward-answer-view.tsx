@@ -538,24 +538,50 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm" })}
-                    disabled={activeAnswerIndex === 0}
-                    onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
+                    aria-disabled={activeAnswerIndex === 0 ? "true" : undefined}
+                    aria-describedby={activeAnswerIndex === 0 ? "ward-answer-prev-reason" : undefined}
+                    title={activeAnswerIndex === 0 ? "Already on the first request." : undefined}
+                    onClick={(event) => {
+                      if (activeAnswerIndex === 0) {
+                        ignoreUnavailableActivation(event);
+                        return;
+                      }
+                      setAnswerIndex((current) => Math.max(0, current - 1));
+                    }}
                   >
                     <ChevronLeft size={14} aria-hidden="true" />
                     Previous
                   </button>
+                  {activeAnswerIndex === 0 ? (
+                    <span id="ward-answer-prev-reason" className="sr-only">
+                      Already on the first request.
+                    </span>
+                  ) : null}
                   <span className={styles.heroNavPos}>
                     Request <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
                   </span>
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm" })}
-                    disabled={activeAnswerIndex >= incoming.length - 1}
-                    onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
+                    aria-disabled={activeAnswerIndex >= incoming.length - 1 ? "true" : undefined}
+                    aria-describedby={activeAnswerIndex >= incoming.length - 1 ? "ward-answer-next-reason" : undefined}
+                    title={activeAnswerIndex >= incoming.length - 1 ? "Already on the last request." : undefined}
+                    onClick={(event) => {
+                      if (activeAnswerIndex >= incoming.length - 1) {
+                        ignoreUnavailableActivation(event);
+                        return;
+                      }
+                      setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1));
+                    }}
                   >
                     Next
                     <ChevronRight size={14} aria-hidden="true" />
                   </button>
+                  {activeAnswerIndex >= incoming.length - 1 ? (
+                    <span id="ward-answer-next-reason" className="sr-only">
+                      Already on the last request.
+                    </span>
+                  ) : null}
                 </span>
               </>
             ) : isPhone ? (
@@ -980,14 +1006,40 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <button
                               type="submit"
                               className={`${styles.btn} ${styles.btnGood}`}
-                              disabled={
+                              aria-disabled={
                                 !overrideReason ||
                                 (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                                  ? "true"
+                                  : undefined
+                              }
+                              onClick={
+                                !overrideReason ||
+                                (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                                  ? ignoreUnavailableActivation
+                                  : undefined
+                              }
+                              aria-describedby={
+                                !overrideReason ||
+                                (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                                  ? `ward-override-submit-reason-${activeMovement.id}`
+                                  : undefined
+                              }
+                              title={
+                                !overrideReason ||
+                                (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                                  ? "Choose an override reason and confirm nurse unit manager consultation when needed."
+                                  : undefined
                               }
                               data-testid={`ward-override-submit-${activeMovement.id}`}
                             >
                               Record reason and continue
                             </button>
+                            {!overrideReason ||
+                            (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted) ? (
+                              <span id={`ward-override-submit-reason-${activeMovement.id}`} className="sr-only">
+                                Choose an override reason and confirm nurse unit manager consultation when needed.
+                              </span>
+                            ) : null}
                           </fieldset>
                         </form>
                       ) : null}
@@ -1150,11 +1202,21 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           </fieldset>
                           <button
                             type="submit"
-                            disabled={!declineReason}
+                            aria-disabled={!declineReason ? "true" : undefined}
+                            onClick={!declineReason ? ignoreUnavailableActivation : undefined}
+                            aria-describedby={
+                              !declineReason ? `ward-decline-submit-reason-${activeMovement.id}` : undefined
+                            }
+                            title={!declineReason ? "Choose a decline reason first." : undefined}
                             className={`${styles.btn} ${styles.btnDanger}`}
                           >
                             Confirm decline
                           </button>
+                          {!declineReason ? (
+                            <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">
+                              Choose a decline reason first.
+                            </span>
+                          ) : null}
                         </form>
                       ) : null}
 

@@ -17,16 +17,16 @@
       "sha256": "583fc18f6a7827de070446ead63fd262db710ba12a4ea3dd23d47b2d39983633"
     },
     "open_questions.json": {
-      "bytes": 37288,
-      "sha256": "30a85b0ebc065340c5f0f2cdccd3ac901e411b0abc0e8f538588d970ea263958"
+      "bytes": 37276,
+      "sha256": "9ef3d9f930f438d56840aaa083f5062d3195393694ffe6ea28df85576e3f9a8b"
     },
     "capacity_assertions.json": {
       "bytes": 70121,
       "sha256": "b3ba2f798bc44de433944ab94fa1bc55885629994e4b2b3f66fc08c4ac4fc651"
     },
     "decisions.json": {
-      "bytes": 2976,
-      "sha256": "8f7a35ca9a210dc74de924fdbc2862dc3a7076c54b948f98758e30a51b75f875"
+      "bytes": 3042,
+      "sha256": "55795a7e6c004a3414cce6e7bbec9aad06ef01774ff2e5c3279b81c95053cfae"
     },
     "entities.json": {
       "bytes": 252859,
@@ -34,11 +34,11 @@
     },
     "WARD-FLOW-MASTER-COMPLETE-2026-09-17.md": {
       "bytes": 61253,
-      "sha256": "e9838efefb212504782100c8de512df2ab1130f10cf25058b0f5f05b17f64a24"
+      "sha256": "3f0a0badea810e9fc7a5aa15ee506494ba4993eef2083621b4488ee9a72a8364"
     },
     "DECISIONS-APPLIED-2026-09-17.md": {
       "bytes": 3372,
-      "sha256": "9ab8bb0a9c2340077d3551136988e5439395b8756917879cbfcc5be240973323"
+      "sha256": "4910961fa053607aba18557d518daea29fce0408023cf1aadc162b4916eb111f"
     },
     "sources.json": {
       "bytes": 129697,
@@ -49,16 +49,16 @@
       "sha256": "691ebad8cf4742da89e7d9bc5f7a8207ffb461348fe321f28e0b289e01983d2f"
     },
     "INGEST_MAP.md": {
-      "bytes": 5447,
-      "sha256": "6228eb9d405637bd4500ded2559eef336e3e53e3914608c7ed8fdd7955f923ee"
+      "bytes": 5448,
+      "sha256": "790cf3fdb24fded653fc4014a00597a9cd204183db4c05d7bbdc3d6b04a0cc38"
     },
     "CHANGELOG.md": {
-      "bytes": 3283,
-      "sha256": "a8c70365aa0957a77b424debc064009a83f3e5f68091f15921c21500a5a0fa32"
+      "bytes": 3297,
+      "sha256": "6e2575be20770eaedfdf3c8b69437771f7ddec70bc9b0f2dd43854250dda2e1f"
     },
     "DISTANCES-README.md": {
-      "bytes": 4747,
-      "sha256": "44faf62dd439a3e3bc8c569c0eb205b22701a76f508a1e0048f0677dbf59de10"
+      "bytes": 4739,
+      "sha256": "3a7683029a92d82805ceb3ddca72479ebc09a8b2ff0e1a870167ada7ac8dfe08"
     },
     "PHASE_STATUS.md": {
       "bytes": 157,

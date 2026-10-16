@@ -21,7 +21,12 @@
 //     principle; not written.
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  heldBedRefusal,
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "@/components/ward-management/ward-flow-reducer";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
@@ -276,6 +281,62 @@ describe("heldBedNumber is cleared when acceptance is unwound or overwritten", (
       },
     ]);
     expect(deteriorated.movements.find((m) => m.id === "WF-001")?.heldBedNumber).toBeUndefined();
+  });
+  it("frees the bed the linked referral arm held when RELEASE_AND_REOPEN_SEARCH releases it", () => {
+    const seeded = seedWardFlowState();
+    const unitId = "scgh-adult-open";
+    const bed = freeBedNumber(seeded, unitId);
+    let t = NOW;
+    const accepted = walk(seeded, [
+      { type: "REFER_TO_UNITS", role: "coordinator", now: ++t, movementId: "WF-001", unitIds: [unitId] },
+      {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now: ++t,
+        movementId: "WF-001",
+        unitId,
+        actingUnitId: unitId,
+        bedNumber: bed,
+      },
+    ]);
+    // A synthetic referral whose accepted ward arm holds the same bed, linked to the movement.
+    const template = seeded.referrals[0]!;
+    const arm = template.destinations[0]!;
+    const linked: WardFlowState = {
+      ...accepted,
+      referrals: [
+        ...accepted.referrals,
+        {
+          ...template,
+          id: "RF-0991",
+          destinations: [
+            {
+              ...arm,
+              state: "accepted",
+              destination: { kind: "psychiatric_ward", unitId },
+              acceptedUnitId: unitId,
+              heldBedNumber: bed,
+            },
+          ],
+        } as WardFlowState["referrals"][number],
+      ],
+      movements: accepted.movements.map((m) => (m.id === "WF-001" ? { ...m, referralId: "RF-0991" } : m)),
+    };
+    const unit = linked.units.find((u) => u.id === unitId)!;
+    expect(heldBedRefusal(linked, unit, bed)).not.toBeNull();
+
+    const reopened = walk(linked, [
+      {
+        type: "RELEASE_AND_REOPEN_SEARCH",
+        role: "coordinator",
+        now: ++t,
+        movementId: "WF-001",
+        actingUnitId: unitId,
+        reason: RELEASE_PULL_REASONS[0],
+      },
+    ]);
+    expect(reopened.referrals.find((r) => r.id === "RF-0991")?.destinations[0]?.heldBedNumber).toBeUndefined();
+    expect(heldBedRefusal(reopened, unit, bed)).toBeNull();
   });
 });
 

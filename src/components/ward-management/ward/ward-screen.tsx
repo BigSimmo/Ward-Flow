@@ -458,9 +458,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
   const bedParam = searchParams?.get("bed");
-  const parsedBed =
-    bedParam !== null && bedParam !== undefined && /^\d+$/.test(bedParam) ? Number.parseInt(bedParam, 10) : null;
-  const [selectedBed, setSelectedBed] = useState<number | null>(parsedBed);
+  const parseBed = (value: string | null | undefined) =>
+    value !== null && value !== undefined && /^\d+$/.test(value) ? Number.parseInt(value, 10) : null;
+  const parsedBed = parseBed(bedParam);
+  const [selectedBed, setSelectedBed] = useState<number | null>(() => {
+    if (parsedBed !== null) return parsedBed;
+    if (typeof window !== "undefined") {
+      return parseBed(new URLSearchParams(window.location.search).get("bed"));
+    }
+    return null;
+  });
   // Bumped when a `?bed=` naming no bed on this ward is refused, so the URL sync below drops it.
   const [refusedBedParam, setRefusedBedParam] = useState(0);
   const [prevBedParam, setPrevBedParam] = useState<string | null | undefined>(bedParam);
@@ -800,15 +807,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
       if (e.key === "Escape") {
         if (notificationCenterOpen) {
+          e.preventDefault();
+          e.stopPropagation();
           setNotificationCenterOpen(false);
           setTimeout(() => {
             notificationTriggerRef.current?.focus({ preventScroll: true });
           }, 0);
           return;
         }
-        if (hasOpenSheet()) return;
+        if (e.defaultPrevented || hasOpenSheet()) return;
         if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (dailySheetOpen) {
@@ -872,7 +882,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // which owns Tab and Escape; this only keeps a stray Escape on the drawer closing it.
   function handleBedDrawerKeyDown(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
+      if (event.defaultPrevented || hasOpenSheet() || notificationCenterOpen || confirmNumbersOpen || dailySheetOpen) {
+        return;
+      }
       event.preventDefault();
+      event.stopPropagation();
       closeBedDrawer();
     }
   }
@@ -2651,6 +2665,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     onDismissBuzz={handleDismissBuzz}
                     onClose={() => {
                       setNotificationCenterOpen(false);
+                      setTimeout(() => {
+                        notificationTriggerRef.current?.focus({ preventScroll: true });
+                      }, 0);
                     }}
                   />
                 </div>

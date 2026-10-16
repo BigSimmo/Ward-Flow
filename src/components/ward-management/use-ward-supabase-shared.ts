@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
-import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
+import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
+
+/** Set once the shared client has loaded on the first sign-in. */
+let loadedClient: typeof SharedWorkspaceClient | null = null;
 import { SupabaseWardAuth, WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-supabase-auth";
 export type WardCredentialForm = {
   open: boolean;
@@ -17,6 +20,29 @@ export type WardCredentialForm = {
   cancel: () => void;
 };
 const emptyView: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
+/** Which of this account's roles this tab works as: a membership id or "bootstrap", nothing else. */
+const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
+// Held in memory too, so a tab whose storage refuses the write still keeps the role it picked
+// until it reloads, rather than being shown the picker again.
+let workingAsInMemory: string | null = null;
+const workingAs = {
+  get: () => {
+    try {
+      return window.sessionStorage.getItem(WARD_WORKING_AS_KEY) ?? workingAsInMemory;
+    } catch {
+      return workingAsInMemory;
+    }
+  },
+  set: (id: string | null) => {
+    workingAsInMemory = id;
+    try {
+      if (id) window.sessionStorage.setItem(WARD_WORKING_AS_KEY, id);
+      else window.sessionStorage.removeItem(WARD_WORKING_AS_KEY);
+    } catch {
+      // Storage refused: the copy in memory serves this tab.
+    }
+  },
+};
 export function useWardSupabaseShared(enabled: boolean) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
@@ -37,6 +63,7 @@ export function useWardSupabaseShared(enabled: boolean) {
     updatePassword: (password: string) => Promise<void>;
     signOut: () => Promise<void>;
     retry: () => Promise<void>;
+    reauthenticate: (password: string) => Promise<void>;
   } | null>(null);
   useEffect(() => {
     if (!enabled) return;
@@ -69,6 +96,9 @@ export function useWardSupabaseShared(enabled: boolean) {
       setView((old) => ({ ...old, status: expired ? "ready" : "unavailable", error: message }));
     };
     const connect = async () => {
+      // The client loads only once someone signs in, so the local demo never carries it.
+      const { SharedWorkspaceClient } = await import("./ward-shared-client");
+      loadedClient = SharedWorkspaceClient;
       if (closed || !auth?.userId || auth.isRecovery) return;
       disconnect();
       setSignedIn(true);
@@ -78,6 +108,7 @@ export function useWardSupabaseShared(enabled: boolean) {
       const client = new SharedWorkspaceClient({
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: () => instance.token(),
+        workingAs,
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
@@ -182,19 +213,28 @@ export function useWardSupabaseShared(enabled: boolean) {
               await auth!.updatePassword(password);
               await connect();
             }),
+          reauthenticate: async (password) => {
+            await auth!.reauthenticate(password);
+          },
           signOut: async () => {
             const token = auth!.captureAccessTokenForSignOut();
+            // The next person at this device chooses their own role. The cleanup below still
+            // speaks as the role worked as, so an account with several roles can turn alerts off.
+            const chosen = workingAs.get();
+            workingAs.set(null);
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
             setForm({ open: false, recovery: false, busy: false, message: null });
             // The next account on a shared phone never sees this one's act-now count, even when
             // the session has expired and the phone alert cleanup below cannot run.
             setActNowAppBadge(0);
-            if (token) {
-              const cleanup = new SharedWorkspaceClient({
+            // Signed in means the client has loaded, so this cleanup still runs in the click.
+            if (token && loadedClient) {
+              const cleanup = new loadedClient({
                 baseUrl: base.toString().replace(/\/$/, ""),
                 token: async () => token,
                 changed: () => {},
+                workingAs: { get: () => chosen, set: () => {} },
               });
               let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
               void Promise.race([
@@ -264,26 +304,23 @@ export function useWardSupabaseShared(enabled: boolean) {
   }, [enabled]);
   return {
     ...view,
-    role: view.role ?? view.snapshot?.role,
-    membershipId: view.membershipId ?? view.snapshot?.membershipId,
-    memberships: view.memberships ?? view.snapshot?.memberships,
-    grants: view.grants ?? view.snapshot?.grants,
     signedIn,
     client: connection,
-    selectMembership: async (membershipId: string) => {
-      if (!connection.current) throw new Error("Shared connection is not active");
-      return connection.current.selectMembership(membershipId);
-    },
-    breakGlass: async (input: Parameters<SharedWorkspaceClient["breakGlass"]>[0]) => {
-      if (!connection.current) throw new Error("Shared connection is not active");
-      return connection.current.breakGlass(input);
-    },
     signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
     signOut: () => {
       void actions.current?.signOut();
     },
     retry: () => {
       void actions.current?.retry();
+    },
+    /** Work as one of this account's roles, when it holds more than one. */
+    chooseRole: (id: string) => connection.current?.chooseRole(id),
+    /** Forget the role worked as, so the account's roles are listed again. */
+    switchRole: () => connection.current?.switchRole(),
+    /** The step-up sign-in with the account's own password. */
+    reauthenticate: async (password: string) => {
+      if (!actions.current) throw new WardAuthError("session", "Sign in again to carry on.");
+      await actions.current.reauthenticate(password);
     },
     credentials: {
       ...form,
@@ -307,5 +344,3 @@ export function useWardSupabaseShared(enabled: boolean) {
     } satisfies WardCredentialForm,
   };
 }
-
-export type UseWardSupabaseSharedResult = ReturnType<typeof useWardSupabaseShared>;

@@ -12,6 +12,7 @@ import { INBOX_CATEGORIES } from "../src/components/ward-management/ward-inbox-r
 import { syntheticGovernanceAuditEvents } from "../src/components/ward-management/ward-governance-seed";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "../src/components/ward-management/ward-role-access";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
+import { mixSexOf } from "../src/components/ward-management/ward-eligibility";
 import { unitHealthService } from "../src/components/ward-management/ward-service-scope";
 import { WARD_SCENARIOS } from "../src/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -19,6 +20,8 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 const state = seedWardFlowState();
 const places = wardPlaceLookup(state.units);
 const options = { now: NOW_ANCHOR, places };
+/** Checked as the wire carries it: JSON drops the `undefined` fields the seed builds with. */
+const validOnTheWire = (value: WardFlowState) => isValidSharedWardFlowState(JSON.parse(JSON.stringify(value)));
 const occupied = state.admissions.find((admission) => admission.patientId !== null && admission.leftAt === null)!;
 const ownUnit = occupied.unitId;
 const otherAdmission = state.admissions.find(
@@ -443,11 +446,14 @@ describe("a command from a desk", () => {
       (admission) => admission.unitId === targetUnit.id && admission.state === "occupied",
     )!;
     const arrivedAt = targetAdmission.arrivedAt ?? NOW_ANCHOR - 10;
-    const syntheticMovementId = "WF-99999" as const;
+    // Outside the generated `WF-9…` namespace, so the fixture does not need the sequence advanced.
+    const syntheticMovementId = "WF-0991" as const;
     const baseTemplate = state.movements[0];
     const syntheticConflictMovement = {
       ...baseTemplate,
       id: syntheticMovementId,
+      sex: "Female" as const,
+      gender: undefined,
       patientId: targetAdmission.patientId ?? undefined,
       referralId: targetAdmission.referralId ?? undefined,
       referralAbsence: targetAdmission.referralId ? undefined : { reason: "not_asked" as const, at: arrivedAt },
@@ -485,17 +491,27 @@ describe("a command from a desk", () => {
           : unit,
       ),
     };
-    expect(isValidSharedWardFlowState(overCapacityState)).toBe(true);
+    expect(validOnTheWire(overCapacityState)).toBe(true);
     const { state: scopedState } = scopeWardFlowState(overCapacityState, ward, options);
     const scopedTarget = scopedState.units.find((unit) => unit.id === targetUnit.id)!;
-    expect(scopedTarget.sexMix.Female + scopedTarget.sexMix.Male).toBeLessThanOrEqual(
-      scopedTarget.beds + (scopedTarget.arrivalCapacityConflicts?.length ?? 0),
-    );
-    expect(isValidSharedWardFlowState(scopedState)).toBe(true);
+    expect(
+      scopedTarget.arrivalCapacityConflicts?.some((conflict) => conflict.movementId === syntheticMovementId),
+    ).toBeFalsy();
+    expect(scopedTarget.sexMix.Female + scopedTarget.sexMix.Male).toBeLessThanOrEqual(scopedTarget.beds);
+    // Only the cut arrival comes out, from its own recorded sex's bucket: never a guessed one.
+    const arrivedSex = mixSexOf(syntheticConflictMovement.gender, syntheticConflictMovement.sex)!;
+    const otherSex = arrivedSex === "Female" ? "Male" : "Female";
+    const before = overCapacityState.units.find((unit) => unit.id === targetUnit.id)!.sexMix;
+    expect(scopedTarget.sexMix[arrivedSex]).toBe(before[arrivedSex] - 1);
+    expect(scopedTarget.sexMix[otherSex]).toBe(before[otherSex]);
+    expect(validOnTheWire(scopedState)).toBe(true);
+    // A desk that is sent the arrival keeps the authoritative counts.
+    const statewideView = scopeWardFlowState(overCapacityState, STATEWIDE_COORDINATOR, options).state;
+    expect(statewideView.units.find((unit) => unit.id === targetUnit.id)!.sexMix).toEqual(before);
   });
 
   it("validates and accepts supportNotifications in isValidSharedWardFlowState", () => {
-    const arrivedMovementId = "WF-99998" as const;
+    const arrivedMovementId = "WF-0992" as const;
     const arrivedMovement = {
       ...state.movements[0],
       id: arrivedMovementId,
@@ -528,10 +544,10 @@ describe("a command from a desk", () => {
       contactedAt: NOW_ANCHOR - 5,
     });
     expect(withNotification.supportNotifications?.length).toBeGreaterThan(0);
-    expect(isValidSharedWardFlowState(withNotification)).toBe(true);
+    expect(validOnTheWire(withNotification)).toBe(true);
     const { state: scopedWithNotification } = scopeWardFlowState(withNotification, ward, options);
     expect(scopedWithNotification.supportNotifications?.length).toBeGreaterThan(0);
-    expect(isValidSharedWardFlowState(scopedWithNotification)).toBe(true);
+    expect(validOnTheWire(scopedWithNotification)).toBe(true);
 
     const malformed: WardFlowState = {
       ...withNotification,
@@ -542,6 +558,62 @@ describe("a command from a desk", () => {
         },
       ],
     };
-    expect(isValidSharedWardFlowState(malformed)).toBe(false);
+    expect(validOnTheWire(malformed)).toBe(false);
+  });
+  it("keeps a receiving ward's arrival notifications from the sending ward", () => {
+    const otherUnit = state.units.find((unit) => unit.id !== ownUnit)!;
+    const outboundId = "WF-0993" as const;
+    const outbound = {
+      ...state.movements[0],
+      id: outboundId,
+      patientId: occupied.patientId ?? undefined,
+      sourceAdmissionId: occupied.id,
+      acceptedUnitId: otherUnit.id,
+      referredUnitIds: [otherUnit.id],
+      stage: "arrived" as const,
+      closure: { outcome: "arrived" as const, reason: "Arrived on ward", at: NOW_ANCHOR - 10 },
+      admissionId: undefined,
+    };
+    const withOutbound: WardFlowState = {
+      ...state,
+      movements: [...state.movements, outbound],
+      supportNotifications: [
+        {
+          id: "SN-1",
+          occasion: "transfer",
+          subjectId: outboundId,
+          party: "carer",
+          outcome: "told",
+          who: "Primary carer",
+          contactedAt: NOW_ANCHOR - 5,
+          at: NOW_ANCHOR,
+          by: "ward",
+        },
+      ],
+    };
+    const { state: senderView } = scopeWardFlowState(withOutbound, ward, options);
+    // The sending ward still sees its outbound move, but not the receiving ward's notes about it.
+    expect(senderView.movements.some((movement) => movement.id === outboundId)).toBe(true);
+    expect(senderView.supportNotifications).toEqual([]);
+    expect(
+      commandScopeRefusal(
+        withOutbound,
+        ward,
+        {
+          type: "RECORD_SUPPORT_NOTIFICATION",
+          role: "ward",
+          now: NOW_ANCHOR,
+          occasion: "transfer",
+          movementId: outboundId,
+          party: "carer",
+          outcome: "not_applicable",
+          reason: "Synthetic",
+        },
+        options,
+      ),
+    ).not.toBeNull();
+    const receiver: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [otherUnit.id] } };
+    const { state: receiverView } = scopeWardFlowState(withOutbound, receiver, options);
+    expect(receiverView.supportNotifications?.map((record) => record.id)).toEqual(["SN-1"]);
   });
 });

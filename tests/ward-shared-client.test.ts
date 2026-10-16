@@ -104,20 +104,153 @@ describe("shared workspace connection", () => {
     expect(view?.status).toBe("ready");
     client.dispose();
   });
-  it("stops and says so when the account holds more than one role", async () => {
+  it("lists the account's roles to choose from, then works as the one chosen", async () => {
     let view: SharedView | undefined;
+    let stored: string | null = null;
+    const seen: (string | null)[] = [];
+    const membership = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
     const client = new SharedWorkspaceClient({
       baseUrl: "https://example.test",
       token: async () => "test",
       changed: (next) => {
         view = next;
       },
-      fetch: async () => Response.json({ code: "choose-role", choices: [] }, { status: 409 }),
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, options) => {
+        const header = new Headers(options?.headers).get("x-ward-working-as");
+        seen.push(header);
+        return header
+          ? Response.json({
+              snapshot: snapshot(1),
+              access: { role: "ward", scope: { kind: "ward", unitIds: ["ward-test"] } },
+              workingAs: header,
+              actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4",
+            })
+          : Response.json(
+              {
+                code: "choose-role",
+                choices: [
+                  { workingAs: membership, role: "ward", scope: { kind: "ward", unitIds: ["ward-test"] } },
+                  { workingAs: "bootstrap", role: "coordinator", scope: { kind: "statewide" } },
+                ],
+              },
+              { status: 409 },
+            );
+      },
     });
     await client.refresh();
-    expect(view?.status).toBe("not-authorised");
+    expect(view?.status).toBe("choose-role");
     expect(view?.snapshot).toBeNull();
-    expect(view?.error).toMatch(/more than one role/);
+    expect(view?.choices?.map((choice) => choice.workingAs)).toEqual([membership, "bootstrap"]);
+    // Waiting on the person: no poll is sent until they choose.
+    await client.refresh();
+    expect(seen).toEqual([null]);
+    client.chooseRole(membership);
+    await vi.waitFor(() => expect(view?.status).toBe("ready"));
+    expect(stored).toBe(membership);
+    expect(seen).toEqual([null, membership]);
+    expect(view?.workingAs).toBe(membership);
+    expect(view?.access).toEqual({ role: "ward", scope: { kind: "ward", unitIds: ["ward-test"] } });
+    expect(view?.canSwitch).toBe(true);
+    // A name or anything else typed is never sent as the role.
+    client.chooseRole("Nurse in charge, Ward 6B");
+    expect(stored).toBe(membership);
+    client.switchRole();
+    await vi.waitFor(() => expect(view?.status).toBe("choose-role"));
+    expect(stored).toBeNull();
+    client.dispose();
+  });
+  it("forgets an ended role once, then says the account has no role without signing out", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const seen: (string | null)[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, options) => {
+        seen.push(new Headers(options?.headers).get("x-ward-working-as"));
+        return Response.json(
+          { error: "No Ward Flow role is assigned to this account", code: "no-role", canRequest: true },
+          { status: 403 },
+        );
+      },
+    });
+    await client.refresh();
+    expect(seen).toEqual(["3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d", null]);
+    expect(stored).toBeNull();
+    expect(view?.status).toBe("no-role");
+    expect(view?.canRequest).toBe(true);
+    expect(view?.snapshot).toBeNull();
+    client.dispose();
+  });
+  it("hands back step-up and role refusals on access steps instead of signing out", async () => {
+    let view: SharedView | undefined;
+    const bodies: unknown[] = [];
+    const answers = [
+      Response.json({ code: "step-up", error: "Sign in again to carry on." }, { status: 401 }),
+      Response.json({ error: "That role is wider than your own." }, { status: 403 }),
+      Response.json({ membership: {} }),
+      Response.json({ code: "role", error: "Phone alerts are not part of your role" }, { status: 422 }),
+    ];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) => {
+        if (!options?.body) return Response.json({ snapshot: snapshot(1) });
+        bodies.push(JSON.parse(String(options.body)));
+        return answers.shift()!;
+      },
+    });
+    await client.refresh();
+    const grant = { actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4", role: "ward", scope: {}, expiresInMinutes: 60 };
+    await expect(client.grantAccess(grant)).resolves.toBe("step-up");
+    await expect(client.approveAccess("m1")).resolves.toBe("That role is wider than your own.");
+    await expect(client.revokeAccess("m1")).resolves.toBeNull();
+    await expect(client.pushSubscribe({ endpoint: "https://push.example.test/1", keys: {} })).resolves.toBe("role");
+    expect(view?.status).toBe("ready");
+    expect(view?.snapshot?.revision).toBe(1);
+    // The end date goes as a time, worked out from minutes, never from the demo clock.
+    const expiresAt = Date.parse((bodies[0] as { expiresAt: string }).expiresAt);
+    expect(Math.abs(expiresAt - (Date.now() + 60 * 60_000))).toBeLessThan(60_000);
+    client.dispose();
+  });
+  it("opens a record through the server's break glass, and shows the board it answers with", async () => {
+    let view: SharedView | undefined;
+    const bodies: unknown[] = [];
+    const answers = [
+      Response.json({ code: "step-up", error: "Sign in again to carry on." }, { status: 401 }),
+      Response.json({ error: "Opening a record outside your care is not part of your role." }, { status: 422 }),
+      Response.json({ until: "2026-10-07T11:00:00Z", pattern: false, snapshot: snapshot(1) }),
+    ];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url, options) => {
+        if (!options?.body) return Response.json({ snapshot: snapshot(1) });
+        expect(String(url)).toBe("https://example.test/v1/workspace/break-glass");
+        bodies.push(JSON.parse(String(options.body)));
+        return answers.shift()!;
+      },
+    });
+    await client.refresh();
+    const before = view?.snapshot;
+    await expect(client.breakGlass("P-1", "handover")).resolves.toBe("step-up");
+    await expect(client.breakGlass("P-1", "handover")).resolves.toMatch(/not part of your role/);
+    await expect(client.breakGlass("P-1", "handover")).resolves.toBeNull();
+    expect(view?.snapshot).not.toBe(before);
+    expect(view?.status).toBe("ready");
+    // Only the patient and the reason from the list are sent.
+    expect(bodies[0]).toEqual({ patientId: "P-1", reason: "handover" });
     client.dispose();
   });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
@@ -453,80 +586,6 @@ describe("shared workspace traffic", () => {
     ]);
     expect(view?.snapshot?.revision).toBe(4);
     expect(reads).toEqual(["https://example.test/v1/workspace"]);
-    client.dispose();
-  });
-
-  it("preserves optional role, membershipId, memberships, and grants metadata across selectMembership and breakGlass", async () => {
-    let view: SharedView | undefined;
-    const requests: { url: string; body?: unknown; headers?: Record<string, string> }[] = [];
-    const memberships = [
-      {
-        id: "mem-ward-1",
-        role: "ward" as const,
-        scope: { kind: "ward" as const, unitIds: ["ward-test"] },
-        label: "Ward 1A",
-      },
-    ];
-    const client = new SharedWorkspaceClient({
-      baseUrl: "https://example.test",
-      token: async () => "test",
-      changed: (next) => {
-        view = next;
-      },
-      fetch: async (url, options) => {
-        requests.push({
-          url: String(url),
-          body: options?.body ? JSON.parse(String(options.body)) : undefined,
-          headers: options?.headers as Record<string, string> | undefined,
-        });
-        const workingAsHeader = (options?.headers as Record<string, string> | undefined)?.["x-ward-working-as"];
-        if (String(url).endsWith("/v1/workspace/break-glass")) {
-          return Response.json({
-            snapshot: {
-              ...snapshot(3),
-              role: "ward",
-              membershipId: "mem-ward-1",
-              memberships,
-              grants: [{ patientId: "P-1", until: 700 }],
-            },
-          });
-        }
-        if (workingAsHeader === "mem-ward-1") {
-          return Response.json({
-            snapshot: {
-              ...snapshot(2),
-              role: "ward",
-              membershipId: "mem-ward-1",
-              memberships,
-            },
-          });
-        }
-        return Response.json({
-          role: "coordinator",
-          workingAs: "bootstrap",
-          memberships,
-          snapshot: snapshot(1),
-        });
-      },
-    });
-
-    await client.refresh();
-    expect(view?.role).toBe("coordinator");
-    expect(view?.membershipId).toBe("bootstrap");
-    expect(view?.memberships).toEqual(memberships);
-
-    const selected = await client.selectMembership("mem-ward-1");
-    expect(selected.role).toBe("ward");
-    expect(selected.membershipId).toBe("mem-ward-1");
-    expect(view?.role).toBe("ward");
-    expect(view?.membershipId).toBe("mem-ward-1");
-
-    const granted = await client.breakGlass({ patientId: "P-1", reason: "handover" });
-    expect(granted.grants).toEqual([{ patientId: "P-1", until: 700 }]);
-    expect(view?.grants).toEqual([{ patientId: "P-1", until: 700 }]);
-    expect(requests.at(-1)?.headers?.["x-ward-working-as"]).toBe("mem-ward-1");
-    expect(requests.at(-1)?.body).toEqual({ patientId: "P-1", reason: "handover" });
-
     client.dispose();
   });
 });

@@ -44,15 +44,29 @@ describe("Alerts — confirm controls (F3.1)", () => {
 
   // D-16 (site review, 12 Oct 2026): a working control that says it is not wired, never greyed for
   // the coordinator.
-  it("Escalate is a working control that says the exact D4 wording, and records nothing", () => {
+  it("Escalate is a working control that records escalation and updates button state", () => {
     renderScreen();
+    // A placement alert: no ward in the network is eligible, so the bed search really is exhausted.
+    fireEvent.click(screen.getAllByRole("button", { name: /^Open No eligible bed/ })[0]!);
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
     const escalate = within(panel).getByRole("button", { name: /Escalate/ });
     expect(escalate).not.toHaveAttribute("aria-disabled");
     expect(escalate).not.toBeDisabled();
     fireEvent.click(escalate);
-    expect(within(panel).getByText("Not wired in this prototype.")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /History/ })).toHaveTextContent("0");
+    expect(within(panel).getByRole("button", { name: /^Escalated/ })).toBeInTheDocument();
+  });
+
+  // PR #349 review: Escalate stamps "bed search exhausted" on the movement, so an alert about
+  // something else (here an expired bed pull) must not offer it, and a click must change nothing.
+  it("Escalate is unavailable for an alert that is not about the bed search and records nothing", () => {
+    renderScreen();
+    fireEvent.click(screen.getAllByRole("button", { name: /^Open Bed pull expired/ })[0]!);
+    const panel = screen.getByRole("complementary", { name: "Selected alert" });
+    const escalate = within(panel).getByRole("button", { name: /^Escalate / });
+    expect(escalate).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(escalate);
+    expect(within(panel).queryByRole("button", { name: /^Escalated/ })).not.toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: /^Escalate / })).toBeInTheDocument();
   });
 });
 

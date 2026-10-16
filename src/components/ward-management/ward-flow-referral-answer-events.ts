@@ -29,6 +29,7 @@ import {
   SENDING_TEAM_NAME_LIMIT,
   STEP_BACK_REASONS,
   genderReviewNeeded,
+  type ClinicalReassessmentEntry,
   type CommunityDeclineReason,
   type Movement,
   type Notice,
@@ -686,12 +687,40 @@ export function reduceReferralAnswerEvent(
       //
       // RB5 (item 16): not for a community arm, which never competes for the placement and stays
       // answerable after a ward or ED says yes.
-      if (event.destinationKind !== "community_team" && referralState(referral) === "accepted") {
+      const hasClinicalReassessment =
+        event.reassessment === true ||
+        event.clinicalUpdate === true ||
+        event.clearanceUpdated === true ||
+        (typeof event.reassessmentNote === "string" && event.reassessmentNote.trim().length > 0);
+      const reassessmentEntry: ClinicalReassessmentEntry | undefined = hasClinicalReassessment
+        ? {
+            at: event.now,
+            by: event.role,
+            ...(typeof event.reassessmentNote === "string" && event.reassessmentNote.trim().length > 0
+              ? { note: event.reassessmentNote.trim() }
+              : {}),
+            ...(event.clinicalUpdate !== undefined ? { clinicalUpdate: event.clinicalUpdate } : {}),
+            ...(event.clearanceUpdated !== undefined ? { clearanceUpdated: event.clearanceUpdated } : {}),
+          }
+        : undefined;
+      if (
+        event.destinationKind !== "community_team" &&
+        referralState(referral) === "accepted" &&
+        !(hasClinicalReassessment && addressing.state === "accepted")
+      ) {
         return reject(state, event, `referral ${referral.id} has already been accepted elsewhere`);
       }
       // Per-destination, not per-referral: another destination having declined leaves this one
-      // free to answer (FD-24). Only THIS destination being already decided is a refusal.
-      if (addressing.state !== "queued") {
+      // free to answer (FD-24). Only THIS destination being already decided is a refusal, unless
+      // a clinical reassessment or updated clearance is being recorded. Turning a decline into an
+      // acceptance needs the explicit reassessment flag: a note or update alone never reverses it.
+      if (
+        addressing.state !== "queued" &&
+        !(
+          (hasClinicalReassessment && addressing.state === "accepted") ||
+          (event.reassessment === true && addressing.state === "declined")
+        )
+      ) {
         return reject(
           state,
           event,
@@ -708,6 +737,55 @@ export function reduceReferralAnswerEvent(
           event,
           `referral ${referral.id} was withdrawn by its referrer, so ${event.destinationKind.replace(/_/g, " ")} cannot accept it`,
         );
+      }
+
+      // History starts at the first recorded reassessment; an older loose note is never given an
+      // invented author or time.
+      const appendReassessment = (
+        existing: ReadonlyArray<ClinicalReassessmentEntry> | undefined,
+      ): ReadonlyArray<ClinicalReassessmentEntry> | undefined =>
+        reassessmentEntry === undefined ? existing : [...(existing ?? []), reassessmentEntry];
+      const nextAddressingReassessmentHistory = appendReassessment(addressing.reassessmentHistory);
+      const nextReferralHistory = appendReassessment(referral.reassessmentHistory);
+      const latestNotePatch =
+        reassessmentEntry?.note !== undefined
+          ? { reassessmentNote: reassessmentEntry.note }
+          : addressing.reassessmentNote !== undefined
+            ? { reassessmentNote: addressing.reassessmentNote }
+            : {};
+      const historyPatch =
+        nextAddressingReassessmentHistory === undefined
+          ? {}
+          : { reassessmentHistory: nextAddressingReassessmentHistory };
+
+      if (hasClinicalReassessment && addressing.state === "accepted" && reassessmentEntry !== undefined) {
+        const updatedAddressing: ReferralAddressing = { ...addressing, ...historyPatch, ...latestNotePatch };
+        const updatedDestinations = referral.destinations.map((c) => (c === addressing ? updatedAddressing : c));
+        let nextState = replaceReferral(state, referral.id, {
+          ...referral,
+          destinations: updatedDestinations,
+          ...(nextReferralHistory === undefined ? {} : { reassessmentHistory: nextReferralHistory }),
+          ...(reassessmentEntry.note !== undefined ? { reassessmentNote: reassessmentEntry.note } : {}),
+        });
+        // Only the ED answer that raised the journey belongs in its history. A community answer on
+        // the same referral is a separate destination and stays on the referral alone.
+        const reassessedEdId =
+          addressing.destination.kind === "emergency_department" ? addressing.destination.edId : null;
+        const linkedMovement =
+          reassessedEdId === null
+            ? undefined
+            : nextState.movements.find(
+                (m) => m.referralId === referral.id && m.originEdId === reassessedEdId && !m.closure,
+              );
+        if (linkedMovement) {
+          nextState = replaceMovement(nextState, linkedMovement.id, {
+            ...linkedMovement,
+            reassessmentHistory: [...(linkedMovement.reassessmentHistory ?? []), reassessmentEntry],
+          });
+        }
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
+        return nextState;
       }
 
       let accepted: ReferralAddressing;
@@ -813,8 +891,11 @@ export function reduceReferralAnswerEvent(
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
           // Written unconditionally, so `...addressing` cannot carry an old reason onto a clean
           // acceptance.
+          declineReason: undefined,
           acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,
           ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
+          ...historyPatch,
+          ...latestNotePatch,
         };
       } else {
         // An ED, medical ward or community team has no bed and no unit, so a `unitId` here is a
@@ -835,6 +916,9 @@ export function reduceReferralAnswerEvent(
           state: "accepted",
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
+          declineReason: undefined, // a re-acceptance after a decline drops the old refusal reason
+          ...historyPatch,
+          ...latestNotePatch,
         };
       }
 
@@ -874,6 +958,8 @@ export function reduceReferralAnswerEvent(
           genderPlacementAddition === undefined
             ? referral.genderPlacements
             : [...(referral.genderPlacements ?? []), genderPlacementAddition],
+        ...(nextReferralHistory === undefined ? {} : { reassessmentHistory: nextReferralHistory }),
+        ...(reassessmentEntry?.note !== undefined ? { reassessmentNote: reassessmentEntry.note } : {}),
       });
       /**
        * Addendum §1.3: "ACCEPT_REFERRAL — the referrer and the receiving ward — both sides of a

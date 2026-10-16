@@ -121,7 +121,7 @@ export function reduceReferralSendEvent(
        * to another is a false join. The purpose is deliberately not checked (owner: nobody declines
        * an ED notification on purpose).
        *
-       * R5 (WF-09): a journey cannot be raised from an addressing its referrer withdrew or its
+       * R5: a journey cannot be raised from an addressing its referrer withdrew or its
        * department declined, and a referral cannot fund two live journeys (checked below).
        */
       let raisedFrom: Referral | undefined;
@@ -169,7 +169,7 @@ export function reduceReferralSendEvent(
           );
         }
         /**
-         * WF-09 / owner Q11: a second journey from the same referral is refused while an earlier
+         * Owner Q11: a second journey from the same referral is refused while an earlier
          * one blocks, and permitted once that earlier one closed `did_not_proceed`. P2-6: an
          * arrival also blocks, since it fulfilled the referral.
          * `tests/ward-raise-referral-uniqueness.test.ts` covers the Q11 case.

@@ -36,6 +36,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
   const {
     now,
     referrals,
+    thisEdId,
     raise,
     recordEdStep,
     toggleExamination,
@@ -159,6 +160,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
               role: "ed",
               now,
               movementId: movement.id,
+              actingPlaceId: thisEdId,
               needed: false,
             })
           }

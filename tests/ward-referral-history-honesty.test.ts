@@ -35,7 +35,7 @@ import { wardPatients } from "../src/components/ward-management/ward-patients-se
 
 const MAX_HISTORY_LENGTH = 2000;
 
-// RF-123, WF-45, AD-6, PT-7 — never a bare "RF" or a code that happens to contain letters, only an
+// RF-123, WF-045, AD-6, PT-7 — never a bare "RF" or a code that happens to contain letters, only an
 // id shape: two-to-three uppercase letters, a hyphen, then digits.
 const RECORD_ID_PATTERN = /\b(RF|WF|AD|PT)-\d+\b/;
 

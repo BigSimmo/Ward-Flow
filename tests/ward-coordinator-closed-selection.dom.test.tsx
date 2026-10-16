@@ -8,7 +8,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * WF-22 — **A CLOSED MOVEMENT STAYS SELECTED ON THE COORDINATOR SCREEN.**
+ * **A CLOSED MOVEMENT STAYS SELECTED ON THE COORDINATOR SCREEN.**
  *
  * `coordinator-screen.tsx`'s `selectedMovement` used to resolve against ALL movements, closed
  * included — `movements.find((movement) => movement.id === selectedMovementId)`, with no `isOpen`
@@ -84,7 +84,7 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
-describe("the coordinator screen never keeps a closed movement selected (WF-22)", () => {
+describe("the coordinator screen never keeps a closed movement selected", () => {
   it("has a real, open, unaccepted movement with a live referral to withdraw — or every assertion below is vacuous", () => {
     expect(
       TARGET,

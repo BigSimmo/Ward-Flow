@@ -281,7 +281,7 @@ export function reduceRecordedFactEvent(
           );
         }
       }
-      const actingPlaceId = (event as { actingPlaceId?: string }).actingPlaceId;
+      const actingPlaceId = event.actingPlaceId;
       if (event.role === "ed" && actingPlaceId !== undefined && actingPlaceId !== movement.originEdId) {
         return reject(
           state,
@@ -1980,7 +1980,8 @@ export function reduceRecordedFactEvent(
         return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
       }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
-      if (existing.some((record) => record.admissionId === admission.id)) {
+      const existingRecord = existing.find((record) => record.admissionId === admission.id);
+      if (existingRecord && (existingRecord.receivingWardAgreed || event.receivingWardAgreed !== true)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);
       }
       if (!siteByCode(event.homeHospital)) {
@@ -2010,12 +2011,16 @@ export function reduceRecordedFactEvent(
       }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
+      // One home hospital for the record and for the return movement: an agreement that arrives
+      // naming a different site never moves the one the plan was sent to.
+      const homeHospital = existingRecord?.homeHospital ?? event.homeHospital;
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
-        at: event.now,
-        by: event.role,
-        homeHospital: event.homeHospital,
+        at: existingRecord?.at ?? event.now,
+        by: existingRecord?.by ?? event.role,
+        homeHospital,
         receivingWardAgreed: event.receivingWardAgreed,
+        ...(event.receivingWardAgreed && existingRecord ? { agreedAt: event.now, agreedBy: event.role } : {}),
         mode: event.mode,
         provider: event.provider,
         cadNumber: event.cadNumber.trim(),
@@ -2038,7 +2043,7 @@ export function reduceRecordedFactEvent(
           allEmergencyDepartments().find((ed) => ed.siteCode === currentSite?.code)?.id ??
           allEmergencyDepartments()[0]?.id ??
           "rph-ed";
-        const targetSite = siteByCode(event.homeHospital);
+        const targetSite = siteByCode(homeHospital);
         const targetHealthService = targetSite?.service ?? "North Metro";
 
         const returnMovement: Movement = {
@@ -2066,7 +2071,7 @@ export function reduceRecordedFactEvent(
           owner: currentSite?.name ?? "Outside Hospital",
           referredUnitIds: [],
           declines: [],
-          blocker: `Repatriation to ${targetSite?.name ?? event.homeHospital} (${targetHealthService}) agreed; awaiting destination bed placement`,
+          blocker: `Repatriation to ${targetSite?.name ?? homeHospital} (${targetHealthService}) agreed; awaiting destination bed placement`,
           withdrawnReferrals: [],
           unwinds: [],
           stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
@@ -2077,7 +2082,9 @@ export function reduceRecordedFactEvent(
       }
       return {
         ...state,
-        repatriations: [...existing, recorded],
+        repatriations: existingRecord
+          ? existing.map((record) => (record.admissionId === admission.id ? recorded : record))
+          : [...existing, recorded],
         movements: nextMovements,
         referralSequence: nextSequence,
       };

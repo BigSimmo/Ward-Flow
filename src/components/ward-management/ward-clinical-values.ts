@@ -488,6 +488,38 @@ export const CLINICAL_VALUES = {
     unit: "count",
     source: `${NO_DECISION} (role access plan, 15 Oct 2026)`,
   },
+  coverLength: {
+    ...SYNTHETIC,
+    name: "Cover for a second ward or ED, given for one shift, lasts at most",
+    group: "Access and privacy",
+    value: 12,
+    unit: "hours",
+    source: `${NO_DECISION} (role access plan feature 2, Josh's go 16 Oct 2026)`,
+  },
+  stepUpWindow: {
+    ...SYNTHETIC,
+    name: "Granting access or opening a record outside your care needs a sign-in within the last",
+    group: "Access and privacy",
+    value: 10,
+    unit: "minutes",
+    source: `${NO_DECISION} (role access plan feature 9, Josh's go 16 Oct 2026)`,
+  },
+  accessExpiringSoon: {
+    ...SYNTHETIC,
+    name: "Access review lists a role ending within",
+    group: "Access and privacy",
+    value: 14,
+    unit: "days",
+    source: `${NO_DECISION} (role access plan feature 8)`,
+  },
+  accessUnused: {
+    ...SYNTHETIC,
+    name: "A role not used for this long is switched off by itself",
+    group: "Access and privacy",
+    value: 90,
+    unit: "days",
+    source: `${NO_DECISION} (role access plan feature 8)`,
+  },
 } satisfies Record<string, ClinicalValueEntry>;
 
 export type ClinicalValueId = keyof typeof CLINICAL_VALUES;
