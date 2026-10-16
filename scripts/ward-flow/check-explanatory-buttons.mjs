@@ -155,6 +155,10 @@ function maskAttrValueBodies(tagText) {
  * `tests/ward-demo-controls-shared-off.dom.test.tsx` with `.toBeDisabled()`) where the
  * `DEMO_CONTROLS_OFF` notice is rendered as an always-visible section `<p>` banner directly
  * above the button group rather than a hidden `.sr-only` tooltip.
+ *
+ * Role-gated controls (`useRoleGate().buttonProps`) are deliberately not scanned: that spread
+ * natively disables the button beside a visible reason and a "Switch to ... desk" control, a
+ * contract pinned by `tests/ward-role-gated-actions.dom.test.tsx` with `.toBeDisabled()`.
  */
 const VISIBLE_BANNER_ALLOWLIST = [
   {

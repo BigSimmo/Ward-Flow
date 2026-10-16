@@ -567,8 +567,7 @@ export function GlobalSearchPreview({
   const flow = useOptionalWardFlow();
   const resolvedNow = now ?? flow?.now;
   const activeDate = useMemo(() => {
-    // With no clock in scope (a preview rendered outside the provider), today's real date is the
-    // honest answer; the frozen demo epoch is not read here.
+    // With no simulation clock in reach (no `now` prop, no provider) the only date left is the real one.
     if (resolvedNow === undefined) return new Date();
     return calendarDateOf(resolvedNow, dayZero ?? flow?.dayZero ?? demoDayZero(new Date()));
   }, [dayZero, flow?.dayZero, resolvedNow]);

@@ -297,20 +297,23 @@ export function WardTasksDrawer({
 
   useWardModalFocus(withBackdrop, drawerRef, handleEscape);
 
-  // Without a backdrop the panel sits beside the page and takes no modal focus, so Escape is heard
-  // only from inside it. A native listener keeps that on the panel without a handler on the
-  // non-interactive landmark.
+  // The inline panel has no modal focus handling, so Escape pressed inside it is caught here. A
+  // native listener, because the panel is a non-interactive landmark and takes no JSX key handler.
+  const handleEscapeRef = useRef(handleEscape);
   useEffect(() => {
-    const panel = drawerRef.current;
-    if (withBackdrop || !panel) return undefined;
+    handleEscapeRef.current = handleEscape;
+  });
+  useEffect(() => {
+    const drawer = drawerRef.current;
+    if (withBackdrop || !drawer) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.stopPropagation();
-      handleEscape();
+      handleEscapeRef.current();
     };
-    panel.addEventListener("keydown", onKeyDown);
-    return () => panel.removeEventListener("keydown", onKeyDown);
-  });
+    drawer.addEventListener("keydown", onKeyDown);
+    return () => drawer.removeEventListener("keydown", onKeyDown);
+  }, [withBackdrop]);
 
   /** Calling is not wired: the number is copied and the toast says so. */
   function callNumber(row: CallRow) {
