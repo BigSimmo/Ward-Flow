@@ -83,12 +83,17 @@ export class SharedWorkspaceClient {
   private viewGeneration = 0;
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
+  /** Local selection remains authoritative when a cleanup connection cannot persist a change. */
+  private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
   private readonly lifetime = new AbortController();
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
+  }
+  private workingAs() {
+    return this.workingAsOverride === undefined ? (this.options.workingAs?.get() ?? null) : this.workingAsOverride;
   }
   constructor(
     private readonly options: {
@@ -151,10 +156,10 @@ export class SharedWorkspaceClient {
     }
     current();
     if (this.disposed) throw new Error("Connection closed");
-    const stored = this.options.workingAs?.get() ?? null;
+    const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
-    const send = async (as: string | null, resource = path) => {
-      const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${resource}`, {
+    const send = async (as: string | null) => {
+      const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
         headers: {
@@ -184,22 +189,17 @@ export class SharedWorkspaceClient {
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
       return new Error("Waiting on the person");
     };
-    let answer = await send(workingAs);
+    const answer = await send(workingAs);
     current();
     if (answer.noRole && workingAs) {
-      // The role this tab was working as has ended or been removed. Forget it and ask again.
+      // Ending the selected role invalidates every concurrent request, including access steps
+      // waiting for a token. A fresh read chooses from the remaining roles without the old cache.
+      this.workingAsOverride = null;
       this.options.workingAs?.set(null);
-      if (body) {
-        // A refused mutation belongs to its original desk. Read the remaining roles, but never
-        // replay that mutation through one of them without the person's new instruction.
-        this.viewGeneration += 1;
-        const changed = gate({ status: "loading" });
-        void this.refresh();
-        throw changed;
-      }
-      // A remaining role may be wider or narrower, even at the same clinical revision.
-      answer = await send(null, workspaceRead ? "/v1/workspace" : path);
-      current();
+      this.viewGeneration += 1;
+      const changed = gate({ status: "loading" });
+      void this.refresh();
+      throw changed;
     }
     const { response, value, noRole } = answer;
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
@@ -257,7 +257,7 @@ export class SharedWorkspaceClient {
         access: value.access,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
-        canSwitch: !!this.options.workingAs?.get(),
+        canSwitch: !!this.workingAs(),
         choices: undefined,
         canRequest: undefined,
       });
@@ -269,7 +269,7 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
-      if (generation !== this.viewGeneration && this.view.status === "loading") void this.refresh();
+      if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
       else if (this.queue.length && this.view.status === "ready") void this.drain();
     }
   }
@@ -342,7 +342,7 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
-      if (generation !== this.viewGeneration && this.view.status === "loading") void this.refresh();
+      if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
       // A run that ended on a revision-only reply reads the board once to catch up.
       if (!this.disposed && this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready")
         void this.refresh();
@@ -396,6 +396,7 @@ export class SharedWorkspaceClient {
     this.pending = null;
     this.queue = [];
     this.headRevision = 0;
+    this.workingAsOverride = workingAs;
     this.options.workingAs?.set(workingAs);
     this.publish({ snapshot: null, eventLog: [], status: "loading", choices: undefined, error: null });
     void this.refresh();
@@ -404,6 +405,7 @@ export class SharedWorkspaceClient {
   switchRole = () => {
     if (this.busy || this.pending) return;
     this.viewGeneration += 1;
+    this.workingAsOverride = null;
     this.options.workingAs?.set(null);
     this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
     void this.refresh();
@@ -463,16 +465,25 @@ export class SharedWorkspaceClient {
    */
   async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
     const generation = this.viewGeneration;
+    const grantGeneration = this.grantGeneration;
     const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
     if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
     if (response.ok) {
+      this.grantGeneration += 1;
       try {
-        if (value?.snapshot) {
-          this.adopt(value.snapshot);
-          this.grantGeneration += 1;
+        let opened = value;
+        if (grantGeneration !== this.grantGeneration - 1) {
+          // Response order is not commit order. Once another opening has answered, re-read the
+          // server's full current grant set instead of accepting an earlier response's subset.
+          const latest = await this.request("/v1/workspace");
+          if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
+          if (!latest.response.ok) throw new Error("Opened view unavailable");
+          opened = latest.value;
         }
+        if (opened?.snapshot) this.adopt(opened.snapshot);
       } catch {
         // The next poll reads the board again.
+        if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
       }
       return null;
     }
