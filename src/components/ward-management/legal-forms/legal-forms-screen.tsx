@@ -36,7 +36,7 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { form3CRefusedAfter3D } from "@/components/ward-management/ward-legal-clock";
+import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -500,11 +500,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       ? {
           label: GAP_ACTION[nextGap],
           disabledReason:
-            nextGap === "received" && !receivedGate.allowed
-              ? receivedGate.reason
-              : nextGap === "written" && !recordGate.allowed
-                ? recordGate.reason
-                : undefined,
+            nextGap === "received" ? receivedGate.reason : nextGap === "written" ? recordGate.reason : undefined,
           onAction: () => {
             if (nextGap === "received") markReceived(selected);
             else {
@@ -521,7 +517,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     (selected
       ? {
           label: "Record next form",
-          disabledReason: recordGate.allowed ? undefined : recordGate.reason,
+          disabledReason: recordGate.reason,
           onAction: () => openRecord(selected.id),
         }
       : undefined);
@@ -1081,10 +1077,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           onSaveForm={({ movementId, formCode, writtenAt }) => {
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
-            if (!movement) return false;
-            if (formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
-              return false;
-            }
+            if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
             runStep(
               {
                 type: "RECORD_LEGAL_FORM_WRITTEN",

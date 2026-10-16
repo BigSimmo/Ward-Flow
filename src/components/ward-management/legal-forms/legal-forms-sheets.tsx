@@ -17,7 +17,7 @@ import {
   cx,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { form3CRefusedAfter3D } from "@/components/ward-management/ward-legal-clock";
+import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
@@ -217,8 +217,7 @@ export function RecordFormSheet({
         ? "Choose a form type first."
         : !isOwnedLegalFormCode(draft.form)
           ? `Form ${draft.form} written time is not recorded on this sheet.`
-          : draft.form === "3C" &&
-              form3CRefusedAfter3D(selectedMovement?.legalForm?.code ?? selectedMovement?.legalClock?.code)
+          : draft.form === "3C" && movementRefuses3C(selectedMovement)
             ? "Form 3C is refused when the person arrived on a Form 3D."
             : parsedWrittenAt === null
               ? "Enter the time written on the form as HH:MM, no later than now."

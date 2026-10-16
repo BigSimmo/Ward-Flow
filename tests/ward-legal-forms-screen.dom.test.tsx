@@ -337,11 +337,13 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
       const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
       fireEvent.click(within(row).getAllByRole("button")[0]!);
       const panel = screen.getByTestId("ward-legal-selected");
-      expect(within(panel).getByRole("button", { name: "Extend recorded form" })).toHaveAttribute(
-        "aria-disabled",
-        "true",
-      );
-      expect(within(panel).getByRole("button", { name: "Record next form" })).toHaveAttribute("aria-disabled", "true");
+      const extend = within(panel).getByRole("button", { name: "Extend recorded form" });
+      const recordNext = within(panel).getByRole("button", { name: "Record next form" });
+      for (const button of [extend, recordNext]) {
+        expect(button).toHaveAttribute("aria-disabled", "true");
+        // The role gate's reason is announced with the button, not only the greyed state.
+        expect(button).toHaveAccessibleDescription(/\S/);
+      }
     } finally {
       setDeskRole("coordinator");
     }

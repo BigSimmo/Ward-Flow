@@ -158,11 +158,9 @@ export class SharedWorkspaceClient {
       return new Error("Access denied");
     };
     const gate = (update: Partial<SharedView>) => {
-      // An independent write must not discard a workspace command that is waiting for retry.
-      if (!body || path === "/v1/workspace/commands") {
-        this.pending = null;
-        this.queue = [];
-      }
+      // The person must choose or ask for a role first, so work made under the last one goes.
+      this.pending = null;
+      this.queue = [];
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
       return new Error("Waiting on the person");
     };
@@ -171,9 +169,12 @@ export class SharedWorkspaceClient {
       // The role this tab was working as has ended or been removed. Forget it and ask again on reads;
       // never re-send a write under whichever remaining role the server would pick by default.
       this.options.workingAs?.set(null);
-      if (body && path === "/v1/workspace/commands") {
+      if (body) {
+        // Commands queued or awaiting retry were made under the ended role, so they go too. The desk
+        // is cleared, so nothing more can be queued, and read again in full before any change.
         this.pending = null;
         this.queue = [];
+        this.publish({ snapshot: null, eventLog: [] });
         this.needsRefresh = true;
         queueMicrotask(() => {
           if (!this.busy && this.needsRefresh) {
@@ -182,7 +183,7 @@ export class SharedWorkspaceClient {
           }
         });
         const ended = {
-          code: "role",
+          code: "role-ended",
           error: "The role this tab was working as has ended. Review the current desk before making changes.",
         };
         return { response: new Response(JSON.stringify(ended), { status: 422 }), value: ended };
@@ -302,7 +303,7 @@ export class SharedWorkspaceClient {
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
-                  : value?.code === "role" && typeof value.error === "string"
+                  : value?.code === "role-ended" && typeof value.error === "string"
                     ? value.error
                     : command.event.role === "demo" && value.snapshot?.demoControls === false
                       ? "Demo controls are switched off on the shared workspace. Nothing was changed."
