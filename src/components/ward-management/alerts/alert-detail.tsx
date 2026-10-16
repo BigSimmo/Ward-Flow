@@ -86,8 +86,7 @@ export function AlertDetail({
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [activityOpen, setActivityOpen] = useState(false);
-  const [escalatedByIds, setEscalatedByIds] = useState<Record<string, boolean>>({});
-  const isEscalated = Boolean(movement?.escalation) || Boolean(escalatedByIds[item.id]);
+  const isEscalated = Boolean(movement?.escalation);
   const isPhone = useIsPhone();
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
@@ -244,12 +243,13 @@ export function AlertDetail({
           size="sm"
           variant="ghost"
           icon={isEscalated ? Check : ArrowUpRight}
-          disabledReason={isEscalated ? "Already escalated" : undefined}
+          disabledReason={
+            isEscalated ? "Already escalated" : !movement ? "This alert has no movement to escalate" : undefined
+          }
           reasonDisplay="tooltip"
           aria-label={isEscalated ? `Escalated ${subjectLine}` : `Escalate ${subjectLine}`}
           onClick={() => {
-            setEscalatedByIds((prev) => ({ ...prev, [item.id]: true }));
-            handlers.onEscalate?.(item);
+            if (movement) handlers.onEscalate?.(item);
           }}
         >
           {isEscalated ? "Escalated" : "Escalate"}
