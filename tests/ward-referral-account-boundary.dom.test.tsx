@@ -1,0 +1,196 @@
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
+import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import {
+  discardReferralDraft,
+  forgetReferrerContact,
+  keepReferralDraft,
+  readKeptReferralDraft,
+  readLastReferrerContact,
+  rememberReferrerContact,
+} from "@/components/ward-management/referrals/referral-draft-store";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { useWardSupabaseShared } from "@/components/ward-management/use-ward-supabase-shared";
+
+// Auth and HTTP are the only stand-ins: the production shared provider, hook, client,
+// sign-out/sign-in UI, scope, drawer and autosave effects all run together.
+const identity = vi.hoisted(() => ({ actor: "synthetic-account-a", signedOut: 0 }));
+vi.mock("@/components/ward-management/ward-supabase-auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/ward-supabase-auth")>();
+  return {
+    ...actual,
+    SupabaseWardAuth: class {
+      userId: string | null = identity.actor;
+      isRecovery = false;
+      async restore() {}
+      async token() {
+        return "synthetic-mocked-token";
+      }
+      captureAccessTokenForSignOut() {
+        return null;
+      }
+      async signOut() {
+        identity.signedOut += 1;
+        this.userId = null;
+      }
+      async signIn(email: string) {
+        identity.actor = email;
+        this.userId = email;
+      }
+      async updatePassword() {}
+      dispose() {}
+    },
+  };
+});
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+}));
+
+function Composer() {
+  const [open, setOpen] = useState(false);
+  return open ? (
+    <WardReferralDrawer onClose={() => setOpen(false)} />
+  ) : (
+    <button onClick={() => setOpen(true)}>New referral probe</button>
+  );
+}
+
+beforeEach(() => {
+  identity.actor = "synthetic-account-a";
+  identity.signedOut = 0;
+  vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
+  vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
+  vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://ward-flow.example.invalid");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json({
+        actorId: identity.actor,
+        access: { role: "coordinator", scope: { kind: "statewide" } },
+        snapshot: {
+          dataMode: "prototype",
+          revision: 1,
+          now: NOW_ANCHOR,
+          payload: {
+            version: 1,
+            state: seedWardFlowState(),
+            dayZero: "2026-10-15T16:00:00Z",
+            startedAt: "2026-10-16T02:42:00Z",
+          },
+        },
+      }),
+    ),
+  );
+  setWardFeatureFlagOnDevice("role-access", true);
+});
+
+afterEach(() => {
+  cleanup();
+  discardReferralDraft();
+  forgetReferrerContact();
+  resetWardAccessStoreForTests();
+  setWardFeatureFlagOnDevice("role-access", null);
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+async function openSharedComposer() {
+  render(
+    <WardFlowProvider>
+      <WardAccessScope>
+        <Composer />
+      </WardAccessScope>
+    </WardFlowProvider>,
+  );
+  await screen.findByRole("button", { name: "New referral probe" });
+}
+
+function typeStory() {
+  fireEvent.click(screen.getByRole("button", { name: "New referral probe" }));
+  fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+  fireEvent.change(screen.getByLabelText(/Reason for referral/), {
+    target: { value: "Synthetic account A unsent story" },
+  });
+}
+
+async function signInAsNextPerson() {
+  fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+  expect(screen.queryByLabelText(/Reason for referral/)).toBeNull();
+  expect(identity.signedOut).toBe(1);
+  // Check before B connects: its adoption must not hide an outgoing unmount re-save.
+  expect(readKeptReferralDraft()).toBeNull();
+  expect(readLastReferrerContact()).toBeNull();
+  fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
+  fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic-b@example.invalid" } });
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
+  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  await screen.findByRole("button", { name: "New referral probe" });
+  expect(identity.actor).toBe("synthetic-b@example.invalid");
+}
+
+describe("referral memory belongs to the signed-in person", () => {
+  it("drops kept text and sender contact before another account opens a referral", async () => {
+    await openSharedComposer();
+    rememberReferrerContact({
+      name: "Synthetic account A sender",
+      email: "synthetic-a@example.invalid",
+      phone: "0000000000",
+      role: "Synthetic role A",
+      location: "Synthetic place A",
+    });
+    typeStory();
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    await signInAsNextPerson();
+    expect(readKeptReferralDraft()).toBeNull();
+    expect(readLastReferrerContact()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "New referral probe" }));
+    fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
+    expect(screen.getByTestId("ward-referral-letter-preview")).not.toHaveTextContent("Synthetic account A sender");
+  });
+
+  it("cannot resurrect a pending draft when sign-out unmounts its autosave", async () => {
+    await openSharedComposer();
+    typeStory();
+    // No debounce or Keep action has run. The old drawer's unmount must not re-save A's draft.
+    await signInAsNextPerson();
+    await waitFor(() => expect(readKeptReferralDraft()).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "New referral probe" }));
+    fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("");
+  });
+
+  it("still keeps and reopens a draft within the same signed-in account", async () => {
+    await openSharedComposer();
+    typeStory();
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "New referral probe" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic account A unsent story");
+    expect(identity.signedOut).toBe(0);
+  });
+
+  it("retains same-account memory when a password update reconnects its client", async () => {
+    const { result } = renderHook(() => useWardSupabaseShared(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    const draft = { story: "Synthetic same-account draft" };
+    const contact = { name: "Synthetic same-account sender" };
+    keepReferralDraft(draft);
+    rememberReferrerContact(contact);
+    await act(async () => {
+      await result.current.credentials.updatePassword("synthetic-updated-password");
+    });
+    expect(readKeptReferralDraft()).toBe(draft);
+    expect(readLastReferrerContact()).toBe(contact);
+  });
+});

@@ -46,6 +46,7 @@ import {
   readKeptReferralDraft,
   readKeptReferralDraftAt,
   readLastReferrerContact,
+  referralDraftSessionVersion,
   rememberReferrerContact,
   useReferralDraftAutosave,
 } from "./referral-draft-store";
@@ -218,6 +219,7 @@ export function useWardReferralDrawerState({
   // A Refer link names its person: it reopens a kept draft only when that draft is for the same
   // person, and never someone else's.
   const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
+  const [draftOwnerVersion] = useState(referralDraftSessionVersion);
   const kept =
     !effectiveInitialPatientId ||
     (storedDraft !== null &&
@@ -515,12 +517,12 @@ export function useWardReferralDrawerState({
   }, []);
   function discardAndClose() {
     stopDraftAutosave();
-    discardReferralDraft();
+    discardReferralDraft(draftOwnerVersion);
     setGuardOpen(false);
     onClose();
   }
   function keepAndClose() {
-    keepReferralDraft(draftNow);
+    keepReferralDraft(draftNow, draftOwnerVersion);
     setGuardOpen(false);
     onClose();
     announceToWardShell("Referral draft kept until this tab reloads.");
@@ -977,8 +979,8 @@ export function useWardReferralDrawerState({
     const created = referrals.find((referral) => referral.intake === submitted.intake);
     if (created) {
       stopDraftAutosave();
-      discardReferralDraft();
-      rememberReferrerContact(submitted.intake.referrer);
+      discardReferralDraft(draftOwnerVersion);
+      rememberReferrerContact(submitted.intake.referrer, draftOwnerVersion);
       setSentReferralId(created.id);
       setSentAt(now);
       setSendPending(false);
@@ -988,7 +990,7 @@ export function useWardReferralDrawerState({
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);
     }
-  }, [sendPending, referrals, rejections, patientRecord?.id, now, stopDraftAutosave]);
+  }, [sendPending, referrals, rejections, patientRecord?.id, now, stopDraftAutosave, draftOwnerVersion]);
 
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords
