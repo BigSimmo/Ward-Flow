@@ -131,7 +131,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [holdDuration, setHoldDuration] = useState("120");
   const [numEndorsement, setNumEndorsement] = useState<string | null>(null);
-  const [askedQuestions, setAskedQuestions] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -1170,13 +1169,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         <button
                           type="button"
                           className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.askButton}`}
-                          aria-pressed={Boolean(askedQuestions[activeMovement.id])}
-                          onClick={() => {
-                            setAskedQuestions((prev) => ({ ...prev, [activeMovement.id]: true }));
-                            triggerToast("Clarification request logged for referring ED clinician.");
-                          }}
+                          disabled
+                          title="Clarification requests are not wired to a persisted event."
                         >
-                          {askedQuestions[activeMovement.id] ? "Question logged" : "Ask a question"}
+                          Ask a question
                         </button>
                         <button
                           type="button"
