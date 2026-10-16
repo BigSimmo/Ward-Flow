@@ -35,8 +35,10 @@ export async function createBackend(config, dependencies = {}) {
   if (!loadAuth) throw new Error("Invalid identity provider");
   let pool;
   try {
-    const authenticate = await (await loadAuth())(config);
     let sharedStore;
+    // The accounts with a role in the shared workspace. The bootstrap list is checked by the verifier.
+    const roleHolders = async () => (await sharedStore?.roleHolders?.()) ?? [];
+    const authenticate = await (await loadAuth())(config, { roleHolders });
     if (config.shared) {
       const database = await loadDatabase();
       pool = await database.createPool(config.postgres);

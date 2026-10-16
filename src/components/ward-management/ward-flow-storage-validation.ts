@@ -844,12 +844,44 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
 }
 
 /**
- * A validated stored state with the stream A inbox records filled in when the save predates them.
+ * A validated stored state with the stream A inbox records filled in when the save predates them,
+ * and reviews of seeded governance entries moved to ids that name their subject.
  * Call after `isValidStoredWardFlowState` on every restore path.
  */
 export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
   const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
-  return { ...state, inboxOwnership: stored.inboxOwnership ?? {}, inboxSnoozes: stored.inboxSnoozes ?? {} };
+  return withSeededReviewIds({
+    ...state,
+    inboxOwnership: stored.inboxOwnership ?? {},
+    inboxSnoozes: stored.inboxSnoozes ?? {},
+  });
+}
+
+/**
+ * Seeded entries once had fixed ids (`audit-seed-legal-status`). They were derived from the first
+ * records of this same state, so a review saved under one, and the audit rows recording that review
+ * or its undo, move to the entry's current id (`audit-seed-legal-status:<movement id>`). The entry
+ * then stays shown as reviewed, with its review history.
+ */
+function withSeededReviewIds<T extends WardFlowState>(state: T): T {
+  const legacy = (eventId: string) => /^audit-seed-[a-z-]+$/.test(eventId);
+  if (
+    !state.auditReviews.some((review) => legacy(review.eventId)) &&
+    !state.auditEvents.some((event) => event.subject.kind === "audit-event" && legacy(event.subject.eventId))
+  )
+    return state;
+  const seeded = syntheticGovernanceAuditEvents(state);
+  const current = (eventId: string) =>
+    legacy(eventId) ? (seeded.find((entry) => entry.id.startsWith(`${eventId}:`))?.id ?? eventId) : eventId;
+  return {
+    ...state,
+    auditReviews: state.auditReviews.map((review) => ({ ...review, eventId: current(review.eventId) })),
+    auditEvents: state.auditEvents.map((event) =>
+      event.subject.kind === "audit-event"
+        ? { ...event, subject: { ...event.subject, eventId: current(event.subject.eventId) } }
+        : event,
+    ),
+  };
 }
 
 /**

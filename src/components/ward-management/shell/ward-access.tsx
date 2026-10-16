@@ -24,6 +24,7 @@ import {
   coordinatorRecordScope,
   scopeBroadcastAlerts,
   scopeWorkspace,
+  smallNumberParts,
   smallNumberText,
 } from "@/components/ward-management/ward-access-scope";
 import type { AuditReview } from "@/components/ward-management/ward-audit";
@@ -140,26 +141,44 @@ function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
   return result;
 }
 
+export type StatisticsCounts = {
+  /** The executive desk: Statistics shows counts only, so a list of people is not shown. */
+  countsOnly: boolean;
+  /** One count of people. Under the line it reads "fewer than 5". */
+  small: (count: number) => number | string;
+  /** The parts of a breakdown whose total is shown, hidden together (`smallNumberParts`). */
+  parts: (counts: readonly number[]) => (number | string)[];
+};
+
 /**
  * Executive figures (role access plan, Josh's yes 15 Oct 2026): a count of people under the small
- * number line reads "fewer than 5" on the Statistics headline figures, so a small group cannot be
- * picked out. Beds and their states (in use, pulled, ready) stay exact, because the bed count and
- * occupancy beside them would give a hidden one away (review on PR #345). Every other desk sees exact
- * counts.
+ * number line reads "fewer than 5" on every Statistics figure, table and chart, so a small group
+ * cannot be picked out, and lists of people are not shown (plan, medium finding 6). Beds and their
+ * states (in use, pulled, ready) stay exact, because the bed count and occupancy beside them would
+ * give a hidden one away (review on PR #345). Every other desk sees exact counts and the lists.
  */
-export function useSmallNumber(): (count: number) => number | string {
+export function useStatisticsCounts(): StatisticsCounts {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const hide = on && access.role === "executive";
-  // A worded count is a string and an exact one stays a number, so a caller can tell them apart.
-  return useCallback(
-    (count: number) => {
-      if (!hide) return count;
-      const text = smallNumberText(count);
-      return text === String(count) ? count : text;
-    },
+  return useMemo(
+    () => ({
+      countsOnly: hide,
+      // A worded count is a string and an exact one stays a number, so a caller can tell them apart.
+      small: (count: number) => {
+        if (!hide) return count;
+        const text = smallNumberText(count);
+        return text === String(count) ? count : text;
+      },
+      parts: (counts: readonly number[]) => (hide ? smallNumberParts(counts) : [...counts]),
+    }),
     [hide],
   );
+}
+
+/** The single count form of `useStatisticsCounts`, for the headline figures. */
+export function useSmallNumber(): (count: number) => number | string {
+  return useStatisticsCounts().small;
 }
 
 /**
@@ -259,8 +278,8 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
       return (review: AuditReview) => kept.has(review.eventId);
     };
-    // A refusal names its subject: a journey, ward, stay, release, leave bed or ED. A refused
-    // record command names none, so it follows its own audit row and stays only when that row is in
+    // A refusal names its subject: a journey, ward, stay, release, leave bed or ED, or for a
+    // community treatment order a person this desk already sees. A refused record command names none, so it follows its own audit row and stays only when that row is in
     // scope, which lets the desk's screen hear its own refusal (reviews on PR #345).
     // The audit log is read only when a refusal is paired with a row, and through the governance read
     // so a refused undo of a review on a seeded entry is still heard.

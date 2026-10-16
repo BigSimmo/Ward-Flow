@@ -1,6 +1,7 @@
 import { CircleDashed } from "lucide-react";
 
 import { SrOnly, StatusGlyph, cx } from "@/components/wf";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { daysInBed, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -136,17 +137,20 @@ function CellGlyph({ kind }: { kind: BedMapKind }) {
   return null;
 }
 
-function cellTitle(entry: BedMapCell): string {
+function cellTitle(entry: BedMapCell, countsOnly = false): string {
   const parts = [BED_MAP_LABELS[entry.kind]];
   if (entry.admissionId) parts.unshift(entry.admissionId);
   if (entry.stayDays !== null) parts.push(`${entry.stayDays} ${entry.stayDays === 1 ? "day" : "days"}`);
   if (entry.blocked) parts.push("discharge blocked");
-  if ((entry.kind === "occupied" || entry.kind === "leave") && !entry.admissionId) parts.push("no admission record");
+  if (!countsOnly && (entry.kind === "occupied" || entry.kind === "leave") && !entry.admissionId) {
+    parts.push("no admission record");
+  }
   return parts.join(" · ");
 }
 
 /** The bed map's key: one swatch per state, the same shape and colour as the cells, with counts. */
 export function StatisticsBedMapLegend({ counts }: { counts: Record<BedMapKind, number> }) {
+  const { countsOnly } = useStatisticsCounts();
   return (
     <ul className={styles.legend} aria-hidden="true">
       {BED_MAP_ORDER.map((kind) => (
@@ -158,10 +162,12 @@ export function StatisticsBedMapLegend({ counts }: { counts: Record<BedMapKind, 
           <b className={styles.legendCount}>{counts[kind]}</b>
         </li>
       ))}
-      <li className={styles.legendItem}>
-        <StatusGlyph tone="warning" size={9} />
-        Discharge blocked
-      </li>
+      {countsOnly ? null : (
+        <li className={styles.legendItem}>
+          <StatusGlyph tone="warning" size={9} />
+          Discharge blocked
+        </li>
+      )}
     </ul>
   );
 }
@@ -171,7 +177,13 @@ export function StatisticsBedMapLegend({ counts }: { counts: Record<BedMapKind, 
  * colour. The grid is drawn for the eye and said once in words beside it.
  */
 export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: string }) {
-  const { cells, counts, unplacedRecords } = map;
+  const { countsOnly, small } = useStatisticsCounts();
+  const { counts, unplacedRecords } = map;
+  // Executive desk (counts only): a cell keeps its bed state but names no admission, stay or blocker.
+  const cells = countsOnly
+    ? map.cells.map((entry) => ({ ...entry, admissionId: null, stayDays: null, longStay: false, blocked: false }))
+    : map.cells;
+  const unplaced = small(unplacedRecords);
   const blocked = cells.filter((entry) => entry.blocked).length;
   const said = BED_MAP_ORDER.filter((kind) => counts[kind] > 0)
     .map((kind) => `${counts[kind]} ${BED_MAP_LABELS[kind].toLowerCase()}`)
@@ -187,12 +199,12 @@ export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: str
           <li
             key={index}
             className={cx(styles.cell, styles[entry.kind])}
-            title={cellTitle(entry)}
+            title={cellTitle(entry, countsOnly)}
             data-bed-kind={entry.kind}
             data-admission-id={entry.admissionId ?? undefined}
           >
             {/* The cell is drawn for the eye; a screen reader hears the same detail as the hover title. */}
-            <SrOnly>{cellTitle(entry)}</SrOnly>
+            <SrOnly>{cellTitle(entry, countsOnly)}</SrOnly>
             <span className={styles.glyph} aria-hidden="true">
               <CellGlyph kind={entry.kind} />
             </span>
@@ -214,10 +226,11 @@ export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: str
         ))}
       </ol>
       <p className={styles.note}>
-        Grouped by state. Bed numbers are not recorded; hover a bed for its admission number, or see the admission
-        roster.
+        {countsOnly
+          ? "Grouped by state. Bed numbers are not recorded."
+          : "Grouped by state. Bed numbers are not recorded; hover a bed for its admission number, or see the admission roster."}
         {unplacedRecords > 0
-          ? ` ${unplacedRecords} recorded ${unplacedRecords === 1 ? "admission is" : "admissions are"} not shown because the ward's bed count has no bed for ${unplacedRecords === 1 ? "it" : "them"}.`
+          ? ` ${unplaced} recorded ${unplaced === 1 ? "admission is" : "admissions are"} not shown because the ward's bed count has no bed for ${unplaced === 1 ? "it" : "them"}.`
           : ""}
       </p>
     </div>
