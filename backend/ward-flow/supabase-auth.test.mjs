@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { clientAddress, createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
-import { REMOTE_CHECKS_PER_ADDRESS, createSupabaseAuthenticator } from "./supabase-auth.mjs";
+import { REMOTE_CHECKS_PER_ADDRESS, REMOTE_CHECKS_TOTAL, createSupabaseAuthenticator } from "./supabase-auth.mjs";
 
 const coordinator = randomUUID();
 const config = {
@@ -195,7 +195,7 @@ test("a confirmed legacy token is reused for a minute, never past its expiry", a
   assert.equal(calls.length, 2);
 });
 
-test("remote checks are limited per client address and per coordinator before anything is sent", async () => {
+test("remote checks are limited per client address while another source can still verify", async () => {
   const { calls, verify } = setup();
   for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS; index += 1)
     await verify(legacy(claims({ jti: String(index) })), { clientAddress: "203.0.113.9" });
@@ -204,33 +204,61 @@ test("remote checks are limited per client address and per coordinator before an
     VerifierRateLimitedError,
   );
   assert.equal(calls.length, REMOTE_CHECKS_PER_ADDRESS);
-  // The same coordinator from another address has used its own allowance too.
-  await assert.rejects(
-    verify(legacy(claims({ jti: "other" })), { clientAddress: "198.51.100.4" }),
-    VerifierRateLimitedError,
+  assert.equal(
+    await verify(legacy(claims({ jti: "other" })), {
+      clientAddress: "198.51.100.4",
+    }),
+    coordinator,
   );
   assert.equal(await verify(signed("ES256", "ec-1"), { clientAddress: "203.0.113.9" }), coordinator);
 });
 
-test("one coordinator's checks cannot use up the allowance for the others", async () => {
-  const other = randomUUID();
+test("forged subjects from one address do not lock out another address's genuine fallback token", async () => {
+  const genuine = legacy(claims({ jti: "genuine" }));
   const calls = [];
-  const verify = createSupabaseAuthenticator(
-    { ...config, coordinatorIds: [coordinator, other] },
-    {
-      fetch: async (url) => {
-        calls.push(url);
-        return Response.json({ id: other });
-      },
+  const verify = createSupabaseAuthenticator(config, {
+    fetch: async (url, options) => {
+      calls.push(url);
+      if (url === JWKS) return Response.json(published);
+      return options.headers.Authorization === genuine
+        ? Response.json({ id: coordinator })
+        : new Response(null, { status: 401 });
     },
-  );
+  });
   for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS; index += 1)
-    await verify(legacy(claims({ jti: String(index) })), { clientAddress: `198.51.100.${index}` }).catch(() => {});
+    await assert.rejects(
+      verify(legacy(claims({ jti: `forged-${index}` })), {
+        clientAddress: "198.51.100.4",
+      }),
+      /Unauthorised/,
+    );
   await assert.rejects(
-    verify(legacy(claims({ jti: "over" })), { clientAddress: "203.0.113.50" }),
+    verify(legacy(claims({ jti: "over" })), { clientAddress: "198.51.100.4" }),
     VerifierRateLimitedError,
   );
-  assert.equal(await verify(legacy(claims({ sub: other })), { clientAddress: "203.0.113.50" }), other);
+  assert.equal(await verify(genuine, { clientAddress: "203.0.113.9" }), coordinator);
+  // Both local signatures and confirmed tokens remain available after a source uses its budget.
+  assert.equal(await verify(genuine, { clientAddress: "198.51.100.4" }), coordinator);
+  assert.equal(await verify(signed("ES256", "ec-1"), { clientAddress: "198.51.100.4" }), coordinator);
+});
+
+test("distributed forged subjects remain bounded by the total remote budget", async () => {
+  const verify = createSupabaseAuthenticator(config, {
+    fetch: async () => new Response(null, { status: 401 }),
+  });
+  for (let index = 0; index < REMOTE_CHECKS_TOTAL; index += 1)
+    await assert.rejects(
+      verify(legacy(claims({ jti: `forged-${index}` })), {
+        clientAddress: `synthetic-source-${index}`,
+      }),
+      /Unauthorised/,
+    );
+  await assert.rejects(
+    verify(legacy(claims({ jti: "over-total" })), {
+      clientAddress: "synthetic-new-source",
+    }),
+    VerifierRateLimitedError,
+  );
 });
 
 test("requests arriving together share one read of the published keys", async () => {
@@ -280,4 +308,41 @@ test("the client address trusts forwarded headers only from configured proxies",
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "::ffff:10.0.0.2" } }), "10.0.0.2");
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "127.0.0.1" } }), "127.0.0.1");
   assert.equal(clientAddress({ headers: {}, socket: {} }), "unknown");
+});
+
+test("a signed token's optional not-before claim must be a finite number no later than now", async () => {
+  const at = Date.now();
+  const { verify } = setup({ clock: () => at });
+  const current = at / 1000;
+  for (const nbf of [current + 600, String(current - 60), null, true, []]) {
+    await assert.rejects(verify(signed("ES256", "ec-1", claims({ nbf }))), /Unauthorised/);
+    await assert.rejects(verify(legacy(claims({ nbf }))), /Unauthorised/);
+  }
+  for (const extra of [{}, { nbf: current - 60 }, { nbf: current }]) {
+    assert.equal(await verify(signed("ES256", "ec-1", claims(extra))), coordinator);
+    assert.equal(await verify(legacy(claims(extra))), coordinator);
+  }
+});
+
+test("a legacy token that expires while remote verification is awaited is refused", async () => {
+  let at = Date.now();
+  const token = legacy(claims({ exp: Math.floor(at / 1000) + 1 }));
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    fetch: async () => {
+      at += 2_000;
+      return Response.json({ id: coordinator });
+    },
+  });
+  await assert.rejects(verify(token), /Unauthorised/);
+});
+
+test("nonfinite numeric JWT dates are refused even with a valid signature", async () => {
+  const { verify } = setup();
+  for (const field of ["exp", "nbf"]) {
+    const body = JSON.stringify(claims({ [field]: 1 })).replace(`"${field}":1`, `"${field}":1e400`);
+    const data = `${part({ alg: "ES256", kid: "ec-1" })}.${Buffer.from(body).toString("base64url")}`;
+    const signature = sign("sha256", Buffer.from(data), { key: ec.privateKey, dsaEncoding: "ieee-p1363" });
+    await assert.rejects(verify(`Bearer ${data}.${signature.toString("base64url")}`), /Unauthorised/);
+  }
 });
