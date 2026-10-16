@@ -23,8 +23,15 @@ import {
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
-import { patientInBedOnUnit, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import type { NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
+import {
+  patientHeldBedUnitId,
+  patientInBedOnUnit,
+  resolveSubjectPatient,
+} from "@/components/ward-management/ward-patient-resolver";
+import {
+  NOT_ON_SENDING_WARD_OTHER,
+  type NotOnSendingWardReason,
+} from "@/components/ward-management/ward-change-reasons";
 import { type Gender } from "@/components/ward-management/ward-patients";
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
@@ -52,6 +59,7 @@ import {
   REFERRAL_RISK_FLAGS,
   referralContactError,
   referralIntakeError,
+  REFERRAL_REASON_LIMIT,
   type ClearanceChecklist,
   type ReferralContact,
   type ReferralIntakeDetails,
@@ -376,7 +384,12 @@ export function useWardReferralDrawerState({
         : defaultPatient.provisionalDiag),
   );
   const [doctorNote, setDoctorNote] = useState(kept?.doctorNote ?? defaultPatient.doctorNote);
-  const [notOnWardReason, setNotOnWardReason] = useState<NotOnSendingWardReason | "">("");
+  const [notOnWard, setNotOnWard] = useState<KeptDraft["notOnWard"]>(kept?.notOnWard);
+  // An answer belongs to the ward it was given for, so another ward's page asks again.
+  const notOnWardReason = notOnWard && notOnWard.unitId === sendingWard?.id ? notOnWard.reason : "";
+  function setNotOnWardReason(reason: NotOnSendingWardReason | "") {
+    setNotOnWard(reason && sendingWard ? { unitId: sendingWard.id, reason } : undefined);
+  }
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
   const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
@@ -420,6 +433,7 @@ export function useWardReferralDrawerState({
     communityNeeds,
     edNeeds,
     unidentified,
+    notOnWard,
   };
   // What the draft looked like on opening. A restored draft is never clean, so closing it asks again.
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
@@ -562,7 +576,7 @@ export function useWardReferralDrawerState({
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
-    setNotOnWardReason("");
+    setNotOnWard(undefined);
     setAgeBand("");
     setUnidentified(null);
     setNewPatientOpen(false);
@@ -746,15 +760,24 @@ export function useWardReferralDrawerState({
   const patientOnSendingWard =
     !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
   const notOnSendingWard = !!sendingWard && !patientOnSendingWard;
+  const heldBedUnitId =
+    notOnSendingWard && patientRecord ? patientHeldBedUnitId(admissions, patientRecord.id) : undefined;
+  const heldBedWardName = heldBedUnitId
+    ? (units.find((unit) => unit.id === heldBedUnitId)?.name ?? "another ward")
+    : "";
   const notOnWardNote =
     sendingWard && notOnSendingWard && notOnWardReason
       ? `Not in a bed on ${sendingWard.name}: ${notOnWardReason}.`
       : "";
   const referralReason = notOnWardNote ? `${notOnWardNote} ${doctorNote}` : doctorNote;
+  const reasonRoom = REFERRAL_REASON_LIMIT - (notOnWardNote ? notOnWardNote.length + 1 : 0);
+  const reasonNoteRequired = notOnWardReason === NOT_ON_SENDING_WARD_OTHER;
   function patientError() {
     if (!patientRecord && unidentified === null)
       return 'Find a registered patient, add a new patient, or choose "Not yet identified".';
     if (!patientRecord && !unidentified?.trim()) return "Describe the unidentified person.";
+    if (heldBedUnitId)
+      return `This person already holds a bed on ${heldBedWardName}, so they cannot be sent as a new admission.`;
     if (sendingWard && notOnSendingWard && !notOnWardReason)
       return `This person is not in a bed on ${sendingWard.name}. Choose why the ward is referring them.`;
     if (!effectiveCohort) return "Choose the age band.";
@@ -775,6 +798,8 @@ export function useWardReferralDrawerState({
     if (!sendingWard && sourceKind === "community" && !sendingTeam.trim())
       return "Record the referring community service.";
     if (!URGENCY_LEVELS.some((tier) => String(tier) === urgency)) return "Choose the referral urgency.";
+    if (reasonNoteRequired && !doctorNote.trim()) return "Give the reason for referral.";
+    if (doctorNote.length > reasonRoom) return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
     return null;
   }
   const originValid =
@@ -787,7 +812,7 @@ export function useWardReferralDrawerState({
   const needsSendingTeam = !sendingWard && !senderMissing && sourceKind === "community";
   const needed: Record<DrawerSection, number> = {
     patient: [
-      (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && !notOnWardReason),
+      (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && (!!heldBedUnitId || !notOnWardReason)),
       !effectiveCohort,
       !catchmentConfirmed || !catchmentTeam.trim(),
       !homeRegion,
@@ -796,6 +821,7 @@ export function useWardReferralDrawerState({
       !originValid,
       needsSendingTeam && !sendingTeam.trim(),
       !URGENCY_LEVELS.some((tier) => String(tier) === urgency),
+      (reasonNoteRequired && !doctorNote.trim()) || doctorNote.length > reasonRoom,
     ].filter(Boolean).length,
     documentation: documentationNeeded(documentation),
     placement: selectedDestinations.length ? 0 : 1,
@@ -1225,6 +1251,9 @@ export function useWardReferralDrawerState({
     notOnSendingWard,
     notOnWardReason,
     setNotOnWardReason,
+    heldBedWardName,
+    reasonRoom,
+    reasonNoteRequired,
     addPatientGate,
     movements,
     patients,

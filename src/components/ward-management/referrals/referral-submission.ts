@@ -164,6 +164,9 @@ export function referralContactError(contact: ReferralContact): string | null {
   return null;
 }
 
+/** How long the reason for referral may be, the sheet's note and any prefix it adds included. */
+export const REFERRAL_REASON_LIMIT = 1000;
+
 /** Validate the same envelope at the engine boundary, including callers outside this drawer. */
 export function referralIntakeError(intake: ReferralIntakeDetails): string | null {
   if (
@@ -192,7 +195,7 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
     return "Choose a recorded catchment service.";
   if (
     typeof intake.reasonForReferral !== "string" ||
-    intake.reasonForReferral.length > 1000 ||
+    intake.reasonForReferral.length > REFERRAL_REASON_LIMIT ||
     typeof intake.legalStatus !== "string" ||
     intake.legalStatus.length > 100
   )

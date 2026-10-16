@@ -413,10 +413,12 @@ export type ReferralCapReason = (typeof REFERRAL_CAP_REASONS)[number];
  * wording of each reason is NOT chosen or seen by the owner, the same warning `OVERRIDE_REASONS`
  * carries. Complete sentences the receiving ward reads back in the referral reason.
  */
+/** The one reason that leans on the referral's own words, so the reason for referral becomes required. */
+export const NOT_ON_SENDING_WARD_OTHER = "Another reason, given in the referral";
 export const NOT_ON_SENDING_WARD_REASONS = [
   "Recently discharged from this ward",
   "Known to this ward's team but not in a bed",
-  "Another reason, given in the referral",
+  NOT_ON_SENDING_WARD_OTHER,
 ] as const;
 export type NotOnSendingWardReason = (typeof NOT_ON_SENDING_WARD_REASONS)[number];
 

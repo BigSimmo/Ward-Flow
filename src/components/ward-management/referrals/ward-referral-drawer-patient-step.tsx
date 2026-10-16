@@ -101,6 +101,7 @@ export function ReferralPatientStep({
     notOnSendingWard,
     notOnWardReason,
     setNotOnWardReason,
+    heldBedWardName,
   } = s;
   return (
     <div
@@ -402,34 +403,40 @@ export function ReferralPatientStep({
           {sendingWard && notOnSendingWard && (patientRecord || unidentified !== null) ? (
             <div data-testid="ward-referral-not-on-sending-ward">
               <div className={styles.suggestion}>
-                <StatusGlyph tone="warning" size={9} />
+                <StatusGlyph tone={heldBedWardName ? "danger" : "warning"} size={9} />
                 <span className={styles.suggestionText}>
                   <strong>Not in a bed on {sendingWard.name}</strong>
-                  <small>A ward usually refers its own inpatients. This goes as a new admission, not a transfer.</small>
+                  <small>
+                    {heldBedWardName
+                      ? `They already hold a bed on ${heldBedWardName}, so this ward cannot send them as a new admission.`
+                      : "A ward usually refers its own inpatients. This goes as a new admission, not a transfer."}
+                  </small>
                 </span>
               </div>
-              <div className={styles.fieldGrid}>
-                <Field
-                  label="Why is the ward referring them?"
-                  htmlFor={`${sectionId}-not-on-ward`}
-                  required
-                  error={patientShowErrors && !notOnWardReason ? "Choose why the ward is referring them" : null}
-                >
-                  <SelectBox>
-                    <select
-                      id={`${sectionId}-not-on-ward`}
-                      className={styles.fieldSelect}
-                      value={notOnWardReason}
-                      onChange={(e) => setNotOnWardReason(e.target.value as NotOnSendingWardReason | "")}
-                    >
-                      <option value="">Choose a reason</option>
-                      {NOT_ON_SENDING_WARD_REASONS.map((reason) => (
-                        <option key={reason}>{reason}</option>
-                      ))}
-                    </select>
-                  </SelectBox>
-                </Field>
-              </div>
+              {heldBedWardName ? null : (
+                <div className={styles.fieldGrid}>
+                  <Field
+                    label="Why is the ward referring them?"
+                    htmlFor={`${sectionId}-not-on-ward`}
+                    required
+                    error={patientShowErrors && !notOnWardReason ? "Choose why the ward is referring them" : null}
+                  >
+                    <SelectBox>
+                      <select
+                        id={`${sectionId}-not-on-ward`}
+                        className={styles.fieldSelect}
+                        value={notOnWardReason}
+                        onChange={(e) => setNotOnWardReason(e.target.value as NotOnSendingWardReason | "")}
+                      >
+                        <option value="">Choose a reason</option>
+                        {NOT_ON_SENDING_WARD_REASONS.map((reason) => (
+                          <option key={reason}>{reason}</option>
+                        ))}
+                      </select>
+                    </SelectBox>
+                  </Field>
+                </div>
+              )}
             </div>
           ) : null}
           {!liveMovement && (patientRecord || unidentified !== null) ? (

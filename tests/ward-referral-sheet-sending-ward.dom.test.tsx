@@ -11,7 +11,10 @@ import {
   readKeptReferralDraft,
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { NOT_ON_SENDING_WARD_REASONS } from "@/components/ward-management/ward-change-reasons";
+import {
+  NOT_ON_SENDING_WARD_OTHER,
+  NOT_ON_SENDING_WARD_REASONS,
+} from "@/components/ward-management/ward-change-reasons";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -50,11 +53,14 @@ const seed = seedWardFlowState();
 const SENDING = "rph-adult-secure";
 const sendingWard = seed.units.find((unit) => unit.id === SENDING)!;
 const otherWard = seed.units.find((unit) => unit.id !== SENDING)!;
-/** A synthetic patient in a bed on the sending ward, and one on no ward at all. */
+/** A synthetic patient in a bed on the sending ward, one on no ward at all, and one on another ward. */
 const ON_WARD_UMRN = "UM100028";
 const OFF_WARD_UMRN = "UM100023";
+const OTHER_WARD_UMRN = "UM100030";
+const heldBedWard = seed.units.find((unit) => unit.id === "rph-older-adult")!;
 
 type KeptWards = { selectedUnitIds: string[] };
+type KeptReason = { notOnWard?: { unitId: string; reason: string } };
 
 function Probe() {
   const { referrals, rejections } = useWardFlow();
@@ -215,6 +221,60 @@ describe("the New referral sheet on a ward page", () => {
       `Not in a bed on ${sendingWard.name}: ${NOT_ON_SENDING_WARD_REASONS[0]}.`,
     );
   }, 60_000);
+
+  it("stops a patient who already holds a bed on another ward, which the bed pull would refuse", () => {
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    startReferral(OTHER_WARD_UMRN);
+    expect(screen.getByTestId("ward-referral-not-on-sending-ward")).toHaveTextContent(
+      `They already hold a bed on ${heldBedWard.name}`,
+    );
+    expect(screen.queryByLabelText("Why is the ward referring them?")).toBeNull();
+    next("Next, referral");
+    expect(screen.getByRole("alert")).toHaveTextContent(`This person already holds a bed on ${heldBedWard.name}`);
+    expect(screen.queryByLabelText(/Patient story/)).not.toBeVisible();
+  });
+
+  it("needs the reason for referral when the ward gives another reason, within the length left", () => {
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    startReferral(OFF_WARD_UMRN);
+    fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), {
+      target: { value: NOT_ON_SENDING_WARD_OTHER },
+    });
+    next("Next, referral");
+    const reason = screen.getByLabelText(/Reason for referral/) as HTMLInputElement;
+    fireEvent.change(reason, { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic ward to ward story" } });
+    next("Next, clearance");
+    expect(screen.getByRole("alert")).toHaveTextContent("Give the reason for referral.");
+    const room = 1000 - `Not in a bed on ${sendingWard.name}: ${NOT_ON_SENDING_WARD_OTHER}.`.length - 1;
+    expect(reason.maxLength).toBe(room);
+    fireEvent.change(reason, { target: { value: "x".repeat(room + 1) } });
+    expect(screen.getByText(`Shorten to ${room} characters or fewer`)).toBeVisible();
+  });
+
+  it("keeps the ward's reason in a kept draft, and asks again on another ward's page", async () => {
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    startReferral(OFF_WARD_UMRN);
+    fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), {
+      target: { value: NOT_ON_SENDING_WARD_REASONS[1] },
+    });
+    await waitFor(() =>
+      expect(readKeptReferralDraft<KeptReason>()?.notOnWard).toEqual({
+        unitId: SENDING,
+        reason: NOT_ON_SENDING_WARD_REASONS[1],
+      }),
+    );
+    const draft = readKeptReferralDraft<KeptReason>()!;
+    cleanup();
+    keepReferralDraft(draft);
+    renderSheet();
+    expect(screen.getByLabelText("Why is the ward referring them?")).toHaveValue(NOT_ON_SENDING_WARD_REASONS[1]);
+    cleanup();
+    route.pathname = `/mockups/ward-flow/ward/${otherWard.id}`;
+    keepReferralDraft(draft);
+    renderSheet();
+    expect(screen.getByLabelText("Why is the ward referring them?")).toHaveValue("");
+  });
 
   it("says why it cannot send from a ward page that names no ward", () => {
     route.pathname = "/mockups/ward-flow/ward/not-a-ward";
