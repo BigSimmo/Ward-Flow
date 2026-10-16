@@ -1579,6 +1579,28 @@ test(
           /role-ended/,
         );
       });
+      await t.test("a scoped poll waits for an access change holding the workspace lock, then refuses", async () => {
+        const f = await fixture();
+        const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+        const view = await f.store.viewer(f.nurse);
+        const revoker = await pool.connect();
+        try {
+          await revoker.query("BEGIN");
+          await revoker.query("SELECT 1 FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [f.workspaceId]);
+          await revoker.query("UPDATE ward_flow.memberships SET revoked_at=$2, revoked_by=$3 WHERE id=$1", [
+            f.base.id,
+            f.clock(),
+            f.lead,
+          ]);
+          const pending = f.store.poll(f.nurse, first.revision, view);
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          await revoker.query("COMMIT");
+          await assert.rejects(pending, /role-ended/);
+        } finally {
+          await revoker.query("ROLLBACK").catch(() => {});
+          revoker.release();
+        }
+      });
       await t.test("same-revision polls send fresh scopes after cover grant, revoke and expiry", async () => {
         const f = await fixture();
         const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));

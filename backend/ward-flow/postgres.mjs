@@ -466,6 +466,30 @@ export function createWorkspaceStore(
     return transaction(async (client, now) => snapshot(await lock(client, actorId, now, view), now, view));
   }
   /**
+   * A member's full snapshot, with the role and covers resolved again under a share lock on the
+   * workspace row. Access changes hold that row FOR UPDATE, so a revocation either commits before
+   * this resolve (and the poll is refused) or waits until the reply is built. Polls do not block
+   * one another. An uninitialised or incompatible workspace falls back to the locked write path.
+   */
+  async function scopedRead(actorId, view) {
+    const version = await schemaVersion();
+    const ready = await transaction(async (client, at) => {
+      const { rows } = await client.query(
+        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR SHARE",
+        [workspaceId],
+      );
+      if (!rows[0] || !engine.validWorld(rows[0].payload)) return null;
+      at.setTime(clock().getTime());
+      const current = await resolveViewer(actorId, { workingAs: view.membershipId }, client, at, version);
+      if (current.status !== "ok") throw new Error("role-ended");
+      return snapshot(rows[0], at, current);
+    });
+    if (ready) return ready;
+    const current = await viewer(actorId, { workingAs: view.membershipId });
+    if (current.status !== "ok") throw new Error("role-ended");
+    return transaction(async (client, now) => snapshot(await lock(client, actorId, now, current), now, current));
+  }
+  /**
    * Who this account is working as. The role always comes from here, never from the browser.
    * An account named in WARD_COORDINATOR_USER_IDS (the bootstrap) works as the statewide
    * coordinator; one that also holds memberships picks, as any account with more than one role
@@ -856,11 +880,8 @@ export function createWorkspaceStore(
     async poll(actorId, knownRevision, view) {
       // Re-resolve scoped access immediately before reading. A role or one of its covers may have
       // ended since the HTTP handler resolved the view; never use that stale scope for a snapshot.
-      if (view?.membershipId || view?.recentGrant) {
-        const current = await viewer(actorId, { workingAs: view.membershipId });
-        if (current.status !== "ok") throw new Error("role-ended");
-        return { notModified: false, snapshot: await read(actorId, current) };
-      }
+      if (view?.membershipId || view?.recentGrant)
+        return { notModified: false, snapshot: await scopedRead(actorId, view) };
       const at = clock();
       const { rows } = await pool.query(
         "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
