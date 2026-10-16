@@ -683,9 +683,14 @@ test(
     const database = `wardflow_rls_${randomUUID().replaceAll("-", "")}`;
     const target = new URL(url);
     target.pathname = `/${database}`;
-    // Each pool acts as one role from the start of every connection, as the real logins do.
-    const as = (role) =>
-      new Pool({ connectionString: target.href, max: 2, ...(role && { options: `-c role=${role}` }) });
+    // Each pool acts as one role from the start of every connection, as the real logins do. The
+    // forced drop at the end can reach a connection that is still closing; that notice is expected
+    // and is not left to fail the run (query errors still reject as usual).
+    const as = (role) => {
+      const pool = new Pool({ connectionString: target.href, max: 2, ...(role && { options: `-c role=${role}` }) });
+      pool.on("error", () => {});
+      return pool;
+    };
     const pools = [];
     const sql = (name) => readFile(new URL(name, import.meta.url), "utf8");
     const actor = "11111111-1111-4111-8111-111111111111";
@@ -1243,6 +1248,65 @@ test(
       assert.equal(sent.includes("m1"), freshAll);
       assert.equal(sent.includes("n1"), freshWard);
       assert.ok(freshAll, "the jump raises at least one new red row");
+      // The phone alert setting is per desk: switched to another role, this device reads off.
+      assert.equal(await store.pushStatus(nurseA, device("n1").endpoint, roleA.id), true);
+      assert.equal(await store.pushStatus(nurseA, device("n1").endpoint, null), false);
+
+      // A queued alert is checked against the desk's place and use again when it is sent.
+      const wardOf = (unit) => ({ kind: "ward", unitIds: [unit.id] });
+      const redIn = (unit) => engine.scopedActNowAlerts(after, { role: "ward", scope: wardOf(unit) }, at);
+      const redWard = after.state.units.find((unit) => redIn(unit).length > 0);
+      assert.ok(redWard, "some ward has a red row to queue");
+      const wardItem = redIn(redWard)[0].id;
+      const elsewhere = after.state.units.find(
+        (unit) => unit.id !== redWard.id && !redIn(unit).some((alert) => alert.id === wardItem),
+      );
+      assert.ok(elsewhere);
+      await pool.query("UPDATE ward_flow.memberships SET scope=$2 WHERE id=$1", [
+        roleA.id,
+        JSON.stringify(wardOf(redWard)),
+      ]);
+      const { rows: n1 } = await pool.query("SELECT id FROM ward_flow.push_subscriptions WHERE endpoint=$1", [
+        device("n1").endpoint,
+      ]);
+      const queue = () =>
+        pool.query(
+          "INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) VALUES ($1, $2) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL",
+          [n1[0].id, wardItem],
+        );
+      const pending = async () =>
+        (
+          await pool.query(
+            "SELECT count(*)::int AS count FROM ward_flow.push_deliveries WHERE subscription_id=$1 AND status='pending'",
+            [n1[0].id],
+          )
+        ).rows[0].count;
+      await queue();
+      sent.length = 0;
+      await store.sweepPush();
+      assert.ok(sent.includes("n1"), "in place and in use, it is sent");
+      // Out of the desk's place now: dropped for this device, never sent.
+      await pool.query("UPDATE ward_flow.memberships SET scope=$2 WHERE id=$1", [
+        roleA.id,
+        JSON.stringify(wardOf(elsewhere)),
+      ]);
+      await queue();
+      sent.length = 0;
+      await store.sweepPush();
+      assert.equal(sent.includes("n1"), false);
+      assert.equal(await pending(), 0);
+      // A role not used for the set time is no longer heard from, as the viewer switches it off.
+      const stale = new Date(start - (engine.ACCESS_UNUSED_MINUTES + 1) * 60_000);
+      await pool.query("UPDATE ward_flow.memberships SET scope=$2, last_used_at=$3, granted_at=$3 WHERE id=$1", [
+        roleA.id,
+        JSON.stringify(wardOf(redWard)),
+        stale,
+      ]);
+      await queue();
+      sent.length = 0;
+      await store.sweepPush();
+      assert.equal(sent.includes("n1"), false);
+      assert.equal(await pending(), 1, "left pending, not sent");
 
       // A role not used for the set time stops working by itself; cover is too short to.
       at = new Date(start + (engine.ACCESS_UNUSED_MINUTES + 1) * 60_000);

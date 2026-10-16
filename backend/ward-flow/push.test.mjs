@@ -301,7 +301,7 @@ test("a signed-in coordinator subscribes and unsubscribes only their own device"
   assert.deepEqual(calls, [
     ["subscribe", coordinator, { endpoint: subscription.endpoint, ...browserKeys }, null],
     ["unsubscribe", coordinator, subscription.endpoint],
-    ["status", coordinator, subscription.endpoint],
+    ["status", coordinator, subscription.endpoint, null],
   ]);
 });
 

@@ -544,10 +544,12 @@ function CoverPanel() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => {
-                          endCover(cover.id);
-                          say(null, "Cover ended.");
-                        }}
+                        onClick={() =>
+                          void guard(async () => {
+                            endCover(cover.id);
+                            return null;
+                          }).then((r) => say(r, "Cover ended."))
+                        }
                       >
                         End cover
                       </Button>

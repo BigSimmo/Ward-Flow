@@ -175,13 +175,16 @@ export function createSharedHandler({
       // browser or the sign-in token. Accounts in WARD_COORDINATOR_USER_IDS are the bootstrap
       // statewide coordinators; everyone else needs an active membership.
       const view = await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId), workingAs });
-      // Asking for access is open to a signed-in account with no role, or with more than one
-      // (feature 7). Nothing else is, so it is answered before the role checks below.
+      // Asking for access is for a signed-in account with no role (feature 7), so it is answered
+      // before the role checks below. An account that already holds a role is given another by an
+      // access admin, never by a request it files itself.
       if (path === "/v1/workspace/access/request" && store.requestAccess) {
         if (request.method === "GET") {
           const result = await store.ownRequest(actorId);
           return reply(result.status, result.body);
         }
+        if (view.status !== "none")
+          return reply(403, { error: "This account already has a role. Ask your access admin for another." });
         const { body, refusal } = await json();
         if (refusal) return refusal;
         if (typeof body?.role !== "string" || JSON.stringify(body?.scope ?? null).length > 4096)
@@ -378,7 +381,7 @@ export function createSharedHandler({
         // Ownership is the server's record for this signed-in account, never the browser's own
         // subscription: another coordinator may have turned alerts on with this device earlier.
         if (path === "/v1/workspace/push-status")
-          return reply(200, { owned: await store.pushStatus(actorId, endpoint) });
+          return reply(200, { owned: await store.pushStatus(actorId, endpoint, view.membershipId ?? null) });
         const outcome = await store.unsubscribe(actorId, endpoint);
         return reply(200, { subscribed: false, revoked: outcome === "unsubscribed" });
       }

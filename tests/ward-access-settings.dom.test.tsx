@@ -129,8 +129,11 @@ describe("the Access tab", () => {
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover given");
     expect(readWardAccessSnapshot().covers).toHaveLength(1);
     const list = screen.getByTestId("ward-access-cover-list");
-    fireEvent.click(within(list).getByRole("button", { name: "End cover" }));
+    // Ending it goes through the same confirm, still fresh here, so it asks nothing more.
+    await act(async () => fireEvent.click(within(list).getByRole("button", { name: "End cover" })));
+    expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
     expect(readWardAccessSnapshot().covers).toHaveLength(0);
+    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover ended.");
   });
 
   it("in the shared workspace reads roles from the server and asks for the password when it says step-up", async () => {

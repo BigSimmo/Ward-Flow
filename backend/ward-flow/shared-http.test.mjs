@@ -496,9 +496,15 @@ test("cover, requests and answers check their fields; asking for access needs no
     ["/access/cover", { actorId: other, scope, minutes: "8h" }],
     ["/access/decide", { ...decided, decision: "maybe" }],
     ["/access/decide", { ...decided, requestId: "x" }],
-    ["/access/request", { role: 7, scope }],
   ])
     assert.equal((await handler(request(path, data))).status, 400, path);
+  // An account that already holds a role is not the one that asks.
+  assert.equal((await handler(request("/access/request", { role: "ward", scope }))).status, 403);
+  const choosing = setup(other, "prototype", {
+    viewer: async () => ({ status: "choose", choices: [] }),
+    requestAccess: answer("request"),
+  });
+  assert.equal((await choosing.handler(request("/access/request", { role: "ward", scope }))).status, 403);
 
   // An account with no role may ask for one, and read its own request, but nothing else.
   seen.length = 0;
@@ -507,6 +513,7 @@ test("cover, requests and answers check their fields; asking for access needs no
     requestAccess: answer("request"),
     ownRequest: answer("own"),
   });
+  assert.equal((await nobody.handler(request("/access/request", { role: 7, scope }))).status, 400);
   assert.equal((await nobody.handler(request("/access/request", { role: "ward", scope }))).status, 200);
   assert.deepEqual(await (await nobody.handler(request("/access/request"))).json(), { name: "own" });
   const closed = await nobody.handler(request("/access"));

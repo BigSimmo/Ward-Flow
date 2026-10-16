@@ -19,6 +19,8 @@ const GRANT_SETTLE_MS = 60_000;
 const APPROVED_ROLES = ["coordinator", "admin"];
 /** How often a role's "last used" time is written: once an hour is enough for a 90 day rule. */
 const LAST_USED_EVERY_MS = 3_600_000;
+/** A membership still in use, as the viewer counts it: cover, or used since `param` (a cutoff). */
+const inUse = (param) => `(m.kind = 'cover' OR coalesce(m.last_used_at, m.granted_at) > ${param}::timestamptz)`;
 /** Open requests for access kept at once, so made-up accounts cannot fill the table. */
 const MAX_OPEN_REQUESTS = 200;
 
@@ -72,6 +74,8 @@ export function createWorkspaceStore(
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
     now: engine.worldNow(row.payload, at),
   });
+  /** The cutoff before which a role not used since switches off (synthetic, clinical values). */
+  const unusedBefore = (at) => new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000);
   let known = { version: 0, until: 0 };
   async function schemaVersion() {
     const now = clock().getTime();
@@ -220,8 +224,8 @@ export function createWorkspaceStore(
       // From 9, a device turned on from a desk held by membership hears that desk's own act-now
       // rows only: the fresh items its scoped workspace still shows.
       const { rows: desks } = await client.query(
-        "SELECT DISTINCT m.id, m.role, m.scope FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND (m.approved_at IS NOT NULL OR NOT (m.role = ANY($3::text[]))) LIMIT 500",
-        [workspaceId, at, APPROVED_ROLES],
+        `SELECT DISTINCT m.id, m.role, m.scope FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND (m.approved_at IS NOT NULL OR NOT (m.role = ANY($3::text[]))) AND ${inUse("$4")} LIMIT 500`,
+        [workspaceId, at, APPROVED_ROLES, unusedBefore(at)],
       );
       const freshIds = new Set(fresh.map((alert) => alert.id));
       for (const desk of desks) {
@@ -263,19 +267,24 @@ export function createWorkspaceStore(
           [workspaceId],
         );
         if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return null;
-        return new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
+        const world = worlds[0].payload;
+        return { world, red: new Map(engine.actNowAlerts(world, at).map((alert) => [alert.id, alert])) };
       };
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       // A bootstrap coordinator's device while it is still named; from 9 also a device held by a
-      // role that is still active.
-      const listener =
-        (await schemaVersion()) >= ACCESS_COVER_MIGRATION
-          ? "((s.membership_id IS NULL AND s.actor_id = ANY($2::uuid[])) OR EXISTS (SELECT 1 FROM ward_flow.memberships m WHERE m.id = s.membership_id AND m.revoked_at IS NULL AND m.expires_at > $5))"
-          : "s.actor_id = ANY($2::uuid[])";
+      // role that is still active and still in use, as the viewer counts it.
+      const byRole = (await schemaVersion()) >= ACCESS_COVER_MIGRATION;
+      const listener = byRole
+        ? `((s.membership_id IS NULL AND s.actor_id = ANY($2::uuid[])) OR EXISTS (SELECT 1 FROM ward_flow.memberships m WHERE m.id = s.membership_id AND m.revoked_at IS NULL AND m.expires_at > $5 AND ${inUse("$8")}))`
+        : "s.actor_id = ANY($2::uuid[])";
+      // The desk a device was turned on from, so a retry is checked against that desk's place.
+      const desk = byRole
+        ? ", (SELECT m.role FROM ward_flow.memberships m WHERE m.id = s.membership_id) AS desk_role, (SELECT m.scope FROM ward_flow.memberships m WHERE m.id = s.membership_id) AS desk_scope"
+        : "";
       let after = "0";
       for (;;) {
         const { rows } = await pool.query(
-          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth`,
+          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth${desk}`,
           [
             workspaceId,
             push.coordinatorIds,
@@ -284,18 +293,36 @@ export function createWorkspaceStore(
             at,
             after,
             SUBSCRIPTION_PAGE,
+            ...(byRole ? [unusedBefore(at)] : []),
           ],
         );
         if (!rows.length) break;
         // Read the world after each claim. The claim has seen every commit that queued or cleared
         // its rows, so this read neither misses a new item nor sends one already cleared. A world
         // that cannot be read leaves the claimed rows to come due again for a later delivery.
-        const red = await readRed();
-        if (!red) return;
+        const read = await readRed();
+        if (!read) return;
+        const { world, red } = read;
         const devices = new Map();
         const unseen = { ids: [], items: [] };
+        const outside = { ids: [], items: [] };
+        const scoped = new Map();
         for (const row of rows) {
           const item = red.get(row.item_id);
+          // A desk's device hears only what that desk's place still shows. An item that has moved
+          // outside it since it was queued is dropped for this device, never sent on a retry.
+          if (item && row.desk_role) {
+            const key = `${row.desk_role}:${JSON.stringify(row.desk_scope)}`;
+            if (!scoped.has(key)) {
+              const access = engine.parseAccess(row.desk_role, row.desk_scope);
+              scoped.set(key, new Set(access ? engine.scopedActNowAlerts(world, access, at).map((a) => a.id) : []));
+            }
+            if (!scoped.get(key).has(row.item_id)) {
+              outside.ids.push(row.id);
+              outside.items.push(row.item_id);
+              continue;
+            }
+          }
           // An item no longer red is released unclaimed for the next evaluation to clear,
           // never sent as an empty entry or marked sent with the device's other rows.
           if (!item) {
@@ -312,6 +339,11 @@ export function createWorkspaceStore(
           await pool.query(
             "UPDATE ward_flow.push_deliveries d SET attempts = d.attempts - 1, last_attempt_at = NULL FROM unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
             [unseen.ids, unseen.items, at],
+          );
+        if (outside.ids.length)
+          await pool.query(
+            "DELETE FROM ward_flow.push_deliveries d USING unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
+            [outside.ids, outside.items, at],
           );
         const list = [...devices.values()];
         const results = await Promise.all(list.map((device) => push.send(device, push.payload(device.items))));
@@ -378,7 +410,7 @@ export function createWorkspaceStore(
             ? "SELECT id, role, scope, kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $5) ORDER BY granted_at, id LIMIT 20"
             : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
           covers
-            ? [workspaceId, actorId, at, APPROVED_ROLES, new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000)]
+            ? [workspaceId, actorId, at, APPROVED_ROLES, unusedBefore(at)]
             : [workspaceId, actorId, at, APPROVED_ROLES],
         )
         .catch((error) => {
@@ -666,12 +698,18 @@ export function createWorkspaceStore(
         return rowCount ? "unsubscribed" : "not-found";
       });
     },
-    /** Whether this account has an active phone alert record for this device endpoint. */
-    async pushStatus(actorId, endpoint) {
+    /**
+     * Whether this account has an active phone alert record for this device endpoint. From 9 it
+     * must also be for the desk now worked as (`membershipId`, null for a bootstrap coordinator),
+     * so after a role switch the setting reads off and turning it on moves the device across.
+     */
+    async pushStatus(actorId, endpoint, membershipId = null) {
       if (!push) throw new Error("push-disabled");
+      const byRole = (await schemaVersion()) >= ACCESS_COVER_MIGRATION;
       const { rowCount } = await pool.query(
-        "SELECT 1 FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL",
-        [workspaceId, actorId, endpoint],
+        "SELECT 1 FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL" +
+          (byRole ? " AND membership_id IS NOT DISTINCT FROM $4::uuid" : ""),
+        byRole ? [workspaceId, actorId, endpoint, membershipId] : [workspaceId, actorId, endpoint],
       );
       return rowCount > 0;
     },
