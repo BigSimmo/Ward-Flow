@@ -306,7 +306,8 @@
   .titleLine {
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    /* Keep the switch's expanded touch target clear of the metadata below it. */
+    gap: 8px;
   }
   .titleMeta {
     min-width: 0;
