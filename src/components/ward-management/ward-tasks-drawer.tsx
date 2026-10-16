@@ -49,6 +49,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import type { WardConfiguration } from "./ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { decisionTargetReading } from "./ward-decision-targets";
+import { alertGroupOf } from "./alerts/alerts-model";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "./ward-due-sort";
 import { inboxItemIsActNow } from "./ward-inbox-reducer";
 import {
@@ -100,9 +101,15 @@ type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed
  * 16 Oct 2026), so the drawer uses the Alerts screen's name and groups. Red rows are act now and
  * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
  */
-type DrawerWords = { name: string; plural: string; act: string; wait: string };
+type DrawerWords = { name: string; plural: string; act: string; wait: string; running?: string };
 const TASKS_WORDS: DrawerWords = { name: "Tasks", plural: "tasks", act: "Critical", wait: "Review" };
-const ALERTS_WORDS: DrawerWords = { name: "Alerts", plural: "alerts", act: "Act now", wait: "Waiting" };
+const ALERTS_WORDS: DrawerWords = {
+  name: "Alerts",
+  plural: "alerts",
+  act: "Act now",
+  wait: "Waiting",
+  running: "Running",
+};
 
 function ackFilterLabels(words: DrawerWords): Record<AckFilter, string> {
   const singular = words.plural.slice(0, -1);
@@ -392,7 +399,8 @@ export function WardTasksDrawer({
     );
   }
   const [ackFilter, setAckFilter] = useState<AckFilter>("all");
-  const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
+  type TaskFilter = "all" | "critical" | "review" | "running";
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<DueSortMode>("default");
 
@@ -439,9 +447,12 @@ export function WardTasksDrawer({
 
   const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
+  const alertsQueue = words === ALERTS_WORDS;
   const filteredItems = items.filter((item) => {
-    if (taskFilter === "critical" && item.tone !== "danger") return false;
-    if (taskFilter === "review" && item.tone === "danger") return false;
+    const group = alertsQueue ? alertGroupOf(item) : item.tone === "danger" ? "act" : "wait";
+    if (taskFilter === "critical" && group !== "act") return false;
+    if (taskFilter === "review" && group !== "wait") return false;
+    if (taskFilter === "running" && group !== "running") return false;
     const acknowledged = Boolean(acknowledgements[item.id]?.length);
     if (ackFilter === "unacknowledged" && (item.kind !== "fact" || acknowledged)) return false;
     if (ackFilter === "acknowledged" && (item.kind !== "fact" || !acknowledged)) return false;
@@ -708,7 +719,13 @@ export function WardTasksDrawer({
             ) : null}
             <p className={styles.rowMeta} data-phone-hidden={isPhone || undefined}>
               <StatusGlyph tone={severity} size={9} />
-              <span>{item.tone === "danger" ? words.act : words.wait}</span>
+              <span>
+                {alertsQueue && alertGroupOf(item) === "running"
+                  ? words.running
+                  : item.tone === "danger"
+                    ? words.act
+                    : words.wait}
+              </span>
               <span aria-hidden="true">·</span>
               <strong>{patient?.displayName ?? "Patient not linked"}</strong>
               {patient?.patient ? (
@@ -944,11 +961,22 @@ export function WardTasksDrawer({
           <div className={styles.filterBar}>
             <div className={styles.segmented} role="group" aria-label={`Filter ${words.plural} by status`}>
               {(
-                [
-                  ["all", "All", items.length],
-                  ["critical", words.act, items.filter((item) => item.tone === "danger").length],
-                  ["review", words.wait, items.filter((item) => item.tone !== "danger").length],
-                ] as const
+                (alertsQueue
+                  ? [
+                      ["all", "All", items.length],
+                      ["critical", words.act, items.filter((item) => alertGroupOf(item) === "act").length],
+                      ["review", words.wait, items.filter((item) => alertGroupOf(item) === "wait").length],
+                      [
+                        "running",
+                        words.running ?? "Running",
+                        items.filter((item) => alertGroupOf(item) === "running").length,
+                      ],
+                    ]
+                  : [
+                      ["all", "All", items.length],
+                      ["critical", words.act, items.filter((item) => item.tone === "danger").length],
+                      ["review", words.wait, items.filter((item) => item.tone !== "danger").length],
+                    ]) as [TaskFilter, string, number][]
               ).map(([value, label, count]) => (
                 <button
                   key={value}

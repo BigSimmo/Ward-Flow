@@ -988,7 +988,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // Alerts screen itself moves focus to its own queue. Covers the dock, the menu and search.
       if (id === "tasks" && oneAlertsQueue && (isPhone || onAlertsScreen)) {
         if (onAlertsScreen) focusAlertsQueue(tasksActiveCount);
-        else router.push(WARD_ALERTS_HREF);
+        else {
+          // The referral sheet can persist across routes; close it through the normal lifecycle
+          // before sending the person to Alerts.
+          if (openPanel !== null) {
+            navigationPendingRef.current = true;
+            closePopover(openPanel, false);
+          }
+          router.push(WARD_ALERTS_HREF);
+        }
         return;
       }
       // A replacement open must wait for the pending Back; otherwise its popstate would
@@ -1024,9 +1032,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // the selector itself.
     },
     [
+      closePopover,
       isPhone,
       onAlertsScreen,
       oneAlertsQueue,
+      openPanel,
       router,
       scopedNotices.length,
       setOpenPanel,
@@ -1615,9 +1625,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           className={styles.drawerTrigger}
           data-bar-mode="tasks"
           data-testid="ward-bar-tasks-trigger"
-          aria-haspopup={onAlertsScreen ? undefined : "dialog"}
-          aria-expanded={onAlertsScreen ? undefined : openPanel === "tasks"}
-          aria-controls={onAlertsScreen ? undefined : "ward-bar-tasks-drawer"}
+          aria-haspopup={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "dialog"}
+          aria-expanded={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : openPanel === "tasks"}
+          aria-controls={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "ward-bar-tasks-drawer"}
           aria-current={onAlertsScreen ? "page" : undefined}
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
