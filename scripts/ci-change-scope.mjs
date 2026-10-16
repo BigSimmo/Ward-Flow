@@ -246,7 +246,7 @@ const workflowPatterns = [
   // docs/agents/** are linked from it, so an edit there routes here too rather
   // than matching only /^.*\.md$/ and dropping to the docs-only lane.
   "docs/agents",
-  "docs/codex-review-protocol.md",
+  "docs/archive/codex-review-protocol.md",
   "docs/process-hardening.md",
   /^scripts\/(?:ci-change-scope|verify-pr-local|eval-rag-offline)\.mjs$/,
 ];
@@ -256,7 +256,7 @@ const codexAutofixPatterns = [
   // Codex review guidance lives in AGENTS.md and its linked docs/agents/**
   // pages, so an edit there keeps the codex-autofix scope.
   "docs/agents",
-  "docs/codex-review-protocol.md",
+  "docs/archive/codex-review-protocol.md",
 ];
 
 const uiPatterns = [
