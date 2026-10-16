@@ -452,6 +452,8 @@ export type RepatriationRecord = {
   by: WardFlowRole;
   homeHospital: string;
   receivingWardAgreed: boolean;
+  agreedAt?: Instant;
+  agreedBy?: WardFlowRole;
   mode: RepatriationMode;
   provider: TransportProvider;
   cadNumber: string;
@@ -4467,7 +4469,14 @@ export function reduceClinicalEvent(
       const clearedReason: DischargeDelayClearReason = (event.reason ??
         "resolved_clinically") as DischargeDelayClearReason;
       const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
-      const linkedRelease = next.bedReleases.find((candidate) => candidate.admissionId === admission.id);
+      const linkedRelease = next.bedReleases.find(
+        (candidate) =>
+          candidate.admissionId === admission.id &&
+          candidate.state !== "discharged" &&
+          candidate.blocker !== null &&
+          candidate.unitId === event.actingUnitId &&
+          candidate.blocker === admission.blockReason,
+      );
       if (!linkedRelease) return next;
       return replaceBedRelease(next, linkedRelease.id, {
         ...linkedRelease,
@@ -5272,9 +5281,9 @@ export function reduceClinicalEvent(
       // RB5 (item 16): not for a community arm, which never competes for the placement and stays
       // answerable after a ward or ED says yes.
       const hasClinicalReassessment =
-        event.reassessment === true ||
-        event.clinicalUpdate === true ||
-        event.clearanceUpdated === true ||
+        ("reassessment" in event && event.reassessment !== undefined) ||
+        ("clinicalUpdate" in event && event.clinicalUpdate !== undefined) ||
+        ("clearanceUpdated" in event && event.clearanceUpdated !== undefined) ||
         (typeof event.reassessmentNote === "string" && event.reassessmentNote.trim().length > 0);
       const reassessmentEntry: ClinicalReassessmentEntry | undefined = hasClinicalReassessment
         ? {
@@ -5299,7 +5308,7 @@ export function reduceClinicalEvent(
       // a clinical reassessment or updated clearance is being recorded.
       if (
         addressing.state !== "queued" &&
-        !(hasClinicalReassessment && (addressing.state === "declined" || addressing.state === "accepted"))
+        !(hasClinicalReassessment && addressing.state === "accepted")
       ) {
         return reject(
           state,
@@ -5437,6 +5446,7 @@ export function reduceClinicalEvent(
           acceptedUnitId: unit.id,
           decidedAt: event.now,
           decidedBy: WARD_FLOW_ROLE_LABELS[event.role],
+          declineReason: undefined,
           // Written unconditionally, so `...addressing` cannot carry an old reason onto a clean
           // acceptance.
           acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,

@@ -1507,10 +1507,10 @@ export function reduceRecordedFactEvent(
       if (movement.closure) {
         return reject(state, event, `cannot divert a closed movement (${movement.closure.reason})`);
       }
-      if (!movement.transport && movement.stage !== "moving") {
+      if (!movement.transport) {
         return reject(state, event, `movement ${movement.id} has no transport job to divert`);
       }
-      if (movement.transport?.collectedAt === undefined && movement.stage !== "moving") {
+      if (movement.transport.collectedAt === undefined) {
         return reject(
           state,
           event,
@@ -1533,15 +1533,7 @@ export function reduceRecordedFactEvent(
         return reject(state, event, `RECORD_DIVERSION place must be chosen from TRANSPORT_WHEREABOUTS`);
       }
 
-      const baseTransport = movement.transport ?? {
-        id: `${movement.id}-transport`,
-        provider: "Ambulance service" as const,
-        escortRequired: false,
-        cadNumber: "SYN-DIVERT",
-        transportLegalStatus: movement.legalStatus === "Voluntary" ? ("voluntary" as const) : ("involuntary" as const),
-        estimatedAt: event.now,
-        collectedAt: event.now,
-      };
+      const baseTransport = movement.transport;
       const diverted: Movement = {
         ...movement,
         transport: {
@@ -1985,10 +1977,13 @@ export function reduceRecordedFactEvent(
       decision.reasonCode = "none";
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
-        at: event.now,
-        by: event.role,
-        homeHospital: event.homeHospital,
+        at: existingRecord?.at ?? event.now,
+        by: existingRecord?.by ?? event.role,
+        homeHospital: existingRecord?.homeHospital ?? event.homeHospital,
         receivingWardAgreed: event.receivingWardAgreed,
+        ...(event.receivingWardAgreed && existingRecord
+          ? { agreedAt: event.now, agreedBy: event.role }
+          : {}),
         mode: event.mode,
         provider: event.provider,
         cadNumber: event.cadNumber.trim(),
