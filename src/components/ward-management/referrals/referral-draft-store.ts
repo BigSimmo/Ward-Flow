@@ -42,8 +42,9 @@ export function readKeptReferralDraftAt(): number | null {
   return kept === null ? null : keptAtMs;
 }
 
-export function discardReferralDraft(ownerVersion = sessionVersion): boolean {
-  if (ownerVersion !== sessionVersion) return false;
+/** A null owner never discards: a sheet that did not write the kept draft must not clear it. */
+export function discardReferralDraft(ownerVersion: number | null = sessionVersion): boolean {
+  if (ownerVersion === null || ownerVersion !== sessionVersion) return false;
   kept = null;
   keptAtMs = null;
   return true;

@@ -229,6 +229,7 @@ export function useWardReferralDrawerState({
       : null;
   // Another person's kept draft stays as it was: this sheet does not autosave over it.
   const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
+  const draftDiscardOwner = keepsAnotherPersonsDraft ? null : draftOwnerVersion;
   // Option B (Josh, 13 Oct 2026): opened from a place that names the person (ED, a community team,
   // Home), the record answers step 1 where it can, so the sheet opens on Referral with step 1 done.
   const fromEntryPoint = kept === null && prefillKey !== null;
@@ -520,7 +521,7 @@ export function useWardReferralDrawerState({
   }, []);
   function discardAndClose() {
     stopDraftAutosave({ resumeOnContentEdit: true });
-    discardReferralDraft(draftOwnerVersion);
+    discardReferralDraft(draftDiscardOwner);
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
@@ -530,11 +531,7 @@ export function useWardReferralDrawerState({
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    announceToWardShell(
-      kept
-        ? "Referral draft kept until this tab reloads."
-        : "Referral draft could not be kept because the session changed.",
-    );
+    announceToWardShell(kept ? "Referral draft kept until this tab reloads." : "Draft not kept: signed in again.");
   }
 
   const handleDrawerClose = useCallback(() => {
@@ -988,18 +985,17 @@ export function useWardReferralDrawerState({
     const created = referrals.find((referral) => referral.intake === submitted.intake);
     if (created) {
       stopDraftAutosave();
-      discardReferralDraft(draftOwnerVersion);
+      discardReferralDraft(draftDiscardOwner);
       rememberReferrerContact(submitted.intake.referrer, draftOwnerVersion);
       setSentReferralId(created.id);
       setSentAt(now);
       setSendPending(false);
-
       announceToWardShell("Referral sent to the selected locations.");
     } else if (rejections.length > submitted.rejectionCount) {
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);
     }
-  }, [sendPending, referrals, rejections, patientRecord?.id, now, stopDraftAutosave, draftOwnerVersion]);
+  }, [sendPending, referrals, rejections, now, stopDraftAutosave, draftDiscardOwner, draftOwnerVersion]);
 
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords

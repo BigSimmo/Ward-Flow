@@ -173,6 +173,14 @@ describe("referral memory belongs to the signed-in person", () => {
     expect(Boolean(readKeptReferralDraft())).toBe(false);
   });
 
+  it("never discards a kept draft for a sheet that did not write it", () => {
+    keepReferralDraft({ synthetic: "kept" });
+    expect(discardReferralDraft(null)).toBe(false);
+    expect(readKeptReferralDraft()).toEqual({ synthetic: "kept" });
+    expect(discardReferralDraft()).toBe(true);
+    expect(readKeptReferralDraft()).toBeNull();
+  });
+
   it("keeps a default Send stop permanent even after later content changes", () => {
     vi.useFakeTimers();
     const { result, rerender, unmount } = renderHook(

@@ -314,6 +314,36 @@ describe("shared view response ordering", () => {
     client.dispose();
   });
 
+  it("keeps the opened view when a pre-grant poll's sign-in check fails after break glass", async () => {
+    let view: SharedView | undefined;
+    let failSignIn!: () => void;
+    let tokenCalls = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => {
+        if (++tokenCalls === 2)
+          await new Promise<never>((_, reject) => {
+            failSignIn = () => reject(new WardAuthError("session", "Sign in again."));
+          });
+        return "test";
+      },
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) =>
+        Response.json({ snapshot: String(url).endsWith("/break-glass") ? snapshot(2) : snapshot(1) }),
+    });
+    await client.refresh();
+    const stalePoll = client.refresh().catch(() => undefined);
+    await vi.waitFor(() => expect(failSignIn).toBeDefined());
+    await client.breakGlass("synthetic-patient", "handover");
+    failSignIn();
+    await stalePoll;
+    expect(view?.status).not.toBe("not-authorised");
+    expect(view?.snapshot?.revision).toBe(2);
+    client.dispose();
+  });
+
   it.each([200, 403])("ignores a pre-grant poll answered after break glass (HTTP %i)", async (status) => {
     let view: SharedView | undefined;
     let finishPoll!: (response: Response) => void;

@@ -135,8 +135,6 @@ function handleGuardedPopState(event: PopStateEvent): void {
   }
   const targetIndex = readHistoryIndex(event.state);
   const targetNavigationIndex = navigationIndex();
-  const sourceHistoryIndex = readHistoryIndex(sourceEntry?.state);
-  const sourceNavigationIndex = lastNavigationIndex;
   if (event.state?.__wfHistoryUncertain === true) historyIndicesTrusted = false;
   const targetUrl = new URL(window.location.href);
   const previousUrl = sourceEntry ? new URL(sourceEntry.url) : null;
@@ -155,8 +153,8 @@ function handleGuardedPopState(event: PopStateEvent): void {
       replaceHistoryEntry?.(stateAt(event.state ?? sourceEntry?.state, lastHistoryIndex), "", targetUrl.href);
     } else lastHistoryIndex = targetIndex;
     lastNavigationIndex = targetNavigationIndex;
-    // Keep sourceEntry pointing at the entry the browser left. The dirty-guard check below must
-    // be able to compensate a cancelled fragment traversal.
+    rememberEntry();
+    return;
   }
   if (!hasAnyDirtyGuard(approved)) {
     lastHistoryIndex = targetIndex ?? lastHistoryIndex;
@@ -175,20 +173,19 @@ function handleGuardedPopState(event: PopStateEvent): void {
   // Navigation API indices also cover old entries made before this code was loaded. Otherwise
   // use our position on Next's history entries; both are numeric metadata, never draft text.
   const reverseDelta =
-    sourceNavigationIndex !== null && targetNavigationIndex !== null
-      ? sourceNavigationIndex - targetNavigationIndex
-      : historyIndicesTrusted && sourceHistoryIndex !== null && targetIndex !== null
-        ? sourceHistoryIndex - targetIndex
+    lastNavigationIndex !== null && targetNavigationIndex !== null
+      ? lastNavigationIndex - targetNavigationIndex
+      : historyIndicesTrusted && lastHistoryIndex !== null && targetIndex !== null
+        ? lastHistoryIndex - targetIndex
         : null;
   if (reverseDelta !== null && reverseDelta !== 0) {
     suppressNextPopState = true;
     window.history.go(reverseDelta);
   } else {
-    // An unmarked legacy destination cannot be replaced: that would erase the history stop. This
-    // path is reached for the older entry case, so move forward to restore the source cursor and
-    // let the compensating popstate be consumed above.
-    suppressNextPopState = true;
-    window.history.go(1);
+    // There is no safe way to infer a legacy cursor. Keep the form and restore the source URL
+    // and opaque router state by replacing this target entry. The exact history slot is lost.
+    restoreSourceEntry(true);
+    window.dispatchEvent(new Event(WARD_HISTORY_TRAVERSAL_CANCELLED));
   }
   event.stopImmediatePropagation();
 }

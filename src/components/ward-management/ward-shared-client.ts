@@ -147,7 +147,12 @@ export class SharedWorkspaceClient {
     try {
       token = await this.options.token();
     } catch (error) {
-      if (generation === this.viewGeneration && error instanceof WardAuthError && error.kind === "session") {
+      if (
+        generation === this.viewGeneration &&
+        (!workspaceRead || grantGeneration === this.grantGeneration) &&
+        error instanceof WardAuthError &&
+        error.kind === "session"
+      ) {
         this.pending = null;
         this.queue = [];
         this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error: error.message });
