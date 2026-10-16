@@ -244,8 +244,8 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
     // Every mounted guard registers itself, so a clean guard (the referral drawer over a half-filled page)
     // cannot replace a dirty one, and removing one leaves the others in place.
     const entry: NavigationGuardEntry = {
-      isDirty,
-      message: confirmMessage ?? DEFAULT_LEAVE_MESSAGE,
+      isDirty: false,
+      message: DEFAULT_LEAVE_MESSAGE,
       approvedForHistory: false,
     };
     navigationGuardRef.current = entry;
@@ -256,6 +256,16 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       if (navigationGuardRef.current === entry) navigationGuardRef.current = null;
       syncNavigationConfirm();
     };
+  }, []);
+
+  useEffect(() => {
+    const entry = navigationGuardRef.current;
+    if (!entry) return;
+    entry.isDirty = isDirty;
+    entry.message = confirmMessage ?? DEFAULT_LEAVE_MESSAGE;
+    entry.approvedForHistory = false;
+    // Keep the entry registered while an edit invalidates its approval. A temporary empty set
+    // would cancel suppression of an already scheduled compensating history traversal.
   }, [isDirty, value, confirmMessage]);
 
   useEffect(() => {
