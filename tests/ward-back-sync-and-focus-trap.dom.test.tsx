@@ -56,7 +56,8 @@ describe("Issue 3: Movement Drawer Browser Back Sync", () => {
 
     const drawer = openDrawer("WF-001");
     expect(drawer).toBeInTheDocument();
-    expect(pushSpy).toHaveBeenCalledWith({ wardMovementDetail: "WF-001" }, "");
+    // The router also owns numeric position metadata on this entry.
+    expect(pushSpy).toHaveBeenCalledWith(expect.objectContaining({ wardMovementDetail: "WF-001" }), "");
 
     // Fire popstate to simulate browser back
     fireEvent(window, new PopStateEvent("popstate", { state: null }));
