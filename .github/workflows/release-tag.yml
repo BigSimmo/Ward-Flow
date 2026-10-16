@@ -1,8 +1,9 @@
 name: Ward Flow release tag
 
-# Railway deploys a main commit once Ward Flow CI succeeds on it. This tags that same commit
-# `deploy-YYYY-MM-DD-<short sha>`, so every deploy has a named point to compare against or roll back
-# to. It runs only after a successful CI run for a push to main, and is the only workflow that may
+# Tags each main commit that passed Ward Flow CI as `release-YYYY-MM-DD-<short sha>`, so every
+# commit Railway may deploy has a named point to compare against or roll back to. A tag means CI
+# passed, not that Railway finished deploying it: Railway's own deploy history is the record of
+# that. It runs only after a successful CI run for a push to main, and is the only workflow that may
 # write: it creates one tag through the API, checks out nothing and runs no repository code.
 on:
   workflow_run:
@@ -15,14 +16,14 @@ permissions:
 
 jobs:
   tag:
-    name: Tag the deployed commit
+    name: Tag the CI-passed main commit
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: write
     steps:
-      - name: Create the deploy tag
+      - name: Create the release tag
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -30,7 +31,7 @@ jobs:
           RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
         run: |
           case "$HEAD_SHA" in *[!0-9a-f]* | "") echo "Unexpected commit id" >&2; exit 1 ;; esac
-          tag="deploy-${RUN_STARTED_AT:0:10}-${HEAD_SHA:0:7}"
+          tag="release-${RUN_STARTED_AT:0:10}-${HEAD_SHA:0:7}"
           if gh api "repos/$REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
             echo "$tag already exists"
             exit 0
