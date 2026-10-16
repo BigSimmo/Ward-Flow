@@ -597,21 +597,31 @@ export const SMALL_NUMBER_NOT_SHOWN = "not shown";
 
 /**
  * The parts of a breakdown whose total is on screen (role access plan, high finding 8). Each part
- * under the line words as "fewer than N". When exactly one part is worded, the smallest other part
- * above zero reads "not shown" too, or the hidden one could be worked back by subtraction. A worded
- * part is a string and an exact one stays a number.
+ * under the line words as "fewer than N". When any part is worded, one exact part reads "not shown"
+ * too (the smallest above zero, else a nought), so the hidden parts' sum is never known: a single
+ * hidden part would be worked back by subtraction, and two whose sum allows one split (1 and 1, or
+ * 4 and 4) would be too (review on PR #354). Not needed when the parts' total is itself under the
+ * line, since that total is worded too. A worded part is a string and an exact one a number.
  */
 export function smallNumberParts(counts: readonly number[]): (number | string)[] {
   const parts: (number | string)[] = counts.map((count) => {
     const text = smallNumberText(count);
     return text === String(count) ? count : text;
   });
-  if (parts.filter((part) => typeof part === "string").length !== 1) return parts;
+  if (!parts.some((part) => typeof part === "string")) return parts;
+  // A total under the line is worded itself, so the hidden parts' sum is not known.
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  if (smallNumberText(total) !== String(total)) return parts;
   let pick = -1;
   counts.forEach((count, index) => {
-    if (typeof parts[index] === "number" && count > 0 && (pick < 0 || count < counts[pick]!)) pick = index;
+    if (typeof parts[index] !== "number") return;
+    const better = pick < 0 || (count > 0 && (counts[pick] === 0 || count < counts[pick]!));
+    if (better) pick = index;
   });
   if (pick >= 0) parts[pick] = SMALL_NUMBER_NOT_SHOWN;
+  // Every part hidden beside a shown total (4 and 4 of 8): "fewer than 5" would pin them, so none
+  // is said to be under the line.
+  else return parts.map(() => SMALL_NUMBER_NOT_SHOWN);
   return parts;
 }
 

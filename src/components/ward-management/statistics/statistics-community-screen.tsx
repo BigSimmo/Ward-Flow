@@ -153,19 +153,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
   const inBedCount = measuredValue(figures.admitted);
   const withDateCount = measuredValue(figures.expected);
-  // The two parts add up to the bed count, so when one part is worded as fewer than five the other
-  // is not shown either, or the hidden one could be worked back from the total (review on PR #345).
+  // The two parts add up to the bed count, so they are hidden together, or a hidden one could be
+  // worked back from the total (reviews on PR #345 and #354).
   const phoneParts = (() => {
     if (inBedCount === null || withDateCount === null) {
       return { withDate: figureText(figures.expected), noDate: figureText(figures.expected) };
     }
-    const withDate = small(withDateCount);
-    const noDate = small(inBedCount - withDateCount);
-    const partHidden = typeof withDate === "string" || typeof noDate === "string";
-    return {
-      withDate: partHidden && typeof withDate !== "string" ? "not shown" : withDate,
-      noDate: partHidden && typeof noDate !== "string" ? "not shown" : noDate,
-    };
+    const [withDate, noDate] = parts([withDateCount, inBedCount - withDateCount]);
+    return { withDate: withDate!, noDate: noDate! };
   })();
 
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
