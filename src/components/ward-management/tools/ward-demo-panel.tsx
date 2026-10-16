@@ -153,7 +153,7 @@ export function WardDemoPanel() {
       >
         Reset demo
       </button>
-      <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} />
+      <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
       <p className={styles.note}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
       <p className={styles.liveNote} role="status">
         {message}

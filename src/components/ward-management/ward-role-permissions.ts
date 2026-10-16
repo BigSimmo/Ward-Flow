@@ -44,9 +44,8 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
   // needs no pair here.
   // Ward Raise referral needs no pair: `EVENT_ROLE.RECEIVE_REFERRAL` includes `ward` (role access
   // plan, 15 Oct 2026) and the reducer takes it from a ward only as source `psychiatric_ward`.
-  // The New referral sheet still sends as the source chosen in its form (ED or community), so a
-  // ward desk keeps this pair until Josh rules on locking the sheet to the sending ward.
-  { routeRole: "ward", event: "RECEIVE_REFERRAL", reason: REFERRAL_SHEET },
+  // The New referral sheet on a ward page sends in that ward's own name too (Josh, 15 Oct 2026),
+  // so it needs no pair either.
   // New referral sheet (`ward-referral-drawer.tsx`), on routes whose role `EVENT_ROLE` omits.
   // Role access plan decision 6 (Josh, 15 Oct 2026): the transport officer does not raise referrals
   // or add patients, so the officer's two pairs are gone and its sheet shows "… only".

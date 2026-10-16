@@ -71,6 +71,15 @@ describe("demo controls when the shared workspace switches them off", () => {
     }
   });
 
+  it("the Tools demo panel says why once, and its demo reset points at that one note", () => {
+    act(() => setWardFeatureFlagOnDevice("demo-reset", true));
+    renderOff(<WardDemoPanel />);
+    const note = screen.getByTestId("ward-tools-demo-off");
+    expect(screen.getAllByText(DEMO_CONTROLS_OFF)).toHaveLength(1);
+    expect(screen.queryByTestId("ward-demo-reset-off")).toBeNull();
+    expect(screen.getByTestId("ward-demo-reset-winter-surge").getAttribute("aria-describedby")).toContain(note.id);
+  });
+
   it("the one tap demo reset disables its choices and never opens the confirm", () => {
     act(() => setWardFeatureFlagOnDevice("demo-reset", true));
     renderOff(<WardDemoReset />);

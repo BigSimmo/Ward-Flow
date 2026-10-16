@@ -49,6 +49,20 @@ export function wardChromeRole(pathname: string): WardChromeRole {
 }
 
 /**
+ * The ward a `/ward/<unitId>` or `/board/<unitId>` desk route belongs to, if any. Anchored to the
+ * app root, so a page about a ward (`/statistics/ward/<unitId>`) never names a sending ward.
+ */
+export function wardRouteUnitId(pathname: string): string | undefined {
+  const match = /^(?:\/mockups\/ward-flow)?\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
+  if (!match?.[1]) return undefined;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+/**
  * **THE PERSON THE SHELL IS SIGNED IN AS — device audit, 11 October 2026 (Recommended, item 6).**
  *
  * The rail's person card names one person on every page ("Dr S. Chen · Bed coordinator") and the

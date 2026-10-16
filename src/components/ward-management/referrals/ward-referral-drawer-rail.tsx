@@ -6,7 +6,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-referral-drawer.module.css";
 import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
-import { Frac, StatusGlyph } from "@/components/wf";
+import { DisabledReason, Frac, StatusGlyph } from "@/components/wf";
 import { SECTION_IDS, sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -396,7 +396,12 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                       : `Next, ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
               </button>
             )}
-            {confirmationOpen ? sendGate.note : null}
+            {confirmationOpen && !sendGate.allowed
+              ? (sendGate.note ??
+                (sendGate.buttonProps["aria-describedby"] ? (
+                  <DisabledReason id={sendGate.buttonProps["aria-describedby"]}>{sendGate.reason}</DisabledReason>
+                ) : null))
+              : null}
           </>
         )}
       </div>

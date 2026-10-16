@@ -56,6 +56,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
     setContact,
     catchmentTeam,
     sourceKind,
+    sendingWard,
     destType,
     legalStatus,
     currentPatient,
@@ -259,7 +260,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 </div>
                 <div>
                   <dt>Source</dt>
-                  <dd>{sourceKind === "ed" ? "Emergency" : "Community"}</dd>
+                  <dd>{sendingWard ? sendingWard.name : sourceKind === "ed" ? "Emergency" : "Community"}</dd>
                 </div>
                 <div>
                   <dt>Refer to</dt>
