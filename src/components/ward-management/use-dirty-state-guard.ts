@@ -21,6 +21,25 @@ const DEFAULT_LEAVE_MESSAGE = "You have unsaved changes. Are you sure you want t
 
 type NavigationGuardEntry = { isDirty: boolean; message: string };
 const navigationGuards = new Set<NavigationGuardEntry>();
+let suppressNextPopState = false;
+let lastHistoryIndex: number | null = null;
+
+function readHistoryIndex(state: unknown): number | null {
+  if (!state || typeof state !== "object") return null;
+  const record = state as Record<string, unknown>;
+  for (const key of ["__wfHistoryIndex", "idx", "index", "page"]) {
+    const val = record[key];
+    if (typeof val === "number" && Number.isFinite(val)) return val;
+  }
+  return null;
+}
+
+function hasAnyDirtyGuard(): boolean {
+  for (const entry of navigationGuards) {
+    if (entry.isDirty) return true;
+  }
+  return false;
+}
 
 /** One confirmation for the shell's task navigation: it asks once if ANY mounted guard is dirty. */
 function confirmNavigationAcrossGuards(): boolean {
@@ -30,11 +49,46 @@ function confirmNavigationAcrossGuards(): boolean {
   return true;
 }
 
+function handleGuardedPopState(event: PopStateEvent): void {
+  if (suppressNextPopState) {
+    suppressNextPopState = false;
+    return;
+  }
+  const targetIndex = readHistoryIndex(event.state);
+  if (!hasAnyDirtyGuard()) {
+    lastHistoryIndex = targetIndex ?? lastHistoryIndex;
+    return;
+  }
+  if (confirmNavigationAcrossGuards()) {
+    lastHistoryIndex = targetIndex ?? lastHistoryIndex;
+    return;
+  }
+  // Undo the browser traversal in the opposite direction (Back -> go(1), Forward -> go(-1))
+  // and ignore the compensating popstate event fired by `history.go(...)`.
+  const reverseDelta = lastHistoryIndex !== null && targetIndex !== null && targetIndex > lastHistoryIndex ? -1 : 1;
+  suppressNextPopState = true;
+  window.history.go(reverseDelta);
+  event.stopImmediatePropagation();
+}
+
 function syncNavigationConfirm(): void {
   if (typeof window === "undefined") return;
   const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
-  if (navigationGuards.size > 0) globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
-  else delete globalWindow.__wardFlowConfirmNavigation;
+  if (navigationGuards.size > 0) {
+    globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
+    if (lastHistoryIndex === null) {
+      lastHistoryIndex = readHistoryIndex(window.history.state);
+    }
+    if (!hasAnyDirtyGuard()) {
+      suppressNextPopState = false;
+    }
+    if (navigationGuards.size === 1) window.addEventListener("popstate", handleGuardedPopState);
+  } else {
+    delete globalWindow.__wardFlowConfirmNavigation;
+    suppressNextPopState = false;
+    lastHistoryIndex = null;
+    window.removeEventListener("popstate", handleGuardedPopState);
+  }
 }
 
 /** Removes legacy typed drafts without reading their contents. */
@@ -142,7 +196,9 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
     };
 
     document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+    };
   }, [isDirty, confirmMessage, skipAnchor]);
 
   return { clearDraft };

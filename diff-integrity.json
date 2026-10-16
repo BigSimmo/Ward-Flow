@@ -649,13 +649,6 @@
       "approvedOn": "2026-10-15"
     },
     {
-      "path": "tests/ui-ward-chrome-header.spec.ts",
-      "before": 12,
-      "after": 0,
-      "reason": "Retired describe.skip suite deleted on 16 Oct 2026 together with the unreferenced ward-chrome-header.tsx and ward-chrome-header.module.css components. The live WardCommandBar replaced WardChromeHeader across all screens and is covered by its own active test suites.",
-      "approvedOn": "2026-10-16"
-    },
-    {
       "path": "tests/ward-chrome-header-actions.dom.test.tsx",
       "before": 9,
       "after": 0,

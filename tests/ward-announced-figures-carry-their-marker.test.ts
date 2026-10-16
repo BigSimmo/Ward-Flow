@@ -189,7 +189,7 @@ const DATA_NOUNS = [
   "movements",
   "task",
   "tasks",
-  // One Alerts queue (16 Oct 2026): the Tasks rows are called alerts when that flag is on.
+  // One Alerts queue (D-61): the bed coordinator's Tasks rows are called alerts.
   "alert",
   "alerts",
   "data",

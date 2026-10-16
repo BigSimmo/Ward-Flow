@@ -141,18 +141,6 @@ import { ReferralBoard } from "@/components/ward-management/referrals/referral-b
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
-// This file runs without a browser window, so the device flag store cannot be written. It pins the
-// Tasks words: the One Alerts queue flag (on by default in development) has its own words, tested
-// in tests/ward-alerts-one-queue.dom.test.tsx, so that one flag reads off here and the rest are real.
-vi.mock("@/components/ward-management/shell/ward-feature-flag-store", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@/components/ward-management/shell/ward-feature-flag-store")>();
-  return {
-    ...original,
-    useWardFeatureFlag: (name: Parameters<typeof original.useWardFeatureFlag>[0]) =>
-      name === "alerts-one-queue" ? false : original.useWardFeatureFlag(name),
-  };
-});
-
 // jsdom is already the installed test environment; use only its document API here.
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
   JSDOM: new (markup: string) => { window: { document: Document } };
@@ -496,6 +484,10 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
         acknowledgements: current.inboxAcknowledgements,
         completions: current.inboxCompletions,
         role: "coordinator",
+        // The facade states the Tasks words. A desk that may open the Alerts screen relabels the
+        // drawer as Alerts (#362), which tests/ward-alerts-one-queue.dom.test.tsx covers, so this
+        // reads the Tasks drawer that every other desk keeps.
+        alertsQueueForDesk: false,
         now: current.now,
         dispatch: current.dispatch,
         onClose: () => {},

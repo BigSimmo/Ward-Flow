@@ -810,13 +810,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (e.defaultPrevented) return;
       if (e.key === "Escape") {
         if (notificationCenterOpen) {
+          e.preventDefault();
+          e.stopPropagation();
           setNotificationCenterOpen(false);
           setTimeout(() => {
             notificationTriggerRef.current?.focus({ preventScroll: true });
           }, 0);
           return;
         }
-        if (hasOpenSheet()) return;
+        if (e.defaultPrevented || hasOpenSheet()) return;
         if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (dailySheetOpen) {
@@ -2663,6 +2665,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     onDismissBuzz={handleDismissBuzz}
                     onClose={() => {
                       setNotificationCenterOpen(false);
+                      setTimeout(() => {
+                        notificationTriggerRef.current?.focus({ preventScroll: true });
+                      }, 0);
                     }}
                   />
                 </div>

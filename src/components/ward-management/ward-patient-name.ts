@@ -8,7 +8,7 @@
 // Not for ward-facing (`ward/`) screens: they must not read referral data (the referral-screen
 // boundary guard), so they use the provider's `resolvePatientIdentity` instead. Neither applies any
 // ward scoping to identity; whether a screen may show a name at all is that screen's decision.
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -24,7 +24,8 @@ type Subject = Parameters<typeof resolveSubjectPatient>[0];
  *  audit or reminder entry that holds only the id); the resolver looks that movement up itself. */
 export function usePatientOf(): (subject: Subject | { movementId: string }) => ResolvedPatientInfo {
   const state = useProviderLookup();
-  return (subject) => resolveSubjectPatient(subject as Subject, state);
+  // Stable while the provider's records are, so a memo that lists the resolver does not recompute on every render.
+  return useCallback((subject) => resolveSubjectPatient(subject as Subject, state), [state]);
 }
 
 /** D-39: engine prose (a refusal, a notice, an exception line) with each quoted WF journey number

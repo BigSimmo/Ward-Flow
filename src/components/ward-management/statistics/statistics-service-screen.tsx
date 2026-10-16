@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BedDouble, ChevronDown, Clock, LayoutList, MapPin, Network, Plane } from "lucide-react";
 
@@ -78,6 +78,10 @@ function shortSiteName(name: string): string {
   return name.replace(/\s+(Hospital|Health Campus)$/u, "");
 }
 
+function referralOriginService(referral: Referral): HealthService | undefined {
+  return siteByCode(referral.originSiteCode)?.service;
+}
+
 /**
  * ONE HEALTH SERVICE IN DETAIL.
  *
@@ -112,7 +116,103 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
 
-  const service = HEALTH_SERVICES.find((candidate) => candidate === serviceId);
+  const service = useMemo(() => HEALTH_SERVICES.find((candidate) => candidate === serviceId), [serviceId]);
+
+  const serviceSites = useMemo(
+    () => (service ? siteDirectory.filter((site) => site.service === service) : []),
+    [service],
+  );
+  const serviceSiteCodes = useMemo(() => new Set(serviceSites.map((site) => site.code)), [serviceSites]);
+  const serviceUnits = useMemo(
+    () => (service ? liveUnits.filter((unit) => serviceSiteCodes.has(unit.siteCode)) : []),
+    [service, liveUnits, serviceSiteCodes],
+  );
+  const serviceEds = useMemo(
+    () => (service ? allEmergencyDepartments().filter((department) => serviceSiteCodes.has(department.siteCode)) : []),
+    [service, serviceSiteCodes],
+  );
+
+  // Ready is `unitCapacity`'s `available`, `min(allocatable, empty)`, per the owner's ruling.
+  const readyRows = useMemo(
+    () => serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) })),
+    [serviceUnits, bedReleases],
+  );
+  const totalReady = useMemo(() => readyRows.reduce((sum, row) => sum + row.capacity.available, 0), [readyRows]);
+  const totalBedBase = useMemo(() => serviceUnits.reduce((sum, unit) => sum + unit.beds, 0), [serviceUnits]);
+  // L1: the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`), as every page prints it.
+  const serviceOccupancy = useMemo(
+    () => occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds),
+    [serviceUnits, admissions, bedReleases, leaveBeds],
+  );
+  const occupancyPct = useMemo(() => occupancyPercent(serviceOccupancy), [serviceOccupancy]);
+  const zeroReadyWards = useMemo(() => readyRows.filter((row) => row.capacity.available === 0).length, [readyRows]);
+  // Owner's ruling of 2026-09-07: only beds the patient has already left count as being made ready.
+  const pendingPreparation = useMemo(
+    () => serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
+    [serviceUnits, bedReleases],
+  );
+  // Pullable is smaller than Ready and clamped per ward, never subtracted from the service total.
+  const totalOpenNow = useMemo(
+    () => serviceUnits.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0),
+    [serviceUnits, bedReleases],
+  );
+
+  // Where this service's OWN referral demand ended up, by the referral's origin site.
+  const referralDemand = useMemo(() => {
+    const ownReferrals = service ? referrals.filter((referral) => referralOriginService(referral) === service) : [];
+    let placedWithinService = 0;
+    let placedElsewhereCount = 0;
+    let notYetAcceptedAtWard = 0;
+    let placedAtUnresolvedWard = 0;
+    const placedElsewhereByService = new Map<HealthService, number>(
+      wardServiceOrder.filter((candidate) => candidate !== service).map((candidate) => [candidate, 0]),
+    );
+    for (const referral of ownReferrals) {
+      const wardAcceptance = referral.destinations.find(
+        (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.acceptedUnitId !== undefined,
+      );
+      if (!wardAcceptance || wardAcceptance.acceptedUnitId === undefined) {
+        notYetAcceptedAtWard += 1;
+        continue;
+      }
+      const acceptedUnit = liveUnits.find((unit) => unit.id === wardAcceptance.acceptedUnitId);
+      const acceptedService = acceptedUnit ? siteByCode(acceptedUnit.siteCode)?.service : undefined;
+      if (acceptedService === service) placedWithinService += 1;
+      else if (acceptedService !== undefined) {
+        placedElsewhereCount += 1;
+        placedElsewhereByService.set(acceptedService, (placedElsewhereByService.get(acceptedService) ?? 0) + 1);
+      } else placedAtUnresolvedWard += 1;
+    }
+    return {
+      ownReferrals,
+      placedWithinService,
+      placedElsewhereCount,
+      notYetAcceptedAtWard,
+      placedAtUnresolvedWard,
+      placedElsewhereByService,
+    };
+  }, [service, referrals, liveUnits]);
+
+  // Out of area, scoped to this service's own beds.
+  const outOfAreaSummary = useMemo(() => {
+    const { entries: outOfAreaEntries, notBanded: outOfAreaNotBanded } = outOfAreaLedger(admissions, serviceUnits, now);
+    const bandCounts = new Map<(typeof OUT_OF_AREA_BANDS)[number], number>(OUT_OF_AREA_BANDS.map((band) => [band, 0]));
+    for (const entry of outOfAreaEntries) bandCounts.set(entry.band, (bandCounts.get(entry.band) ?? 0) + 1);
+    return { outOfAreaEntries, outOfAreaNotBanded, bandCounts };
+  }, [admissions, serviceUnits, now]);
+
+  // Everyone waiting in this service's emergency departments, read through the ED screens' own helper.
+  const edSwarmRows = useMemo(
+    () =>
+      serviceEds.map((department) => ({
+        id: department.id,
+        name: shortDepartmentName(department.name),
+        href: edStatisticsHref(department.id),
+        entries: edWaitFigures(movements, department.id, now).waitingMovements,
+      })),
+    [serviceEds, movements, now],
+  );
+  const edWaiting = useMemo(() => edSwarmRows.reduce((sum, row) => sum + row.entries.length, 0), [edSwarmRows]);
 
   if (!service) {
     return (
@@ -146,68 +246,17 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     );
   }
 
-  const serviceSites = siteDirectory.filter((site) => site.service === service);
-  const serviceSiteCodes = new Set(serviceSites.map((site) => site.code));
-  const serviceUnits = liveUnits.filter((unit) => serviceSiteCodes.has(unit.siteCode));
-  const serviceEds = allEmergencyDepartments().filter((department) => serviceSiteCodes.has(department.siteCode));
-
-  // Ready is `unitCapacity`'s `available`, `min(allocatable, empty)`, per the owner's ruling.
-  const readyRows = serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) }));
-  const totalReady = readyRows.reduce((sum, row) => sum + row.capacity.available, 0);
-  const totalBedBase = serviceUnits.reduce((sum, unit) => sum + unit.beds, 0);
-  // L1: the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`), as every page prints it.
-  const serviceOccupancy = occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds);
-  const occupancyPct = occupancyPercent(serviceOccupancy);
-  const zeroReadyWards = readyRows.filter((row) => row.capacity.available === 0).length;
-  // Owner's ruling of 2026-09-07: only beds the patient has already left count as being made ready.
-  const pendingPreparation = serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
-  // Pullable is smaller than Ready and clamped per ward, never subtracted from the service total.
-  const totalOpenNow = serviceUnits.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0);
-
-  // Where this service's OWN referral demand ended up, by the referral's origin site.
-  function referralOriginService(referral: Referral): HealthService | undefined {
-    return siteByCode(referral.originSiteCode)?.service;
-  }
-  const ownReferrals = referrals.filter((referral) => referralOriginService(referral) === service);
-  let placedWithinService = 0;
-  let placedElsewhereCount = 0;
-  let notYetAcceptedAtWard = 0;
-  let placedAtUnresolvedWard = 0;
-  const placedElsewhereByService = new Map<HealthService, number>(
-    wardServiceOrder.filter((candidate) => candidate !== service).map((candidate) => [candidate, 0]),
-  );
-  for (const referral of ownReferrals) {
-    const wardAcceptance = referral.destinations.find(
-      (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.acceptedUnitId !== undefined,
-    );
-    if (!wardAcceptance || wardAcceptance.acceptedUnitId === undefined) {
-      notYetAcceptedAtWard += 1;
-      continue;
-    }
-    const acceptedUnit = liveUnits.find((unit) => unit.id === wardAcceptance.acceptedUnitId);
-    const acceptedService = acceptedUnit ? siteByCode(acceptedUnit.siteCode)?.service : undefined;
-    if (acceptedService === service) placedWithinService += 1;
-    else if (acceptedService !== undefined) {
-      placedElsewhereCount += 1;
-      placedElsewhereByService.set(acceptedService, (placedElsewhereByService.get(acceptedService) ?? 0) + 1);
-    } else placedAtUnresolvedWard += 1;
-  }
-
-  // Out of area, scoped to this service's own beds.
-  const { entries: outOfAreaEntries, notBanded: outOfAreaNotBanded } = outOfAreaLedger(admissions, serviceUnits, now);
-  const bandCounts = new Map<(typeof OUT_OF_AREA_BANDS)[number], number>(OUT_OF_AREA_BANDS.map((band) => [band, 0]));
-  for (const entry of outOfAreaEntries) bandCounts.set(entry.band, (bandCounts.get(entry.band) ?? 0) + 1);
+  const {
+    ownReferrals,
+    placedWithinService,
+    placedElsewhereCount,
+    notYetAcceptedAtWard,
+    placedAtUnresolvedWard,
+    placedElsewhereByService,
+  } = referralDemand;
+  const { outOfAreaEntries, outOfAreaNotBanded, bandCounts } = outOfAreaSummary;
   // Executive: the bands add up to the far-from-home count beside them, so they hide together.
   const bandsShown = parts(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0));
-
-  // Everyone waiting in this service's emergency departments, read through the ED screens' own helper.
-  const edSwarmRows = serviceEds.map((department) => ({
-    id: department.id,
-    name: shortDepartmentName(department.name),
-    href: edStatisticsHref(department.id),
-    entries: edWaitFigures(movements, department.id, now).waitingMovements,
-  }));
-  const edWaiting = edSwarmRows.reduce((sum, row) => sum + row.entries.length, 0);
 
   return (
     <StatisticsPage

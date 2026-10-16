@@ -377,6 +377,17 @@ export type PatientSearchContext = {
   units?: readonly { id: string; name: string }[];
 };
 
+function getPatientOptionalField(
+  patient: Patient,
+  field: "primaryDiagnosis" | "presentingComplaint" | "clinicalNotes" | "assignedWard",
+): string | undefined {
+  if (typeof patient === "object" && patient !== null && field in patient) {
+    const val = Reflect.get(patient, field);
+    return typeof val === "string" ? val : undefined;
+  }
+  return undefined;
+}
+
 // The context argument is part of the public signature that search callers already pass; matching is
 // currently patient-record-only, so it is accepted and deliberately unused.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -401,20 +412,23 @@ export function findPatients(patients: readonly Patient[], query: string, _conte
 
     // 3. Clinical diagnosis & complaint keywords on patient profile
     // These free-text fields are not on the Patient type; read them only if a record carries them.
-    const pAny: Partial<Record<"primaryDiagnosis" | "presentingComplaint" | "clinicalNotes" | "assignedWard", string>> =
-      patient as unknown as Record<string, string | undefined>;
-    if (pAny.primaryDiagnosis && fold(pAny.primaryDiagnosis).includes(needle)) {
+    const primaryDiagnosis = getPatientOptionalField(patient, "primaryDiagnosis");
+
+    if (primaryDiagnosis && fold(primaryDiagnosis).includes(needle)) {
       return true;
     }
-    if (pAny.presentingComplaint && fold(pAny.presentingComplaint).includes(needle)) {
+    const presentingComplaint = getPatientOptionalField(patient, "presentingComplaint");
+    if (presentingComplaint && fold(presentingComplaint).includes(needle)) {
       return true;
     }
-    if (pAny.clinicalNotes && fold(pAny.clinicalNotes).includes(needle)) {
+    const clinicalNotes = getPatientOptionalField(patient, "clinicalNotes");
+    if (clinicalNotes && fold(clinicalNotes).includes(needle)) {
       return true;
     }
 
     // 4. Assigned ward matching on patient profile
-    if (pAny.assignedWard && fold(pAny.assignedWard).includes(needle)) {
+    const assignedWard = getPatientOptionalField(patient, "assignedWard");
+    if (assignedWard && fold(assignedWard).includes(needle)) {
       return true;
     }
 
