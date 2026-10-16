@@ -1053,9 +1053,12 @@ export function WardPhoneMenu({
       flowNow,
     ],
   );
-  // One Alerts queue only for a desk whose role may open the Alerts screen. Others keep the Tasks drawer.
+  // One Alerts queue only for the bed coordinator's desk (whose list it is, as the act-now count
+  // above) when its role may open the Alerts screen. Others keep the Tasks drawer.
   const oneAlertsQueue =
-    flagOn("alerts-one-queue") && accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
+    flagOn("alerts-one-queue") &&
+    wardTasksAreActionableForRole(shellRole) &&
+    accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
   // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
   const menuGroups = oneAlertsQueue

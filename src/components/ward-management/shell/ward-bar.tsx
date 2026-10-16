@@ -574,13 +574,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
   const isPhone = useIsPhone();
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
-  // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
-  // screen it does not open a second copy of the list; it takes the person to the queue.
-  // One Alerts queue only for a desk whose role may open the Alerts screen. Others keep Tasks.
-  const accessNav = useAccessNavFilter();
-  const alertsScreenOpen = accessNav(ALERTS_ACCESS_ENTRY).length > 0;
-  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen;
-  const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
   const {
     movements,
     patients,
@@ -633,6 +626,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   useEffect(() => replayEarlyHeaderTap(), []);
 
   const { role, shellRole, placeId } = useWardNavCounts();
+  // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
+  // screen it does not open a second copy of the list; it takes the person to the queue.
+  // Only for the desk whose list it is (the bed coordinator, as the task gate below) and whose role
+  // may open the Alerts screen. Other desks keep Tasks and its "Bed coordinator's list" empty state.
+  const accessNav = useAccessNavFilter();
+  const alertsScreenOpen = accessNav(ALERTS_ACCESS_ENTRY).length > 0;
+  const alertsQueueForDesk = wardTasksAreActionableForRole(shellRole);
+  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen && alertsQueueForDesk;
+  const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
@@ -2170,6 +2172,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               onSelectDischarge={openDischarge}
               records={{ movements, admissions, patients, referrals, units }}
               alertsScreenOpen={alertsScreenOpen}
+              alertsQueueForDesk={alertsQueueForDesk}
             />
           </div>
         ) : null}

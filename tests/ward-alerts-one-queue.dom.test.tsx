@@ -194,6 +194,14 @@ describe("the bar's Alerts button", () => {
     expect(within(drawer).queryByTestId("ward-tasks-jump-alerts")).toBeNull();
   });
 
+  it("stays Tasks for a ward desk, whose task list is the bed coordinator's and so empty", () => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [seed.units[0].id] } });
+    const trigger = renderBar();
+    expect(trigger).toHaveTextContent(/^Tasks/u);
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+  });
+
   it("chooses the Now tab before focusing the queue when another Alerts view is showing", async () => {
     route.pathname = WARD_ALERTS_HREF;
     const trigger = renderBar();
