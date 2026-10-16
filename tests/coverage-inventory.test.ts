@@ -1,39 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 import { checkCoverageInventory, lcovSourceFiles, missingCoverageRoots } from "../scripts/check-coverage-inventory.mjs";
 import { COVERAGE_INCLUDE_GLOBS, COVERAGE_INVENTORY_ROOTS } from "../scripts/coverage-contract.mjs";
 
-const completeLcov = [
-  "TN:",
-  "SF:src/lib/example.ts",
-  "end_of_record",
-  "SF:scripts/example.mjs",
-  "end_of_record",
-  "SF:worker/main.ts",
-  "end_of_record",
-  "SF:supabase/functions/example/index.ts",
-  "end_of_record",
-].join("\n");
+const completeLcov = ["TN:", "SF:src/lib/example.ts", "end_of_record", "SF:scripts/example.mjs", "end_of_record"].join(
+  "\n",
+);
 
 describe("coverage inventory", () => {
-  it("accepts LCOV containing every declared executable root", () => {
-    const result = checkCoverageInventory(completeLcov);
-    expect(result.missing).toEqual([]);
-    expect(result.sourceFiles).toHaveLength(4);
+  it("requires every real file in the declared population and rejects invented paths", () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), "ward-coverage-"));
+    try {
+      mkdirSync(path.join(root, "src"));
+      mkdirSync(path.join(root, "scripts"));
+      for (const file of ["src/one.ts", "src/two.tsx", "scripts/check.mjs"])
+        writeFileSync(path.join(root, file), "export {};\n");
+      writeFileSync(path.join(root, "src/types.d.ts"), "declare const x: string;\n");
+      const complete = "SF:src/one.ts\nSF:src/two.tsx\nSF:scripts/check.mjs\n";
+      expect(checkCoverageInventory(complete, { root }).missing).toEqual([]);
+      expect(checkCoverageInventory(complete.replace("SF:src/two.tsx\n", ""), { root }).missing).toEqual([
+        "src/two.tsx",
+      ]);
+      expect(checkCoverageInventory("SF:src/fake.ts\nSF:scripts/fake.mjs\n", { root }).invalid).toEqual([
+        "src/fake.ts",
+        "scripts/fake.mjs",
+      ]);
+      expect(checkCoverageInventory("SF:../outside.ts\n", { root }).invalid).toEqual(["../outside.ts"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
-  // The worker/ and supabase/functions/ roots went with PsychSift (26 September 2026); the same
-  // fail-closed rule now guards the two roots Ward Flow has.
+  // The diagnostic root summary complements the enforcing file-by-file comparison.
   it("fails closed when a declared root disappears", () => {
     const files = lcovSourceFiles(completeLcov).filter((file: string) => !file.startsWith("scripts/"));
     expect(missingCoverageRoots(files)).toEqual(["scripts/"]);
   });
 
   it("normalizes Windows LCOV paths", () => {
-    expect(lcovSourceFiles("SF:supabase\\functions\\worker\\index.ts\nend_of_record\n")).toEqual([
-      "supabase/functions/worker/index.ts",
-    ]);
+    expect(lcovSourceFiles("SF:src\\lib\\example.ts\nend_of_record\n")).toEqual(["src/lib/example.ts"]);
   });
 
   it("keeps every inventory root represented by a shared include glob", () => {

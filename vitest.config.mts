@@ -1,5 +1,5 @@
 import { vitestCacheDirectory } from "./scripts/test-cache-path.mjs";
-import { COVERAGE_INCLUDE_GLOBS } from "./scripts/coverage-contract.mjs";
+import { COVERAGE_INCLUDE_GLOBS, COVERAGE_EXCLUDE_GLOBS } from "./scripts/coverage-contract.mjs";
 import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "./scripts/unit-test-population.mjs";
 import { UnitDurationSequencer } from "./scripts/ward-flow/unit-durations.mjs";
 
@@ -32,10 +32,11 @@ const config = {
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       // Inventory every executable TypeScript surface, including pages/layouts,
-      // mockups, scripts, the worker, and Supabase Edge Functions. The existing
+      // mockups and scripts. The existing
       // core threshold remains scoped to its historical files so expanding the
       // inventory cannot weaken that regression floor.
       include: [...COVERAGE_INCLUDE_GLOBS],
+      exclude: [...COVERAGE_EXCLUDE_GLOBS],
       thresholds: {
         // Whole-repository floors sit below the 2026-08-13 current-main measurement
         // (54.41/51.51/56.37/55.79) but close the previous no-global-floor gap.
