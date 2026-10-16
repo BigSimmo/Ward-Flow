@@ -1,6 +1,3 @@
-/**
-
-
 /** Redact paths, URLs, secrets, and emails from support/diagnostic strings. */
 export function redactLogValue(value: unknown): unknown {
   if (typeof value !== "string") {
