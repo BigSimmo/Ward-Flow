@@ -174,7 +174,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     draft?: RepatDraft;
   } | null>(null);
   // Disarmed only by this step's own outcome: a refusal naming this stay, or this stay's record
-  // changing. Changes to other stays leave it armed, and once disarmed a later refusal is never
+  // changing in content. Changes to other stays leave it armed, and once disarmed a later refusal is never
   // read as this step's.
   useEffect(() => {
     const check = repatCheckRef.current;
@@ -182,7 +182,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     const refused = rejections.slice(check.prior).find((rejection) => rejection.movementId === check.admissionId);
     if (!refused) {
       const record = liveRepatriations?.find((candidate) => candidate.admissionId === check.admissionId);
-      if (record !== check.record) repatCheckRef.current = null;
+      // Compared by content: a shared refresh can hand back an equal record as a new object, which is
+      // not this step's outcome.
+      if (JSON.stringify(record) !== JSON.stringify(check.record)) repatCheckRef.current = null;
       return;
     }
     repatCheckRef.current = null;
