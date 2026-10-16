@@ -7,7 +7,7 @@
  * Criteria are chosen from a fixed list, never typed, so the event stays on the persistence safe
  * list. They lapse after `CLINICAL_VALUES.dischargeCriteriaValidity` and then need a fresh review.
  */
-import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
 export const DISCHARGE_CRITERIA = [
@@ -19,13 +19,13 @@ export const DISCHARGE_CRITERIA = [
   "Family, carer or support person told",
   "Transport home arranged",
   // D-63: from MP 0181/24 Safety Planning, and the WACHS guideline's observations on the day of discharge.
+  // A tick always falls inside the validity window (a review clears every tick), so "the last 24
+  // hours" stays true while the criteria are live. Change the wording if the validity changes.
   "Safety plan reviewed with the patient",
-  "Observations done today and reviewed",
+  "Observations done and reviewed in the last 24 hours",
 ] as const;
 
 export type DischargeCriterion = (typeof DISCHARGE_CRITERIA)[number];
-
-export const OBSERVATIONS_CRITERION: DischargeCriterion = "Observations done today and reviewed";
 
 export type DischargeCriteriaRecord = {
   /** When the treating psychiatrist set or last changed the list. The validity runs from here. */
@@ -90,11 +90,7 @@ export function dischargeCriteriaStatus(
   if (!record || record.items.length === 0) return { kind: "none" };
   if (eligibility !== "voluntary") return { kind: "paused" };
   const total = record.items.length;
-  const met = record.items.filter(
-    (item) =>
-      item.metAt !== null &&
-      (item.criterion !== OBSERVATIONS_CRITERION || dayOf(item.metAt) === dayOf(now)),
-  ).length;
+  const met = record.items.filter((item) => item.metAt !== null).length;
   const lapsesAt = record.setAt + CLINICAL_VALUES.dischargeCriteriaValidity.value;
   if (now >= lapsesAt) return { kind: "lapsed", met, total };
   return met === total ? { kind: "all_met", total, lapsesAt } : { kind: "in_progress", met, total, lapsesAt };
@@ -194,9 +190,7 @@ export function nextDischargeCriteria(
         metAt: change.setByTreatingPsychiatrist
           ? null
           : met.includes(criterion)
-            ? criterion === OBSERVATIONS_CRITERION
-              ? now
-              : (metBefore.get(criterion) ?? now)
+            ? (metBefore.get(criterion) ?? now)
             : null,
       })),
     },
