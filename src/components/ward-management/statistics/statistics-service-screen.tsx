@@ -20,6 +20,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
@@ -101,6 +102,7 @@ function shortSiteName(name: string): string {
  */
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements } = live.state;
   const now = live.now;
   const isPhone = useIsPhone();
@@ -265,7 +267,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           ["Being made ready", pendingPreparation],
           ["Wards", serviceUnits.length],
           ["EDs", serviceEds.length],
-          ["Out of area", outOfAreaEntries.length],
+          ["Out of area", small(outOfAreaEntries.length)],
         ],
       }}
       phone={{
@@ -276,7 +278,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <HeroStat value={totalBedBase} label="Beds" />
             <HeroStat value={totalReady} label="Ready" />
             <HeroStat
-              value={edWaiting}
+              value={small(edWaiting)}
               label="In ED"
               tone={
                 edSwarmRows.some((row) => row.entries.some((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES))
@@ -305,7 +307,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           {/* Five figures at most (v10). The ED count is on the ED waits card's head ("N waiting in
               M EDs"), so the hero leaves it out; the export still carries it. */}
           <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-ooa">{outOfAreaEntries.length}</span>}
+            value={<span data-testid="ward-statistics-service-exec-ooa">{small(outOfAreaEntries.length)}</span>}
             label={
               <span className={styles.flagged}>
                 {outOfAreaEntries.length > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -325,7 +327,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             name: shortDepartmentName(department.name),
             figures: edWaitFigures(movements, department.id, now),
           }))}
-          edWaiting={edWaiting}
+          edWaiting={small(edWaiting)}
           outOfArea={outOfAreaEntries}
         />
       ) : (
@@ -425,7 +427,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             className={detail.anchor}
             icon={Clock}
             title="ED waits"
-            aside={`${edWaiting} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            aside={`${small(edWaiting)} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>
@@ -534,7 +536,8 @@ function ServicePhone({
   states: { unit: Unit; states: ReturnType<typeof bedStates> }[];
   pendingPreparation: number;
   eds: { id: string; name: string; figures: ReturnType<typeof edWaitFigures> }[];
-  edWaiting: number;
+  /** Worded as "fewer than 5" for an executive, like the hero. */
+  edWaiting: number | string;
   outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
 }) {
   const sum = (pick: (entry: (typeof states)[number]) => number) =>

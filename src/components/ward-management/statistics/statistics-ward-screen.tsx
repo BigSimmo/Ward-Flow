@@ -37,6 +37,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
@@ -106,6 +107,7 @@ export function StatisticsWardScreen({
   admissions?: Admission[];
 }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
   const { dayZero } = useWardFlowSelect("dayZero");
@@ -255,7 +257,7 @@ export function StatisticsWardScreen({
           ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
           ["Average stay, days", averageStay ?? "none"],
-          ["Due out, 7 days", dueThisWeek],
+          ["Due out, 7 days", small(dueThisWeek)],
         ],
       }}
       phone={{
@@ -290,7 +292,7 @@ export function StatisticsWardScreen({
           />
           <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
           {averageStay === null ? null : <HeroStat value={`${averageStay}d`} label="Average stay" />}
-          <HeroStat value={dueThisWeek} label="Due out, 7 days" />
+          <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
         </>
       }
     >

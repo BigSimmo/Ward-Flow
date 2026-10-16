@@ -84,7 +84,11 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
-import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
+import {
+  admissionCriteriaEligibility,
+  HIGH_ACUITY_STAFFING_REFUSAL,
+  OVERRIDE_REASON_REQUIRED,
+} from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -375,6 +379,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Top 25 item 5: the bed drawer asks for the discharge barrier of a stay due out soon.
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const barrierGate = useRoleGate()("SET_DISCHARGE_BARRIER");
+  const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
+  const criteriaGate = useRoleGate()("SET_DISCHARGE_CRITERIA");
   // Top 25 item 1: confirming a discharge offers its pharmacy, transport and cleaning notices.
   const dischargeNoticesOn = useWardFeatureFlag("top25-discharge-notices");
   const [noticesForRelease, setNoticesForRelease] = useState<string | null>(null);
@@ -478,6 +484,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
   const routeRole = useRouteRole();
+  const raiseAsRouteRole = useWardRaise(routeRole);
   const setRole = useCallback(
     (nextRole: "ward") => {
       setDeskRole(nextRole, pathname);
@@ -3312,6 +3319,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {selectedBed !== null
           ? (() => {
               const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
+              const selectedAdmission = admissions.find((admission) => admission.id === selectedBedItem?.admissionId);
               return (
                 <WardBedDossierDrawer
                   selectedBed={selectedBed}
@@ -3436,6 +3444,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           setToastMessage(
                             barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
                           );
+                        }
+                      : undefined
+                  }
+                  criteriaEligibility={
+                    criteriaLedOn && selectedAdmission
+                      ? admissionCriteriaEligibility({ movements, patients }, selectedAdmission)
+                      : undefined
+                  }
+                  onSetCriteria={
+                    criteriaLedOn && criteriaGate.allowed
+                      ? (admissionId, update) => {
+                          raiseAsRouteRole("SET_DISCHARGE_CRITERIA", { actingUnitId: unitId, admissionId, ...update });
                         }
                       : undefined
                   }

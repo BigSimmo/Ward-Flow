@@ -8,6 +8,7 @@ import { seedWardFlowState } from "../src/components/ward-management/ward-flow-r
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import {
+  coordinatorRecordScope,
   scopeBroadcastAlerts,
   scopeWorkspace,
   smallNumberText,
@@ -308,6 +309,120 @@ describe("the scoped workspace", () => {
     }
     for (const patient of scoped.patients) expect(patient.umrn).toBe("");
     expect(scoped.referrals).toEqual([]);
+  });
+
+  it("trims an officer's job to what the collection needs", () => {
+    const job = state.movements.find((movement) => movement.transport !== undefined)!;
+    const open = {
+      ...job,
+      transport: { ...job.transport!, arrivedAt: undefined },
+      closure: undefined,
+      owner: "Synthetic owner",
+      blocker: "Synthetic typed note",
+      referredUnitIds: [unitId],
+      declines: [{ unitId, at: NOW_ANCHOR, reason: "no_bed" }],
+      unwinds: [
+        { at: NOW_ANCHOR, kind: "stage_corrected", by: "coordinator" },
+        { at: NOW_ANCHOR, kind: "transport_cancelled", by: "officer" },
+      ],
+    } as unknown as typeof job;
+    const [trimmed] = scopeWorkspace(
+      { ...state, movements: [open] },
+      { role: "officer", scope: { kind: "jobs" } },
+      {
+        now: NOW_ANCHOR,
+        places,
+      },
+    ).movements;
+    expect(trimmed.transport).toEqual(open.transport);
+    expect(trimmed.legalStatus).toBe(open.legalStatus);
+    expect(trimmed.originEdId).toBe(open.originEdId);
+    expect(trimmed.owner).toBe("");
+    expect(trimmed.blocker).toBe("");
+    expect(trimmed.referredUnitIds).toEqual([]);
+    expect(trimmed.declines).toEqual([]);
+    expect(trimmed.statusChanges).toEqual([]);
+    expect(trimmed.tentativeDiagnosis).toBeUndefined();
+    expect(trimmed.unwinds.map((unwind) => unwind.kind)).toEqual(["transport_cancelled"]);
+  });
+
+  it("keeps a service coordinator's records to its own service", () => {
+    const service = places.unitService(unitId)!;
+    const own = (id: string) => places.unitService(id) === service;
+    const otherUnit = state.units.find((unit) => !own(unit.id))!;
+    const scoped = scope({ role: "coordinator", scope: { kind: "service", service } });
+    const records = coordinatorRecordScope(scoped, state.bedReleases, own);
+    const outside = state.movements.find((movement) => !scoped.movements.some((kept) => kept.id === movement.id));
+    if (scoped.movements[0]) {
+      expect(records.subject({ kind: "movement", movementId: scoped.movements[0].id, patientId: null })).toBe(true);
+      expect(
+        records.logEntry({
+          type: "PULL_PATIENT",
+          role: "coordinator",
+          now: undefined,
+          accepted: true,
+          movementId: scoped.movements[0].id,
+        }),
+      ).toBe(true);
+    }
+    if (outside) {
+      expect(records.subject({ kind: "movement", movementId: outside.id, patientId: null })).toBe(false);
+      expect(records.movementIds.has(outside.id)).toBe(false);
+    }
+    expect(records.subject({ kind: "configuration" })).toBe(false);
+    const entry = { type: "PULL_PATIENT", role: "coordinator", now: undefined, accepted: true } as const;
+    expect(records.logEntry({ ...entry, unitId })).toBe(true);
+    expect(records.logEntry({ ...entry, unitId: otherUnit.id })).toBe(false);
+    expect(records.logEntry({ ...entry, unitId, actingUnitId: otherUnit.id })).toBe(false);
+    expect(records.logEntry(entry)).toBe(false);
+    expect(records.logEntry({ ...entry, unitId, plannedAdmissionId: "synthetic" })).toBe(false);
+    // A review is an audit event about another audit event, and follows the event it reviews.
+    const releaseId = state.bedReleases.find((release) => own(release.unitId))?.id;
+    if (releaseId) {
+      const about = { kind: "bed-release", releaseId, unitId } as const;
+      const events = [
+        { id: "kept", subject: about },
+        { id: "review", subject: { kind: "audit-event", eventId: "kept" } as const },
+        { id: "config", subject: { kind: "configuration" } as const },
+        { id: "review-of-config", subject: { kind: "audit-event", eventId: "config" } as const },
+      ];
+      expect(records.auditEvents(events).map((event) => event.id)).toEqual(["kept", "review"]);
+      // An event acted by, or naming, another service's ward is left out whole.
+      const foreign = [
+        { id: "acted", subject: about, actor: { actingUnitId: otherUnit.id } },
+        { id: "target", subject: about, details: { targets: [{ unitId }, { unitId: otherUnit.id }] } },
+        { id: "own", subject: about, actor: { actingUnitId: unitId }, details: { targets: [{ unitId }] } },
+      ];
+      expect(records.auditEvents(foreign).map((event) => event.id)).toEqual(["own"]);
+      // A refused record command names no subject, so it follows the audit row written with it.
+      const refused = records.refusals([
+        { id: "audit-1", subject: about },
+        { id: "audit-2", subject: about, actor: { actingUnitId: otherUnit.id } },
+      ]);
+      const refusal = { id: "record-rejection-1", movementId: "none" };
+      expect(refused(refusal)).toBe(true);
+      expect(refused({ ...refusal, id: "record-rejection-2" })).toBe(false);
+      expect(refused({ ...refusal, id: "record-rejection-3" })).toBe(false);
+      expect(refused({ id: "rejection-x", movementId: unitId })).toBe(true);
+      expect(refused({ id: "rejection-y", movementId: otherUnit.id })).toBe(false);
+      // A refused undo of a review on a seeded entry follows that entry, once the seeds are in the list.
+      const undo = { id: "audit-5", subject: { kind: "audit-event", eventId: "seeded" } as const };
+      expect(records.refusals([undo])({ ...refusal, id: "record-rejection-5" })).toBe(false);
+      expect(records.refusals([{ id: "seeded", subject: about }, undo])({ ...refusal, id: "record-rejection-5" })).toBe(
+        true,
+      );
+    }
+    expect(records.rejectionSubject("none")).toBe(true);
+    expect(records.rejectionSubject(unitId)).toBe(true);
+    expect(records.rejectionSubject(otherUnit.id)).toBe(false);
+    // A refused leave bed end on the desk's own ward stays with it. A person alone does not.
+    const withLeave = coordinatorRecordScope(scoped, state.bedReleases, own, undefined, [
+      { id: "leave-own", unitId },
+      { id: "leave-other", unitId: otherUnit.id },
+    ]);
+    expect(withLeave.rejectionSubject("leave-own")).toBe(true);
+    expect(withLeave.rejectionSubject("leave-other")).toBe(false);
+    expect(withLeave.rejectionSubject(scoped.patients[0]?.id ?? "synthetic-person")).toBe(false);
   });
 
   it("hides counts below the small-number threshold", () => {

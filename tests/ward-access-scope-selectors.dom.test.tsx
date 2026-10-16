@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { memo } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
+import { WardAccessScope, useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
@@ -111,5 +111,26 @@ describe("role access scope and field readers", () => {
     fireEvent.click(screen.getByTestId("refused"));
     expect(screen.getByTestId("refusals").textContent).toBe("1");
     expect(renders.lists).toBe(before);
+  });
+
+  it("words an executive's small headline counts as fewer than five, and no other desk's", () => {
+    function Count() {
+      const small = useSmallNumber();
+      return (
+        <span data-testid="counts">
+          {small(3)},{small(0)},{small(12)}
+        </span>
+      );
+    }
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+    });
+    const { unmount } = render(<Count />);
+    expect(screen.getByTestId("counts").textContent).toBe("fewer than 5,0,12");
+    unmount();
+    act(() => setWardAccess({ role: "coordinator", scope: { kind: "statewide" } }));
+    render(<Count />);
+    expect(screen.getByTestId("counts").textContent).toBe("3,0,12");
   });
 });

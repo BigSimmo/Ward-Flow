@@ -97,6 +97,7 @@ describe("clinical values file", () => {
       expectFlagInvoluntary: 10080,
       expectReconsider: 4320,
       dischargePrepWindow: 1440,
+      dischargeCriteriaValidity: 4320,
       leaveOpenWarning: 1440,
       awolBedHoldWarning: 240,
       ctoFollowUpWindow: 7,

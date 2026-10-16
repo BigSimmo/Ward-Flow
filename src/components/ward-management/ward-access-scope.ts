@@ -25,6 +25,9 @@ import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-br
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { AuditSubject } from "@/components/ward-management/ward-audit";
+import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
+import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import {
@@ -137,6 +140,70 @@ function withoutDiagnosis(movement: Movement): Movement {
   const rest: Movement = { ...movement };
   delete rest.tentativeDiagnosis;
   return rest;
+}
+
+const ENGINE_BLOCKERS: ReadonlySet<string> = new Set(Object.values(STAGE_TRANSITION_BLOCKERS));
+
+/** What a collection reads beyond the always present fields, copied only when recorded. */
+const COLLECTION_FIELDS = [
+  "patientId",
+  "referralId",
+  "transportNeed",
+  "gender",
+  "legalForm",
+  "acceptedUnitId",
+  "acceptedAt",
+  "heldBedNumber",
+  "allocatedBed",
+  "transport",
+  "closure",
+  "admissionId",
+  "examination",
+  "pullExpiresAt",
+  "plannedMoveAt",
+  "arrivalMode",
+  "arrivalDetails",
+  "arrivalException",
+  "medicalClearance",
+  "uploadedForms",
+] as const satisfies readonly (keyof Movement)[];
+
+/**
+ * An open transport job with only what a collection needs (role access plan, Josh's yes 15 Oct
+ * 2026): who, from where, to which ward, legal status, safety and the job itself. Built field by
+ * field, never spread, so no diagnosis, decline, referral answer, override, owner or change history
+ * reaches the officer. The required histories it never reads are empty, and only cancelled
+ * transports are kept from the unwind trail.
+ */
+function collectionMovement(movement: Movement): Movement {
+  const trimmed: Record<string, unknown> = {
+    id: movement.id,
+    originEdId: movement.originEdId,
+    openedAt: movement.openedAt,
+    flaggedUrgent: movement.flaggedUrgent,
+    urgency: movement.urgency,
+    cohort: movement.cohort,
+    security: movement.security,
+    sex: movement.sex,
+    specialling: movement.specialling,
+    highAcuity: movement.highAcuity,
+    legalStatus: movement.legalStatus,
+    stage: movement.stage,
+    owner: "",
+    referredUnitIds: [],
+    declines: [],
+    statusChanges: [],
+    urgencyChanges: [],
+    overrides: [],
+    withdrawnReferrals: [],
+    stageChanges: [],
+    unwinds: movement.unwinds.filter((unwind) => unwind.kind === "transport_cancelled"),
+    // The officer reads the blocker only to spot the engine's own sentences. A person's typed
+    // blocker note is not a collection field (review on PR #345).
+    blocker: ENGINE_BLOCKERS.has(movement.blocker) ? movement.blocker : "",
+  };
+  for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
+  return trimmed as Movement;
 }
 
 /** A referral with only what a count needs: no typed history, corrections, diagnosis or intake. */
@@ -418,8 +485,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
           movement.closure === undefined,
       );
       // A collection needs who, where, legal status and safety, never the working diagnosis
-      // (review on PR #330).
-      movements = movements.map(withoutDiagnosis);
+      // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026).
+      movements = movements.map(collectionMovement);
       officer = true;
       break;
     }
@@ -515,15 +582,136 @@ export function scopeBroadcastAlerts(
 }
 
 /**
- * Executive figures, planned: a count under the small number line words as "fewer than N". NOT YET
- * APPLIED to any Statistics screen (review on PR #330), so the executive still sees exact counts,
- * without names. Wiring it in, with totals rounded so a hidden part cannot be worked back, is a
- * follow-up.
+ * Executive figures (Josh's yes, 15 Oct 2026): a count of people under the small number line words
+ * as "fewer than N". `useSmallNumber` applies it to the Statistics headline figures and their
+ * export. Tables and charts below the headline still show exact counts, and totals are not rounded,
+ * so a hidden part can still be worked back from them. That is a later pass.
  */
 export function smallNumberText(count: number): string {
   const line = CLINICAL_VALUES.smallNumberHidden.value;
   if (count > 0 && count < line) return `fewer than ${line}`;
   return String(count);
+}
+
+type ScopedAuditEvent = {
+  id: string;
+  subject: AuditSubject;
+  actor?: { actingUnitId: string | null };
+  details?: unknown;
+};
+
+/**
+ * Which coordinator records a service coordinator keeps (Josh's yes, 15 Oct 2026): those about its
+ * own service's wards, journeys, referrals, stays and bed releases. A record naming anything outside
+ * the scope, or naming nothing at all (a configuration change), stays the statewide desk's.
+ */
+export function coordinatorRecordScope(
+  scoped: {
+    movements: readonly { id: string }[];
+    referrals: readonly { id: string }[];
+    admissions: readonly { id: string }[];
+  },
+  bedReleases: readonly { id: string; unitId: string }[],
+  unitIn: (unitId: string) => boolean,
+  edIn: (edId: string) => boolean = () => false,
+  leaveBeds: readonly { id: string; unitId: string }[] = [],
+): {
+  movementIds: ReadonlySet<string>;
+  subject(subject: AuditSubject): boolean;
+  /**
+   * The events in scope. An event acted by, or naming a ward target, outside the scope is left out
+   * whole, so no other service's ward or outcome is shown. One about another audit event (a review)
+   * follows the event it is about.
+   */
+  auditEvents<E extends ScopedAuditEvent>(events: readonly E[]): E[];
+  /**
+   * A refusal's subject id: a journey, referral, stay, release, leave bed, ward or ED in scope, or
+   * "none". A person alone is not enough, because one person can be known to two services.
+   */
+  rejectionSubject(id: string): boolean;
+  /**
+   * Which refusals are in scope. A refused record command names no subject ("none"), so it follows
+   * the audit row the reducer writes with it (`record-rejection-N` with `audit-N`), and another
+   * service's refused record command is left out.
+   */
+  refusals(auditEvents: readonly ScopedAuditEvent[]): (rejection: { id: string; movementId: string }) => boolean;
+  logEntry(entry: EventLogEntry): boolean;
+} {
+  const movementIds = new Set(scoped.movements.map((movement) => movement.id));
+  const referralIds = new Set(scoped.referrals.map((referral) => referral.id));
+  const admissionIds = new Set(scoped.admissions.map((admission) => admission.id));
+  const releaseIds = new Set(bedReleases.filter((release) => unitIn(release.unitId)).map((release) => release.id));
+  const leaveBedIds = new Set(leaveBeds.filter((bed) => unitIn(bed.unitId)).map((bed) => bed.id));
+  const subject = (record: AuditSubject): boolean => {
+    switch (record.kind) {
+      case "admission":
+        return admissionIds.has(record.admissionId) && unitIn(record.unitId);
+      case "movement":
+        return movementIds.has(record.movementId);
+      case "referral":
+        return referralIds.has(record.referralId);
+      case "bed-release":
+        return releaseIds.has(record.releaseId) && unitIn(record.unitId);
+      default:
+        return false;
+    }
+  };
+  const logEntry = (entry: EventLogEntry): boolean => {
+    const named = [
+      entry.movementId === undefined ? undefined : movementIds.has(entry.movementId),
+      entry.referralId === undefined ? undefined : referralIds.has(entry.referralId),
+      entry.admissionId === undefined ? undefined : admissionIds.has(entry.admissionId),
+      entry.releaseId === undefined ? undefined : releaseIds.has(entry.releaseId),
+      entry.unitId === undefined ? undefined : unitIn(entry.unitId),
+      entry.actingUnitId === undefined ? undefined : unitIn(entry.actingUnitId),
+      // A planned admission is the statewide desk's booking list.
+      entry.plannedAdmissionId === undefined ? undefined : false,
+    ].filter((answer): answer is boolean => answer !== undefined);
+    return named.length > 0 && named.every(Boolean);
+  };
+  const wardsInScope = (event: ScopedAuditEvent): boolean => {
+    const acting = event.actor?.actingUnitId;
+    if (acting !== undefined && acting !== null && !unitIn(acting)) return false;
+    const targets = (event.details as { targets?: readonly { unitId: string | null }[] } | undefined)?.targets;
+    return (targets ?? []).every((target) => target.unitId === null || unitIn(target.unitId));
+  };
+  const auditEvents = <E extends ScopedAuditEvent>(events: readonly E[]): E[] => {
+    const kept = new Set(
+      events.filter((event) => subject(event.subject) && wardsInScope(event)).map((event) => event.id),
+    );
+    // A review of a review follows its chain, so repeat until nothing more joins.
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const event of events)
+        if (
+          event.subject.kind === "audit-event" &&
+          !kept.has(event.id) &&
+          kept.has(event.subject.eventId) &&
+          wardsInScope(event)
+        ) {
+          kept.add(event.id);
+          grew = true;
+        }
+    }
+    return events.filter((event) => kept.has(event.id));
+  };
+  const rejectionSubject = (id: string): boolean =>
+    id === "none" ||
+    movementIds.has(id) ||
+    referralIds.has(id) ||
+    admissionIds.has(id) ||
+    releaseIds.has(id) ||
+    leaveBedIds.has(id) ||
+    unitIn(id) ||
+    edIn(id);
+  const refusals = (events: readonly ScopedAuditEvent[]) => {
+    const kept = new Set(auditEvents(events).map((event) => event.id));
+    return (rejection: { id: string; movementId: string }) => {
+      const paired = /^record-rejection-(\d+)$/.exec(rejection.id);
+      return paired ? kept.has(`audit-${paired[1]}`) : rejectionSubject(rejection.movementId);
+    };
+  };
+  return { movementIds, subject, auditEvents, rejectionSubject, refusals, logEntry };
 }
 
 /**

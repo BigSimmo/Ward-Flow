@@ -366,6 +366,24 @@ describe("stored ward flow state fence, equivalence harness", () => {
     expect(check((x) => Object.defineProperty(x.units[0], "__proto__", { value: 1, enumerable: true }))).toBe(false);
     // A stored discharge barrier is a list value, never free text.
     expect(check((x) => (x.admissions[0].dischargeBarrier = "typed text"))).toBe(false);
+    // Stored discharge criteria (D-60) are a closed shape of list values and times.
+    const goodCriteria = { setAt: 1, items: [{ criterion: "Accommodation confirmed", metAt: null }] };
+    expect(check((x) => (x.admissions[0].dischargeCriteria = goodCriteria))).toBe(true);
+    expect(check((x) => (x.admissions[0].dischargeCriteria = null))).toBe(true);
+    expect(check((x) => (x.admissions[0].dischargeCriteria = { setAt: 1 }))).toBe(false);
+    expect(check((x) => (x.admissions[0].dischargeCriteria = { ...goodCriteria, note: "typed" }))).toBe(false);
+    expect(
+      check((x) => (x.admissions[0].dischargeCriteria = { setAt: 1, items: [{ criterion: "typed", metAt: null }] })),
+    ).toBe(false);
+    expect(
+      check(
+        (x) =>
+          (x.admissions[0].dischargeCriteria = {
+            setAt: 1,
+            items: [{ criterion: "Accommodation confirmed", metAt: "now" }],
+          }),
+      ),
+    ).toBe(false);
     expect(check((x) => (x.scenario = "unknown"))).toBe(false);
     // A broadcast answer and a legal form region are plain strings: the hand-written validator
     // let a one-element array through by stringifying it, the zod rewrite refuses it.

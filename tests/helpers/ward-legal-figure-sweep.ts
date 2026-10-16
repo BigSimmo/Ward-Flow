@@ -366,6 +366,17 @@ export function candidateEvents(
         actingUnitId: admission.unitId,
         barrier: "Accommodation / Housing",
       }));
+    case "SET_DISCHARGE_CRITERIA":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        criteria: ["Accommodation confirmed", "Transport home arranged"],
+        met: ["Accommodation confirmed"],
+        setByTreatingPsychiatrist: true,
+      }));
     case "RAISE_REFERRAL":
       // Since 2026-08-24 the form is CHOSEN on the draft rather than derived from the status, so
       // the candidates now cross every selectable code (and "no form") with both
