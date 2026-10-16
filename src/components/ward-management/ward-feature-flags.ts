@@ -225,7 +225,7 @@ export const WARD_FEATURE_FLAGS = {
   "alerts-one-queue": {
     label: "One Alerts queue",
     description:
-      "Tasks becomes Alerts: one name, one count and the Alerts words. On a desktop the drawer is a quick look with a way to the Alerts screen, and on a phone the Alerts tab opens that screen.",
+      "The Tasks drawer becomes Alerts: one name, one count and the Alerts words. On a desktop the drawer is a quick look with a way to the Alerts screen, and on a phone the Alerts tab opens that screen.",
     owner: "Josh",
     added: "2026-10-16",
     defaults: { development: true, demo: true, production: false },
