@@ -288,15 +288,14 @@ describe("the movement workspace's blocker control", () => {
 
   it("cannot submit a blank, so an empty blocker never reaches the reducer", () => {
     renderWorkspace("WF-001");
-    // Native `disabled` here is transient inertness — a form action awaiting validity — which is
-    // what `docs/wiring-conventions.md` keeps `disabled` for. It is NOT an unavailable feature, so
-    // `aria-disabled` would be the wrong pattern and the two together fail lint.
+    // The blocked button carries a stated reason (`aria-describedby` + `title`), so it stays
+    // focusable with `aria-disabled` and ignores activation, per `docs/wiring-conventions.md`.
     const submit = screen.getByRole("button", { name: /record it/i });
-    expect(submit).toBeDisabled();
-    expect(submit).not.toHaveAttribute("aria-disabled");
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    expect(submit).not.toBeDisabled();
 
     fireEvent.change(screen.getByTestId("ward-console-blocker-input"), { target: { value: "   " } });
-    expect(screen.getByRole("button", { name: /record it/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /record it/i })).toHaveAttribute("aria-disabled", "true");
   });
 });
 

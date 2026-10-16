@@ -2,10 +2,12 @@
 
 import { useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { useWardModalFocus } from "../ward-modal-focus";
+import styles from "./upload-forms-modal.module.css";
 
 export interface UploadFormsModalProps {
   isOpen: boolean;
@@ -108,34 +110,18 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className={styles.titleGroup}>
             <FileUp aria-hidden="true" size={20} style={{ color: "var(--ward-accent, #0284c7)" }} />
-            <h2 id="upload-modal-title" style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+            <h2 id="upload-modal-title" className={styles.title}>
               Record document details
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "0.5rem",
-              borderRadius: "0.5rem",
-              minHeight: "48px",
-              minWidth: "48px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          <button type="button" onClick={onClose} aria-label="Close dialog" className={styles.closeButton}>
             <X aria-hidden="true" size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: "1.5rem" }}>
+        <form onSubmit={handleSubmit} className={styles.form}>
           <div
             style={{
               padding: "0.75rem 1rem",
@@ -157,11 +143,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
           </div>
 
           {/* Form Type */}
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label
-              htmlFor="form-type-select"
-              style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}
-            >
+          <div className={styles.uploadField}>
+            <label htmlFor="form-type-select" className={styles.fieldLabel}>
               Document / Statutory Form Type
             </label>
             <select
@@ -187,11 +170,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
           </div>
 
           {/* Dropzone / Upload Area */}
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label
-              htmlFor="ward-document-metadata-file"
-              style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}
-            >
+          <div className={styles.dropField}>
+            <label htmlFor="ward-document-metadata-file" className={styles.fieldLabel}>
               Select a file to record its details
             </label>
             <div
@@ -216,14 +196,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 onChange={handleFileSelect}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  opacity: 0,
-                  cursor: "pointer",
-                  width: "100%",
-                  height: "100%",
-                }}
+                className={styles.fileInput}
                 aria-label="Upload document file"
               />
               <FileText
@@ -231,10 +204,11 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 size={32}
                 style={{ color: "var(--ward-accent, #0284c7)", margin: "0 auto 0.5rem" }}
               />
-              <div style={{ fontWeight: 600, fontSize: "0.9375rem" }}>
-                {fileName ? fileName : "Click to select a file"}
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}>
+              <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>
+              <div
+                id="upload-forms-file-requirement"
+                style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}
+              >
                 {fileAttached
                   ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
                   : "Select a non-empty PDF, JPEG or PNG. Contents are not retained."}
@@ -243,7 +217,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+          <div className={styles.actions}>
             <button
               type="button"
               onClick={onClose}
@@ -263,7 +237,12 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </button>
             <button
               type="submit"
-              disabled={!fileAttached || simulatedSize <= 0}
+              aria-disabled={!fileAttached || simulatedSize <= 0 ? "true" : undefined}
+              onClick={!fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
+              aria-describedby={!fileAttached || simulatedSize <= 0 ? "upload-forms-file-requirement" : undefined}
+              title={
+                !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
+              }
               data-testid="confirm-upload-form-button"
               style={{
                 minHeight: "48px",

@@ -215,3 +215,32 @@ it("refuses refreshed tokens for a different account and removes the old session
   expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   auth.dispose();
 });
+
+it("refuses a bearer value that is not a signed token without asking Supabase about it", async () => {
+  // Verified tokens are cached by the authenticator itself (see backend/ward-flow/supabase-auth.test.mjs);
+  // a value that is not even shaped like a token must never reach the remote user check.
+  const supabaseAuthModulePath = "../backend/ward-flow/supabase-auth.mjs";
+  const { createSupabaseAuthenticator } = (await import(supabaseAuthModulePath)) as {
+    createSupabaseAuthenticator: (
+      config: Record<string, unknown>,
+      deps?: Record<string, unknown>,
+    ) => (authorization: string) => Promise<string>;
+  };
+  let fetchCount = 0;
+  const coordinatorId = "12345678-1234-1234-1234-123456789abc";
+  const authenticator = createSupabaseAuthenticator(
+    {
+      coordinatorIds: [coordinatorId],
+      supabase: { projectRef: "zakzoemeedfepxcstsou", url, publishableKey: "sb_publishable_test" },
+    },
+    {
+      fetch: async () => {
+        fetchCount++;
+        return Response.json({ id: coordinatorId });
+      },
+    },
+  );
+
+  await expect(authenticator("Bearer test-token-1")).rejects.toThrow("Unauthorised");
+  expect(fetchCount).toBe(0);
+});

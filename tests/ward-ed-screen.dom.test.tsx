@@ -1111,13 +1111,13 @@ describe("direct CMHT referral pathway from ED screen", () => {
 
     const teamSelect = screen.getByTestId("ward-ed-cmht-select-WF-001") as HTMLSelectElement;
     const confirmBtn = screen.getByTestId("ward-ed-cmht-confirm-WF-001");
-    expect(confirmBtn).toBeDisabled();
+    expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
 
     // Choose the first available team option
     expect(teamSelect.options.length).toBeGreaterThan(1);
     const chosenTeam = teamSelect.options[1].value;
     fireEvent.change(teamSelect, { target: { value: chosenTeam } });
-    expect(confirmBtn).not.toBeDisabled();
+    expect(confirmBtn).not.toHaveAttribute("aria-disabled", "true");
 
     // Confirm the referral
     fireEvent.click(confirmBtn);

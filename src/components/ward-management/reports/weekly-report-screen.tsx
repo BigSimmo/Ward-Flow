@@ -144,6 +144,7 @@ export function WeeklyReportScreen() {
       <main id="main-content" className={styles.main}>
         <StatisticsHero
           section="weekly"
+          now={now}
           eyebrow={isPhone ? "Statistics · Weekly report" : <>Weekly report · synthetic demo data</>}
           title="Weekly operations"
           phone={{

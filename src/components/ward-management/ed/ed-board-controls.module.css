@@ -144,7 +144,10 @@
   border-radius: 7px;
   background: var(--surface-2);
   color: var(--ink);
-  font-size: 13px !important;
+}
+/* `.popover input { font: inherit }` is (0,1,1), so the plan input's size names the element. */
+input.planInput {
+  font-size: 13px;
 }
 .planOption {
   display: flex;
@@ -187,6 +190,8 @@
   font-weight: 600;
   color: var(--muted);
 }
+/* Menu rows restyle buttons owned by other screens (ED accept, decline and primary action buttons,
+   whose own rules reach (0,3,0)), so these declarations keep `!important` on purpose. */
 .actionItems button {
   width: 100%;
   display: flex;
@@ -328,9 +333,9 @@
 }
 
 @media (max-width: 48rem), (pointer: coarse) {
-  .planInput,
+  input.planInput,
   .dialog textarea {
-    font-size: max(1rem, 16px) !important;
+    font-size: max(1rem, 16px);
   }
 }
 .dialog footer {

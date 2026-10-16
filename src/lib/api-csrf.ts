@@ -16,12 +16,14 @@
  *
  * In both cases the browser still sends `Origin` on a cross-origin state-changing
  * request, so an `Origin` host that does not match the host the request was
- * addressed to is rejected. `Referer` is consulted only when there is neither
- * Fetch Metadata nor an `Origin` — the shape an old browser produces. A request
- * carrying none of the three is refused (12 October 2026 review, A4-12): Ward Flow
- * has no non-browser API client, and failing closed means a future mutation route
- * cannot be reached by a stripped-header request. A legitimate client sends
- * `Origin` or Fetch Metadata.
+ * addressed to is rejected. Without an `Origin`, only `Sec-Fetch-Site: same-origin`
+ * is accepted outright; any other Fetch Metadata value (`same-site`, `none` or an
+ * unknown one) falls through to the checks below, as does a request with no Fetch
+ * Metadata at all. A valid `x-ward-flow-csrf` header, or a same-host `Referer`, can
+ * then vouch for it — the shape an old browser produces. A request carrying none of
+ * these is refused (12 October 2026 review, A4-12): Ward Flow has no non-browser API
+ * client, and failing closed means a future mutation route cannot be reached by a
+ * stripped-header request. A legitimate client sends `Origin` or Fetch Metadata.
  *
  * This is defence in depth. It does not rely on any cookie's `SameSite`
  * attribute (the former clinical app's @supabase/ssr session cookies, which
@@ -101,7 +103,7 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
     return { allowed: false, reason: "invalid_csrf_header" };
   }
 
-  const secFetchSite = headers.get("sec-fetch-site");
+  const secFetchSite = headers.get("sec-fetch-site")?.trim().toLowerCase() ?? null;
   if (secFetchSite === "cross-site") return { allowed: false, reason: "cross_site" };
 
   const hosts = addressedHosts(headers, requestHost);
@@ -115,10 +117,9 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
     return originHost && hosts.has(originHost) ? ALLOWED : { allowed: false, reason: "origin_mismatch" };
   }
 
-  // Fetch Metadata already said same-origin/same-site/none and there is no Origin
-  // to contradict it. Referer is deliberately not consulted here: it is the weaker
-  // signal and is routinely stripped by privacy settings.
-  if (secFetchSite !== null) return ALLOWED;
+  // Same-origin Fetch Metadata without an Origin header is safe to allow immediately.
+  // For same-site, none, or unknown values without Origin, fall through to Referer/CSRF checks.
+  if (secFetchSite === "same-origin") return ALLOWED;
 
   // Explicit valid x-ward-flow-csrf header vouches for programmatic or non-browser
   // requests when Fetch Metadata and Origin are absent (A4-12).

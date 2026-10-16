@@ -807,3 +807,9 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). The search field's input inside the
+   finder's box. Scoped under .search so it outranks the wf form `.control` rule it repeats. */
+.search .searchInput {
+  flex: 1 1 auto;
+}

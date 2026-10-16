@@ -1,5 +1,6 @@
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -548,11 +549,15 @@ export function useWardReferralDrawerState({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
+      if (hasOpenSheet() && !drawerRef.current?.contains(document.activeElement)) return;
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
+        const active = document.activeElement as HTMLElement | null;
         if (
-          document.activeElement?.tagName !== "INPUT" &&
-          document.activeElement?.tagName !== "TEXTAREA" &&
-          document.activeElement?.tagName !== "SELECT"
+          active?.tagName !== "INPUT" &&
+          active?.tagName !== "TEXTAREA" &&
+          active?.tagName !== "SELECT" &&
+          !active?.isContentEditable
         ) {
           e.preventDefault();
           onViewChange("new");

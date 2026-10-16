@@ -18,100 +18,120 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { childProcessExitCode } from "./child-process-result.mjs";
 
-/** Same matcher as playwright.config.ts `productionSpecPattern` (keep in sync). */
+/** Matcher for Playwright specs collected by PR UI shards (api-csrf-proxy + 14 Ward Flow journeys). */
 export const productionSpecFilePattern =
-  /^(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(?:smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts$/;
+  /^(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(?:smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts$/;
 
 /**
- * One source of truth for shard membership and its latest hosted timing sample.
- * Durations are summed from the list reporter in CI run 31658845383 (2026-08-13).
- * `criticalSeconds` is removed on PR/merge-queue runs because the companion
- * required critical job proves those exact tests. Re-measure after suite growth.
+ * One source of truth for shard membership across the 15 Playwright specs in Ward Flow
+ * (`api-csrf-proxy.spec.ts` in `chromium` plus the 14 `ui-ward-*.spec.ts` journeys in
+ * `chromium-mockups`).
  */
 export const prUiSpecProfiles = Object.freeze([
-  // Hosted shard timings exclude @critical; add the separately measured
-  // critical seconds back to fullSeconds so both execution modes stay modeled.
-  { file: "tests/ui-smoke.spec.ts", shard: 1, fullSeconds: 134.4, criticalSeconds: 21.7 },
-  { file: "tests/ui-mode-nav-density.spec.ts", shard: 1, fullSeconds: 36.5, criticalSeconds: 0 },
-  { file: "tests/ui-phone-scroll-page-owned.spec.ts", shard: 1, fullSeconds: 42.5, criticalSeconds: 0 },
-  // Moved to shard 2 to offset the Caring Contacts populated sweep landing on shard 1; its own
-  // timing is unchanged.
-  { file: "tests/ui-accessibility.spec.ts", shard: 2, fullSeconds: 17.1, criticalSeconds: 0 },
-  { file: "tests/ui-route-coverage.spec.ts", shard: 1, fullSeconds: 21.1, criticalSeconds: 0 },
-  // Moved to shard 3 to offset the Caring Contacts populated sweep landing on shard 1; its own
-  // timing is unchanged.
-  { file: "tests/ui-formulation.spec.ts", shard: 3, fullSeconds: 11.0, criticalSeconds: 0 },
-  // New route-focused suite; keep on the lightest measured shard until hosted timing is available.
-  { file: "tests/ui-dictionary.spec.ts", shard: 1, fullSeconds: 0, criticalSeconds: 0 },
-  // New route-focused suite; keep on the lightest measured shard until hosted timing is available.
-  { file: "tests/ui-sources.spec.ts", shard: 1, fullSeconds: 0, criticalSeconds: 0 },
-  // New computed-value proof spec (PR #2577); keep on the lightest measured shard until
-  // hosted timing is available.
-  { file: "tests/ui-token-layer-resolution.spec.ts", shard: 1, fullSeconds: 0, criticalSeconds: 0 },
-  // Arrived from `main` in the 2026-09-03 merge, which widened `productionSpecPattern` to name
-  // `tools-show-all` while this matcher still said only `tools` — so the spec was a production
-  // journey that belonged to no shard. Zero timing follows the convention above: keep it on the
-  // lightest measured shard until hosted timing is available, and replace this at the next
-  // refresh. A spec wired into no gate is a spec that never runs — the spec (PR #2008) was
-  // collected by NO project from 2026-08-16 until audit M32, and the two-way parity test
-  // (retired 2026-09-25) failed on that shape.
-  { file: "tests/ui-tools-show-all.spec.ts", shard: 1, fullSeconds: 0, criticalSeconds: 0 },
-  // Critical-only acceptance coverage; the required critical job owns its runtime.
-  { file: "tests/ui-clinical-ask.spec.ts", shard: 1, fullSeconds: 1, criticalSeconds: 1 },
-  // The reverse-proxy CSRF Origin journey (#72282V). It drives API routes rather than a page, so
-  // it carries no measured page timing; keep it on the lightest measured shard with zero seconds
-  // until hosted evidence exists, per the convention above. It must be listed here because
-  // `productionSpecPattern` names it: a production spec in no shard group is a spec that never
-  // runs, which is exactly the two-way parity this table exists to make impossible.
-  { file: "tests/api-csrf-proxy.spec.ts", shard: 1, fullSeconds: 0, criticalSeconds: 0 },
-  // Added after the timing sample. Measured locally at ~4.8s for 3 tests; replace
-  // with hosted evidence at the next timing refresh. Moved here from shard 2 by
-  // Task 19 to offset the re-measured Caring Contacts workspace spec.
-  { file: "tests/ui-phone-motion.spec.ts", shard: 1, fullSeconds: 5.0, criticalSeconds: 0 },
-  // Added with the Therapy Pathways mobile picker redesign; measured locally at
-  // ~2 tests. Placed on shard 1 to keep post-critical spread within the 10s ceiling.
-  { file: "tests/ui-therapy-pathways.spec.ts", shard: 1, fullSeconds: 2.0, criticalSeconds: 0 },
-  { file: "tests/ui-phone-scroll-routes.spec.ts", shard: 2, fullSeconds: 129.6, criticalSeconds: 0 },
-  { file: "tests/ui-phone-scroll.spec.ts", shard: 2, fullSeconds: 66.3, criticalSeconds: 0 },
-  { file: "tests/ui-universal-search.spec.ts", shard: 2, fullSeconds: 24.3, criticalSeconds: 0 },
-  // Added after the timing sample; place it on the lightest measured shard and
-  // replace this zero with hosted evidence at the next timing refresh.
-  { file: "tests/dsm-ui-smoke.spec.ts", shard: 2, fullSeconds: 0, criticalSeconds: 0 },
-  // Added by Task 15 with the production Caring Contacts workspace and re-measured
-  // by Task 19, which grew it from 9 tests to 18 (the 24-overlay matrix at two
-  // widths, focus return, reflow and the focus-ring modes). Measured locally at
-  // ~34.2s for 18 tests; replace with hosted evidence at the next timing refresh.
-  //
-  // That +24.2s forced a rebalance rather than just a new number: at 34.2 on this
-  // shard the post-critical spread went to 32.4s against the 10s ceiling its unit test
-  // enforced until 2026-09-25. Two small specs moved out to lift the
-  // other two shards instead of packing this one.
-  { file: "tests/ui-caring-contacts-workspace.spec.ts", shard: 2, fullSeconds: 34.2, criticalSeconds: 0 },
-  // ui-ward-{management,coordinator,roles}.spec.ts moved out of this required PR
-  // shard: Ward Flow now lives behind the /mockups/ward-flow developer gate, so
-  // (like ui-caring-contact-mockup.spec.ts) it runs only under the advisory
-  // chromium-mockups project, not here. See playwright.config.ts mockupSpecPattern.
+  // Shard 1 (95.0s estimated)
+  { file: "tests/api-csrf-proxy.spec.ts", shard: 1, fullSeconds: 2.0, criticalSeconds: 0 },
+  {
+    file: "tests/ui-ward-full-journey.spec.ts",
+    shard: 1,
+    fullSeconds: 45.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-chrome-header.spec.ts",
+    shard: 1,
+    fullSeconds: 18.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-capacity-morning-moved.spec.ts",
+    shard: 1,
+    fullSeconds: 15.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-forced-colors.spec.ts",
+    shard: 1,
+    fullSeconds: 15.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
 
-  // Moved here from shard 2 by Task 19 to offset the re-measured Caring Contacts
-  // workspace spec; its own timing is unchanged.
-  { file: "tests/answer-progress-ui-smoke.spec.ts", shard: 3, fullSeconds: 13.7, criticalSeconds: 0 },
-  { file: "tests/ui-tools.spec.ts", shard: 3, fullSeconds: 110.5, criticalSeconds: 3.1 },
-  { file: "tests/ui-chrome-scroll.spec.ts", shard: 3, fullSeconds: 60.7, criticalSeconds: 0 },
-  { file: "tests/ui-overlap.spec.ts", shard: 3, fullSeconds: 10.1, criticalSeconds: 0 },
-  { file: "tests/ui-stress.spec.ts", shard: 3, fullSeconds: 8.2, criticalSeconds: 0 },
-  { file: "tests/ui-specifiers.spec.ts", shard: 3, fullSeconds: 17.6, criticalSeconds: 0 },
-  { file: "tests/ui-formulation-result-cards.spec.ts", shard: 3, fullSeconds: 2.2, criticalSeconds: 0 },
-  { file: "tests/ui-style-contract.spec.ts", shard: 3, fullSeconds: 7.2, criticalSeconds: 0 },
-  { file: "tests/ui-hydration.spec.ts", shard: 3, fullSeconds: 4.6, criticalSeconds: 0 },
-  { file: "tests/ui-pwa.spec.ts", shard: 3, fullSeconds: 3.7, criticalSeconds: 0 },
-  { file: "tests/ui-phone-scroll-document-rail.spec.ts", shard: 3, fullSeconds: 3.6, criticalSeconds: 0 },
-  { file: "tests/ui-visual-artifacts.spec.ts", shard: 3, fullSeconds: 2.6, criticalSeconds: 0 },
-  { file: "tests/ui-forms-section-nav.spec.ts", shard: 3, fullSeconds: 6.0, criticalSeconds: 0 },
-  { file: "tests/ui-therapy-nav-scroll.spec.ts", shard: 3, fullSeconds: 2.1, criticalSeconds: 0 },
-  // Critical-only regression; use a conservative estimate until the next hosted timing sample.
-  { file: "tests/ui-phone-scroll-submitted-root.spec.ts", shard: 3, fullSeconds: 1.0, criticalSeconds: 1.0 },
-  // Skipped in the sampled runner because pdf.js could not raster there.
-  { file: "tests/ui-document-canvas.spec.ts", shard: 3, fullSeconds: 4.7, criticalSeconds: 0 },
+  // Shard 2 (95.0s estimated)
+  {
+    file: "tests/ui-ward-management.spec.ts",
+    shard: 2,
+    fullSeconds: 35.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-referrals.spec.ts",
+    shard: 2,
+    fullSeconds: 25.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-discharges.spec.ts",
+    shard: 2,
+    fullSeconds: 15.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-search.spec.ts",
+    shard: 2,
+    fullSeconds: 10.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-table-thresholds.spec.ts",
+    shard: 2,
+    fullSeconds: 10.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+
+  // Shard 3 (95.0s estimated)
+  {
+    file: "tests/ui-ward-coordinator.spec.ts",
+    shard: 3,
+    fullSeconds: 25.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-roles.spec.ts",
+    shard: 3,
+    fullSeconds: 25.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-responsive-audit.spec.ts",
+    shard: 3,
+    fullSeconds: 15.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-statistics-compare.spec.ts",
+    shard: 3,
+    fullSeconds: 15.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
+  {
+    file: "tests/ui-ward-statistics-journey.spec.ts",
+    shard: 3,
+    fullSeconds: 15.0,
+    criticalSeconds: 0,
+    project: "chromium-mockups",
+  },
 ]);
 
 export const prUiShardGroups = Object.freeze(
@@ -201,7 +221,9 @@ export function projectsForPrUiShard(shard, groups = prUiShardGroups, profiles =
 }
 
 export function playwrightArgsForPrUiShard(shard, { excludeCritical = false } = {}) {
-  const grepInvert = excludeCritical ? "@critical|@quarantine|@mockup" : "@quarantine|@mockup";
+  // Ward journey specs belong to chromium-mockups and are intentionally tagged @mockup.
+  // Do not exclude that tag or the mockup project shards collect no Ward tests.
+  const grepInvert = excludeCritical ? "@critical|@quarantine" : "@quarantine";
   return [
     "scripts/run-playwright.mjs",
     ...filesForPrUiShard(shard),

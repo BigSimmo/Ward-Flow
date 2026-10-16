@@ -751,11 +751,10 @@ function DeskRow({
   const previewId = `workstation-desk-${desk.id}`;
   return (
     <div className={styles.desk} data-open={isOpen ? "true" : undefined} data-here={isHere ? "true" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+      <div className={styles.deskRow}>
         <button
           type="button"
-          className={styles.deskHead}
-          style={{ flex: 1, minWidth: 0 }}
+          className={cx(styles.deskHead, styles.deskHeadGrow)}
           aria-expanded={isOpen}
           aria-controls={previewId}
           onClick={onToggle}

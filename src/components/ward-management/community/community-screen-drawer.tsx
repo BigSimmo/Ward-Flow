@@ -156,15 +156,13 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
               <>
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                      Demographics &amp; Allocation
-                    </h4>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Demographics &amp; Allocation</h4>
                     <span id="pxLegalChip" className={`${styles.statusPillBadge} ${styles.neutral}`}>
                       {selectedPatient.legalStatus ?? "Legal status not recorded"}
                     </span>
                   </div>
-                  <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                  <div className={`${styles.panelBody} ${styles.bodyText}`}>
+                    <div className={styles.factGrid}>
                       <div>
                         <b>Name:</b> <span>{patientDisplayName(selectedPatient)}</span>
                       </div>
@@ -189,9 +187,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                      Key Information
-                    </h4>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Key Information</h4>
                   </div>
                   <div className={styles.panelBody}>
                     <dl className={styles.factsList}>
@@ -211,7 +207,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   </div>
                 </div>
 
-                <div style={{ display: "none" }}>
+                <div className={styles.displayNone}>
                   <span id="pxDiagnosis">
                     {selectedPatientId === "PT-3712"
                       ? "Severe depressive episode with psychotic features"
@@ -227,15 +223,13 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
               <>
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                      Demographics &amp; Allocation
-                    </h4>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Demographics &amp; Allocation</h4>
                     <span id="pxLegalChip" className={`${styles.statusPillBadge} ${styles.neutral}`}>
                       Illustrative Record
                     </span>
                   </div>
-                  <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem" }}>
+                  <div className={`${styles.panelBody} ${styles.bodyText}`}>
+                    <div className={styles.factGridLoose}>
                       <div>
                         <b>UMRN:</b>{" "}
                         <span id="pxUmrn" className={styles.patientIdWrap}>
@@ -276,14 +270,14 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>
                       Current Active Care Plan &amp; Diagnosis
                     </h4>
                     <span id="pxCareTier" className={styles.badgePill}>
                       {selectedPatientId === "PT-3712" ? "Tier 2 Step-Down" : "Tier 1 High Acuity"}
                     </span>
                   </div>
-                  <div className={styles.panelBody} style={{ fontSize: "var(--t-1)", lineHeight: 1.45 }}>
+                  <div className={`${styles.panelBody} ${styles.bodyProse}`}>
                     <p>
                       <b>Diagnosis:</b>{" "}
                       <span id="pxDiagnosis">
@@ -313,36 +307,25 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>
                       Recent Timeline &amp; Clinical Contacts
                     </h4>
                     <span className={styles.badgePill}>Last 7 Days</span>
                   </div>
-                  <div
-                    id="pxTimeline"
-                    className={styles.panelBody}
-                    style={{ fontSize: "var(--t-1)", display: "flex", flexDirection: "column", gap: "0.5rem" }}
-                  >
-                    <div style={{ borderBottom: "1px solid var(--line)", paddingBottom: "0.375rem" }}>
-                      <span className={styles.mono} style={{ color: "var(--muted)", fontSize: "0.75rem" }}>
-                        3d ago
-                      </span>{" "}
-                      · <b>Ward Bed Telemetry:</b> Admitted in{" "}
-                      {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure Bed 03"}. Joint MDT
-                      conference scheduled.
+                  <div id="pxTimeline" className={`${styles.panelBody} ${styles.timeline}`}>
+                    <div className={styles.timelineEntry}>
+                      <span className={`${styles.mono} ${styles.microMuted}`}>3d ago</span> · <b>Ward Bed Telemetry:</b>{" "}
+                      Admitted in {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure Bed 03"}.
+                      Joint MDT conference scheduled.
                     </div>
-                    <div style={{ borderBottom: "1px solid var(--line)", paddingBottom: "0.375rem" }}>
-                      <span className={styles.mono} style={{ color: "var(--muted)", fontSize: "0.75rem" }}>
-                        5d ago
-                      </span>{" "}
-                      · <b>Community Liaison Contact:</b> Key clinician attended ward huddle; patient tolerating care
-                      plan well.
+                    <div className={styles.timelineEntry}>
+                      <span className={`${styles.mono} ${styles.microMuted}`}>5d ago</span> ·{" "}
+                      <b>Community Liaison Contact:</b> Key clinician attended ward huddle; patient tolerating care plan
+                      well.
                     </div>
                     <div>
-                      <span className={styles.mono} style={{ color: "var(--muted)", fontSize: "0.75rem" }}>
-                        10d ago
-                      </span>{" "}
-                      · <b>Inpatient Admission:</b> Transferred under Form 1A MHA.
+                      <span className={`${styles.mono} ${styles.microMuted}`}>10d ago</span> ·{" "}
+                      <b>Inpatient Admission:</b> Transferred under Form 1A MHA.
                     </div>
                   </div>
                 </div>
@@ -391,15 +374,13 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
               <p className={styles.footnote}>Priority triage assessment and referral routing record.</p>
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
-                  <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                    Referral Demographics &amp; Urgency
-                  </h4>
+                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Referral Demographics &amp; Urgency</h4>
                   <span className={`${styles.statusPillBadge} ${styles.danger}`} id="refDrawerUrgencyBadge">
                     {selectedReferral ? urgencyTierLabel(selectedReferral.urgency) : "Urgency not recorded"}
                   </span>
                 </div>
-                <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                <div className={`${styles.panelBody} ${styles.bodyText}`}>
+                  <div className={styles.factGrid}>
                     <div>
                       <b>Patient:</b>{" "}
                       <span id="refDrawerPatient">
@@ -424,11 +405,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     </div>
                     <div>
                       <b>Elapsed Wait:</b>{" "}
-                      <span
-                        className={styles.mono}
-                        id="refDrawerWait"
-                        style={{ color: "var(--danger-ink)", fontWeight: 700 }}
-                      >
+                      <span className={`${styles.mono} ${styles.inkDangerStrong}`} id="refDrawerWait">
                         {selectedReferral ? referralWaitLine(selectedReferral, now) : "Not recorded"}
                       </span>
                     </div>
@@ -438,11 +415,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
-                  <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                    Triage Assessment &amp; Clinical Notes
-                  </h4>
+                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Triage Assessment &amp; Clinical Notes</h4>
                 </div>
-                <div className={styles.panelBody} style={{ fontSize: "var(--t-1)", lineHeight: 1.45 }}>
+                <div className={`${styles.panelBody} ${styles.bodyProse}`}>
                   <p>
                     <b>Presenting Symptoms:</b>{" "}
                     <span id="refDrawerSymptoms">{selectedReferral?.history || "History not recorded"}</span>
@@ -467,11 +442,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
-                  <h4 className={styles.panelTitle} style={{ fontSize: "var(--t-2)" }}>
-                    Clinician Allocation &amp; Decision
-                  </h4>
+                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Clinician Allocation &amp; Decision</h4>
                 </div>
-                <div className={styles.panelBody} style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                <div className={`${styles.panelBody} ${styles.bodyStack}`}>
                   <p>
                     Clinician assignment: <strong>Not wired in this prototype.</strong>
                   </p>
@@ -485,29 +458,29 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
           )}
 
           {(activeDrawer === "activity" || activeDrawer === "activityDrawer") && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div className={styles.stackMd}>
               <p className={styles.footnote}>
                 Illustrative interface content only. This is not a live activity stream for {team.name}.
               </p>
-              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--line)", fontSize: "var(--t-1)" }}>
+              <div className={styles.activityEntry}>
                 {/* No named patient here: an example event attached to a sample patient's name reads
                           as that person's record, and contradicted it (25 Sept 2026). */}
-                <span style={{ color: "var(--muted)", fontSize: "var(--t-0)", display: "block" }}>Example entry</span>
+                <span className={styles.entryLabel}>Example entry</span>
                 <b>Referral:</b> a priority referral arrives from an emergency department.
               </div>
-              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--line)", fontSize: "var(--t-1)" }}>
-                <span style={{ color: "var(--muted)", fontSize: "var(--t-0)", display: "block" }}>Example entry</span>
+              <div className={styles.activityEntry}>
+                <span className={styles.entryLabel}>Example entry</span>
                 <b>Discharge:</b> a discharge summary arrives from an inpatient ward.
               </div>
-              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--line)", fontSize: "var(--t-1)" }}>
-                <span style={{ color: "var(--muted)", fontSize: "var(--t-0)", display: "block" }}>Example entry</span>
+              <div className={styles.activityEntry}>
+                <span className={styles.entryLabel}>Example entry</span>
                 <b>Team huddle:</b> the morning allocations are completed.
               </div>
             </div>
           )}
 
           {(activeDrawer === "tasks" || activeDrawer === "tasksDrawer") && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div className={styles.stackMd}>
               <p className={styles.footnote}>
                 Illustrative interface content only. These are not recorded tasks for this catchment shift.
               </p>
@@ -549,9 +522,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                       >
                         {task.label}
                       </span>
-                      <span style={{ display: "block", fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                        {task.prio}
-                      </span>
+                      <span className={styles.entryLabel}>{task.prio}</span>
                     </div>
                     <button
                       type="button"
@@ -574,10 +545,10 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
           )}
 
           {(activeDrawer === "tools" || activeDrawer === "toolsDrawer") && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div className={styles.stackLg}>
               <div>
-                <h4 style={{ margin: "0 0 0.5rem", fontSize: "var(--t-1)" }}>Prototype State Simulation</h4>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <h4 className={styles.toolsHeading}>Prototype State Simulation</h4>
+                <div className={styles.buttonRow}>
                   <button
                     type="button"
                     className={uiState === "populated" ? styles.btnSmPrimary : styles.btnSmSec}
@@ -637,7 +608,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
             >
               Edit dossier
             </button>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className={styles.footButtons}>
               <button
                 type="button"
                 className={styles.btnSmSec}

@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { describe, expect, it, vi } from "vitest";
 
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -8,11 +7,6 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { supportNotificationTaskId } from "@/components/ward-management/ward-support-notifications";
-
-// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
-// reset after, so no flag change re-renders a tree that is being torn down.
-beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
 
 /**
  * 🔴 **THE TASKS DRAWER HAD NO TEST OF ITS OWN UNTIL NOW, AND IT IS ON EVERY WARD ROUTE.**
@@ -49,6 +43,7 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
   const onSelectMovement = vi.fn();
   render(
     <WardTasksDrawer
+      alertsScreenOpen={false}
       items={items}
       acknowledgements={{}}
       completions={{}}
@@ -68,6 +63,7 @@ describe("the tasks drawer", () => {
   it("is announced as a modal dialog when it opens over a backdrop", () => {
     render(
       <WardTasksDrawer
+        alertsScreenOpen={false}
         items={items}
         acknowledgements={{}}
         completions={{}}
@@ -386,6 +382,7 @@ describe("carer, PSP and MHAS rows open the right checklist", () => {
     const onSelectDischarge = vi.fn();
     render(
       <WardTasksDrawer
+        alertsScreenOpen={false}
         items={notificationItems}
         acknowledgements={{}}
         completions={{}}
