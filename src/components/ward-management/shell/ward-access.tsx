@@ -255,9 +255,13 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
       return (review: AuditReview) => kept.has(review.eventId);
     };
-    // A refusal names its subject: a journey, ward, stay, release or ED, or "none" for a refused
-    // record command, which is the desk's own and stays so its screen hears it (review on PR #345).
-    const rejectionInScope = (rejection: Rejection) => scope.rejectionSubject(rejection.movementId);
+    // A refusal names its subject: a journey, ward, stay, release or ED. A refused record command
+    // names none, so it follows its own audit row and stays only when that row is in scope, which
+    // lets the desk's screen hear its own refusal (reviews on PR #345).
+    const rejectionInScope = (): ((rejection: Rejection) => boolean) => {
+      const read = context.readAuditEvents({ role: "coordinator" });
+      return scope.refusals(read.status === "allowed" ? read.value : []);
+    };
     const auditRead = <T,>(
       read: RecordRead<readonly T[]>,
       keep: (items: readonly T[]) => T[],
@@ -293,7 +297,11 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
           coordinator && context.readGovernanceAuditEvents
             ? auditRead(context.readGovernanceAuditEvents(actor), scope.auditEvents)
             : denied,
-        rejections: wholeNetwork ? context.rejections : coordinator ? context.rejections.filter(rejectionInScope) : [],
+        rejections: wholeNetwork
+          ? context.rejections
+          : coordinator
+            ? context.rejections.filter(rejectionInScope())
+            : [],
         eventLog: wholeNetwork ? context.eventLog : coordinator ? (context.eventLog ?? []).filter(scope.logEntry) : [],
         bedReleases: byUnit(context.bedReleases),
         leaveBeds: byUnit(context.leaveBeds),

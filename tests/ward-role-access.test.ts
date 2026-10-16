@@ -394,6 +394,17 @@ describe("the scoped workspace", () => {
         { id: "own", subject: about, actor: { actingUnitId: unitId }, details: { targets: [{ unitId }] } },
       ];
       expect(records.auditEvents(foreign).map((event) => event.id)).toEqual(["own"]);
+      // A refused record command names no subject, so it follows the audit row written with it.
+      const refused = records.refusals([
+        { id: "audit-1", subject: about },
+        { id: "audit-2", subject: about, actor: { actingUnitId: otherUnit.id } },
+      ]);
+      const refusal = { id: "record-rejection-1", movementId: "none" };
+      expect(refused(refusal)).toBe(true);
+      expect(refused({ ...refusal, id: "record-rejection-2" })).toBe(false);
+      expect(refused({ ...refusal, id: "record-rejection-3" })).toBe(false);
+      expect(refused({ id: "rejection-x", movementId: unitId })).toBe(true);
+      expect(refused({ id: "rejection-y", movementId: otherUnit.id })).toBe(false);
     }
     expect(records.rejectionSubject("none")).toBe(true);
     expect(records.rejectionSubject(unitId)).toBe(true);

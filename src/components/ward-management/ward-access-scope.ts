@@ -625,6 +625,12 @@ export function coordinatorRecordScope(
   auditEvents<E extends ScopedAuditEvent>(events: readonly E[]): E[];
   /** A refusal's subject id: a journey, referral, stay, release, ward or ED in scope, or "none". */
   rejectionSubject(id: string): boolean;
+  /**
+   * Which refusals are in scope. A refused record command names no subject ("none"), so it follows
+   * the audit row the reducer writes with it (`record-rejection-N` with `audit-N`), and another
+   * service's refused record command is left out.
+   */
+  refusals(auditEvents: readonly ScopedAuditEvent[]): (rejection: { id: string; movementId: string }) => boolean;
   logEntry(entry: EventLogEntry): boolean;
 } {
   const movementIds = new Set(scoped.movements.map((movement) => movement.id));
@@ -692,7 +698,14 @@ export function coordinatorRecordScope(
     releaseIds.has(id) ||
     unitIn(id) ||
     edIn(id);
-  return { movementIds, subject, auditEvents, rejectionSubject, logEntry };
+  const refusals = (events: readonly ScopedAuditEvent[]) => {
+    const kept = new Set(auditEvents(events).map((event) => event.id));
+    return (rejection: { id: string; movementId: string }) => {
+      const paired = /^record-rejection-(\d+)$/.exec(rejection.id);
+      return paired ? kept.has(`audit-${paired[1]}`) : rejectionSubject(rejection.movementId);
+    };
+  };
+  return { movementIds, subject, auditEvents, rejectionSubject, refusals, logEntry };
 }
 
 /**
