@@ -68,13 +68,13 @@ tested. Two services were added to the same Ward Flow project and environment, S
 both following `BigSimmo/Ward-Flow` `main`. The open public demo (`ward-flow`) is unchanged and
 stays in local mode, because shared mode puts a sign-in screen in front of every page.
 
-| Item     | Backend                                                     | Signed-in site                                             |
-| -------- | ----------------------------------------------------------- | ---------------------------------------------------------- |
+| Item     | Backend                                                      | Signed-in site                                              |
+| -------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
 | Service  | `ward-flow-backend` (`e61d6afa-0fe0-48d4-af02-6db904423f97`) | `ward-flow-shared` (`e6b96cb4-a904-4f83-a10c-0a2ee9608457`) |
-| Address  | https://ward-flow-backend-production.up.railway.app         | https://ward-flow-shared-production.up.railway.app         |
-| Port     | 8080                                                        | 8080                                                       |
-| Health   | `/healthz` (liveness only; `/readyz` checks the database)   | `/api/health`                                              |
-| Sleeping | Off                                                         | On                                                         |
+| Address  | https://ward-flow-backend-production.up.railway.app          | https://ward-flow-shared-production.up.railway.app          |
+| Port     | 8080                                                         | 8080                                                        |
+| Health   | `/healthz` (liveness only; `/readyz` checks the database)    | `/api/health`                                               |
+| Sleeping | Off                                                          | On                                                          |
 
 Backend settings (Railway dashboard):
 
@@ -88,14 +88,16 @@ Backend settings (Railway dashboard):
   `WARD_ALLOWED_ORIGIN` set to the signed-in site, `WARD_SUPABASE_CA_PEM` and
   `WARD_SUPABASE_CA_CERT_FILE=/tmp/supabase-ca.pem`. Phone push is off (no VAPID keys).
   `WARD_SUPABASE_DATABASE_URL` is the restricted `wardflow_backend` session pooler login. Its
-  password was set by the owner in the Supabase SQL editor and lives only in Railway.
+  password was set privately by the owner and lives only in Railway.
 - Watch paths: `backend/ward-flow`, `src/components/ward-management` (the engine bundles it),
   `package.json`, `package-lock.json` and `tsconfig.json`.
 
 Signed-in site settings: the same build and start commands as `ward-flow`, plus
 `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, `NEXT_PUBLIC_WARD_AUTH_PROVIDER=supabase`, the approved
-Supabase URL and publishable key, and `NEXT_PUBLIC_WARD_API_BASE_URL` set to the backend. These
-are fixed at build time, so a change needs a rebuild.
+Supabase URL, `NEXT_PUBLIC_WARD_API_BASE_URL` set to the backend, and
+`NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY` as a Railway reference to the backend's
+`WARD_SUPABASE_PUBLISHABLE_KEY`, so the key is kept in one place. These are fixed at build time, so
+a change needs a rebuild.
 
 ## Known limits
 
