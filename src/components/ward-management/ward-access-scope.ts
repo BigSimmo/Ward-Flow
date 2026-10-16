@@ -597,31 +597,43 @@ export const SMALL_NUMBER_NOT_SHOWN = "not shown";
 
 /**
  * The parts of a breakdown whose total is on screen (role access plan, high finding 8). Each part
- * under the line words as "fewer than N". When any part is worded, one exact part reads "not shown"
- * too (the smallest above zero, else a nought), so the hidden parts' sum is never known: a single
- * hidden part would be worked back by subtraction, and two whose sum allows one split (1 and 1, or
- * 4 and 4) would be too (review on PR #354). Not needed when the parts' total is itself under the
- * line, since that total is worded too. A worded part is a string and an exact one a number.
+ * under the line words as "fewer than N". If the hidden parts have only one possible split of the
+ * displayed total, the next-smallest exact part above zero reads "not shown" too, or it could be
+ * worked back by subtraction. A worded part is a string and an exact one stays a number.
  */
 export function smallNumberParts(counts: readonly number[]): (number | string)[] {
+  const line = CLINICAL_VALUES.smallNumberHidden.value;
   const parts: (number | string)[] = counts.map((count) => {
     const text = smallNumberText(count);
     return text === String(count) ? count : text;
   });
-  if (!parts.some((part) => typeof part === "string")) return parts;
-  // A total under the line is worded itself, so the hidden parts' sum is not known.
-  const total = counts.reduce((sum, count) => sum + count, 0);
-  if (smallNumberText(total) !== String(total)) return parts;
-  let pick = -1;
-  counts.forEach((count, index) => {
-    if (typeof parts[index] !== "number") return;
-    const better = pick < 0 || (count > 0 && (counts[pick] === 0 || count < counts[pick]!));
-    if (better) pick = index;
-  });
-  if (pick >= 0) parts[pick] = SMALL_NUMBER_NOT_SHOWN;
-  // Every part hidden beside a shown total (4 and 4 of 8): "fewer than 5" would pin them, so none
-  // is said to be under the line.
-  else return parts.map(() => SMALL_NUMBER_NOT_SHOWN);
+  const hidden = parts.filter((part) => typeof part === "string");
+  if (hidden.length === 0) return parts;
+
+  // If the visible total leaves only one possible split among the hidden parts, hiding the next
+  // exact part prevents the viewer from recovering it by subtraction.
+  const exactPositive = counts.filter((count, index) => typeof parts[index] === "number" && count > 0);
+  const nextExact = Math.min(...exactPositive);
+  const target = counts.reduce((total, count) => total + count, 0) -
+    parts.reduce((total, part) => (typeof part === "number" ? total + part : total), 0);
+  let waysBySum = new Map<number, number>([[0, 1]]);
+  for (const part of hidden) {
+    const lower = part === SMALL_NUMBER_NOT_SHOWN ? line : 1;
+    const upper = part === SMALL_NUMBER_NOT_SHOWN ? (Number.isFinite(nextExact) ? nextExact : target) : line - 1;
+    const next = new Map<number, number>();
+    for (const [sum, ways] of waysBySum) {
+      for (let value = lower; value <= upper; value += 1) {
+        const candidate = sum + value;
+        if (candidate > target) continue;
+        next.set(candidate, Math.min(2, (next.get(candidate) ?? 0) + ways));
+      }
+    }
+    waysBySum = next;
+  }
+  if (waysBySum.get(target) === 1) {
+    const pick = counts.findIndex((count, index) => typeof parts[index] === "number" && count > 0);
+    if (pick >= 0) parts[pick] = SMALL_NUMBER_NOT_SHOWN;
+  }
   return parts;
 }
 
