@@ -45,7 +45,7 @@ import {
   type SearchResultGroup,
   type SearchResultItem,
 } from "@/components/ward-management/ward-global-search";
-import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
+import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";

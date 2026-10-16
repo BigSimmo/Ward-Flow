@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
-import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

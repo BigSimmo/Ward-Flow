@@ -151,6 +151,11 @@ jobs:
       - name: Lint the whole tree
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern
+      # Full knip (unused files, exports, types and dependencies) against knip-baseline.json. It fails
+      # on a new unused item, and on a fixed one until the baseline is shrunk, so the list only shrinks.
+      - name: Check for new unused code
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:knip
       # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
       # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
       # shard would also fail. It shares this runner, which keeps two PRs' runs inside the
@@ -437,6 +442,11 @@ jobs:
       - name: Build for production (Railway build command)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
+      # Starts the built app on a local port and checks each route's phone script size against
+      # script-budget.json, so first-load JavaScript cannot creep back up unnoticed.
+      - name: Check the phone script budget
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/check-script-budget.mjs
 
   coverage:
     # Enforces the vitest.config.mts coverage thresholds over the whole unit suite. On 4 October 2026

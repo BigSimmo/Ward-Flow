@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
-import { WARD_PERSONA_SYNC_EVENT } from "@/components/ward-management/settings/operator-switcher-modal";
+import { WARD_PERSONA_SYNC_EVENT } from "@/components/ward-management/settings/persona-sync";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
