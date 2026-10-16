@@ -4,6 +4,7 @@ import {
   AlarmClock,
   ArrowUpRight,
   BedDouble,
+  Bell,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -23,10 +24,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type Dispatch } from "react";
-import { WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
+import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
@@ -90,13 +92,25 @@ type WardTasksDrawerProps = {
 
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
 
-const ACK_FILTER_LABELS: Record<AckFilter, string> = {
-  all: "All task states",
-  open: "Open tasks",
-  unacknowledged: "Not yet acknowledged",
-  acknowledged: "Acknowledged",
-  completed: "Completed",
-};
+/**
+ * The drawer's words. With the `alerts-one-queue` flag on, Tasks and Alerts are one queue (Josh,
+ * 16 Oct 2026), so the drawer uses the Alerts screen's name and groups. Red rows are act now and
+ * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
+ */
+type DrawerWords = { name: string; plural: string; act: string; wait: string };
+const TASKS_WORDS: DrawerWords = { name: "Tasks", plural: "tasks", act: "Critical", wait: "Review" };
+const ALERTS_WORDS: DrawerWords = { name: "Alerts", plural: "alerts", act: "Act now", wait: "Waiting" };
+
+function ackFilterLabels(words: DrawerWords): Record<AckFilter, string> {
+  const singular = words.plural.slice(0, -1);
+  return {
+    all: `All ${singular} states`,
+    open: `Open ${words.plural}`,
+    unacknowledged: "Not yet acknowledged",
+    acknowledged: "Acknowledged",
+    completed: "Completed",
+  };
+}
 
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
@@ -176,6 +190,7 @@ function rowTiming(
   item: InboxItem,
   movement: Movement | undefined,
   now: Instant,
+  waitWord: string,
 ): { value?: string; word?: string; state: string; tone: WfTone; stateTone?: WfTone } {
   if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     return { value: durMinutes(now - movement.pullExpiresAt), state: "Overdue", tone: "danger", stateTone: "danger" };
@@ -202,11 +217,11 @@ function rowTiming(
   // Ops-8 (remaining-pages audit, 13 Oct 2026): a row that records when it started (a planned
   // arrival not yet recorded) shows how long it has waited, the figure the phone list sorts by.
   if (item.tone !== "danger" && item.since !== undefined && item.since <= now) {
-    return { value: durMinutes(now - item.since), word: "waiting", state: "Review", tone: "warning" };
+    return { value: durMinutes(now - item.since), word: "waiting", state: waitWord, tone: "warning" };
   }
   return item.tone === "danger"
     ? { state: "Act now", tone: "danger", stateTone: "danger" }
-    : { state: "Review", tone: "warning" };
+    : { state: waitWord, tone: "warning" };
 }
 
 /**
@@ -254,6 +269,7 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
+  const words = useWardFeatureFlag("alerts-one-queue") ? ALERTS_WORDS : TASKS_WORDS;
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
@@ -625,7 +641,7 @@ export function WardTasksDrawer({
           tone: "success" as WfTone,
           stateTone: undefined,
         }
-      : rowTiming(item, movement, now);
+      : rowTiming(item, movement, now, words.wait);
     const isExpanded = expanded === item.id;
     const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
     const detail = rowDetail(item, movement, records?.units, now);
@@ -688,7 +704,7 @@ export function WardTasksDrawer({
             ) : null}
             <p className={styles.rowMeta} data-phone-hidden={isPhone || undefined}>
               <StatusGlyph tone={severity} size={9} />
-              <span>{item.tone === "danger" ? "Critical" : "Review"}</span>
+              <span>{item.tone === "danger" ? words.act : words.wait}</span>
               <span aria-hidden="true">·</span>
               <strong>{patient?.displayName ?? "Patient not linked"}</strong>
               {patient?.patient ? (
@@ -862,18 +878,18 @@ export function WardTasksDrawer({
         className={styles.drawer}
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? "true" : undefined}
-        aria-label="Tasks"
+        aria-label={words.name}
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">
-            <ListChecks aria-hidden="true" />
+            {words === ALERTS_WORDS ? <Bell aria-hidden="true" /> : <ListChecks aria-hidden="true" />}
           </span>
           <div className={styles.headerText}>
-            <h2 className={styles.heading}>Tasks</h2>
+            <h2 className={styles.heading}>{words.name}</h2>
             <p className={styles.headerNote}>
               {isPhone
                 ? `${openCount} open · act now, then oldest`
-                : `${ROLE_LABELS[role] ?? "Tasks"} · synthetic movements`}
+                : `${ROLE_LABELS[role] ?? words.name} · synthetic movements`}
             </p>
           </div>
           <span className={styles.headingCount} data-testid="ward-tasks-drawer-count">
@@ -886,8 +902,8 @@ export function WardTasksDrawer({
             type="button"
             className={styles.closeButton}
             onClick={onClose}
-            aria-label="Close tasks panel"
-            title="Close tasks panel"
+            aria-label={`Close ${words.plural} panel`}
+            title={`Close ${words.plural} panel`}
             data-sheet-autofocus="true"
           >
             <X aria-hidden="true" />
@@ -922,12 +938,12 @@ export function WardTasksDrawer({
           ) : null}
 
           <div className={styles.filterBar}>
-            <div className={styles.segmented} role="group" aria-label="Filter tasks by status">
+            <div className={styles.segmented} role="group" aria-label={`Filter ${words.plural} by status`}>
               {(
                 [
                   ["all", "All", items.length],
-                  ["critical", "Critical", items.filter((item) => item.tone === "danger").length],
-                  ["review", "Review", items.filter((item) => item.tone !== "danger").length],
+                  ["critical", words.act, items.filter((item) => item.tone === "danger").length],
+                  ["review", words.wait, items.filter((item) => item.tone !== "danger").length],
                 ] as const
               ).map(([value, label, count]) => (
                 <button
@@ -948,18 +964,26 @@ export function WardTasksDrawer({
           <div className={styles.filterMeta}>
             <span role="status" className={styles.filterStatus}>
               <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
-              <span className="sr-only">invented </span>tasks
+              {words === ALERTS_WORDS ? (
+                <>
+                  <span className="sr-only">invented </span>alerts
+                </>
+              ) : (
+                <>
+                  <span className="sr-only">invented </span>tasks
+                </>
+              )}
             </span>
             <label className={styles.selectWrap}>
               <Filter aria-hidden="true" />
               <select
-                aria-label="Filter task state"
+                aria-label={`Filter ${words.plural.slice(0, -1)} state`}
                 value={ackFilter}
                 onChange={(event) => setAckFilter(event.target.value as AckFilter)}
               >
-                {(Object.keys(ACK_FILTER_LABELS) as AckFilter[]).map((value) => (
+                {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
                   <option key={value} value={value}>
-                    {ACK_FILTER_LABELS[value]}
+                    {label}
                   </option>
                 ))}
               </select>
@@ -967,7 +991,7 @@ export function WardTasksDrawer({
             </label>
             <label className={styles.selectWrap}>
               <select
-                aria-label="Sort tasks"
+                aria-label={`Sort ${words.plural}`}
                 data-testid="ward-tasks-sort"
                 value={sortMode}
                 onChange={(event) => {
@@ -998,14 +1022,18 @@ export function WardTasksDrawer({
                     ? "Nothing active"
                     : "No outstanding work"}
               </h3>
-              <p>{role === "coordinator" ? "New tasks appear here" : "Tasks is the bed coordinator's list."}</p>
+              <p>
+                {role === "coordinator"
+                  ? `New ${words.plural} appear here`
+                  : `${words.name} is the bed coordinator's list.`}
+              </p>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className={styles.empty}>
               <span className={styles.emptyIcon} aria-hidden="true">
                 <Search aria-hidden="true" />
               </span>
-              <h3>{ackFilter === "completed" ? "No completed tasks" : "No matching tasks"}</h3>
+              <h3>{ackFilter === "completed" ? `No completed ${words.plural}` : `No matching ${words.plural}`}</h3>
               <p>
                 {ackFilter === "completed"
                   ? "Facts stay open until they stop being true"
@@ -1141,6 +1169,7 @@ export function WardTasksDrawer({
           style={{
             display: "flex",
             flexWrap: "wrap",
+            alignItems: "center",
             gap: "6px",
             padding: "8px 14px",
             borderTop: "1px solid var(--wf-line)",
@@ -1148,6 +1177,18 @@ export function WardTasksDrawer({
             fontSize: "0.75rem",
           }}
         >
+          {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
+              broadcast and history. */}
+          {words === ALERTS_WORDS ? (
+            <Link
+              href={WARD_ALERTS_HREF}
+              onClick={onClose}
+              data-testid="ward-tasks-open-alerts"
+              className={buttonClass({ variant: "pri", size: "sm" })}
+            >
+              Open the Alerts screen
+            </Link>
+          ) : null}
           <Link
             href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/mockups/ward-flow/delays"}
             onClick={onClose}
@@ -1159,17 +1200,21 @@ export function WardTasksDrawer({
           <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
             ·
           </span>
-          <Link
-            href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? "/mockups/ward-flow/alerts"}
-            onClick={onClose}
-            data-testid="ward-tasks-jump-alerts"
-            style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
-          >
-            Alerts &amp; watches →
-          </Link>
-          <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
-            ·
-          </span>
+          {words === ALERTS_WORDS ? null : (
+            <>
+              <Link
+                href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
+                onClick={onClose}
+                data-testid="ward-tasks-jump-alerts"
+                style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
+              >
+                Alerts &amp; watches →
+              </Link>
+              <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
+                ·
+              </span>
+            </>
+          )}
           <Link
             href={WARD_HOME_HREF}
             onClick={onClose}

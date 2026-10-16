@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -7,6 +8,11 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { supportNotificationTaskId } from "@/components/ward-management/ward-support-notifications";
+
+// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx.
+beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
+afterEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", null));
 
 /**
  * 🔴 **THE TASKS DRAWER HAD NO TEST OF ITS OWN UNTIL NOW, AND IT IS ON EVERY WARD ROUTE.**

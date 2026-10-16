@@ -222,6 +222,16 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
+  "alerts-one-queue": {
+    label: "One Alerts queue",
+    description:
+      "Tasks becomes Alerts: one name, one count and the Alerts words. On a desktop the drawer is a quick look with a way to the Alerts screen, and on a phone the Alerts tab opens that screen.",
+    owner: "Josh",
+    added: "2026-10-16",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen:
+      "Josh picks a merge design and signs it off in the real screens, then the Tasks words and drawer path go.",
+  },
   "top25-walk-round": {
     label: "Phone walk round",
     description:

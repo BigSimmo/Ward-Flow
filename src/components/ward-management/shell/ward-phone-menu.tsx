@@ -10,6 +10,7 @@ import {
   Inbox,
   ChevronRight,
   Clock3,
+  Bell,
   ListChecks,
   Plus,
   Search,
@@ -29,7 +30,7 @@ import {
   wardTasksAreActionableForRole,
   type WardChromeRole,
 } from "@/components/ward-management/ward-chrome-role";
-import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_ADD_PERSON_HREF, WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
@@ -245,9 +246,22 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
   return rows;
 }
 
-function actNowNeed(actNow: number): NeedRow[] {
-  return actNow > 0
+function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
+  if (actNow <= 0) return [];
+  // One Alerts queue: the row names Alerts and opens the Alerts screen, as the dock tab does.
+  return oneAlertsQueue
     ? [
+        {
+          id: "act-now",
+          label: "Act-now alerts",
+          meta: "red rows in Alerts",
+          count: actNow,
+          href: WARD_ALERTS_HREF,
+          icon: Bell,
+          actNow: true,
+        },
+      ]
+    : [
         {
           id: "act-now",
           label: "Act-now tasks",
@@ -256,8 +270,7 @@ function actNowNeed(actNow: number): NeedRow[] {
           icon: ListChecks,
           actNow: true,
         },
-      ]
-    : [];
+      ];
 }
 
 function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; onTasks: () => void }) {
@@ -428,6 +441,7 @@ function PhoneDock({
   pathname,
   tasksCount,
   activityUnread,
+  oneAlertsQueue,
   onGo,
   onCreate,
   onDrawer,
@@ -436,6 +450,8 @@ function PhoneDock({
   counts: CountMap;
   pathname: string;
   tasksCount: number;
+  /** One Alerts queue: the Tasks tab is the Alerts tab and opens the Alerts screen. */
+  oneAlertsQueue: boolean;
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
   onCreate: () => void;
@@ -478,20 +494,37 @@ function PhoneDock({
           <Plus aria-hidden="true" strokeWidth={2} />
         </button>
       </span>
-      <button
-        type="button"
-        className={styles.dockItem}
-        aria-haspopup="dialog"
-        data-testid="ward-phone-menu-tasks"
-        onClick={() => onDrawer("tasks")}
-      >
-        <DockFace
-          icon={ListChecks}
-          label="Tasks"
-          count={tasksCount}
-          tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
-        />
-      </button>
+      {oneAlertsQueue ? (
+        <Link
+          href={WARD_ALERTS_HREF}
+          className={styles.dockItem}
+          aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
+          data-testid="ward-phone-menu-alerts"
+          onClick={() => announceToWardShell("Alerts.")}
+        >
+          <DockFace
+            icon={Bell}
+            label="Alerts"
+            count={tasksCount}
+            tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
+          />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          className={styles.dockItem}
+          aria-haspopup="dialog"
+          data-testid="ward-phone-menu-tasks"
+          onClick={() => onDrawer("tasks")}
+        >
+          <DockFace
+            icon={ListChecks}
+            label="Tasks"
+            count={tasksCount}
+            tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+          />
+        </button>
+      )}
       <button
         type="button"
         className={styles.dockItem}
@@ -1020,7 +1053,8 @@ export function WardPhoneMenu({
       flowNow,
     ],
   );
-  const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
+  const oneAlertsQueue = flagOn("alerts-one-queue");
+  const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
 
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
@@ -1113,6 +1147,7 @@ export function WardPhoneMenu({
           pathname={pathname}
           tasksCount={tasksCount}
           activityUnread={activityUnread}
+          oneAlertsQueue={oneAlertsQueue}
           onGo={(entry) => announceGo(pathname, entry)}
           onCreate={create}
           onDrawer={drawer}

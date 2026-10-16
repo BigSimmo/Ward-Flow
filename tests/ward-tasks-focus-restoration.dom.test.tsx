@@ -1,9 +1,15 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
+// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx.
+beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
+afterEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", null));
 
 const openers: HTMLButtonElement[] = [];
 afterEach(() => {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
+  Bell,
   Check,
   ChevronDown,
   ClipboardCheck,
@@ -62,6 +63,7 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_ALERTS_HREF,
   WARD_ED_HREF,
   WARD_HOME_HREF,
   WARD_NAV,
@@ -106,6 +108,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
+import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, edHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
@@ -527,6 +530,22 @@ function withRoleCategory(
 /** The Referrals board the slide-out route sits over, read from the rail rather than retyped. */
 const REFERRAL_BOARD_HREF = WARD_NAV.find((item) => item.id === "referrals")?.href ?? WARD_HOME_HREF;
 
+/**
+ * The Alerts button on the Alerts screen: moves focus to the first row of the queue (or the queue
+ * itself when it is empty) instead of opening the same list again in a drawer.
+ */
+function focusAlertsQueue(openCount: number) {
+  const target =
+    document.querySelector<HTMLElement>('[data-alert-id] [data-testid="ward-alerts-open"]') ??
+    document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
+  if (target) {
+    if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    target.scrollIntoView({ block: "nearest" });
+    target.focus();
+  }
+  announceToWardShell(`You are on Alerts. ${openCount} invented alerts outstanding.`);
+}
+
 function isReferralSheetPath(pathname: string): boolean {
   return pathname.replace(/\/+$/, "") === WARD_REFERRAL_INTAKE_HREF;
 }
@@ -539,6 +558,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
   const isPhone = useIsPhone();
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
+  // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
+  // screen it does not open a second copy of the list; it takes the person to the queue.
+  const oneAlertsQueue = useWardFeatureFlag("alerts-one-queue");
+  const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
   const {
     movements,
     patients,
@@ -943,6 +966,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (id: WardBarPopoverId) => {
       // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
       if (id === "tools") toolsReturnFocusRef.current = null;
+      // One Alerts queue: a phone opens the Alerts screen rather than a drawer copy of it, and the
+      // Alerts screen itself moves focus to its own queue. Covers the dock, the menu and search.
+      if (id === "tasks" && oneAlertsQueue && (isPhone || onAlertsScreen)) {
+        if (onAlertsScreen) focusAlertsQueue(tasksActiveCount);
+        else router.push(WARD_ALERTS_HREF);
+        return;
+      }
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
@@ -959,7 +989,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           `Activity opened. Synthetic data: ${scopedNotices.length} notices and ${shownActivity?.changes.length ?? 0} recent changes.`,
         );
       } else if (id === "tasks") {
-        announceToWardShell(`Tasks opened. ${tasksActiveCount} invented tasks outstanding.`);
+        announceToWardShell(
+          oneAlertsQueue
+            ? `Alerts opened. ${tasksActiveCount} invented alerts outstanding.`
+            : `Tasks opened. ${tasksActiveCount} invented tasks outstanding.`,
+        );
       } else if (id === "tools") {
         announceToWardShell(
           "Tools opened. Service now, quick actions, look ups, print and share, and demo controls are here.",
@@ -971,7 +1005,16 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
       // the selector itself.
     },
-    [scopedNotices.length, setOpenPanel, shownActivity?.changes.length, tasksActiveCount],
+    [
+      isPhone,
+      onAlertsScreen,
+      oneAlertsQueue,
+      router,
+      scopedNotices.length,
+      setOpenPanel,
+      shownActivity?.changes.length,
+      tasksActiveCount,
+    ],
   );
 
   /**
@@ -1554,19 +1597,30 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           className={styles.drawerTrigger}
           data-bar-mode="tasks"
           data-testid="ward-bar-tasks-trigger"
-          aria-haspopup="dialog"
-          aria-expanded={openPanel === "tasks"}
-          aria-controls="ward-bar-tasks-drawer"
+          aria-haspopup={onAlertsScreen ? undefined : "dialog"}
+          aria-expanded={onAlertsScreen ? undefined : openPanel === "tasks"}
+          aria-controls={onAlertsScreen ? undefined : "ward-bar-tasks-drawer"}
+          aria-current={onAlertsScreen ? "page" : undefined}
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ListChecks className={`${styles.triggerIcon} ${styles.tasksWide}`} aria-hidden="true" strokeWidth={1.75} />
-          {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
-          <ClipboardCheck
-            className={`${styles.triggerIcon} ${styles.tasksPhone}`}
-            aria-hidden="true"
-            strokeWidth={1.75}
-          />
-          <span className={styles.triggerLabel}>Tasks</span>
+          {oneAlertsQueue ? (
+            <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+          ) : (
+            <>
+              <ListChecks
+                className={`${styles.triggerIcon} ${styles.tasksWide}`}
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+              {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
+              <ClipboardCheck
+                className={`${styles.triggerIcon} ${styles.tasksPhone}`}
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+            </>
+          )}
+          <span className={styles.triggerLabel}>{oneAlertsQueue ? "Alerts" : "Tasks"}</span>
           <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
             {tasksActiveCount}
           </span>
@@ -2060,7 +2114,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         id="ward-bar-tasks-drawer"
         open={openPanel === "tasks"}
         onClose={() => closePopover("tasks")}
-        ariaLabel="Tasks"
+        ariaLabel={oneAlertsQueue ? "Alerts" : "Tasks"}
         headerHidden
         placement="right"
         testId="ward-bar-tasks-sheet"
