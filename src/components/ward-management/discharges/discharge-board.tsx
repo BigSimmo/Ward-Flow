@@ -1047,27 +1047,21 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       </tbody>
     </table>
   );
-  const [recordedActions, setRecordedActions] = useState<Record<string, boolean>>({});
   const actionButton = (
-    actionKey: string,
+    _actionKey: string,
     label: string,
-    doneLabel: string,
-    notice: string,
+    _doneLabel: string,
+    _notice: string,
     variant: "sec" | "ghost" = "sec",
   ) => {
-    const done = Boolean(recordedActions[actionKey]);
     return (
       <button
         type="button"
         className={buttonClass({ size: "sm", variant })}
-        aria-pressed={done}
-        onClick={() => {
-          setRecordedActions((prev) => ({ ...prev, [actionKey]: true }));
-          announceToWardShell(notice);
-          toast?.push({ tone: "info", title: notice });
-        }}
+        disabled
+        title="This action is not wired to a persisted event."
       >
-        {done ? doneLabel : label}
+        {label}
       </button>
     );
   };
