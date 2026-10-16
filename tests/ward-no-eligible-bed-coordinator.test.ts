@@ -60,10 +60,24 @@ describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
     for (const movement of referable) expect(noBedRowFor(movement), movement.id).toBeUndefined();
   });
 
-  it("keeps each one open and visibly flagged as no_eligible_bed", () => {
-    for (const movement of nowhere) {
-      expect(isOpen(movement)).toBe(true);
-      expect(causeOf(movement, state.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("no_eligible_bed");
+  it("keeps each one open and flags no_eligible_bed only when no ward remains referable", () => {
+    // The board also includes stale/prior-decline-only cases; those remain open under another cause.
+    const genuineNoBed = nowhere.filter((movement) => !stillReferable(movement));
+    const referable = nowhere.filter(stillReferable);
+    expect(genuineNoBed.length, "no genuine no-bed movement exercised the flag").toBeGreaterThan(0);
+    expect(referable.length, "no still-referable movement exercised the exclusion").toBeGreaterThan(0);
+    expect(genuineNoBed.length + referable.length).toBe(nowhere.length);
+
+    for (const movement of nowhere) expect(isOpen(movement), movement.id).toBe(true);
+    for (const movement of genuineNoBed) {
+      expect(causeOf(movement, state.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS), movement.id).toBe(
+        "no_eligible_bed",
+      );
+    }
+    for (const movement of referable) {
+      expect(causeOf(movement, state.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS), movement.id).not.toBe(
+        "no_eligible_bed",
+      );
     }
   });
 

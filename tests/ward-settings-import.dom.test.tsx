@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 
@@ -72,8 +72,14 @@ it.each([
   // v10: the ED target is one stepper; Home sets its range minimum, 12h (720 minutes).
   const stepper = screen.getByRole("spinbutton", { name: "ED access target" });
   fireEvent.keyDown(stepper, { key: "Home" });
+  expect(stepper).toHaveAttribute("aria-valuenow", "720");
   importPayload(payload, container);
-  expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute("aria-valuenow", "720");
+  // Inspect the same live edited control; avoid rediscovering every hidden settings pane.
+  expect(stepper).toBeInTheDocument();
+  expect(within(stepper.parentElement!).getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute(
+    "aria-valuenow",
+    "720",
+  );
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   expect(screen.getByText("Invalid configuration file format.")).toBeVisible();
 });
