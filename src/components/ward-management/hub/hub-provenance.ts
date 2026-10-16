@@ -1,7 +1,7 @@
 /**
  * THE SEARCH HUB'S RECONCILIATION LINE, COPIED FROM ITS OWN DRAWING RATHER THAN COMPOSED.
  *
- * `docs/ward-flow/mockups/search-hub-third-edition.html` builds this sentence in its own engine,
+ * `design/third-edition-mockups/search-hub-third-edition.html` builds this sentence in its own engine,
  * and the two branches below are that construction transcribed. It is a module rather than an
  * inline template because the sentence has THREE forms that must each be exercised, and a template
  * literal inside a 900-line component can only ever be tested through whichever branch the

@@ -1,4 +1,4 @@
-// Usage (from the repository root): node docs/ward-flow/mockups/third-edition-kit/check-standard.mjs <file.html> <fontcss:platinum|premium>
+// Usage (from the repository root): node design/third-edition-mockups/third-edition-kit/check-standard.mjs <file.html> <fontcss:platinum|premium>
 // Adapted from merged/check.mjs for the design standard: fonts, weights, page errors, sideways
 // overflow at four viewports in both themes, the type floor, a contrast sweep over every visible
 // text element in both themes (scrolling through the page in viewport-height steps), the
@@ -8,7 +8,7 @@ import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-const file = process.argv[2] || "docs/ward-flow/mockups/design-system-third-edition.html",
+const file = process.argv[2] || "design/third-edition-mockups/design-system-third-edition.html",
   css = process.argv[3] || "platinum";
 // The Cloud sandbox keeps Chromium at /opt/pw-browsers/chromium. Anywhere else (a Windows or
 // macOS checkout) that path does not exist, so the launch falls back to the Chromium Playwright

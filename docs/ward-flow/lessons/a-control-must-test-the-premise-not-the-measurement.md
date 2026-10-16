@@ -614,7 +614,7 @@ It had been told _"do not try to fix your own base"_ and it handed back instead.
 that saved this was the refusal clause, not the verification step. Write refusal clauses.**
 
 ✅ **The replacement discriminates by COUNT, not existence:**
-`ls docs/ward-flow/mockups/ | grep -c third-edition` → 36 on the ward line, 3 on `main`.
+`ls design/third-edition-mockups/ | grep -c third-edition` → 36 on the ward line, 3 on `main`.
 
 🔴 **THE SHARPEST PART: three of the thirty-six drawings DO exist on `main`.** An agent assigned one
 of those three would have found its drawing, found the app directory, and built something plausible

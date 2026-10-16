@@ -2,7 +2,7 @@
 /**
  * shell-sweep.mjs
  *
- * Checks that sixteen Ward Flow mockup pages (docs/ward-flow/mockups/*-third-edition.html)
+ * Checks that sixteen Ward Flow mockup pages (design/third-edition-mockups/*-third-edition.html)
  * share one identical shell: the stylesheet, the skip link, the rail, the header bar, the
  * menu drawers, the live region, the reconciliation line, and the shared shell script's
  * functions (openMenu, setInert, trapTab, filterBar, selectPatient, and the rest).
@@ -25,10 +25,10 @@ import path from "node:path";
 // Configuration
 // ─────────────────────────────────────────────────────────────────────────
 
-const MOCKUPS_DIR = path.resolve(process.cwd(), "docs/ward-flow/mockups");
+const MOCKUPS_DIR = path.resolve(process.cwd(), "design/third-edition-mockups");
 const REFERENCE_FILE = "command-third-edition.html";
 
-// Every docs/ward-flow/mockups/*-third-edition.html except command-third-edition.html
+// Every design/third-edition-mockups/*-third-edition.html except command-third-edition.html
 // (the reference) and design-system-third-edition.html (explicitly excluded by the brief).
 const OTHER_PAGES = [
   "delays-third-edition.html",

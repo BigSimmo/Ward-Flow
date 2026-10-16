@@ -529,28 +529,14 @@ export function reduceBedEvent(
         confirmedAt: event.now,
       };
       // The person has already left (refused above otherwise) and `departAdmission` moved the
-      // figures then; this event only records the stage and never moves a count. Any figure written
-      // must stay clamped to `unit.beds`, which `unitCapacity`'s reconciliation identity
-      // (`tests/ward-capacity-reconciliation.test.ts`) depends on.
-      const departureAlreadyIncremented = true;
-
-      // `sexMix` is not touched: a release does not say who left, so the count moves when the
-      // admission departs (owner rulings), never by guessing here. Audit A1-11: recording the stage
-      // never stamps the ward's figures as confirmed.
-      const updatedUnit: Unit = departureAlreadyIncremented
-        ? unit
-        : {
-            ...unit,
-            allocatable: {
-              ...unit.allocatable,
-              value: Math.min(unit.beds, unit.allocatable.value + 1),
-            },
-            empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
-          };
-      const withUnit = replaceUnit(state, unit.id, updatedUnit);
+      // figures then; this event only records the stage and never moves a count, so the unit is left
+      // as it is. `unitCapacity`'s reconciliation identity (`tests/ward-capacity-reconciliation.test.ts`)
+      // depends on that. `sexMix` is not touched either: a release does not say who left, so the
+      // count moves when the admission departs (owner rulings), never by guessing here. Audit A1-11:
+      // recording the stage never stamps the ward's figures as confirmed.
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceBedRelease(withUnit, release.id, updatedRelease);
+      return replaceBedRelease(state, release.id, updatedRelease);
     }
 
     case "END_LEAVE_BED": {

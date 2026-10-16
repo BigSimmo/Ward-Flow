@@ -55,7 +55,7 @@ import {
 
 const ROOT = process.cwd();
 const JSON_PATH = join(ROOT, "docs", "ward-flow", "screen-verification.json");
-const MANIFEST_PATH = join(ROOT, "docs", "ward-flow", "mockups", "MANIFEST.json");
+const MANIFEST_PATH = join(ROOT, "design", "third-edition-mockups", "MANIFEST.json");
 const OUT = join(ROOT, "docs", "ward-flow", "SCREEN-VERIFICATION.md");
 const REMEDIATION = "Run: node scripts/ward-flow/screen-verification.mjs";
 
@@ -310,7 +310,7 @@ if (!deviations.length) {
 
 if (!manifestAvailable) {
   lines.push(
-    "⚠️ **The mockup hash manifest (`docs/ward-flow/mockups/MANIFEST.json`) does not exist yet.**",
+    "⚠️ **The mockup hash manifest (`design/third-edition-mockups/MANIFEST.json`) does not exist yet.**",
     "No screen below can be aged against it — DRAWING UNCHANGED and STALE cannot be told apart until it lands.",
     "",
   );

@@ -15,7 +15,7 @@ row and current screens card, and the one pixel highlight along the top of panel
 primary control. The word, the mark and the meter now carry every state alone. A register row's
 title carries its tone in its own colour instead.
 
-Recorded in `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` section 13 "Decisions taken", the
+Recorded in `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` section 13 "Decisions taken", the
 Never list, rules 5, 6 and 10, and the departures table (commit 485a9cfa98 on
 `claude/wardflow-design-review-43df97`). The two highlight tokens stay defined and are marked retired.
 

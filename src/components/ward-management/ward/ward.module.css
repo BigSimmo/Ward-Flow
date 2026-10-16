@@ -582,7 +582,7 @@
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════════════════════
- * Rebuilt to `docs/ward-flow/design/prototypes/mockup-ward-entry.html` (2026-09-04). The hero
+ * Rebuilt to `design/prototypes/mockup-ward-entry.html` (2026-09-04). The hero
  * and the confirm panel below are the whole point of that design: the way in ("Open bed list")
  * must never wait on the form, and the confirm panel is where the form actually lives.
  *

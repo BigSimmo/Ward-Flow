@@ -1,5 +1,5 @@
 {
-  "_howToUse": "Open the mockup file and the running screen side by side in a real browser, at 390px, 820px and 1440px wide, in both light and dark. Then find this screen's entry below and replace its 'verified': null with an object recording what you saw — the date, your name, the widths and themes you checked, a verdict of 'matches', 'deviates' or 'blocked', the mockupSha256 hash for this file from docs/ward-flow/mockups/MANIFEST.json, and notes describing any deviation and why.",
+  "_howToUse": "Open the mockup file and the running screen side by side in a real browser, at 390px, 820px and 1440px wide, in both light and dark. Then find this screen's entry below and replace its 'verified': null with an object recording what you saw — the date, your name, the widths and themes you checked, a verdict of 'matches', 'deviates' or 'blocked', the mockupSha256 hash for this file from design/third-edition-mockups/MANIFEST.json, and notes describing any deviation and why.",
   "screens": [
     {
       "mockup": "command-third-edition.html",

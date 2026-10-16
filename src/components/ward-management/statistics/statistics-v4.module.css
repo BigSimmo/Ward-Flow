@@ -3,7 +3,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  * THE FOURTH-EDITION STATISTICS LANGUAGE, PORTED — PRIMITIVES ONLY.
  *
- * Reference: `docs/ward-flow/design/prototypes/statistics-language-v4.css` (the owner-approved
+ * Reference: `design/prototypes/statistics-language-v4.css` (the owner-approved
  * mockup stylesheet). PORTED, NOT COPIED: every colour, spacing, radius and type value below
  * resolves through this app's own token layer (`ward-tokens.module.css`, `ckb-v2-tokens.css`,
  * `globals.css`) rather than through the mockup's own standalone `:root` block, which this file

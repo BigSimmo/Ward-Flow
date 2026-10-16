@@ -1,13 +1,13 @@
 # Ward Flow mockups — start here
 
-> **WARD FLOW ENTRY POINT:** Start at [`docs/ward-flow/README.md`](../README.md).
+> **WARD FLOW ENTRY POINT:** Start at [`docs/ward-flow/README.md`](../../docs/ward-flow/README.md).
 
 The drawings of Ward Flow, and the standard they are drawn to. **The standard is 224 KB and is not
 a landing page; this is.**
 
 **Current scope — 2 October 2026.** These drawings record historical designs. The
 accepted current app is appearance authority under the dedicated repository's
-[AGENTS.md](../../../AGENTS.md). The former local-only/no-PR procedure is historical;
+[AGENTS.md](../../AGENTS.md). The former local-only/no-PR procedure is historical;
 publication requires separate authority. Never delete or move anything under `docs/ward-flow/` without asking the owner and saying
 exactly what would be lost.
 
@@ -161,9 +161,9 @@ artifact is currently the broken version on a phone.**
 Every command runs **from the repository root**, not from this folder.
 
 ```bash
-npx prettier --write docs/ward-flow/mockups/<page>-third-edition.html
-node docs/ward-flow/mockups/third-edition-kit/check.mjs docs/ward-flow/mockups/<page>-third-edition.html platinum
-node docs/ward-flow/mockups/third-edition-kit/check-shell.mjs docs/ward-flow/mockups/<page>-third-edition.html platinum
+npx prettier --write design/third-edition-mockups/<page>-third-edition.html
+node design/third-edition-mockups/third-edition-kit/check.mjs design/third-edition-mockups/<page>-third-edition.html platinum
+node design/third-edition-mockups/third-edition-kit/check-shell.mjs design/third-edition-mockups/<page>-third-edition.html platinum
 ```
 
 `check.mjs` sweeps eight widths (1920, 1600, 1440, 1280, 1200, 1100, 390, 320) in both themes:
@@ -175,7 +175,7 @@ or the red lines.
 Drift of any page's shell from Command's:
 
 ```bash
-node docs/ward-flow/mockups/third-edition-kit/shell-sweep.mjs
+node design/third-edition-mockups/third-edition-kit/shell-sweep.mjs
 ```
 
 Every page must read `SAME SHELL`.
@@ -190,7 +190,7 @@ a zero-change result and a clean tree look identical. Run `npx prettier` directl
 (`.claude/worktrees/ward-flow-phase-5-resume-166ecb`). It will fail here. Run the individual `node`
 commands above instead.
 
-⚠️ **`docs/ward-flow/design/prototypes/` is in `.prettierignore` deliberately** — those files are
+⚠️ **`design/prototypes/` is in `.prettierignore` deliberately** — those files are
 compared byte for byte against `statistics-language-*.css`, and a whole-tree format pass reddened
 ten guards on 2026-09-10. Do not remove that entry.
 
@@ -244,12 +244,12 @@ and approved back in, and nothing anywhere goes red. That has happened here.
 
 ## Where the rest lives
 
-| Need                                | Read                                                                                                                      |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| The owner's rulings, dated          | [`../archive/dated-notes/owner-decisions-2026-09-09.md`](../archive/dated-notes/owner-decisions-2026-09-09.md)            |
-| What every chat is working on       | gone — `docs/ward-flow/control/work-claims.md` was deleted with WLQ-33; use [`../STATUS.md`](../STATUS.md) and the ledger |
-| How a branch is folded, and by whom | `../archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)                                 |
-| The kit's own status and open items | [`third-edition-kit/HANDOVER.md`](third-edition-kit/HANDOVER.md)                                                          |
-| The handover written for this chat  | `docs/ward-flow/mockups/third-edition-kit/HANDOVER-MOCKUPS-CHAT-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)     |
+| Need                                | Read                                                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| The owner's rulings, dated          | [`../archive/dated-notes/owner-decisions-2026-09-09.md`](../../docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-09.md)            |
+| What every chat is working on       | gone — `docs/ward-flow/control/work-claims.md` was deleted with WLQ-33; use [`../STATUS.md`](../../docs/ward-flow/STATUS.md) and the ledger |
+| How a branch is folded, and by whom | `../archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)                                                   |
+| The kit's own status and open items | [`third-edition-kit/HANDOVER.md`](third-edition-kit/HANDOVER.md)                                                                            |
+| The handover written for this chat  | `design/third-edition-mockups/third-edition-kit/HANDOVER-MOCKUPS-CHAT-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)                 |
 
 **Ward Lead is the only chat that folds.** Commit on your own branch and hand it the SHAs.

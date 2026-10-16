@@ -17,7 +17,7 @@ import { blankCssComments } from "./helpers/strip-source-comments";
  * not: both are declared in `globals.css` in **both** themes (`:534`/`:837` and `:415`/`:776`), and
  * the `LinkText`/`CanvasText` values at `:4594`/`:4606` are forced-colours **overrides** — correct
  * practice, not a hole. What had actually been measured was a **standalone mockup**,
- * `docs/ward-flow/design/prototypes/mockup-front-doors-v5.html`, which paints with both tokens and
+ * `design/prototypes/mockup-front-doors-v5.html`, which paints with both tokens and
  * declares only their `-soft`/`-border` variants. **True of that file; the sentence was written about
  * the app.** ⚠️ **And the mockup still looked plausible with those elements invisible, which is how a
  * drawing containing nothing gets approved** — the reason a mockup's flaw must never be relayed as

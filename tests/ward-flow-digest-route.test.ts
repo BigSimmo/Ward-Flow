@@ -6,14 +6,14 @@ import { describe, expect, it } from "vitest";
 import { GET } from "../src/app/mockups/ward-flow-digest/route";
 
 /**
- * The digest route serves docs/ward-flow/mockups/ward-flow-digest.html as-is, but that design
+ * The digest route serves design/third-edition-mockups/ward-flow-digest.html as-is, but that design
  * reference links to the Google Fonts stylesheet, which the app's CSP (style-src 'self'
  * 'unsafe-inline') blocks in the browser. The route strips those <link> tags before responding;
  * this proves the stripping happens (not that the source file simply lacks the links).
  */
 describe("ward-flow-digest route", () => {
   it("the source design reference still contains the Google Fonts link (so the route's stripping is the thing under test)", () => {
-    const source = readFileSync(resolve(process.cwd(), "docs/ward-flow/mockups/ward-flow-digest.html"), "utf8");
+    const source = readFileSync(resolve(process.cwd(), "design/third-edition-mockups/ward-flow-digest.html"), "utf8");
     expect(source).toContain("fonts.googleapis.com");
   });
 

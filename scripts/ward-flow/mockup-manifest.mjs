@@ -2,10 +2,10 @@
 /**
  * 🔴 **THE MOCKUP HASH MANIFEST — makes a drawing edit as visible as a code change.**
  *
- *     node scripts/ward-flow/mockup-manifest.mjs           # write docs/ward-flow/mockups/MANIFEST.json
+ *     node scripts/ward-flow/mockup-manifest.mjs           # write design/third-edition-mockups/MANIFEST.json
  *     node scripts/ward-flow/mockup-manifest.mjs --check   # exit 1 if the committed manifest disagrees with disk
  *
- * The mockups in `docs/ward-flow/mockups/` are historical design records; the accepted app governs
+ * The mockups in `design/third-edition-mockups/` are historical design records; the accepted app governs
  * current appearance. This manifest tracks changes to HTML drawings, not implementation fidelity.
  * Until this manifest
  * existed, a drawing could be edited — accidentally or by an agent that thought it was helping —
@@ -21,7 +21,7 @@ import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
-const MOCKUPS = join(ROOT, "docs", "ward-flow", "mockups");
+const MOCKUPS = join(ROOT, "design", "third-edition-mockups");
 const OUT = join(MOCKUPS, "MANIFEST.json");
 
 // `CONTACT-SHEET.html` is GENERATED from this directory, not a drawing in it. Excluded by name

@@ -294,7 +294,7 @@
 
 /* ────────────────────────────────────────────────────────────────────────────────────────────
  * THE MOVEMENT WORKSPACE ITSELF — redesigned 2026-09-04 onto the Board design language
- * (docs/ward-flow/design/prototypes/DESIGN-LANGUAGE.md, canonical example community-home.html).
+ * (design/prototypes/DESIGN-LANGUAGE.md, canonical example community-home.html).
  *
  * What went, and why it is not coming back:
  *   · `.movementPipeline` / `.stage*` — seven buttons showing counts of OTHER patients on one

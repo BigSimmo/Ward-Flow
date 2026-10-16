@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  delaysAliasBannerCopy,
-  parseDelaysAliasFrom,
-} from "@/components/ward-management/delays/delays-alias";
+import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 
 describe("delays alias pedagogy (Wave 4 item 15)", () => {
   it("accepts only the three MERGE 01 bookmark names", () => {

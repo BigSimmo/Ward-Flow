@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
  * REVISION HISTORY, STATED PLAINLY. A first version of this guard (17 September, first pass) used a
  * same-line "the line must also name the Act" rule for EVERY shape, including the plain word
  * ("section 34") and the bare abbreviation ("s34") — with no numeric floor, and with a scan scope
- * limited to `ward-management`, the mockups app and a non-recursive `docs/ward-flow/mockups/*.html`.
+ * limited to `ward-management`, the mockups app and a non-recursive `design/third-edition-mockups/*.html`.
  * That combination is why it missed most of what was on the tree: `ward-model.ts`'s own comment
  * named a section two lines below the one sentence that named the Act, so the same-line rule never
  * saw them together; the drawings' table cells, dropdown options and `inspectForm()` JS arguments
@@ -50,7 +50,7 @@ import { describe, expect, it } from "vitest";
  *     is flagged under the same 20-or-higher floor as the shapes above. ⚠️ **ONE DEVIATION FROM THE
  *     REVIEWER'S PATTERN, STATED HERE BECAUSE THE BRIEF ASKS FOR IT.** The pattern as given used NO
  *     floor for this shape (any number, always flagged) on the reasoning that nothing else writes a
- *     number in that specific separated form. Widening the scan to `docs/ward-flow/mockups/third-
+ *     number in that specific separated form. Widening the scan to `design/third-edition-mockups/third-
  *     edition-kit/inputs/SHELL-SPEC.md` found a real exception: that document numbers its own steps
  *     "**S.1 The announce helper**", "**S.2 The appearance control**" — a separated "S." shape with
  *     no Act/MHA/WAPOL/form-code context, and no digit anywhere near the Act's own range. The 20
@@ -85,7 +85,7 @@ const MOCKUPS_APP_DIR = "src/app/mockups/ward-flow";
 const SIGN_IN_COMPONENT_DIR = "src/components/ward-flow-sign-in";
 const SIGN_IN_APP_DIR = "src/app/mockups/ward-flow-sign-in";
 const DIGEST_APP_DIR = "src/app/mockups/ward-flow-digest";
-const DRAWINGS_DIR = "docs/ward-flow/mockups";
+const DRAWINGS_DIR = "design/third-edition-mockups";
 const TEST_DIR = "tests";
 const GUARD_FILE_NAME = "ward-act-section-citation-guard.test.ts";
 
@@ -101,12 +101,12 @@ const OWNER_APPROVED_CITATION_FILES = new Set([
 ]);
 
 /**
- * Named exemption: `docs/ward-flow/mockups/reference/` holds Gemini reference copies that nothing
+ * Named exemption: `design/third-edition-mockups/reference/` holds Gemini reference copies that nothing
  * in the product is built from — 53 citation lines live there, left in place deliberately as a
  * historical artefact of what an earlier pass produced, not as a drawing this repository ships.
  * The 15 October 2026 docs trim removed that folder; the exemption stays so a restore from Git
  * history does not fail this guard.
- * `docs/ward-flow/mockups/third-edition-kit/` is a sibling directory under the same drawings root
+ * `design/third-edition-mockups/third-edition-kit/` is a sibling directory under the same drawings root
  * and is NOT exempt — it carries build tooling and handover notes for the drawings and is scanned
  * like any other subfolder.
  */

@@ -1,6 +1,6 @@
 # 05 — The 4-Tier Verification Ladder & Release Gate
 
-> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
+> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
 > Kept for historical reference. The "Sovereign" tokens, 100-point numerical scoring rubric, and 4-tier ladder described herein are retired. All visual work follows the 3rd Edition Design System and the September 17 & 21 speed rules in `docs/ward-flow/HOW-WE-WORK.md`.
 
 ## Phase 5 Standard Operating Procedure
@@ -207,7 +207,7 @@ Whenever a screen passes Tier 4 verification, compute the SHA-256 hash of the mo
 {
   "screen": "movements",
   "route": "/mockups/ward-flow/movements",
-  "mockupDrawing": "docs/ward-flow/mockups/movement-third-edition.html",
+  "mockupDrawing": "design/third-edition-mockups/movement-third-edition.html",
   "drawingSha256": "8f3b61a9c4e2d7e8...",
   "verifiedDate": "2026-09-14",
   "verifiedBy": "Engineering & Visual System",
@@ -229,7 +229,7 @@ If anyone edits the mockup file in the future, its SHA-256 changes, immediately 
 
 Before merging any PR or closing a feature ticket, check every box:
 
-- [ ] **1. Mockup Provenance**: Standalone HTML mockup exists in `docs/ward-flow/mockups/` and was served via HTTP.
+- [ ] **1. Mockup Provenance**: Standalone HTML mockup exists in `design/third-edition-mockups/` and was served via HTTP.
 - [ ] **2. 100-Point Score >= 9.5**: Evaluated against the rubric with zero fatal flaws.
 - [ ] **3. Dual-Agent Audit Passed**: Adversarial Auditor and Design Systems Investigator findings addressed.
 - [ ] **4. Panel Structure Matches**: Panel order, panel types, and tab behaviors match the mockup.

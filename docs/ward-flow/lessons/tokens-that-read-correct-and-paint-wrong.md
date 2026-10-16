@@ -29,7 +29,7 @@ pass review — and paint the wrong picture. Three shapes, all found on Ward Flo
    opposite treatment, and every one of those fallbacks said `#ffffff` for a token that is
    `#0f1216` in the other theme, so they were latent theme bugs rather than lint.
 
-1. **USED BUT NOT DECLARED — IN A STANDALONE MOCKUP.** `docs/ward-flow/design/prototypes/mockup-front-doors-v5.html`
+1. **USED BUT NOT DECLARED — IN A STANDALONE MOCKUP.** `design/prototypes/mockup-front-doors-v5.html`
    paints with `var(--warning)` and `var(--clinical-accent)` and declares only their `-soft` and
    `-border` variants. Opened on its own, with no `globals.css`, those rules are silently discarded
    — **and the mockup still looks plausible**, which is how the defect gets approved.
