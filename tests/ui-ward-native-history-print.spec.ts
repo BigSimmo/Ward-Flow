@@ -28,6 +28,60 @@ test.describe("native history and handover print @mockup", () => {
     await page.close(); // Keep automatic failure context free of synthetic patient rows.
   });
 
+  test("phone Keep draft closes through native history and reopens the referral from memory", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 568 });
+    await page.goto(`${HOME}/delays`);
+    await settled(page);
+    const originalIndex = await page.evaluate(() => window.history.state.__wfHistoryIndex);
+    expect(typeof originalIndex).toBe("number");
+    let prompts = 0;
+    page.on("dialog", async (dialog) => {
+      prompts += 1;
+      await dialog.dismiss();
+    });
+    const toolsTrigger = page.getByTestId("ward-bar-tools-trigger");
+    const openReferral = async () => {
+      await toolsTrigger.click();
+      await page
+        .getByRole("dialog", { name: "Tools", exact: true })
+        .getByRole("button", { name: /New referral/u })
+        .click();
+      const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
+      await referral
+        .getByRole("group", { name: "Referral sections" })
+        .getByRole("button", { name: "Referral", exact: true })
+        .click();
+      return referral;
+    };
+    let referral = await openReferral();
+    await referral.locator("#refDocInput").fill("Synthetic clinician");
+    await referral.getByRole("button", { name: "Close step", exact: true }).click();
+    await page.keyboard.press("Escape");
+    await page
+      .getByRole("alertdialog", { name: "Close without sending?" })
+      .getByRole("button", { name: "Keep draft", exact: true })
+      .click();
+    await expect(referral).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.history.state.__wfHistoryIndex)).toBe(originalIndex);
+    await expect(toolsTrigger).toBeFocused();
+    expect(prompts).toBe(0);
+    referral = await openReferral();
+    // Keep assertion output free of the typed fixture value.
+    expect(
+      await referral
+        .locator("#refDocInput")
+        .evaluate((input) => (input as HTMLInputElement).value === "Synthetic clinician"),
+    ).toBe(true);
+    expect(
+      await page.evaluate(() =>
+        [sessionStorage, localStorage].some((storage) =>
+          Object.values(storage).some((value) => value.includes("Synthetic clinician")),
+        ),
+      ),
+    ).toBe(false);
+    expect(prompts).toBe(0);
+  });
+
   for (const direction of ["back", "forward"] as const) {
     test(`native ${direction} retains a cancelled booking draft and leaves only after acceptance`, async ({ page }) => {
       await page.goto(HOME);
