@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { PLANNED_ADMISSION_REASON_LABELS } from "@/components/ward-management/ward-admissions";
@@ -72,7 +72,7 @@ export function AlertDetail({
   item: InboxItem;
   movement: Movement | undefined;
   subject: AlertSubject;
-  units: readonly { id: string; name: string }[];
+  units: readonly Unit[];
   now: Instant;
   mine: boolean;
   acknowledgements: readonly { at: Instant; by: string }[] | undefined;
@@ -87,7 +87,10 @@ export function AlertDetail({
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [activityOpen, setActivityOpen] = useState(false);
-  const isEscalated = Boolean(movement?.escalation);
+  // Whether Escalate means anything for THIS alert comes first: a movement's escalation record belongs
+  // to its bed search, so an unrelated alert on the same movement must not claim it was escalated.
+  const escalationApplies = escalationAppliesTo(item, movement, units, now);
+  const isEscalated = escalationApplies && Boolean(movement?.escalation);
   const isPhone = useIsPhone();
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
@@ -245,18 +248,18 @@ export function AlertDetail({
           variant="ghost"
           icon={isEscalated ? Check : ArrowUpRight}
           disabledReason={
-            isEscalated
-              ? "Already escalated"
-              : !movement
-                ? "This alert has no movement to escalate"
-                : !escalationAppliesTo(item)
-                  ? "Escalation records that the bed search is exhausted, which this alert is not about"
+            !movement
+              ? "This alert has no movement to escalate"
+              : !escalationApplies
+                ? "Escalation records that the bed search is exhausted, which is not the case for this alert"
+                : isEscalated
+                  ? "Already escalated"
                   : undefined
           }
           reasonDisplay="tooltip"
           aria-label={isEscalated ? `Escalated ${subjectLine}` : `Escalate ${subjectLine}`}
           onClick={() => {
-            if (movement && escalationAppliesTo(item)) handlers.onEscalate?.(item);
+            if (movement && escalationApplies && !isEscalated) handlers.onEscalate?.(item);
           }}
         >
           {isEscalated ? "Escalated" : "Escalate"}

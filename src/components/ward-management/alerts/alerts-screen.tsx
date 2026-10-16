@@ -614,8 +614,8 @@ function AlertsWorkspace() {
     },
     onEscalate: (item) => {
       setChosenId(item.id);
-      if (item.movementId && escalationAppliesTo(item)) {
-        const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+      const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+      if (item.movementId && escalationAppliesTo(item, movement, units, now)) {
         track({
           type: "RECORD_ESCALATION",
           ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
