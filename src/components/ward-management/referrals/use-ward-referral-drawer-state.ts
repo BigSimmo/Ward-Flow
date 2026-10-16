@@ -478,15 +478,19 @@ export function useWardReferralDrawerState({
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
-  useDirtyStateGuard({
+  const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty: !sentReferralId && (dirty || draftKeptAt !== null),
+    value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
   });
   const requestClose = useCallback(() => {
     if (guardOpen) setGuardOpen(false);
     else if (dirty) setGuardOpen(true);
-    else onClose();
-  }, [guardOpen, dirty, onClose]);
+    else {
+      approveNextHistoryNavigation();
+      onClose();
+    }
+  }, [guardOpen, dirty, onClose, approveNextHistoryNavigation]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -519,11 +523,13 @@ export function useWardReferralDrawerState({
     stopDraftAutosave();
     discardReferralDraft(draftOwnerVersion);
     setGuardOpen(false);
+    approveNextHistoryNavigation();
     onClose();
   }
   function keepAndClose() {
     keepReferralDraft(draftNow, draftOwnerVersion);
     setGuardOpen(false);
+    approveNextHistoryNavigation();
     onClose();
     announceToWardShell("Referral draft kept until this tab reloads.");
   }

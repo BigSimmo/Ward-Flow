@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 export interface DirtyStateGuardOptions {
   key?: string;
   isDirty: boolean;
+  /** Memory-only draft revision; a change cancels a pending confirmed history close. */
   value?: string;
   /** Retained for call-site compatibility. Typed drafts are never restored from browser storage. */
   onRestore?: (cachedValue: string) => void;
@@ -18,8 +19,10 @@ export interface DirtyStateGuardOptions {
 }
 
 const DEFAULT_LEAVE_MESSAGE = "You have unsaved changes. Are you sure you want to leave?";
+/** Shells may release a pending close only after a cancelled traversal has settled. */
+export const WARD_HISTORY_TRAVERSAL_CANCELLED = "ward-flow-history-traversal-cancelled";
 
-type NavigationGuardEntry = { isDirty: boolean; message: string };
+type NavigationGuardEntry = { isDirty: boolean; message: string; approvedForHistory: boolean };
 const navigationGuards = new Set<NavigationGuardEntry>();
 let suppressNextPopState = false;
 let lastHistoryIndex: number | null = null;
@@ -98,28 +101,36 @@ function readHistoryIndex(state: unknown): number | null {
   return typeof index === "number" && Number.isFinite(index) ? index : null;
 }
 
-function hasAnyDirtyGuard(): boolean {
+function hasAnyDirtyGuard(approved?: ReadonlySet<NavigationGuardEntry>): boolean {
   for (const entry of navigationGuards) {
-    if (entry.isDirty) return true;
+    if (entry.isDirty && !approved?.has(entry)) return true;
   }
   return false;
 }
 
 /** One confirmation for the shell's task navigation: it asks once if ANY mounted guard is dirty. */
-function confirmNavigationAcrossGuards(): boolean {
+function confirmNavigationAcrossGuards(approved?: ReadonlySet<NavigationGuardEntry>): boolean {
   for (const entry of navigationGuards) {
-    if (entry.isDirty) return window.confirm(entry.message);
+    if (entry.isDirty && !approved?.has(entry)) return window.confirm(entry.message);
   }
   return true;
 }
 
 function handleGuardedPopState(event: PopStateEvent): void {
+  // A custom Keep/Discard decision applies only to its own form and this one traversal.
+  // Consume it even if another dirty form cancels, or this is a compensating traversal.
+  const approved = new Set<NavigationGuardEntry>();
+  for (const entry of navigationGuards) {
+    if (entry.approvedForHistory) approved.add(entry);
+    entry.approvedForHistory = false;
+  }
   if (suppressNextPopState) {
     suppressNextPopState = false;
     // A legacy/hash entry may make an index ambiguous. Never leave the retained form under
     // a different URL or router state, even if the compensating cursor was inexact.
     restoreSourceEntry(window.location.href !== sourceEntry?.url);
     event.stopImmediatePropagation();
+    window.dispatchEvent(new Event(WARD_HISTORY_TRAVERSAL_CANCELLED));
     return;
   }
   const targetIndex = readHistoryIndex(event.state);
@@ -145,13 +156,13 @@ function handleGuardedPopState(event: PopStateEvent): void {
     rememberEntry();
     return;
   }
-  if (!hasAnyDirtyGuard()) {
+  if (!hasAnyDirtyGuard(approved)) {
     lastHistoryIndex = targetIndex ?? lastHistoryIndex;
     lastNavigationIndex = targetNavigationIndex;
     rememberEntry();
     return;
   }
-  if (confirmNavigationAcrossGuards()) {
+  if (confirmNavigationAcrossGuards(approved)) {
     lastHistoryIndex = targetIndex ?? lastHistoryIndex;
     lastNavigationIndex = targetNavigationIndex;
     rememberEntry();
@@ -174,6 +185,7 @@ function handleGuardedPopState(event: PopStateEvent): void {
     // There is no safe way to infer a legacy cursor. Keep the form and restore the source URL
     // and opaque router state by replacing this target entry. The exact history slot is lost.
     restoreSourceEntry(true);
+    window.dispatchEvent(new Event(WARD_HISTORY_TRAVERSAL_CANCELLED));
   }
   event.stopImmediatePropagation();
 }
@@ -208,7 +220,12 @@ export function clearWardFlowDraftCaches(): void {
 /** D18: typed text stays in memory. Warn on unload, client navigation, and purge caches from older versions. */
 export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   const normalized: DirtyStateGuardOptions = typeof options === "boolean" ? { isDirty: options } : options;
-  const { key, isDirty, confirmMessage, skipAnchor } = normalized;
+  const { key, isDirty, value, confirmMessage, skipAnchor } = normalized;
+  const navigationGuardRef = useRef<NavigationGuardEntry | null>(null);
+
+  const approveNextHistoryNavigation = useCallback(() => {
+    if (navigationGuardRef.current) navigationGuardRef.current.approvedForHistory = true;
+  }, []);
 
   useEffect(() => {
     clearWardFlowDraftCaches();
@@ -226,14 +243,20 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   useEffect(() => {
     // Every mounted guard registers itself, so a clean guard (the referral drawer over a half-filled page)
     // cannot replace a dirty one, and removing one leaves the others in place.
-    const entry: NavigationGuardEntry = { isDirty, message: confirmMessage ?? DEFAULT_LEAVE_MESSAGE };
+    const entry: NavigationGuardEntry = {
+      isDirty,
+      message: confirmMessage ?? DEFAULT_LEAVE_MESSAGE,
+      approvedForHistory: false,
+    };
+    navigationGuardRef.current = entry;
     navigationGuards.add(entry);
     syncNavigationConfirm();
     return () => {
       navigationGuards.delete(entry);
+      if (navigationGuardRef.current === entry) navigationGuardRef.current = null;
       syncNavigationConfirm();
     };
-  }, [isDirty, confirmMessage]);
+  }, [isDirty, value, confirmMessage]);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -301,5 +324,5 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
     };
   }, [isDirty, confirmMessage, skipAnchor]);
 
-  return { clearDraft };
+  return { clearDraft, approveNextHistoryNavigation };
 }
