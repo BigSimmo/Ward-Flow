@@ -47,9 +47,27 @@ export default function manifest(): MetadataRoute.Manifest {
     // Long-press shortcuts (Android). Ward Flow pages only, approved with the PWA plan in Oct 2026; the
     // former clinical app's four were removed with its pages on 25-26 September 2026.
     shortcuts: [
-      { name: "New referral", url: `${WARD_FLOW}/referrals/new`, icons: SHORTCUT_ICONS },
-      { name: "Alerts", url: `${WARD_FLOW}/alerts`, icons: SHORTCUT_ICONS },
-      { name: "Referrals", url: `${WARD_FLOW}/referrals`, icons: SHORTCUT_ICONS },
+      {
+        name: "New referral",
+        short_name: "New referral",
+        description: "Log a new psychiatric inpatient referral",
+        url: `${WARD_FLOW}/referrals/new`,
+        icons: SHORTCUT_ICONS,
+      },
+      {
+        name: "Alerts",
+        short_name: "Alerts",
+        description: "View active broadcast alerts and escalations",
+        url: `${WARD_FLOW}/alerts`,
+        icons: SHORTCUT_ICONS,
+      },
+      {
+        name: "Referrals",
+        short_name: "Referrals",
+        description: "Triage incoming referrals and match suitable beds",
+        url: `${WARD_FLOW}/referrals`,
+        icons: SHORTCUT_ICONS,
+      },
     ],
     // Richer Android install sheet. Phone captures of the synthetic demo (made-up records only).
     screenshots: [

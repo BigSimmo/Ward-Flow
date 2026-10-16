@@ -33,6 +33,8 @@ describe("web app manifest", () => {
       ["Referrals", "/mockups/ward-flow/referrals"],
     ]);
     for (const shortcut of app.shortcuts ?? []) {
+      expect(shortcut.short_name, shortcut.name).toBe(shortcut.name);
+      expect(shortcut.description?.length ?? 0, shortcut.name).toBeGreaterThan(10);
       expect(existsSync(join(process.cwd(), "src/app", shortcut.url, "page.tsx")), shortcut.url).toBe(true);
       for (const icon of shortcut.icons ?? []) expect(variants.has(icon.src), icon.src).toBe(true);
     }

@@ -8,6 +8,7 @@ import {
   patientDisplayName,
   type Patient,
 } from "@/components/ward-management/ward-patients";
+import { perthMidnight } from "@/components/ward-management/ward-clock";
 
 const NOW = 10 * 60 + 42;
 
@@ -449,8 +450,14 @@ describe("a patient exists before anything happens to them", () => {
     // One fact, one home. The owner said "Name, Age and DOB"; holding both would let a record state
     // an age that disagrees with its own date of birth, and nothing would notice.
     const patient: Patient = { ...aPatient(), dateOfBirth: "1990-06-01" };
-    expect(patientAgeYears(patient, new Date(2026, 5, 1)), "on the birthday itself").toBe(36);
-    expect(patientAgeYears(patient, new Date(2026, 4, 31)), "the day before").toBe(35);
+    expect(patientAgeYears(patient, perthMidnight(2026, 5, 1)), "on the birthday itself").toBe(36);
+    expect(patientAgeYears(patient, perthMidnight(2026, 4, 31)), "the day before").toBe(35);
+    // 23:30 UTC on 31 May is already 1 June in Perth, so the birthday has arrived whatever the
+    // browser's own zone says the date is.
+    expect(patientAgeYears(patient, new Date(Date.UTC(2026, 4, 31, 23, 30))), "Perth is already on the birthday").toBe(
+      36,
+    );
+    expect(patientAgeYears(patient, new Date(Date.UTC(2026, 4, 31, 15, 30))), "Perth is still the day before").toBe(35);
     expect(patientDisplayName(patient)).toBe("Testable Quillfeather");
   });
 

@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useId, useRef, useState, type Dispatch } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch } from "react";
 import { WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -254,7 +254,6 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  useWardModalFocus(withBackdrop, drawerRef, onClose);
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
@@ -274,6 +273,63 @@ export function WardTasksDrawer({
   const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
   const toast = useOptionalToast();
+
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!withBackdrop && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+      openerRef.current = document.activeElement;
+    }
+  }, [withBackdrop]);
+
+  function handleEscape() {
+    if (escalating !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        'button[data-escalate][aria-expanded="true"]',
+      );
+      setEscalating(null);
+      setContact("");
+      trigger?.focus();
+      return;
+    }
+    if (contacting !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        `button[data-contact="${CSS.escape(contacting)}"]`,
+      );
+      setContacting(null);
+      trigger?.focus();
+      return;
+    }
+    const opener = !withBackdrop
+      ? (openerRef.current ??
+        document.querySelector<HTMLElement>(
+          '[data-testid="ward-tasks-opener"], button[aria-controls*="tasks"], button[aria-label*="Tasks"]',
+        ))
+      : null;
+    onClose();
+    if (opener && opener.isConnected) opener.focus();
+  }
+
+  useWardModalFocus(withBackdrop, drawerRef, handleEscape);
+
+  // The inline panel has no modal focus handling, so Escape pressed inside it is caught here. A
+  // native listener, because the panel is a non-interactive landmark and takes no JSX key handler.
+  const handleEscapeRef = useRef(handleEscape);
+  useEffect(() => {
+    handleEscapeRef.current = handleEscape;
+  });
+  useEffect(() => {
+    const drawer = drawerRef.current;
+    if (withBackdrop || !drawer) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      // Let nested popovers/dialogs (such as the Snooze popover) handle Escape first:
+      if (event.target instanceof Element && event.target.closest('[role="dialog"]') !== null) return;
+      event.stopPropagation();
+      handleEscapeRef.current();
+    };
+    drawer.addEventListener("keydown", onKeyDown);
+    return () => drawer.removeEventListener("keydown", onKeyDown);
+  }, [withBackdrop]);
 
   /** Calling is not wired: the number is copied and the toast says so. */
   function callNumber(row: CallRow) {
@@ -412,6 +468,7 @@ export function WardTasksDrawer({
           aria-label="Contact"
           title="Contact"
           aria-expanded={contacting === item.id}
+          data-contact={item.id}
           onClick={() => {
             setContacting(contacting === item.id ? null : item.id);
           }}
