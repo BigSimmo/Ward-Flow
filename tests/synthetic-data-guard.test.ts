@@ -140,14 +140,25 @@ describe("synthetic-data-guard", () => {
     }
   });
 
-  it("permits explicit synthetic-prefixed identifiers and demo contacts", () => {
+  it("permits only the exact synthetic identifier shape the demo fixtures generate", () => {
     const payload = {
       umrn: "SYNTHETIC-12345678",
-      notes: "Demo patient SYNTHETIC-UMRN-1234567 admitted.",
-      contact: "DEMO-0412345678",
+      notes: "Demo patient SYNTHETIC-87654321 admitted.",
       wardUmrn: "UM100093",
     };
     const result = checkSyntheticPayload(payload);
     expect(result.safe).toBe(true);
+  });
+
+  it("does not let a demo or synthetic word hide a real-looking identifier", () => {
+    for (const note of [
+      "call demo 0412 345 678",
+      "Synthetic 2123456781",
+      "demo UMRN-1234567",
+      "DEMO-0412345678",
+      "SYNTHETIC-UMRN-1234567",
+    ]) {
+      expect(checkSyntheticPayload({ note }).safe).toBe(false);
+    }
   });
 });
