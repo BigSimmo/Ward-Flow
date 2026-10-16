@@ -7,6 +7,8 @@ import { NO_SENDING_WARD } from "@/components/ward-management/referrals/use-ward
 import {
   discardReferralDraft,
   forgetReferrerContact,
+  keepReferralDraft,
+  readKeptReferralDraft,
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -51,6 +53,8 @@ const otherWard = seed.units.find((unit) => unit.id !== SENDING)!;
 const ON_WARD_UMRN = "UM100028";
 const OFF_WARD_UMRN = "UM100023";
 
+type KeptWards = { selectedUnitIds: string[] };
+
 function Probe() {
   const { referrals, rejections } = useWardFlow();
   const sent = referrals.filter((referral) => referral.intake);
@@ -71,14 +75,23 @@ function next(name: string) {
   fireEvent.click(screen.getAllByRole("button", { name }).at(-1)!);
 }
 
-/** Opens the sheet, chooses the person and confirms their catchment, ready for Next, referral. */
-function startReferral(umrn: string) {
+/** The Wards to refer card's count of chosen wards. */
+function selectedCount() {
+  return screen.getByText((_, el) => el?.tagName === "SPAN" && /^\d+ selected$/.test(el.textContent ?? "")).textContent;
+}
+
+function renderSheet() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardReferralDrawer onClose={vi.fn()} />
       <Probe />
     </WardFlowProvider>,
   );
+}
+
+/** Opens the sheet, chooses the person and confirms their catchment, ready for Next, referral. */
+function startReferral(umrn: string) {
+  renderSheet();
   chooseSampleReferralPerson(umrn);
   fireEvent.click(screen.getByRole("button", { name: "Change" }));
   fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
@@ -90,8 +103,8 @@ function startReferral(umrn: string) {
   if (ageBand instanceof HTMLSelectElement && !ageBand.value) fireEvent.change(ageBand, { target: { value: "Adult" } });
 }
 
-/** Walks the sheet to Confirm and send, with no From details chosen: a ward sender has none. */
-async function walkToConfirm() {
+/** Walks the sheet to the wards step, with no From details chosen: a ward sender has none. */
+async function walkToWards() {
   startReferral(ON_WARD_UMRN);
   next("Next, referral");
   fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic ward to ward story" } });
@@ -124,8 +137,13 @@ async function walkToConfirm() {
   const list = screen.getByRole("list", { name: "Placement Destination Options" });
   // A ward never refers to itself, so the sending ward is not offered.
   expect(within(list).queryByRole("checkbox", { name: new RegExp(SENDING) })).toBeNull();
-  const offered = within(list).getAllByRole("checkbox");
-  fireEvent.click(offered[0]!);
+  fireEvent.click(within(list).getAllByRole("checkbox")[0]!);
+  expect(selectedCount()).toBe("1 selected");
+}
+
+/** Walks the sheet to Confirm and send. */
+async function walkToConfirm() {
+  await walkToWards();
   fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
   expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
   fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Demo Sender" } });
@@ -156,6 +174,18 @@ describe("the New referral sheet on a ward page", () => {
     route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
     await walkToConfirm();
     await sendAndExpectFromSendingWard();
+  }, 60_000);
+
+  it("never counts a kept choice of the sending ward toward the ward limit", async () => {
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    await walkToWards();
+    await waitFor(() => expect(readKeptReferralDraft<KeptWards>()?.selectedUnitIds).toHaveLength(1));
+    const draft = readKeptReferralDraft<KeptWards>()!;
+    cleanup();
+    // A draft kept elsewhere, where the sending ward was on offer, reopens on the ward's page.
+    keepReferralDraft({ ...draft, selectedUnitIds: [SENDING, ...draft.selectedUnitIds] });
+    renderSheet();
+    expect(selectedCount()).toBe("1 selected");
   }, 60_000);
 
   it("asks for a patient on the ward, because a ward refers its own patients", () => {

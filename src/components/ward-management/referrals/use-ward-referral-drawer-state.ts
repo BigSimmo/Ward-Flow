@@ -705,19 +705,20 @@ export function useWardReferralDrawerState({
     return { readyBedsCount, pulledBedsCount, pendingPreparationCount, sortedUnits };
   })();
 
+  /** The chosen wards still offered, so a ward the match no longer lists (the sending ward, or one a
+   *  changed need rules out) neither counts toward the cap nor is sent to. */
+  const offeredUnitIds = selectedUnitIds.filter((id) => realTimeMatch.sortedUnits.some((unit) => unit.unitId === id));
   const selectedDestinations: ReferralDestination[] =
     destType === "ward"
-      ? selectedUnitIds
-          .filter((id) => realTimeMatch.sortedUnits.some((unit) => unit.unitId === id))
-          .map((unitId) => ({
-            kind: "psychiatric_ward",
-            unitId,
-            sex: referralSex,
-            gender: referralGender || undefined,
-            secureBedNeeded: security === "Secure",
-            involuntaryBedNeeded: legalStatus !== "Voluntary",
-            highAcuityNursingNeeded: highAcuity,
-          }))
+      ? offeredUnitIds.map((unitId) => ({
+          kind: "psychiatric_ward",
+          unitId,
+          sex: referralSex,
+          gender: referralGender || undefined,
+          secureBedNeeded: security === "Secure",
+          involuntaryBedNeeded: legalStatus !== "Voluntary",
+          highAcuityNursingNeeded: highAcuity,
+        }))
       : !selectedRecipient
         ? []
         : destType === "community"
@@ -1244,7 +1245,7 @@ export function useWardReferralDrawerState({
     noPatientChosen,
     bodyRef,
     sectionId,
-    selectedUnitIds,
+    selectedUnitIds: offeredUnitIds,
     setSelectedUnitIds,
     selectedRecipient,
     setSelectedRecipient,
