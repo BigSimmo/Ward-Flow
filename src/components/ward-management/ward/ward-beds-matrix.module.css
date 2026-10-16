@@ -810,3 +810,14 @@
     background-color: Canvas !important;
   }
 }
+
+/* Criteria led discharge on the tile (D-64): ready reads as good, lapsed or paused as a warning. */
+.chipGood {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.chipWarn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}

@@ -7,10 +7,11 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import type { WfTone } from "@/components/wf";
+import { cx, type WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
  * Top 25 item 21: the badge for a discharge date the ward has moved several times. The "several"
@@ -56,6 +57,8 @@ export interface BedItem {
   blockReason?: string;
   expectedDays?: number | null;
   legalStatusLabel?: string;
+  /** Criteria led discharge on the tile (D-64), set only when the flag is on and criteria exist. */
+  criteriaLedChip?: CriteriaLedChip | null;
   admissionId?: string;
   /**
    * The admission whose stay this bed shows, including a live pull (which `admissionId` leaves
@@ -112,6 +115,7 @@ function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): strin
   if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined)
     parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
+  if (bed.criteriaLedChip) parts.push(bed.criteriaLedChip.phrase);
   if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
   if (bed.tentativeDiagnosis) parts.push(`Tentative diagnosis: ${bed.tentativeDiagnosis}`);
   const expectedLeave = expectedLeaveLine(bed);
@@ -218,6 +222,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.age === n.age &&
     p.sex === n.sex &&
     p.legalStatusLabel === n.legalStatusLabel &&
+    p.criteriaLedChip?.label === n.criteriaLedChip?.label &&
     p.tentativeDiagnosis === n.tentativeDiagnosis &&
     p.notes === n.notes &&
     p.isPlannedAdmission === n.isPlannedAdmission &&
@@ -236,6 +241,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
   const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
   const eddDriftOn = useWardFeatureFlag("top25-edd-drift");
   const eddMoved = eddDriftOn && bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
+  const criteriaLed = bed.patientAlias && !isReady && !isPulled ? (bed.criteriaLedChip ?? null) : null;
 
   // Color tint band class based on stay duration
   let bandClass = "";
@@ -312,7 +318,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
         </div>
       )}
 
-      {signal || eddMoved ? (
+      {signal || eddMoved || criteriaLed ? (
         <div className={styles.bedBottomTags}>
           {signal ? (
             <span className={isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip}>
@@ -322,6 +328,18 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
           {eddMoved ? (
             <span className={styles.bedCardChip} data-testid="ward-bed-edd-moved">
               {eddMoved}
+            </span>
+          ) : null}
+          {criteriaLed ? (
+            <span
+              className={cx(
+                styles.bedCardChip,
+                criteriaLed.tone === "success" && styles.chipGood,
+                criteriaLed.tone === "warning" && styles.chipWarn,
+              )}
+              data-testid="ward-bed-criteria-led"
+            >
+              {criteriaLed.label}
             </span>
           ) : null}
         </div>
