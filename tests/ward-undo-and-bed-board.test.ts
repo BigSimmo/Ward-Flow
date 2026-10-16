@@ -431,9 +431,17 @@ describe("governance: synthetic seed entries and UNDO_AUDIT_REVIEW", () => {
     const saved = {
       ...reviewed,
       auditReviews: reviewed.auditReviews.map((row) => ({ ...row, eventId: "audit-seed-referral-override" })),
+      auditEvents: reviewed.auditEvents.map((row) =>
+        row.subject.kind === "audit-event"
+          ? { ...row, subject: { ...row.subject, eventId: "audit-seed-referral-override" } }
+          : row,
+      ),
     };
     expect(isValidStoredWardFlowState(stored(saved))).toBe(true);
-    expect(withInboxStreamADefaults(saved).auditReviews.map((row) => row.eventId)).toEqual([REFERRAL_ENTRY]);
+    const restored = withInboxStreamADefaults(saved);
+    expect(restored.auditReviews.map((row) => row.eventId)).toEqual([REFERRAL_ENTRY]);
+    // The audit row recording that review moves with it, so the review history still names the entry.
+    expect(restored.auditEvents.map((row) => row.subject)).toEqual([{ kind: "audit-event", eventId: REFERRAL_ENTRY }]);
   });
 
   it("reviews a synthetic entry, and Undo takes the review back exactly", () => {
