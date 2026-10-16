@@ -538,9 +538,9 @@ const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
   const accepted = nextWorld.rejections.length === container.world.rejections.length;
-  const logged = eventLogEntryFor(event, accepted);
+  const logged = { ...eventLogEntryFor(event, accepted), sequence: (container.eventLog?.at(-1)?.sequence ?? -1) + 1 };
   if (nextWorld.worldGeneration !== container.world.worldGeneration) {
-    return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
+    return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [{ ...logged, sequence: 0 }] };
   }
   const previousLog = container.eventLog ?? [];
   const eventLog =

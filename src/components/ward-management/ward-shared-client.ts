@@ -266,7 +266,13 @@ export class SharedWorkspaceClient {
         if (value.snapshot) this.adopt(value.snapshot);
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
           this.headRevision = Math.max(this.headRevision, value.commandRevision);
-        this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });
+        const previousLog = this.view.eventLog ?? [];
+        this.publish({
+          eventLog: [
+            ...previousLog,
+            { ...eventLogEntryFor(command.event, response.ok), sequence: (previousLog.at(-1)?.sequence ?? -1) + 1 },
+          ],
+        });
         this.pending = null;
         if (!response.ok) {
           this.queue = [];
