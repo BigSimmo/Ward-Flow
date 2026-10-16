@@ -80,6 +80,8 @@ export class SharedWorkspaceClient {
   private disposed = false;
   private busy = false;
   private needsRefresh = false;
+  /** Bumped when the working role ends, so a reply to a request sent under it is not adopted. */
+  private roleEpoch = 0;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
   private readonly lifetime = new AbortController();
@@ -174,6 +176,7 @@ export class SharedWorkspaceClient {
         // is cleared, so nothing more can be queued, and read again in full before any change.
         this.pending = null;
         this.queue = [];
+        this.roleEpoch += 1;
         this.publish({ snapshot: null, eventLog: [] });
         this.needsRefresh = true;
         queueMicrotask(() => {
@@ -226,10 +229,13 @@ export class SharedWorkspaceClient {
     this.busy = true;
     try {
       const current = this.view.snapshot;
+      const epoch = this.roleEpoch;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
+      // The role ended while this read was out: drop its desk, and the follow-up read replaces it.
+      if (epoch !== this.roleEpoch) return;
       if (!response.ok) throw new Error("Workspace unavailable");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
@@ -287,9 +293,10 @@ export class SharedWorkspaceClient {
         }
         this.publish({ status: "saving", error: null });
         const command = this.pending;
+        const epoch = this.roleEpoch;
         const { response, value } = await this.request("/v1/workspace/commands", command);
         if (response.status >= 500) throw new Error("Save not confirmed");
-        if (value.snapshot) this.adopt(value.snapshot);
+        if (value.snapshot && epoch === this.roleEpoch) this.adopt(value.snapshot);
         else if (response.ok && Number.isSafeInteger(value.commandRevision))
           this.headRevision = Math.max(this.headRevision, value.commandRevision);
         this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });

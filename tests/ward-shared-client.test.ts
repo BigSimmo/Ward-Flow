@@ -261,6 +261,42 @@ describe("shared workspace connection", () => {
     expect(view?.workingAs).toBe("fallback-coordinator");
     client.dispose();
   });
+  it("drops a board read that was out when the role ended, so the ended desk never comes back", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    let releaseRead: (() => void) | undefined;
+    let reads = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, options) => {
+        if (!options?.body) {
+          reads += 1;
+          // The second read starts under the ended role and answers only after the refusal.
+          if (reads === 2) await new Promise<void>((resolve) => (releaseRead = resolve));
+          return Response.json({ snapshot: snapshot(reads), workingAs: "fallback-coordinator" });
+        }
+        return Response.json(
+          { error: "No Ward Flow role is assigned to this account", code: "no-role" },
+          { status: 403 },
+        );
+      },
+    });
+    await client.refresh();
+    const stale = client.refresh();
+    await vi.waitFor(() => expect(releaseRead).toBeDefined());
+    await client.revokeAccess("3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9e");
+    expect(view?.snapshot).toBeNull();
+    releaseRead!();
+    await stale;
+    await vi.waitFor(() => expect(reads).toBe(3));
+    await vi.waitFor(() => expect(view?.snapshot?.revision).toBe(3));
+    client.dispose();
+  });
   it("hands back step-up and role refusals on access steps instead of signing out", async () => {
     let view: SharedView | undefined;
     const bodies: unknown[] = [];
