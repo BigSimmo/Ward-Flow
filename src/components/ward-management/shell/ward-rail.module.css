@@ -3,7 +3,7 @@
  * the collapsed rail board, the phone sheet board and the rail pop-out mockups, 7 October 2026).
  * Layout and element placement are the third edition's; this file changes the skin only.
  *
- * Tokens only: `--wf-*` (global, `src/app/ward-flow-v6-tokens.css`) for colour, radius, size and
+ * Tokens only: `--wf-*` (global, `src/app/ward-flow-v9-tokens.css`) for colour, radius, size and
  * type, and `color-mix()` of those tokens for tints. The rail is chrome, so it is glass with a fine
  * edge. Selection is a slate tint with a fine edge, never a bar on any edge (owner ruling Q-11).
  * Status markers are round. The legacy shell tokens are still composed for `--ward-tap` and the
@@ -952,7 +952,7 @@
   margin: -0.25rem -0.375rem;
   padding: 0 0.375rem;
   border: 1px solid transparent;
-  border-radius: var(--wf-r-sm);
+  border-radius: var(--wf-r-tag);
   background: transparent;
   color: var(--wf-accent-ink);
   font: inherit;

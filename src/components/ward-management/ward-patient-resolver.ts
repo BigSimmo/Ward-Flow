@@ -110,6 +110,19 @@ function initialsOnlyPatient(initials: string): ResolvedPatientInfo {
 }
 
 /** D-39 placeholders: what a screen shows when the resolver has no name or no UMRN for a person. */
+/**
+ * Whether one person is in a bed on one ward now: the stay a ward's own referral would move
+ * (`movementSourceAdmission` in the reducer). It answers yes or no for that ward only, never where
+ * else the person has been.
+ */
+export function patientInBedOnUnit(
+  admissions: readonly Pick<Admission, "patientId" | "unitId" | "state">[],
+  patientId: string,
+  unitId: string,
+): boolean {
+  return admissions.some((stay) => stay.patientId === patientId && stay.unitId === unitId && stay.state === "occupied");
+}
+
 export const NAME_NOT_RECORDED = "Name not recorded";
 export const UMRN_NOT_RECORDED = "UMRN not recorded";
 

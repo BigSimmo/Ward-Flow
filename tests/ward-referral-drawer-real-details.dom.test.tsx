@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";

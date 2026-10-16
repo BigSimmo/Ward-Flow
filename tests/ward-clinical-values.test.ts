@@ -70,8 +70,6 @@ describe("clinical values file", () => {
       anyTierOverdue: 4320,
       edElevatedPressure: 180,
       edSeverePressure: 480,
-      edSecondEscalation: 720,
-      edLadderActNowEdge: 1320,
       longWait: 1440,
       veryLongWait: 2880,
       edAccessTarget: 1440,
@@ -82,8 +80,6 @@ describe("clinical values file", () => {
       occupancyCritical: 98,
       dueSoonUrgent: 60,
       dueSoon: 180,
-      paperFormRadarAmber: 240,
-      paperFormRadarEdge: 360,
       pullNowAnswer: 15,
       pullNowLive: 240,
       pullHold: 240,
@@ -97,17 +93,25 @@ describe("clinical values file", () => {
       wardAnswerTarget: 120,
       transferAcceptanceTarget: 240,
       transportBookedTarget: 60,
-      handoverStuck: 60,
       expectFlagVoluntary: 2880,
       expectFlagInvoluntary: 10080,
       expectReconsider: 4320,
       dischargePrepWindow: 1440,
+      dischargeCriteriaValidity: 4320,
       leaveOpenWarning: 1440,
       awolBedHoldWarning: 240,
       ctoFollowUpWindow: 7,
       longStayPrompt: 7,
       delayedDischargeEscalation: 72,
       readmissionWindow: 28,
+      // Role access plan (Josh, 15 Oct 2026): new synthetic access and privacy values.
+      breakGlassWindow: 60,
+      breakGlassPerShift: 3,
+      breakGlassShift: 12,
+      edHandoffWindow: 24,
+      wardHandoffWindow: 7,
+      idleLock: 15,
+      smallNumberHidden: 5,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,
@@ -312,7 +316,7 @@ const INLINE_SHAPES: ReadonlyArray<{ rule: string; shape: RegExp }> = [
   { rule: "longStayPrompt", shape: /\.days\s*>=?\s*\d|daysInBed\([^)]*\)\s*\?\?\s*0\)\s*>=?\s*\d/ },
   { rule: "longWait", shape: /openedAt\s*>=?\s*\d{3,}/ },
   { rule: "silentWardFirstReminder or silentWardSecondReminder", shape: /elapsedMinutes\s*[<>]=?\s*\d{2,}/ },
-  { rule: "dueSoonUrgent (currentDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
+  { rule: "dueSoonUrgent (useDueSoonThresholds)", shape: /dueAt\s*-\s*now\s*<=?\s*\d|\bremaining\s*<=?\s*\d{2,}/ },
 ];
 
 function inlineThresholdsIn(source: string): string[] {

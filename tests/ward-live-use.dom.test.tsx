@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ToastDeviceSaveContext, ToastProvider, useToast } from "@/components/ui/toast";
+import { ToastDeviceSaveContext, ToastProvider, useToast } from "@/components/wf/toast-provider";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { LiveChip, WfServerPhoneProvider, guessPhoneFromRequest, useIsPhone } from "@/components/wf";
 import { WARD_OFFLINE_LINK_NOTICE, WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";

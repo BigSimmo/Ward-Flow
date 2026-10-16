@@ -16,6 +16,7 @@ import {
 } from "@/components/ward-management/ward-service-scope";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * The `ADVANCE_CLOCK` scaffold `tests/ward-delays-legal-deadline.dom.test.tsx` established: moves
  * `now` forward without re-seeding the world, so a `dueAt` authored relative to `NOW_ANCHOR` stays
@@ -57,7 +58,7 @@ const MEMBER_OPEN = OPEN.filter((movement) => movementBelongsToService(movement,
 const EXCLUDED_OPEN = OPEN.filter((movement) => !movementBelongsToService(movement, SERVICE, UNITS));
 const CONFIG = defaultWardConfiguration();
 const URGENT_OUTSIDE = urgentMovementsOutsideService(OPEN, SERVICE, UNITS, NOW_ANCHOR, CONFIG);
-const GROUPS_UNDER_SERVICE = delayGroups(MEMBER_OPEN, UNITS, NOW_ANCHOR);
+const GROUPS_UNDER_SERVICE = delayGroups(MEMBER_OPEN, UNITS, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
 
 function ownerPeopleUnderService(ownerId: string): number {
   return GROUPS_UNDER_SERVICE.filter((group) => ownerOf(group.cause) === ownerId).reduce(
@@ -316,7 +317,7 @@ describe("WF-018 scenario — flagged-urgent-but-not-severe patients outside the
     // WF-018's cause under `delayGroups` is `patient_or_family` (flagged, nothing else present) —
     // NOT one of `SEVERE_CAUSES` — so before R2 item 3 this panel, built only from severe-cause
     // network groups, never named it at all.
-    const groups = delayGroups(OPEN, UNITS, NOW_ANCHOR);
+    const groups = delayGroups(OPEN, UNITS, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     const wf018Group = groups.find((group) => group.movements.some((movement) => movement.id === "WF-018"));
     expect(wf018Group?.cause, "WF-018's own cause must not already be severe or this scenario proves nothing").toBe(
       "patient_or_family",

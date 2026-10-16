@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById } from "../community/community-derivations";
 import { edById, siteByCode } from "../ward-sites";
 import { occupiedBeds } from "./statistics-occupancy";
@@ -13,7 +13,7 @@ import styles from "./statistics-samples.module.css";
 export function StatisticsSampleFigures() {
   const enabled = useStatisticsSamples();
   const pathname = usePathname() || "";
-  const state = useWardFlow();
+  const state = useWardFlowSelect("units", "admissions", "bedReleases", "leaveBeds", "scenario");
   const now = useWardFlowClock();
   if (!enabled) return null;
   const [mode, encodedId] = pathname.split("/statistics")[1]?.split("/").slice(1) ?? [];

@@ -33,7 +33,7 @@ import {
   unitCapacity,
   wardServiceOrder,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatElapsed, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import type {
@@ -264,7 +264,7 @@ function BedStateChips({
   now: Instant;
   showTime?: boolean;
 }) {
-  const { admissions } = useWardFlow();
+  const { admissions } = useWardFlowSelect("admissions");
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
@@ -335,7 +335,7 @@ function ServiceCard({
   onSelect: () => void;
   registerRef: (id: string, node: HTMLButtonElement | null) => void;
 }) {
-  const { admissions } = useWardFlow();
+  const { admissions } = useWardFlowSelect("admissions");
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
   // One spelling for both outcomes, and it is the match view's own. `matchReason` answers "can
@@ -551,7 +551,14 @@ type NetworkView = "overview" | "placement";
  * coordinator's local selection when they briefly return to the overview.
  */
 export function WardNetworkWorkspace() {
-  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "configuration",
+  );
   const { now, paused, togglePause } = usePageLive();
   const [view, setView] = useState<NetworkView>("overview");
   // Phone (v10 Network): the view tabs sit under the hero and a "Ready against waiting" row scopes
@@ -800,7 +807,15 @@ export function initialNetworkPatientId(movements: Movement[]): string | null {
 
 /** `now` is the page's own clock from `usePageLive()`, so pausing the hero freezes this workspace too. */
 function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
-  const { movements, units, referrals, bedReleases, leaveBeds, admissions, patients } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds, admissions, patients } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "patients",
+  );
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);

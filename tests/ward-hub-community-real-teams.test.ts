@@ -8,6 +8,7 @@ import { hubEntries } from "../src/components/ward-management/hub/hub-derivation
 import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { bedReleases } from "../src/components/ward-management/ward-movements";
 
+import { wardSites } from "@/components/ward-management/ward-sites";
 /**
  * The search hub lists the REAL community teams, and its links now arrive somewhere.
  *
@@ -33,7 +34,9 @@ import { bedReleases } from "../src/components/ward-management/ward-movements";
  * This compares against the list itself.
  */
 function communityEntries() {
-  return hubEntries({ units: allUnits(), bedReleases, now: NOW_ANCHOR }).filter((entry) => entry.kind === "community");
+  return hubEntries({ units: allUnits(), bedReleases, now: NOW_ANCHOR, sites: wardSites }).filter(
+    (entry) => entry.kind === "community",
+  );
 }
 
 describe("the search hub lists real community teams", () => {

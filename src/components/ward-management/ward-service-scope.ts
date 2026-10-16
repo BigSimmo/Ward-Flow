@@ -40,7 +40,7 @@
  * has been breached. A future pass that also re-points `handover-page.tsx`'s own `movementIsUrgent`
  * at this one can delete the page's copy without changing behaviour anywhere.
  */
-import { clockState, type Instant } from "@/components/ward-management/ward-clock";
+import { dueSoonThresholdsOf, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
@@ -180,7 +180,7 @@ export function referralBelongsToService(referral: Referral, service: HealthServ
 export function movementIsUrgent(movement: Movement, now: Instant): boolean {
   if (movement.flaggedUrgent) return true;
   const dueAt = movement.legalForm?.dueAt;
-  return dueAt !== undefined && clockState(dueAt, now) === "breached";
+  return dueAt !== undefined && isClockBreached(dueAt, now);
 }
 
 /**
@@ -231,11 +231,11 @@ export function movementIsUrgentForServiceSafety(
   movement: Movement,
   units: Unit[],
   now: Instant,
-  configuration: Pick<WardConfiguration, "edAccessTargetMinutes">,
+  configuration: Pick<WardConfiguration, "edAccessTargetMinutes" | "dueSoonUrgentMinutes" | "dueSoonMinutes">,
 ): boolean {
   if (movement.flaggedUrgent) return true;
   if (movement.escalation !== undefined) return true;
-  const [soleGroup] = delayGroups([movement], units, now);
+  const [soleGroup] = delayGroups([movement], units, now, dueSoonThresholdsOf(configuration));
   if (soleGroup !== undefined && SEVERE_CAUSES.includes(soleGroup.cause)) return true;
   return isOpen(movement) && now - movement.openedAt >= configuration.edAccessTargetMinutes;
 }
@@ -259,7 +259,7 @@ export function urgentMovementsOutsideService(
   service: HealthService,
   units: Unit[],
   now: Instant,
-  configuration: Pick<WardConfiguration, "edAccessTargetMinutes">,
+  configuration: Pick<WardConfiguration, "edAccessTargetMinutes" | "dueSoonUrgentMinutes" | "dueSoonMinutes">,
 ): Movement[] {
   return movements.filter(
     (movement) =>

@@ -20,7 +20,9 @@ import { deriveAfternoonDischarges } from "@/components/ward-management/ward-der
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WardDischargeCriteriaCard, type DischargeCriteriaUpdate } from "./ward-discharge-criteria-card";
+import type { CriteriaEligibility } from "@/components/ward-management/ward-discharge-criteria";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import {
@@ -66,6 +68,10 @@ interface WardBedDossierDrawerProps {
   roleLockNote?: React.ReactNode;
   /** Top 25 item 5: records the stay's discharge barrier (`SET_DISCHARGE_BARRIER`). Absent when the role cannot. */
   onSetBarrier?: (admissionId: string, barrier: DischargeBarrier | null) => void;
+  /** Top 25 item 9 (D-60): set when the criteria led discharge flag is on. */
+  criteriaEligibility?: CriteriaEligibility;
+  /** Records the stay's discharge criteria (`SET_DISCHARGE_CRITERIA`). Absent when the role cannot. */
+  onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => void;
 }
 
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
@@ -150,8 +156,14 @@ export function WardBedDossierDrawer({
   fullReferralHref,
   roleLockNote,
   onSetBarrier,
+  criteriaEligibility,
+  onSetCriteria,
 }: WardBedDossierDrawerProps) {
-  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlow();
+  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlowSelect(
+    "admissions",
+    "bedReleases",
+    "resolvePatientIdentity",
+  );
   const now = useWardFlowClock();
   const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
@@ -294,6 +306,17 @@ export function WardBedDossierDrawer({
         : " Record any discharge barrier now so it can be sorted before the day."}
     </p>
   ) : null;
+  // Top 25 item 9 (D-60): criteria led discharge, on the Plan to leave tab and the phone sheet.
+  const criteriaCard =
+    criteriaEligibility !== undefined && admission?.state === "occupied" ? (
+      <WardDischargeCriteriaCard
+        key={admission.id}
+        record={admission.dischargeCriteria}
+        eligibility={criteriaEligibility}
+        now={now}
+        onChange={onSetCriteria ? (update) => onSetCriteria(admission.id, update) : undefined}
+      />
+    ) : null;
   const admittedAt = admission?.arrivedAt ?? admission?.pulledAt ?? null;
 
   // Only what the stay itself recorded, newest first. Nothing here is inferred.
@@ -403,6 +426,7 @@ export function WardBedDossierDrawer({
         onKeyDown={onKeyDown}
         planRows={barrierRow}
         planNote={prepNote}
+        planCriteria={criteriaCard}
         readyNote={readyNote}
       />
     );
@@ -640,6 +664,7 @@ export function WardBedDossierDrawer({
                       </div>
                     ) : null}
                   </Section>
+                  {criteriaCard}
                   {isOccupied && bedItem?.admissionId ? (
                     <Section title="Going to">
                       <div className={styles.cardInner}>
@@ -888,6 +913,7 @@ interface PhoneBedSheetProps {
   planRows?: ReactNode;
   /** Top 25: a short note under Plan to leave (flagged). */
   planNote?: ReactNode;
+  planCriteria?: ReactNode;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
 }
@@ -934,6 +960,7 @@ function PhoneBedSheet({
   onKeyDown,
   planRows,
   planNote,
+  planCriteria,
   readyNote,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
@@ -1093,6 +1120,7 @@ function PhoneBedSheet({
                   </Button>
                 </div>
               ) : null}
+              {planCriteria}
               <h3 className={styles.phoneSec}>Timeline</h3>
               {timeline.length > 0 ? (
                 <ul className={styles.timeline}>

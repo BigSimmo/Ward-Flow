@@ -77,6 +77,65 @@ describe("the tasks drawer", () => {
     expect(drawer).toHaveAttribute("aria-modal", "true");
   });
 
+  it("AUD-13: does not trap focus or hijack global Escape without a backdrop, while local Escape collapses open sub-forms first and then closes the drawer", () => {
+    const opener = document.createElement("button");
+    opener.type = "button";
+    opener.textContent = "Tasks opener";
+    document.body.appendChild(opener);
+    opener.focus();
+
+    try {
+      const { drawer, onClose } = renderDrawer({ withBackdrop: false, records: seed });
+      expect(drawer).toHaveAttribute("role", "complementary");
+      expect(drawer).not.toHaveAttribute("aria-modal");
+
+      // Pressing Escape on window outside the drawer must not close the inline complementary panel:
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+
+      // If an inline Escalate sub-form is open, pressing Escape inside it collapses the sub-form first:
+      const item = items.find((candidate) => candidate.title === "Multiple destinations declined")!;
+      const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
+      const escalateTrigger = within(card).getByRole("button", { name: "Escalate" });
+      fireEvent.click(escalateTrigger);
+      const input = within(drawer).getByPlaceholderText("Contact name or service");
+      fireEvent.keyDown(input, { key: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(within(drawer).queryByPlaceholderText("Contact name or service")).toBeNull();
+      // Focus goes back to the trigger that opened the form, not to the page.
+      expect(escalateTrigger).toHaveFocus();
+
+      // The same for the Contact panel: Escape from one of its Call buttons closes the panel and
+      // returns focus to that row's Contact trigger.
+      const contactTrigger = within(card).getByRole("button", { name: "Contact" });
+      fireEvent.click(contactTrigger);
+      const callButton = within(card).getAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u })[0]!;
+      callButton.focus();
+      fireEvent.keyDown(callButton, { key: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(within(card).queryByTestId(`ward-task-contacts-${item.id}`)).toBeNull();
+      expect(contactTrigger).toHaveFocus();
+
+      // If a Snooze popover dialog is open inside the inline drawer, Escape closes the Snooze popover first:
+      const snoozeTrigger = within(card).getByRole("button", { name: /^Snooze /i });
+      fireEvent.click(snoozeTrigger);
+      const snoozeDialog = within(card).getByRole("dialog");
+      fireEvent.keyDown(snoozeDialog, { key: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(within(card).queryByRole("dialog")).toBeNull();
+      expect(snoozeTrigger).toHaveFocus();
+
+      // Pressing Escape while focused inside the complementary drawer honours the visible Esc badge and returns focus to the opener:
+      const closeBtn = within(drawer).getByRole("button", { name: "Close tasks panel" });
+      closeBtn.focus();
+      fireEvent.keyDown(closeBtn, { key: "Escape" });
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(opener).toHaveFocus();
+    } finally {
+      opener.remove();
+    }
+  });
+
   it("has rows to assert about, so nothing below passes over an empty list", () => {
     expect(items.length, "the seed produced no inbox rows — every assertion here would be vacuous").toBeGreaterThan(0);
   });

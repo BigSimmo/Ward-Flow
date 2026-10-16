@@ -92,19 +92,21 @@ export class SharedWorkspaceClient {
       signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal]),
     });
     if (this.disposed) throw new Error("Connection closed");
-    if (response.status === 401 || response.status === 403) {
+    const denied = (error: string) => {
       this.pending = null;
       this.queue = [];
-      this.publish({
-        snapshot: null,
-        eventLog: [],
-        status: "not-authorised",
-        error: "Sign in with an account assigned coordinator access.",
-      });
-      throw new Error("Access denied");
-    }
+      this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });
+      return new Error("Access denied");
+    };
+    if (response.status === 401 || response.status === 403)
+      throw denied("Sign in with an account assigned a Ward Flow role.");
     const value = await response.json();
     if (this.disposed) throw new Error("Connection closed");
+    // The server holds more than one role for this account and needs to be told which.
+    if (response.status === 409 && value?.code === "choose-role")
+      throw denied(
+        "This account holds more than one role. Choosing which one to work as is not wired in this prototype.",
+      );
     return { response, value };
   }
   async refresh() {
@@ -180,9 +182,11 @@ export class SharedWorkspaceClient {
             error:
               response.status === 409
                 ? "Another coordinator changed the board. Your action was not applied; review the latest state."
-                : command.event.role === "demo" && value.snapshot?.demoControls === false
-                  ? "Demo controls are switched off on the shared workspace. Nothing was changed."
-                  : "The action was not applied. Review the workflow requirements.",
+                : value?.code === "scope" && typeof value.error === "string"
+                  ? `${value.error} Nothing was changed.`
+                  : command.event.role === "demo" && value.snapshot?.demoControls === false
+                    ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                    : "The action was not applied. Review the workflow requirements.",
           });
           break;
         }

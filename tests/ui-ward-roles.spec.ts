@@ -469,7 +469,7 @@ test.describe("@mockup Movements — transport panel", () => {
   function transportLegRows(page: Page) {
     return page
       .getByRole("region", { name: "Transport right now" })
-      .getByRole("feed", { name: "Active transport legs" })
+      .getByRole("region", { name: "Active transport legs" })
       .getByRole("button");
   }
 

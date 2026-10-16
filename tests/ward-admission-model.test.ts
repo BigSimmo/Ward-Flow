@@ -77,6 +77,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     followUp: null,
     careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
+    dischargeCriteria: null,
     stepDownCandidate: false,
     ...overrides,
   };
@@ -569,6 +570,7 @@ describe("Admission privacy — structural", () => {
     // put this stay in. Never a fact about the person; no `AUTHORISED_PERSON_FACTS` entry.
     "bedNumber",
     "dischargeBarrier",
+    "dischargeCriteria",
     "stepDownCandidate",
     "state",
     "pulledAt",
@@ -646,6 +648,7 @@ describe("Admission privacy — structural", () => {
       followUp: { state: "arranged", recordedAt: 10 * 60, recordedBy: "Ward manager" },
       careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
       dischargeBarrier: "Accommodation / Housing",
+      dischargeCriteria: { setAt: DAY_ZERO, items: [{ criterion: "Accommodation confirmed", metAt: null }] },
       stepDownCandidate: true,
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_ADMISSION_FIELDS);

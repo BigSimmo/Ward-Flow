@@ -166,30 +166,29 @@ baseline.
   `groupByHealthService`, `ofPopulation`. **Not itself unreachable** — `coordinator/pressure-strip.tsx`
   imports `edOpenSummaries` directly, so this file stays live. Its sibling component
   `ed-home.tsx` was removed by PR #306 on 15 Oct 2026.
-- **`ed-screen.tsx`** (5,810 lines) — **the largest file in Ward Flow.** `EdScreen` (from line 1,139
-  to end of file) is the entire routed ED board: referral intake, legal forms, medical clearance,
-  transport booking, outcomes. See outline below.
-- **`ed.module.css`** (3,750 lines) — the stylesheet for `ed-screen.tsx`.
+- **`ed-screen.tsx`** (484 lines) — `EdScreen`, the routed ED board: referral intake, legal forms,
+  medical clearance, transport booking, outcomes. Split into sibling files on 15 Oct 2026 (fix list
+  2.5 and 9.6), with no change to markup or behaviour. `EdScreen` reads the records, runs its hooks
+  and derivations, builds one `EdScreenContext` and hands it to each section.
+- **`ed.module.css`** (3,750 lines) — the stylesheet for `ed-screen.tsx` and its sibling sections.
 
-**`ed-screen.tsx` outline** (5,810 lines; `EdScreen` alone is ~4,670 lines):
+**`ed-screen.tsx` sibling files** (all in `ed/`):
 
-- Module-level pure helpers (139–1,111): `asLineHeading`, `urgencyGlyph`, `edReferralClockLines`
-  (exported, 171), `declineReasonBlockedReason`, `answeredAddressingLabel`,
-  `minutesFromTimeInput`/`instantFromDateAndTimeInputs`/`instantFromEstimatedTimeInputs`,
-  `referralDraftBlockedReason`, `examinationBlockedReason`, `communityReferralBlockedReason`,
-  `isEdInitiatedWithdrawal`, `edOutcomeBlockedReason`, `dischargeChoiceBlockedReason`,
-  `handoverBlockedReason`, `bookTransportBlockedReason`, `transportLegalFormNotice`,
-  `withdrawReferralBlockedReason`, `transportAnswersBlockedReason`, `outstandingItem` (exported,
-  967), `formExpiryLine`/`formExpiryWarning`, `patientBay`, `accessTargetLine`,
-  `movementMedicalClearance`, `referralWardGender`.
-- `EdScreen` (1,139–5,810): dialog/keyboard handlers `closeTransportDialog` (1,241),
-  `handleTransportDialogKeyDown` (1,251), `onDepartmentListKeyDown` (1,384); form submit handlers
-  from 2,017 on — `submitReferral`, `toggleExamination`/`submitExamination`,
-  `toggleUrgencyChange`/`submitUrgencyChange`, `toggleLegalStatusChange`/`submitLegalStatusChange`,
-  `toggleWithdrawReferral`/`confirmWithdrawReferral`, `toggleLegalFormExpiry`/`submitLegalFormExpiry`,
-  `toggleReceiptCorrection`/`submitReceiptCorrection`, `toggleBookTransport`,
-  `toggleDecline`/`submitDecline`, `submitBookTransport` (2,239). The remaining ~3,500 lines
-  (2,300–5,810) are the render body: department list, per-movement cards, and every dialog's JSX.
+- Types and pure logic: `ed-screen-context.ts` (the context type), `ed-screen-model.ts` (drafts,
+  labels and pure helpers such as `edReferralClockLines`, `outstandingItem`,
+  `instantFromDateAndTimeInputs`), `ed-screen-derivations.ts` (`deriveEdScreen`, the lists and
+  hero figures).
+- Hooks: `use-ed-screen-state.ts` (referral draft, board drafts and view, row panels),
+  `use-ed-screen-decline.ts` (the inbox decline and its refusal check).
+- Actions: `ed-screen-actions.ts`, the row panels' submit handlers. Every ED action raises by name
+  through `useWardRaise("ed")`.
+- Sections: `ed-screen-desktop.tsx`, `ed-screen-phone.tsx`, `ed-screen-inbox.tsx`,
+  `ed-screen-lists.tsx`, `ed-screen-board.tsx`, `ed-screen-board-row.tsx`, `ed-screen-row-facts.tsx`,
+  `ed-screen-row-forms.tsx`, `ed-screen-row-menu.tsx`, `ed-screen-referred.tsx`,
+  `ed-screen-timeline.tsx`, `ed-screen-raise-section.tsx`, `ed-screen-transport-dialog.tsx`,
+  `ed-screen-patient-dialog.tsx`, `ed-screen-person-sheet.tsx`.
+- Tests that read the screen's source read every one of these files through
+  `tests/helpers/ed-screen-source.ts`.
 
 ## `ward/` — 8 files, 13,751 lines
 
@@ -309,10 +308,12 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   logic used by both intake and community screens.
 - **`referral-duplicate.ts`** (140 lines) — `duplicateSentence`: states what referral is already
   open for a patient before a second one is raised (Lane C task 15).
-- **`referral-match.tsx`** (1,532 lines) — `ReferralMatchView`, the per-referral matching panel
-  mounted by `referral-board.tsx`. Internal handlers: `handleAddCorrection` (220), `handleAccept`
-  (636), `handleLocalBedSought` (664), `handleDecline` (678), `handleCommunityDecline` (704),
-  `handleCommunityAccept` (733), `handleEdAccept` (745), `handleCommunityWithdraw` (765).
+- **`referral-match.tsx`** (1,242 lines) — `ReferralMatchView`, the per-referral matching panel
+  mounted by `referral-board.tsx`, and `ReferralHistoryAndCorrections`. Split on 15 Oct 2026 (fix
+  list 2.5) with no change to markup: `use-referral-match-state.tsx` (state and withdraw handling),
+  `referral-match-model.ts`, `referral-history-corrections.tsx`, `referral-match-rows.tsx`,
+  `referral-match-not-a-bed.tsx` and `referral-match-tiers.tsx`. The accept, decline, local bed and
+  community withdraw handlers stay in `referral-match.tsx`.
 - **`referral-referrer.ts`** (42 lines) — `referralReferrerName`, `REFERRER_NOT_RECORDED` ("Not
   recorded" — D-12 ruling: never a personal name, never a source type standing in for one).
 - **`referral-sending-team.ts`** (60 lines) — `sendingTeamFragment`, `withSendingTeam`. One-place
@@ -327,13 +328,15 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   and `referral-match.tsx` (its `data-referral-view="intake"` rules served the deleted full-page form).
 - **`upload-forms-modal.tsx`** (281 lines) — `UploadFormsModal`; only imported by
   `patients/patient-now-screen.tsx`, not by anything in this folder.
-- **`ward-referral-drawer.module.css`** (1,572 lines) — styles only `ward-referral-drawer.tsx`.
-- **`ward-referral-drawer.tsx`** (1,590 lines) — `WardReferralDrawer`, plus `useWardCapacity` and
-  the `CAPACITY_RECORDS` fixture. Mounted from `shell/ward-bar.tsx` (the global top-bar search
-  drawer), not from a referrals route — this is the referrals folder's one file reached from the
-  shell rather than from a page. Internal handlers: `handleToggleMedicalClearance` (494),
-  `handleTriageAction` (529), `handleSelectPatient` (583), `toggleRisk` (624), `handleDispatch`
-  (748).
+- **`ward-referral-drawer.module.css`** (1,572 lines) — styles `ward-referral-drawer.tsx` and its
+  sibling sections.
+- **`ward-referral-drawer.tsx`** (166 lines) — `WardReferralDrawer`, plus `useWardCapacity` and
+  `WardCapacityRecord`. Mounted from `shell/ward-bar.tsx` (the global top-bar search drawer), not
+  from a referrals route — this is the referrals folder's one file reached from the shell rather
+  than from a page. Split on 15 Oct 2026 (fix list 2.5) with no change to markup: state and
+  handlers in `use-ward-referral-drawer-state.ts`, the `CAPACITY_RECORDS` fixture and pure helpers
+  in `ward-referral-drawer-model.ts`, and sections in `ward-referral-drawer-head.tsx`, `-fields`,
+  `-letter`, `-patient-step`, `-referral-step`, `-placement-step` and `-rail`.
 
 ## `community/` — 16 files, 12,060 lines
 
@@ -380,9 +383,10 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   Human-ruled "these two names are one service" list, deliberately separate from the similarity
   detector in `community-vocabulary.ts` (its header explains why: similarity is a checkable string
   property, sameness is a clinical claim).
-- **`community-screen.tsx`** (4,129 lines) — **the largest file in this folder** and its only
-  dispatch source. `CommunityScreen` (444–4,078). See outline below. Also exports
-  `AcceptedBeforeAdmission` (type, line 4,078) after the component.
+- **`community-screen.tsx`** (1,198 lines) — `CommunityScreen`, the routed community team page.
+  Split into sibling files on 15 Oct 2026 (fix list 2.5 and 9.6), with no change to markup or
+  behaviour. Also exports `AcceptedBeforeAdmission`. Its actions raise by name through
+  `useWardRaise("community")`, except the clinical contact helper.
 - **`community-team-contact-mapping.ts`** (226 lines) — `CommunityTeamContactMapping`,
   `COMMUNITY_TEAM_CONTACT_MAPPINGS`, `mappedTeamNames`, `contactForTeam`, `contactDecisionFor`,
   `RATIFIED_GROUP_COUNT`. Only imported by `community-screen.tsx`.
@@ -393,25 +397,19 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `community-screen.tsx` and `statistics/statistics-screen.tsx`.
 - **`community.module.css`** (3,226 lines) — the stylesheet for `community-screen.tsx`.
 
-**`community-screen.tsx` outline** (4,129 lines):
+**`community-screen.tsx` sibling files** (all in `community/`):
 
-- Module-level helpers before the component (150–435): `minutesFromTimeInput`,
-  `instantFromEstimatedTimeInputs`, `transportAnswersBlockedReason`, `clinicalContactCanSave`,
-  `recordClinicalContact`, `serviceFilterLabel`.
-- `CommunityScreen` (444–3,763): handlers `handleToggleTheme`/`handleSetThemeExplicit` (498, 506),
-  `handleActionClick` (511), `handleToggleDecline`/`handleConfirmDecline` (546, 558),
-  `handleConfirmAccept` (582), `intakeBlockedReason` (592), `submitCommunityFollowUp` (609),
-  `handleSaveClinicalContact` (635), `openTransportBook`/`closeTransportBook` (642, 649),
-  `openTransportCancel`/`closeTransportCancel` (654, 661), `submitBookTransport` (666),
-  `submitCancelTransport` (693), `markTeamNoticeRead` (795).
-- Module-level helpers after the component (3,763–4,129): `unitName`, `bedStateLabel`, `stayLabel`,
-  `expectedBackLabel`, `departureLabel`, `otherDepartureDestinations`, `referralOriginLabel`,
-  `communityAddressingFor`, `caseloadStatutoryFormCode`/`caseloadRecordedExpiryAt`/
-  `caseloadRecordedExpiryLabel`, `caseloadRowsForTeam`, `referralsWaitingOnTeam`,
-  `categoriseTeamAdmission`, `elapsedSinceOrUnderADay`. ⚠️ Line 3,846 has a comment flagging one
-  branch of a conditional as "UNREACHABLE TODAY" because only one caller currently maps into it —
-  a live dead-branch note, not a component-reachability marker; worth re-checking if a second
-  caller is ever added.
+- Pure helpers: `community-screen-helpers.ts` (labels, caseload rows, `referralsWaitingOnTeam`,
+  `categoriseTeamAdmission`).
+- Hooks: `use-community-screen-overlays.ts` (overlay focus, plus transport booking and cancelling),
+  `use-community-screen-demo-lists.ts`, `use-community-screen-window-bridge.ts`.
+- Sections: `community-screen-hero.tsx`, `community-screen-panels.tsx`, `community-screen-phone.tsx`,
+  `community-screen-waiting-tab.tsx`, `community-screen-in-bed-tab.tsx`,
+  `community-screen-back-tab.tsx`, `community-screen-caseload-tab.tsx`,
+  `community-screen-drawer.tsx`, `community-screen-modals.tsx`,
+  `community-screen-transport-dialogs.tsx`.
+- Tests that read the screen's source read every one of these files through
+  `tests/helpers/community-screen-sources.ts`.
 
 ## `search/` — 11 files, 9,679 lines
 
@@ -676,10 +674,9 @@ scoping, independent decisions, waitlisting and receipt deduplication.
    thin switch into `WardOverviewScreen` (288); the `/ward/[unitId]/answer` route does not render
    `ward-answer-view.tsx` despite the similar name — that file has no importer this map found
    outside its own folder, and is worth re-confirming before assuming it is reachable at all.
-4. **`ed-screen.tsx` and `ward-screen.tsx` are both ~5,000-line single components with no internal
-   decomposition.** Nearly every handler and every dialog's JSX lives in one function scope; a
-   change to one dialog's state can affect variable capture for a sibling dialog with no compiler
-   warning across the boundary.
+4. **`ward-screen.tsx` is still a single ~5,000-line component with no internal decomposition.**
+   Nearly every handler and every dialog's JSX lives in one function scope. `ed-screen.tsx` was
+   split into sections on 15 Oct 2026 (fix list 2.5 and 9.6).
 5. **`referral-wait.ts` vs `ward-referrals.ts`'s `referralWaitLabel`.** Both compute a "how long has
    this referral waited" string, but `referralWaitLabel` keeps counting after triage while
    `referralWaitLine` (this folder) does not. Picking the wrong one by name similarity produces a

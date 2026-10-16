@@ -517,4 +517,14 @@ describe("Every Ward Flow route has exactly one <h1> (D7)", () => {
       expect(matches.length, `expected exactly one <h1> on ${entry.route}, found ${matches.length}`).toBe(1);
     });
   }
+
+  it.each(["/mockups/ward-flow/network", "/mockups/ward-flow/governance"])(
+    'AUD-12: places the visually hidden <h1> inside <main id="main-content"> on %s',
+    (route) => {
+      const entry = RENDERABLE_ROUTES.find((candidate) => candidate.route === route);
+      expect(entry).toBeDefined();
+      const markup = renderRoute(entry!);
+      expect(markup).toMatch(/<main[^>]*\bid="main-content"[^>]*>\s*<h1[^>]*class="sr-only"[^>]*>/);
+    },
+  );
 });

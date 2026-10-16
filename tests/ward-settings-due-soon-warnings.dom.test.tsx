@@ -1,7 +1,7 @@
 // tests/ward-settings-due-soon-warnings.dom.test.tsx
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // Same reason as every sibling settings dom suite: this screen renders next/link anchors and
 // jsdom cannot provide an App Router context.
@@ -14,7 +14,6 @@ vi.mock("next/link", () => ({
 }));
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { applyDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -35,7 +34,6 @@ function Probe() {
 
 // Saving applies the warnings to ward-clock's shared thresholds; put the defaults back so no later
 // test in this file inherits a saved value (Code map's Q3 review, note 2).
-afterEach(() => applyDueSoonThresholds(DUE_SOON_URGENT_MINUTES, DUE_SOON_MINUTES));
 
 function renderSettings() {
   return render(

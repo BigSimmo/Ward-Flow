@@ -22,7 +22,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { ToastProvider } from "@/components/ui/toast";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";

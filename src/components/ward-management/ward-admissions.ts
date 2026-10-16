@@ -2,6 +2,7 @@ import type { CareJourney } from "./ward-care-journey";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { DischargeCriteriaRecord } from "@/components/ward-management/ward-discharge-criteria";
 import type {
   Cohort,
   HomeRegion,
@@ -685,6 +686,8 @@ export type Admission = {
    * Chosen from DISCHARGE_BARRIERS fixed vocabulary, never typed or free text.
    */
   dischargeBarrier?: DischargeBarrier | null;
+  /** Criteria led discharge (D-60): set by the treating psychiatrist for a voluntary patient only. */
+  dischargeCriteria?: DischargeCriteriaRecord | null;
   /**
    * Whether this acute patient is flagged as suitable for step-down care to unlock an acute bed.
    */
@@ -715,6 +718,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   bedKind: true,
   bedNumber: true,
   dischargeBarrier: true,
+  dischargeCriteria: true,
   stepDownCandidate: true,
   state: true,
   pulledAt: true,

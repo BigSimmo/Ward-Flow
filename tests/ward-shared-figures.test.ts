@@ -18,8 +18,9 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { isTierOverdue, tierOverdueAfterMinutes, waitingInEds } from "@/components/ward-management/ward-shared-figures";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * L1 (site review, 12 Oct 2026): "one shared calculation per figure, a noun on every figure, and one
  * test that checks the hero, chip, badge and list counts agree." This is that test, over the seed:
@@ -80,7 +81,8 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
   });
 
   it("beds ready: Home's hero and the Statistics ready count read one figure", () => {
-    const home = wardNavCounts({ ...state, now }).capacity?.value;
+    const home = wardNavCounts({ ...state, now, sites: wardSites, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).capacity
+      ?.value;
     const statistics = state.units.reduce((sum, unit) => sum + unitCapacity(unit, state.bedReleases).available, 0);
     expect(home, "the seed has ready beds").toBeGreaterThan(0);
     expect(home).toBe(statistics);

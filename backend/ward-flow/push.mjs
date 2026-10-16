@@ -119,24 +119,74 @@ export function pushPayload(alerts) {
   };
 }
 
+// Diagnostic values are protocol categories, never free text supplied by an exception.
+// Keep reviewed SQLSTATEs explicit: a five-character user value is not automatically a code.
+const SQLSTATE_CODES = new Set(
+  (
+    "08000 08001 08003 08004 08006 08007 08P01 " +
+    "22001 22003 22007 22008 22012 22023 22P02 23000 23502 23503 23505 23514 " +
+    "25006 25P02 28000 28P01 3D000 3F000 40001 40P01 " +
+    "42501 42601 42703 42704 42804 42883 42P01 42P07 " +
+    "53300 53400 54000 54001 54011 55000 55P03 57014 57P01 57P02 57P03 " +
+    "58000 58030 58P01 58P02 P0001 XX000 XX001 XX002"
+  ).split(" "),
+);
+const ERROR_NAMES = new Set([
+  "Error",
+  "TypeError",
+  "RangeError",
+  "SyntaxError",
+  "ReferenceError",
+  "URIError",
+  "EvalError",
+  "AggregateError",
+  "DatabaseError",
+  "WebPushError",
+  "AbortError",
+  "TimeoutError",
+]);
+const ERROR_CODES = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ECONNABORTED",
+  "ETIMEDOUT",
+  "EPIPE",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "ERR_INVALID_ARG_TYPE",
+  "ERR_HTTP_HEADERS_SENT",
+  "ERR_STREAM_PREMATURE_CLOSE",
+  "ENGINE",
+]);
+
+/** Read an untrusted exception property once; accessors must not break failure reporting. */
+function errorValue(error, key) {
+  try {
+    return error?.[key];
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * Log-safe fields for an error: class name, code (such as a PostgreSQL SQLSTATE or ECONNRESET)
- * and a short message with any URL removed. Never an endpoint, key or payload.
+ * Closed diagnostic fields shared by HTTP, push and store failures. PostgreSQL SQLSTATEs and
+ * approved error categories retain the cause without logging messages, URLs, keys or payloads.
+ * HTTP request IDs and each caller's fixed event name remain the correlation fields.
  */
 export function errorFields(error) {
-  const code = error?.code;
+  const name = errorValue(error, "name");
+  const code = errorValue(error, "code");
   return {
-    errorName: typeof error?.name === "string" ? error.name.slice(0, 60) : "Error",
-    ...(typeof code === "string" || typeof code === "number" ? { errorCode: String(code).slice(0, 40) } : {}),
-    message: String(error?.message ?? "")
-      .replace(/https?:\/\/\S+/g, "[url]")
-      .slice(0, 160),
+    errorName: ERROR_NAMES.has(name) ? name : "Error",
+    ...(typeof code === "string" && (SQLSTATE_CODES.has(code) || ERROR_CODES.has(code)) ? { errorCode: code } : {}),
   };
 }
 
 /** The reason a send failed, as a short category: "status 429" or "Error ECONNRESET". */
-function failureCategory(error) {
-  if (Number.isInteger(error?.statusCode)) return `status ${error.statusCode}`;
+function failureCategory(error, status) {
+  if (status !== undefined) return `status ${status}`;
   const { errorName, errorCode } = errorFields(error);
   return errorCode ? `${errorName} ${errorCode}` : errorName;
 }
@@ -159,10 +209,11 @@ export function createPushSender(config, webpush) {
       );
       return { outcome: "sent" };
     } catch (error) {
-      const status = error?.statusCode;
+      const value = errorValue(error, "statusCode");
+      const status = Number.isInteger(value) && value >= 100 && value <= 599 ? value : undefined;
       if (status === 404 || status === 410) return { outcome: "expired" };
       const retry = !Number.isInteger(status) || status === 408 || status === 429 || status >= 500;
-      return { outcome: "failed", category: failureCategory(error), retry };
+      return { outcome: "failed", category: failureCategory(error, status), retry };
     }
   };
 }

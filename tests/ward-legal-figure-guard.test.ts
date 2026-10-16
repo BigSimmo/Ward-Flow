@@ -1037,7 +1037,9 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       `${WARD_DIR}/movements/movement-workspace-cockpit.tsx`,
       `${WARD_DIR}/ward-management-network.tsx`,
       `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
-      `${WARD_DIR}/ed/ed-screen.tsx`,
+      // Fix list 2.5 and 9.6 (15 Oct 2026): the ED screen's sentence (`outstandingItem`) moved,
+      // unchanged, from `ed/ed-screen.tsx` into `ed/ed-screen-model.ts` when the screen was split.
+      `${WARD_DIR}/ed/ed-screen-model.ts`,
     ]) {
       expect(recordedCarriers, `${expected} no longer says "No legal form recorded"`).toContain(expected);
     }

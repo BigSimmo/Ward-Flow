@@ -17,11 +17,11 @@
  */
 
 import { type HealthService } from "./ward-model";
-import { wardSites } from "./ward-sites";
+import { siteDirectory } from "./ward-sites";
 
 function resolveSiteName(siteId: string, suffix?: string): string {
   const query = siteId.toLowerCase();
-  const site = wardSites.find((s) => s.code.toLowerCase() === query || s.referenceSiteId?.toLowerCase() === query);
+  const site = siteDirectory.find((s) => s.code.toLowerCase() === query || s.referenceSiteId?.toLowerCase() === query);
   const base = site ? site.name : siteId;
   return suffix ? `${base} ${suffix}` : base;
 }

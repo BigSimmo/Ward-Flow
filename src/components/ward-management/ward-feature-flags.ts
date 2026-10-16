@@ -50,6 +50,16 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Never in a demonstration build. Keep off in production, where there is no demo data to reset.",
   },
+  "role-access": {
+    label: "Role access",
+    description:
+      "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
+    owner: "Josh",
+    added: "2026-10-15",
+    // Off everywhere until Josh tries it (`?flags=role-access:on` turns it on for one device).
+    defaults: { development: false, demo: false, production: false },
+    removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
+  },
   "top25-discharge-prep": {
     label: "Discharge prep before expected discharge",
     description:
@@ -58,6 +68,16 @@ export const WARD_FEATURE_FLAGS = {
     added: "2026-10-15",
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh signs off the item in the real screens after review.",
+  },
+  "top25-criteria-led-discharge": {
+    label: "Criteria led discharge",
+    description:
+      "For a voluntary patient, the treating psychiatrist sets discharge criteria and the ward can confirm the discharge once all are met.",
+    owner: "Josh",
+    added: "2026-10-15",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen:
+      "Josh signs off the item in the real screens after review, and clinical governance agrees the criteria list.",
   },
   "top25-discharge-notices": {
     label: "Discharge support notices",

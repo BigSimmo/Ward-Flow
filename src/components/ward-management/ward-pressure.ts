@@ -1,5 +1,5 @@
 // src/components/ward-management/ward-pressure.ts
-import { clockState, type Instant } from "@/components/ward-management/ward-clock";
+import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { EmergencyDepartment, Movement } from "@/components/ward-management/ward-model";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -74,8 +74,7 @@ export function edPressure(now: Instant, movements: Movement[]): EdPressure[] {
       // ward-model.ts) — only the transport/transfer forms (4A/4C) still do, and none of those
       // are due in the past on today's fixture, so this evaluates to 0 today.
       breaching: summary.open.filter(
-        (movement) =>
-          movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "breached",
+        (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
       ).length,
     }))
     .sort((a, b) => b.breaching - a.breaching || b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);

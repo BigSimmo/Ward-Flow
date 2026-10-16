@@ -33,7 +33,7 @@ export default function WardFlowStatisticsErrorBoundary({
       error={error}
       retry={retry}
       title="This statistics screen could not be shown"
-      description="No figure was estimated or substituted. Nothing changed. Try again uses the same prototype state. Reload resets its synthetic data."
+      description="No figure was estimated or substituted. Nothing changed. Try again uses the same prototype state. Reload may restore saved synthetic data. Unsaved changes may be lost."
       logLabel="Unhandled runtime error captured by the Ward Flow statistics boundary:"
       testId="ward-flow-statistics-error-boundary"
     />

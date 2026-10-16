@@ -6,6 +6,7 @@ import { PatientDocumentsTab } from "@/components/ward-management/patients/patie
 import type { PatientNowRecord } from "@/components/ward-management/patients/patient-now-records";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -41,11 +42,11 @@ afterEach(() => {
 
 describe("paper legal form time left, one rule", () => {
   it("uses the Settings warnings and has no separate four hour amber", () => {
-    expect(formTimeLeft(movement(NOW + URGENT - 1), NOW)?.standing).toBe("urgent");
-    expect(formTimeLeft(movement(NOW + SOON - 1), NOW)?.standing).toBe("soon");
+    expect(formTimeLeft(movement(NOW + URGENT - 1), NOW, DEFAULT_DUE_SOON_THRESHOLDS)?.standing).toBe("urgent");
+    expect(formTimeLeft(movement(NOW + SOON - 1), NOW, DEFAULT_DUE_SOON_THRESHOLDS)?.standing).toBe("soon");
     // Between the first warning and four hours the form is later, not amber.
-    expect(formTimeLeft(movement(NOW + SOON + 30), NOW)?.standing).toBe("later");
-    expect(formTimeLeft(movement(NOW - 5), NOW)?.standing).toBe("passed");
+    expect(formTimeLeft(movement(NOW + SOON + 30), NOW, DEFAULT_DUE_SOON_THRESHOLDS)?.standing).toBe("later");
+    expect(formTimeLeft(movement(NOW - 5), NOW, DEFAULT_DUE_SOON_THRESHOLDS)?.standing).toBe("passed");
   });
 
   it("shows time left and the warning word on the patient's forms register with the flag on", () => {

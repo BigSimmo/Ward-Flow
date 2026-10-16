@@ -60,8 +60,8 @@ under `src/app/mockups/ward-flow/`, `src/app/mockups/ward-flow-sign-in/`,
 in `src/components/ward-management/shell/` and `.../ward-table/` (§2–3); and every root-level
 `.tsx`/`.module.css` file in `src/components/ward-management/` plus the seven root `.ts` files named
 in this part's brief (`ward-nav.ts`, `ward-nav-counts.ts`, `ward-nav-icons.ts`,
-`ward-nav-role-order.ts`, `use-ward-nav-counts.ts`, `use-ward-sidebar-collapsed.ts`,
-`use-printable-disclosures.ts`) (§4). `ward-flow-provider.tsx` is out of scope here — it is covered
+`ward-nav-role-order.ts`, `use-ward-nav-counts.ts`, `use-printable-disclosures.ts`; the seventh,
+`use-ward-sidebar-collapsed.ts`, was deleted on 15 Oct 2026) (§4). `ward-flow-provider.tsx` is out of scope here — it is covered
 by [Engine](engine.md). Line counts are `wc -l`. Every importer count was measured for this map by
 `grep -rlE 'from ["'"'"'][^"'"'"']*/<name>["'"'"']'` over `src/` (and, where noted, `tests/`), read from the
 raw match list rather than the grep count alone — a naive path-suffix grep for `ward-bar` also
@@ -355,7 +355,7 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
 - **`shell/ward-rail.tsx`** (1,230 lines) — the left rail: four fixed groups (Operations, Service
   Hubs, Care Coordination, Oversight) built from `ward-nav.ts`'s lists and reordered within each
   group by role (`ward-nav-role-order.ts`), open/closed state (`localStorage`, open by default —
-  the opposite default from the retired `use-ward-sidebar-collapsed.ts`), the appearance toggle, and
+  the opposite default from the deleted `use-ward-sidebar-collapsed.ts`), the appearance toggle, and
   a service dot beside the current health service (a dot next to a _word_, never a bare colour bar —
   owner ruling Q-11 forbids the drawing's own brass "you are here" edge bar and its `.svcStripe`
   service-tint bar). Key exports: `WardRail`, `useRailOpenStore`/`setRailOpenPreference`,
@@ -489,9 +489,8 @@ file's scope note.
   route's content sits inside. 1 importer. (The file's other export, `WardShellHeader`, is retired
   — see §4.4.)
 - `ward-tasks-drawer.tsx` — the drawer body `shell/ward-bar.tsx`'s Tasks drawer renders
-  (`WardTasksDrawer`). 3 importers total; one (`ward-chrome-header.tsx`) and one
-  (`ward-tasks-panel.tsx`) are themselves not mounted (§4.4) — only the `shell/ward-bar.tsx` path is
-  live.
+  (`WardTasksDrawer`). 2 importers; `ward-chrome-header.tsx` is itself not mounted (§4.4), so only
+  the `shell/ward-bar.tsx` path is live.
 
 **Shared primitives** — presentational building blocks used across many screens, not part of the
 shell itself:
@@ -543,22 +542,12 @@ scope's own directory):
 - `ward-standing-strip.tsx` (380 lines) — `WardStandingStrip`/`WardStatsToggle`/`WardStatsPanel`,
   the figures panel `WardChromeHeader` used to toggle open; reached only from it. 1 `src` importer
   (unmounted); 1 test file renders it directly (declared unreachable).
-- `ward-management-navigation.tsx` — `WardModeNavigation` only. `ClinicalRail`, the
-  second-edition rail `shell/ward-rail.tsx` replaced, was removed on 15 Oct 2026. **Not** in `DECLARED_UNREACHABLE` — it counts
-  as file-level "reachable" per that guard's transitive-import walk, because
-  `ward-management-modes.tsx` does a **type-only** import of it (`import type { WardMode } from
-"./ward-management-navigation"`, itself just a re-export of `ward-nav.ts`'s own `WardMode`). The
-  `WardModeNavigation` **component** is rendered by no route — see the Pitfalls section below.
-  `ward-sidebar-content.tsx`, the labelled sidebar body `ClinicalRail` used to mount, went with it.
-- `ward-tasks-panel.tsx` (82 lines) — `WardTasksPanel`, a second mounting wrapper around
-  `WardTasksDrawer` with its own open/closed state. 0 importers anywhere (`src` or `tests`) — dead
-  code duplicating what `shell/ward-bar.tsx`'s own Tasks drawer wiring already does.
+- `ward-management-navigation.tsx` (`WardModeNavigation`), `ward-tasks-panel.tsx` (`WardTasksPanel`)
+  and `use-ward-sidebar-collapsed.ts` were deleted on 15 Oct 2026, unmounted and unimported.
+  `ward-management-modes.tsx` now takes its `WardMode` type straight from `ward-nav.ts`.
 - `ward-flow-command-overview.tsx` (5 lines) — a bare re-export of `CoordinatorScreen` as
   `WardFlowCommandOverview`/`default`. 0 importers anywhere (`src` or `tests`) — a fully orphaned
   file.
-
-`use-ward-sidebar-collapsed.ts` (root `.ts`, in the §4.5 list below) belongs in this same
-"unreachable" family: its only importer is `ward-management-navigation.tsx`.
 
 ### 4.2 Navigation `.ts` files
 
@@ -590,11 +579,6 @@ scope's own directory):
   trees cannot disagree about which route they are on. Its own doc comment still says `ClinicalRail`
   "is mounted 35 times across 27 files" — stale since Task 8 retired every one of those mounts (see
   the Pitfalls section below). 4 importers.
-- **`use-ward-sidebar-collapsed.ts`** (70 lines) — the second-edition sidebar's own
-  `localStorage`-backed collapse preference (`ward-flow-sidebar-collapsed`, collapsed by default —
-  the opposite default from `shell/ward-rail.tsx`'s own open-by-default store, and a deliberately
-  separate key from the clinical app's equivalent hook). 1 importer, `ward-management-navigation.tsx`
-  — itself unmounted (§4.1), so this hook is dead along with its one caller.
 - **`use-printable-disclosures.ts`** (49 lines) — `usePrintableDisclosures()`: on `beforeprint`,
   force-opens every `<details class="source-print">` (removing its `name` attribute so an
   accordion group does not fight the forced-open state) and restores each one's exact prior
@@ -623,8 +607,7 @@ One line each: which component(s) compose/import it, and whether anything does.
 - **`ward-management-network-third-edition.module.css`** (471) — `ward-management-network.tsx`.
 - **`ward-management-network.module.css`** (1,445) — `ward-management-network.tsx` (imported
   alongside the third-edition module above — both are live in the same file at once).
-- **`ward-management.module.css`** (1,413) — `ward-management-console.tsx` and
-  `ward-management-navigation.tsx` (the latter unmounted, §4.1).
+- **`ward-management.module.css`** (1,413) — `ward-management-console.tsx`.
 - **`ward-modes-second-edition.module.css`** (586) — not imported by any `.tsx`/`.ts` file. Only
   comments in three other stylesheets name it. `governance-registers.tsx` and
   `ward-management-modes.tsx` import `governance-third-edition.module.css` instead.
@@ -648,8 +631,6 @@ One line each: which component(s) compose/import it, and whether anything does.
   it stays until they are repointed.
 - **`ward-standing-strip.module.css`** (199) — `ward-standing-strip.tsx` only; unmounted (§4.1).
 - **`ward-tasks-drawer.module.css`** (576) — `ward-tasks-drawer.tsx` only.
-- **`ward-tasks-panel.module.css`** (68) — `ward-tasks-panel.tsx` only; that component itself has
-  0 importers (§4.1), so this stylesheet is fully dead weight.
 - **`ward-tokens.module.css`** (416) — not imported from any `.tsx`/`.ts` file directly; **composed
   from** by 60 other CSS modules under `ward-management/`. This is the second-edition alias layer
   (`--ward-*` names bridging onto this app's existing v2 palette) — distinct from, and much more
@@ -717,12 +698,6 @@ the destination list itself.
 
 ## Pitfalls in this area
 
-- **`ward-management-navigation.tsx` looks "reachable" but `WardModeNavigation` is not mounted.**
-  `tests/ward-component-reachability.test.ts` walks file-level imports transitively from every
-  route, and it follows type-only imports. `ward-management-modes.tsx` does one type-only import of
-  this file (for the re-exported `WardMode` type), which is enough to mark it "reachable" even
-  though the `WardModeNavigation` component it defines renders on no route. Check §4.1 and §4.4,
-  not just that test, before assuming it is live.
 - **Do not trust a component's own "where I'm mounted" comment in this tree without a `grep`.**
   Several comments still name `ClinicalRail`, which no route has mounted since Task 8 (2026-09-11)
   and which was deleted on 15 Oct 2026.
@@ -749,8 +724,8 @@ the destination list itself.
   content moved to `src/app/ward-flow-shell-tokens.module.css` and nothing composes from the stub
   any more, but it is still on disk (protected-path deletion rule) and its filename is one character
   away from the real, still-used `ward-flow-shell-tokens.module.css`.
-- **`ward-tasks-panel.tsx` and `ward-flow-command-overview.tsx` are fully dead** (0 importers
-  anywhere, including tests) but are not declared in `tests/ward-component-reachability.test.ts`'s
+- **`ward-flow-command-overview.tsx` is fully dead** (0 importers
+  anywhere, including tests) but is not declared in `tests/ward-component-reachability.test.ts`'s
   `DECLARED_UNREACHABLE` list, because that guard only declares components a **test still renders**
   — an orphan nothing renders at all is invisible to it by design (see that file's own comment on
   why it narrows to `.tsx` and to tested modules).

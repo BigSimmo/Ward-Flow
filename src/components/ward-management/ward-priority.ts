@@ -1,5 +1,11 @@
 // src/components/ward-management/ward-priority.ts
-import { clockState, minutesUntil, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  type DueSoonThresholds,
+  type Instant,
+  minutesUntil,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -120,7 +126,11 @@ function hasActiveBlocker(blocker: string): boolean {
  * examination record itself is untouched — it is still captured and still displayed; it simply has
  * no effect on the queue. Do not reintroduce it here in any weight, and do not substitute a proxy.
  */
-export function operationalScore(movement: Movement, now: Instant): { score: number; factors: ScoreFactor[] } {
+export function operationalScore(
+  movement: Movement,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): { score: number; factors: ScoreFactor[] } {
   const factors: ScoreFactor[] = [];
 
   const waitedMinutes = Math.max(0, now - movement.openedAt);
@@ -153,7 +163,7 @@ export function operationalScore(movement: Movement, now: Instant): { score: num
   const legalForm = movement.legalForm;
   if (legalForm?.dueAt !== undefined) {
     const dueAt = legalForm.dueAt;
-    const state = clockState(dueAt, now);
+    const state = clockState(dueAt, now, thresholds);
     const points = state === "breached" ? 30 : state === "critical" ? 20 : state === "due" ? 10 : 0;
     if (points > 0) {
       const remaining = minutesUntil(dueAt, now);

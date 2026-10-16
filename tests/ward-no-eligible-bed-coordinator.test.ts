@@ -12,6 +12,7 @@ import { causeOf } from "../src/components/ward-management/delays/delays-derivat
 import { INBOX_CATEGORIES } from "../src/components/ward-management/ward-inbox-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 // Clinical owner ruling, 14 Oct 2026: no eligible bed keeps the patient on the waitlist with a
 // visible flag and notifies the bed coordinator. Never dropped, never silently released.
 describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
@@ -62,7 +63,7 @@ describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
   it("keeps each one open and visibly flagged as no_eligible_bed", () => {
     for (const movement of nowhere) {
       expect(isOpen(movement)).toBe(true);
-      expect(causeOf(movement, state.units, NOW_ANCHOR)).toBe("no_eligible_bed");
+      expect(causeOf(movement, state.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("no_eligible_bed");
     }
   });
 

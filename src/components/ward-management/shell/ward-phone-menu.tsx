@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { Dot, SrOnly } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
@@ -35,7 +35,7 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDebouncedValue } from "@/components/ward-management/search/use-debounced-value";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -52,6 +52,8 @@ import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
 import styles from "./ward-phone-menu.module.css";
@@ -173,9 +175,11 @@ function phoneMenuModel(
   counts: CountMap,
   dockRole: WardChromeRole = role,
   flagOn?: Parameters<typeof railEntries>[0],
+  accessNav: (entries: readonly RailEntry[]) => RailEntry[] = (entries) => [...entries],
 ) {
   // A page that needs a larger screen (the bed meeting TV view) is not offered on a phone at all.
-  const entries = railEntries(flagOn).filter((entry) => !isPhoneDesktopOnlyPath(entry.href));
+  // Role access plan: only the screens the desk's role may open.
+  const entries = accessNav(railEntries(flagOn)).filter((entry) => !isPhoneDesktopOnlyPath(entry.href));
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const dock = DOCK_PLACES[dockRole].flatMap(([id, label]) => {
     const entry = byId.get(id);
@@ -622,6 +626,10 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
+  // Role access plan: New referral only for a desk whose role may raise one (review on PR #330).
+  // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
+  const gate = useRoleGate();
+  const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
   const router = useRouter();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
@@ -640,18 +648,20 @@ function CreateSheet({
       closeButtonClassName={styles.close}
       bodyClassName={`${styles.body} ${styles.createBody}`}
     >
-      <button
-        type="button"
-        className={styles.createPrimary}
-        data-testid="ward-phone-create-referral"
-        onClick={() => {
-          onClose();
-          onNewReferral();
-        }}
-      >
-        <Inbox aria-hidden="true" strokeWidth={1.75} />
-        New referral
-      </button>
+      {canRefer ? (
+        <button
+          type="button"
+          className={styles.createPrimary}
+          data-testid="ward-phone-create-referral"
+          onClick={() => {
+            onClose();
+            onNewReferral();
+          }}
+        >
+          <Inbox aria-hidden="true" strokeWidth={1.75} />
+          New referral
+        </button>
+      ) : null}
       <ul className={`${styles.list} ${styles.rich}`}>
         {CREATE_LINKS.flatMap((item) => {
           const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
@@ -731,7 +741,13 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlow();
+  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "referrals",
+    "plannedAdmissions",
+  );
   const now = useWardFlowClock();
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
@@ -934,12 +950,75 @@ export function WardPhoneMenu({
   // holds Transport and Movements, not the coordinator's Home and Referrals.
   const dockRole = routeRole === "officer" ? routeRole : shellRole;
   const flagOn = useWardFeatureFlagCheck();
-  const { entries, byId, dock, needs: overdueNeeds, groups } = phoneMenuModel(shellRole, counts, dockRole, flagOn);
+  const accessNav = useAccessNavFilter();
+  const {
+    entries,
+    byId,
+    dock,
+    needs: overdueNeeds,
+    groups,
+  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
-  const flow = useWardFlow();
+  const {
+    movements,
+    units,
+    configuration,
+    inboxSnoozes,
+    leaveBeds,
+    admissions,
+    patients,
+    referrals,
+    supportNotifications,
+    plannedAdmissions,
+    now: flowNow,
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "configuration",
+    "inboxSnoozes",
+    "leaveBeds",
+    "admissions",
+    "patients",
+    "referrals",
+    "supportNotifications",
+    "plannedAdmissions",
+    "now",
+  );
+  // `useWardFlowSelect` returns a new object each render, so the memo lists the fields it reads, not
+  // that object: typing in the menu search must not recount the act-now tasks.
   const actNowCount = useMemo(
-    () => (wardTasksAreActionableForRole(shellRole) ? activeActNowItems(flow, flow.now).length : 0),
-    [shellRole, flow],
+    () =>
+      wardTasksAreActionableForRole(shellRole)
+        ? activeActNowItems(
+            {
+              movements,
+              units,
+              configuration,
+              inboxSnoozes,
+              leaveBeds,
+              admissions,
+              patients,
+              referrals,
+              supportNotifications,
+              plannedAdmissions,
+            },
+            flowNow,
+          ).length
+        : 0,
+    [
+      shellRole,
+      movements,
+      units,
+      configuration,
+      inboxSnoozes,
+      leaveBeds,
+      admissions,
+      patients,
+      referrals,
+      supportNotifications,
+      plannedAdmissions,
+      flowNow,
+    ],
   );
   const needs = [...actNowNeed(actNowCount), ...overdueNeeds];
 
