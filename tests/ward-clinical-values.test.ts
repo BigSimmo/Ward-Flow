@@ -97,7 +97,7 @@ describe("clinical values file", () => {
       expectFlagInvoluntary: 10080,
       expectReconsider: 4320,
       dischargePrepWindow: 1440,
-      dischargeCriteriaValidity: 4320,
+      dischargeCriteriaValidity: 1440,
       leaveOpenWarning: 1440,
       awolBedHoldWarning: 240,
       ctoFollowUpWindow: 7,
@@ -116,7 +116,7 @@ describe("clinical values file", () => {
       coverLength: 12,
       stepUpWindow: 10,
       accessExpiringSoon: 14,
-      accessUnused: 90,
+      accessUnused: 45,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

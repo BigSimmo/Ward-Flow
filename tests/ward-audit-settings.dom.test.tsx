@@ -13,11 +13,7 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
-import {
-  CLINICAL_VALUE_LIST,
-  clinicalValueStatusText,
-  unsignedClinicalValueCount,
-} from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUE_LIST, clinicalValueStatusText } from "@/components/ward-management/ward-clinical-values";
 beforeEach(() => {
   localStorage.clear();
 });
@@ -44,9 +40,7 @@ it("lists every clinical value with its synthetic or signed status", () => {
   fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
   fireEvent.click(screen.getByRole("tab", { name: /Clinical values/ }));
   const panel = screen.getByTestId("ward-settings-clinical-values");
-  expect(panel).toHaveTextContent(
-    `${unsignedClinicalValueCount()} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only`,
-  );
+  expect(panel).toHaveTextContent(`All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`);
   for (const entry of CLINICAL_VALUE_LIST) {
     const row = within(panel).getByTestId(`ward-settings-clinical-value-${entry.id}`);
     expect(row).toHaveTextContent(entry.name);
