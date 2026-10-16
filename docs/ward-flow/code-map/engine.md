@@ -35,6 +35,22 @@ when unavailable). `public/ward-flow-push-sw.js` shows the notification and open
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
 
+## Role access, later pass — 16 October 2026
+
+Behind the `role-access` flag. `ward-access-admin.ts` holds the one set of rules (grant, approve,
+remove, cover, requests for access, step-up and unused windows, `PUSH_ROLES`) that the local demo
+and `backend/ward-flow/engine.ts` both read. Local demo: `shell/ward-access-store.ts` holds cover
+in memory, `shell/ward-access-admin-store.ts` the made-up staff list, `shell/ward-step-up.tsx` the
+fresh confirm, and `settings/access-settings.tsx` the Settings Access tab. Shared workspace:
+migration 9 (`009-access-cover-requests.sql`, code only until applied), the new access routes in
+`shared-http.mjs`, `ward-shared-client.ts` (working-as header, role picker and no-role states,
+`step-up` answers, access calls), `ward-shared-role-gate.tsx` (the role picker and Ask for
+access), `settings/access-shared-source.ts` (the Access tab's server lists) and
+`ward-supabase-auth.ts` `reauthenticate` (the password step-up). `shell/ward-access-labels.ts`
+names places without React. Tests: `tests/ward-access-admin.test.ts`,
+`tests/ward-access-settings.dom.test.tsx`, `tests/ward-shared-role-gate.dom.test.tsx`,
+`tests/ward-shared-client.test.ts` and the migration 9 case in `backend/ward-flow/postgres.test.mjs`.
+
 ## Current remediation seams — 8–14 October 2026
 
 The original map below is historical; its line numbers and earlier counts are not current.

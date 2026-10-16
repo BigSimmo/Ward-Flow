@@ -110,6 +110,15 @@ to `005`. These source files do not establish a current hosted connection or dep
     `infra/rollback-008-role-access.sql` takes a database back to 7, and refuses once any audit row
     names a role other than coordinator or a place narrower than statewide, because audit rows are
     never removed or changed.
+  - `009-access-cover-requests.sql`: cover of a second ward or ED as its own kind of membership
+    (it ends by itself, at most the clinical values module's cover length), requests for access
+    from an account with no role, when each role was last used (a role not used for the set time
+    switches off), and phone alerts by role and place. Cover counts as a role holder for the
+    sign-in allowance, because it is a membership. A request is not a role, so the account that
+    asks stays in the no-role allowance. Granting, approving, removing, cover, answering a request
+    and break glass need a sign-in within the step-up window, or the server answers `step-up`.
+    `infra/rollback-009-access-cover-requests.sql` ends all cover, turns off membership phone
+    alerts and takes a database back to 8. The backend accepts versions 5 to 9.
 
 ## Boundaries
 
