@@ -548,7 +548,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
  *
  * ⚠️ **THIS IS NOT EVERY WARD FLOW ROUTE.** It covers the routes the third edition
  * redesigns — the ones named in `docs/ward-flow/plans/2026-09-10-third-edition-build-master-plan.md`
- * and proved built in `docs/ward-flow/mockups/third-edition-kit/check-output.txt`, plus the service
+ * and proved built in `design/third-edition-mockups/third-edition-kit/check-output.txt`, plus the service
  * statistics route that follows the same export-action contract. Every other route (Handover, Discharges, the
  * referral board, Out of area, Officer, the ward/community indexes, Network, Governance) keeps
  * using `ward-chrome-header.tsx`'s existing role-adaptive `roleAction()` for now — **this task does

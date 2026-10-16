@@ -13,6 +13,10 @@ import {
   type HealthService,
 } from "@/components/ward-management/ward-model";
 import { GENDERS, type Gender } from "@/components/ward-management/ward-patients";
+import {
+  NOT_ON_SENDING_WARD_REASONS,
+  type NotOnSendingWardReason,
+} from "@/components/ward-management/ward-change-reasons";
 import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
@@ -93,6 +97,11 @@ export function ReferralPatientStep({
     patientShowErrors,
     suburbKnown,
     readmissionFlag,
+    sendingWard,
+    notOnSendingWard,
+    notOnWardReason,
+    setNotOnWardReason,
+    heldBedWardName,
   } = s;
   return (
     <div
@@ -389,6 +398,47 @@ export function ReferralPatientStep({
               >
                 Where this case is
               </Link>
+            </div>
+          ) : null}
+          {sendingWard && notOnSendingWard && (patientRecord || unidentified !== null) ? (
+            <div data-testid="ward-referral-not-on-sending-ward">
+              <div className={styles.suggestion}>
+                <StatusGlyph tone={heldBedWardName ? "danger" : "warning"} size={9} />
+                <span className={styles.suggestionText}>
+                  <strong>Not in a bed on {sendingWard.name}</strong>
+                  <small>
+                    {heldBedWardName
+                      ? `They already hold a bed on ${heldBedWardName}, so this ward cannot send them as a new admission.`
+                      : destType === "ward"
+                        ? "A ward usually refers its own inpatients. This goes as a new admission, not a transfer."
+                        : "A ward usually refers its own inpatients."}
+                  </small>
+                </span>
+              </div>
+              {heldBedWardName ? null : (
+                <div className={styles.fieldGrid}>
+                  <Field
+                    label="Why is the ward referring them?"
+                    htmlFor={`${sectionId}-not-on-ward`}
+                    required
+                    error={patientShowErrors && !notOnWardReason ? "Choose why the ward is referring them" : null}
+                  >
+                    <SelectBox>
+                      <select
+                        id={`${sectionId}-not-on-ward`}
+                        className={styles.fieldSelect}
+                        value={notOnWardReason}
+                        onChange={(e) => setNotOnWardReason(e.target.value as NotOnSendingWardReason | "")}
+                      >
+                        <option value="">Choose a reason</option>
+                        {NOT_ON_SENDING_WARD_REASONS.map((reason) => (
+                          <option key={reason}>{reason}</option>
+                        ))}
+                      </select>
+                    </SelectBox>
+                  </Field>
+                </div>
+              )}
             </div>
           ) : null}
           {!liveMovement && (patientRecord || unidentified !== null) ? (

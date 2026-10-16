@@ -39,7 +39,7 @@ import { officialForms } from "@/lib/form-register";
  * that can report the next muddle.
  */
 
-const MOCKUPS_DIR = "docs/ward-flow/mockups";
+const MOCKUPS_DIR = "design/third-edition-mockups";
 const SOURCE_DIRS = ["src/components/ward-management"];
 
 /**

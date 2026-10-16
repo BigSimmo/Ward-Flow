@@ -123,7 +123,7 @@ import styles from "./ward-bar.module.css";
 
 /**
  * Ward Flow's third-edition bar (`docs/ward-flow/plans/2026-09-10-third-edition-build-master-
- * plan.md` §1.3, item 1.1). Ported from `docs/ward-flow/mockups/command-third-edition.html`'s
+ * plan.md` §1.3, item 1.1). Ported from `design/third-edition-mockups/command-third-edition.html`'s
  * `header.hdr1` and shell script — place, the Service selector, search, three drawers (Activity,
  * Tasks and Tools), per the phase-1.1 brief. **NOT MOUNTED ANYWHERE YET**
  * — see `ward-rail.tsx`'s own header for what that means and why.
@@ -170,7 +170,7 @@ import styles from "./ward-bar.module.css";
  *   `"record-decision"`, `"contact-team"` and `"export-figures"` render as plain `<button>`
  *   elements — never an `<a>`, so no `href` attribute exists for them anywhere in this markup —
  *   that announce "`<label>` is not wired in this prototype." on click, the exact sentence standard
- *   §8.6 already uses for "Export the queue" (`docs/ward-flow/mockups/command-third-edition.html`'s
+ *   §8.6 already uses for "Export the queue" (`design/third-edition-mockups/command-third-edition.html`'s
  *   own `announce("Export the queue is not wired in this prototype.")`), reused here in each
  *   action's own words rather than invented fresh. `"none"` and an absent `primaryAction` both
  *   render nothing, which is why `resolveWardPrimaryAction` (`ward-nav.ts`) does not need to tell
@@ -220,7 +220,7 @@ import styles from "./ward-bar.module.css";
  *      further press says Nothing more to clear and names the service." A further press announces
  *      that sentence and changes nothing. This is the one behaviour `tests/ward-shell-third-
  *      edition.dom.test.tsx` names by number (assertion 2) and the one already-final drawing
- *      confirms verbatim in its own `escape()` (`docs/ward-flow/mockups/command-third-edition.html`,
+ *      confirms verbatim in its own `escape()` (`design/third-edition-mockups/command-third-edition.html`,
  *      not the earlier `third-edition-kit/shell/shell-script.js` draft, which still cleared it —
  *      see that file's own SHELL-NOTES.md for the same discrepancy, resolved by the newer file).
  *

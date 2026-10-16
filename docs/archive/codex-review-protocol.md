@@ -1,7 +1,7 @@
 > **Historical source boundary — 2 October 2026.** The preserved material below
 > describes the former Database/PsychSift workflow or a completed task. Its commands,
 > hosting and appearance claims are not current Ward instructions. Use the
-> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
 
 <!-- docs-script-refs:historical-start -->
 

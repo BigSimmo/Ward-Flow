@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
  * keep the two-pane layout."*
  *
  * 🔴 **THE DRAWING STILL SHOWS THREE, AND THAT IS WHY THIS FILE EXISTS.**
- * `docs/ward-flow/mockups/raise-a-referral-third-edition.html` still draws `data-story="why"`,
+ * `design/third-edition-mockups/raise-a-referral-third-edition.html` still draws `data-story="why"`,
  * `data-story="background"` and `data-story="risk"`. Q-13's answer was *"the ruling — one field;
  * Ward Mockups redraws"*, and **the redraw has not happened.** A mockup sits outside every gate, so
  * until it is corrected the drawing is a standing invitation to re-add two fields — and before this

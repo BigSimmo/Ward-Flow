@@ -52,7 +52,7 @@
 #### Correction (17 September 2026)
 
 Under owner rule D5, the Mental Health Act section numbers written into `ward-model.ts`, the
-legal-figure guard's provenance strings, and the drawings under `docs/ward-flow/mockups/` have been
+legal-figure guard's provenance strings, and the drawings under `design/third-edition-mockups/` have been
 removed from product code, product comments and drawings. A guard,
 `tests/ward-act-section-citation-guard.test.ts`, now scans `src/components/ward-management/`, the
 mockups app, the drawings and the ward test suite for a reintroduced section number; its own file

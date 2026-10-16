@@ -157,7 +157,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/wards`                          | `WardIndex`                                                                                     |
 
 `/mockups/ward-flow-sign-in`: `WardFlowSignInScreen`. `/mockups/ward-flow-digest`: not a page — a
-route handler (`GET`) that streams `docs/ward-flow/mockups/ward-flow-digest.html` back verbatim.
+route handler (`GET`) that streams `design/third-edition-mockups/ward-flow-digest.html` back verbatim.
 
 **Six redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
 `command` → `/mockups/ward-flow`; `constellation` → `/network`; `escalation`, `exceptions`, `queue` → each
@@ -289,7 +289,7 @@ defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
   route with no shell (§1.1). Renders `WardFlowSignInScreen`
   (`@/components/ward-flow-sign-in/ward-flow-sign-in-screen`, outside this part's scope).
 - **`src/app/mockups/ward-flow-digest/route.ts`** (11) — `GET /mockups/ward-flow-digest`, a route
-  handler (not a page) that reads and streams back `docs/ward-flow/mockups/ward-flow-digest.html`
+  handler (not a page) that reads and streams back `design/third-edition-mockups/ward-flow-digest.html`
   verbatim, "without a second, drifting copy."
 - **`src/app/ward-flow-shell-tokens.module.css`** (456 lines) — the third-edition token layer:
   every CSS custom property the sixteen third-edition screens and the shell components paint with,

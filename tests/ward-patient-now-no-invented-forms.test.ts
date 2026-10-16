@@ -55,7 +55,9 @@ describe("the person-now page invents no legal document", () => {
       if (forms.length === 0) expect(atFirst).toEqual([]);
       const recordedCodes = new Set<string>(forms.map((form) => form.code));
       for (const document of atFirst) {
-        expect(recordedCodes.has(document.code ?? ""), `${id} shows ${document.code}, which no movement records`).toBe(true);
+        expect(recordedCodes.has(document.code ?? ""), `${id} shows ${document.code}, which no movement records`).toBe(
+          true,
+        );
         const form = forms.find((candidate) => candidate.code === document.code);
         // A form with no typed due time never shows one: "Runs to" only when the record carries it.
         if (form?.dueAt === undefined) expect(document.status).toBe("Active");

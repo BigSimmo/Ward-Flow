@@ -1,11 +1,11 @@
 // Screenshots of shell/preview.html in both themes at four sizes and in every shell state. Run
-// from the repository root: node docs/ward-flow/mockups/third-edition-kit/shell/shots-preview.mjs
+// from the repository root: node design/third-edition-mockups/third-edition-kit/shell/shots-preview.mjs
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-const file = "docs/ward-flow/mockups/third-edition-kit/shell/preview.html";
-const out = "docs/ward-flow/mockups/third-edition-shots/shell-preview";
+const file = "design/third-edition-mockups/third-edition-kit/shell/preview.html";
+const out = "design/third-edition-mockups/third-edition-shots/shell-preview";
 const kitDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fontDir = path.join(kitDir, "fonts");
 const fixture = (n) => {

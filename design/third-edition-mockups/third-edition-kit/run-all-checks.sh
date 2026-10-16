@@ -6,8 +6,8 @@
 set -u
 OUT="${1:?output file}"
 cd "D:/Repos/Database/.claude/worktrees/ward-flow-phase-5-resume-166ecb" || exit 2
-K=docs/ward-flow/mockups/third-edition-kit
-M=docs/ward-flow/mockups
+K=design/third-edition-mockups/third-edition-kit
+M=design/third-edition-mockups
 PAGES="command delays statistics-community statistics capacity ward bed-board search-hub raise-a-referral patient-search community-team statistics-ward movement emergency-department statistics-emergency-department patient-now"
 : > "$OUT"
 for p in $PAGES; do

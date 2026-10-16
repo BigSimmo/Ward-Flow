@@ -25,7 +25,7 @@ statistics), and the search screen with and without a query. Six more routes (`c
 
 ## 1 · What the standard says — quoted
 
-The standard (`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`) says it four times, and it names
+The standard (`design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`) says it four times, and it names
 uppercase directly:
 
 - §2 principle 4: _"Nothing is set below 12px, and the scale has seven steps. The flow map is the one

@@ -37,7 +37,10 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
  * event that writes it named** — that list is the honest exception, and it is short on purpose.
  */
 const MODEL = fileURLToPath(new URL("../src/components/ward-management/ward-model.ts", import.meta.url));
-const REDUCER = fileURLToPath(new URL("../src/components/ward-management/ward-flow-reducer.ts", import.meta.url));
+// RECEIVE_REFERRAL moved out of the reducer unchanged into the referral answer slice (16 October 2026).
+const REDUCER = fileURLToPath(
+  new URL("../src/components/ward-management/ward-flow-referral-answer-events.ts", import.meta.url),
+);
 
 /** Fields no `RECEIVE_REFERRAL` can carry, each with the event that does write it. */
 const WRITTEN_ELSEWHERE: Record<string, string> = {

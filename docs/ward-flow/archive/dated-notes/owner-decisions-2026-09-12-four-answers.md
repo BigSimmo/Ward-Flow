@@ -46,7 +46,7 @@ because that only changes which misleading answer a reader gets.
 > 🟢 **OWNER: "Yes to your recommendation."**
 
 ⚠️ **Note for whoever builds it: the current sort cites the APPROVED DRAWING's own `legalSortKey`
-(`docs/ward-flow/mockups/legal-forms-third-edition.html`, lines 8581–8599) as its source.** **So the
+(`design/third-edition-mockups/legal-forms-third-edition.html`, lines 8581–8599) as its source.** **So the
 drawing specifies the behaviour being changed. This decision supersedes the drawing on that point,
 and the drawing should be annotated rather than silently diverged from.**
 

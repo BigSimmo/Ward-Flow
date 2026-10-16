@@ -23,7 +23,11 @@ async function main() {
   await page.goto(`${BASE}/mockups/ward-flow`, { waitUntil: "networkidle", timeout: 120_000 });
   await page.waitForTimeout(1500);
 
-  const liveClock = await page.locator("text=AWST").first().textContent().catch(() => null);
+  const liveClock = await page
+    .locator("text=AWST")
+    .first()
+    .textContent()
+    .catch(() => null);
   const handover = await page
     .locator('[aria-label*="Handover countdown"], a[title*="handover" i]')
     .first()
@@ -64,10 +68,12 @@ async function main() {
   log(`fake markers present: 3h38m=${hasFake338} 96.4%=${hasFake964} 18 Free Beds=${has18Free}`);
 
   // --- ED route ---
-  await page.goto(`${BASE}/mockups/ward-flow/ed/fsh`, { waitUntil: "networkidle", timeout: 120_000 }).catch(async () => {
-    // try listing available ED links from hub
-    await page.goto(`${BASE}/mockups/ward-flow`, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  });
+  await page
+    .goto(`${BASE}/mockups/ward-flow/ed/fsh`, { waitUntil: "networkidle", timeout: 120_000 })
+    .catch(async () => {
+      // try listing available ED links from hub
+      await page.goto(`${BASE}/mockups/ward-flow`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    });
   await page.waitForTimeout(1000);
   const edUrl = page.url();
   log(`ED url after navigate: ${edUrl}`);
@@ -77,7 +83,8 @@ async function main() {
     .textContent()
     .catch(() => null);
   const edBody = await page.locator("body").innerText();
-  const waitMatch = edBody.match(/(\d+\s*(h|hr|hrs|m|min|mins)?\s*){1,3}wait/i) || edBody.match(/wait(?:ing)?[^\n]{0,40}/i);
+  const waitMatch =
+    edBody.match(/(\d+\s*(h|hr|hrs|m|min|mins)?\s*){1,3}wait/i) || edBody.match(/wait(?:ing)?[^\n]{0,40}/i);
   log(`ED wait snippet: ${JSON.stringify(waitText)}`);
   log(`ED wait match: ${JSON.stringify(waitMatch?.[0] ?? null)}`);
 
@@ -94,8 +101,7 @@ async function main() {
       });
       await page.waitForTimeout(1000);
       const edBody2 = await page.locator("body").innerText();
-      const waitMatch2 =
-        edBody2.match(/(\d+[hm])\s*[·•\-–]\s*\d/i) || edBody2.match(/wait(?:ing)?[^\n]{0,60}/i);
+      const waitMatch2 = edBody2.match(/(\d+[hm])\s*[·•\-–]\s*\d/i) || edBody2.match(/wait(?:ing)?[^\n]{0,60}/i);
       log(`ED wait match2: ${JSON.stringify(waitMatch2?.[0] ?? null)}`);
       log(`ED url2: ${page.url()}`);
     } else {
@@ -104,7 +110,9 @@ async function main() {
   }
 
   // --- Community ---
-  await page.goto(`${BASE}/mockups/ward-flow/community`, { waitUntil: "networkidle", timeout: 120_000 }).catch(() => null);
+  await page
+    .goto(`${BASE}/mockups/ward-flow/community`, { waitUntil: "networkidle", timeout: 120_000 })
+    .catch(() => null);
   await page.waitForTimeout(800);
   let communityUrl = page.url();
   if (!communityUrl.includes("/community")) {
@@ -171,14 +179,24 @@ async function main() {
       labels.push((await activityFilters.nth(i).innerText()).replace(/\s+/g, " ").trim());
     }
     log(`activity filter labels: ${JSON.stringify(labels)}`);
-    const before = await page.locator('[data-testid*="activity"], [class*="activity"]').first().innerText().catch(() => "");
+    const before = await page
+      .locator('[data-testid*="activity"], [class*="activity"]')
+      .first()
+      .innerText()
+      .catch(() => "");
     await activityFilters.nth(Math.min(1, filterCount - 1)).click();
     await page.waitForTimeout(400);
-    const after = await page.locator('[data-testid*="activity"], [class*="activity"]').first().innerText().catch(() => "");
+    const after = await page
+      .locator('[data-testid*="activity"], [class*="activity"]')
+      .first()
+      .innerText()
+      .catch(() => "");
     log(`activity list changed after chip click: ${before.slice(0, 120) !== after.slice(0, 120)}`);
   }
 
-  const tasksBtn = page.locator('button:has-text("Tasks"), button:has-text("Outstanding"), [data-testid*="tasks"]').first();
+  const tasksBtn = page
+    .locator('button:has-text("Tasks"), button:has-text("Outstanding"), [data-testid*="tasks"]')
+    .first();
   await tasksBtn.click({ timeout: 8000 }).catch(() => null);
   await page.waitForTimeout(600);
   const taskFilters = page.locator(

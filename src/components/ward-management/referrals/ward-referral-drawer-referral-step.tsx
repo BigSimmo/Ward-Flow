@@ -71,6 +71,8 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     originValid,
     sendingWard,
     senderMissing,
+    reasonRoom,
+    reasonNoteRequired,
   } = s;
   return (
     <div
@@ -298,12 +300,24 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 </select>
               </SelectBox>
             </Field>
-            <Field label="Reason for referral" htmlFor="refDocInput" hint="optional">
+            <Field
+              label="Reason for referral"
+              htmlFor="refDocInput"
+              required={reasonNoteRequired}
+              hint={reasonNoteRequired ? undefined : "optional"}
+              error={
+                doctorNote.length > reasonRoom
+                  ? `Shorten to ${reasonRoom} characters or fewer`
+                  : attempted.referral && reasonNoteRequired && !doctorNote.trim()
+                    ? "Give the reason for referral"
+                    : null
+              }
+            >
               <input
                 type="text"
                 className={styles.fieldInput}
                 id="refDocInput"
-                maxLength={1000}
+                maxLength={reasonRoom}
                 placeholder="Why this service is needed"
                 autoCorrect="off"
                 autoCapitalize="sentences"

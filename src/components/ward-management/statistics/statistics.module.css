@@ -344,7 +344,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════════════════════
  * PROTOTYPE VOCABULARY, PORTED — statistics-primitives.tsx.
  *
- * Ported from `docs/ward-flow/design/prototypes/mockup-statistics-ward-v1.html` (`.panel`,
+ * Ported from `design/prototypes/mockup-statistics-ward-v1.html` (`.panel`,
  * `.kpis`/`.kpi`/`.figure`/`.caption`/`.kpi-delta`, `.chart-wrap`/`.chart-svg`/`.chart-caption`,
  * `.table-wrap`/`.dtable`, `.fact`/`.facts`, `.stat-line`, `.eyebrow`, `.footnote`) and from
  * `mockup-statistics-cmht-v1.html` (`.dist-bar`/`.dist-key`, which the ward file does not itself

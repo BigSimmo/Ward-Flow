@@ -1,4 +1,4 @@
-// Usage (from the repository root): node docs/ward-flow/mockups/third-edition-kit/check.mjs <file.html> <fontcss:platinum|premium>
+// Usage (from the repository root): node design/third-edition-mockups/third-edition-kit/check.mjs <file.html> <fontcss:platinum|premium>
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";

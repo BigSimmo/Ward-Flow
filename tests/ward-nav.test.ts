@@ -1730,10 +1730,10 @@ describe("Ward index — every ward in the network has a way in", () => {
 describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () => {
   /**
    * The routes covered by the third-edition primary-action contract, written out in full rather than derived from
-   * `docs/ward-flow/mockups/` — a doc directory is not source the app ships, and scanning it would
+   * `design/third-edition-mockups/` — a doc directory is not source the app ships, and scanning it would
    * make this test depend on filenames nothing here enforces stay in step with the app's own routes.
    * The set is real and measured, not a guess: it includes the `### check.mjs <name>` runs
-   * recorded in `docs/ward-flow/mockups/third-edition-kit/check-output.txt` (command, delays,
+   * recorded in `design/third-edition-mockups/third-edition-kit/check-output.txt` (command, delays,
    * statistics-community, statistics, capacity, ward, bed-board, search-hub, raise-a-referral,
    * patient-search, community-team, statistics-ward, movement, emergency-department,
    * statistics-emergency-department, patient-now), plus the later Service statistics route that uses
