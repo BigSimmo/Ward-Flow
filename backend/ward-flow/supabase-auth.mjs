@@ -33,6 +33,8 @@ export const REMOTE_CHECKS_UNKNOWN_TOTAL = 30;
  * period, however many tokens arrive, and a new grant is recognised within this time.
  */
 export const ROLE_HOLDERS_REFRESH_MS = 30_000;
+/** After a failed read, the next one is tried this soon, so a brief outage does not hold real desks back. */
+export const ROLE_HOLDERS_RETRY_MS = 5_000;
 const LIMIT_WINDOW_MS = 60_000;
 const LIMIT_ADDRESSES_MAX = 10_000;
 
@@ -186,24 +188,33 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
-  const holders = { ids: new Set(), refreshedAt: -Infinity, pending: null };
-  /** Read the role holders at most once per refresh period, shared by every request waiting on it. */
+  const holders = { ids: new Set(), nextReadAt: -Infinity, pending: null };
+  /**
+   * Read the role holders at most once per refresh period, shared by every request waiting on it.
+   * A request waits no longer than the verifier's deadline, then uses the last list it has.
+   */
   async function holdsRole(subject) {
     if (coordinatorIds.has(subject)) return true;
-    if (now() - holders.refreshedAt >= ROLE_HOLDERS_REFRESH_MS)
+    if (now() >= holders.nextReadAt)
       holders.pending ??= Promise.resolve()
         .then(() => loadRoleHolders())
         .then(
           (ids) => {
             holders.ids = new Set(Array.isArray(ids) ? ids : []);
+            holders.nextReadAt = now() + ROLE_HOLDERS_REFRESH_MS;
           },
-          () => {},
+          () => {
+            holders.nextReadAt = now() + ROLE_HOLDERS_RETRY_MS;
+          },
         )
         .finally(() => {
-          holders.refreshedAt = now();
           holders.pending = null;
         });
-    if (holders.pending) await holders.pending;
+    if (holders.pending) {
+      let timer;
+      await Promise.race([holders.pending, new Promise((resolve) => (timer = setTimeout(resolve, timeoutMs)))]);
+      clearTimeout(timer);
+    }
     return holders.ids.has(subject);
   }
   const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map(), subjects: new Map() };

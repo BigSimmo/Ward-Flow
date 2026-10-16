@@ -8,6 +8,7 @@ import {
   REMOTE_CHECKS_PER_ADDRESS,
   REMOTE_CHECKS_UNKNOWN_TOTAL,
   ROLE_HOLDERS_REFRESH_MS,
+  ROLE_HOLDERS_RETRY_MS,
   createSupabaseAuthenticator,
 } from "./supabase-auth.mjs";
 
@@ -318,10 +319,58 @@ test("a role granted after the last read is recognised at the next refresh, and 
   );
   at += ROLE_HOLDERS_REFRESH_MS;
   assert.equal(await verify(legacy(claims({ sub: nurse, jti: "a" })), { clientAddress: "203.0.113.80" }), nurse);
-  // A failed read is retried only after the refresh period, and the nurse's role is kept meanwhile.
+  // A failed read keeps the nurse's role.
   failing = true;
   at += ROLE_HOLDERS_REFRESH_MS;
   assert.equal(await verify(legacy(claims({ sub: nurse, jti: "b" })), { clientAddress: "203.0.113.80" }), nurse);
+});
+
+test("a failed first read is tried again soon, so a brief outage does not hold real desks back", async () => {
+  let at = 1_000_000;
+  const nurse = randomUUID();
+  let reads = 0;
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    roleHolders: async () => {
+      reads += 1;
+      if (reads === 1) throw new Error("database unavailable");
+      return [nurse];
+    },
+    fetch: async (_url, init) => {
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      return Response.json({ id: JSON.parse(Buffer.from(token, "base64url").toString()).sub });
+    },
+  });
+  // The first read failed, so the no-role allowance is spent by other accounts.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` });
+  await assert.rejects(
+    verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.85" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(reads, 1);
+  at += ROLE_HOLDERS_RETRY_MS;
+  assert.equal(await verify(legacy(claims({ sub: nurse, jti: "late" })), { clientAddress: "203.0.113.85" }), nurse);
+  assert.equal(reads, 2);
+});
+
+test("a stalled role read never holds a sign-in check past the verifier's deadline", async () => {
+  let reads = 0;
+  const subject = randomUUID();
+  const verify = createSupabaseAuthenticator(config, {
+    timeoutMs: 20,
+    roleHolders: () => {
+      reads += 1;
+      return new Promise(() => {});
+    },
+    fetch: async () => Response.json({ id: subject }),
+  });
+  const started = Date.now();
+  assert.equal(await verify(legacy(claims({ sub: subject })), { clientAddress: "203.0.113.86" }), subject);
+  assert.ok(Date.now() - started < 1000);
+  // The stalled read is shared, not repeated.
+  await verify(legacy(claims({ sub: subject, jti: "again" })), { clientAddress: "203.0.113.86" });
+  assert.equal(reads, 1);
 });
 
 test("without a role list, only the bootstrap coordinator list counts as having a role", async () => {
