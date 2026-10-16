@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { ChevronLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
+import { WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
@@ -89,7 +90,7 @@ const itemHeight = (item: PaperItem) => (item.kind === "group" ? 22 : item.kind 
  */
 function paginate(items: PaperItem[], orientation: PrintOptions["orientation"], firstPageNote = 0): PaperItem[][] {
   const height = PAPER[orientation].height;
-  const avail = height - 30 - 24 - 58 - 34 - 22;
+  const avail = height - 30 - 24 - 80 - 34 - 22;
   const total = items.reduce((sum, item) => sum + itemHeight(item), 34 + firstPageNote);
   const count = Math.max(1, Math.ceil(total / avail));
   const target = Math.min(avail, Math.ceil(total / count) + 30);
@@ -327,6 +328,7 @@ export function HandoverPrintSheet({
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
+        <WardPrintAttribution at={takenAt ?? now} className={styles.attribution} />
       </div>
     </header>
   );

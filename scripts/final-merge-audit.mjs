@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const blockingMergeLabels = new Set(["hold", "do-not-merge"]);
-export const requiredMergeChecks = new Map([["pr-required", new Set(["pr-required", "ci-pr-required"])]]);
+// Ward Flow's aggregate is distinct from the retired source repository's PR required check.
+// The release gate remains independent; this helper does not change its merge/deploy policy.
+export const requiredMergeChecks = new Map([
+  ["ward-flow-required", new Set(["ward-flow-required", "ward-flow-ci-ward-flow-required"])],
+]);
 const successfulCheckStates = new Set(["SUCCESS", "SKIPPED", "NEUTRAL"]);
 
 function normalizeCheckName(check) {

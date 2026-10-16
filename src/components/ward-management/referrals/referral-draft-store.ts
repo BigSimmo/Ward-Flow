@@ -12,8 +12,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 let kept: unknown = null;
 /** Wall-clock milliseconds when the draft was last kept, for the "Draft kept" age. */
 let keptAtMs: number | null = null;
+// A sign-out also invalidates callbacks owned by a drawer that is still unmounting.
+let sessionVersion = 0;
 
-export function keepReferralDraft<T>(draft: T): void {
+export function referralDraftSessionVersion(): number {
+  return sessionVersion;
+}
+
+/** A new signed-in person must never inherit the previous person's draft or sender. */
+export function clearReferralDraftSession(): void {
+  sessionVersion += 1;
+  kept = null;
+  keptAtMs = null;
+  lastReferrer = null;
+}
+
+export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion): void {
+  if (ownerVersion !== sessionVersion) return;
   kept = draft;
   keptAtMs = Date.now();
 }
@@ -26,7 +41,8 @@ export function readKeptReferralDraftAt(): number | null {
   return kept === null ? null : keptAtMs;
 }
 
-export function discardReferralDraft(): void {
+export function discardReferralDraft(ownerVersion = sessionVersion): void {
+  if (ownerVersion !== sessionVersion) return;
   kept = null;
   keptAtMs = null;
 }
@@ -37,7 +53,8 @@ export function discardReferralDraft(): void {
  */
 let lastReferrer: unknown = null;
 
-export function rememberReferrerContact<T>(contact: T): void {
+export function rememberReferrerContact<T>(contact: T, ownerVersion = sessionVersion): void {
+  if (ownerVersion !== sessionVersion) return;
   lastReferrer = contact;
 }
 
@@ -90,6 +107,7 @@ export function useReferralDraftAutosave<T>({
 }) {
   const [keptAt, setKeptAt] = useState<number | null>(initialKeptAt);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [ownerVersion] = useState(referralDraftSessionVersion);
   const latest = useRef({ draft, draftJson, enabled, dirty });
   const lastKeptJson = useRef<string | null>(initialKeptJson);
   const stopped = useRef(false);
@@ -100,13 +118,13 @@ export function useReferralDraftAutosave<T>({
   });
 
   useEffect(() => {
-    if (!enabled || stopped.current) return;
+    if (!enabled || stopped.current || ownerVersion !== sessionVersion) return;
     if (!dirty) {
       // Back to how a fresh sheet opened: drop the copy this sheet kept, so it cannot come back.
       if (reopened || lastKeptJson.current === null) return;
       const timer = window.setTimeout(() => {
-        if (stopped.current) return;
-        discardReferralDraft();
+        if (stopped.current || ownerVersion !== sessionVersion) return;
+        discardReferralDraft(ownerVersion);
         lastKeptJson.current = null;
         setKeptAt(null);
       }, REFERRAL_DRAFT_AUTOSAVE_MS);
@@ -116,8 +134,8 @@ export function useReferralDraftAutosave<T>({
     }
     if (draftJson === lastKeptJson.current) return;
     const timer = window.setTimeout(() => {
-      if (stopped.current) return;
-      keepReferralDraft(latest.current.draft);
+      if (stopped.current || ownerVersion !== sessionVersion) return;
+      keepReferralDraft(latest.current.draft, ownerVersion);
       lastKeptJson.current = latest.current.draftJson;
       const at = readKeptReferralDraftAt();
       setKeptAt(at);
@@ -126,21 +144,21 @@ export function useReferralDraftAutosave<T>({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [enabled, dirty, draftJson, reopened]);
+  }, [enabled, dirty, draftJson, reopened, ownerVersion]);
 
   // Unmounting with a change still waiting settles it at once, so no close path loses it.
   useEffect(
     () => () => {
       const current = latest.current;
-      if (stopped.current || !current.enabled) return;
+      if (stopped.current || !current.enabled || ownerVersion !== sessionVersion) return;
       if (!current.dirty) {
         if (!reopened && lastKeptJson.current !== null) {
-          discardReferralDraft();
+          discardReferralDraft(ownerVersion);
         }
         return;
       }
       if (current.draftJson !== lastKeptJson.current) {
-        keepReferralDraft(current.draft);
+        keepReferralDraft(current.draft, ownerVersion);
       }
     },
     // `reopened` is fixed for the sheet's life.
@@ -166,10 +184,10 @@ export function useReferralDraftAutosave<T>({
 
   /** Keep now, without waiting for the debounce (the guard's "Keep draft"). */
   const keepNow = useCallback(() => {
-    if (stopped.current) return;
-    keepReferralDraft(latest.current.draft);
+    if (stopped.current || ownerVersion !== sessionVersion) return;
+    keepReferralDraft(latest.current.draft, ownerVersion);
     lastKeptJson.current = latest.current.draftJson;
-  }, []);
+  }, [ownerVersion]);
 
   return { keptAt, nowMs, stop, keepNow };
 }

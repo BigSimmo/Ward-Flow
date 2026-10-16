@@ -79,12 +79,21 @@ export class SharedWorkspaceClient {
   private queue: WardFlowEvent[] = [];
   private disposed = false;
   private busy = false;
+  /** Requests stay with the desk that started them, even while waiting for a token. */
+  private viewGeneration = 0;
+  /** Polls started before a grant must not replace the newly opened view. */
+  private grantGeneration = 0;
+  /** Local selection remains authoritative when a cleanup connection cannot persist a change. */
+  private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
   private readonly lifetime = new AbortController();
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
+  }
+  private workingAs() {
+    return this.workingAsOverride === undefined ? (this.options.workingAs?.get() ?? null) : this.workingAsOverride;
   }
   constructor(
     private readonly options: {
@@ -115,22 +124,39 @@ export class SharedWorkspaceClient {
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
       throw new Error("Incompatible workspace data");
-    if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
+    const held = this.view.snapshot;
+    if (snapshot.revision >= (held?.revision ?? 0)) {
+      // Scoped polls also return full snapshots when only permissions may have changed. Keep
+      // identical data stable for the provider and its field selectors, including draft owners.
+      const payload =
+        snapshot.revision === held?.revision && JSON.stringify(snapshot.payload) === JSON.stringify(held.payload)
+          ? held.payload
+          : snapshot.payload;
+      this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
+    }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
+    const generation = this.viewGeneration;
+    const grantGeneration = this.grantGeneration;
+    const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
+    const current = () => {
+      if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
+        throw new Error("The working view changed; try again.");
+    };
     let token: string;
     try {
       token = await this.options.token();
     } catch (error) {
-      if (error instanceof WardAuthError && error.kind === "session") {
+      if (generation === this.viewGeneration && error instanceof WardAuthError && error.kind === "session") {
         this.pending = null;
         this.queue = [];
         this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error: error.message });
       }
       throw error;
     }
+    current();
     if (this.disposed) throw new Error("Connection closed");
-    const stored = this.options.workingAs?.get() ?? null;
+    const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
     const send = async (as: string | null) => {
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
@@ -146,6 +172,7 @@ export class SharedWorkspaceClient {
       });
       if (this.disposed) throw new Error("Connection closed");
       const value = await response.json().catch(() => null);
+      current();
       if (this.disposed) throw new Error("Connection closed");
       const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);
       return { response, value, noRole };
@@ -162,11 +189,17 @@ export class SharedWorkspaceClient {
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
       return new Error("Waiting on the person");
     };
-    let answer = await send(workingAs);
+    const answer = await send(workingAs);
+    current();
     if (answer.noRole && workingAs) {
-      // The role this tab was working as has ended or been removed. Forget it and ask again.
+      // Ending the selected role invalidates every concurrent request, including access steps
+      // waiting for a token. A fresh read chooses from the remaining roles without the old cache.
+      this.workingAsOverride = null;
       this.options.workingAs?.set(null);
-      answer = await send(null);
+      this.viewGeneration += 1;
+      const changed = gate({ status: "loading" });
+      void this.refresh();
+      throw changed;
     }
     const { response, value, noRole } = answer;
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
@@ -202,12 +235,15 @@ export class SharedWorkspaceClient {
   async refresh() {
     if (this.busy || this.pending || this.disposed || this.gated()) return;
     this.busy = true;
+    const generation = this.viewGeneration;
+    const grantGeneration = this.grantGeneration;
     try {
       const current = this.view.snapshot;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
       );
+      if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration) return;
       if (!response.ok) throw new Error("Workspace unavailable");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
@@ -221,19 +257,20 @@ export class SharedWorkspaceClient {
         access: value.access,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
-        canSwitch: !!this.options.workingAs?.get(),
+        canSwitch: !!this.workingAs(),
         choices: undefined,
         canRequest: undefined,
       });
     } catch {
-      if (!this.gated())
+      if (generation === this.viewGeneration && grantGeneration === this.grantGeneration && !this.gated())
         this.publish({
           status: "unavailable",
           error: "The shared board could not be refreshed. Reconnect before making changes.",
         });
     } finally {
       this.busy = false;
-      if (this.queue.length && this.view.status === "ready") void this.drain();
+      if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
+      else if (this.queue.length && this.view.status === "ready") void this.drain();
     }
   }
   dispatch = (event: WardFlowEvent) => {
@@ -244,6 +281,7 @@ export class SharedWorkspaceClient {
   private async drain() {
     if (this.busy || this.disposed) return;
     this.busy = true;
+    const generation = this.viewGeneration;
     try {
       while (!this.disposed && (this.pending || this.queue.length)) {
         if (!this.pending) {
@@ -261,10 +299,21 @@ export class SharedWorkspaceClient {
         }
         this.publish({ status: "saving", error: null });
         const command = this.pending;
+        const grantGeneration = this.grantGeneration;
         const { response, value } = await this.request("/v1/workspace/commands", command);
+        if (generation !== this.viewGeneration) return;
         if (response.status >= 500) throw new Error("Save not confirmed");
-        if (value.snapshot) this.adopt(value.snapshot);
-        else if (response.ok && Number.isSafeInteger(value.commandRevision))
+        if (value.snapshot) {
+          if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
+          else {
+            // Keep the definitive command result, but read the newly granted view rather than
+            // replacing it with the command's earlier scope. Retry retains the same command ID.
+            const latest = await this.request("/v1/workspace");
+            if (generation !== this.viewGeneration) return;
+            if (!latest.response.ok) throw new Error("Save not confirmed");
+            this.adopt(latest.value.snapshot);
+          }
+        } else if (response.ok && Number.isSafeInteger(value.commandRevision))
           this.headRevision = Math.max(this.headRevision, value.commandRevision);
         this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });
         this.pending = null;
@@ -286,13 +335,14 @@ export class SharedWorkspaceClient {
         this.publish({ status: "ready", error: null });
       }
     } catch {
-      if (!this.gated())
+      if (generation === this.viewGeneration && !this.gated())
         this.publish({
           status: "unavailable",
           error: "Save is not confirmed. Retry reconnects using the same command ID, so the action cannot run twice.",
         });
     } finally {
       this.busy = false;
+      if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
       // A run that ended on a revision-only reply reads the board once to catch up.
       if (!this.disposed && this.headRevision > (this.view.snapshot?.revision ?? 0) && this.view.status === "ready")
         void this.refresh();
@@ -342,13 +392,20 @@ export class SharedWorkspaceClient {
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
+    this.viewGeneration += 1;
+    this.pending = null;
+    this.queue = [];
+    this.headRevision = 0;
+    this.workingAsOverride = workingAs;
     this.options.workingAs?.set(workingAs);
-    this.publish({ status: "loading", choices: undefined, error: null });
+    this.publish({ snapshot: null, eventLog: [], status: "loading", choices: undefined, error: null });
     void this.refresh();
   };
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
     if (this.busy || this.pending) return;
+    this.viewGeneration += 1;
+    this.workingAsOverride = null;
     this.options.workingAs?.set(null);
     this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
     void this.refresh();
@@ -407,12 +464,26 @@ export class SharedWorkspaceClient {
    * desk now sees it, so the record shows at once.
    */
   async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
+    const generation = this.viewGeneration;
+    const grantGeneration = this.grantGeneration;
     const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
+    if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
     if (response.ok) {
+      this.grantGeneration += 1;
       try {
-        if (value?.snapshot) this.adopt(value.snapshot);
+        let opened = value;
+        if (grantGeneration !== this.grantGeneration - 1) {
+          // Response order is not commit order. Once another opening has answered, re-read the
+          // server's full current grant set instead of accepting an earlier response's subset.
+          const latest = await this.request("/v1/workspace");
+          if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
+          if (!latest.response.ok) throw new Error("Opened view unavailable");
+          opened = latest.value;
+        }
+        if (opened?.snapshot) this.adopt(opened.snapshot);
       } catch {
         // The next poll reads the board again.
+        if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
       }
       return null;
     }
