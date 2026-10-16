@@ -1,6 +1,7 @@
 name: Ward Flow release tag
 
-# Tags each main commit that passed Ward Flow CI as `release-YYYY-MM-DD-<short sha>`, so every
+# Tags each main commit that passed Ward Flow CI as `release-YYYY-MM-DD-<short sha>` (the CI run's UTC
+# start date), so every
 # commit Railway may deploy has a named point to compare against or roll back to. A tag means CI
 # passed, not that Railway finished deploying it: Railway's own deploy history is the record of
 # that. It runs only after a successful CI run for a push to main, and is the only workflow that may
