@@ -235,6 +235,7 @@ describe("Frontend-to-backend shared workspace contract", () => {
         role: "coordinator",
         now: latestView!.snapshot!.now,
         accepted: true,
+        sequence: 0,
       },
     ]);
     expect(
