@@ -1502,6 +1502,59 @@ test(
           await pending?.catch(() => {});
         }
       });
+      await t.test("a role grant expiring during a lock wait is refused without a database failure", async () => {
+        const f = await fixture();
+        const expiresAt = new Date(f.clock().getTime() + 60_000);
+        const blocker = await pool.connect();
+        let reachedLock;
+        const waiting = new Promise((resolve) => {
+          reachedLock = resolve;
+        });
+        const pendingStore = createWorkspaceStore(
+          {
+            query: pool.query.bind(pool),
+            connect: async () => {
+              const client = await pool.connect();
+              return {
+                query: (sql, parameters) => {
+                  const result = client.query(sql, parameters);
+                  if (sql.includes("FROM ward_flow.workspaces") && sql.endsWith("FOR UPDATE")) reachedLock();
+                  return result;
+                },
+                release: client.release.bind(client),
+              };
+            },
+          },
+          { workspaceId: f.workspaceId, engine, clock: f.clock },
+        );
+        let pending;
+        try {
+          await blocker.query("BEGIN");
+          await blocker.query("SELECT id FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [f.workspaceId]);
+          pending = pendingStore
+            .grantAccess(f.leadView, {
+              actorId: randomUUID(),
+              role: "ward",
+              scope: { kind: "ward", unitIds: [f.unitA] },
+              expiresAt,
+            })
+            .then(
+              (response) => ({ response }),
+              (error) => ({ error }),
+            );
+          await waiting;
+          f.advance(2);
+          await blocker.query("COMMIT");
+          const outcome = await pending;
+          assert.equal(outcome.error, undefined, "expiry must be a normal refusal, not an SQL constraint failure");
+          assert.equal(outcome.response.status, 400);
+          assert.match(outcome.response.body.error, /end date in the future/);
+        } finally {
+          await blocker.query("ROLLBACK");
+          blocker.release();
+          await pending;
+        }
+      });
       await t.test("an expired base role cannot write through a previously resolved view", async () => {
         const f = await fixture();
         const view = await f.store.viewer(f.nurse);

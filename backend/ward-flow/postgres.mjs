@@ -953,8 +953,8 @@ export function createWorkspaceStore(
       if (!access) return refused(400, "A role and a place that go together are required.");
       if (request.actorId === view.actorId) return refused(422, "Nobody grants themselves a role.");
       return transaction(async (client, at) => {
-        if (!(request.expiresAt > at)) return refused(400, "A role needs an end date in the future.");
         const row = await lock(client, view.actorId, at, view);
+        if (!(request.expiresAt > at)) return refused(400, "A role needs an end date in the future.");
         if (!engine.scopeExists(row.payload, access.scope)) return refused(422, "That place is not in the workspace.");
         if (!engine.scopeWithin(row.payload, access.scope, view.access.scope))
           return refused(403, "That role is wider than your own.");
