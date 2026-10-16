@@ -53,6 +53,7 @@ describe("executive counts on the community team page", () => {
     expect(leftOrDischarged()).not.toContain("1");
     expect(screen.getByTestId("ward-statistics-community-follow-up-not-listed")).toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-community-due-out-not-listed")).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent("AD-LEFT-01");
     // A nought is not a small group, so it stays.
     expect(screen.getByTestId("ward-statistics-community-value-admitted").textContent).toBe("0");
   });
@@ -66,5 +67,8 @@ describe("executive counts on the community team page", () => {
     expect(leftOrDischarged()).toContain("1");
     expect(screen.queryByTestId("ward-statistics-community-follow-up-not-listed")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-community-due-out-not-listed")).toBeNull();
+    // The seed's one member left the ward, so the follow-up list names that admission.
+    expect(document.getElementById("follow-up")).toHaveTextContent("AD-LEFT-01");
+    expect(screen.getByRole("table", { name: /with a discharge date/ })).toBeInTheDocument();
   });
 });

@@ -95,6 +95,17 @@ afterEach(() => {
 });
 
 describe("one ED on the executive desk, counts only", () => {
+  it("words a small headline count", () => {
+    asDesk("executive", true);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StatisticsEdScreen edId={OTHER.id} movements={MOVEMENTS} />
+      </WardFlowProvider>,
+    );
+    // One person waits at the other department.
+    expect(text("ward-stat-ed-on-the-list")).toBe("fewer than 5");
+  });
+
   it("words small counts in the comparison, the bands and the declines", () => {
     asDesk("executive", true);
     renderEd();

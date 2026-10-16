@@ -96,6 +96,16 @@ describe("Overview on the executive desk, counts only", () => {
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("2");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
   });
+
+  it("shows the executive the exact counts while the flag is off", () => {
+    asDesk("executive", false);
+    renderScreen(<StatisticsOverviewScreen />);
+    expect(text("ward-statistics-overview-decline-no_bed")).toBe("1");
+    expect(text("ward-statistics-overview-declines-movements-with")).toBe("2");
+    expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
+    expect(screen.queryByText("fewer than 5")).toBeNull();
+    expect(screen.queryByText("not shown")).toBeNull();
+  });
 });
 
 describe("one health service on the executive desk, counts only", () => {

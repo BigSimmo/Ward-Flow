@@ -103,6 +103,20 @@ describe("ward statistics on the executive desk", () => {
     expect(screen.getByTestId("ward-stat-capacity-allocatable")).toHaveTextContent(String(UNIT!.allocatable.value));
   });
 
+  it("shows the executive the same bed figures as the coordinator", () => {
+    const BEDS = ["ready", "empty", "allocatable", "pending-preparation"].map((key) => `ward-stat-capacity-${key}`);
+    const beds = () => BEDS.map((testId) => screen.getByTestId(testId).textContent);
+    act(() => setWardFeatureFlagOnDevice("role-access", true));
+    const { unmount } = renderWard();
+    const coordinator = beds();
+    unmount();
+
+    asExecutive();
+    renderWard();
+    expect(beds()).toEqual(coordinator);
+    for (const value of coordinator) expect(value).toMatch(/^\d+$/);
+  });
+
   it("hides the phone's per-admission lists too", () => {
     vi.stubGlobal(
       "matchMedia",
