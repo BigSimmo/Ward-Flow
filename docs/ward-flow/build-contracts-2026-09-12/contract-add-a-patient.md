@@ -1,6 +1,6 @@
 # BUILD CONTRACT — Ward Flow Add a patient (third-edition drawing)
 
-Drawing: `docs/ward-flow/mockups/add-a-patient-third-edition.html`
+Drawing: `design/third-edition-mockups/add-a-patient-third-edition.html`
 Built screen: `src/components/ward-management/patients/add-patient.tsx` (+
 `add-patient.module.css`), route `/mockups/ward-flow/people/new`
 (`WARD_ADD_PERSON_HREF`, `ward-nav.ts:358`), page wrapper

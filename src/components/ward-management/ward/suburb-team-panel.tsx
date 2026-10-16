@@ -84,15 +84,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="reviewed">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>One team covers {found.suburb}.</p>
               <span className={`${styles.statusPillBadge} ${styles.good}`}>Single Team Catchment</span>
             </div>
@@ -109,15 +101,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="marked">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>{found.suburb} has an answer, and the row it came from is marked.</p>
               <span className={`${styles.statusPillBadge} ${styles.warn}`}>Marked Row</span>
             </div>
@@ -138,15 +122,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="contested">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>
                 {found.suburb} has two readings that disagree
                 {found.withinOneDocument ? ", in the same document" : ""}.
@@ -172,15 +148,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return found.reason === "suburb-in-source-table-but-no-follow-up-clinic-recorded" ? (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="no-team-recorded">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               {/* 🔴 NOT "unknown". The place is real and the mapping is missing — something to FILL IN. */}
               <p className={styles.suburbVerdict}>No team is recorded for {found.suburb ?? found.query}.</p>
               <span className={`${styles.statusPillBadge} ${styles.warn}`}>No Clinic Recorded</span>
@@ -199,15 +167,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       ) : (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="not-in-table">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               {/* 🔴 NOT "unknown" either, and not the same as the case above — something to CHECK. */}
               <p className={styles.suburbVerdict}>{found.query} is not in the source table.</p>
               <span className={`${styles.statusPillBadge} ${styles.danger}`}>Not In Catchment Table</span>

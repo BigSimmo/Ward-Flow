@@ -615,9 +615,10 @@
   display: none;
 }
 
-.stepDone::before,
-.stepCurrent::before {
-  background: var(--wf-accent) !important;
+/* Outranks `.stepper li::before` (0,1,2) so done and current segments take the accent. */
+.stepper li.stepDone::before,
+.stepper li.stepCurrent::before {
+  background: var(--wf-accent);
 }
 
 .stepDot {

@@ -22,6 +22,7 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
   const dispatch = vi.fn();
   render(
     <WardTasksDrawer
+      alertsScreenOpen={false}
       items={items}
       acknowledgements={{}}
       completions={{}}

@@ -21,18 +21,33 @@ function canMatch(): boolean {
  * the browser's own media query takes over as soon as the page is running.
  */
 const WfServerPhoneContext = createContext(false);
+const WfServerTabletContext = createContext(false);
 
-export function WfServerPhoneProvider({ phone, children }: { phone: boolean; children: ReactNode }) {
-  return createElement(WfServerPhoneContext.Provider, { value: phone }, children);
+export function WfServerPhoneProvider({
+  phone,
+  tablet = false,
+  children,
+}: {
+  phone: boolean;
+  tablet?: boolean;
+  children: ReactNode;
+}) {
+  return createElement(
+    WfServerPhoneContext.Provider,
+    { value: phone },
+    createElement(WfServerTabletContext.Provider, { value: tablet }, children),
+  );
 }
 
 /**
  * Whether a CSS media query matches, kept live. On the server and on first paint the phone query
- * reads the server's guess (`WfServerPhoneProvider`, false when none is given) and every other query
- * reads false, so the tree drawn by the server is the tree hydrated. Pass a constant query string.
+ * reads the server's guess (`WfServerPhoneProvider`, false when none is given), the tablet portrait
+ * query reads the optional `tablet` server guess, and every other query reads false, so the tree
+ * drawn by the server is the tree hydrated. Pass a constant query string.
  */
 export function useMediaQuery(query: string): boolean {
   const serverPhone = useContext(WfServerPhoneContext);
+  const serverTablet = useContext(WfServerTabletContext);
   const subscribe = useCallback(
     (notify: () => void) => {
       if (!canMatch()) return () => undefined;
@@ -43,7 +58,10 @@ export function useMediaQuery(query: string): boolean {
     [query],
   );
   const snapshot = useCallback(() => canMatch() && window.matchMedia(query).matches, [query]);
-  const serverSnapshot = useCallback(() => query === WF_PHONE_QUERY && serverPhone, [query, serverPhone]);
+  const serverSnapshot = useCallback(
+    () => (query === WF_PHONE_QUERY && serverPhone) || (query === WF_TABLET_PORTRAIT_QUERY && serverTablet),
+    [query, serverPhone, serverTablet],
+  );
   return useSyncExternalStore(subscribe, snapshot, serverSnapshot);
 }
 

@@ -35,6 +35,24 @@ when unavailable). `public/ward-flow-push-sw.js` shows the notification and open
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
 
+## Role access, later pass — 16 October 2026
+
+Behind the `role-access` flag. `ward-access-admin.ts` holds the one set of rules (grant, approve,
+remove, cover, requests for access, step-up and unused windows, `PUSH_ROLES`) that the local demo
+and `backend/ward-flow/engine.ts` both read. The three the shell on every screen needs (step-up
+window, `PUSH_ROLES`, `withCover`) live in `ward-access-shell-rules.ts` and are re-exported, so the
+shell does not load the rest. Local demo: `shell/ward-access-store.ts` holds cover
+in memory, `shell/ward-access-admin-store.ts` the made-up staff list, `shell/ward-step-up.tsx` the
+fresh confirm, and `settings/access-settings.tsx` the Settings Access tab. Shared workspace:
+migration 9 (`009-access-cover-requests.sql`, code only until applied), the new access routes in
+`shared-http.mjs`, `ward-shared-client.ts` (working-as header, role picker and no-role states,
+`step-up` answers, access calls), `ward-shared-role-gate.tsx` (the role picker and Ask for
+access), `settings/access-shared-source.ts` (the Access tab's server lists) and
+`ward-supabase-auth.ts` `reauthenticate` (the password step-up). `shell/ward-access-labels.ts`
+names places without React. Tests: `tests/ward-access-admin.test.ts`,
+`tests/ward-access-settings.dom.test.tsx`, `tests/ward-shared-role-gate.dom.test.tsx`,
+`tests/ward-shared-client.test.ts` and the migration 9 case in `backend/ward-flow/postgres.test.mjs`.
+
 ## Current remediation seams — 8–14 October 2026
 
 The original map below is historical; its line numbers and earlier counts are not current.
@@ -106,6 +124,13 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 - **`ward-flow-reducer.ts`** (8,741 lines at baseline) — the whole engine's write path: `WardFlowState`,
   `wardFlowReducer(state, event)`, `seedWardFlowState`/`seedWardFlowStateAt`, and every event's
   guard-and-effect case. See §1a for its internal structure and §2 for the event catalogue.
+- **Reducer slice files** (split out unchanged, 15 and 16 October 2026) — `reduceClinicalEvent`
+  now forwards selected `RECORD_*` cases to `ward-flow-record-events.ts`, `UNDO_*` cases to
+  `ward-flow-undo-events.ts`, and whole groups to `ward-flow-referral-send-events.ts`,
+  `ward-flow-referral-answer-events.ts`, `ward-flow-placement-events.ts`,
+  `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`.
+  Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
+  slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
@@ -783,8 +808,8 @@ WardFlowRole[]>` is exhaustive by type, so `tsc` refuses to compile a missing en
    `tests/ward-event-permissions.test.ts` separately pins the _exact_ role list by hand
    (comparing against a hard-coded expectation, not against `EVENT_ROLE` itself) — a widened role
    list must be a deliberate edit to that test, not a side effect nobody reviewed.
-3. **Add the `case "TYPE":`** in `reduceClinicalEvent`'s switch (`ward-flow-reducer.ts:1745`
-   onward) — the role check has already run by the time the case body executes; write only the
+3. **Add the `case "TYPE":`** in `reduceClinicalEvent`'s switch, or in the slice file that owns
+   its group (§1) with a forwarding `case` in the reducer — the role check has already run by the time the case body executes; write only the
    domain guards and the state update. Use the existing `find*`/`replace*` helpers rather than
    indexing arrays directly.
 4. **Classify it for persistence** in `ward-flow-persistence-classification.ts` — add the type

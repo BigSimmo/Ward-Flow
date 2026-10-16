@@ -126,7 +126,7 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
           type="search"
           icon={Search}
           boxClassName={styles.search}
-          style={{ flex: "1 1 auto" }}
+          className={styles.searchInput}
           aria-label={PLACEHOLDER[kind]}
           placeholder={PLACEHOLDER[kind]}
           value={query}

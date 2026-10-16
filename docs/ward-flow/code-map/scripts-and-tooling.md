@@ -22,7 +22,7 @@ other `scripts/` file whose name or content genuinely mentions Ward Flow (found 
 were false positives, listed at the end), the Ward-related `npm run` scripts in `package.json`,
 `.githooks/pre-commit` and the Ward Flow parts of `scripts/guard-push.mjs`, the
 `docs/ward-flow/journey/*.mjs` build tooling, the scripts under
-`docs/ward-flow/mockups/third-edition-kit/`, and `docs/ward-flow/organisation/registry.json`. Tip
+`design/third-edition-mockups/third-edition-kit/`, and `docs/ward-flow/organisation/registry.json`. Tip
 `ace8e9ee8d` (branch `codex/task-ward-flow-live-state-20260831`; `git log -1` on this worktree
 currently shows one docs commit past that — `d9016539bd`, the code-map split itself — which does
 not touch any file below). Written 25 September 2026. Line counts are `wc -l` on the tracked file,
@@ -47,7 +47,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   Ward Flow teams by exact name only — never suburb/postcode/LGA proximity. No numeric capacity
   field, same structural reasoning as the registry generator.
 - **`scripts/ward-flow/mockup-manifest.mjs`** (113 lines) — Writes
-  `docs/ward-flow/mockups/MANIFEST.json`, a content hash of every file in `docs/ward-flow/mockups/`
+  `design/third-edition-mockups/MANIFEST.json`, a content hash of every file in `design/third-edition-mockups/`
   (CRLF normalised to LF first, so a checkout line-ending difference cannot fire `--check`).
   `--check` exits 1 if the committed manifest disagrees with disk. This is what makes a drawing
   edit as visible as a code change.
@@ -82,10 +82,10 @@ run individually per file; nothing here was executed. Back to [the code map inde
 - **`scripts/ward-flow/screen-verification-lib.mjs`** (137 lines) — The pure functions behind
   `screen-verification.mjs`: `drawingStatus` (has the DRAWING moved since the last look) and
   `implementationFiles`/`implementationSha256`/`implementationStatus` (has the BUILT screen moved).
-  Written after WF-35, where a drawing-hash match was printed as "CURRENT" and read as a claim
+  Written after an audit finding where a drawing-hash match was printed as "CURRENT" and read as a claim
   about the built screen, which nothing had actually compared.
 - **`scripts/ward-flow/contact-sheet.mjs`** (102 lines) — Writes
-  `docs/ward-flow/mockups/CONTACT-SHEET.html`: one page of every current drawing as a live
+  `design/third-edition-mockups/CONTACT-SHEET.html`: one page of every current drawing as a live
   `<iframe>` (never a screenshot — these drawings build their own navigation with JavaScript, so a
   static capture renders a different, wrong design). Excludes the two superseded
   patient-search drawings by name.
@@ -160,7 +160,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
 - **`scripts/ward-flow/role-map.py`** (103 lines, Python) — Prints the second-edition →
   ward-tokens colour-role mapping with WCAG contrast ratios, authored by ROLE rather than by VALUE
   (six of seven neutral roles differ by only a hex digit, so value-matching cannot discover the
-  pairing). Reads `docs/ward-flow/design/prototypes/design-language.html`, `ckb-v2-tokens.css` and
+  pairing). Reads `design/prototypes/design-language.html`, `ckb-v2-tokens.css` and
   `ward-tokens.module.css`. Read-only reference tool; not npm-wired.
 - **`scripts/ward-flow/mutate.mjs`** (116 lines) — Exports `withMutation({file, find, replace},
 body)` and `blobHash` (git's own blob-hash algorithm). A single mutation with two guarantees: the
@@ -191,7 +191,7 @@ body)` and `blobHash` (git's own blob-hash algorithm). A single mutation with tw
   `scripts/ensure-local-server.mjs`, propagating whichever exit code is non-zero.
 - **`scripts/ward-flow/serve-mockups.mjs`** (68 lines) — Usage: `node
 scripts/ward-flow/serve-mockups.mjs [port]` (env `PORT`, default 60178). A minimal static HTTP
-  server for `docs/ward-flow/mockups/`, root path defaulting to
+  server for `design/third-edition-mockups/`, root path defaulting to
   `settings-third-edition.html`. This is how a drawing must be viewed — opening the HTML file
   directly renders a different, wrong design because the drawings build their navigation with
   JavaScript.
@@ -420,15 +420,15 @@ is staged.
 - **Lines 19–59: generated-index re-check.** `ward_flow_index_check(script, pattern)` runs
   `node <script> --check` and blocks the commit if it disagrees, only when a staged file matches
   that script's pattern:
-  - `screen-map.mjs` ← `docs/ward-flow/mockups/**`, `src/app/mockups/ward-flow/**`,
+  - `screen-map.mjs` ← `design/third-edition-mockups/**`, `src/app/mockups/ward-flow/**`,
     `docs/ward-flow/SCREEN-MAP.md`, `scripts/ward-flow/screen-pairs.mjs`
   - `rules-index.mjs` ← `docs/ward-flow/RULES.md`
   - `owner-rulings-index.mjs` ← `docs/ward-flow/(archive/dated-notes/)?owner-*.md`,
     `docs/ward-flow/OWNER-RULINGS.md`
-  - `mockup-manifest.mjs` ← `docs/ward-flow/mockups/**`
+  - `mockup-manifest.mjs` ← `design/third-edition-mockups/**`
   - `screen-verification.mjs` ← `docs/ward-flow/screen-verification.json`,
     `docs/ward-flow/SCREEN-VERIFICATION.md`, `scripts/ward-flow/screen-pairs.mjs`,
-    `docs/ward-flow/mockups/MANIFEST.json`
+    `design/third-edition-mockups/MANIFEST.json`
 - **Lines 61–85: task-branch / `main` commit guard.** Direct commits on `main`/`master` are guarded
   (work happens on a dedicated task branch in `BigSimmo/Ward-Flow`, where `origin/main` is Ward
   Flow's public main branch).
@@ -494,7 +494,7 @@ ward-bed-availability,ward-patients,ward-eligibility}.ts` and writes `vocabulari
   than printing "[object Object]", the coverage measure refuses bad inputs from three different
   failure shapes, an action nothing can trigger is caught by name).
 
-## `docs/ward-flow/mockups/third-edition-kit/` scripts
+## `design/third-edition-mockups/third-edition-kit/` scripts
 
 Manual/dev harness for checking the 16 third-edition drawings against the design standard; none of
 these are npm-wired or part of the automated fold gates.
@@ -566,12 +566,12 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 | `src/components/ward-management/reference/ward-reference-registry.ts`  | `build-reference-registry.mjs`                   | `npm run check:ward-reference`                                                                                                  |
 | `src/components/ward-management/reference/ward-reference-distances.ts` | `build-reference-distances.mjs`                  | `npm run check:ward-reference`                                                                                                  |
 | `src/components/ward-management/reference/ward-reference-teams.ts`     | `build-reference-teams.mjs`                      | (no dedicated `--check`; regenerate and diff by hand — `check-ward-reference.mjs` checks only the registry and distances files) |
-| `docs/ward-flow/mockups/MANIFEST.json`                                 | `mockup-manifest.mjs`                            | `node scripts/ward-flow/mockup-manifest.mjs --check`                                                                            |
+| `design/third-edition-mockups/MANIFEST.json`                           | `mockup-manifest.mjs`                            | `node scripts/ward-flow/mockup-manifest.mjs --check`                                                                            |
 | `docs/ward-flow/OWNER-RULINGS.md`                                      | `owner-rulings-index.mjs`                        | `node scripts/ward-flow/owner-rulings-index.mjs --check`                                                                        |
 | `docs/ward-flow/RULES.md`                                              | `rules-index.mjs`                                | `node scripts/ward-flow/rules-index.mjs --check`                                                                                |
 | `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                                 | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
 | `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                        | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
-| `docs/ward-flow/mockups/CONTACT-SHEET.html`                            | `contact-sheet.mjs`                              | none (visual reference page, not a gate)                                                                                        |
+| `design/third-edition-mockups/CONTACT-SHEET.html`                      | `contact-sheet.mjs`                              | none (visual reference page, not a gate)                                                                                        |
 | `docs/ward-flow/LESSON-AUDIT-REPORT.md`                                | `audit-lessons.mjs`                              | `node scripts/ward-flow/audit-lessons.mjs --check`                                                                              |
 | `docs/ward-flow/journey/ward-journey-explorer.html`                    | `build-explorer.mjs` (via `ward:journey`)        | `npm run ward:journey` (build refuses rather than emitting a wrong page)                                                        |
 | `docs/ward-flow/journey/ward-journey.bpmn`                             | `build-bpmn.mjs` (via `ward:journey`)            | part of `npm run ward:journey`                                                                                                  |
@@ -642,14 +642,14 @@ generator `--check`s only when their own source changed.
    `docs/ward-flow/` will not find it; use `--show-report`.
 7. **The `screen-verification.mjs` `--check` gate cannot tell you a screen is wrong or stale on
    purpose.** It only fails on structural JSON problems. Reading a clean `--check` as "every screen
-   matches its drawing" is exactly the WF-35 misreading `screen-verification-lib.mjs` was written
+   matches its drawing" is the exact misreading `screen-verification-lib.mjs` was written
    to stop; read the generated `SCREEN-VERIFICATION.md` itself for per-screen status.
 8. **The journey-explorer probes (`prove-*.mjs`) mutate real source files in this folder and
    restore them.** They are hardened against a known Windows transient-lock failure
    (`probe-io.mjs`), but running two of them concurrently, or interrupting one mid-run, is exactly
    the scenario that already once silently reverted a day of edits to `rebuild-map.mjs`. Never run
    `npm run ward:journey:prove` alongside another edit to this folder.
-9. **`docs/ward-flow/mockups/third-edition-kit/shell/shell-script.js` (2,373 lines) is real,
+9. **`design/third-edition-mockups/third-edition-kit/shell/shell-script.js` (2,373 lines) is real,
    load-bearing UI logic, not a check** — it is the actual third-edition shell script, lifted into
    a docs/mockups folder for preview purposes. A future editor scanning "scripts under docs/" for
    throwaway tooling could easily skip past the one file in this whole area that is production-shape

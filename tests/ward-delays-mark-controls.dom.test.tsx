@@ -20,7 +20,7 @@ import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-c
  * filter shows as a removable chip, and Clear resets them all. These cases carry the old file's two
  * defects across to the new controls:
  *
- *   - a control must not read pressed while it is not what is narrowing the table (WF-27), and
+ *   - a control must not read pressed while it is not what is narrowing the table, and
  *   - a filter on a cause that has emptied must stop applying and stop naming itself, rather than
  *     leave the table showing nobody under a chip for a cause the board no longer has.
  */

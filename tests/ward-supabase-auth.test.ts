@@ -52,6 +52,34 @@ describe("scoped browser auth", () => {
     expect(fetcher.mock.calls.filter(([u]) => String(u).includes("grant_type=refresh_token"))).toHaveLength(1);
     auth.dispose();
   });
+  it("signs the same account in again for a step-up, and refuses a different account", async () => {
+    const store = storage();
+    let next = user;
+    let tokens = 0;
+    const fetcher = vi.fn(async (u: RequestInfo | URL, init?: RequestInit) => {
+      if (String(u).endsWith("/user")) return Response.json({ ...next, email: "synthetic@example.invalid" });
+      if (String(init?.body).includes("wrong-password")) return Response.json({ error: "invalid" }, { status: 400 });
+      tokens++;
+      return Response.json(session(`access-${tokens}`));
+    });
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+    await expect(auth.reauthenticate("private-test-password")).rejects.toMatchObject({ kind: "session" });
+    await auth.signIn("synthetic@example.invalid", "private-test-password");
+    await auth.reauthenticate("private-test-password");
+    expect(await auth.token()).toBe("access-2");
+    const body = JSON.parse(String(fetcher.mock.calls.at(-2)?.[1]?.body));
+    expect(body).toEqual({ email: "synthetic@example.invalid", password: "private-test-password" });
+    // A wrong password is a form answer: the session is kept.
+    await expect(auth.reauthenticate("wrong-password")).rejects.toMatchObject({ kind: "credentials" });
+    expect(await auth.token()).toBe("access-2");
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("private-test-password");
+    // The email is used for the step-up but is never written to browser storage.
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("synthetic@example.invalid");
+    next = { id: "87654321-4321-4321-4321-cba987654321" };
+    await expect(auth.reauthenticate("private-test-password")).rejects.toMatchObject({ kind: "session" });
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+    auth.dispose();
+  });
   it("suppresses and aborts a late login after disposal", async () => {
     let finish!: (v: Response) => void;
     let signal: AbortSignal | null | undefined;
@@ -186,4 +214,33 @@ it("refuses refreshed tokens for a different account and removes the old session
   expect(auth.userId).toBeNull();
   expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   auth.dispose();
+});
+
+it("refuses a bearer value that is not a signed token without asking Supabase about it", async () => {
+  // Verified tokens are cached by the authenticator itself (see backend/ward-flow/supabase-auth.test.mjs);
+  // a value that is not even shaped like a token must never reach the remote user check.
+  const supabaseAuthModulePath = "../backend/ward-flow/supabase-auth.mjs";
+  const { createSupabaseAuthenticator } = (await import(supabaseAuthModulePath)) as {
+    createSupabaseAuthenticator: (
+      config: Record<string, unknown>,
+      deps?: Record<string, unknown>,
+    ) => (authorization: string) => Promise<string>;
+  };
+  let fetchCount = 0;
+  const coordinatorId = "12345678-1234-1234-1234-123456789abc";
+  const authenticator = createSupabaseAuthenticator(
+    {
+      coordinatorIds: [coordinatorId],
+      supabase: { projectRef: "zakzoemeedfepxcstsou", url, publishableKey: "sb_publishable_test" },
+    },
+    {
+      fetch: async () => {
+        fetchCount++;
+        return Response.json({ id: coordinatorId });
+      },
+    },
+  );
+
+  await expect(authenticator("Bearer test-token-1")).rejects.toThrow("Unauthorised");
+  expect(fetchCount).toBe(0);
 });

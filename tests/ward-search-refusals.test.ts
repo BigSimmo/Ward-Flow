@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { NOTHING_FOUND, RESULTS_FOOTER, refusalFor } from "@/components/ward-management/search/search-refusals";
 
 describe("what search refuses, in the standard's own words", () => {
-  // ⚠️ VERBATIM FROM `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md` §8.6. These are fixed
+  // ⚠️ VERBATIM FROM `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md` §8.6. These are fixed
   // sentences, not copy to improve. A reworded refusal is a different promise, and nothing else in
   // the repository would go red if somebody improved one.
   it("refuses a score or a best match with the fixed sentence", () => {

@@ -128,7 +128,7 @@ describe("ward scenarios", () => {
    * the two zeroes are what drive the rise. If the owner supplies real staffing figures these
    * numbers move again, and that will not be a regression either.
    *
-   * **RE-MEASURED 2026-09-16, after fixing WF-26** (the scarce map built `allocatable` from
+   * **RE-MEASURED 2026-09-16, after fixing audit rule** (the scarce map built `allocatable` from
    * `index % 3 === 0 ? 1 : 0` alone, never clamping to `unit.empty.value`, and never touched
    * `allocatableLocked` at all — see `ward-scenarios.ts`'s own comment on `scenarioUnits`).
    *
@@ -265,10 +265,10 @@ describe("ward scenarios", () => {
         "at strandedMovements first — it counts open movements with nowhere eligible to go on an " +
         "ordinary night, so a rise there means the network now strands patients it used to place, " +
         "and that is a clinical regression rather than a test that needs updating.",
-    // RE-MEASURED 2026-09-25, 21:25, on the R7 split merged with batch 3g: seeded movements record
-    // gender (authored demo data), so `gender_designation` can pass the two single-sex wards on gender:
-    // 408 -> 430 pairs. Stranded UNCHANGED at 2. (A 453/1 reading at batch 3a was superseded by batch
-    // 3g's own seed and capacity changes.)
+      // RE-MEASURED 2026-09-25, 21:25, on the R7 split merged with batch 3g: seeded movements record
+      // gender (authored demo data), so `gender_designation` can pass the two single-sex wards on gender:
+      // 408 -> 430 pairs. Stranded UNCHANGED at 2. (A 453/1 reading at batch 3a was superseded by batch
+      // 3g's own seed and capacity changes.)
     ).toEqual({ openMovements: 53, eligiblePairs: 430, strandedMovements: 2 });
   });
 
@@ -290,11 +290,11 @@ describe("ward scenarios", () => {
         "because the scarce scenario changes bed counts and never the movements; if it does not, " +
         "the scenario has started altering something it must not touch, and the last test in this " +
         "file says which attributes those are.",
-    // RE-MEASURED 2026-09-25, 21:25, same tree: UNCHANGED at 130 pairs and 3 stranded, because the
-    // single-sex wards sit at zero allocatable beds on the scarce night.
-    // RE-MEASURED 2026-09-26, after the Kununurra ward was removed (owner-approved ward facts):
-    // 130 -> 135 pairs, stranded UNCHANGED at 3. The scarce night's allocatable beds are keyed by
-    // each unit's position (index % 3), so removing one unit moved which later units draw a bed.
+      // RE-MEASURED 2026-09-25, 21:25, same tree: UNCHANGED at 130 pairs and 3 stranded, because the
+      // single-sex wards sit at zero allocatable beds on the scarce night.
+      // RE-MEASURED 2026-09-26, after the Kununurra ward was removed (owner-approved ward facts):
+      // 130 -> 135 pairs, stranded UNCHANGED at 3. The scarce night's allocatable beds are keyed by
+      // each unit's position (index % 3), so removing one unit moved which later units draw a bed.
     ).toEqual({ openMovements: 53, eligiblePairs: 135, strandedMovements: 3 });
 
     expect(
@@ -327,7 +327,7 @@ describe("ward scenarios", () => {
 });
 
 /**
- * WF-26: the scarce scenario built `allocatable` from `index % 3 === 0 ? 1 : 0` alone, never
+ * the scarce scenario built `allocatable` from `index % 3 === 0 ? 1 : 0` alone, never
  * looking at the unit's `empty` figure — so `gry-older-adult` (empty 0) was handed an allocatable
  * bed that did not physically exist. It also never touched `allocatableLocked` at all, so a unit
  * whose STANDARD `allocatableLocked` was 1 or 2 kept that figure on the scarce night even where

@@ -1,0 +1,21 @@
+/* D-64: a compact label, not a target, so it stays smaller than the chip token. */
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 5px;
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-track);
+  font: 600 var(--wf-fs-11) / 1.2 var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

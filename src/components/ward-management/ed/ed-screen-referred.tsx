@@ -2,6 +2,7 @@
 
 // "Referred": the patients this department referred onward who are still here, and its recently
 // answered referrals. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import type { ReferralGender } from "@/components/ward-management/ward-model";
@@ -235,10 +236,27 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                         type="button"
                         data-testid={`ward-ed-record-gender-submit-${movement.id}`}
                         className={styles.acceptButton}
-                        disabled={!genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender}
-                        onClick={() => {
+                        aria-disabled={
+                          !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
+                            ? "true"
+                            : undefined
+                        }
+                        aria-describedby={
+                          !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
+                            ? `ward-ed-record-gender-reason-${movement.id}`
+                            : undefined
+                        }
+                        title={
+                          !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
+                            ? "Choose a new gender value to record first."
+                            : undefined
+                        }
+                        onClick={(event) => {
                           const gender = genderRecordDraft[movement.id];
-                          if (!gender) return;
+                          if (!gender || gender === movement.gender) {
+                            ignoreUnavailableActivation(event);
+                            return;
+                          }
                           raise("RECORD_MOVEMENT_GENDER", {
                             movementId: movement.id,
                             gender,
@@ -248,6 +266,11 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                       >
                         Record gender
                       </button>
+                      {!genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender ? (
+                        <span id={`ward-ed-record-gender-reason-${movement.id}`} className="sr-only">
+                          Choose a new gender value to record first.
+                        </span>
+                      ) : null}
                     </div>
                   )}
                 </li>

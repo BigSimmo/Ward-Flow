@@ -8,7 +8,7 @@ print the evidence beside each row, not to discover the pairing.
 import pathlib
 import re
 
-PROTO = pathlib.Path("docs/ward-flow/design/prototypes/design-language.html")
+PROTO = pathlib.Path("design/prototypes/design-language.html")
 V2 = pathlib.Path("src/app/ckb-v2-tokens.css")
 WARD = pathlib.Path("src/components/ward-management/ward-tokens.module.css")
 

@@ -11,7 +11,7 @@
  * hands back, over a base fixture and three mutated ones.
  *
  * ⚠️ **NOTHING HERE COMPUTES A CLINICAL FIGURE.** Every figure below wraps a derivation that already
- * exists and is already tested — `wardNavCounts` for the rail's counts, `buildActionInbox` for the
+ * exists and is already tested — `wardNavCounts` for the rail's counts, `taskItems` for the
  * task list. A second formula for a figure that already has one is the exact drift this file was
  * created to stop, so re-deriving anything here would defeat its own purpose. If a lane needs a
  * number this module does not carry, the derivation is added where the derivation lives and wrapped
@@ -48,7 +48,8 @@ import type {
   Unit,
 } from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { taskItems, type TaskSource } from "@/components/ward-management/ward-act-now-items";
+import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
@@ -128,25 +129,28 @@ export type ShellFigureInput = {
   readonly now: Instant;
   readonly thresholds: DueSoonThresholds;
   readonly plannedAdmissions?: readonly PlannedAdmission[];
+  /**
+   * The rest of what the one task list (`taskItems`) reads, as the Tasks badge and drawer pass it.
+   * Omitted records simply contribute no rows; an omitted configuration is the default one.
+   */
+  readonly configuration?: TaskSource["configuration"];
+  readonly inboxSnoozes?: TaskSource["inboxSnoozes"];
+  readonly admissions?: TaskSource["admissions"];
+  readonly patients?: TaskSource["patients"];
+  readonly supportNotifications?: TaskSource["supportNotifications"];
 };
 
 /**
- * The words for the one figure not carried by `wardNavCounts`. `buildActionInbox` returns rows, not
+ * The words for the one figure not carried by `wardNavCounts`. `taskItems` returns rows, not
  * a labelled count, so the noun is stated here.
  *
- * ⚠️ **THIS IS THE PLURAL WORDING THE TASKS CONTROL ALREADY RENDERS, NOT A THIRD PHRASING.**
- * `ward-chrome-header.tsx` — the surface `layout.tsx` actually mounts — renders `"need attention"`
- * beside its count for every value except exactly one, where it switches to `"needs attention"`:
- * subject-verb agreement that one flat string cannot carry. `TASKS_NOUN` is fixed at the plural
- * form, so a lane rendering `${value} ${noun}` matches the header for every count the seeded
- * fixture and its three reducer mutations produce (all four worlds hold this figure at the same
- * value). It would read ungrammatically only if the count were ever exactly one — the accepted
- * cost of one flat noun, not a second phrasing invented for the facade. An earlier version of this
- * comment claimed `"needing attention"` was that existing wording; it was not, and nothing guarded
- * the claim. `tests/ward-facade-agrees-with-screens.test.ts` now reads this noun back out of the
- * header's own rendered markup, so a real divergence reddens instead of being described.
+ * `WardTasksDrawer` — the surface `shell/ward-bar.tsx` actually mounts — renders `"alerts"` beside
+ * its total count for the coordinator desk, the only desk the bar hands a non-empty list (#362:
+ * `<strong ...>N</strong> of M <span class="sr-only">invented </span>alerts`).
+ * `tests/ward-facade-agrees-with-screens.test.ts` reads this noun back out of the drawer's rendered
+ * markup, so a real divergence reddens instead of being described.
  */
-const TASKS_NOUN = "need attention";
+const TASKS_NOUN = "alerts";
 
 /**
  * Every shell figure, from one call.
@@ -185,12 +189,23 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     openMovements: required("movements"),
     delaysNeedingAttention: required("delays"),
     referralsWaiting: required("referrals"),
+    // The same list the Tasks badge, drawer, Alerts and Home read (`taskItems`), so absence and
+    // decision-target rows count here too.
     tasks: {
-      value: buildActionInbox(
-        input.movements.filter(isOpen),
+      value: taskItems(
+        {
+          movements: input.movements,
+          units: input.units,
+          configuration: input.configuration ?? defaultWardConfiguration(),
+          inboxSnoozes: input.inboxSnoozes ?? {},
+          admissions: input.admissions,
+          patients: input.patients,
+          referrals: input.referrals,
+          supportNotifications: input.supportNotifications,
+          plannedAdmissions: input.plannedAdmissions,
+          leaveBeds: [...input.leaveBeds],
+        },
         input.now,
-        input.units,
-        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
       ).length,
       noun: TASKS_NOUN,
     },
@@ -214,10 +229,8 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
  * the other. Today's ids are plain slugs, which is precisely why this would go unnoticed if it were
  * wrong.
  */
-export function patientHref(patientId: string): string {
-  // D-39: the address carries a code, never the person's record number.
-  return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
-}
+// Defined beside the task list's imports so that list can link a person without a cycle back here.
+export { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 
 /**
  * A ward's own screen. See `patientHref` — same two reasons.

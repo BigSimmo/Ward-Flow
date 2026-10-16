@@ -4,7 +4,14 @@ import { test } from "node:test";
 import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { clientAddress, createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
-import { REMOTE_CHECKS_PER_ADDRESS, REMOTE_CHECKS_TOTAL, createSupabaseAuthenticator } from "./supabase-auth.mjs";
+import {
+  REMOTE_CHECKS_PER_ADDRESS,
+  REMOTE_CHECKS_TOTAL,
+  REMOTE_CHECKS_UNKNOWN_TOTAL,
+  ROLE_HOLDERS_REFRESH_MS,
+  ROLE_HOLDERS_RETRY_MS,
+  createSupabaseAuthenticator,
+} from "./supabase-auth.mjs";
 
 const coordinator = randomUUID();
 const config = {
@@ -261,6 +268,165 @@ test("distributed forged subjects remain bounded by the total remote budget", as
   );
 });
 
+test("made-up accounts share one small allowance, so they never use up the checks real desks need", async () => {
+  const nurse = randomUUID();
+  let reads = 0;
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    roleHolders: async () => {
+      reads += 1;
+      return [nurse];
+    },
+    fetch: async (url, init) => {
+      calls.push(url);
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      return Response.json({ id: JSON.parse(Buffer.from(token, "base64url").toString()).sub });
+    },
+  });
+  // Each forged token names a new account from a new address, so neither per-account nor
+  // per-address limits apply. Only the allowance for accounts with no role does.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` });
+  await assert.rejects(
+    verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.70" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(calls.length, REMOTE_CHECKS_UNKNOWN_TOTAL);
+  // A bootstrap coordinator and an account with a role still get through.
+  assert.equal(await verify(legacy(), { clientAddress: "203.0.113.71" }), coordinator);
+  assert.equal(await verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.72" }), nurse);
+  // The role holders were read once, not once per token.
+  assert.equal(reads, 1);
+});
+
+test("forged tokens never cause a database read per request, from one address or many", async () => {
+  let at = 1_000_000;
+  let reads = 0;
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    roleHolders: async () => {
+      reads += 1;
+      return [];
+    },
+    fetch: async () => Response.json({ id: randomUUID() }),
+  });
+  // One address is charged before the role check, refused or not, so it stops at its own limit.
+  for (let index = 0; index < REMOTE_CHECKS_PER_ADDRESS * 3; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "203.0.113.90" }).catch(() => {});
+  // Many addresses, each with a new account, share the one cached read.
+  for (let index = 0; index < 200; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `10.0.${index}.1` }).catch(() => {});
+  assert.equal(reads, 1);
+  at += ROLE_HOLDERS_REFRESH_MS;
+  await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "10.1.0.1" }).catch(() => {});
+  assert.equal(reads, 2);
+});
+
+test("a role granted after the last read is recognised at the next refresh, and a failed read keeps the last list", async () => {
+  let at = 1_000_000;
+  const nurse = randomUUID();
+  let holders = [];
+  let failing = false;
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    roleHolders: async () => {
+      if (failing) throw new Error("database unavailable");
+      return holders;
+    },
+    fetch: async (_url, init) => {
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      return Response.json({ id: JSON.parse(Buffer.from(token, "base64url").toString()).sub });
+    },
+  });
+  // Spend the no-role allowance, which the nurse also draws on before the grant is seen.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` });
+  holders = [nurse];
+  await assert.rejects(
+    verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.80" }),
+    VerifierRateLimitedError,
+  );
+  at += ROLE_HOLDERS_REFRESH_MS;
+  assert.equal(await verify(legacy(claims({ sub: nurse, jti: "a" })), { clientAddress: "203.0.113.80" }), nurse);
+  // A failed read keeps the nurse's role.
+  failing = true;
+  at += ROLE_HOLDERS_REFRESH_MS;
+  assert.equal(await verify(legacy(claims({ sub: nurse, jti: "b" })), { clientAddress: "203.0.113.80" }), nurse);
+});
+
+test("a failed first read is tried again soon, so a brief outage does not hold real desks back", async () => {
+  let at = 1_000_000;
+  const nurse = randomUUID();
+  let reads = 0;
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    roleHolders: async () => {
+      reads += 1;
+      if (reads === 1) throw new Error("database unavailable");
+      return [nurse];
+    },
+    fetch: async (_url, init) => {
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      return Response.json({ id: JSON.parse(Buffer.from(token, "base64url").toString()).sub });
+    },
+  });
+  // The first read failed, so the no-role allowance is spent by other accounts.
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `198.51.100.${index}` });
+  await assert.rejects(
+    verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.85" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(reads, 1);
+  at += ROLE_HOLDERS_RETRY_MS;
+  assert.equal(await verify(legacy(claims({ sub: nurse, jti: "late" })), { clientAddress: "203.0.113.85" }), nurse);
+  assert.equal(reads, 2);
+});
+
+test("a stalled role read never holds a sign-in check past the verifier's deadline, and is replaced", async () => {
+  let at = 1_000_000;
+  let reads = 0;
+  const subject = randomUUID();
+  let finishFirst;
+  const verify = createSupabaseAuthenticator(config, {
+    now: () => at,
+    timeoutMs: 20,
+    roleHolders: () => {
+      reads += 1;
+      if (reads === 1) return new Promise((resolve) => (finishFirst = resolve));
+      return Promise.resolve([subject]);
+    },
+    fetch: async () => Response.json({ id: subject }),
+  });
+  const started = Date.now();
+  assert.equal(await verify(legacy(claims({ sub: subject })), { clientAddress: "203.0.113.86" }), subject);
+  assert.ok(Date.now() - started < 1000);
+  // The stalled read is shared, not repeated.
+  await verify(legacy(claims({ sub: subject, jti: "again" })), { clientAddress: "203.0.113.86" });
+  assert.equal(reads, 1);
+  // After a whole refresh period it is abandoned and a new read starts.
+  at += ROLE_HOLDERS_REFRESH_MS;
+  await verify(legacy(claims({ sub: subject, jti: "later" })), { clientAddress: "203.0.113.86" });
+  assert.equal(reads, 2);
+  // The abandoned read ending late does not replace the newer list.
+  finishFirst([]);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  at += 1;
+  await verify(legacy(claims({ sub: subject, jti: "after" })), { clientAddress: "203.0.113.86" });
+  assert.equal(reads, 2);
+});
+
+test("without a role list, only the bootstrap coordinator list counts as having a role", async () => {
+  const { verify } = setup({ user: { id: coordinator } });
+  for (let index = 0; index < REMOTE_CHECKS_UNKNOWN_TOTAL; index += 1)
+    await verify(legacy(claims({ sub: randomUUID() })), { clientAddress: `192.0.2.${index}` }).catch(() => {});
+  await assert.rejects(
+    verify(legacy(claims({ sub: randomUUID() })), { clientAddress: "192.0.2.200" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(await verify(legacy(), { clientAddress: "192.0.2.201" }), coordinator);
+});
+
 test("requests arriving together share one read of the published keys", async () => {
   const { calls, verify } = setup();
   const tokens = Array.from({ length: 5 }, (_, index) => signed("ES256", "ec-1", claims({ jti: String(index) })));
@@ -345,4 +511,31 @@ test("nonfinite numeric JWT dates are refused even with a valid signature", asyn
     const signature = sign("sha256", Buffer.from(data), { key: ec.privateKey, dsaEncoding: "ieee-p1363" });
     await assert.rejects(verify(`Bearer ${data}.${signature.toString("base64url")}`), /Unauthorised/);
   }
+});
+
+test("a verified token reports when the account last signed in, for the step-up check", async () => {
+  const { verify } = setup();
+  const signedIn = Math.floor(Date.now() / 1000) - 120;
+  const session = {};
+  const token = signed(
+    "ES256",
+    "ec-1",
+    claims({
+      aal: "aal1",
+      amr: [
+        { method: "password", timestamp: signedIn - 600 },
+        { method: "password", timestamp: signedIn },
+      ],
+    }),
+  );
+  assert.equal(await verify(token, { session }), coordinator);
+  assert.deepEqual(session, { signedInAt: signedIn * 1000, aal: "aal1" });
+  // A token with no sign-in record leaves the time unknown, so step-up asks again.
+  const unknown = {};
+  await verify(signed("ES256", "ec-1"), { session: unknown });
+  assert.equal(unknown.signedInAt, undefined);
+  // A refused token fills nothing.
+  const refused = {};
+  await assert.rejects(verify(`${token}x`, { session: refused }));
+  assert.deepEqual(refused, {});
 });

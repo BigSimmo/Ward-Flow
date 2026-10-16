@@ -458,7 +458,7 @@ top-level files are dated point-in-time notes (1–22 Sept). Large history folde
 files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-rescued/` 81,
 `handover/` + `handovers/` 34.
 
-### 6.2 Design drawings (`docs/ward-flow/mockups/`, 140 files)
+### 6.2 Design drawings (`design/third-edition-mockups/`, 140 files)
 
 - **Design authority:** `WARD-FLOW-DESIGN-SYSTEM.md`, mirrored by
   `design-system-third-edition.html` and `ward-flow-digest.html`.

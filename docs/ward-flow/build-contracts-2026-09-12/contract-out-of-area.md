@@ -1,6 +1,6 @@
 # Build contract — Out of area (`/mockups/ward-flow/out-of-area`)
 
-Drawing: `docs/ward-flow/mockups/out-of-area-third-edition.html` (8233 lines).
+Drawing: `design/third-edition-mockups/out-of-area-third-edition.html` (8233 lines).
 Read-only research. No repository file touched.
 
 ## 0. Design or reproduction?

@@ -1,7 +1,7 @@
 # Field-producer audit for the "per-patient ward board" mockup
 
 **Repo:** D:/Worktrees/Database/ward-builder-community-route (read-only inspection, 2026-09-05)
-**Mockup identified:** `docs/ward-flow/design/prototypes/mockup-front-doors-v5.html:1004-1088` -
+**Mockup identified:** `design/prototypes/mockup-front-doors-v5.html:1004-1088` -
 the `.board` table headed `UMRN | Patient | Bed | Form | Story - presenting complaint | Review |
 Plan | Referrals`, rows keyed by the eight synthetic patients (UM100001-UM100008) that exactly
 match `src/components/ward-management/ward-patients-seed.ts:36-165`.

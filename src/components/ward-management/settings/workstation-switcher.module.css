@@ -661,3 +661,15 @@
     forced-color-adjust: none;
   }
 }
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.deskRow {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.deskHeadGrow {
+  flex: 1;
+  min-width: 0;
+}

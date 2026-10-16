@@ -647,6 +647,13 @@
       "after": 0,
       "reason": "Deleted with the component it tested on 15 Oct 2026 (screen and component cleanup, PR #343). Nothing in the app imported or rendered components/ui/form-field.tsx; Josh approved deleting the unused components that day.",
       "approvedOn": "2026-10-15"
+    },
+    {
+      "path": "tests/ward-chrome-header-actions.dom.test.tsx",
+      "before": 9,
+      "after": 0,
+      "reason": "Retired describe.skip suite deleted on 16 Oct 2026 together with the unreferenced ward-chrome-header.tsx and ward-chrome-header.module.css components. The live WardCommandBar replaced WardChromeHeader across all screens and is covered by its own active test suites.",
+      "approvedOn": "2026-10-16"
     }
   ]
 }

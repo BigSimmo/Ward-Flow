@@ -28,7 +28,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
     referrals,
     patientDialogRef,
     setSelectedPatientId,
-    setArrivalPlanOpenFor,
+    openArrivalPlanFromRecord,
     selectedPatientInfo,
     selectedPatientJourneyEvents,
     patientBay,
@@ -195,7 +195,12 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                   type="button"
                   data-testid={`ward-ed-drawer-arrival-plan-toggle-${selectedPatient.id}`}
                   className={styles.acceptButton}
-                  onClick={() => setArrivalPlanOpenFor(selectedPatient.id)}
+                  onClick={() => {
+                    // This native modal dialog makes everything outside it inert, so it closes
+                    // first and reopens when the arrival modal closes (review on PR #365).
+                    setSelectedPatientId(null);
+                    openArrivalPlanFromRecord(selectedPatient.id);
+                  }}
                 >
                   {selectedPatient.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
                 </button>

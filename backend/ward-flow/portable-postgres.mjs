@@ -181,6 +181,21 @@ SELECT current_user AS role,
     AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.break_glass', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
     AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.break_glass', 'UPDATE,REFERENCES')
     AND NOT pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.break_glass_id_seq', 'UPDATE')
+    -- Migration 9: a role's last used time may also change, never its kind; a request for access
+    -- is added and answered once, and nothing else about it changes.
+    AND CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 9) THEN
+      pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', 'last_used_at', 'UPDATE')
+      AND NOT pg_catalog.has_column_privilege(r.oid, 'ward_flow.memberships', 'kind', 'UPDATE')
+      AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.access_requests', 'SELECT')
+      AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.access_requests', 'INSERT')
+      AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.access_requests', 'decision', 'UPDATE')
+      AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.access_requests', 'decided_by', 'UPDATE')
+      AND pg_catalog.has_column_privilege(r.oid, 'ward_flow.access_requests', 'decided_at', 'UPDATE')
+      AND NOT EXISTS (SELECT 1 FROM unnest(ARRAY['id', 'workspace_id', 'data_mode', 'actor_id', 'role', 'scope', 'requested_at']) AS fixed(name)
+        WHERE pg_catalog.has_column_privilege(r.oid, 'ward_flow.access_requests', fixed.name, 'UPDATE'))
+      AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.access_requests', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+      AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.access_requests', 'REFERENCES')
+    ELSE true END
   ELSE true END AS access_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')

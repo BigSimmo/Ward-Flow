@@ -87,7 +87,7 @@ function blobHash(bytes) {
 }
 
 // Windows can briefly refuse either write open (observed UNKNOWN/-4094, EBUSY, EPERM). Measured
- // 2026-09-22 on ward-lead: self-test children still exhausted a 770 ms window under rapid
+// 2026-09-22 on ward-lead: self-test children still exhausted a 770 ms window under rapid
 // mutate-restore of this file, leaving SELF_TEST_ANCHOR as "mutated" when restore lost. Keep one
 // bounded ~3.2 s policy for applying and restoring. Retry only that IO, never a command or a
 // failed hash comparison; every attempt writes the same bytes supplied for that phase.
@@ -419,10 +419,7 @@ function didNotRun(output, status) {
  *      is the verdict people act on**, so the difference belongs beside the mode rather than in
  *      somebody's memory.
  */
-function runMutation(
-  { file, find, replace, append, command },
-  { write = writeFileSync, runCommand = spawnSync } = {},
-) {
+function runMutation({ file, find, replace, append, command }, { write = writeFileSync, runCommand = spawnSync } = {}) {
   const absolute = resolve(file);
 
   if (!existsSync(absolute)) die(REFUSED, `REFUSED: no such file — ${file}`);
@@ -751,7 +748,7 @@ function assertAnchorPristine() {
         const afterMatch = DECLARATION.exec(after);
         if (afterMatch?.[1] === want[1] && after.split(want[1]).length - 1 === wantCount) {
           console.warn(
-            "⚠️  healed leftover SELF_TEST_ANCHOR mutant (value was \"mutated\") from an interrupted self-test;",
+            '⚠️  healed leftover SELF_TEST_ANCHOR mutant (value was "mutated") from an interrupted self-test;',
           );
           console.warn("    continuing. A Windows restore race left it; the suite must not stay red for that.");
           return;
@@ -842,9 +839,7 @@ function selfTest() {
       if (!touchesTracked || !isTransientMutationChildFailure(run.status, output) || attempt === maxAttempts) {
         return run;
       }
-      console.warn(
-        `self-test: Windows file lock on mutation child (attempt ${attempt}/${maxAttempts}); retrying`,
-      );
+      console.warn(`self-test: Windows file lock on mutation child (attempt ${attempt}/${maxAttempts}); retrying`);
       pauseMs(100 * attempt);
     }
     return run;
@@ -852,268 +847,268 @@ function selfTest() {
   const invoke = (args) => invokeResult(args).status;
 
   try {
-  const restoreFixture = Buffer.from("captured original bytes");
-  let restoreAttempts = 0;
-  let sameCapturedBytes = true;
-  restoreCapturedBytes(
-    "restore-control",
-    restoreFixture,
-    (_file, bytes) => {
-      restoreAttempts += 1;
-      sameCapturedBytes &&= bytes === restoreFixture;
-      if (restoreAttempts < 3) throw Object.assign(new Error("temporary open refusal"), { code: "UNKNOWN" });
-    },
-    () => {},
-  );
-  check(
-    "restore retries transient IO using the identical captured buffer",
-    restoreAttempts === 3 && sameCapturedBytes ? 0 : 1,
-    0,
-  );
-  for (const [code, expectedAttempts] of [
-    ["EPERM", RESTORE_RETRY_DELAYS_MS.length + 1],
-    ["EACCES", 1],
-  ]) {
-    let attempts = 0;
-    let thrown;
-    const expectedError = Object.assign(new Error("restore refused"), { code });
-    try {
-      restoreCapturedBytes(
-        "restore-control",
-        restoreFixture,
-        () => {
-          attempts += 1;
-          throw expectedError;
-        },
-        () => {},
-      );
-    } catch (error) {
-      thrown = error;
-    }
+    const restoreFixture = Buffer.from("captured original bytes");
+    let restoreAttempts = 0;
+    let sameCapturedBytes = true;
+    restoreCapturedBytes(
+      "restore-control",
+      restoreFixture,
+      (_file, bytes) => {
+        restoreAttempts += 1;
+        sameCapturedBytes &&= bytes === restoreFixture;
+        if (restoreAttempts < 3) throw Object.assign(new Error("temporary open refusal"), { code: "UNKNOWN" });
+      },
+      () => {},
+    );
     check(
-      `restore ${code} remains failed after exactly ${expectedAttempts} attempt(s)`,
-      thrown === expectedError && attempts === expectedAttempts ? 0 : 1,
+      "restore retries transient IO using the identical captured buffer",
+      restoreAttempts === 3 && sameCapturedBytes ? 0 : 1,
       0,
     );
-  }
-
-  writeFileSync(file, "alpha\n", "utf8");
-  check(
-    "refuses an untracked target",
-    invoke(["--file", file, "--find", "alpha", "--replace", "beta", "--command", "true"]),
-    REFUSED,
-  );
-
-  /*
-   * 🔴 APPEND MODE — THE BYPASS MUST BE EXACTLY ONE GUARD WIDE, AND THESE EXECUTE THAT CLAIM.
-   *
-   * `--append` exists because a sweep has no anchor and guard 2 refuses it, which left the
-   * highest-value shape of control hand-rolled — the shape where a fixture was truncated to two
-   * lines and the control still went red. The danger in adding a mode is that it quietly relaxes
-   * a SECOND guard, and it would then be trusted by everybody who trusts the first.
-   *
-   * So: guard 1 must still refuse an untracked target through the new path, and guard 3 must
-   * still refuse an append that does not change the file. Both are asserted here rather than
-   * argued in a comment, because a comment claiming a guard applies is worth nothing.
-   */
-  check(
-    "APPEND: guard 1 still refuses an untracked target — the bypass is not a second door",
-    invoke(["--file", file, "--append", ".probe { color: red; }", "--command", "true"]),
-    REFUSED,
-  );
-  check(
-    "APPEND: refuses being combined with --find, rather than choosing between them",
-    invoke(["--file", file, "--append", "x", "--find", "alpha", "--replace", "beta", "--command", "true"]),
-    REFUSED,
-  );
-
-  // A tracked file that certainly exists, mutated with an anchor that cannot match.
-  /**
-   * ⚠️ ASSEMBLED AT RUNTIME, AND THE FIRST VERSION OF THIS TEST WENT RED BECAUSE IT WAS NOT.
-   *
-   * It searched for a literal absent-anchor string — which then occurred exactly once, in this
-   * file, because writing the test put it here. The harness matched it, mutated, ran, and correctly
-   * reported a surviving mutant; the self-test read that as a broken refusal.
-   *
-   * **That is guard 2's own defect, committed inside guard 2's test**: the needle was in the
-   * haystack because somebody wrote it there — the same reason a doc comment about a value is so
-   * often the first textual match for it. **A subject that contains its own probe cannot test an
-   * absence.**
-   */
-  const absentAnchor = ["@@", "no", "such", "anchor", "@@"].join("~");
-  check(
-    "refuses a find string matching zero times",
-    invoke(["--file", tracked, "--find", absentAnchor, "--replace", "x", "--command", "true"]),
-    REFUSED,
-  );
-  check(
-    "refuses an ambiguous find string",
-    invoke(["--file", tracked, "--find", "const", "--replace", "let", "--command", "true"]),
-    REFUSED,
-  );
-
-  /**
-   * THE VERDICT CASES, AND WHY THEY ARE HERE RATHER THAN ASSUMED.
-   *
-   * Until 2026-09-05 this self-test walked the three REFUSALS and nothing else,
-   * so the harness shipped for a day with its verdict INVERTED for any command
-   * using `--reporter=dot` — the reporter this repository's own build plans
-   * prescribe. It printed "THE MUTANT SURVIVED" for runs that had gone red, and
-   * a survived mutant is defined here as "no assertion covers this", so the
-   * reading invites somebody to rewrite a guard that works.
-   *
-   * Every guard fired throughout. The conclusion was still wrong, and
-   * "self-test: all guards fire" read as a clean bill of health for the tool.
-   *
-   * These drive the real binary with a stand-in command, so they pin the WIRING.
-   * A unit test of the helpers would not have caught the original defect,
-   * because the original defect had no helper — the verdict was
-   * `names.length === 0` written inline.
-   *
-   * Case 1 is the discriminating one: a non-zero exit with no `×` line is
-   * exactly the dot-reporter shape, and the old code called that survival.
-   */
-  // ⚠️ THE STAND-IN MUST LOOK LIKE WHAT THE DOT REPORTER ACTUALLY EMITS, and the
-  // first version of it did not. It printed a FAIL banner and no `Tests …`
-  // summary — which is precisely the shape of a COLLECT ERROR, where no assertion
-  // executes and INDETERMINATE is the correct verdict. So the case went red
-  // against correct logic, and "fixing" it by loosening the logic would have
-  // re-opened the very defect this round closed.
-  //
-  // A real red run under --reporter=dot prints BOTH lines. Verified against a
-  // genuine failing run earlier tonight:
-  //     Test Files  1 failed (1)
-  //          Tests  1 failed | 6 passed (7)
-  //
-  // 🔴 AND THE INDENTATION BELOW IS LOAD-BEARING. The comment above quotes the real
-  // output correctly, WITH its leading spaces — and the first version of the stand-in
-  // was typed flush left anyway, three lines under its own evidence. That fixture
-  // satisfied a column-0 anchor that real vitest output cannot, so the self-test
-  // passed on a shape the world never produces while the harness returned
-  // INDETERMINATE for every genuine catch.
-  //
-  // ⚠️ **A STAND-IN TYPED BY WHOEVER WROTE THE PARSER AGREES WITH THE PARSER BY
-  // CONSTRUCTION.** Ward Verifier's clause, and it is the rule now: the fixture a
-  // self-test feeds a parser must be captured from the real producer, not typed from
-  // memory. Six spaces, because that is what vitest emits — asserted just below so
-  // this cannot be quietly tidied back to the left margin.
-  const failLine = "FAIL  |node| tests/x.test.ts > d > a name";
-  const failSummary = "      Tests  1 failed | 6 passed (7)";
-  const greenSummary = "      Tests  7 passed (7)";
-  const zeroFailSummary = "      Tests  0 failed | 7 passed (7)";
-  check(
-    "the self-test's own summary fixtures reproduce vitest's leading indentation",
-    [failSummary, greenSummary, zeroFailSummary].every((line) => /^ {6}Tests\b/.test(line)) &&
-      ranTests(failSummary) &&
-      !/^Tests\b/.test(failSummary)
-      ? 0
-      : 1,
-    0,
-  );
-  const verdictCase = (label, command, expected) => {
-    const run = invokeResult([
-      "--file",
-      tracked,
-      "--find",
-      SELF_TEST_ANCHOR,
-      "--replace",
-      "mutated",
-      "--command",
-      command,
-    ]);
-    check(label, run.status, expected);
-    if (expected === 1) {
+    for (const [code, expectedAttempts] of [
+      ["EPERM", RESTORE_RETRY_DELAYS_MS.length + 1],
+      ["EACCES", 1],
+    ]) {
+      let attempts = 0;
+      let thrown;
+      const expectedError = Object.assign(new Error("restore refused"), { code });
+      try {
+        restoreCapturedBytes(
+          "restore-control",
+          restoreFixture,
+          () => {
+            attempts += 1;
+            throw expectedError;
+          },
+          () => {},
+        );
+      } catch (error) {
+        thrown = error;
+      }
       check(
-        `${label} only reports SURVIVED after Guard 3 verified the mutant`,
-        /mutant blob.*\(applied\)/u.test(run.stdout ?? "") ? 0 : 1,
+        `restore ${code} remains failed after exactly ${expectedAttempts} attempt(s)`,
+        thrown === expectedError && attempts === expectedAttempts ? 0 : 1,
         0,
       );
     }
-  };
 
-  let exhaustedApplyAttempts = 0;
-  let exhaustedApplyCommandRan = false;
-  const previousExitCode = process.exitCode;
-  runMutation(
-    {
-      file: tracked,
-      find: SELF_TEST_ANCHOR,
-      replace: "mutated",
-      command: "the command must not run",
-    },
-    {
-      write: (target, bytes, ...writeArgs) => {
-        if (typeof bytes === "string") {
-          exhaustedApplyAttempts += 1;
-          throw Object.assign(new Error("controlled apply refusal"), { code: "UNKNOWN" });
-        }
-        return writeFileSync(target, bytes, ...writeArgs);
-      },
-      runCommand: () => {
-        exhaustedApplyCommandRan = true;
-        return { stdout: "", stderr: "", status: 0 };
-      },
-    },
-  );
-  const exhaustedApplyExit = process.exitCode;
-  process.exitCode = previousExitCode;
-  try {
-    ensureTrackedPristine("in-process exhausted-apply control");
-  } catch (error) {
-    console.error(String(error?.message ?? error));
-    failures += 1;
-  }
-  check(
-    "an exhausted mutant write is INDETERMINATE and never runs the command",
-    exhaustedApplyExit === INDETERMINATE &&
-      exhaustedApplyAttempts === RESTORE_RETRY_DELAYS_MS.length + 1 &&
-      !exhaustedApplyCommandRan
-      ? 0
-      : 1,
-    0,
-  );
+    writeFileSync(file, "alpha\n", "utf8");
+    check(
+      "refuses an untracked target",
+      invoke(["--file", file, "--find", "alpha", "--replace", "beta", "--command", "true"]),
+      REFUSED,
+    );
 
-  /*
-   * 🔴 THE EMPTY CASE, AND IT WENT RED HERE BEFORE IT WAS A REFUSAL — which is the whole argument
-   * for adding self-test cases with the mode rather than after it.
-   *
-   * I expected guard 3 to catch this: it proves the mutant landed by comparing hashes, and
-   * appending nothing should leave the file byte-identical. It does not, because append mode puts
-   * the probe on its own LINE, so an empty probe still appends a newline. The hash changed, guard 3
-   * was satisfied, the command ran, and a verdict came back about a file carrying no mutant.
-   *
-   * Now refused at the CLI boundary. The case is retitled to say what it actually tests, rather
-   * than left claiming a guard that cannot see it.
-   */
-  check(
-    "APPEND: refuses an empty probe, which would otherwise plant only a newline and pass guard 3",
-    invoke(["--file", tracked, "--append", "", "--command", "true"]),
-    REFUSED,
-  );
-  /*
-   * ⚠️ THIS PROBE IS INERT ON PURPOSE AND IT IS NOT A TEMPLATE. TWO REASONS, IN THIS ORDER.
-   *
-   * 🔴 **FIRST, AND IT IS THE ONE I GOT WRONG THE FIRST TIME I WROTE THIS NOTE: "functional" is
-   * UNDEFINED for this probe.** The command here is a canned `node -e` that prints a fabricated
-   * vitest summary and **never reads the target at all**. Nothing inspects the file, so no probe of
-   * any kind could be seen, and the expected `SURVIVED` is correct whatever the payload is. **This
-   * case tests VERDICT PASS-THROUGH, not coverage.** My first version explained the survival by
-   * saying a comment probe survives any gate that does not read comments — true in general,
-   * **false as an account of this case**, and placed exactly where it would be read as one. Ward
-   * Builder Three caught it by reading the case rather than my summary of it.
-   *
-   * **Second, and it is why the payload stays inert rather than being made executable anyway:
-   * `tracked` is THIS FILE.** Appending executable JavaScript to the mutation harness's own source
-   * means that if a run dies between the write and the restore — **the exact incident this tool was
-   * built after, and `finally` does not run on a kill** — the file left on disk is the tool you
-   * would use to recover, carrying executable junk. *"The window is milliseconds"* is precisely the
-   * argument that was available before the incident that created this harness.
-   *
-   * **The imitation hazard is real and is labelled rather than removed: copy the shape, not the
-   * payload.** A probe that the gate under test cannot see reports `SURVIVED` while proving
-   * nothing — but that is a property of the probe-and-gate PAIR, and this case has no gate.
-   */
-  const appendSurvival = invokeResult([
+    /*
+     * 🔴 APPEND MODE — THE BYPASS MUST BE EXACTLY ONE GUARD WIDE, AND THESE EXECUTE THAT CLAIM.
+     *
+     * `--append` exists because a sweep has no anchor and guard 2 refuses it, which left the
+     * highest-value shape of control hand-rolled — the shape where a fixture was truncated to two
+     * lines and the control still went red. The danger in adding a mode is that it quietly relaxes
+     * a SECOND guard, and it would then be trusted by everybody who trusts the first.
+     *
+     * So: guard 1 must still refuse an untracked target through the new path, and guard 3 must
+     * still refuse an append that does not change the file. Both are asserted here rather than
+     * argued in a comment, because a comment claiming a guard applies is worth nothing.
+     */
+    check(
+      "APPEND: guard 1 still refuses an untracked target — the bypass is not a second door",
+      invoke(["--file", file, "--append", ".probe { color: red; }", "--command", "true"]),
+      REFUSED,
+    );
+    check(
+      "APPEND: refuses being combined with --find, rather than choosing between them",
+      invoke(["--file", file, "--append", "x", "--find", "alpha", "--replace", "beta", "--command", "true"]),
+      REFUSED,
+    );
+
+    // A tracked file that certainly exists, mutated with an anchor that cannot match.
+    /**
+     * ⚠️ ASSEMBLED AT RUNTIME, AND THE FIRST VERSION OF THIS TEST WENT RED BECAUSE IT WAS NOT.
+     *
+     * It searched for a literal absent-anchor string — which then occurred exactly once, in this
+     * file, because writing the test put it here. The harness matched it, mutated, ran, and correctly
+     * reported a surviving mutant; the self-test read that as a broken refusal.
+     *
+     * **That is guard 2's own defect, committed inside guard 2's test**: the needle was in the
+     * haystack because somebody wrote it there — the same reason a doc comment about a value is so
+     * often the first textual match for it. **A subject that contains its own probe cannot test an
+     * absence.**
+     */
+    const absentAnchor = ["@@", "no", "such", "anchor", "@@"].join("~");
+    check(
+      "refuses a find string matching zero times",
+      invoke(["--file", tracked, "--find", absentAnchor, "--replace", "x", "--command", "true"]),
+      REFUSED,
+    );
+    check(
+      "refuses an ambiguous find string",
+      invoke(["--file", tracked, "--find", "const", "--replace", "let", "--command", "true"]),
+      REFUSED,
+    );
+
+    /**
+     * THE VERDICT CASES, AND WHY THEY ARE HERE RATHER THAN ASSUMED.
+     *
+     * Until 2026-09-05 this self-test walked the three REFUSALS and nothing else,
+     * so the harness shipped for a day with its verdict INVERTED for any command
+     * using `--reporter=dot` — the reporter this repository's own build plans
+     * prescribe. It printed "THE MUTANT SURVIVED" for runs that had gone red, and
+     * a survived mutant is defined here as "no assertion covers this", so the
+     * reading invites somebody to rewrite a guard that works.
+     *
+     * Every guard fired throughout. The conclusion was still wrong, and
+     * "self-test: all guards fire" read as a clean bill of health for the tool.
+     *
+     * These drive the real binary with a stand-in command, so they pin the WIRING.
+     * A unit test of the helpers would not have caught the original defect,
+     * because the original defect had no helper — the verdict was
+     * `names.length === 0` written inline.
+     *
+     * Case 1 is the discriminating one: a non-zero exit with no `×` line is
+     * exactly the dot-reporter shape, and the old code called that survival.
+     */
+    // ⚠️ THE STAND-IN MUST LOOK LIKE WHAT THE DOT REPORTER ACTUALLY EMITS, and the
+    // first version of it did not. It printed a FAIL banner and no `Tests …`
+    // summary — which is precisely the shape of a COLLECT ERROR, where no assertion
+    // executes and INDETERMINATE is the correct verdict. So the case went red
+    // against correct logic, and "fixing" it by loosening the logic would have
+    // re-opened the very defect this round closed.
+    //
+    // A real red run under --reporter=dot prints BOTH lines. Verified against a
+    // genuine failing run earlier tonight:
+    //     Test Files  1 failed (1)
+    //          Tests  1 failed | 6 passed (7)
+    //
+    // 🔴 AND THE INDENTATION BELOW IS LOAD-BEARING. The comment above quotes the real
+    // output correctly, WITH its leading spaces — and the first version of the stand-in
+    // was typed flush left anyway, three lines under its own evidence. That fixture
+    // satisfied a column-0 anchor that real vitest output cannot, so the self-test
+    // passed on a shape the world never produces while the harness returned
+    // INDETERMINATE for every genuine catch.
+    //
+    // ⚠️ **A STAND-IN TYPED BY WHOEVER WROTE THE PARSER AGREES WITH THE PARSER BY
+    // CONSTRUCTION.** Ward Verifier's clause, and it is the rule now: the fixture a
+    // self-test feeds a parser must be captured from the real producer, not typed from
+    // memory. Six spaces, because that is what vitest emits — asserted just below so
+    // this cannot be quietly tidied back to the left margin.
+    const failLine = "FAIL  |node| tests/x.test.ts > d > a name";
+    const failSummary = "      Tests  1 failed | 6 passed (7)";
+    const greenSummary = "      Tests  7 passed (7)";
+    const zeroFailSummary = "      Tests  0 failed | 7 passed (7)";
+    check(
+      "the self-test's own summary fixtures reproduce vitest's leading indentation",
+      [failSummary, greenSummary, zeroFailSummary].every((line) => /^ {6}Tests\b/.test(line)) &&
+        ranTests(failSummary) &&
+        !/^Tests\b/.test(failSummary)
+        ? 0
+        : 1,
+      0,
+    );
+    const verdictCase = (label, command, expected) => {
+      const run = invokeResult([
+        "--file",
+        tracked,
+        "--find",
+        SELF_TEST_ANCHOR,
+        "--replace",
+        "mutated",
+        "--command",
+        command,
+      ]);
+      check(label, run.status, expected);
+      if (expected === 1) {
+        check(
+          `${label} only reports SURVIVED after Guard 3 verified the mutant`,
+          /mutant blob.*\(applied\)/u.test(run.stdout ?? "") ? 0 : 1,
+          0,
+        );
+      }
+    };
+
+    let exhaustedApplyAttempts = 0;
+    let exhaustedApplyCommandRan = false;
+    const previousExitCode = process.exitCode;
+    runMutation(
+      {
+        file: tracked,
+        find: SELF_TEST_ANCHOR,
+        replace: "mutated",
+        command: "the command must not run",
+      },
+      {
+        write: (target, bytes, ...writeArgs) => {
+          if (typeof bytes === "string") {
+            exhaustedApplyAttempts += 1;
+            throw Object.assign(new Error("controlled apply refusal"), { code: "UNKNOWN" });
+          }
+          return writeFileSync(target, bytes, ...writeArgs);
+        },
+        runCommand: () => {
+          exhaustedApplyCommandRan = true;
+          return { stdout: "", stderr: "", status: 0 };
+        },
+      },
+    );
+    const exhaustedApplyExit = process.exitCode;
+    process.exitCode = previousExitCode;
+    try {
+      ensureTrackedPristine("in-process exhausted-apply control");
+    } catch (error) {
+      console.error(String(error?.message ?? error));
+      failures += 1;
+    }
+    check(
+      "an exhausted mutant write is INDETERMINATE and never runs the command",
+      exhaustedApplyExit === INDETERMINATE &&
+        exhaustedApplyAttempts === RESTORE_RETRY_DELAYS_MS.length + 1 &&
+        !exhaustedApplyCommandRan
+        ? 0
+        : 1,
+      0,
+    );
+
+    /*
+     * 🔴 THE EMPTY CASE, AND IT WENT RED HERE BEFORE IT WAS A REFUSAL — which is the whole argument
+     * for adding self-test cases with the mode rather than after it.
+     *
+     * I expected guard 3 to catch this: it proves the mutant landed by comparing hashes, and
+     * appending nothing should leave the file byte-identical. It does not, because append mode puts
+     * the probe on its own LINE, so an empty probe still appends a newline. The hash changed, guard 3
+     * was satisfied, the command ran, and a verdict came back about a file carrying no mutant.
+     *
+     * Now refused at the CLI boundary. The case is retitled to say what it actually tests, rather
+     * than left claiming a guard that cannot see it.
+     */
+    check(
+      "APPEND: refuses an empty probe, which would otherwise plant only a newline and pass guard 3",
+      invoke(["--file", tracked, "--append", "", "--command", "true"]),
+      REFUSED,
+    );
+    /*
+     * ⚠️ THIS PROBE IS INERT ON PURPOSE AND IT IS NOT A TEMPLATE. TWO REASONS, IN THIS ORDER.
+     *
+     * 🔴 **FIRST, AND IT IS THE ONE I GOT WRONG THE FIRST TIME I WROTE THIS NOTE: "functional" is
+     * UNDEFINED for this probe.** The command here is a canned `node -e` that prints a fabricated
+     * vitest summary and **never reads the target at all**. Nothing inspects the file, so no probe of
+     * any kind could be seen, and the expected `SURVIVED` is correct whatever the payload is. **This
+     * case tests VERDICT PASS-THROUGH, not coverage.** My first version explained the survival by
+     * saying a comment probe survives any gate that does not read comments — true in general,
+     * **false as an account of this case**, and placed exactly where it would be read as one. Ward
+     * Builder Three caught it by reading the case rather than my summary of it.
+     *
+     * **Second, and it is why the payload stays inert rather than being made executable anyway:
+     * `tracked` is THIS FILE.** Appending executable JavaScript to the mutation harness's own source
+     * means that if a run dies between the write and the restore — **the exact incident this tool was
+     * built after, and `finally` does not run on a kill** — the file left on disk is the tool you
+     * would use to recover, carrying executable junk. *"The window is milliseconds"* is precisely the
+     * argument that was available before the incident that created this harness.
+     *
+     * **The imitation hazard is real and is labelled rather than removed: copy the shape, not the
+     * payload.** A probe that the gate under test cannot see reports `SURVIVED` while proving
+     * nothing — but that is a property of the probe-and-gate PAIR, and this case has no gate.
+     */
+    const appendSurvival = invokeResult([
       "--file",
       tracked,
       "--append",
@@ -1121,88 +1116,88 @@ function selfTest() {
       "--command",
       `node -e "console.log('${greenSummary}')"`,
     ]);
-  check(
-    "APPEND: an INERT probe still runs, and the verdict is the command's — see the note above",
-    appendSurvival.status,
-    1,
-  );
-  check(
-    "APPEND: the inert probe only reports SURVIVED after Guard 3 verified it was applied",
-    /mutant blob.*\(applied\)/u.test(appendSurvival.stdout ?? "") ? 0 : 1,
-    0,
-  );
+    check(
+      "APPEND: an INERT probe still runs, and the verdict is the command's — see the note above",
+      appendSurvival.status,
+      1,
+    );
+    check(
+      "APPEND: the inert probe only reports SURVIVED after Guard 3 verified it was applied",
+      /mutant blob.*\(applied\)/u.test(appendSurvival.stdout ?? "") ? 0 : 1,
+      0,
+    );
 
-  verdictCase(
-    "a red run naming no assertion is CAUGHT, not survived (the dot-reporter shape)",
-    `node -e "console.log('${failLine}'); console.log('${failSummary}'); process.exit(1)"`,
-    0,
-  );
-  verdictCase(
-    "a green run is still SURVIVED (this was not made to always say caught)",
-    `node -e "console.log('${greenSummary}')"`,
-    1,
-  );
-  verdictCase(
-    "a reused gate receipt is INDETERMINATE, neither caught nor survived",
-    `node -e "console.log('[gate-receipts] REUSED, a reused receipt, not a fresh run')"`,
-    INDETERMINATE,
-  );
+    verdictCase(
+      "a red run naming no assertion is CAUGHT, not survived (the dot-reporter shape)",
+      `node -e "console.log('${failLine}'); console.log('${failSummary}'); process.exit(1)"`,
+      0,
+    );
+    verdictCase(
+      "a green run is still SURVIVED (this was not made to always say caught)",
+      `node -e "console.log('${greenSummary}')"`,
+      1,
+    );
+    verdictCase(
+      "a reused gate receipt is INDETERMINATE, neither caught nor survived",
+      `node -e "console.log('[gate-receipts] REUSED, a reused receipt, not a fresh run')"`,
+      INDETERMINATE,
+    );
 
-  /**
-   * ⚠️ THE INVERSE CASES, AND WARD VERIFIER IS RIGHT THAT THEY ARE THE ONLY ONES
-   * THAT DISCRIMINATE.
-   *
-   * The three cases above assert that a red run is reported CAUGHT. **They pass
-   * just as happily on the broken version**, because the broken version said
-   * CAUGHT for every non-zero exit. A forward probe cannot separate "reports
-   * caught correctly" from "reports caught always" — so it proved nothing about
-   * the very property it looked like it was proving.
-   *
-   * These four fail on the broken version and pass on the fixed one. That is what
-   * makes them a test rather than a demonstration.
-   */
-  verdictCase(
-    "INVERSE: a non-zero exit with NO output is INDETERMINATE, not caught",
-    `node -e "process.exit(1)"`,
-    INDETERMINATE,
-  );
-  verdictCase(
-    "INVERSE: the heavy-run lease marker is INDETERMINATE, not caught",
-    `node -e "console.log('DATABASE_HEAVY_RUN_ADMISSION_BUSY'); process.exit(75)"`,
-    INDETERMINATE,
-  );
-  verdictCase(
-    "INVERSE: a non-zero exit that collected no tests is INDETERMINATE, not caught",
-    `node -e "console.log('${failLine}'); process.exit(1)"`.replace(failLine, "Test Files  1 failed (1)"),
-    INDETERMINATE,
-  );
-  /*
-   * THE CASE THAT PROVES THE BROWSER-GATE FIX, rather than only proving nothing broke.
-   *
-   * A browser gate emits no vitest summary. Before `ranEvidence` this exact shape - non-zero exit,
-   * an assertion message, no `Tests` line - was reported INDETERMINATE, i.e. a caught mutant
-   * reported as one that never ran. Ward Builder Three hit it on a real production build.
-   *
-   * The fixture carries an ASSERTION LINE and deliberately not a fabricated Playwright summary:
-   * the property under test is "there is evidence a test executed", and an assertion message is
-   * that evidence in any runner. Inventing another runner's summary format from memory is the
-   * stand-in-typed-by-the-parser-author failure this file has already been caught by once.
-   */
-  verdictCase(
-    "a browser gate with no vitest summary but a real assertion is CAUGHT, not indeterminate",
-    `node -e "console.log('AssertionError: the confirmed group no longer carries exactly these columns'); process.exit(1)"`,
-    0,
-  );
+    /**
+     * ⚠️ THE INVERSE CASES, AND WARD VERIFIER IS RIGHT THAT THEY ARE THE ONLY ONES
+     * THAT DISCRIMINATE.
+     *
+     * The three cases above assert that a red run is reported CAUGHT. **They pass
+     * just as happily on the broken version**, because the broken version said
+     * CAUGHT for every non-zero exit. A forward probe cannot separate "reports
+     * caught correctly" from "reports caught always" — so it proved nothing about
+     * the very property it looked like it was proving.
+     *
+     * These four fail on the broken version and pass on the fixed one. That is what
+     * makes them a test rather than a demonstration.
+     */
+    verdictCase(
+      "INVERSE: a non-zero exit with NO output is INDETERMINATE, not caught",
+      `node -e "process.exit(1)"`,
+      INDETERMINATE,
+    );
+    verdictCase(
+      "INVERSE: the heavy-run lease marker is INDETERMINATE, not caught",
+      `node -e "console.log('DATABASE_HEAVY_RUN_ADMISSION_BUSY'); process.exit(75)"`,
+      INDETERMINATE,
+    );
+    verdictCase(
+      "INVERSE: a non-zero exit that collected no tests is INDETERMINATE, not caught",
+      `node -e "console.log('${failLine}'); process.exit(1)"`.replace(failLine, "Test Files  1 failed (1)"),
+      INDETERMINATE,
+    );
+    /*
+     * THE CASE THAT PROVES THE BROWSER-GATE FIX, rather than only proving nothing broke.
+     *
+     * A browser gate emits no vitest summary. Before `ranEvidence` this exact shape - non-zero exit,
+     * an assertion message, no `Tests` line - was reported INDETERMINATE, i.e. a caught mutant
+     * reported as one that never ran. Ward Builder Three hit it on a real production build.
+     *
+     * The fixture carries an ASSERTION LINE and deliberately not a fabricated Playwright summary:
+     * the property under test is "there is evidence a test executed", and an assertion message is
+     * that evidence in any runner. Inventing another runner's summary format from memory is the
+     * stand-in-typed-by-the-parser-author failure this file has already been caught by once.
+     */
+    verdictCase(
+      "a browser gate with no vitest summary but a real assertion is CAUGHT, not indeterminate",
+      `node -e "console.log('AssertionError: the confirmed group no longer carries exactly these columns'); process.exit(1)"`,
+      0,
+    );
 
-  verdictCase(
-    "INVERSE: a green run printing a ZERO-failure summary is SURVIVED, not caught",
-    `node -e "console.log('${zeroFailSummary}')"`,
-    1,
-  );
+    verdictCase(
+      "INVERSE: a green run printing a ZERO-failure summary is SURVIVED, not caught",
+      `node -e "console.log('${zeroFailSummary}')"`,
+      1,
+    );
 
-  rmSync(dir, { recursive: true, force: true });
-  console.log(failures === 0 ? "\nself-test: all guards fire" : `\nself-test: ${failures} RED`);
-  process.exitCode = failures === 0 ? 0 : 1;
+    rmSync(dir, { recursive: true, force: true });
+    console.log(failures === 0 ? "\nself-test: all guards fire" : `\nself-test: ${failures} RED`);
+    process.exitCode = failures === 0 ? 0 : 1;
   } finally {
     // Always put the harness file back — even when a mid-suite child exhausted restore retries.
     try {

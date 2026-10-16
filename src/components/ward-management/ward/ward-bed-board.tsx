@@ -14,6 +14,7 @@ import {
 
 import { bedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-bed-board.module.css";
 
 /** One referral waiting for this ward's answer that the board can place in a bed. */
@@ -207,7 +208,9 @@ function cellLabel(
         : bed.status === "incoming"
           ? `pulled${alias ? `, ${alias}` : ""}`
           : `${alias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
-  return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${fits ? ", fits" : ""}`;
+  // D-64: the cell shows the short criteria led discharge tag, and the full phrase is spoken and in the tooltip.
+  const criteria = bed.criteriaLedChip ? `, ${bed.criteriaLedChip.phrase}` : "";
+  return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${criteria}${fits ? ", fits" : ""}`;
 }
 
 function matchesQuery(bed: BedItem, query: string): boolean {
@@ -402,7 +405,10 @@ export function WardBedBoard({
                         onBedPress(bed);
                       }}
                     >
-                      <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>
+                      <span className={styles.cellTop}>
+                        <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>
+                        {bed.criteriaLedChip ? <CriteriaLedTag chip={bed.criteriaLedChip} short /> : null}
+                      </span>
                       <span className={styles.cellState}>
                         {glyph ? (
                           <StatusGlyph tone={glyph} size={10} />

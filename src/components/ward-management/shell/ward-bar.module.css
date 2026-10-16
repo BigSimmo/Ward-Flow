@@ -33,7 +33,7 @@
   top: 0;
   z-index: 30;
   display: flex;
-  flex-wrap: nowrap !important;
+  flex-wrap: nowrap;
   flex-shrink: 0;
   align-items: center;
   gap: 10px;
@@ -1467,51 +1467,51 @@
 
 .drawerBackdrop {
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
-  background: var(--wf-scrim) !important;
-  backdrop-filter: none !important;
+  background: var(--wf-scrim);
+  backdrop-filter: none;
 }
 
 .drawerSheet {
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   /* Frame (edge, radius, shadow, inset) belongs to the shared Sheet; this sets only the content
      tone, so white cards read against a quiet grey body as in the drawing. */
-  background: var(--wf-surface-2) !important;
+  background: var(--wf-surface-2);
   font-family: var(--wf-font);
   font-size: var(--t-1);
   color: var(--wf-ink-1);
 }
 
 .drawerSheetWide {
-  max-width: min(calc(100vw - 1.5rem), 31rem) !important;
-  overflow-x: hidden !important;
+  max-width: min(calc(100vw - 1.5rem), 31rem);
+  overflow-x: hidden;
 }
 
 .drawerSheetReferral {
   /* Option B (8 Oct 2026): room for the form and the Ready to send rail. */
-  width: min(calc(100vw - 1.5rem), 64rem) !important;
-  max-width: min(calc(100vw - 1.5rem), 64rem) !important;
-  overflow-x: hidden !important;
+  width: min(calc(100vw - 1.5rem), 64rem);
+  max-width: min(calc(100vw - 1.5rem), 64rem);
+  overflow-x: hidden;
 }
 
 .drawerSheetTasks {
-  max-width: min(calc(100vw - 1.5rem), 34rem) !important;
+  max-width: min(calc(100vw - 1.5rem), 34rem);
 }
 
 .drawerHeader {
   flex-shrink: 0;
-  gap: 12px !important;
-  padding: 12px 12px 10px 16px !important;
-  border-bottom: 0 !important;
+  gap: 12px;
+  padding: 12px 12px 10px 16px;
+  border-bottom: 0;
   background: transparent;
 }
 
 .drawerTitle {
   font-family: var(--wf-font);
-  font-size: var(--t-4) !important;
+  font-size: var(--t-4);
   line-height: 22px;
-  font-weight: 600 !important;
+  font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--wf-ink-1) !important;
+  color: var(--wf-ink-1);
 }
 
 /* The drawer's own icon: a small framed tile, ink not colour. */
@@ -1593,15 +1593,15 @@
   display: grid;
   align-content: start;
   gap: 12px;
-  padding: 2px 16px 16px !important;
+  padding: 2px 16px 16px;
   background: transparent;
 }
 
 .tasksCarrierBody {
   display: flex;
   flex-direction: column;
-  padding: 0 !important;
-  overflow: hidden !important;
+  padding: 0;
+  overflow: hidden;
 }
 
 .tasksBody {
@@ -1616,16 +1616,16 @@
 }
 
 .referralCarrierBody {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  padding: 0 !important;
-  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 .drawerFooter {
-  padding: 10px 16px !important;
-  border-top: 1px solid var(--wf-line) !important;
+  padding: 10px 16px;
+  border-top: 1px solid var(--wf-line);
   background: transparent;
 }
 
@@ -2299,8 +2299,8 @@
   .drawerSheetWide,
   .drawerSheetTasks,
   .drawerSheetReferral {
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: 100vw;
+    max-width: 100vw;
   }
 
   .drawerSummary > div {
@@ -3339,12 +3339,12 @@
    search, tasks) stays above the referral hero as in the mockup. */
 @media (max-width: 48rem) {
   .drawerBackdrop:has(> .drawerSheetReferral) {
-    top: var(--wf-header-height, 3.5rem) !important;
+    top: var(--wf-header-height, 3.5rem);
   }
 
   /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
   .drawerSheetReferral {
-    border-radius: 0 !important;
+    border-radius: 0;
   }
 }
 

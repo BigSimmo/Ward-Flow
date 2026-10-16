@@ -619,6 +619,16 @@
     min-height: var(--spacing-tap, 3rem);
   }
 
+  /* A select on its own line under its label, so a long choice is not cut off. 16px stops iOS
+     Safari zooming the page when the select is tapped. */
+  .phoneKv .kvWide {
+    grid-column: 1 / -1;
+  }
+
+  .phoneKv .kvWide .select {
+    font-size: var(--wf-fs-16);
+  }
+
   .phoneSheet .editor {
     padding: var(--wf-s-2) 0 0;
   }
@@ -674,4 +684,12 @@
     min-height: auto;
     overflow: visible;
   }
+}
+
+/* D-64: the criteria led discharge state beside "Record that they have left". */
+.footCriteria {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
 }

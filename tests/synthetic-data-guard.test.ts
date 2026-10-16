@@ -130,4 +130,35 @@ describe("synthetic-data-guard", () => {
     expect(redactCaptionIdentifiers("Patient UMRN-1234567 admitted")).toBe("Patient [id] admitted");
     expect(redactCaptionIdentifiers("Patient UMRN1234567 admitted")).toBe("Patient [id] admitted");
   });
+
+  it("detects real 8-digit UMRN values in record fields", () => {
+    const payload = { umrn: "12345678" };
+    const result = checkSyntheticPayload(payload);
+    expect(result.safe).toBe(false);
+    if (!result.safe) {
+      expect(result.reason).toContain("hospital record number");
+    }
+  });
+
+  it("permits only the exact synthetic identifier shape the demo fixtures generate", () => {
+    const payload = {
+      umrn: "SYNTHETIC-12345678",
+      notes: "Demo patient SYNTHETIC-87654321 admitted.",
+      wardUmrn: "UM100093",
+    };
+    const result = checkSyntheticPayload(payload);
+    expect(result.safe).toBe(true);
+  });
+
+  it("does not let a demo or synthetic word hide a real-looking identifier", () => {
+    for (const note of [
+      "call demo 0412 345 678",
+      "Synthetic 2123456781",
+      "demo UMRN-1234567",
+      "DEMO-0412345678",
+      "SYNTHETIC-UMRN-1234567",
+    ]) {
+      expect(checkSyntheticPayload({ note }).safe).toBe(false);
+    }
+  });
 });

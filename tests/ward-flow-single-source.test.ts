@@ -120,6 +120,8 @@ const NOW_ANCHOR_ALLOWLIST = new Set([
   // synthetic time as an offset from the anchor, and is shifted onto the live clock by the reducer.
   "src/components/ward-management/ward-demo-network.ts",
   "src/components/ward-management/ward-flow-provider.tsx", // the provider, which reads it once to derive the live `now`
+  // The saved-session read and write, moved out of the provider unchanged: it compares a saved clock with the anchor.
+  "src/components/ward-management/ward-flow-demo-storage.ts",
   // Added 2026-08-30 for Task 1. RESET_SCENARIO and SET_SCENARIO re-seed from a fixture authored
   // at NOW_ANCHOR, so the reducer must know that anchor to shift the fresh seed onto the demo's
   // current now - otherwise a reset mid-demonstration hands back predictions already lapsed

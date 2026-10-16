@@ -662,7 +662,7 @@ export function WardDailySheet({
                       {target.region}
                       <span className={styles.visuallyHidden}>: </span>
                     </span>
-                    <span className={styles.rowLine} style={{ display: "block" }}>
+                    <span className={`${styles.rowLine} ${styles.rowLineBlock}`}>
                       <span style={TNUM}>{target.count}</span> {target.count === 1 ? "person" : "people"}, soonest{" "}
                       {target.nearestDays === 0 ? (
                         "due now or overdue"

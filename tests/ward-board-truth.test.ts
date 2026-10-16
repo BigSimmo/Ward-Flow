@@ -29,7 +29,9 @@ describe("the bed board offers only what the reducer accepts", () => {
     }
     // Both answers must occur, or this agreement proves nothing about the refusal half.
     expect(allowed, "no seeded movement can arrive, so the accepting half is untested").toBeGreaterThan(0);
-    expect(allowed, "every seeded movement can arrive, so the refusing half is untested").toBeLessThan(candidates.length);
+    expect(allowed, "every seeded movement can arrive, so the refusing half is untested").toBeLessThan(
+      candidates.length,
+    );
   });
 });
 

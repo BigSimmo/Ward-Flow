@@ -74,7 +74,9 @@ describe("a saved day that holds audit rows survives a reload", () => {
   });
 
   it("still refuses an audit row numbered beyond auditSequence, or numbered 0", () => {
-    const audited = JSON.parse(JSON.stringify(wardFlowReducer(seedWardFlowStateAt(0), { ...legalEvent, now: NOW_ANCHOR })));
+    const audited = JSON.parse(
+      JSON.stringify(wardFlowReducer(seedWardFlowStateAt(0), { ...legalEvent, now: NOW_ANCHOR })),
+    );
     expect(audited.auditSequence).toBe(1);
     expect(isValidStoredWardFlowState(audited)).toBe(true);
 

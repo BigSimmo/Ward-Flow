@@ -22,7 +22,7 @@
   },
   "open_questions": [
     {
-      "issue_id": "WF-01",
+      "issue_id": "OQ-01",
       "priority": "P0",
       "subject": "Synthetic production substitution",
       "finding": "Ward Flow's bed and designation fixtures are invented; held field is inert.",
@@ -35,7 +35,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-02",
+      "issue_id": "OQ-02",
       "priority": "P0",
       "subject": "Team vocabulary is not an active registry",
       "finding": "Picker is derived from 2015 rows, 71 strings normalised to 65 names. Ten separate region-team entries are explicitly synthetic.",
@@ -48,7 +48,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-03",
+      "issue_id": "OQ-03",
       "priority": "P0",
       "subject": "Lynwood child catchment conflict",
       "finding": "2025 CAHS schedule lists Swan; 2026 Fremantle page lists Fremantle.",
@@ -64,7 +64,7 @@
       "decision_date": "2026-09-17"
     },
     {
-      "issue_id": "WF-04",
+      "issue_id": "OQ-04",
       "priority": "P0",
       "subject": "Butler / Wanneroo split",
       "finding": "Current directory has both clinics. Oct 2023 catchment table provides a single broad Wanneroo/Joondalup area.",
@@ -79,7 +79,7 @@
       "decision_date": "2026-09-17"
     },
     {
-      "issue_id": "WF-05",
+      "issue_id": "OQ-05",
       "priority": "P0",
       "subject": "FSFHG three geographic CTTs",
       "finding": "Fremantle, Cockburn and Melville CTTs share a broad published Fremantle area; individual boundaries not found.",
@@ -92,7 +92,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-06",
+      "issue_id": "OQ-06",
       "priority": "P0",
       "subject": "Armadale adult and older boundaries",
       "finding": "LGA-level service description found, but complete current approved adult suburb schedule not established.",
@@ -107,7 +107,7 @@
       "decision_date": "2026-09-17"
     },
     {
-      "issue_id": "WF-07",
+      "issue_id": "OQ-07",
       "priority": "P0",
       "subject": "Graylands capacity disagreement",
       "finding": "Aug 2026 page: 109 = 51 acute + 58 extended. Mar 2026 inpatient page: 122 = 53 + 69.",
@@ -123,7 +123,7 @@
       "decision_date": "2026-09-17"
     },
     {
-      "issue_id": "WF-08",
+      "issue_id": "OQ-08",
       "priority": "P0",
       "subject": "SCGH denominator disagreement",
       "finding": "30 inpatient + 8 observation in one page; 36 aggregate on another.",
@@ -136,7 +136,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-09",
+      "issue_id": "OQ-09",
       "priority": "P0",
       "subject": "Fremantle staged opening",
       "finding": "104 is post-expansion facility capacity. Ten Boodalung beds confirmed open. All 40 expansion beds not independently confirmed operational.",
@@ -149,7 +149,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-10",
+      "issue_id": "OQ-10",
       "priority": "P0",
       "subject": "Cockburn reconfiguration",
       "finding": "75 building beds is not a reliable current acute MH total after a ward's care-awaiting-placement conversion.",
@@ -162,7 +162,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-11",
+      "issue_id": "OQ-11",
       "priority": "P0",
       "subject": "PCH / Nickoll duplication",
       "finding": "One 20-bed CAHS service across two sites. Historical 8/12 split not a second 12-bed service.",
@@ -175,7 +175,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-12",
+      "issue_id": "OQ-12",
       "priority": "P1",
       "subject": "Bentley individual wards",
       "finding": "Aug 2026 profile supplies 50 adult, 26 older, 12 EMyU. Full current ward-level breakdown not found.",
@@ -188,7 +188,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-13",
+      "issue_id": "OQ-13",
       "priority": "P1",
       "subject": "Armadale HDU double-counting",
       "finding": "33 adult beds explicitly includes high-dependency beds. Moodjar/Karri/Yorgum split not established.",
@@ -201,7 +201,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-14",
+      "issue_id": "OQ-14",
       "priority": "P1",
       "subject": "Joondalup omitted / 102 physical capacity",
       "finding": "Repo treats Joondalup as ED feeder. Current provider describes 102-bed mental health facility.",
@@ -214,7 +214,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-15",
+      "issue_id": "OQ-15",
       "priority": "P1",
       "subject": "Fiona Stanley adult count",
       "finding": "Youth 14 and MBU 8 verified. Adult-unit current number not independently established.",
@@ -227,7 +227,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-16",
+      "issue_id": "OQ-16",
       "priority": "P1",
       "subject": "Rockingham older published numbers",
       "finding": "30-bed configuration is supported by a 2010 official opening source; not a current operational bed list.",
@@ -240,7 +240,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-17",
+      "issue_id": "OQ-17",
       "priority": "P1",
       "subject": "Older-adult geography and NMHS 56 total",
       "finding": "Older community service existence established, but separate approved catchments and Selby/Osborne individual ward capacities not all found.",
@@ -253,7 +253,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-18",
+      "issue_id": "OQ-18",
       "priority": "P1",
       "subject": "Private ward-level census",
       "finding": "Perth Clinic 100, Marian 69, Abbotsford 77 published aggregate. Hollywood 101 comes from 2020 opening.",
@@ -266,7 +266,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-19",
+      "issue_id": "OQ-19",
       "priority": "P0",
       "subject": "Host campus versus clinical operator",
       "finding": "Nickoll is CAHS at Hollywood; Mt Lawley changes to EMHS from Sep 1; JHC and Midland public care are privately operated.",
@@ -279,7 +279,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-20",
+      "issue_id": "OQ-20",
       "priority": "P0",
       "subject": "ED hours and false ED records",
       "finding": "Murdoch changes to 08:00–22:00 from Sep 1. Cockburn explicitly has no emergency service. Future SJOG Subiaco ED opening not established.",
@@ -292,7 +292,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-21",
+      "issue_id": "OQ-21",
       "priority": "P1",
       "subject": "Raw locality spelling / partial suburbs",
       "finding": "Examples Nirinba, North Dandelup, Wannunup, Willeton, Warnboro, Pinjarra/Carcoola and split Keralup.",
@@ -305,7 +305,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-22",
+      "issue_id": "OQ-22",
       "priority": "P1",
       "subject": "CAMHS contact and postcode conflicts",
       "finding": "Fremantle phone changed between schedule and clinic page. Bibra Lake 6163 versus 6153; current geographic clinic index has nine sites.",
@@ -318,7 +318,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-23",
+      "issue_id": "OQ-23",
       "priority": "P0",
       "subject": "No live availability or legal designation feed",
       "finding": "Public website counts cannot establish beds open now, staffing, allocation, transfer acceptance, sex configuration or current legal authorisation.",
@@ -331,7 +331,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-24",
+      "issue_id": "OQ-24",
       "priority": "P1",
       "subject": "Research scope is not whole-state completeness",
       "finding": "This package is Perth metro plus Peel and selected statewide interfaces. It is not every regional team, NGO program or every private ward.",
@@ -344,7 +344,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-25",
+      "issue_id": "OQ-25",
       "priority": "High",
       "subject": "Stirling parent versus clinic identity",
       "finding": "Stirling is a supported umbrella; existing five-clinic list omitted the parent. Exact local identifier behind user term Stirling CMHT is unresolved.",
@@ -357,7 +357,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-26",
+      "issue_id": "OQ-26",
       "priority": "High",
       "subject": "Mixed service hierarchy counted as teams",
       "finding": "Geographic areas, physical clinics, cohorts, ATT/CTT functions and specialist programmes must not be flattened into a misleading team count.",
@@ -370,7 +370,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-27",
+      "issue_id": "OQ-27",
       "priority": "High",
       "subject": "Child community versus inpatient age thresholds",
       "finding": "Community CAMHS under 18 is not PCH inpatient under 16; Nickoll selected 14–15.",
@@ -383,7 +383,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-28",
+      "issue_id": "OQ-28",
       "priority": "High",
       "subject": "Older-adult threshold is service-specific",
       "finding": "City older adult publishes 45 for Aboriginal/Torres Strait Islander people; FOAMHS 55 plus self-identification. No universal Aboriginal threshold.",
@@ -396,7 +396,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-29",
+      "issue_id": "OQ-29",
       "priority": "High",
       "subject": "Postcode field contradictions",
       "finding": "Bibra Lake 6163 vs 6153; Kenwick 6107 vs 6108; Thornlie 6108 vs 6107 between schedule and clinic pages.",
@@ -409,7 +409,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-30",
+      "issue_id": "OQ-30",
       "priority": "High",
       "subject": "ED live-labelled source stale",
       "finding": "Fetched official ED page carried 11 August 2026 02:15 data during September review.",
@@ -422,7 +422,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-31",
+      "issue_id": "OQ-31",
       "priority": "High",
       "subject": "Fremantle MHCC versus ATT transition",
       "finding": "V Block newer MHCC page versus W Block older ATT 08–20 page; project 24/7 promise does not settle current actual hours.",
@@ -435,7 +435,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-32",
+      "issue_id": "OQ-32",
       "priority": "High",
       "subject": "Joondalup design versus operation",
       "finding": "Architect supplies 102-room breakdown with swing capacity, not current operational ward IDs or staffed allocation.",
@@ -448,7 +448,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-33",
+      "issue_id": "OQ-33",
       "priority": "High",
       "subject": "Older-adult source acquisition gap",
       "finding": "112 undated NMHS older-adult locality rows now text-extracted. Effective-date confirmation, fresh visual table verification and operational ratification remain outstanding.",
@@ -462,7 +462,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-34",
+      "issue_id": "OQ-34",
       "priority": "High",
       "subject": "No fresh PDF visual validation",
       "finding": "New screenshot attempts failed. Parsed text and inherited structured rows were checked, but layout-sensitive completeness still needs page-image validation.",
@@ -475,7 +475,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-35",
+      "issue_id": "OQ-35",
       "priority": "High",
       "subject": "Public-source contact and page mirrors",
       "finding": "A recently crawled mirror can contain older contacts than another official page. Contacts are not call-tested and review status must be field-specific.",
@@ -488,7 +488,7 @@
       "automatic_routing_approved": false
     },
     {
-      "issue_id": "WF-36",
+      "issue_id": "OQ-36",
       "priority": "High",
       "subject": "OCP authorisation reference outdated for operational use",
       "finding": "PriorOctober 2025 legal register is not a currentSeptember 2026 authorisation attestation. Lock status is not legal authority.",
@@ -658,7 +658,7 @@
       "issue_id": "GEO-BUTLER-WANNEROO",
       "priority": "P0",
       "subject": "Butler/Wanneroo tip over-collapse",
-      "finding": "Tip over-collapses; public split contested WF-04.",
+      "finding": "Tip over-collapses; public split contested.",
       "status": "decision_applied_awaiting_hsp_ratification",
       "layer": "phase1_pack",
       "operational_use_approved": false,
@@ -670,7 +670,7 @@
       "issue_id": "GEO-ALMA-CTT",
       "priority": "P0",
       "subject": "Alma Street CTT-grain overclaim",
-      "finding": "FSFHG three CTTs lack published individual boundaries WF-05.",
+      "finding": "FSFHG three CTTs lack published individual boundaries.",
       "status": "decision_applied",
       "layer": "phase1_pack",
       "operational_use_approved": false,

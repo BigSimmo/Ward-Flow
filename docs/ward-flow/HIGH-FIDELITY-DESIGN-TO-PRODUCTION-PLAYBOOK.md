@@ -1,6 +1,6 @@
 # High-Fidelity Design to Production Playbook
 
-> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/HOW-WE-WORK.md` and `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`.** Kept for historical reference; do not follow.
+> **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/HOW-WE-WORK.md` and `design/third-edition-mockups/WARD-FLOW-DESIGN-SYSTEM.md`.** Kept for historical reference; do not follow.
 > **Active operating rules:** Numerical scoring and 4-tier verification ladders are inactive (`SCREEN-DEFINITION-OF-DONE.md`). Mockups are served via `node scripts/ward-flow/serve-mockups.mjs` (not ad-hoc Python/Vite servers). The Owner's September 17 and 21 UI speed rules (single desktop light view by default) strictly govern.
 
 ## The Standard Operating Procedure for Creating, Scoring, Adversarially Iterating, and Engineering Production Screens
@@ -71,7 +71,7 @@ When moving from design to code, conflicting incentives often produce either a b
 
 ## Phase 1: High-Fidelity Mockup Engineering
 
-Every screen begins as a standalone, zero-dependency HTML/CSS document in `docs/ward-flow/mockups/`. This isolates visual iteration from complex Next.js compilation, enabling instantaneous previewing, pixel-level manipulation, and ruthless scrutiny.
+Every screen begins as a standalone, zero-dependency HTML/CSS document in `design/third-edition-mockups/`. This isolates visual iteration from complex Next.js compilation, enabling instantaneous previewing, pixel-level manipulation, and ruthless scrutiny.
 
 ### 1. The Serving Requirement (Never Use `file://`)
 
@@ -521,7 +521,7 @@ To prevent "stale-truth decay" (where a screen was verified once, edited later, 
 ```json
 {
   "screen": "movements",
-  "drawing": "docs/ward-flow/mockups/movement-third-edition.html",
+  "drawing": "design/third-edition-mockups/movement-third-edition.html",
   "drawingHash": "sha256-a1b2c3d4e5f6...",
   "verifiedDate": "2026-09-14",
   "verifiedBy": "Engineering & Visual System",
@@ -543,7 +543,7 @@ Run `node scripts/ward-flow/generate-screen-verification-md.mjs` (if configured)
 
 Before closing any screen design or build task, verify every box:
 
-- [ ] **1. Mockup Provenance**: High-fidelity HTML mockup exists in `docs/ward-flow/mockups/` and was served via HTTP.
+- [ ] **1. Mockup Provenance**: High-fidelity HTML mockup exists in `design/third-edition-mockups/` and was served via HTTP.
 - [ ] **2. 100-Point Score >= 9.5**: Evaluated against the rubric with zero fatal flaws.
 - [ ] **3. Dual-Agent Audit Passed**: Adversarial Auditor and Design Systems Investigator findings addressed.
 - [ ] **4. Panel Structure Matches**: Panel order, panel types, and tab behaviors match the mockup.

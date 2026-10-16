@@ -690,7 +690,7 @@
 }
 
 /* Patient-drawer header line (site / legal status / urgency), per
-   docs/ward-flow/mockups/emergency-department-third-edition.html ~2985-2993
+   design/third-edition-mockups/emergency-department-third-edition.html ~2985-2993
    (`.fresh { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono);
    font-size: var(--t-0); color: var(--muted); white-space: normal; flex-basis: 100%; line-height:
    1.4; }`) — the drawing pairs it with .meta on the same element in exactly this .popHead context
@@ -1119,7 +1119,7 @@
 }
 
 /* Numeric/identifier columns (Identifier, In department): right-aligned tabular figures, per
-   docs/ward-flow/mockups/emergency-department-third-edition.html ~2519-2529
+   design/third-edition-mockups/emergency-department-third-edition.html ~2519-2529
    (`.dataTable .n, .dataTable th.n { text-align: right; font-family: var(--mono);
    font-variant-numeric: tabular-nums; white-space: nowrap; }` / `.dataTable td.n { color:
    var(--ink); }`) — scoped under .boardTable so it only ever touches this board's cells. */
@@ -1268,7 +1268,7 @@
 }
 
 .formMenu[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .formMenu button {
@@ -2788,7 +2788,7 @@
 }
 
 /* Patient-drawer body layout, per
-   docs/ward-flow/mockups/emergency-department-third-edition.html ~3193-3197
+   design/third-edition-mockups/emergency-department-third-edition.html ~3193-3197
    (`.popBody { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }`).
    .pxBody above already sets align-content: start, which is otherwise a no-op without a flex/grid
    display — this activates it, and the single minmax(0, 1fr) column clamps a wide child so it
@@ -3267,7 +3267,7 @@
 .sectionHeading {
   width: 100%;
   padding: 10px 16px;
-  margin: 0 !important;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -5284,4 +5284,16 @@
     background: CanvasText;
     forced-color-adjust: none;
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.inboxName {
+  font-size: 0.85rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.umrnNote {
+  font-size: 0.82rem;
+  color: var(--muted);
 }

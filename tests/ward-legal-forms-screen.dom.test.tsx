@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { ToastProvider } from "@/components/wf";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
+import { RecordFormSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import {
   legalFormBreakdown,
   legalFormGroupRows,
@@ -9,8 +12,9 @@ import {
 import { actPeriodFor } from "@/components/ward-management/legal-forms/act-periods-demo";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -266,7 +270,93 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(dimmed).toBe(before - noDeadline.length);
     expect(screen.getByText(`${noDeadline.length} of ${rows.length} highlighted, all rows stay`)).toBeInTheDocument();
   });
+
+  it("offers Undo on the toast after extending a breached form, and restores the deadline when Undo is pressed", () => {
+    const target = withDeadline[0]!;
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <AdvanceClock minutes={240} />
+          <LegalFormsScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
+    fireEvent.click(within(row).getAllByRole("button")[0]!);
+    const panel = screen.getByTestId("ward-legal-selected");
+    expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
+    fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
+
+    expect(within(panel).getByText("until the typed expiry")).toBeInTheDocument();
+    const undoBtn = screen.getByRole("button", { name: "Undo" });
+    fireEvent.click(undoBtn);
+    expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
+    expect(screen.getByText("Form extension undone.")).toBeInTheDocument();
+  });
+
+  it("blocks Form 3C on a movement that arrived on Form 3D in Record a form and keeps the sheet open", () => {
+    const on3D = openMovements.find((movement) => movement.legalForm?.code === "3D");
+    if (!on3D) throw new Error("the fixture no longer carries an open movement on Form 3D");
+    let closed = false;
+    render(
+      <RecordFormSheet
+        open
+        onClose={() => {
+          closed = true;
+        }}
+        draft={{ form: "3C", movement: on3D.id }}
+        onDraft={() => undefined}
+        openMovements={openMovements}
+        labelOf={(movement) => movement.id}
+        now={NOW_ANCHOR}
+      />,
+    );
+    const sheet = screen.getByTestId("ward-legal-record");
+    fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "20:00" } });
+
+    const confirm = screen.getByTestId("ward-legal-forms-register-confirm");
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    expect(confirm).toHaveAttribute("title", "Form 3C is refused when the person arrived on a Form 3D.");
+    fireEvent.click(confirm);
+    expect(closed).toBe(false);
+  });
+
+  it("disables Record next form and Extend recorded form with a reason when the active desk role is not allowed", () => {
+    const target = withDeadline[0]!;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AdvanceClock minutes={240} />
+        <LegalFormsScreen />
+      </WardFlowProvider>,
+    );
+    setDeskRole("officer");
+    try {
+      const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
+      fireEvent.click(within(row).getAllByRole("button")[0]!);
+      const panel = screen.getByTestId("ward-legal-selected");
+      const extend = within(panel).getByRole("button", { name: "Extend recorded form" });
+      const recordNext = within(panel).getByRole("button", { name: "Record next form" });
+      for (const button of [extend, recordNext]) {
+        expect(button).toHaveAttribute("aria-disabled", "true");
+        // The role gate's reason is announced with the button, not only the greyed state.
+        expect(button).toHaveAccessibleDescription(/\S/);
+      }
+    } finally {
+      setDeskRole("coordinator");
+    }
+  });
 });
+
+function AdvanceClock({ minutes }: { minutes: number }) {
+  const { dispatch } = useWardFlowSelect("dispatch");
+  useEffect(() => {
+    dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR, minutes });
+  }, [dispatch, minutes]);
+  return null;
+}
 
 function openFoldedGroup() {
   const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });

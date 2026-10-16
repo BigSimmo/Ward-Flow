@@ -199,6 +199,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
           </button>
           {isOpen && (
             <WardTasksDrawer
+              alertsScreenOpen={false}
               items={items}
               acknowledgements={{}}
               completions={{}}

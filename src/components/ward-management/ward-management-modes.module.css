@@ -865,3 +865,9 @@
 }
 
 /* Phone (network): the role focus note is desk guidance; the hero band already names the view. */
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). Compounded so it outranks every
+   `.modeHeader` display rule, including the phone one, as the inline style did. */
+.modeHeader.modeHeaderHidden {
+  display: none;
+}

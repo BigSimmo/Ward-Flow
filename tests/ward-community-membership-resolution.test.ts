@@ -206,7 +206,7 @@ describe("a team's empty list says which kind of empty it is", () => {
       ...WARD_ADMISSIONS[0],
       id: "AD-FIXTURE-BROKEN-JOIN",
       referralId: BROKEN_REFERRAL_ID,
-    movementId: null,
+      movementId: null,
     };
     const fixtureAdmissions: Admission[] = [brokenAdmission];
 
@@ -237,7 +237,7 @@ describe("a team's empty list says which kind of empty it is", () => {
     const repaired: Admission[] = WARD_ADMISSIONS.map((admission) => ({
       ...admission,
       referralId: WARD_REFERRALS.some((referral) => referral.id === admission.referralId) ? admission.referralId : null,
-    movementId: null,
+      movementId: null,
     }));
     expect(
       admissionsWithUnresolvableReferral(repaired, WARD_REFERRALS),

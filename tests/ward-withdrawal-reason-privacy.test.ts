@@ -37,10 +37,17 @@ import { namesRealPlace } from "./helpers/ward-place-names";
  * allowed to. The destination stops travelling inside a ward-readable string.
  */
 const REDUCER_PATH = fileURLToPath(new URL("../src/components/ward-management/ward-flow-reducer.ts", import.meta.url));
-// 15 Oct 2026: the RECORD_* cases (RECORD_REFERRER_WITHDRAWAL among them) moved here unchanged.
-const RECORD_EVENTS_PATH = fileURLToPath(
-  new URL("../src/components/ward-management/ward-flow-record-events.ts", import.meta.url),
-);
+// 15 Oct 2026: the RECORD_* cases (RECORD_REFERRER_WITHDRAWAL among them) moved out unchanged, and on
+// 16 Oct 2026 the referral, placement, transport and bed cases did too.
+const SLICE_PATHS = [
+  "ward-flow-record-events.ts",
+  "ward-flow-referral-send-events.ts",
+  "ward-flow-referral-answer-events.ts",
+  "ward-flow-placement-events.ts",
+  "ward-flow-transport-events.ts",
+  "ward-flow-bed-events.ts",
+  "ward-flow-undo-events.ts",
+].map((file) => fileURLToPath(new URL(`../src/components/ward-management/${file}`, import.meta.url)));
 const ACCEPTING_UNIT = "fre-adult-open";
 const OTHER_UNIT = "rph-adult-secure";
 
@@ -220,7 +227,7 @@ describe("a withdrawal reason cannot name the ward that won", () => {
     // wrong on a ward screen, and nothing else in this repository would notice.
     //
     // Measured on the source rather than assumed, because the claim IS a claim about the source.
-    const source = readFileSync(REDUCER_PATH, "utf8") + "\n" + readFileSync(RECORD_EVENTS_PATH, "utf8");
+    const source = [REDUCER_PATH, ...SLICE_PATHS].map((file) => readFileSync(file, "utf8")).join("\n");
     const stripped = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
     // Both directions, because either failure makes the count below meaningless. The floor is a
     // quarter rather than a half: MEASURED, this file is a little over half comment by character,

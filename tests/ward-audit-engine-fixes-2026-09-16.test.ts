@@ -92,14 +92,25 @@ function pulledMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACITY_UNIT) 
 
 describe("Fix 1: no dead duplicate switch cases", () => {
   it("has RECORD_LEGAL_FORM_RECEIVED and REFER_TO_COMMUNITY_TEAM as switch cases exactly once each", () => {
-    const text = source("src/components/ward-management/ward-flow-reducer.ts");
-    const countOf = (eventType: string) => (text.match(new RegExp(`case "${eventType}":`, "g")) ?? []).length;
+    const reducer = source("src/components/ward-management/ward-flow-reducer.ts");
+    const countOf = (text: string, eventType: string) =>
+      (text.match(new RegExp(`case "${eventType}":`, "g")) ?? []).length;
     // The floor: the strings must actually be found at all, or a rename would make both counts
     // zero and this test would pass for the wrong reason.
-    expect(text).toContain('case "RECORD_LEGAL_FORM_RECEIVED":');
-    expect(text).toContain('case "REFER_TO_COMMUNITY_TEAM":');
-    expect(countOf("RECORD_LEGAL_FORM_RECEIVED")).toBe(1);
-    expect(countOf("REFER_TO_COMMUNITY_TEAM")).toBe(1);
+    expect(reducer).toContain('case "RECORD_LEGAL_FORM_RECEIVED":');
+    expect(reducer).toContain('case "REFER_TO_COMMUNITY_TEAM":');
+    expect(countOf(reducer, "RECORD_LEGAL_FORM_RECEIVED")).toBe(1);
+    expect(countOf(reducer, "REFER_TO_COMMUNITY_TEAM")).toBe(1);
+    // Since the reducer split (15 and 16 October 2026) the reducer holds only a forwarding label for
+    // each, and the real case body lives in its slice. Each slice must hold that body exactly once.
+    for (const [file, eventType] of [
+      ["ward-flow-record-events.ts", "RECORD_LEGAL_FORM_RECEIVED"],
+      ["ward-flow-referral-send-events.ts", "REFER_TO_COMMUNITY_TEAM"],
+    ] as const) {
+      const slice = source(`src/components/ward-management/${file}`);
+      expect(slice, `${eventType} has no case body in ${file}`).toContain(`case "${eventType}": {`);
+      expect(countOf(slice, eventType), `${eventType} appears more than once in ${file}`).toBe(1);
+    }
   });
 });
 
@@ -459,12 +470,12 @@ describe("Fix 5: RECORD_REFERRER_WITHDRAWAL cascades to every linked open moveme
    * both.
    *
    * 🔴 **CORRECTED 2026-09-17, R5 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`,
-   * WF-09).** This used to build the second movement with a SECOND live `RAISE_REFERRAL` dispatch
+   * audit rule).** This used to build the second movement with a SECOND live `RAISE_REFERRAL` dispatch
    * carrying the same `referralId`, on the reasoning (quoted here until this correction, because
    * the reading that made it true is what a reader would otherwise re-derive) that "nothing here or
    * in RAISE_REFERRAL prevents a referral linking to more than one open movement... it only checks
    * the referral exists and is addressed to the raising department, never that it has not already
-   * been raised from before." **That reasoning is now false.** WF-09 added exactly the guard this
+   * been raised from before." **That reasoning is now false.** audit rule added exactly the guard this
    * fixture used to exploit: a second `RAISE_REFERRAL` from a referral with an already-open linked
    * movement is refused, by design (`tests/ward-raise-referral-uniqueness.test.ts`). So the second
    * `RAISE_REFERRAL` call below is now a WALK-IN — no `referralId` — and the link is spliced onto

@@ -18,6 +18,11 @@ export const DISCHARGE_CRITERIA = [
   "Discharge medicines supplied and explained",
   "Family, carer or support person told",
   "Transport home arranged",
+  // D-63: from MP 0181/24 Safety Planning, and the WACHS guideline's observations on the day of discharge.
+  // A tick always falls inside the validity window (a review clears every tick), so "the last 24
+  // hours" stays true while the criteria are live. Change the wording if the validity changes.
+  "Safety plan reviewed with the patient",
+  "Observations done and reviewed in the last 24 hours",
 ] as const;
 
 export type DischargeCriterion = (typeof DISCHARGE_CRITERIA)[number];
@@ -89,6 +94,77 @@ export function dischargeCriteriaStatus(
   const lapsesAt = record.setAt + CLINICAL_VALUES.dischargeCriteriaValidity.value;
   if (now >= lapsesAt) return { kind: "lapsed", met, total };
   return met === total ? { kind: "all_met", total, lapsesAt } : { kind: "in_progress", met, total, lapsesAt };
+}
+
+/**
+ * The short chip a bed tile shows for its criteria, or null when none are set. The WACHS Criteria
+ * Led Discharge Guideline (16 Apr 2026, s 2.4 and 2.5) asks for a patient's criteria led discharge
+ * status to be noted on journey boards, whiteboards and handover, not only in the record.
+ */
+export function criteriaLedTileChip(status: DischargeCriteriaStatus): CriteriaLedChip | null {
+  switch (status.kind) {
+    case "none":
+      return null;
+    case "all_met":
+      return {
+        label: "CLD ready",
+        short: `CLD ${status.total}/${status.total}`,
+        tone: "success",
+        phrase: "Criteria led discharge, all criteria met",
+      };
+    case "in_progress":
+      return {
+        label: `CLD ${status.met}/${status.total}`,
+        short: `CLD ${status.met}/${status.total}`,
+        tone: "neutral",
+        phrase: `Criteria led discharge, ${status.met} of ${status.total} criteria met`,
+      };
+    case "lapsed":
+      return {
+        label: "CLD review",
+        short: "CLD",
+        tone: "warning",
+        phrase: "Criteria led discharge lapsed, review needed",
+      };
+    case "paused":
+      return {
+        label: "CLD paused",
+        short: "CLD",
+        tone: "warning",
+        phrase: "Criteria led discharge paused, legal status no longer allows it",
+      };
+  }
+}
+
+/**
+ * A tile's criteria led discharge chip. `short` fits a Bed board cell, where the glyph tells ready
+ * (tick) from review or paused (warning); the cell's spoken name and tooltip carry `phrase`.
+ */
+export type CriteriaLedChip = {
+  label: string;
+  short: string;
+  tone: "success" | "warning" | "neutral";
+  phrase: string;
+};
+
+/**
+ * What the bed panel says beside "Record that they have left", or null when no criteria are set.
+ * It warns and never blocks. The WACHS guideline (s 3) asks the clinician facilitating the
+ * discharge to instigate a medical review when any criterion is unmet or there is a concern.
+ */
+export function criteriaLedDepartureNote(status: DischargeCriteriaStatus): string | null {
+  switch (status.kind) {
+    case "none":
+      return null;
+    case "all_met":
+      return "Criteria led discharge: all criteria met.";
+    case "in_progress":
+      return `Criteria led discharge: ${status.met} of ${status.total} met. Ask for a medical review before they leave.`;
+    case "lapsed":
+      return "Criteria led discharge has lapsed. Ask the treating psychiatrist for a review before they leave.";
+    case "paused":
+      return "Criteria led discharge is paused because the patient's legal status no longer allows it.";
+  }
 }
 
 export type DischargeCriteriaChange = {
