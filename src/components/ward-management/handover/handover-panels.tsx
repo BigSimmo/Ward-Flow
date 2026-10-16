@@ -278,7 +278,7 @@ export function HandoverFlowPanel({
             Open patient
           </Link>
         ) : (
-          <Button variant="pri" size="sm" disabled disabledReason="UMRN not recorded">
+          <Button variant="pri" size="sm" disabledReason="UMRN not recorded">
             Open patient
           </Button>
         )}
@@ -384,8 +384,7 @@ export function HandoverSignOffPanel({
             size="sm"
             icon={Check}
             onClick={onSignOff}
-            disabled={!canSignOff}
-            disabledReason={cannotSignReason}
+            disabledReason={!canSignOff ? (cannotSignReason ?? "Complete sign-off checks first") : cannotSignReason}
             data-testid="ward-handover-sign-off-button"
           >
             {`Sign off at ${formatInstant(now)}`}

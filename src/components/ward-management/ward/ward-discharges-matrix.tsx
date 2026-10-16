@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import styles from "./ward-discharges-matrix.module.css";
 import type { Unit, BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
@@ -43,6 +43,15 @@ export function WardDischargesMatrix({
   endLeaveBed,
 }: WardDischargesMatrixProps) {
   const [subTab, setSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
+  const [, startTransition] = useTransition();
+  const rawUnitBeds = (unit as { beds?: number | Array<{ label?: string; name?: string; status?: string }> }).beds;
+  const terminalCleanBedLabel = Array.isArray(rawUnitBeds)
+    ? (rawUnitBeds.find((bed) => bed.status === "cleaning" || bed.status === "ready")?.label ??
+      rawUnitBeds.find((bed) => bed.status === "cleaning" || bed.status === "ready")?.name ??
+      rawUnitBeds[0]?.label ??
+      rawUnitBeds[0]?.name ??
+      "Bed 01 (Bay 1)")
+    : "Bed 01 (Bay 1)";
 
   return (
     <div className={styles.dischargesWrap}>
@@ -59,7 +68,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "all"}
-          onClick={() => setSubTab("all")}
+          onClick={() => startTransition(() => setSubTab("all"))}
         >
           All Discharges ({releasesCountedToday.length + unitLeaveBeds.length})
         </button>
@@ -67,7 +76,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "scheduled"}
-          onClick={() => setSubTab("scheduled")}
+          onClick={() => startTransition(() => setSubTab("scheduled"))}
         >
           Scheduled Departures ({releasesCountedToday.length})
         </button>
@@ -75,7 +84,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "leave"}
-          onClick={() => setSubTab("leave")}
+          onClick={() => startTransition(() => setSubTab("leave"))}
         >
           Leave &amp; AWOL ({unitLeaveBeds.length})
         </button>
@@ -83,7 +92,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "barriers"}
-          onClick={() => setSubTab("barriers")}
+          onClick={() => startTransition(() => setSubTab("barriers"))}
         >
           Discharge Barriers ({blockedReleases.length})
         </button>
@@ -91,7 +100,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "suburb"}
-          onClick={() => setSubTab("suburb")}
+          onClick={() => startTransition(() => setSubTab("suburb"))}
         >
           Catchment Team Lookup
         </button>
@@ -265,8 +274,8 @@ export function WardDischargesMatrix({
             </svg>
           </div>
           <div className={styles.cleaningText}>
-            <strong>Bed 01 (Bay 1):</strong> Terminal room clean completed at 09:50 by Environmental Services. Bed is
-            verified clean and ready for allocation.
+            <strong>{terminalCleanBedLabel}:</strong> Terminal room clean completed at 09:50 by Environmental Services.
+            Bed is verified clean and ready for allocation.
           </div>
         </div>
         <span className={styles.chkChip}>Ready for Allocation</span>

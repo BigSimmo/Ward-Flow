@@ -84,6 +84,7 @@ export function Button(props: ButtonProps) {
     children,
     onClick,
     type = "button",
+    disabled,
     "aria-describedby": describedBy,
     ...rest
   } = props;
@@ -103,6 +104,7 @@ export function Button(props: ButtonProps) {
     <button
       type={type}
       className={buttonClass({ variant, size, iconOnly: Boolean(iconOnly), className })}
+      disabled={off ? undefined : disabled}
       aria-disabled={off || undefined}
       aria-busy={loading || undefined}
       aria-describedby={cx(describedBy, off && reasonId) || undefined}

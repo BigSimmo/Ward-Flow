@@ -9,7 +9,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -80,6 +79,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsPhone,
   useIsTabletPortrait,
   useMediaQuery,
 } from "@/components/wf";
@@ -133,19 +133,6 @@ import styles from "./handover-refined.module.css";
 import { type HandoverScope, NETWORK_SCOPE_VALUE, handoverScopeValue, parseHandoverScope } from "./handover-scope";
 
 export { type HandoverScope, handoverScopeValue, parseHandoverScope } from "./handover-scope";
-
-const PHONE_WIDTH_QUERY = "(max-width: 48rem)";
-
-function subscribePhoneWidth(onChange: () => void) {
-  if (typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia(PHONE_WIDTH_QUERY);
-  query.addEventListener?.("change", onChange);
-  return () => query.removeEventListener?.("change", onChange);
-}
-
-function readPhoneWidth() {
-  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_WIDTH_QUERY).matches;
-}
 
 /** THE SCOPE'S NAME */
 export function handoverScopeLabel(scope: HandoverScope, units: Unit[]): string | undefined {
@@ -381,7 +368,7 @@ export function HandoverPage() {
   );
   const now = useWardFlowClock();
   const longStayOn = useWardFeatureFlag("top25-long-stay-dossier");
-  const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
+  const isPhoneWidth = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
   const portrait = isTabletPortrait && !isPhoneWidth;

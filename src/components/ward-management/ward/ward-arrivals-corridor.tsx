@@ -427,7 +427,11 @@ export function WardArrivalsCorridor({
                       </select>
                       <button
                         type="submit"
-                        disabled={!releaseReason}
+                        aria-disabled={!releaseReason || undefined}
+                        title={!releaseReason ? "Choose a reason before confirming release" : undefined}
+                        onClick={(e) => {
+                          if (!releaseReason) e.preventDefault();
+                        }}
                         className={`${styles.btnCorridorPull} ${styles.releaseSubmit}`}
                       >
                         Confirm release

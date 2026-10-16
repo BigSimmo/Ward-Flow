@@ -209,6 +209,18 @@ export function registerShutdown(server, pool, signals = process) {
   };
   signals.once("SIGINT", close);
   signals.once("SIGTERM", close);
+  signals.on("unhandledRejection", (error) => {
+    const { errorName, errorCode } = errorFields(error);
+    console.error(JSON.stringify({ event: "ward_backend_unhandled_rejection", errorName, errorCode }));
+    signals.exitCode = 1;
+    void close();
+  });
+  signals.on("uncaughtException", (error) => {
+    const { errorName, errorCode } = errorFields(error);
+    console.error(JSON.stringify({ event: "ward_backend_uncaught_exception", errorName, errorCode }));
+    signals.exitCode = 1;
+    void close();
+  });
   server.on("error", () => {
     console.error("Backend listener unavailable");
     signals.exitCode = 1;

@@ -126,10 +126,14 @@ export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Discharges held up";
  * passes the live provider state (Task 6), so the pipeline strip can never advertise a count
  * a different surface would compute differently from the same instant. */
 export function stageSummaries(movements: Movement[]) {
+  const counts = new Map<MovementStage, number>();
+  for (const movement of movements) {
+    counts.set(movement.stage, (counts.get(movement.stage) ?? 0) + 1);
+  }
   return MOVEMENT_STAGES.map((id) => ({
     id,
     ...stageCopy[id],
-    count: movements.filter((movement) => movement.stage === id).length,
+    count: counts.get(id) ?? 0,
   }));
 }
 
@@ -163,14 +167,22 @@ export function stageSummaries(movements: Movement[]) {
  * passes every other assertion in that file.
  */
 export function queueStageSummaries(movements: Movement[]) {
-  const left = movements.filter((movement) => !isOpen(movement));
+  const left: Movement[] = [];
+  const openCounts = new Map<MovementStage, number>();
+  for (const movement of movements) {
+    if (isOpen(movement)) {
+      openCounts.set(movement.stage, (openCounts.get(movement.stage) ?? 0) + 1);
+    } else {
+      left.push(movement);
+    }
+  }
   const didNotProceed = left.filter((movement) => movement.closure?.outcome === "did_not_proceed").length;
 
   return {
     waiting: MOVEMENT_STAGES.filter((id) => id !== "arrived").map((id) => ({
       id,
       ...stageCopy[id],
-      count: movements.filter((movement) => movement.stage === id && isOpen(movement)).length,
+      count: openCounts.get(id) ?? 0,
     })),
     left: {
       total: left.length,
@@ -215,6 +227,21 @@ export const roleTaskLabel: Record<WardRole, string> = {
   ward: "Accept and pull bed",
 };
 
+const edServiceById = new Map<string, HealthService | undefined>(
+  allEmergencyDepartments().map((candidate) => [candidate.id, siteByCode(candidate.siteCode)?.service]),
+);
+
+const unitMapCache = new WeakMap<readonly Unit[], Map<string, Unit>>();
+
+function getUnitByIdMap(units: readonly Unit[]): Map<string, Unit> {
+  let cached = unitMapCache.get(units);
+  if (!cached) {
+    cached = new Map(units.map((unit) => [unit.id, unit]));
+    unitMapCache.set(units, cached);
+  }
+  return cached;
+}
+
 /**
  * The health service that owns the ED a movement originated in. This is the origin service,
  * not the patient's catchment — catchment is determined by where a patient lives, not where
@@ -222,8 +249,7 @@ export const roleTaskLabel: Record<WardRole, string> = {
  * adding one is Phase 2 model work, not a derivation this module can safely invent.
  */
 export function movementHealthService(movement: Movement): HealthService | undefined {
-  const ed = allEmergencyDepartments().find((candidate) => candidate.id === movement.originEdId);
-  return ed ? siteByCode(ed.siteCode)?.service : undefined;
+  return edServiceById.get(movement.originEdId);
 }
 
 /**
@@ -316,7 +342,7 @@ export function destinationNoLongerLawful(movement: Movement, units: Unit[]): Un
   // recorded rather than left silent because mutating it is the one mutation in this function that
   // does not kill its test, which is a property of the line, not a gap in the test.
   if (movement.acceptedUnitId === undefined) return undefined;
-  const unit = units.find((candidate) => candidate.id === movement.acceptedUnitId);
+  const unit = getUnitByIdMap(units).get(movement.acceptedUnitId);
   if (unit === undefined) return undefined;
   return unit.authorised ? undefined : unit;
 }
@@ -353,7 +379,7 @@ export function referralBlockedReason(movement: Movement): string | undefined {
  */
 export function destinationUnit(movement: Movement, units: Unit[]): Unit | undefined {
   const id = movement.acceptedUnitId ?? movement.referredUnitIds[0];
-  return id ? units.find((unit) => unit.id === id) : undefined;
+  return id ? getUnitByIdMap(units).get(id) : undefined;
 }
 
 /**
@@ -1376,7 +1402,7 @@ export function buildActionInbox(
   // recorded. There is no movement behind the row — leave `movementId` empty so movement-only
   // surfaces skip it, and carry the booking on `plannedAdmission`.
   for (const planned of plannedAdmissions.filter((booking) => plannedAdmissionIsOverdue(booking, now))) {
-    const unit = units.find((candidate) => candidate.id === planned.unitId);
+    const unit = getUnitByIdMap(units).get(planned.unitId);
     items.push({
       id: `${INBOX_CATEGORIES.planned_arrival_overdue.idPrefix}${planned.id}`,
       kind: INBOX_CATEGORIES.planned_arrival_overdue.kind,
@@ -1611,11 +1637,9 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
     .map((movement) => ({ movement }));
 
   const stoppedAwaitingRelease = movements.filter(isStoppedTransportAwaitingRelease);
+  const openIds = new Set(open.map((openMovement) => openMovement.id));
 
-  const pulledBedCandidates = [
-    ...open,
-    ...stoppedAwaitingRelease.filter((movement) => !open.some((openMovement) => openMovement.id === movement.id)),
-  ];
+  const pulledBedCandidates = [...open, ...stoppedAwaitingRelease.filter((movement) => !openIds.has(movement.id))];
   const pulledBeds = pulledBedCandidates
     .filter((movement) => movement.pullExpiresAt !== undefined)
     .map((movement) => {
@@ -1728,13 +1752,14 @@ export type EscalationBoard = {
 
 export function escalationBoard(movements: Movement[], units: Unit[], now: Instant): EscalationBoard {
   const open = movements.filter(isOpen);
+  const unitMap = getUnitByIdMap(units);
 
   const escalated = open
     .filter((movement) => movement.escalation !== undefined)
     .map((movement) => {
       const triedUnitIds = movement.escalation?.triedUnitIds ?? [];
       const triedUnits = triedUnitIds
-        .map((unitId) => units.find((unit) => unit.id === unitId))
+        .map((unitId) => unitMap.get(unitId))
         .filter((unit): unit is Unit => unit !== undefined);
       return { movement, triedUnits };
     });

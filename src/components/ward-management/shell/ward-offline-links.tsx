@@ -26,7 +26,7 @@ export function WardOfflineLinks() {
       if (target.hasAttribute("download")) return;
       const url = new URL(target.href, window.location.href);
       if (url.origin !== window.location.origin) return;
-      if (url.pathname === window.location.pathname) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
       event.preventDefault();
       event.stopPropagation();
       toast?.push({

@@ -169,11 +169,20 @@ const VISIBLE_BANNER_ALLOWLIST = [
     file: "src/components/ward-management/ward-global-search.tsx",
     testIdPattern: /data-testid="ward-global-search-cmd-advance-clock"/,
   },
+  {
+    file: "src/components/ward-management/ward/ward-discharge-notices.tsx",
+    testIdPattern: /aria-describedby=\{`ward-discharge-notice-\$\{service\}`\}/,
+  },
+  {
+    file: "src/components/ward-management/capacity/step-down-board.tsx",
+    testIdPattern: /disabled=\{row\.transferMovement\.referredUnitIds\.includes\(ward\.unit\.id\)\}/,
+  },
 ];
 
 /**
- * Extracts JSX `<button ...>` opening tags (handling nested `{...}` expressions inside props)
- * and checks whether any tag combines a native `disabled` attribute with `aria-describedby`.
+ * Extracts JSX `<button ...>` and `<Button ...>` opening tags (handling nested `{...}` expressions
+ * inside props) and checks whether any tag combines a native `disabled` attribute with
+ * `aria-describedby` or `disabledReason`.
  *
  * @param {string} source
  * @param {string} [filePath="<inline>"]
@@ -182,12 +191,12 @@ const VISIBLE_BANNER_ALLOWLIST = [
 export function findExplanatoryDisabledButtonViolations(source, filePath = "<inline>") {
   const cleaned = stripCommentsPreservingLines(source);
   const violations = [];
-  const tagStartRegex = /<button\b/g;
+  const tagStartRegex = /<(?:button|Button)\b/g;
   let match;
 
   while ((match = tagStartRegex.exec(cleaned)) !== null) {
     const startIdx = match.index;
-    let idx = startIdx + "<button".length;
+    let idx = startIdx + match[0].length;
     let braceDepth = 0;
     let quoteChar = null;
     let endIdx = -1;
@@ -224,11 +233,12 @@ export function findExplanatoryDisabledButtonViolations(source, filePath = "<inl
 
     const topLevelTag = maskAttrValueBodies(tagText);
     const hasAriaDescribedBy = /(?:^|[\s\n])aria-describedby\s*=/m.test(topLevelTag);
+    const hasDisabledReason = /(?:^|[\s\n])disabledReason\s*=/m.test(topLevelTag);
     // Match standalone top-level `disabled` or `disabled={...}`, never `aria-disabled` or `data-disabled`
     // or a `disabled` variable inside `{...}`.
     const hasNativeDisabled = /(?:^|[\s\n])disabled(?:\s*=|\s*[\s/>])/m.test(topLevelTag);
 
-    if (hasAriaDescribedBy && hasNativeDisabled) {
+    if ((hasAriaDescribedBy || hasDisabledReason) && hasNativeDisabled) {
       const line = cleaned.slice(0, startIdx).split("\n").length;
       const snippet = rawTag.replace(/\s+/g, " ").trim();
       violations.push({

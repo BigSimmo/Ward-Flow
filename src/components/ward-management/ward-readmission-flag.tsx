@@ -17,6 +17,7 @@ function readmissionDetailText(flag: ReadmissionFlagValue, dayZero: Date): strin
   const date = new Date(dayZero.getTime() + flag.dischargedAt * 60_000).toLocaleDateString("en-AU", {
     day: "numeric",
     month: "short",
+    timeZone: "Australia/Perth",
   });
   const gap = flag.daysBefore === 0 ? "same day" : `${flag.daysBefore}d before`;
   return `Discharged ${date} from ${flag.unitName} · ${gap}`;

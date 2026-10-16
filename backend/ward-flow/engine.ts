@@ -43,8 +43,41 @@ import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
 export { checkSyntheticPayload };
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
-/** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
-const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i += 1) {
+      const entry = value[i];
+      value[i] = entry === undefined ? null : stripUndefined(entry);
+    }
+    return value;
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      const entry = record[key];
+      if (entry === undefined) {
+        delete record[key];
+      } else if (entry && typeof entry === "object") {
+        stripUndefined(entry);
+      }
+    }
+  }
+  return value;
+}
+
+/** Deep-clones via structuredClone and drops explicit `undefined` fields the shared-state validator rejects. */
+const serialise = <T>(value: T): T => stripUndefined(structuredClone(value));
+
+const placeLookupCache = new WeakMap<readonly WardFlowState["units"][number][], ReturnType<typeof wardPlaceLookup>>();
+
+function getWardPlaceLookup(units: WardFlowState["units"]): ReturnType<typeof wardPlaceLookup> {
+  let cached = placeLookupCache.get(units);
+  if (!cached) {
+    cached = wardPlaceLookup(units);
+    placeLookupCache.set(units, cached);
+  }
+  return cached;
+}
 /** A known type, an explicit allowed role and well-formed fields: see command-schemas.ts. */
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
   return validSharedCommand(value) && checkSyntheticPayload(value).safe;
@@ -80,23 +113,32 @@ export function boundAudit(state: WardFlowState): WardFlowState {
   };
 }
 
-function changedFacts(before: WardFlowState, after: WardFlowState) {
+const SKIP_FACT_KEYS = new Set(["auditEvents", "auditReviews", "rejections"]);
+
+function changedFacts(before: WardFlowState, after: WardFlowState, rawAfter?: WardFlowState) {
   const changes: Record<string, unknown> = {};
-  const skip = new Set(["auditEvents", "auditReviews", "rejections"]);
   for (const [key, nextValue] of Object.entries(after) as [keyof WardFlowState, WardFlowState[keyof WardFlowState]][]) {
-    if (skip.has(key as string)) continue;
+    if (SKIP_FACT_KEYS.has(key as string)) continue;
     const previousValue = before[key];
-    if (JSON.stringify(previousValue) === JSON.stringify(nextValue)) continue;
+    if (previousValue === nextValue || (rawAfter && previousValue === rawAfter[key])) continue;
     if (Array.isArray(previousValue) && Array.isArray(nextValue)) {
       const previousSerialized = previousValue.map((row) => JSON.stringify(row));
       const nextSerialized = nextValue.map((row) => JSON.stringify(row));
+      if (
+        previousSerialized.length === nextSerialized.length &&
+        previousSerialized.every((val, index) => val === nextSerialized[index])
+      ) {
+        continue;
+      }
       const previousRows = new Set(previousSerialized);
       const nextRows = new Set(nextSerialized);
       changes[key as string] = {
         before: previousValue.filter((_, index) => !nextRows.has(previousSerialized[index]!)),
         after: nextValue.filter((_, index) => !previousRows.has(nextSerialized[index]!)),
       };
-    } else changes[key as string] = { before: previousValue, after: nextValue };
+    } else if (JSON.stringify(previousValue) !== JSON.stringify(nextValue)) {
+      changes[key as string] = { before: previousValue, after: nextValue };
+    }
   }
   return changes;
 }
@@ -208,7 +250,7 @@ export function scopeWorld(world: SharedWorld, access: WardAccess, at: Date, gra
   if (accessIsWholeNetwork(access)) return world;
   const { state } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
-    places: wardPlaceLookup(world.state.units),
+    places: getWardPlaceLookup(world.state.units),
     grants: worldGrants(world, grants, at),
   });
   return { ...world, state };
@@ -249,7 +291,7 @@ export function commandRefusal(
   }
   return commandScopeRefusal(world.state, access, supplied, {
     now: worldNow(world, at),
-    places: wardPlaceLookup(world.state.units),
+    places: getWardPlaceLookup(world.state.units),
     grants: worldGrants(world, grants, at),
   });
 }
@@ -367,7 +409,7 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
     return "That patient is not in the workspace.";
   const { state } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
-    places: wardPlaceLookup(world.state.units),
+    places: getWardPlaceLookup(world.state.units),
   });
   if (state.patients.some((patient) => patient.id === patientId)) return "That patient is already in your care.";
   return null;
@@ -385,16 +427,17 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   const role = fields.role;
   if (!roles.includes(role as WardFlowEvent["role"])) throw new Error("invalid-command");
   const event = { ...fields, type, role, now: worldNow(world, at) } as WardFlowEvent;
-  let next: WardFlowState;
+  let rawNext: WardFlowState;
   try {
-    next = serialise(wardFlowReducer(world.state, event));
+    rawNext = wardFlowReducer(world.state, event);
   } catch (error) {
     if (error instanceof TypeError || error instanceof RangeError) throw new Error("invalid-command");
     throw error;
   }
-  if (next.rejections.length > world.state.rejections.length) {
+  if (rawNext.rejections.length > world.state.rejections.length) {
     return { world, outcome: "denied" as const, changes: {}, reason: "The workflow rules did not permit this action." };
   }
+  const next = serialise(rawNext);
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
   const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);
@@ -403,7 +446,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   return {
     world: { ...world, state: saved },
     outcome: "accepted" as const,
-    changes: { domainAudit, reset, facts: changedFacts(world.state, next) },
+    changes: { domainAudit, reset, facts: changedFacts(world.state, next, rawNext) },
     reason: null,
   };
 }
@@ -417,12 +460,18 @@ export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: 
   if (!validWorld(world)) return [];
   const state = world.state;
   const sites = scenarioNetwork(state.scenario)?.sites ?? STANDARD_WARD_SITES;
+  const siteByOrigin = new Map<string, string>();
+  for (const candidate of sites) {
+    if (candidate.emergencyDepartment?.id && !siteByOrigin.has(candidate.emergencyDepartment.id)) {
+      siteByOrigin.set(candidate.emergencyDepartment.id, candidate.name);
+    }
+    if (!siteByOrigin.has(candidate.code)) {
+      siteByOrigin.set(candidate.code, candidate.name);
+    }
+  }
   const origins = new Map<string, string>(state.movements.map((movement) => [movement.id, movement.originEdId]));
   return activeActNowItems(state, worldNow(world, at)).map((item) => {
     const origin = origins.get(item.movementId);
-    const site = origin
-      ? sites.find((candidate) => candidate.emergencyDepartment?.id === origin || candidate.code === origin)
-      : undefined;
-    return { id: item.id, site: site?.name ?? null };
+    return { id: item.id, site: (origin ? siteByOrigin.get(origin) : undefined) ?? null };
   });
 }

@@ -1733,6 +1733,7 @@ button.gLaneL:hover {
     left: var(--wf-s-3);
     z-index: 40;
     max-height: 82vh;
+    max-height: 82dvh;
     overflow-y: auto;
     box-shadow: var(--wf-e3);
   }

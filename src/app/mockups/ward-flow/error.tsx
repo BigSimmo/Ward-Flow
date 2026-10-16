@@ -29,12 +29,9 @@ import { WardFlowErrorPanel } from "./ward-flow-error-panel";
  * Closing those two gaps needs a boundary at `src/app/mockups/error.tsx`, which is outside this task's
  * remit and is recorded rather than quietly attempted.
  *
- * ⚠️ **THE ON-SCREEN RESULT IS THE WHOLE PAGE, INCLUDING THE NAVIGATION RAIL — and that is not a
- * placement mistake.** The navigation chrome (`WardBar`, formerly `ClinicalRail`) is rendered by each screen's
- * own component tree (`ward-management-console.tsx`, `statistics-section-frame.tsx`), not by the ward-flow
- * layout, so it sits BELOW every boundary that can exist here. No `error.tsx` placement anywhere under this
- * folder can keep the rail on screen while a page fails; that would take moving the rail into the
- * layout, which is a change to the screens and not this task's to make.
+ * ⚠️ **THE ON-SCREEN RESULT REPLACES `{children}` INSIDE THE WARD SHELL.** `ward-flow/layout.tsx`
+ * renders `WardRail` and `WardBarMount` around `{children}`, so the navigation rail and top bar
+ * remain mounted while `WardFlowErrorPanel` fills `.shellContent` for the failing route segment.
  */
 export default function WardFlowErrorBoundary({
   error,

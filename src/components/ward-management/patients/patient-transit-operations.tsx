@@ -221,7 +221,8 @@ export function PatientTransitOperations({
           <button
             type="button"
             className={styles.primary}
-            disabled={!overrideReason}
+            aria-disabled={!overrideReason || undefined}
+            title={!overrideReason ? "Choose an override reason first" : undefined}
             onClick={() => {
               if (!overrideReason || !lastActionRejection) return;
               const reason = overrideReason;
@@ -832,6 +833,13 @@ export function PatientTransitOperations({
                   type="button"
                   className={styles.secondary}
                   disabled={!releaseReason || !!activeJob || job?.collectedAt !== undefined}
+                  title={
+                    !releaseReason
+                      ? "Choose a release reason first"
+                      : activeJob || job?.collectedAt !== undefined
+                        ? "Cancel the transport job before releasing the bed"
+                        : undefined
+                  }
                   onClick={() => {
                     if (!releaseReason) return;
                     noteAttempt();
@@ -887,6 +895,7 @@ export function PatientTransitOperations({
                   type="button"
                   className={styles.secondary}
                   disabled={!backTo || !backReason}
+                  title={!backTo || !backReason ? "Choose both an earlier stage and a reason first" : undefined}
                   onClick={() => {
                     if (!backTo || !backReason) return;
                     noteAttempt();
@@ -919,8 +928,16 @@ export function PatientTransitOperations({
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
+                  aria-disabled={!confirmWithdraw || movement.referredUnitIds.length === 0 || undefined}
+                  title={
+                    !confirmWithdraw
+                      ? "Tick confirmation before withdrawing referral"
+                      : movement.referredUnitIds.length === 0
+                        ? "No open ward referrals to withdraw"
+                        : undefined
+                  }
                   onClick={() => {
+                    if (!confirmWithdraw || movement.referredUnitIds.length === 0) return;
                     noteAttempt();
                     dispatch({
                       type: "WITHDRAW_REFERRAL",

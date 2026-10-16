@@ -13,7 +13,7 @@ import {
 } from "react";
 import { UserPlus } from "lucide-react";
 
-import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
+import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx, useIsPhone } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -1363,13 +1363,14 @@ function subscribePhone(onChange: () => void) {
 
 /** Phone is its own design (Josh, 9 Oct 2026): below 40rem the census renders its phone layout. */
 function usePhoneLayout(): boolean {
+  const serverPhone = useIsPhone();
   return useSyncExternalStore(
     subscribePhone,
     () =>
       typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
       window.matchMedia(PHONE_QUERY).matches,
-    () => false,
+    () => serverPhone,
   );
 }
 

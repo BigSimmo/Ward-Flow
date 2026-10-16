@@ -396,6 +396,7 @@
     bottom: 0;
     width: 100vw;
     height: 90vh;
+    height: 90dvh;
     border: 1px solid var(--wf-line-2);
     border-bottom: 0;
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;

@@ -108,19 +108,33 @@ function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
  * state field by field, so a list keeps its previous identity while it holds the same items, and a
  * reader of that field does not re-render for an unrelated change (review on PR #322).
  */
+function isSteadyContextKey(value: WardFlowContextValue, key: string): key is keyof WardFlowContextValue {
+  return key in value;
+}
+
+function copySteadyKey<K extends keyof WardFlowContextValue>(
+  target: WardFlowContextValue,
+  source: WardFlowContextValue,
+  key: K,
+): void {
+  target[key] = source[key];
+}
+
 function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
   const [steady, setSteady] = useState(next);
   let changed = false;
-  const merged = { ...next } as Record<string, unknown>;
-  const before = steady as unknown as Record<string, unknown>;
+  const merged: WardFlowContextValue = { ...next };
   for (const key of Object.keys(merged)) {
-    const was = before[key];
+    if (!isSteadyContextKey(merged, key)) continue;
+    const was = steady[key];
     const now = merged[key];
-    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) merged[key] = was;
+    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) {
+      copySteadyKey(merged, steady, key);
+    }
     if (merged[key] !== was) changed = true;
   }
-  if (Object.keys(before).length !== Object.keys(merged).length) changed = true;
-  const result = changed ? (merged as unknown as WardFlowContextValue) : steady;
+  if (Object.keys(steady).length !== Object.keys(merged).length) changed = true;
+  const result = changed ? merged : steady;
   if (result !== steady) setSteady(result);
   return result;
 }
