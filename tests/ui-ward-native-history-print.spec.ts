@@ -39,9 +39,10 @@ test.describe("native history and handover print @mockup", () => {
       prompts += 1;
       await dialog.dismiss();
     });
-    const toolsTrigger = page.getByTestId("ward-bar-tools-trigger");
+    const toolsTrigger = page.getByTestId("ward-bar-phone-menu");
     const openReferral = async () => {
       await toolsTrigger.click();
+      await page.getByTestId("ward-phone-menu-tools").click();
       await page
         .getByRole("dialog", { name: "Tools", exact: true })
         .getByRole("button", { name: /New referral/u })
