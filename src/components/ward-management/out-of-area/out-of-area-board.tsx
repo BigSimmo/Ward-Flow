@@ -168,16 +168,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   // The panel notice is written at once, so a refusal of that step (for example a shared workspace
   // recording the stay as gone first) replaces it with the engine's reason and restores the draft.
   const repatCheckRef = useRef<{ prior: number; admissionId: string; draft?: RepatDraft } | null>(null);
+  // One-shot: judged on the first change to rejections or repatriations after the step, then
+  // disarmed, so a later unrelated refusal can never be read as this step's.
   useEffect(() => {
     const check = repatCheckRef.current;
-    if (!check || rejections.length <= check.prior) return;
+    if (!check) return;
+    repatCheckRef.current = null;
     const refused = rejections.slice(check.prior).find((rejection) => rejection.movementId === check.admissionId);
     if (!refused) return;
-    repatCheckRef.current = null;
     const { admissionId, draft } = check;
     if (draft) setDrafts((current) => ({ ...current, [admissionId]: draft }));
     setRepatNotice(`Not recorded: ${refused.reason}. Nothing was changed.`);
-  }, [rejections]);
+  }, [rejections, liveRepatriations]);
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [region, setRegion] = useState<string | null>(null);
