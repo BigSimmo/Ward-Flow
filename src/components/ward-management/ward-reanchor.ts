@@ -172,6 +172,12 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "bookedAt",
   "changedAt",
   "convertedAt",
+  // D-60/D-64: when discharge criteria were set and when each was ticked met. Left out, seeded or
+  // recorded criteria would sit on the old anchor and could read as lapsed in an offset demo.
+  "setAt",
+  "metAt",
+  // The criteria status's derived lapse time. Never stored, but declared as an Instant beside them.
+  "lapsesAt",
 ]);
 
 /**
