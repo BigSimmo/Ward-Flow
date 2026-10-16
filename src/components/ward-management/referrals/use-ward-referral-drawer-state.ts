@@ -441,8 +441,6 @@ export function useWardReferralDrawerState({
   // What the draft looked like on opening. A restored draft is never clean, so closing it asks again.
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
   const draftJson = JSON.stringify(draftNow);
-  // Moving between sections does not edit the referral or revive content explicitly discarded.
-  const contentJson = JSON.stringify({ ...draftNow, activeSection: undefined });
 
   // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
   // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
@@ -475,7 +473,7 @@ export function useWardReferralDrawerState({
   } = useReferralDraftAutosave({
     draft: draftNow,
     draftJson,
-    contentJson,
+    contentJson: JSON.stringify({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
     dirty,
     initialKeptAt: initialKept?.at ?? null,
@@ -487,12 +485,10 @@ export function useWardReferralDrawerState({
     skipAnchor: isOwnLeaveGuardAnchor,
   });
   const requestClose = useCallback(() => {
-    if (guardOpen) setGuardOpen(false);
-    else if (dirty) setGuardOpen(true);
-    else {
-      approveNextHistoryNavigation();
-      onClose();
-    }
+    if (guardOpen) return setGuardOpen(false);
+    if (dirty) return setGuardOpen(true);
+    approveNextHistoryNavigation();
+    onClose();
   }, [guardOpen, dirty, onClose, approveNextHistoryNavigation]);
   useEffect(() => {
     if (!closeRequestRef) return;
