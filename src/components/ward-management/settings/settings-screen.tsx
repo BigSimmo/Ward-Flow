@@ -1691,8 +1691,9 @@ export function SettingsScreen() {
           {dataContent}
         </div>
 
-        {accessOn ? (
-          <div className={styles.pane} hidden={tab !== "access"} data-pane="access">
+        {/* Mounted only while open, so its server reads wait until the tab is chosen (review on PR #363). */}
+        {accessOn && tab === "access" ? (
+          <div className={styles.pane} data-pane="access">
             <AccessSettings />
           </div>
         ) : null}

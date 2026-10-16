@@ -30,7 +30,10 @@ export type PhonePushApi = {
   pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }>;
   /** Whether the signed-in account owns an active server record for this device endpoint. */
   pushStatus(endpoint: string): Promise<boolean>;
-  /** "limit" and "in-use" are refusals the person can act on; any other failure rejects. */
+  /**
+   * "limit", "in-use" and "role" (this desk's role does not hear phone alerts, or the database is
+   * not ready for it) are refusals the person can act on; any other failure rejects.
+   */
   pushSubscribe(subscription: {
     endpoint?: string;
     keys?: Record<string, string>;

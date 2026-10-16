@@ -39,7 +39,9 @@ and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's p
 
 Behind the `role-access` flag. `ward-access-admin.ts` holds the one set of rules (grant, approve,
 remove, cover, requests for access, step-up and unused windows, `PUSH_ROLES`) that the local demo
-and `backend/ward-flow/engine.ts` both read. Local demo: `shell/ward-access-store.ts` holds cover
+and `backend/ward-flow/engine.ts` both read. The three the shell on every screen needs (step-up
+window, `PUSH_ROLES`, `withCover`) live in `ward-access-shell-rules.ts` and are re-exported, so the
+shell does not load the rest. Local demo: `shell/ward-access-store.ts` holds cover
 in memory, `shell/ward-access-admin-store.ts` the made-up staff list, `shell/ward-step-up.tsx` the
 fresh confirm, and `settings/access-settings.tsx` the Settings Access tab. Shared workspace:
 migration 9 (`009-access-cover-requests.sql`, code only until applied), the new access routes in

@@ -15,7 +15,7 @@
 import { useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
 import { Dialog, Field, TextInput } from "@/components/wf";
-import { STEP_UP_MINUTES } from "@/components/ward-management/ward-access-admin";
+import { STEP_UP_MINUTES } from "@/components/ward-management/ward-access-shell-rules";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useUnscopedWardFlow } from "./ward-access-context";
 import { sameDesk, useWardAccessSnapshot } from "./ward-access-store";
@@ -59,24 +59,31 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Bumped whenever the dialog closes or is replaced, so a sign-in still running then never goes
+  // on to make the change.
+  const attempt = useRef(0);
+
   const guard = useCallback(
     (run: () => Promise<StepUpResult>): Promise<StepUpResult> => {
-      if (reauthenticate) {
-        return run().then((result) =>
-          result === STEP_UP_NEEDED
-            ? new Promise<StepUpResult>((resolve) => setPending({ mode: "password", run, resolve }))
-            : result,
-        );
-      }
+      // A second step asking while one waits replaces it, and the first is told it was cancelled,
+      // so its promise always settles (review on PR #363).
+      const ask = (mode: Pending["mode"]) =>
+        new Promise<StepUpResult>((resolve) => {
+          attempt.current += 1;
+          setBusy(false);
+          setError(null);
+          setPassword("");
+          setPending((previous) => {
+            previous?.resolve(CANCELLED);
+            return { mode, run, resolve };
+          });
+        });
+      if (reauthenticate) return run().then((result) => (result === STEP_UP_NEEDED ? ask("password") : result));
       if (confirmed && sameDesk(confirmed.desk, desk) && now - confirmed.at < STEP_UP_MINUTES) return run();
-      return new Promise<StepUpResult>((resolve) => setPending({ mode: "confirm", run, resolve }));
+      return ask("confirm");
     },
     [reauthenticate, desk, now],
   );
-
-  // Bumped whenever the dialog closes, so a sign-in still running when it was cancelled never
-  // goes on to make the change.
-  const attempt = useRef(0);
   const close = (result: StepUpResult) => {
     attempt.current += 1;
     pending?.resolve(result);

@@ -217,7 +217,8 @@ describe("shared workspace connection", () => {
     expect(view?.status).toBe("ready");
     expect(view?.snapshot?.revision).toBe(1);
     // The end date goes as a time, worked out from minutes, never from the demo clock.
-    expect(typeof (bodies[0] as { expiresAt: string }).expiresAt).toBe("string");
+    const expiresAt = Date.parse((bodies[0] as { expiresAt: string }).expiresAt);
+    expect(Math.abs(expiresAt - (Date.now() + 60 * 60_000))).toBeLessThan(60_000);
     client.dispose();
   });
   it("opens a record through the server's break glass, and shows the board it answers with", async () => {

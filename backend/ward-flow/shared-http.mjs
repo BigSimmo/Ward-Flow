@@ -183,7 +183,12 @@ export function createSharedHandler({
           const result = await store.ownRequest(actorId);
           return reply(result.status, result.body);
         }
-        if (view.status !== "none")
+        // Decided from the account's roles, not the desk named in the header: a stale or made-up
+        // working-as id reads as no desk, but the account still holds its roles.
+        const holder = workingAs
+          ? await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId) })
+          : view;
+        if (holder.status !== "none")
           return reply(403, { error: "This account already has a role. Ask your access admin for another." });
         const { body, refusal } = await json();
         if (refusal) return refusal;
@@ -310,8 +315,8 @@ export function createSharedHandler({
             !store.decideRequest ||
             !UUID.test(body?.requestId ?? "") ||
             !["approved", "declined"].includes(body?.decision) ||
-            !expiresAt ||
-            !Number.isFinite(expiresAt.getTime())
+            // Only an approval gives a role, so only an approval needs an end date.
+            (body.decision === "approved" && (!expiresAt || !Number.isFinite(expiresAt.getTime())))
           )
             return reply(400, { error: "A request, an answer and an end date are required" });
           result = await store.decideRequest(view, body.requestId.toLowerCase(), body.decision, expiresAt);

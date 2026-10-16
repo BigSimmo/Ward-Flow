@@ -27,6 +27,7 @@ import {
   COVER_MAX_MINUTES,
   coverAccess,
   coverRefusal,
+  managesAccess,
   membershipStatus,
   reviewNotes,
   scopeWithinScope,
@@ -81,7 +82,11 @@ type AccessAdminSource = {
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
   /** Why the lists may be out of date (the server was not reached). */
   readonly problem?: string | null;
+  /** True until the first read from the server comes back. */
+  readonly loading?: boolean;
 };
+
+const READING = "Reading from the server.";
 
 const GRANT_DAYS = [30, 90, 180, 365] as const;
 const COVER_HOURS = [4, 8, 12].filter((hours) => hours * 60 <= COVER_MAX_MINUTES);
@@ -142,6 +147,14 @@ export function AccessSettings() {
   const { desk, previewOf } = useWardAccessSnapshot();
   if (previewOf) return <p className={styles.intro}>Preview only. Access changes are made from your own desk.</p>;
   if (desk.role === "admin") return <AccessAdminPanel />;
+  // A statewide coordinator gives cover and also manages roles (managesAccess, review on PR #363).
+  if (managesAccess(desk))
+    return (
+      <>
+        <CoverPanel />
+        <AccessAdminPanel />
+      </>
+    );
   return <CoverPanel />;
 }
 
@@ -165,8 +178,11 @@ function AccessAdminPanel() {
   return (
     <>
       <p className={styles.intro}>
-        You give and remove roles. You see no patients from this desk. Nobody grants themselves a role, and a
-        coordinator or access admin role works only once a second person approves it.
+        {desk.role === "admin"
+          ? "You give and remove roles. You see no patients from this desk. "
+          : "As a statewide coordinator you also give and remove roles. "}
+        Nobody grants themselves a role, and a coordinator or access admin role works only once a second person approves
+        it.
       </p>
       {source.problem ? (
         <p className={styles.result} role="alert">
@@ -179,7 +195,9 @@ function AccessAdminPanel() {
         <CardHead title="Requests for access" icon={UserPlus} meta={plural(open.length, "open request")} />
         <CardBody flush>
           {open.length === 0 ? (
-            <p className={styles.empty}>No requests waiting.</p>
+            <p className={styles.empty} role={source.loading ? "status" : undefined}>
+              {source.loading ? READING : "No requests waiting."}
+            </p>
           ) : (
             <ul className={styles.list}>
               {open.map((request) => (
@@ -250,6 +268,11 @@ function AccessAdminPanel() {
       <Card data-testid="ward-access-roles">
         <CardHead title="Everyone with a role" icon={Users} meta={plural(live.length, "role")} />
         <CardBody flush>
+          {source.loading ? (
+            <p className={styles.empty} role="status">
+              {READING}
+            </p>
+          ) : null}
           <ul className={styles.list}>
             {live.map((m) => {
               const status = membershipStatus(m, now);
@@ -596,6 +619,10 @@ function SharedCoverList({
         {source.problem ? (
           <p className={styles.empty} role="alert">
             {source.problem}
+          </p>
+        ) : source.loading ? (
+          <p className={styles.empty} role="status">
+            {READING}
           </p>
         ) : source.covers.length === 0 ? (
           <p className={styles.empty}>No cover given or held by this account.</p>

@@ -186,7 +186,8 @@ export class SharedWorkspaceClient {
                 typeof (choice as SharedRoleChoice).workingAs === "string" &&
                 typeof (choice as SharedRoleChoice).role === "string",
             )
-            .slice(0, 20)
+            // The server sends up to 20 roles, plus the bootstrap statewide desk.
+            .slice(0, 21)
             .map((choice: SharedRoleChoice) => ({
               workingAs: choice.workingAs,
               role: choice.role,

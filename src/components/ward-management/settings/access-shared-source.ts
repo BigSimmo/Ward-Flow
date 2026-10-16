@@ -105,6 +105,7 @@ function useServerList<T>(
     value: current?.value ?? null,
     at: current?.at ?? now,
     problem: current && current.value === null ? "The list could not be read from the server." : null,
+    loading: api !== null && current === null,
     after,
   };
 }
@@ -118,6 +119,7 @@ export type SharedAdminSource = {
   readonly requests: readonly AccessRequest[];
   readonly people: null;
   readonly problem: string | null;
+  readonly loading: boolean;
   readonly label: (actorId: string) => string;
   readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
   readonly approve: (id: string) => Promise<StepUpResult>;
@@ -132,7 +134,7 @@ export function useSharedAdminSource(
 ): SharedAdminSource | null {
   const api = enabled ? (shared?.api ?? null) : null;
   const self = shared?.actorId ?? null;
-  const { value, at, problem, after } = useServerList(api, api ? readAccess : null, now);
+  const { value, at, problem, loading, after } = useServerList(api, api ? readAccess : null, now);
   return useMemo(() => {
     if (!api) return null;
     const settle = (change: Promise<SharedChangeResult>) => change.then(after, () => NOT_REACHED);
@@ -141,6 +143,7 @@ export function useSharedAdminSource(
       requests: (value?.requests ?? []).map((row) => sharedRequest(row, at)).filter(present),
       people: null,
       problem,
+      loading,
       label: (actorId) => accountLabel(actorId, self),
       grant: ({ actorId, access, expiresAt }) =>
         settle(api.grantAccess({ actorId, role: access.role, scope: access.scope, expiresInMinutes: expiresAt - now })),
@@ -148,7 +151,7 @@ export function useSharedAdminSource(
       revoke: (id) => settle(api.revokeAccess(id)),
       decide: (id, decision, expiresAt) => settle(api.decideRequest(id, decision, expiresAt - now)),
     };
-  }, [api, value, at, problem, now, self, after]);
+  }, [api, value, at, problem, loading, now, self, after]);
 }
 
 /** One cover from the server, on the demo clock. */
@@ -163,6 +166,7 @@ type SharedCover = {
 export type SharedCoverSource = {
   readonly covers: readonly SharedCover[];
   readonly problem: string | null;
+  readonly loading: boolean;
   readonly self: string | null;
   readonly label: (actorId: string) => string;
   readonly give: (input: { actorId: string; scope: WardAccessScope; minutes: number }) => Promise<StepUpResult>;
@@ -176,7 +180,7 @@ export function useSharedCoverSource(
 ): SharedCoverSource | null {
   const api = enabled ? (shared?.api ?? null) : null;
   const self = shared?.actorId ?? null;
-  const { value, at, problem, after } = useServerList(api, api ? readCovers : null, now);
+  const { value, at, problem, loading, after } = useServerList(api, api ? readCovers : null, now);
   return useMemo(() => {
     if (!api) return null;
     const settle = (change: Promise<SharedChangeResult>) => change.then(after, () => NOT_REACHED);
@@ -196,10 +200,11 @@ export function useSharedCoverSource(
         })
         .filter(present),
       problem,
+      loading,
       self,
       label: (actorId) => accountLabel(actorId, self),
       give: (input) => settle(api.giveCover(input)),
       end: (id) => settle(api.revokeAccess(id)),
     };
-  }, [api, value, at, problem, self, after]);
+  }, [api, value, at, problem, loading, self, after]);
 }

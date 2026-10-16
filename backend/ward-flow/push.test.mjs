@@ -396,6 +396,16 @@ test("from migration 9 a desk held by membership turns alerts on for its own rol
   assert.equal(refused.status, 422);
   assert.match((await refused.json()).error, /not part of your role/);
   assert.equal(executive.calls.length, 0);
+  // The same ward desk on a database still at version 8.
+  const before9 = routes({
+    actor: other,
+    viewer: async () => ({ ...wardView, version: 8 }),
+    pushByRole: (view) => view.version >= 9 && view.access.role === "ward",
+  });
+  const early = await before9.handler(call("push-subscribe", { subscription }));
+  assert.equal(early.status, 422);
+  assert.match((await early.json()).error, /not set up on this database yet/);
+  assert.equal(before9.calls.length, 0);
 });
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {

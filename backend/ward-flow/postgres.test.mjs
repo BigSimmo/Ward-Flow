@@ -1131,8 +1131,9 @@ test(
     const start = Date.parse("2026-10-07T10:00:00Z");
     let at = new Date(start);
     const sent = [];
-    const [lead, second, nurseA, nurseB, asker, declined, deskCoordinator] = Array.from({ length: 7 }, () =>
-      randomUUID(),
+    const [lead, second, nurseA, nurseB, asker, declined, deskCoordinator, placeCoordinator] = Array.from(
+      { length: 8 },
+      () => randomUUID(),
     );
     const workspaceId = randomUUID();
     const store = createWorkspaceStore(pool, {
@@ -1173,6 +1174,12 @@ test(
       // The viewer notes when a role was last used.
       const used = await pool.query("SELECT last_used_at FROM ward_flow.memberships WHERE id=$1", [roleA.id]);
       assert.equal(new Date(used.rows[0].last_used_at).getTime(), start);
+      // Read again within the hour, the time is not written again.
+      at = new Date(start + 30 * 60_000);
+      await store.viewer(nurseA);
+      const again = await pool.query("SELECT last_used_at FROM ward_flow.memberships WHERE id=$1", [roleA.id]);
+      assert.equal(new Date(again.rows[0].last_used_at).getTime(), start);
+      at = new Date(start);
 
       // Cover: a nurse in charge gives a colleague cover of their own ward, for one shift at most.
       // Longer than one shift (the synthetic cover length is 12 hours).
@@ -1205,7 +1212,17 @@ test(
       const passedOn = await store.giveCover(reliefView, { actorId: nurseB, scope: wardA, minutes: 60 });
       assert.equal(passedOn.status, 403);
       assert.match(passedOn.body.error, /cannot be passed on/);
-      assert.equal((await store.revokeAccess(aView, reliefCover.body.membership.id)).status, 200);
+      // A coordinator for the ward's own service sees that cover and may end it, though not its giver.
+      const service = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"].find((name) =>
+        engine.scopeWithin(before, wardA, { kind: "service", service: name }),
+      );
+      const placeRole = await grant(placeCoordinator, "coordinator", { kind: "service", service });
+      assert.equal((await store.approveAccess(secondView, placeRole.id)).status, 200);
+      const placeView = await store.viewer(placeCoordinator);
+      assert.ok((await store.listCovers(placeView)).body.covers.some((c) => c.id === reliefCover.body.membership.id));
+      assert.equal((await store.revokeAccess(placeView, roleA.id)).status, 403);
+      assert.equal((await store.revokeAccess(placeView, reliefCover.body.membership.id)).status, 200);
+      assert.equal((await store.revokeAccess(leadView, placeRole.id)).status, 200);
 
       // A person with no role asks once; a request is not a role.
       assert.deepEqual((await store.ownRequest(asker)).body, { request: null });

@@ -139,6 +139,22 @@ describe("approving and removing", () => {
       revokeRefusal({ remover: statewideAdmin, removerId: "admin-9", membership: membership(), places }),
     ).toBeNull();
   });
+
+  it("refuses a non-admin ending a role, and lets a coordinator end cover inside its place", () => {
+    expect(revokeRefusal({ remover: fshWard, removerId: "nic-1", membership: membership(), places })).toBe(
+      "Granting and removing roles is not part of your role.",
+    );
+    const south: WardAccess = { role: "coordinator", scope: { kind: "service", service: "South Metro" } };
+    const north: WardAccess = { role: "coordinator", scope: { kind: "service", service: "North Metro" } };
+    const cover = membership({ kind: "cover", grantedBy: "nic-1" });
+    expect(revokeRefusal({ remover: south, removerId: "coord-1", membership: cover, places })).toBeNull();
+    expect(revokeRefusal({ remover: north, removerId: "coord-2", membership: cover, places })).toBe(
+      "Granting and removing roles is not part of your role.",
+    );
+    expect(revokeRefusal({ remover: south, removerId: "coord-1", membership: membership(), places })).toBe(
+      "Granting and removing roles is not part of your role.",
+    );
+  });
 });
 
 describe("the access review", () => {
@@ -280,6 +296,11 @@ describe("the local demo access admin", () => {
 
   it("answers a request once, and takes one open request per person", () => {
     const [first, second] = readLocalAccessAdmin(now).requests;
+    // Nobody answers their own request, either way.
+    const asker = { ...desk, actorId: first.actorId };
+    expect(localDecide(asker, first.id, "declined", { expiresAt: now + 1440, now, places })).toBe(
+      "Nobody grants themselves a role.",
+    );
     expect(localDecide(desk, first.id, "approved", { expiresAt: now + 1440, now, places })).toBeNull();
     expect(find(first.actorId).access).toEqual(first.access);
     expect(localDecide(desk, first.id, "declined", { expiresAt: now + 1440, now, places })).toBe(

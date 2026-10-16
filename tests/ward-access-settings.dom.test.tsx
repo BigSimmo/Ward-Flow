@@ -26,7 +26,12 @@ import {
   setWardAccess,
 } from "@/components/ward-management/shell/ward-access-store";
 import { resetLocalAccessAdminForTests } from "@/components/ward-management/shell/ward-access-admin-store";
-import { StepUpReauthContext, forgetStepUp } from "@/components/ward-management/shell/ward-step-up";
+import {
+  StepUpReauthContext,
+  forgetStepUp,
+  useStepUp,
+  type StepUpResult,
+} from "@/components/ward-management/shell/ward-step-up";
 import {
   SharedAccessContext,
   type SharedAccessApi,
@@ -95,6 +100,18 @@ describe("the Access tab", () => {
   it("is not offered with the role-access flag off", () => {
     settings();
     expect(screen.queryByRole("radio", { name: /^Access/ })).not.toBeInTheDocument();
+  });
+
+  it("gives a statewide coordinator both cover and the roles lists", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
+    });
+    settings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    expect(screen.getByTestId("ward-access-cover")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-access-roles")).toBeInTheDocument();
+    expect(screen.getByText(/As a statewide coordinator you also give and remove roles/u)).toBeInTheDocument();
   });
 
   it("opens an Access admin desk on the roles list, and gives a role after a fresh confirm", async () => {
@@ -247,5 +264,36 @@ describe("the Access tab", () => {
     await act(async () => signedIn());
     expect(api.grantAccess).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cancelled. Nothing was changed.");
+  });
+
+  it("tells a step waiting for the password that it was cancelled when a second step asks", async () => {
+    const results: StepUpResult[] = [];
+    function TwoSteps() {
+      const { guard, dialog } = useStepUp();
+      const ask = (name: string) => () =>
+        void guard(async () => "step-up" as const).then((result) => results.push(`${name}: ${result}`));
+      return (
+        <>
+          <button type="button" onClick={ask("first")}>
+            first
+          </button>
+          <button type="button" onClick={ask("second")}>
+            second
+          </button>
+          {dialog}
+        </>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StepUpReauthContext.Provider value={async () => {}}>
+          <TwoSteps />
+        </StepUpReauthContext.Provider>
+      </WardFlowProvider>,
+    );
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "first" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "second" })));
+    expect(results).toEqual(["first: Cancelled. Nothing was changed."]);
+    expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
   });
 });

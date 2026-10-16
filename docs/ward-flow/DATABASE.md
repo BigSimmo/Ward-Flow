@@ -6,8 +6,10 @@
   synthetic data only. Never PsychSift's Supabase project, Railway service or credentials.
 - Sign-in is Supabase Auth on the same project. The accounts listed in `WARD_COORDINATOR_USER_IDS`
   are the bootstrap statewide coordinators. From migration 8 any other account needs a role and
-  place in `ward_flow.memberships` (see the backend README). From migration 9 cover, requests for
-  access and phone alerts by role are held there too.
+  place in `ward_flow.memberships` (see the backend README). From migration 9 cover is a
+  membership of its own kind in that table, requests for access have their own
+  `ward_flow.access_requests` table, and each phone alert device in `ward_flow.push_subscriptions`
+  records the membership that turned it on.
 - Plain PostgreSQL (`postgres`) is kept behind the same seam as a fallback. It shares the SQL,
   migrations and runtime-role checks that the Supabase adapter builds on. It is not in use.
 - **Azure is retired.** The Azure Functions host, Blob session vault, Azure PostgreSQL and Entra

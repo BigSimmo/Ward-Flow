@@ -231,6 +231,8 @@ export function localDecide(
   const state = current(input.now);
   const request = state.requests.find((candidate) => candidate.id === id && candidate.decision === null);
   if (!request) return "That request has already been answered.";
+  // As on the server: nobody answers their own request, either way.
+  if (request.actorId === desk.actorId) return "Nobody grants themselves a role.";
   if (decision === "approved") {
     const refusal = localGrant(desk, { actorId: request.actorId, access: request.access, ...input });
     if (refusal) return refusal;

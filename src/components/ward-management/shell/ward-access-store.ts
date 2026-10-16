@@ -28,7 +28,7 @@ import {
   type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 import type { BreakGlassGrant } from "@/components/ward-management/ward-access-scope";
-import { withCover } from "@/components/ward-management/ward-access-admin";
+import { withCover } from "@/components/ward-management/ward-access-shell-rules";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";

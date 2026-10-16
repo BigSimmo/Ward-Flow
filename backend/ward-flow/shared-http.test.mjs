@@ -500,10 +500,13 @@ test("cover, requests and answers check their fields; asking for access needs no
   assert.deepEqual(await (await handler(request("/access/cover"))).json(), { name: "covers" });
   const decided = { requestId, decision: "approved", expiresAt: "2027-01-01T00:00:00.000Z" };
   assert.equal((await handler(request("/access/decide", decided))).status, 200);
+  // Declining needs no end date.
+  assert.equal((await handler(request("/access/decide", { requestId, decision: "declined" }))).status, 200);
   assert.deepEqual(seen, [
     ["cover", view, { actorId: other, scope, minutes: 480 }],
     ["covers", view],
     ["decide", view, requestId, "approved", new Date(decided.expiresAt)],
+    ["decide", view, requestId, "declined", null],
   ]);
   for (const [path, data] of [
     ["/access/cover", { actorId: "x", scope, minutes: 480 }],
@@ -519,6 +522,14 @@ test("cover, requests and answers check their fields; asking for access needs no
     requestAccess: answer("request"),
   });
   assert.equal((await choosing.handler(request("/access/request", { role: "ward", scope }))).status, 403);
+  // A stale or made-up working-as header reads as no role, but the account still holds roles.
+  const stale = setup(other, "prototype", {
+    viewer: async (_actor, options) => (options?.workingAs ? { status: "none" } : { status: "choose", choices: [] }),
+    requestAccess: answer("request"),
+  });
+  const staleAsk = request("/access/request", { role: "ward", scope });
+  staleAsk.headers.set("x-ward-working-as", "88888888-8888-4888-8888-888888888888");
+  assert.equal((await stale.handler(staleAsk)).status, 403);
 
   // An account with no role may ask for one, and read its own request, but nothing else.
   seen.length = 0;

@@ -163,7 +163,7 @@ export function WardAskForAccess({
           </button>
         </form>
       ) : (
-        <p>Asking for access from here is not wired in this prototype. Ask your access admin directly.</p>
+        <p>Not wired in this prototype. Ask your access admin directly.</p>
       )}
       <button type="button" onClick={onRetry}>
         Check again

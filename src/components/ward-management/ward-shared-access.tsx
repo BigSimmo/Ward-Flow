@@ -7,7 +7,7 @@ import type { SharedChangeResult, SharedView, SharedWorkspaceClient } from "./wa
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
-import { PUSH_ROLES } from "./ward-access-admin";
+import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";

@@ -28,24 +28,18 @@ import {
   type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 
+// The few rules every screen's shell needs live apart, so the shell does not load all of these.
+export { PUSH_ROLES, STEP_UP_MINUTES, withCover } from "./ward-access-shell-rules";
+
 /** Roles that wait for a second person's approval before they work (plan decision 6). */
 const SECOND_APPROVER_ROLES: readonly WardAccessRole[] = ["coordinator", "admin"];
 
 /** Cover lasts one shift at most (synthetic). */
 export const COVER_MAX_MINUTES = CLINICAL_VALUES.coverLength.value * 60;
-/** Granting access or breaking glass needs a sign-in this recent (synthetic). */
-export const STEP_UP_MINUTES = CLINICAL_VALUES.stepUpWindow.value;
 /** The review list shows a role ending this soon (synthetic). */
 export const ACCESS_ENDING_SOON_MINUTES = CLINICAL_VALUES.accessExpiringSoon.value * MINUTES_PER_DAY;
 /** A role not used for this long stops working by itself (synthetic). */
 export const ACCESS_UNUSED_MINUTES = CLINICAL_VALUES.accessUnused.value * MINUTES_PER_DAY;
-
-/**
- * Who hears phone alerts by role (feature 10): a coordinator, a site bed manager, a nurse in
- * charge or an ED clinician, each for the act-now rows inside their own place only. An executive
- * sees counts, an access admin no patients, so neither is sent alerts.
- */
-export const PUSH_ROLES: readonly WardAccessRole[] = ["coordinator", "bed_manager", "ward", "ed"];
 
 type AccessMembershipKind = "role" | "cover";
 
@@ -175,6 +169,13 @@ export function revokeRefusal(input: {
 }): string | null {
   const { membership } = input;
   if (membership.kind === "cover" && membership.grantedBy === input.removerId) return null;
+  // A coordinator sees all cover inside its place, so may end any of it there, not only its own.
+  if (
+    membership.kind === "cover" &&
+    input.remover.role === "coordinator" &&
+    scopeWithinScope(membership.access.scope, input.remover.scope, input.places)
+  )
+    return null;
   if (!managesAccess(input.remover)) return NOT_ADMIN;
   if (!scopeWithinScope(membership.access.scope, input.remover.scope, input.places)) return WIDER;
   return null;
@@ -245,19 +246,6 @@ export function coverRefusal(input: {
   if (!Number.isInteger(input.minutes) || input.minutes < 1 || input.minutes > COVER_MAX_MINUTES)
     return `Cover lasts up to ${CLINICAL_VALUES.coverLength.value} hours.`;
   return null;
-}
-
-/**
- * A nurse in charge working with cover of more wards: the covered wards join its own, so night
- * cover of two wards is one desk. An ED desk works one ED at a time, so ED cover is its own choice
- * of who to work as, never merged.
- */
-export function withCover(access: WardAccess, covers: readonly WardAccessScope[]): WardAccess {
-  if (access.role !== "ward" || access.scope.kind !== "ward") return access;
-  const unitIds = [...access.scope.unitIds];
-  for (const cover of covers)
-    if (cover.kind === "ward") for (const id of cover.unitIds) if (!unitIds.includes(id)) unitIds.push(id);
-  return unitIds.length === access.scope.unitIds.length ? access : { role: "ward", scope: { kind: "ward", unitIds } };
 }
 
 /** Why this request may not be made, or `null`. One open request per person. */

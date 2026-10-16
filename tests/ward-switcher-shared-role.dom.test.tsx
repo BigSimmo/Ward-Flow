@@ -33,8 +33,8 @@ afterEach(() => {
   });
 });
 
-function sheet(shared: boolean) {
-  const tree = <OperatorSwitcherModal isOpen onClose={() => {}} />;
+function sheet(shared: boolean, onSelectRole = vi.fn()) {
+  const tree = <OperatorSwitcherModal isOpen onClose={() => {}} onSelectRole={onSelectRole} />;
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       {shared ? (
@@ -54,10 +54,14 @@ describe("Go to a desk in the shared workspace", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess(ward);
     });
-    sheet(true);
+    const onSelectRole = vi.fn();
+    sheet(true, onSelectRole);
     expect(screen.getByTestId("workstation-shared-role-note")).toHaveTextContent("use Switch role");
     fireEvent.click(screen.getByTestId("workstation-open-coordinator"));
     expect(readWardAccessSnapshot().desk).toEqual(ward);
+    // A desk the signed-in role cannot open stays shut, says why, and the rail keeps its persona.
+    expect(screen.getByText(/That desk is not part of your role/u)).toBeInTheDocument();
+    expect(onSelectRole).not.toHaveBeenCalled();
   });
 
   it("still takes the desk's access in the local demo", () => {

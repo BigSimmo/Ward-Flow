@@ -88,7 +88,7 @@ describe("shared workspace role gate (role access plan, later pass)", () => {
 
   it("says asking is not wired when the server takes no requests", () => {
     render(<WardAskForAccess canRequest={false} api={null} onRetry={vi.fn()} onSignOut={vi.fn()} />);
-    expect(screen.getByText(/not wired in this prototype/u)).toBeInTheDocument();
+    expect(screen.getByText(/^Not wired in this prototype\./u)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ask for access" })).toBeNull();
   });
 
