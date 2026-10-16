@@ -2,8 +2,8 @@
 
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 
 /**
  * shell-6 (13 Oct 2026): `/people/UM100023` used to say a real UMRN "is not a person's record
@@ -12,7 +12,7 @@ import { WardMovementNotFound } from "@/components/ward-management/ward-manageme
  * No match says so plainly and offers the patient search with the UMRN filled in.
  */
 export function PersonByUmrn({ umrn, governed }: { umrn: string; governed: boolean }) {
-  const { patients } = useWardFlow();
+  const { patients } = useWardFlowSelect("patients");
   const wanted = umrn.toUpperCase();
   const patient = patients.find((candidate) => candidate.umrn.toUpperCase() === wanted);
   if (!patient) return <WardMovementNotFound requestedId={wanted} reason="no-such-umrn" />;

@@ -10,7 +10,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
  * fact with no bed change is "patient"; an event the engine records nothing for, or that only logs a
  * request, is "neither".
  */
-export type EventHistoryCategory = "bed" | "patient" | "both" | "neither";
+type EventHistoryCategory = "bed" | "patient" | "both" | "neither";
 
 export interface EventTypeHistoryConfig {
   category: EventHistoryCategory;
@@ -60,6 +60,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   CLEAR_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker cleared" },
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
+  SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
 
   // 2.2 Front-door referrals
@@ -168,6 +169,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   DISPATCH_BROADCAST_ALERT: { category: "neither", plainWording: "Statewide broadcast directive dispatched" },
   ACKNOWLEDGE_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive acknowledged" },
   STAND_DOWN_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive stood down" },
+  EXTEND_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast alert extended" },
   RAISE_PULL_NOW: { category: "neither", plainWording: "Pull now alert raised" },
   REPLY_BROADCAST_ALERT: { category: "neither", plainWording: "Alert answered" },
   // Bed history finds a booking's events by its ward; patient history finds the change, cancel and

@@ -1,5 +1,4 @@
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-
 /**
  * Minutes elapsed since midnight on the synthetic operating day.
  *
@@ -188,31 +187,56 @@ export function minutesUntil(due: Instant, now: Instant) {
 
 /**
  * The two warnings before a recorded legal due time, in minutes. Josh's defaults (1 hour and 3
- * hours), changeable in Settings (26 Sept 2026, "All yes", question 3). `WardFlowProvider` applies
- * `state.configuration`'s values here whenever they change, so every screen and derivation that
- * calls `clockState` reads the same thresholds without each one threading the configuration
- * through. Outside a provider (unit tests of pure functions) the defaults hold.
+ * hours), changeable in Settings (26 Sept 2026, "All yes", question 3).
+ *
+ * Passed in, never read from a module-wide value (Josh's card, 15 Oct 2026, "Pass values in"):
+ * the React Compiler caches a calculation on the inputs it can see, so a warning time it cannot
+ * see would leave a screen on the old warnings after a Settings change. Screens read them with
+ * `useDueSoonThresholds()`; calculations take them as a parameter.
  */
-let dueSoonThresholds = { urgentMinutes: DUE_SOON_URGENT_MINUTES, soonMinutes: DUE_SOON_MINUTES };
+export type DueSoonThresholds = { readonly urgentMinutes: number; readonly soonMinutes: number };
 
-export function applyDueSoonThresholds(urgentMinutes: number, soonMinutes: number): void {
-  if (dueSoonThresholds.urgentMinutes === urgentMinutes && dueSoonThresholds.soonMinutes === soonMinutes) return;
-  dueSoonThresholds = { urgentMinutes, soonMinutes };
+export const DEFAULT_DUE_SOON_THRESHOLDS: DueSoonThresholds = Object.freeze({
+  urgentMinutes: DUE_SOON_URGENT_MINUTES,
+  soonMinutes: DUE_SOON_MINUTES,
+});
+
+let lastThresholds: DueSoonThresholds = DEFAULT_DUE_SOON_THRESHOLDS;
+
+/**
+ * The warnings a configuration sets. A configuration saved before these keys existed has neither,
+ * so the defaults stand in. The same two numbers give back the same object, so a screen that
+ * passes the result on does not look changed to anything that compares it.
+ */
+export function dueSoonThresholdsOf(
+  configuration: { readonly dueSoonUrgentMinutes?: number; readonly dueSoonMinutes?: number } | null | undefined,
+): DueSoonThresholds {
+  const urgentMinutes = configuration?.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+  const soonMinutes = configuration?.dueSoonMinutes ?? DUE_SOON_MINUTES;
+  if (lastThresholds.urgentMinutes !== urgentMinutes || lastThresholds.soonMinutes !== soonMinutes) {
+    lastThresholds = Object.freeze({ urgentMinutes, soonMinutes });
+  }
+  return lastThresholds;
 }
 
-export function currentDueSoonThresholds(): { urgentMinutes: number; soonMinutes: number } {
-  return dueSoonThresholds;
+/**
+ * `clockState(due, now, thresholds) === "breached"` without the warnings, which never decide a breach:
+ * past the recorded due time, and a due time that is a real number.
+ */
+export function isClockBreached(due: Instant, now: Instant): boolean {
+  const remaining = minutesUntil(due, now);
+  return Number.isFinite(remaining) && remaining < 0;
 }
 
-export function clockState(due: Instant, now: Instant): ClockState {
+export function clockState(due: Instant, now: Instant, thresholds: DueSoonThresholds): ClockState {
   const remaining = minutesUntil(due, now);
   if (!Number.isFinite(remaining)) return "due";
   if (remaining < 0) return "breached";
   // The 1-hour and 3-hour warnings are Josh's defaults, not legal limits (26 Sept 2026 card).
   // Inclusive at each threshold (audit A3-4, 13 Oct 2026): exactly 60m left is act now on every
   // page, matching the Delays board's `dueTone`/`isDueSoon`, so Forms and Delays never disagree.
-  if (remaining <= dueSoonThresholds.urgentMinutes) return "critical";
-  if (remaining <= dueSoonThresholds.soonMinutes) return "due";
+  if (remaining <= thresholds.urgentMinutes) return "critical";
+  if (remaining <= thresholds.soonMinutes) return "due";
   return "clear";
 }
 
@@ -279,4 +303,20 @@ export function formatInstant(instant: Instant) {
   const hours = Math.floor(wrapped / 60);
   const minutes = wrapped % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/**
+ * A typed 24-hour clock time as minutes since midnight (0 to 1439), or `undefined`.
+ *
+ * Takes "09:30" and "9:30", and four digits ("0930") too, because the iPhone number pad has no
+ * ":" key. Digits only must be four: "143" could be 01:43 or a dropped digit from 14:30, so it is
+ * refused like "14:3", "14", "24:00" and "9h30". A half-typed time never becomes a time nobody typed.
+ */
+export function minuteOfDayFromClockText(text: string): number | undefined {
+  const match = /^(?:(\d{1,2}):(\d{2})|(\d{2})(\d{2}))$/.exec(text.trim());
+  if (!match) return undefined;
+  const hours = Number(match[1] ?? match[3]);
+  const minutes = Number(match[2] ?? match[4]);
+  if (hours > 23 || minutes > 59) return undefined;
+  return hours * 60 + minutes;
 }

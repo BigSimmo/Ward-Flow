@@ -259,7 +259,7 @@
     box-sizing: border-box;
     padding: 0 var(--wf-phone-pill-px);
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     white-space: nowrap;
   }
@@ -345,28 +345,30 @@
 
 /*
  * A2-18 (audit round 2): at night the hero's light Raise referral was the brightest thing on screen.
- * In dark mode it takes the hero band's secondary look (the onHero button style).
+ * Phone review F-32 (15 Oct 2026): the outlined onHero look that replaced it lost the fill, so the
+ * page's one primary no longer read as one. In dark mode it takes the filled primary (accent) look:
+ * still filled, and quieter than the near-white light button.
  */
 :global([data-theme="dark"]) .raiseReferral {
-  color: var(--wf-hero-ink);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+  color: var(--wf-on-accent);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
 }
 
 :global([data-theme="dark"]) .raiseReferral:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
 }
 
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) .raiseReferral {
-    color: var(--wf-hero-ink);
-    background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-    border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+    color: var(--wf-on-accent);
+    background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+    border-color: var(--wf-pri-edge);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
   }
 
   :global(:root:not([data-theme="light"])) .raiseReferral:hover {
-    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
   }
 }

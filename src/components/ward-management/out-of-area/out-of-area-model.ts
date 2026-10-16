@@ -16,8 +16,9 @@ import type {
 } from "@/components/ward-management/ward-model";
 import { BED_MEETING_MINUTES, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
-import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 
 /**
  * Out of area option A (9 Oct 2026): the small, pure reads the page shows beside the ledger.
@@ -116,30 +117,6 @@ export const BLANK_REPAT_DRAFT: RepatDraft = {
   estimatedDay: "today",
 };
 
-/** Same HH:MM parser the ED booking popup uses, kept local so this screen does not import from ed-screen. */
-export function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
-export function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY;
-  return startOfToday + (day === "tomorrow" ? MINUTES_PER_DAY : 0) + minuteOfDay;
-}
-
 /** The three steps of the plan, and the answers each holds. */
 export const PLAN_STEPS = [
   { n: 1, title: "Receiving bed", answers: ["receiving hospital", "ward agreement"] },
@@ -151,7 +128,7 @@ export const PLAN_ANSWER_COUNT = 7;
 /** The answers still needed, in plan order. None is filled in for the coordinator. */
 export function missingAnswers(draft: RepatDraft, now: Instant): string[] {
   const missing: string[] = [];
-  if (!wardSites.some((site) => site.code === draft.homeHospital)) missing.push("receiving hospital");
+  if (!siteDirectory.some((site) => site.code === draft.homeHospital)) missing.push("receiving hospital");
   if (draft.receivingWardAgreed === undefined) missing.push("ward agreement");
   if (draft.mode !== "road" && draft.mode !== "flight") missing.push("road or flight");
   if (draft.provider === undefined) missing.push("provider");
@@ -271,7 +248,7 @@ export function homeRegionBeds(entries: OutOfAreaEntry[], units: Unit[], now: In
     .sort((a, b) => b[1] - a[1])
     .map(([region, away]) => {
       // Asked of `travelBand` site by site: only ward-distance.ts reads the band fixture.
-      const recorded = wardSites
+      const recorded = siteDirectory
         .map((site): [string, TravelBand | undefined] => [site.code, travelBand(region, site.code)])
         .filter((pair): pair is [string, TravelBand] => pair[1] !== undefined);
       // The shortest road band recorded, or the air only sites when a region has no road band.

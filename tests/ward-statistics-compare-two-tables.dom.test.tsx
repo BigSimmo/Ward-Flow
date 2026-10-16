@@ -62,7 +62,7 @@ function renderCompare() {
   return view;
 }
 
-const STATISTICS_CSS = "src/components/ward-management/statistics/statistics-third-edition.module.css";
+const STATISTICS_CSS = "src/components/ward-management/statistics/statistics-compare.module.css";
 
 /** Comments first, always: this file’s own prose contains the string being searched for. */
 function stripComments(css: string): string {
@@ -174,38 +174,10 @@ describe("the comparisons page sets wards beside wards and departments beside de
     ).toBe(true);
   });
 
-  /**
-   * 🔴 **THE ALIGNMENT RULE WAS INERT AND EVERY TEST HERE STILL PASSED.** As a bare `.num` it lost
-   * to the shared block's `.table th, .table td { text-align: left }` on specificity — (0,1,0)
-   * against (0,2,0) — so the figures rendered left-aligned while the stylesheet read as though they
-   * were right. **Found by opening the page**, not by anything in this file.
-   *
-   * ⚠️ **AND IT IS ASSERTED AGAINST THE STYLESHEET RATHER THAN THE DOM, BECAUSE THE DOM CANNOT
-   * ANSWER IT HERE.** The obvious guard is `getComputedStyle(cell).textAlign === "right"`. That was
-   * written first and it failed with `expected '' to be 'right'` — jsdom loads no CSS Modules
-   * stylesheet, so every computed style in this environment is empty. A DOM assertion about
-   * alignment can only ever FAIL here; it cannot pass, and a guard that cannot pass is as useless
-   * as one that cannot fail.
-   *
-   * So the property checked is the one that actually broke: the rule that right-aligns figures must
-   * be SCOPED to a table selector, because an unscoped one is outranked. Comments are stripped
-   * first — a text-scanning guard is satisfied by prose unless it excludes prose, and this file's
-   * own comments say `text-align: right` more than once.
-   */
-  it("scopes the right-alignment rule to a table selector, because an unscoped one is outranked", () => {
-    const css = stripComments(readFileSync(STATISTICS_CSS, "utf8"));
-    const aligning = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/gu)].filter(([, , body]) =>
-      /text-align:\s*right/u.test(body),
-    );
-    expect(aligning.length, "no rule right-aligns anything in this stylesheet").toBeGreaterThan(0);
-    for (const [, selector] of aligning) {
-      expect(
-        /\.[a-zA-Z]*[Tt]able[a-zA-Z]*\s+\w*\.?\w*/u.test(selector),
-        `a right-alignment rule is not scoped to a table selector and will lose to the shared ` +
-          `block's own \`.table td\`: ${selector.trim()}`,
-      ).toBe(true);
-    }
-  });
+  // Retired 15 Oct 2026: "scopes the right-alignment rule to a table selector, because an
+  // unscoped one is outranked". It read statistics-third-edition.module.css, which the Compare
+  // screen stopped importing in the v6 rebuild (it uses statistics-compare, -detail and -v6), so
+  // it checked a sheet nothing loads. The sheet was deleted (fix list 2.4).
 
   /**
    * A raw average reached the page as `44.33680555555556 days` and no assertion here minded. A
@@ -466,8 +438,11 @@ describe("the comparisons page sets wards beside wards and departments beside de
   // clear of today's max-content again. Column counts are unchanged (5 and 4), so this is a value
   // change and nothing else.
   it.each([
-    { table: WARD_TABLE, selector: ".compareWardTable", pin: "47.5rem", columnsWhenMeasured: 5 },
-    { table: WARD_TABLE, selector: ".compareEdTable", pin: "36rem", columnsWhenMeasured: 4, use: ED_TABLE },
+    // Re-pointed 15 Oct 2026 to the v6 sheet the screen imports (statistics-compare.module.css,
+    // `.wardTable` and `.edTable`, passed as minWidthClass). Its pins were measured on 7 Oct 2026
+    // and raised by the CI sweep, as that sheet's own comment records.
+    { table: WARD_TABLE, selector: ".wardTable", pin: "40rem", columnsWhenMeasured: 5 },
+    { table: WARD_TABLE, selector: ".edTable", pin: "35rem", columnsWhenMeasured: 4, use: ED_TABLE },
   ])("$selector was measured at $pin against $columnsWhenMeasured columns, and still has them", (entry) => {
     const testId = entry.use ?? entry.table;
     renderCompare();
@@ -480,8 +455,8 @@ describe("the comparisons page sets wards beside wards and departments beside de
     ).toBe(entry.columnsWhenMeasured);
 
     const css = stripComments(readFileSync(STATISTICS_CSS, "utf8"));
-    const block = new RegExp(`\\${entry.selector}\\s*\\{[^}]*--ward-table-min-width:\\s*([^;]+);`, "u").exec(css);
-    expect(block, `${entry.selector} no longer declares a --ward-table-min-width`).not.toBeNull();
+    const block = new RegExp(`\\${entry.selector}\\s*\\{[^}]*min-width:\\s*([^;]+);`, "u").exec(css);
+    expect(block, `${entry.selector} no longer declares a min-width`).not.toBeNull();
     expect(
       block?.[1].trim(),
       `${entry.selector}'s threshold moved without its column count changing — if the table did not change ` +

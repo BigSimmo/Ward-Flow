@@ -258,7 +258,7 @@ test.describe("@mockup Ward Flow command view", () => {
     const links = [];
     for (const view of WARD_VIEWS) {
       // From `page`, not `nav` — the sheet portals to `document.body` by default
-      // (`components/ui/sheet.tsx`'s `Sheet`), so its copy of a non-primary view's link sits
+      // (`components/wf/sheet.tsx`'s `Sheet`), so its copy of a non-primary view's link sits
       // outside `nav`'s own DOM subtree once open. `:visible` then picks whichever of the two
       // copies (the rail's own inline one, or the sheet's) is actually the one on screen.
       // Device audit (11 Oct 2026): the phone menu shows each page once. Home sits in the phone

@@ -26,7 +26,14 @@ beforeEach(() => {
   sessionStorage.clear();
   window.history.replaceState({}, "", "/mockups/ward-flow");
 });
+/** A stand-in for the app badge API, removed again by the caller. */
+function stubAppBadge() {
+  const clearAppBadge = vi.fn(() => Promise.resolve());
+  Object.defineProperty(navigator, "clearAppBadge", { value: clearAppBadge, configurable: true });
+  return clearAppBadge;
+}
 afterEach(() => {
+  Reflect.deleteProperty(navigator, "clearAppBadge");
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -310,10 +317,13 @@ it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
   await act(async () => {
     await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
   });
+  const clearAppBadge = stubAppBadge();
   await act(async () => {
     result.current.signOut();
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
+  // The act-now count on the app icon goes with the account, so a shared phone never shows it.
+  expect(clearAppBadge).toHaveBeenCalled();
   expect(result.current.signedIn).toBe(false);
   expect(result.current.status).not.toBe("unavailable");
   expect(result.current.error ?? null).toBeNull();
@@ -329,13 +339,15 @@ it("stops polling and signs out the view when the workspace refuses access", asy
   );
   vi.stubGlobal("fetch", fetcher);
   const interval = vi.spyOn(globalThis, "setInterval");
+  const clearAppBadge = stubAppBadge();
   const { result } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
   await act(async () => {
     await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
   });
   expect(result.current.status).toBe("not-authorised");
-  expect(result.current.error).toMatch(/coordinator access/);
+  expect(clearAppBadge).toHaveBeenCalled();
+  expect(result.current.error).toMatch(/Ward Flow role/);
   expect(result.current.signedIn).toBe(false);
   expect(interval.mock.calls.some(([, ms]) => ms === 3000)).toBe(false);
   expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);

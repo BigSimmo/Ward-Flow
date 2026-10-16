@@ -27,7 +27,13 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { dayOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  MINUTES_PER_DAY,
+} from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
@@ -190,6 +196,7 @@ export function buildCensus(state: {
   admissions: readonly Admission[];
   plannedAdmissions?: readonly PlannedAdmission[];
   now: Instant;
+  thresholds: DueSoonThresholds;
   dayZero: Date;
 }): Census {
   const { movements, referrals, units, patients, admissions, plannedAdmissions = [], now, dayZero } = state;
@@ -197,7 +204,7 @@ export function buildCensus(state: {
   const unitOf = new Map(units.map((unit) => [unit.id, unit]));
   const today = new Date(dayZero.getTime() + Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY * 60_000);
   const causeById = new Map<string, DelayCause>();
-  for (const group of delayGroups(movements, units, now)) {
+  for (const group of delayGroups(movements, units, now, state.thresholds)) {
     for (const movement of group.movements) causeById.set(movement.id, group.cause);
   }
 
@@ -584,12 +591,21 @@ export function sortCensusRows(rows: readonly CensusRow[], sort: CensusSort, lif
   return [...rows].sort((a, b) => Number(lifted(b)) - Number(lifted(a)) || by(a, b) || a.name.localeCompare(b.name));
 }
 
-/** "16/07/1987", "16.7.1987" or "1987-07-16" as ISO, or `null` when it is not a whole date yet. */
+/**
+ * "16/07/1987", "16.7.1987", "1987-07-16" or digits only "16071987" (DDMMYYYY, because the iPhone
+ * number pad has no "/") as ISO, or `null` when it is not a whole date yet or is not a real date.
+ */
 export function parseDob(text: string): string | null {
   const trimmed = text.trim();
-  const dmy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2]!.padStart(2, "0")}-${dmy[1]!.padStart(2, "0")}`;
-  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+  const dmy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/) ?? trimmed.match(/^(\d{2})(\d{2})(\d{4})$/);
+  const [year, month, day] = dmy
+    ? [dmy[3]!, dmy[2]!, dmy[1]!]
+    : (trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)?.slice(1) ?? []);
+  if (!year || !month || !day) return null;
+  // A date that cannot exist ("99999999", 31 April, 29 February 1990) is refused, not searched for.
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return null;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
 
 /** "1987-07-16" as "16/07/1987". */

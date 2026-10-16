@@ -1,13 +1,13 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useToast, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
-import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { stepUndoFor, undoStepSubjectId, type UndoStepType } from "@/components/ward-management/ward-undo";
 
@@ -32,6 +32,11 @@ type Pending = {
   undone?: string;
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
+  /**
+   * False when an `offer` caller cannot be sure the record seen next is its own (for example a
+   * shared workspace dispatch still on its way). Undo then sends no record number.
+   */
+  guard?: boolean;
 };
 
 type RecordWatch = { undoType: UndoStepType; subjectId: string; priorSeq?: number; seq?: number };
@@ -83,7 +88,7 @@ export function useUndoableStep({
 }: UndoableStepOptions) {
   const layoutToast = useLayoutToast();
   // Read where a provider exists; a screen rendered alone falls back to the step's time alone.
-  const undoRecords = useContext(WardFlowContext)?.undoRecords;
+  const undoRecords = useOptionalWardFlowSelect("undoRecords")?.undoRecords;
   const sink = toast ?? layoutToast;
   const pendingRef = useRef<Pending | null>(null);
   const [token, setToken] = useState(0);
@@ -129,8 +134,8 @@ export function useUndoableStep({
       subjectId: undoStepSubjectId(offered),
       priorSeq: pending.priorSeq,
     };
-    watch.seq = newRecordSeq(undoRecords, watch);
-    if (watch.seq === undefined) {
+    watch.seq = pending.guard === false ? undefined : newRecordSeq(undoRecords, watch);
+    if (watch.seq === undefined && pending.guard !== false) {
       watchersRef.current.add(watch);
       setTimeout(() => watchersRef.current.delete(watch), UNDO_TOAST_MS);
     }
@@ -174,8 +179,8 @@ export function useUndoableStep({
       setToken((value) => value + 1);
     },
     /** Offers Undo for a step another component on the page has already recorded. */
-    offer(step: UndoableStep) {
-      pendingRef.current = { prior: rejectionCountRef.current, ...step };
+    offer(step: UndoableStep, options?: { guard?: boolean }) {
+      pendingRef.current = { prior: rejectionCountRef.current, ...step, guard: options?.guard };
       setToken((value) => value + 1);
     },
   };

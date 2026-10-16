@@ -129,10 +129,12 @@
   text-overflow: ellipsis;
 }
 
+/* Phone review F-33: a fact can be words ("Not known") or a duration ("3d 14h"), so it takes the
+ * text font with tabular figures; the monospace font spread "3d 14h" and "47.6" apart. */
 .fact dd {
   margin: 0;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-16) / 1.25 var(--wf-mono);
+  font: 600 var(--wf-fs-16) / 1.25 var(--wf-font);
   font-variant-numeric: tabular-nums;
 }
 
@@ -253,6 +255,27 @@
 
 .mono {
   font-family: var(--wf-mono);
+}
+
+/* A word in a figure's place ("No ED") reads in the text font, not the figures' monospace. */
+.word {
+  font-family: var(--wf-font);
+}
+
+/* The amber dot's key under a list (phone review F-25). */
+.dotKey {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding-inline: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.dotKey > svg {
+  flex: none;
 }
 
 /* U2 (site review, 12 Oct 2026): a unit after a figure ("12 d") at the 12px text floor; a bare
@@ -499,7 +522,7 @@
   gap: var(--wf-s-2);
   width: 100%;
   min-height: var(--spacing-tap, 3rem);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 @media print {

@@ -115,3 +115,24 @@ export function showActNowNotification(items: readonly InboxItem[], onOpen: () =
     return false;
   }
 }
+
+type BadgingNavigator = Navigator & {
+  setAppBadge?: (count?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
+};
+
+/**
+ * PWA plan item 8 (Oct 2026): the act-now count on the installed app's icon, where the browser
+ * supports app badges (Android, and iOS 16.4+ once notifications are allowed). A number only,
+ * never a name or an alert's words. Zero clears it. Never throws.
+ */
+export function setActNowAppBadge(count: number): void {
+  if (typeof navigator === "undefined") return;
+  const badging = navigator as BadgingNavigator;
+  try {
+    const pending = count > 0 ? badging.setAppBadge?.(count) : badging.clearAppBadge?.();
+    void pending?.catch(() => undefined);
+  } catch {
+    // Not allowed here (a browser tab, or notifications not granted): no badge, nothing else changes.
+  }
+}

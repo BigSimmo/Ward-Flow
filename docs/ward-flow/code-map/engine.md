@@ -282,6 +282,12 @@ terminal); "open" means no closure yet.
   `admission.dischargeBarrier` (`null` for "None", else the barrier value). Guards: admission
   exists; `actingUnitId` (ward caller) matches `admission.unitId`; refused if setting a real
   barrier while length of stay is under 7 days. Case at `:8093`.
+- **`SET_DISCHARGE_CRITERIA`** — roles: `ward`, `coordinator`. Effect: sets, ticks or clears
+  `admission.dischargeCriteria` through `nextDischargeCriteria` in `ward-discharge-criteria.ts`
+  (D-60). Guards: admission exists and is occupied; `ward` caller's `actingUnitId` matches
+  `admission.unitId`; the patient is recorded as voluntary; criteria come from
+  `DISCHARGE_CRITERIA`; setting or changing the list needs `setByTreatingPsychiatrist`; ticks are
+  refused once the criteria have lapsed.
 - **`RECORD_REPATRIATION`** — roles: `coordinator`. Effect: appends a `RepatriationRecord`
   (phone-log only, never books transport) to `state.repatriations`; if `receivingWardAgreed` is
   true, also synthesises a new return `Movement` (stage `placement_requested`). Guards: admission
@@ -845,7 +851,7 @@ guard.test.ts` is what proves that check can actually fail.
   `docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md` first — the owner's ruling was
   that this prototype computes no legal time limits of its own.
 - **Three engine files are the only ones with outside imports** at all
-  (`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/ui/sheet-focus`) — per the
+  (`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/wf/sheet-focus`) — per the
   overview map. The engine otherwise only imports from itself, so a change here has an unusually
   contained blast radius compared to the screens.
 

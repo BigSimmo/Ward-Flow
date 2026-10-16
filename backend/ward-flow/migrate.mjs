@@ -1,31 +1,35 @@
-import { readFile } from "node:fs/promises";
+// @ts-check
+import { LATEST_MIGRATION, MIGRATIONS, readMigration } from "./migrations.mjs";
 
-/** Applies migrations 1 to 5 in order. Run by migrate-supabase.mjs or migrate-postgres.mjs. */
+/**
+ * Applies every migration after the database's current version, in order, in one transaction.
+ * Run by migrate-supabase.mjs or migrate-postgres.mjs. Every file is checked against its checksum
+ * before any SQL runs, so a changed file never half-applies.
+ */
 export async function migrate(pool) {
+  const sql = await Promise.all(MIGRATIONS.map(readMigration));
   const client = await pool.connect();
+  let rollbackFailure;
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(782322)");
     const { rows } = await client.query("SELECT to_regclass('ward_flow.migrations') AS relation");
-    if (!rows[0].relation)
-      await client.query(await readFile(new URL("./migrations/001-shared-workspace.sql", import.meta.url), "utf8"));
-    const version = await client.query("SELECT max(version) AS version FROM ward_flow.migrations");
-    if (![1, 2, 3, 4, 5].includes(version.rows[0].version)) throw new Error("Unsupported database migration version");
-    if (version.rows[0].version === 1)
-      await client.query(await readFile(new URL("./migrations/002-workspace-data-mode.sql", import.meta.url), "utf8"));
-    if (version.rows[0].version <= 2)
-      await client.query(await readFile(new URL("./migrations/003-push-subscriptions.sql", import.meta.url), "utf8"));
-    if (version.rows[0].version <= 3)
-      await client.query(await readFile(new URL("./migrations/004-trigger-search-path.sql", import.meta.url), "utf8"));
-    if (version.rows[0].version <= 4)
-      await client.query(
-        await readFile(new URL("./migrations/005-retention-and-indexes.sql", import.meta.url), "utf8"),
-      );
+    if (!rows[0].relation) await client.query(sql[0]);
+    const version = (await client.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version;
+    if (!Number.isInteger(version) || version < 1 || version > LATEST_MIGRATION)
+      throw new Error("Unsupported database migration version");
+    for (const [index, migration] of MIGRATIONS.entries())
+      if (migration.version > version) await client.query(sql[index]);
     await client.query("COMMIT");
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      // Keep the migration error as the cause of failure; evict the unusable connection below.
+      rollbackFailure = rollbackError;
+    }
     throw error;
   } finally {
-    client.release();
+    client.release(rollbackFailure);
   }
 }

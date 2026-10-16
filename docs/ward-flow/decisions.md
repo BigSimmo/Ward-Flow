@@ -523,9 +523,23 @@ is inferred.
     the synthetic-data guard (`src/lib/synthetic-data-guard.ts`) does not flag them. Ranges: hand
     authored patients `UM1nnnnn`, generated patients `UM5nnnnn`, the rulings demo `UM60nnnn`, the
     demo network `UM7nnnnn`, the community demo cohort its own six digits.
-  - Referral (`RF-...`) and admission (`AD-...`) ids are record numbers, not patient numbers, and
-    are out of scope. Statistics screens keep admission ids because they deliberately show no
-    patient identity.
+  - **Update, 15 October 2026.** Decided by Josh ("you should have purged all these numberings
+    from the site"). Referral (`RF-...`), patient (`PT-...`), admission (`AD-...`) and bed release
+    (`WR-...`) numbers are now also kept off screens, toasts and accessible names. A screen names
+    the person by name and UMRN, or says the record kind, such as "this referral". The ids stay in
+    routes, keys, test ids, engine events and fixtures. Statistics screens keep admission ids
+    because they deliberately show no patient identity.
+  - **Addresses, 15 October 2026.** Decided by Josh ("Screens and addresses"). A link to a
+    journey, person, referral or stay carries an address code that carries no record number. The
+    same goes for query values that name a record. The code is made from the id itself, so a record
+    added while the app runs gets a working link at once. Old links that still hold a raw id keep
+    working: the movement and person pages send them on to the coded address with the query kept,
+    and query readers accept either form. Refusals and notices say "this referral" or "this stay"
+    in place of a record number, and the ids stay in their data fields. The code only keeps the
+    number out of the address bar. It is not a privacy control.
+  - Names and UMRNs come only from the resolver. When it has none, a screen shows "Name not
+    recorded" and "UMRN not recorded". `patientIdentityLine` writes the shared "Family, Given ·
+    UMRN" line.
 - **Why:** Staff on shift search and hand over by UMRN. A journey number nobody else uses reads as
   a second patient number and invites mistakes.
 
@@ -631,9 +645,61 @@ is inferred.
 - **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §14).
 - **Decision:** Urgency tier (`T1`–`T3`) time thresholds and target lines in the demonstration prototype remain synthetic placeholder values and require formal clinical governance sign-off before any real-patient or live operational use (consistent with D-4, D-22 and D-36).
 - **Why:** Prevents synthetic demonstration wait thresholds from being mistaken for ratified WA Health clinical policy.
+- **Subsequent note (15 October 2026):** Josh signed the tier targets for the prototype (D-56). This decision still stands: real-patient or live use needs formal clinical governance sign-off.
 
 ## D-55. Supabase is Ward Flow's database and sign-in provider, and Azure is retired (15 October 2026)
 
 - **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Big picture repo review").
 - **Decision:** The dedicated Ward Flow Supabase project (`zakzoemeedfepxcstsou`) is the current database and sign-in provider for the shared synthetic workspace. The Azure Functions host, Azure Blob session vault, Azure PostgreSQL and Entra sign-in code are removed. Plain PostgreSQL stays behind the same provider seam as a fallback. [`DATABASE.md`](DATABASE.md) is the single source of truth for the provider and how to change it.
 - **Why:** Supabase was already the default (PR #289), and keeping three providers left stale code and docs. One seam keeps a future switch to one adapter and one setting. Real patient data still needs separate hosting approval, a privacy impact assessment and clinical sign-off.
+
+## D-56. Josh signs the clinical values that have a recorded source, for the prototype (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Clinical values file", decision card "Sign the 31 sourced"; the card miscounted, and 30 values have a recorded source).
+- **Decision:** In [`ward-clinical-values.ts`](../../src/components/ward-management/ward-clinical-values.ts), every value with a recorded source (a decision id or an owner answer), 30 of the 44, is marked signed by Josh on 15 October 2026, at the figure the app ran on that day. The 14 values with "No decision recorded" as their source stay synthetic until a decision is made. Where two figures conflicted (for example the 85% bed alert against the 90% amber occupancy band), the figure the app runs on is the one signed. The other figure stays listed under "Other figures seen".
+- **Why:** One file now holds every clinical threshold, so a sign-off can be recorded against each value instead of being implied. Signing is for the prototype. Real-patient or live use still needs formal clinical governance sign-off (D-54), and no value is a legal limit (D-22).
+
+## D-57. Twenty Top 25 items move from the showcase into the real screens, each behind its own flag (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread on the Top 25 review: "Go ahead with all remaining recommendations outstanding", "Single PR").
+- **Decision:** Each item below is built into a real screen from shared state, behind its own `top25-*` flag in [`ward-feature-flags.ts`](../../src/components/ward-management/ward-feature-flags.ts) (on in development and demo, off in production). Timings come from [`ward-clinical-values.ts`](../../src/components/ward-management/ward-clinical-values.ts). The Sovereign showcase and its local fixtures are removed. Items 9 and 16 are not built yet. For item 23 Josh picked option D of the phone mockups.
+  - **1, discharge support notices:** after the ward confirms a discharge, the ward screen lists pharmacy, transport and cleaning with a send button that says "Not wired in this prototype." No event records them yet.
+  - **2, referral cap:** asking more wards than the cap of 3 warns and asks for a reason, kept in the audit trail. Without a reason the engine still refuses. Acceptance already withdraws the other requests.
+  - **3, next ward after a refusal:** the coordinator shortlist suggests the next eligible wards (main eligibility rules) and adds them through the existing Refer path. The ED declined flag names them.
+  - **4, bed being made ready:** a bed still being made ready past `preparingBedStale` asks the ward to tap Ready. Nothing opens a bed or changes a count.
+  - **5, discharge prep:** stays due out within `dischargePrepWindow` (24 hours) show on the ward's This shift list with their barrier. The bed drawer sets the barrier from the 7 item barrier list, from day `longStayPrompt`.
+  - **6, Needs you by role:** one owner to role filter on the shared task list. The ED Needs you adds the ED owned task rows. The coordinator is never limited.
+  - **7, silent ward:** the existing reminders at `silentWardFirstReminder` and `silentWardSecondReminder` suggest asking another ward at the second reminder. Nothing is moved automatically.
+  - **8, step down board:** step down candidates on Capacity are matched by the main eligibility rules (single sex D-31, legal, forensic) through a stay adapter.
+  - **11, seven day follow up:** every discharge shows whether follow up within `ctoFollowUpWindow` (7 days) is booked, with extra items on an active community treatment order. It warns and never blocks.
+  - **12, stuck handover:** the existing Transport awaiting departure row is named "Handover waiting too long" past the transport booked target.
+  - **13, ED wait steps:** one ladder from `edElevatedPressure`, `edSeverePressure`, `longWait` and `veryLongWait`, shown neutrally on ED board rows (D-24).
+  - **14, arrival checklist:** a read only checklist on the ED person card from recorded medical clearance, legal form and transport. Contraband search and medication chart say "Not wired in this prototype."
+  - **15, bed being made ready on a match:** the shortlist notes a bed being made ready and a medical pause read from the movement (D-34).
+  - **17, undo:** the one undo pattern is `useUndoableStep`. Remaining hand made undo toasts are listed for conversion.
+  - **19, paper legal form time left:** the patient forms register uses the one time left rule and the due soon settings (D-29). The radar's 4 hour amber is dropped.
+  - **20, long stay summary:** the handover Beds tab lists stranded stays with barrier, hold and an escalation point at the typed expected date plus `delayedDischargeEscalation`. Not a legal limit.
+  - **21, discharge date moved:** the bed tile and drawer show "Date moved N times" from the recorded count.
+  - **23, phone walk round (option D):** on a phone, a bed strip in bed order sits above the grouped bed list. Tapping a bed walks the ward one bed at a time, with Reviewed, next bed and Back to list. Updates go through the bed's existing panel. Reviewed and changed this round marks are held on screen only, never saved.
+  - **24, absent without leave:** the patient status card shows time away, steps done from the existing list and a bed hold review warning past `awolBedHoldWarning`.
+  - **25, broadcast alerts:** the real banner can extend an alert by 2 hours (new `EXTEND_BROADCAST_ALERT`, same roles as stand down) or stand it down.
+- **Why:** The showcase skipped the shared reducer and used its own unsigned rules. Building each item into the screen that already owns the job, from shared state and signed values, keeps one rule per job. Flags let unfinished items ship without changing production.
+- **Open for Josh:** wording of the referral cap reasons and community treatment order items, WA Health names for the ED wait steps, whether a stuck handover turns red, the start point for the 72 hour escalation, the day 7 limit on recording a barrier, the edited date count of 3, and the unsigned values `awolBedHoldWarning` and `delayedDischargeEscalation`.
+
+## D-58. Josh signs three more clinical values that have a national source, for the prototype (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Clinical values file", decision card "Sign the 3").
+- **Decision:** Three of the 14 synthetic values in [`ward-clinical-values.ts`](../../src/components/ward-management/ward-clinical-values.ts) are marked signed by Josh on 15 October 2026, at the figure the app ran on that day. The ED wait escalated to a state coordinator broadcast from 12 hours takes its 12 hours from the ACEM 12 hour emergency department length of stay measure. ACEM sets the length of stay mark, not the broadcast, which stays a local workflow choice. Follow up booked within 7 days of departure takes its 7 days from the national mental health KPI for community care within 7 days of discharge (AIHW). The KPI counts a completed community contact after discharge from a public acute admitted mental health unit. The app's check is different: it looks for a booked appointment rather than a completed contact. It runs on every discharge and adds extra items for community treatment order patients, so it is a local workflow that borrows the KPI's window, not the KPI itself. The readmission flag within 28 days rests on the national mental health KPI for readmission within 28 days (AIHW). The other 11 stayed synthetic because they are local workflow choices with no external source. Later the same day the Top 25 follow-up (#339) retired the 12 hour broadcast value as unused, along with other unused synthetic values, so two D-58 values remain in the file.
+- **Why:** Josh asked for a recommendation per value rather than a blanket sign-off, and only these three have a published national source. Signing is for the prototype. Real-patient or live use still needs formal clinical governance sign-off (D-54), and no value is a legal limit (D-22).
+
+## D-59. Each role sees only what it needs, from one access table (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread "Role based access plan", plan v2 approved at 17:43 with the bed manager allowed patient pages, then "go ahead and build the plan" at 17:47).
+- **Decision:** Ward Flow uses strict default deny. One table in [`ward-role-access.ts`](../../src/components/ward-management/ward-role-access.ts) says which screens each role may open and at which places, and it drives the routes, the rail, the phone menu and dock, and the desk switcher. [`ward-access-scope.ts`](../../src/components/ward-management/ward-access-scope.ts) trims the workspace to the desk's role and place before any screen reads it. The executive sees counts with no names, the access admin sees no patients, and the transport officer sees open jobs only and no longer raises referrals. Ward, ED, community and bed manager desks may break glass on one record, read only, with a reason, for a set time, and the coordinator reviews every opening. The app part ships behind the `role-access` flag. The server part (scoped replies, memberships, audit role) follows through the Backend thread and needs Josh's confirm before any live Supabase change.
+- **Why:** Every desk saw the whole statewide workspace. Least privilege matches WA Health privacy expectations and keeps the demo honest about who can see what. The ward raising referrals in its own name stays on the existing borrowed-role pair until the reducer checks the referral source, so a ward cannot file a referral under another source.
+
+## D-60. Criteria led discharge, for voluntary patients only (15 October 2026)
+
+- **Date:** 15 October 2026 (`2026-10-15`). **Decided by:** Josh (project thread for the Top 25 follow-up, "Yes go ahead with all recommendations" at 23:21 UTC, on the review's item 9 verdict "Rework, needs your sign off").
+- **Decision:** The bed panel's Plan to leave tab, on desktop and phone, records discharge criteria set by the treating psychiatrist, chosen from a fixed list of seven ([`ward-discharge-criteria.ts`](../../src/components/ward-management/ward-discharge-criteria.ts)). The ward ticks each criterion as it is met. When every one is met, the panel says the ward can confirm the discharge without waiting for the next review. It confirms nothing itself, and the existing discharge guards still apply. Only a patient recorded as voluntary is eligible. An involuntary patient is excluded because only a psychiatrist can revoke the order, and a patient with no recorded legal status or on a community treatment order is excluded until the status is recorded as voluntary. Criteria a patient already has pause if they stop being voluntary. Setting, changing or reviewing the list needs the ward to record that the treating psychiatrist set it. Criteria lapse after `dischargeCriteriaValidity` (72 hours, synthetic) and then need a review before more can be ticked. One event, `SET_DISCHARGE_CRITERIA`, sets, ticks and clears them. It ships behind the `top25-criteria-led-discharge` flag.
+- **Why:** The review found criteria led discharge uncommon in inpatient mental health and safe only with criteria set per patient by the treating psychiatrist and with involuntary patients excluded. Requiring a recorded voluntary status rather than the absence of an involuntary one makes exclusion the failure mode. The criteria list and the 72 hours are prototype choices. Real patient use still needs clinical governance sign-off of both (D-54). Item 16, the inter ward swap matcher, stays parked as Later.

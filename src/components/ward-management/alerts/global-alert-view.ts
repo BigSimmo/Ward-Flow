@@ -52,7 +52,7 @@ export function directiveDesks(alert: BroadcastAlert, units: readonly Unit[]): s
 }
 
 /** The ward and ED desks a target covers: every ED desk for every unit or ED liaison. */
-export function desksInBroadcastScope(
+function desksInBroadcastScope(
   units: readonly Unit[],
   scope: BroadcastTargetScope,
 ): { wards: string[]; eds: string[] } {
@@ -73,12 +73,16 @@ export function broadcastScopeCount(units: readonly Unit[], scope: BroadcastTarg
   return parts.length > 0 ? parts.join(" and ") : "no desks";
 }
 
-/** A directive's acknowledgements against the desks it asked, so nine wards read "of 9". */
+/**
+ * A directive's acknowledgements against the desks it asked, so nine wards read "of 9". A scoped desk
+ * passes `inScope` and counts against its own desks only.
+ */
 export function directiveAcknowledgements(
   alert: BroadcastAlert,
   units: readonly Unit[],
+  inScope: (deskId: string) => boolean = () => true,
 ): { acknowledged: number; of: number } {
-  const asked = new Set(directiveDesks(alert, units));
+  const asked = new Set(directiveDesks(alert, units).filter(inScope));
   return { acknowledged: alert.acknowledgedUnits.filter((id) => asked.has(id)).length, of: asked.size };
 }
 
@@ -143,7 +147,7 @@ export function bannerEntriesForDesk(
   );
 }
 
-export type ReplyRow = { unitId: string; name: string; reply?: BroadcastReply };
+type ReplyRow = { unitId: string; name: string; reply?: BroadcastReply };
 
 export type ReplyBoard = {
   rows: ReplyRow[];

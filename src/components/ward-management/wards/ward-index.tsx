@@ -39,14 +39,14 @@ import {
   unitHasLockedBeds,
   wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
-import { hasOpenSheet } from "@/components/ward-management/ward-modal-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -380,7 +380,13 @@ type WardRow = {
 };
 
 export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
-  const { units: liveUnits, bedReleases, movements, admissions, leaveBeds } = useWardFlow();
+  const {
+    units: liveUnits,
+    bedReleases,
+    movements,
+    admissions,
+    leaveBeds,
+  } = useWardFlowSelect("units", "bedReleases", "movements", "admissions", "leaveBeds");
   const units = unitsOverride ?? liveUnits;
   const { now, paused, togglePause } = usePageLive();
 
@@ -630,7 +636,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           }
           titleMeta={
             isPhone
-              ? `${units.length} wards · ${statewidePercent === null ? "occupancy not recorded" : `${statewidePercent.toFixed(1)}% occupied`} · ${pulled} pulled`
+              ? `${units.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${statewidePercent.toFixed(1)}% in use`} · ${pulled} pulled`
               : undefined
           }
           stats={
@@ -1229,7 +1235,7 @@ function WardPhoneList({
                           {row.stale ? (
                             <>
                               <StatusGlyph tone="warning" size={8} />
-                              <span>{durMinutes(Math.max(0, now - row.confirmedAt))} stale, ask NUM</span>
+                              <span>Count {durMinutes(Math.max(0, now - row.confirmedAt))} old, ask the ward</span>
                             </>
                           ) : (
                             <>
@@ -1250,7 +1256,7 @@ function WardPhoneList({
                         </span>
                         <span className={styles.phoneRowShare}>
                           {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
-                          {pct}% occupied
+                          {pct}% in use
                         </span>
                       </span>
                     </button>
@@ -1261,6 +1267,11 @@ function WardPhoneList({
           </div>
         );
       })}
+      {/* Phone review F-25: the amber dot marks two things here, so the key names both. */}
+      <p className={styles.phoneDotKey} data-testid="ward-index-phone-dot-key">
+        <StatusGlyph tone="warning" size={8} />
+        <span>{`Amber dot: ${NEAR_FULL * 100}% or more in use, or a bed count not confirmed in time`}</span>
+      </p>
     </section>
   );
 }

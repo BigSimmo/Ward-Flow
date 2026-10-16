@@ -1,6 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
@@ -27,7 +28,7 @@ import {
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
@@ -44,8 +45,10 @@ import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
+/** F-08 (phone review, Oct 2026): printed at the top of the pack, so paper is never mistaken for records. */
+const PRINT_NOTICE = "Prototype data, invented records. Not real patients and not for clinical use.";
 /** A pack older than this reads as stale, in words and with a glyph. Nothing turns red. */
-const STALE_AFTER_MINUTES = 60;
+const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
@@ -137,9 +140,16 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  * own layout: a compact hero, a four-way segmented control and rows that open a sheet of facts.
  */
 export function DowntimePackScreen() {
-  const world = useWardFlow();
   const now = useWardFlowClock();
-  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = world;
+  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
+    "dayZero",
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "movements",
+    "worldGeneration",
+  );
   const patientOf = usePatientOf();
   const isPhone = useIsPhone();
   const role = useRouteRole();
@@ -553,7 +563,9 @@ export function DowntimePackScreen() {
             <PhoneHero
               level={1}
               className={styles.downtimePhoneHero}
-              eyebrow="Downtime pack"
+              // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
+              // frozen pack takes no Demo pill, whose pulse would read as live.
+              eyebrow="Downtime pack · synthetic data"
               title={`Frozen at ${frozenAt}`}
               sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
               // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
@@ -599,7 +611,7 @@ export function DowntimePackScreen() {
                         key={ward.unitId}
                         as="li"
                         name={ward.name}
-                        meta={wardLine(ward)}
+                        meta={<span className={styles.phoneMetaWrap}>{wardLine(ward)}</span>}
                         value={
                           <span className={styles.phoneReady}>
                             {ward.counts.ready > 0 ? <StatusGlyph tone="success" size={9} /> : null}
@@ -634,7 +646,7 @@ export function DowntimePackScreen() {
                     key={line.movementId}
                     as="li"
                     name={line.person}
-                    meta={`${line.ed} · ${line.stage}`}
+                    meta={<span className={styles.phoneMetaWrap}>{`${line.ed} · ${line.stage}`}</span>}
                     value={splitDuration(line.waitedMinutes)}
                     time="waited"
                     onSelect={() =>
@@ -660,7 +672,7 @@ export function DowntimePackScreen() {
                     key={line.movementId}
                     as="li"
                     name={line.person}
-                    meta={`${line.from} to ${line.to}`}
+                    meta={<span className={styles.phoneMetaWrap}>{`${line.from} to ${line.to}`}</span>}
                     value={line.plannedAt === null ? "None" : formatInstantWithDay(line.plannedAt, now)}
                     time="planned"
                     onSelect={() =>
@@ -684,7 +696,11 @@ export function DowntimePackScreen() {
                     key={line.movementId}
                     as="li"
                     name={line.person}
-                    meta={`${line.form || NOT_RECORDED} · ${line.legalStatus}`}
+                    meta={
+                      <span
+                        className={styles.phoneMetaWrap}
+                      >{`${line.form || NOT_RECORDED} · ${line.legalStatus}`}</span>
+                    }
                     value={line.madeAt === null ? "None" : formatInstantWithDay(line.madeAt, now)}
                     time="made"
                     onSelect={() =>
@@ -709,6 +725,9 @@ export function DowntimePackScreen() {
           <div className={styles.printOnly} data-testid="ward-downtime-print-pack">
             <p className={styles.printMeta}>
               Downtime pack · synthetic data · frozen {frozenAt}, {reportDay(pack.generatedAt, dayZero)}
+            </p>
+            <p className={styles.printMeta} data-testid="ward-downtime-print-notice">
+              {PRINT_NOTICE}
             </p>
             {packTables}
           </div>
@@ -779,6 +798,8 @@ export function DowntimePackScreen() {
           ))}
         </nav>
 
+        {/* F-08: the printout says it holds invented records before its first table. */}
+        <p className={cx(styles.printOnly, styles.printMeta)}>{PRINT_NOTICE}</p>
         {packTables}
 
         <WardPrototypeFooter testId="ward-downtime-footer" note="Synthetic data" />

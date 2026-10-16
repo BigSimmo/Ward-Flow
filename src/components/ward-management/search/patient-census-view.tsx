@@ -64,6 +64,7 @@ import {
 } from "./patient-census";
 
 import styles from "./census.module.css";
+import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 
 const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
   act: "danger",
@@ -162,6 +163,7 @@ export function SearchAdornment({
             aria-label="Date of birth"
             inputMode="numeric"
             autoComplete="off"
+            enterKeyHint="search"
           />
         </span>
       ) : null}
@@ -202,6 +204,7 @@ export function PhoneDobField({ dob, onDob }: { dob: string; onDob: (next: strin
         placeholder="Date of birth, DD/MM/YYYY"
         inputMode="numeric"
         autoComplete="off"
+        enterKeyHint="search"
       />
     </label>
   );
@@ -828,7 +831,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
           ];
   const record =
     row.kind === "movement" ? (
-      <Link className={buttonClass({ size: "sm" })} href={`/mockups/ward-flow/movements/${row.key}`}>
+      <Link className={buttonClass({ size: "sm" })} href={movementHref(row.key)}>
         Movement
       </Link>
     ) : row.kind === "referral" ? (
@@ -948,10 +951,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         <span className={styles.spacer} />
         {record}
         {row.patientRecordId ? (
-          <Link
-            className={buttonClass({ variant: "pri", size: "sm" })}
-            href={`/mockups/ward-flow/people/${row.patientRecordId}`}
-          >
+          <Link className={buttonClass({ variant: "pri", size: "sm" })} href={patientHref(row.patientRecordId)}>
             Open patient
           </Link>
         ) : null}
@@ -1007,10 +1007,7 @@ export function CensusHistory({
             <b>{row.name}</b> <span className={styles.mono}>{row.umrn}</span> · {row.outcome}, {row.detail}
           </span>
           {row.patientRecordId ? (
-            <Link
-              className={buttonClass({ variant: "ghost", size: "sm" })}
-              href={`/mockups/ward-flow/people/${row.patientRecordId}`}
-            >
+            <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={patientHref(row.patientRecordId)}>
               Open
             </Link>
           ) : null}
@@ -1323,7 +1320,7 @@ export function PhoneCensus(props: PhoneCensusProps) {
             {open.patientRecordId ? (
               <Link
                 ref={openLink}
-                href={`/mockups/ward-flow/people/${open.patientRecordId}`}
+                href={patientHref(open.patientRecordId)}
                 className="sr-only"
                 tabIndex={-1}
                 aria-hidden="true"

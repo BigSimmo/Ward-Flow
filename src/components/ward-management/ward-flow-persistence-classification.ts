@@ -255,6 +255,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "WITHDRAW_WARD_REQUEST",
   "SET_STEP_DOWN_CANDIDATE",
   "SET_DISCHARGE_BARRIER",
+  // D-60: criteria are a closed list chosen from checkboxes, never typed text.
+  "SET_DISCHARGE_CRITERIA",
   // D-34 carries only originating ED/movement ids, role and time; the audit reason is fixed by the reducer.
   "RECORD_ED_MEDICAL_DETERIORATION",
   "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
@@ -270,6 +272,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CONFIRM_MORNING_ROLLUP",
   "ACKNOWLEDGE_BROADCAST_ALERT",
   "STAND_DOWN_BROADCAST_ALERT",
+  // Top 25 item 25: an alert id only; the added time is a fixed default, never typed.
+  "EXTEND_BROADCAST_ALERT",
   // Global alerts, 10 Oct 2026: ids, enums, a whole number of beds and instants only.
   "RAISE_PULL_NOW",
   "REPLY_BROADCAST_ALERT",

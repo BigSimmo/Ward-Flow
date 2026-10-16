@@ -33,6 +33,9 @@ const REDUCER = `${WARD_ROOT}/ward-flow-reducer.ts`;
  */
 const DEFINITION_FILES = new Set([
   REDUCER,
+  // 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the reducer into these two files.
+  `${WARD_ROOT}/ward-flow-record-events.ts`,
+  `${WARD_ROOT}/ward-flow-undo-events.ts`,
   `${WARD_ROOT}/ward-flow-events.ts`,
   // Holds a classification list of every event name (which carry typed text vs. not), not dispatches.
   `${WARD_ROOT}/ward-flow-persistence-classification.ts`,

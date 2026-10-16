@@ -1,5 +1,21 @@
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
+import { wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
+import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
+import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
+import {
+  BREAK_GLASS_REASONS,
+  STATEWIDE_COORDINATOR,
+  WARD_ACCESS_ROLES,
+  accessIsValid,
+  accessIsWholeNetwork,
+  canBreakGlass,
+  type WardAccess,
+  type WardAccessScope,
+} from "../../src/components/ward-management/ward-role-access";
+import { CROSS_ROLE_ALLOWED } from "../../src/components/ward-management/ward-role-permissions";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
+import { validSharedCommand } from "./command-schemas";
 import { scenarioNetwork } from "../../src/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "../../src/components/ward-management/ward-sites";
 import {
@@ -15,41 +31,39 @@ export { checkSyntheticPayload };
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
 /** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
 const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-
-function hasValidBounds(node: unknown, depth = 0): boolean {
-  if (depth > 16) return false;
-  if (typeof node === "string") return node.length <= 10_000;
-  if (typeof node === "number") return Number.isFinite(node);
-  if (typeof node === "boolean" || node === null || node === undefined) return true;
-  if (typeof node === "object") {
-    if (Array.isArray(node)) {
-      if (node.length > 500) return false;
-      for (const item of node) {
-        if (!hasValidBounds(item, depth + 1)) return false;
-      }
-      return true;
-    }
-    const entries = Object.entries(node);
-    if (entries.length > 200) return false;
-    for (const [key, val] of entries) {
-      if (key.length > 200) return false;
-      if (!hasValidBounds(val, depth + 1)) return false;
-    }
-    return true;
-  }
-  return false;
+/** A known type, an explicit allowed role and well-formed fields: see command-schemas.ts. */
+export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
+  return validSharedCommand(value) && checkSyntheticPayload(value).safe;
 }
 
-export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    typeof (value as Record<string, unknown>).type === "string" &&
-    Object.hasOwn(EVENT_ROLE, (value as Record<string, unknown>).type as string) &&
-    hasValidBounds(value) &&
-    checkSyntheticPayload(value).safe
-  );
+/** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */
+export function demoOnlyCommand(value: unknown): boolean {
+  const type = (value as { type?: unknown } | null)?.type;
+  if (typeof type !== "string" || !Object.hasOwn(EVENT_ROLE, type)) return false;
+  const roles: readonly string[] = EVENT_ROLE[type as WardFlowEvent["type"]];
+  return roles.length === 1 && roles[0] === "demo";
+}
+
+/**
+ * The newest audit entries kept in the saved workspace. The database audit table is the full
+ * record; the workspace copy only feeds the on-screen views, and an unbounded copy eventually
+ * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept,
+ * and so are this scenario's newest record-access receipts, because an open record is read
+ * against its receipt.
+ */
+export const PERSISTED_AUDIT_EVENTS = 1000;
+export function boundAudit(state: WardFlowState): WardFlowState {
+  const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
+  if (excess <= 0) return state;
+  const kept = new Set(state.auditReviews.map((review) => review.eventId));
+  state.auditEvents
+    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
+    .slice(-PERSISTED_AUDIT_EVENTS)
+    .forEach((entry) => kept.add(entry.id));
+  return {
+    ...state,
+    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
+  };
 }
 
 function changedFacts(before: WardFlowState, after: WardFlowState) {
@@ -103,6 +117,198 @@ export function validWorld(value: unknown): value is SharedWorld {
   );
 }
 
+/** A break glass grant as the server holds it: one patient, read only, until a wall-clock time. */
+export type StoredGrant = { patientId: string; until: Date };
+
+/** Grants in the workspace's own minutes, as the scoping rule reads them. */
+function worldGrants(world: SharedWorld, grants: readonly StoredGrant[], at: Date) {
+  const now = worldNow(world, at);
+  return grants.map((grant) => ({
+    patientId: grant.patientId,
+    until: now + Math.max(0, Math.ceil((grant.until.getTime() - at.getTime()) / 60_000)),
+  }));
+}
+
+const text = (value: unknown, max: number): value is string =>
+  typeof value === "string" && value.length > 0 && value.length <= max;
+
+/**
+ * A role and place read from a membership row or a request, or `null` when it is not one the
+ * access table allows. Every field is checked, so a hand-edited row can never widen a scope.
+ */
+export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
+  if (typeof role !== "string" || !(WARD_ACCESS_ROLES as readonly string[]).includes(role)) return null;
+  if (!scope || typeof scope !== "object" || Array.isArray(scope)) return null;
+  const fields = scope as Record<string, unknown>;
+  const only = (...keys: string[]) => Object.keys(fields).every((key) => key === "kind" || keys.includes(key));
+  let parsed: WardAccessScope | null = null;
+  switch (fields.kind) {
+    case "statewide":
+    case "jobs":
+      parsed = only() ? { kind: fields.kind } : null;
+      break;
+    case "service":
+      parsed =
+        only("service") && (HEALTH_SERVICES as readonly unknown[]).includes(fields.service)
+          ? { kind: "service", service: fields.service as HealthService }
+          : null;
+      break;
+    case "site":
+      parsed = only("siteCode") && text(fields.siteCode, 40) ? { kind: "site", siteCode: fields.siteCode } : null;
+      break;
+    case "ward":
+      parsed =
+        only("unitIds") &&
+        Array.isArray(fields.unitIds) &&
+        fields.unitIds.length <= 20 &&
+        fields.unitIds.every((id) => text(id, 100)) &&
+        new Set(fields.unitIds).size === fields.unitIds.length
+          ? { kind: "ward", unitIds: [...(fields.unitIds as string[])] }
+          : null;
+      break;
+    case "ed":
+      parsed = only("edId") && text(fields.edId, 100) ? { kind: "ed", edId: fields.edId } : null;
+      break;
+    case "team":
+      parsed = only("teamName") && text(fields.teamName, 200) ? { kind: "team", teamName: fields.teamName } : null;
+      break;
+  }
+  if (!parsed) return null;
+  const access = { role: role as WardAccess["role"], scope: parsed };
+  return accessIsValid(access) ? access : null;
+}
+
+/** The bootstrap view: an account named in WARD_COORDINATOR_USER_IDS works as this. */
+export const STATEWIDE: WardAccess = STATEWIDE_COORDINATOR;
+
+/** True for the statewide coordinator: the whole network, every record. */
+export function wholeNetwork(access: WardAccess): boolean {
+  return accessIsWholeNetwork(access);
+}
+
+/**
+ * The workspace this desk may be sent. A statewide coordinator gets the world itself. Every other
+ * desk gets `scopeWardFlowState`, the same rule the screens use, plus any break glass grants.
+ */
+export function scopeWorld(world: SharedWorld, access: WardAccess, at: Date, grants: readonly StoredGrant[] = []) {
+  if (accessIsWholeNetwork(access)) return world;
+  const { state } = scopeWardFlowState(world.state, access, {
+    now: worldNow(world, at),
+    places: wardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
+  return { ...world, state };
+}
+
+/**
+ * Why this desk may not send this command, or `null`. The sender's role comes from its membership,
+ * never from the browser: a desk sends only commands its own role may take (`EVENT_ROLE`, or a pair
+ * in `CROSS_ROLE_ALLOWED`), and only about records inside its own place. A statewide coordinator may
+ * send any command the workflow allows; the demonstration controls are the statewide coordinator's
+ * alone. The access admin and the executive change nothing.
+ */
+export function commandRefusal(
+  world: SharedWorld,
+  access: WardAccess,
+  supplied: Record<string, unknown>,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+): string | null {
+  const type = supplied.type as WardFlowEvent["type"];
+  const role = supplied.role;
+  if (!Object.hasOwn(EVENT_ROLE, type)) return "This change is not one the workflow knows.";
+  if (accessIsWholeNetwork(access)) return null;
+  const notYours = "This change is not part of your role.";
+  if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
+  // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
+  // coordinator takes every action), so only its place limits it, below.
+  if (access.role !== "coordinator") {
+    const accepted = EVENT_ROLE[type].includes(role as WardFlowEvent["role"]);
+    // A `CROSS_ROLE_ALLOWED` pair lets the desk's screen send the event under the role the event
+    // takes (the ward's Raise referral is sent as the referral's source, ED or community). It never
+    // lends the coordinator's role, which would write the change down as the coordinator's.
+    const borrowed =
+      role !== "coordinator" &&
+      CROSS_ROLE_ALLOWED.some((entry) => entry.routeRole === access.role && entry.event === type);
+    const allowed = accepted && (role === access.role || borrowed);
+    if (!allowed) return notYours;
+  }
+  return commandScopeRefusal(world.state, access, supplied, {
+    now: worldNow(world, at),
+    places: wardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
+}
+
+/** Who may grant, approve and remove roles: the access admin, and the statewide coordinator. */
+export function managesAccess(access: WardAccess): boolean {
+  return access.role === "admin" || accessIsWholeNetwork(access);
+}
+
+/**
+ * Whether a place names something in this workspace, so a grant never points at a ward, ED or
+ * site that does not exist. A team is any name: one with no patients simply shows nobody.
+ */
+export function scopeExists(world: SharedWorld, scope: WardAccessScope): boolean {
+  const places = wardPlaceLookup(world.state.units);
+  switch (scope.kind) {
+    case "site":
+      return world.state.units.some((unit) => places.unitSiteCode(unit.id) === scope.siteCode);
+    case "ward":
+      return scope.unitIds.every((id) => places.unitSiteCode(id) !== undefined);
+    case "ed":
+      return places.edSiteCode(scope.edId) !== undefined;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Whether `inner` lies wholly inside `outer`, so an access admin never grants, approves or removes
+ * a role wider than their own. A service admin covers that service's sites, wards and EDs only;
+ * statewide, team and jobs scopes need a statewide admin.
+ */
+export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: WardAccessScope): boolean {
+  if (outer.kind === "statewide") return true;
+  if (outer.kind !== "service") return false;
+  const places = wardPlaceLookup(world.state.units);
+  switch (inner.kind) {
+    case "service":
+      return inner.service === outer.service;
+    case "site": {
+      const units = world.state.units.filter((unit) => places.unitSiteCode(unit.id) === inner.siteCode);
+      return units.length > 0 && units.every((unit) => places.unitService(unit.id) === outer.service);
+    }
+    case "ward":
+      return inner.unitIds.every((id) => places.unitService(id) === outer.service);
+    case "ed":
+      return places.edService(inner.edId) === outer.service;
+    default:
+      return false;
+  }
+}
+
+export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
+export const BREAK_GLASS_MINUTES = CLINICAL_VALUES.breakGlassWindow.value;
+export const BREAK_GLASS_PER_SHIFT = CLINICAL_VALUES.breakGlassPerShift.value;
+export const BREAK_GLASS_SHIFT_HOURS = CLINICAL_VALUES.breakGlassShift.value;
+
+/**
+ * Whether this desk may open this patient's record outside its care, or why not. Only clinical
+ * roles break glass, only for a patient who exists, and never for one already in its own care.
+ */
+export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patientId: unknown, at: Date): string | null {
+  if (!canBreakGlass(access.role)) return "Opening a record outside your care is not part of your role.";
+  if (typeof patientId !== "string" || !world.state.patients.some((patient) => patient.id === patientId))
+    return "That patient is not in the workspace.";
+  const { state } = scopeWardFlowState(world.state, access, {
+    now: worldNow(world, at),
+    places: wardPlaceLookup(world.state.units),
+  });
+  if (state.patients.some((patient) => patient.id === patientId)) return "That patient is already in your care.";
+  return null;
+}
+
 export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   if (!validWorld(world) || !validCommand(supplied)) throw new Error("invalid-command");
   const fields = supplied as Record<string, unknown>;
@@ -110,11 +316,11 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   const type = fields.type as WardFlowEvent["type"];
   const roles = EVENT_ROLE[type];
   // A workflow perspective is not an access grant. The API authorises the named coordinator
-  // before this function runs. Preserve existing ward/ED/officer guards and audit facts.
-  const role = fields.role ?? roles[0];
+  // before this function runs. Preserve existing ward/ED/officer guards and audit facts. The role
+  // is always the sender's own: it is never defaulted to the first allowed role.
+  const role = fields.role;
   if (!roles.includes(role as WardFlowEvent["role"])) throw new Error("invalid-command");
   const event = { ...fields, type, role, now: worldNow(world, at) } as WardFlowEvent;
-  if (!checkSyntheticPayload(event).safe) throw new Error("invalid-command");
   let next: WardFlowState;
   try {
     next = serialise(wardFlowReducer(world.state, event));
@@ -128,8 +334,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
   const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);
+  const saved = boundAudit(next);
+  if (saved !== next && !isValidSharedWardFlowState(saved)) throw new Error("invalid-command");
   return {
-    world: { ...world, state: next },
+    world: { ...world, state: saved },
     outcome: "accepted" as const,
     changes: { domainAudit, reset, facts: changedFacts(world.state, next) },
     reason: null,

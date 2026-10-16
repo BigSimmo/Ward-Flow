@@ -233,11 +233,12 @@ describe("the Ward Flow `.table` rule set is declared in exactly one file", () =
     "src/components/ward-management/ward-management-network.module.css",
     // governance-third-edition.module.css left this list on 7 Oct 2026: the v6 rebuild moved
     // `.govTable` onto the wf table primitive (`tableClasses.table`), so it no longer redeclares the cell rule.
-    // Recorded 2026-09-25 (test fixer). `.dataTable` uses its own padding and divider; moving it onto
-    // the canonical table would change how it looks, which is a design decision for Josh.
-    "src/components/ward-management/statistics/statistics-ward-third-edition.module.css",
     // Recorded 2026-09-30 (test fixer). Patient Trajectory in-place refinement module.
     "src/components/ward-management/patients/patient-now.module.css",
+    // Recorded 2026-10-15. The bed meeting TV view is read from across a meeting room: its cells
+    // are sized from the viewport on the `--wf-*` layer, not the canonical small `--ward-*` table.
+    // A separate, deliberate design, like `ed` and `statistics` above, not copy-paste drift.
+    "src/components/ward-management/bed-meeting/bed-meeting-tv.module.css",
   ];
 
   it("declares the canonical `.table th`/`.table td` cell rule (padding + border-bottom) in exactly the canonical file plus the known, documented backlog", () => {
@@ -290,17 +291,17 @@ describe("the Ward Flow `.table` rule set is declared in exactly one file", () =
   });
 
   /**
-   * The five migrated call sites (`discharges`, `escalation`, `handover`, `out-of-area`, `search`)
+   * The migrated call sites (`discharges`, `handover`, `out-of-area`, `search`; `escalation` was
+   * deleted with its unreachable board on 15 Oct 2026)
    * must actually compose the shared class rather than merely happening to have no local
    * redeclaration (e.g. because the file was deleted or the class renamed without anyone noticing).
    * Named from the brief's own migration list, not re-derived — the population floor above is the
    * anti-vacuity check on discovery; this is a sanity check that the migration actually happened
    * where it was supposed to.
    */
-  it("the five migrated call sites compose the shared table class", () => {
+  it("the migrated call sites compose the shared table class", () => {
     const migrated = [
       join(WARD_DIR, "discharges", "discharges.module.css"),
-      join(WARD_DIR, "escalation", "escalation.module.css"),
       join(WARD_DIR, "handover", "handover.module.css"),
       join(WARD_DIR, "out-of-area", "out-of-area.module.css"),
       join(WARD_DIR, "search", "search.module.css"),

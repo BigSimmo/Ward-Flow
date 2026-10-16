@@ -297,12 +297,12 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
                 track
                 max={axisMax(wardValues)}
                 label={WARD_METRICS[wardMetric].chart}
-                labelWidth="8.5rem"
+                labelWidth="9rem"
               />
               <p className={phone.note}>
                 <span className={phone.flagged}>
                   <StatusGlyph tone="warning" size={9} />
-                  Over 1 SD above the mean. Case mix differs.
+                  Amber dot: well above the mean, by more than one standard deviation. Case mix differs.
                 </span>
               </p>
             </>
@@ -527,7 +527,13 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
           ]}
         />
       </div>
-      <CardBody flush className={`${compare.chartBody} ${detail.scrolls}`}>
+      <CardBody
+        flush
+        className={`${compare.chartBody} ${detail.scrolls}`}
+        tabIndex={0}
+        role="region"
+        aria-label={view === "chart" ? "Ward comparison chart" : "Ward comparison table"}
+      >
         {rows.length === 0 ? (
           <p className={styles.empty} data-testid="ward-statistics-compare-ward-chart-empty">
             No wards recorded.
@@ -592,14 +598,32 @@ const ED_METRICS: Record<EdMetric, { label: string; chart: string }> = {
 
 type EdCompareRow = { department: EmergencyDepartment; row: EdRow; longestMinutes: number };
 
+/** The longest place name a phone chart label takes before it falls back to the site code. */
+const SHORT_PLACE_MAX = 13;
+
 /**
- * A ward's chart label on a phone: site code and cohort ("GRY Secure", "ALB Adult", "RPH Older"),
- * so no name is clipped at the label width (audit stats-13). Where two wards would read the same,
- * both keep their full name. The full name always stays in the accessible list (`labelText`).
+ * A site's short place name for a phone chart, from its own name in the site data (phone review
+ * F-24): "Albany Health Campus" reads "Albany", "St John of God Subiaco Hospital" reads "SJOG
+ * Subiaco". A name still too long for the label ("Sir Charles Gairdner") keeps its site code.
+ */
+export function shortPlaceName(siteCode: string): string {
+  const name = siteByCode(siteCode)?.name;
+  if (!name) return siteCode;
+  const place = name
+    .replace(/^St John of God /u, "SJOG ")
+    .replace(/ (Public |General |Memorial )?(Hospital|Health Campus|Health Service)$/u, "");
+  return place.length <= SHORT_PLACE_MAX ? place : siteCode;
+}
+
+/**
+ * A ward's chart label on a phone: short place name and cohort ("Graylands Secure", "Albany
+ * Adult", "Royal Perth Older"), so no name is clipped at the label width (audit stats-13). Where
+ * two wards would read the same, both keep their full name. The full name always stays in the
+ * accessible list (`labelText`).
  */
 export function shortWardLabels(units: readonly Pick<Unit, "id" | "name" | "siteCode" | "cohort" | "lockedBeds">[]) {
   const short = (unit: (typeof units)[number]) =>
-    `${unit.siteCode} ${
+    `${shortPlaceName(unit.siteCode)} ${
       unit.cohort === "Adult"
         ? unit.lockedBeds > 0
           ? "Secure"

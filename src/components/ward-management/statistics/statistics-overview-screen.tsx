@@ -20,6 +20,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionStagePosition,
@@ -46,6 +47,7 @@ import { occupiedBeds } from "./statistics-occupancy";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   PhoneBody,
+  PhoneDotKey,
   PhoneFacts,
   PhoneList,
   PhoneSheetRow,
@@ -114,6 +116,7 @@ const wardsWord = (n: number) => (n === 1 ? "ward" : "wards");
  */
 export function StatisticsOverviewScreen() {
   usePrintableDisclosures();
+  const small = useSmallNumber();
   const section = statisticsSectionById("overview");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
@@ -222,7 +225,7 @@ export function StatisticsOverviewScreen() {
               label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               tone={wardsOverLine > 0 ? "warning" : undefined}
             />
-            <HeroStat value={blockedTotal} label="Blocked" />
+            <HeroStat value={small(blockedTotal)} label="Blocked" />
           </>
         ),
       }}
@@ -693,7 +696,7 @@ function OverviewPhone({
           </FilterChip>
         ))}
       </ScrollRow>
-      <PhoneList label="Wards by occupancy, fullest first">
+      <PhoneList label="Wards by share of beds in use, fullest first">
         {sorted.slice(0, showAll ? undefined : PHONE_WARDS_SHOWN).map((ward) => (
           <PhoneListRow
             key={ward.id}
@@ -719,6 +722,9 @@ function OverviewPhone({
           <PhoneShowAll total={sorted.length} open={showAll} onToggle={() => setShowAll((value) => !value)} />
         ) : null}
       </PhoneList>
+      <PhoneDotKey testId="ward-statistics-overview-dot-key">
+        {`Amber dot: ${BED_ALERT_THRESHOLD_PERCENT}% or more of beds in use`}
+      </PhoneDotKey>
       <PhoneSheetRow
         icon={Filter}
         title="Empty to ready"

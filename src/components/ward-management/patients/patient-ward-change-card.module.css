@@ -33,7 +33,7 @@
 .kindChoice {
   padding: 0 var(--wf-s-4);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
   font: 550 var(--wf-fs-13) / 1 var(--wf-font);
@@ -69,6 +69,14 @@
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+}
+
+/* Phone: 16px so iOS Safari does not zoom the page on focus. */
+@media (max-width: 48rem) {
+  .changeField select,
+  .changeField input {
+    font-size: max(1rem, 16px);
+  }
 }
 
 .changeHint {
@@ -124,7 +132,7 @@
 .phSheetFoot > button {
   min-height: 48px;
   justify-content: center;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 @media (max-width: 48rem) {
@@ -137,7 +145,7 @@
     flex: 0 0 auto;
     min-height: 48px;
     padding: 0 var(--wf-s-4);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
   }
 

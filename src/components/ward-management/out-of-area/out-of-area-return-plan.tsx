@@ -29,7 +29,7 @@ import {
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
-import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import {
   PLAN_STEPS,
@@ -42,6 +42,7 @@ import {
   type RepatDraft,
 } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 export type PlanPatient = {
   displayName: string;
@@ -68,7 +69,7 @@ const LEGAL_LABELS: Record<TransportLegalStatus, string> = { voluntary: "Volunta
 function hospitalGroups() {
   const groups = new Map<string, { service: string; sites: { code: string; name: string }[] }>();
   for (const service of WA_SERVICE_ORDER) groups.set(service, { service, sites: [] });
-  for (const site of wardSites) {
+  for (const site of siteDirectory) {
     if (!groups.has(site.service)) groups.set(site.service, { service: site.service, sites: [] });
     groups.get(site.service)!.sites.push({ code: site.code, name: site.name });
   }
@@ -535,10 +536,7 @@ function RecordedReturn({
               <StatusGlyph tone="neutral" size={10} /> Movement opened
             </span>
             {returnMovementId ? (
-              <Link
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                href={`/mockups/ward-flow/movements/${encodeURIComponent(returnMovementId)}`}
-              >
+              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={movementHref(returnMovementId)}>
                 Open movement
               </Link>
             ) : null}

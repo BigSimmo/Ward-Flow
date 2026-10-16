@@ -1,9 +1,12 @@
 import { expect, test, type Page } from "playwright/test";
 
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { movementPath } from "./helpers/ward-record-url";
+
 const routes = [
   ["ED overview", "/ed"],
   ["ED workspace", "/ed/rph-ed"],
-  ["Movement workspace", "/movements/WF-001"],
+  ["Movement workspace", `/movements/${encodeRecordAddress("WF-001")}`],
   ["On-call directory", "/on-call"],
   ["Referral intake", "/referrals/new"],
   ["Ward statistics", "/statistics/ward/rph-adult-secure"],
@@ -274,8 +277,13 @@ test("@mockup approved overdue queue treatment fits phone, tablet and desktop", 
 
 test("@mockup movement status stays inside phone, tablet and desktop viewports", async ({ page }) => {
   test.setTimeout(120_000);
+  // D-39: an old raw-id link still works. It is sent on to the coded address, which shows no number.
   await page.goto("/mockups/ward-flow/movements/WF-001", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("ward-patient-live-status")).toContainText("Stage");
+  await expect(page).toHaveURL(new RegExp(`${movementPath("WF-001")}$`, "u"));
+  await expect(page).not.toHaveURL(/WF-001/u);
+  // While the page streams in, React can hold a second, hidden copy in a <div hidden> until it
+  // swaps it in, so check only the copy on screen.
+  await expect(page.getByTestId("ward-patient-live-status").filter({ visible: true })).toContainText("Stage");
   for (const width of [320, 820, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expect
@@ -314,7 +322,7 @@ test.describe("@mockup Ward scroll geometry", () => {
         .toBeGreaterThanOrEqual(11);
       const box = await panel.boundingBox();
       expect(box!.y + box!.height).toBeLessThanOrEqual(844);
-      const body = panel.getByRole("feed", { name: "Active transport legs" });
+      const body = panel.getByRole("region", { name: "Active transport legs" });
       await expect
         .poll(() => body.evaluate((element) => element.scrollHeight - element.clientHeight))
         .toBeGreaterThan(0);

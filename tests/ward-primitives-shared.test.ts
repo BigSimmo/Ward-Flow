@@ -170,17 +170,6 @@ describe("the breakpoint scale", () => {
   const KNOWN_BREAKPOINTS = [
     // PR12 clinical metadata changes from two to four bounded columns at 52rem.
     "src/components/ward-management/referrals/referrals.module.css: 52",
-    // ⚠️ ADDED 2026-09-04, AND THE GATE HAD BEEN RED SINCE THESE TWO FILES LANDED. `ed-home` (48)
-    // and `ed-service-bands` (60) are part of the ED cluster's design-language adoption; both were
-    // committed without their rows, so this assertion was failing on the integration line at the
-    // same time as `COVERING_THE_GROUND`'s `freed` half in the sibling contract test. Two red gates,
-    // neither noticed, because nobody's work happened to touch either file.
-    //
-    // ⚠️ AND `ed-service-bands.module.css` WAS ON NOBODY'S FILE LIST. It is a tenth file in a
-    // cluster two separate surveys described as nine, which is exactly how its 60 went unpinned. A
-    // walk and a hand-written brief disagreed and the walk was right.
-    "src/components/ward-management/ed/ed-home.module.css: 48",
-    "src/components/ward-management/ed/ed-service-bands.module.css: 60",
     "src/components/ward-management/board/board.module.css: 60",
     // Third-edition Bed board: the served drawing changes its fact band at 1200px. The app keeps
     // ten engine-derived facts rather than the drawing's nine, so this exact 75rem rung changes the
@@ -229,21 +218,14 @@ describe("the breakpoint scale", () => {
     // Desktop governance polish starts one pixel above the stylesheet's existing
     // max-width: 64rem stack, so the two ranges do not both match. 64.0625rem is 1025px.
     "src/components/ward-management/governance-third-edition.module.css: 64.0625",
-    "src/components/ward-management/handover/handover-third-edition.module.css: 62.5625",
     "src/components/ward-management/hub/hub.module.css: 62.5625",
     "src/components/ward-management/legal-forms/legal-forms.module.css: 62.5625",
     "src/components/ward-management/officer/officer.module.css: 62.5625",
     "src/components/ward-management/on-call/on-call.module.css: 62.5625",
-    "src/components/ward-management/out-of-area/out-of-area-third-edition.module.css: 62.5625",
     "src/components/ward-management/referrals/referrals.module.css: 62.5625",
     "src/components/ward-management/search/search.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-community-third-edition.module.css: 62.5625",
     "src/components/ward-management/statistics/statistics-ed-third-edition.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-landing-third-edition.module.css: 62.5625",
     "src/components/ward-management/statistics/statistics-sections.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-service-third-edition.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-third-edition.module.css: 62.5625",
-    "src/components/ward-management/statistics/statistics-ward-third-edition.module.css: 62.5625",
     "src/components/ward-management/ward-management-network-third-edition.module.css: 62.5625",
     "src/components/ward-management/ward-management-network.module.css: 62.5625",
     "src/components/ward-management/ward/ward.module.css: 62.5625",
@@ -364,8 +346,6 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/ward-modes-second-edition.module.css: 60",
     "src/components/ward-management/ward-management.module.css: 64",
     "src/components/ward-management/ward-shared.module.css: 60",
-    "src/components/ward-management/ward-sidebar.module.css: 40.0625",
-    "src/components/ward-management/ward-sidebar.module.css: 64",
     // ⚠️ ADDED — Task 2, fourth-edition statistics language port (wise-singing-thunder). Not a new
     // step in the scale: both rows below are `ward-figure.module.css`'s own two pinned values, two
     // rows above. `statistics-v4.module.css`'s new `.band` primitive is the same "a strip of
@@ -377,7 +357,6 @@ describe("the breakpoint scale", () => {
     // Task 3's accepted Statistics overview uses the drawing's two independent panel columns and
     // becomes one column below 1000px. 62.5rem is that documented 1000px content boundary in the
     // opt-in third-edition module; Compare remains a full-width stack at every width.
-    "src/components/ward-management/statistics/statistics-third-edition.module.css: 62.5",
     // Full-estate third-edition registrations. These pin the exact source boundaries; the served
     // 390/820/1440 matrices establish the surrounding layouts, but do not claim pixel-level proof
     // at every threshold between those sampled widths.
@@ -393,7 +372,6 @@ describe("the breakpoint scale", () => {
     // Recorded 2026-09-25 (test fixer): the legal forms register layout's wide breakpoint.
     "src/components/ward-management/legal-forms/legal-forms.module.css: 68.0625",
     // Just above the 40rem phone range, the OOA register gains its tablet-only bounded scroller.
-    "src/components/ward-management/out-of-area/out-of-area-third-edition.module.css: 40.0625",
     // The exclusive 48rem complements prevent the phone and tablet layouts applying together.
     "src/components/ward-management/patients/add-patient.module.css: 48.0625",
     "src/components/ward-management/patients/add-patient.module.css: 64",

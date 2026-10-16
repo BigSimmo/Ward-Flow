@@ -1,4 +1,4 @@
-import { clockState, type Instant } from "@/components/ward-management/ward-clock";
+import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { elapsedOpenMinutes, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
@@ -407,7 +407,7 @@ export function trackServiceBedCapacity(
                 (m, idx) => isDetainedUnderTheAct(m.legalStatus) && elapsedTimes[idx] >= accessTargetMinutes,
               ).length;
         const statutoryBreaches = openMovements.filter(
-          (m) => m.legalForm?.dueAt !== undefined && clockState(m.legalForm.dueAt, now) === "breached",
+          (m) => m.legalForm?.dueAt !== undefined && isClockBreached(m.legalForm.dueAt, now),
         ).length;
 
         serviceEdWaiting += openMovements.length;

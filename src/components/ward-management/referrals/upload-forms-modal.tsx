@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { type Movement } from "@/components/ward-management/ward-model";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { useWardModalFocus } from "../ward-modal-focus";
 
@@ -27,7 +27,7 @@ export function UploadFormsModal(props: UploadFormsModalProps) {
 }
 
 function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModalProps) {
-  const { dispatch } = useWardFlow();
+  const { dispatch } = useWardFlowSelect("dispatch");
   const now = useWardFlowClock();
 
   const [formName, setFormName] = useState<string>(FORM_TYPE_OPTIONS[0]);

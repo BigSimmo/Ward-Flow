@@ -78,9 +78,8 @@ const TOKEN_LAYERS = [
   "src/app/globals.css",
   "src/app/ckb-v2-tokens.css",
   "src/app/ward-flow-shell-tokens.module.css",
-  "src/app/ward-flow-v6-tokens.css",
-  // Loaded globally after v6 by src/app/layout.tsx. Holds the v9 and v10 groups (motion roles, the
-  // band header's on-hero and bar tokens, --wf-dim), which the shell's band header reads.
+  // Loaded globally by src/app/layout.tsx: the one --wf-* token sheet (the v6 baseline folded into v9
+  // on 15 Oct 2026), including the band header's on-hero and bar tokens and --wf-dim.
   "src/app/ward-flow-v9-tokens.css",
 ];
 

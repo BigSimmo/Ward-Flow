@@ -22,7 +22,7 @@ export type WardReferralInboxEntry = {
 
 /**
  * A referral sent with no person on file opens its history with "Not yet identified, <description>"
- * (the referral drawer writes it). The inbox heading reads that line instead of "Unknown Patient".
+ * (the referral drawer writes it). The inbox heading reads that line instead of "Name not recorded".
  */
 export const UNIDENTIFIED_REFERRAL_PREFIX = "Not yet identified, ";
 

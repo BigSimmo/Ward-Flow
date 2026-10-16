@@ -38,6 +38,10 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
   return {
     ...actual,
     useWardFlow: () => mockContext,
+    useWardFlowSelect: () => mockContext,
+    useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
   };
 });
@@ -45,9 +49,10 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import type { WardActivityContent } from "@/components/ward-management/shell/ward-shell-types";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Notice } from "@/components/ward-management/ward-model";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 /** Two activity changes — an arbitrary, independently-controlled tally, deliberately not equal to
  *  the notice count below, so a sum (2 + 1 = 3) reads differently from either count alone. */
 const TWO_CHANGES: WardActivityContent = {

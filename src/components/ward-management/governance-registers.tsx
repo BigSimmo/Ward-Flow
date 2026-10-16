@@ -63,6 +63,7 @@ import {
   Hero,
   HeroStat,
   HeroTrack,
+  LiveChip,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -84,6 +85,7 @@ import {
 
 import thirdEdition from "./governance-third-edition.module.css";
 import wardPin from "./ward-pinned-switch.module.css";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * TWO NEW GOVERNANCE PANELS — built to sit inside `GovernanceView`
@@ -767,7 +769,7 @@ function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteGap[] {
         umrn: person.umrn,
         detail: `Form ${movement.legalForm.code}`,
         missing,
-        href: `${FORMS_HREF}?movement=${encodeURIComponent(movement.id)}`,
+        href: `${FORMS_HREF}?movement=${encodeURIComponent(encodeRecordAddress(movement.id))}`,
       });
     }
   }
@@ -1279,8 +1281,11 @@ function GovernanceSession({
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
       <PhoneHero
         eyebrow="Governance · This session"
+        // F-08 (phone review, Oct 2026): real-looking names sit beside "Change legal status" here, so
+        // the hero carries the Demo pill and says the records are invented.
+        chip={<LiveChip state="live" onHero />}
         title={reviewTitle}
-        sub={`${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
+        sub={`Invented records · ${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
         figures={[
           {
             id: "override",
@@ -2245,6 +2250,7 @@ function EventTable({
         <span>Outcome</span>
         <span>Review</span>
       </div>
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div className={thirdEdition.registerBody} role="region" aria-label={label} tabIndex={0} onKeyDown={onKey}>
         {!allowed ? (
           <div className={thirdEdition.emptyBlock}>

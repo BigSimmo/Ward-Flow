@@ -70,7 +70,7 @@
  *   95      popovers that must beat overlays (source preview)
  *   100     modal layer — the Sheet primitive — and the skip link
  *   max     mockup-only diagnostics; never in live routes
- * New overlays go through components/ui/sheet.tsx rather than a new layer.
+ * New overlays go through components/wf/sheet.tsx rather than a new layer.
  */
 @theme {
   /* Device-band names. These carry NO product call sites and that is not a
@@ -1933,50 +1933,9 @@ summary::-webkit-details-marker {
   pointer-events: none;
 }
 
-.pwa-install-header {
-  display: flex;
-  min-height: var(--pwa-header-min-height);
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--pwa-notice-gap);
-  border-bottom: 1px solid color-mix(in srgb, var(--border-lux) 82%, transparent);
-  background: color-mix(in srgb, var(--clinical-accent-soft) 72%, var(--surface-lux));
-  padding: calc(2 * var(--pwa-inset-xs)) var(--pwa-inset-md) calc(2 * var(--pwa-inset-xs)) var(--pwa-inset-xl);
-}
-
-.pwa-install-body {
-  background: var(--surface-lux);
-  padding: var(--spacing-icon-sm) var(--pwa-inset-xl) var(--pwa-inset-xl);
-}
-
-.pwa-install-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: calc(2 * var(--pwa-inset-xs));
-  margin-top: var(--pwa-inset-lg);
-}
-
-/* The in-flow phone home composer sits near the viewport centre. Keep the
-   browser-native install prompt below it without moving page content: the full
-   value proposition remains on larger and dock-owned surfaces, while the phone
-   hero gets a concise, action-first card.
-
-   Every rule below gates on ONE :has() only — the hero-composer ownership
-   attribute on #main-content, which is a static per-route render prop (see
-   heroOwnsPhoneComposer in global-search-shell.tsx) and never changes after a
-   route's first paint. Compacting for the native install card itself uses a
-   plain descendant combinator off .pwa-install-native-sheet, NOT a second
-   :has(.pwa-install-native-sheet) existence check: .pwa-install-grip/-tagline/
-   -copy/-support/-benefits/-header/-body/-compact-copy/-actions are always
-   literal descendants of that card when it renders, in the same React commit
-   and the same browser paint, so the descendant selector cannot observe a
-   frame where the card exists without its compacted geometry. A second
-   ancestor-level :has() re-checking a fact the DOM tree already guarantees
-   was exactly the shape of bug fixed for .pwa-notice-stack's own bottom-gap
-   rule below in PR #2219 (see useSettledNoticeSignature in pwa-lifecycle.tsx
-   and tests/pwa-lifecycle.dom.test.tsx) — this mirrors that fix across the
-   remaining eight rules in this block, which still carried the same
-   two-:has() pattern after that PR landed. */
+/* The phone home composer sits near the viewport centre: keep global notices
+   below it without moving page content. Gates on ONE :has() only, the static
+   hero-composer ownership attribute on #main-content (see PR #2219). */
 /* BEGIN post-hydration PWA main-content selector allowlist */
 @media (max-width: 639.98px) {
   body:has(#main-content[data-phone-footer-owner="hero"]) .pwa-notice-stack {
@@ -1997,13 +1956,6 @@ summary::-webkit-details-marker {
 @media (display-mode: standalone) {
   .pwa-notice-stack {
     --pwa-notice-bottom-gap: calc(max(0.75rem, var(--safe-area-bottom)) + 5.5rem);
-  }
-}
-
-@media (forced-colors: active) {
-  .pwa-install-header,
-  .pwa-install-body {
-    background: Canvas;
   }
 }
 

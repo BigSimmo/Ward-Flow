@@ -1,7 +1,7 @@
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import type { ReactNode } from "react";
-import { Clock, MapPin, MessageSquare, Phone, Scale } from "lucide-react";
-import { Button, Card, CardBody, CardHead, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
+import { Clock, MapPin, MessageSquare, Scale } from "lucide-react";
+import { Button, Card, CardHead, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { formTitleForCode } from "@/lib/form-register";
@@ -11,6 +11,7 @@ import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-for
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /**
  * The gate board's context cards for Now (9 Oct 2026). Now only ever shows what is true at this
  * moment: past presentations, closed records and superseded forms live in History and Documents.
@@ -87,6 +88,7 @@ export function PatientLegalNowCard({
   /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
   absent?: boolean;
 }) {
+  const thresholds = useDueSoonThresholds();
   const rows: Array<{
     tone: WfTone;
     code: string;
@@ -101,7 +103,7 @@ export function PatientLegalNowCard({
     // Audit S-6: after an inpatient order at the examination, or an arrival on an order, the old
     // form shows as ended and Form 6A is the one form to record next.
     const progression = formProgression(movement);
-    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now) : undefined;
+    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now, thresholds) : undefined;
     rows.push({
       tone: progression ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
       code: `Form ${movement.legalForm.code}`,
@@ -255,81 +257,6 @@ export function PatientLegalNowCard({
 export interface ContactRow {
   name: string;
   role: string;
-}
-
-/** Who to call now. Phone numbers are not held in this prototype, so there is no call button. */
-export function PatientContactsCard({ rows, framed = false }: { rows: ContactRow[]; framed?: boolean }) {
-  const isPhone = useIsPhone();
-  if (isPhone && framed)
-    /* v10 Movement, phone: "Who to call" is a card with its head inside. No phone glyph per row: no
-       number is held, so a row cannot dial and must not look as if it does (device audit, 11 Oct 2026). */
-    return (
-      <section className={styles.phFramed} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
-        <h2 id="pn-who-to-call" className={styles.phFramedHead}>
-          Who to call
-        </h2>
-        {rows.length > 0 ? (
-          <ul className={styles.phFramedList}>
-            {rows.map((row) => (
-              <li key={`${row.name}-${row.role}`} className={styles.phItem}>
-                <span className={styles.phItemText}>
-                  <strong>{row.name}</strong>
-                  <span>{row.role}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={styles.para}>No contacts recorded for this record.</p>
-        )}
-      </section>
-    );
-  if (isPhone)
-    /* v10 Patient, phone: "Who to call" heads a plain list, the name over the role. */
-    return (
-      <section className={styles.phSection} data-testid="ward-patient-who-to-call" aria-labelledby="pn-who-to-call">
-        <h2 id="pn-who-to-call" className={styles.phHead}>
-          Who to call
-        </h2>
-        {rows.length > 0 ? (
-          <ul className={styles.phList}>
-            {rows.map((row) => (
-              <li key={`${row.name}-${row.role}`} className={styles.phItem}>
-                <span className={styles.phItemText}>
-                  <strong>{row.name}</strong>
-                  <span>{row.role}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={styles.phList}>
-            <span className={styles.para}>No contacts recorded for this record.</span>
-          </p>
-        )}
-      </section>
-    );
-  return (
-    <Card data-testid="ward-patient-who-to-call">
-      <CardHead level={2} icon={Phone} title="Who to call" />
-      <CardBody flush>
-        {rows.length > 0 ? (
-          <ul className={styles.list}>
-            {rows.map((row) => (
-              <li key={`${row.name}-${row.role}`} className={styles.item}>
-                <span className={styles.itemText}>
-                  <strong>{row.name}</strong>
-                  <span>{row.role}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={styles.para}>No contacts recorded for this record.</p>
-        )}
-      </CardBody>
-    </Card>
-  );
 }
 
 /**

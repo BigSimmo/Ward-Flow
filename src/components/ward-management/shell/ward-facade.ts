@@ -36,19 +36,21 @@
  * already resolved, so a figure computed here and a figure computed in a screen cannot be about two
  * different moments.
  */
-import type { Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type {
   BedRelease,
-  HealthService,
   LeaveBed,
   Movement,
   Referral,
+  ReferralSource,
+  Site,
   Unit,
 } from "@/components/ward-management/ward-model";
 import type { CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /**
  * THE MOVEMENT VERDICT, RE-EXPORTED RATHER THAN WRAPPED.
@@ -65,9 +67,6 @@ import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
  * with no wrapper, so that the facade is one import for a lane without becoming a second definition
  * anybody could change independently.
  */
-export { candidateReason, eligibility } from "@/components/ward-management/ward-eligibility";
-export type { EligibilityGate, EligibilityVerdict, GateResult } from "@/components/ward-management/ward-eligibility";
-
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
  * SHELL FIGURES — the numbers the rail and the bar show.
  * ══════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -121,10 +120,13 @@ export type ShellFigure = {
 export type ShellFigureInput = {
   readonly movements: Movement[];
   readonly units: Unit[];
+  /** The scenario's network (`useWardNetwork().sites`). */
+  readonly sites: readonly Site[];
   readonly referrals: Referral[];
   readonly bedReleases: readonly BedRelease[];
   readonly leaveBeds: readonly LeaveBed[];
   readonly now: Instant;
+  readonly thresholds: DueSoonThresholds;
   readonly plannedAdmissions?: readonly PlannedAdmission[];
 };
 
@@ -159,10 +161,12 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
   const counts = wardNavCounts({
     movements: input.movements,
     units: input.units,
+    sites: input.sites,
     referrals: input.referrals,
     bedReleases: input.bedReleases,
     leaveBeds: input.leaveBeds,
     now: input.now,
+    thresholds: input.thresholds,
   });
 
   function required(key: "capacity" | "movements" | "delays" | "referrals"): ShellFigure {
@@ -211,7 +215,8 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
  * wrong.
  */
 export function patientHref(patientId: string): string {
-  return `/mockups/ward-flow/people/${encodeURIComponent(patientId)}`;
+  // D-39: the address carries a code, never the person's record number.
+  return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
 }
 
 /**
@@ -265,12 +270,12 @@ export function edHref(edId: string): string {
 
 /** One movement's record. See `patientHref` — same two reasons. */
 export function movementHref(movementId: string): string {
-  return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;
+  return `/mockups/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
 }
 
 /** One discharged stay, opened in the discharges board detail. The id is a synthetic admission id. */
 export function dischargeHref(admissionId: string): string {
-  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;
+  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;
 }
 
 /** Fixed shell destinations live beside the parameterised builders so chrome never retypes them. */
@@ -369,9 +374,6 @@ export function communityStatisticsHref(teamId: string): string {
  * GP referral source. So the type is no longer restated here — it is the model's own, quoted, and
  * anything this file can put in a link is something `Referral.source` can hold.
  */
-import type { ReferralSource } from "@/components/ward-management/ward-model";
-export type { ReferralSource };
-
 export type RaiseReferralTarget = {
   readonly patientId?: string;
   /** Where the referral comes from. Optional: the bar's "New referral" menu names only where it goes. */
@@ -408,47 +410,11 @@ export type RaiseReferralTarget = {
  */
 export function raiseReferralHref(target: RaiseReferralTarget): string {
   const query = new URLSearchParams();
-  if (target.patientId !== undefined) query.set("patientId", target.patientId);
+  if (target.patientId !== undefined) query.set("patientId", encodeRecordAddress(target.patientId));
   if (target.source !== undefined) query.set("source", target.source);
   if (target.refer !== undefined) query.set("refer", target.refer);
   if (target.originEdId !== undefined) query.set("originEdId", target.originEdId);
   if (target.teamId !== undefined) query.set("teamId", target.teamId);
   if (target.unitIds !== undefined && target.unitIds.length > 0) query.set("units", target.unitIds.join(","));
   return `/mockups/ward-flow/referrals/new?${query.toString()}`;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════════
- * SERVICE SCOPE — what the Service selector is showing.
- * ══════════════════════════════════════════════════════════════════════════════════════════════ */
-
-/**
- * THE SERVICE SELECTOR'S SCOPE: every health service, or one named one.
- *
- * 🔴 **THERE IS NO THIRD STATE, AND THAT IS WHAT "ESCAPE NEVER CLEARS IT" MEANS STRUCTURALLY.** A
- * nullable scope would make "showing everything" and "nothing selected" the same value, and a reader
- * looking at a network-wide board would have no way to tell a deliberate whole-network view from a
- * selector that had silently dropped their choice. All services is a CHOICE, not an absence, so it
- * has its own member and the type cannot express a cleared scope at all.
- *
- * ⚠️ **THE OTHER HALF OF THAT RULE IS THE SHELL'S, NOT THIS MODULE'S.** "Escape never clears it" also
- * means a keypress that closes the selector must leave a chosen service chosen, and that is
- * behaviour in the shell's own component — this module cannot hold state without becoming a client
- * module, which the file header explains would break every Server Component that builds an href.
- */
-export type ServiceScope =
-  { readonly kind: "all-services" } | { readonly kind: "one-service"; readonly service: HealthService };
-
-export const ALL_SERVICES_SCOPE: ServiceScope = { kind: "all-services" };
-
-/**
- * The scope for a stored selection. `null` means the reader has not chosen a service — which
- * resolves to all services, never to nothing.
- */
-export function serviceScope(service: HealthService | null): ServiceScope {
-  return service === null ? ALL_SERVICES_SCOPE : { kind: "one-service", service };
-}
-
-/** Whether a health service is inside the current scope. All services admits every one of them. */
-export function serviceScopeIncludes(scope: ServiceScope, service: HealthService): boolean {
-  return scope.kind === "all-services" || scope.service === service;
 }

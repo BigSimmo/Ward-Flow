@@ -39,18 +39,13 @@ import { collectWardModuleGraph } from "./helpers/ward-module-graph";
  *   nurse carries into the morning meeting". It has no route of its own and is reached only through
  *   the board, but it is listed as an entry point in its own right because it is the surface that
  *   goes on PAPER: a leak here leaves the building.
- * - **`community/community-team-hub.tsx`** — added 2026-09-04, the day this list went stale within
- *   hours of a plan being written against it. Owner ruling the same day: community becomes its own
- *   first-class role, alongside ED, coordinator and the wards, and a community team may NOT see
- *   that a patient was referred anywhere else — the identical restriction FD-23 already gives a
- *   ward. `CommunityScopedReferral` (`ward-referral-visibility.ts`, `66b10a439`) is the projection
- *   this component must read; `tests/ward-community-viewer-assumption.test.ts` pins that
- *   projection's own shape. It is the community role's OWN landing for one team and is a different
- *   screen from the coordinator's drill-down into the same team (`community/community-home.tsx`,
- *   in `SEES_EVERYTHING` below) even though the two can render the same team at the same moment —
- *   see the build plan's Task 3b on why that visual resemblance is exactly the reason the two must
- *   never share a component or a data type, and why a shared component would fall OUTSIDE this very
- *   guarded set by construction (section 2 below).
+ * - **`community/community-screen.tsx`** — the live team page, route `/mockups/ward-flow/community/[teamId]`,
+ *   where a team accepts and declines its own referrals. Owner ruling 2026-09-04: a community team
+ *   may NOT see that a patient was referred anywhere else, the restriction FD-23 already gives a
+ *   ward. It takes its referrals from `useCommunityScopedReferrals()` (`ward-flow-provider.tsx`) as
+ *   `CommunityScopedReferral`, and never destructures `referrals` from `useWardFlow()`. Listed on
+ *   15 Oct 2026, on the owner's choice, when the unused `community/community-team-hub.tsx` that held
+ *   this place was deleted as dead code.
  *
  * **Considered and deliberately NOT ward-facing**, so the reasoning is recoverable rather than
  * inferred from an absence: `wards/ward-index.tsx` is the statewide index of every ward, not one
@@ -131,7 +126,7 @@ const WARD_FACING: readonly string[] = [
   "ward/ward-screen.tsx",
   "board/ward-board.tsx",
   "board/ward-daily-sheet.tsx",
-  "community/community-team-hub.tsx",
+  "community/community-screen.tsx",
 ].map((file) => resolve(WARD_DIR, file));
 
 /**
@@ -142,13 +137,6 @@ const SEES_EVERYTHING: ReadonlyArray<{ file: string; reason: string }> = [
   {
     file: "coordinator/coordinator-screen.tsx",
     reason: "the coordinator's own screen — 'the coordinator may see everything'",
-  },
-  {
-    file: "community/community-home.tsx",
-    reason:
-      "the coordinator's all-teams overview and drill-down into one team — coordinator entitlement " +
-      "on both scopes, never the community role's own view (community/community-team-hub.tsx, in " +
-      "WARD_FACING above); added 2026-09-04 alongside that entry, same day as the owner's ruling",
   },
   {
     file: "coordinator/shortlist-panel.tsx",
@@ -168,13 +156,8 @@ const SEES_EVERYTHING: ReadonlyArray<{ file: string; reason: string }> = [
   },
   { file: "search/patient-search.tsx", reason: "network-wide search over the open caseload, not one ward's view" },
   { file: "handover/handover-page.tsx", reason: "the network-wide shift handover" },
-  {
-    file: "escalation/escalation-board.tsx",
-    reason: "every patient whose placement has gone wrong, across the network",
-  },
   { file: "discharges/discharge-board.tsx", reason: "the discharge and egress board — a coordinator's chase list" },
   { file: "out-of-area/out-of-area-board.tsx", reason: "the statewide out-of-area ledger" },
-  { file: "tracker/live-tracker.tsx", reason: "the network-wide live tracker" },
   {
     file: "wards/ward-index.tsx",
     reason: "the index of every ward — statewide navigation, not any one ward's own view",
@@ -492,7 +475,7 @@ function namespaceOrDefaultReferralImports(source: string): string[] {
 
 /** How many times a source calls `useWardFlow()`, comments stripped. */
 function useWardFlowCallCount(source: string): number {
-  return (withoutComments(source).match(/useWardFlow\s*\(/g) ?? []).length;
+  return (withoutComments(source).match(/use(?:Optional)?WardFlow(?:Select)?\s*\(/g) ?? []).length;
 }
 
 /** The binding lists of every `const { … } = useWardFlow()` in a source file. Comments are stripped
@@ -500,12 +483,22 @@ function useWardFlowCallCount(source: string): number {
  *  a destructuring, and the prose "Incoming referrals" on the same screen is never mistaken for a
  *  context read. */
 function contextBindingsOf(source: string): string[][] {
-  return [...withoutComments(source).matchAll(/const\s*\{([^}]*)\}\s*=\s*useWardFlow\(\)/g)].map((match) =>
+  const code = withoutComments(source);
+  const destructured = [...code.matchAll(/const\s*\{([^}]*)\}\s*=\s*useWardFlow\(\)/g)].map((match) =>
     match[1]
       .split(",")
       .map((binding) => binding.split(":")[0].trim())
       .filter((binding) => binding.length > 0),
   );
+  // `useWardFlowSelect("units", "now")` names its fields as string literals. Anything else in the
+  // argument list (a spread, a variable) is kept as written, so it can never pass as a named field.
+  const selected = [...code.matchAll(/use(?:Optional)?WardFlowSelect\s*\(([^)]*)\)/g)].map((match) =>
+    match[1]
+      .split(",")
+      .map((argument) => argument.trim().replace(/^"([^"]*)"$/, "$1"))
+      .filter((argument) => argument.length > 0),
+  );
+  return [...destructured, ...selected];
 }
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");
@@ -515,13 +508,16 @@ describe("FD-23 at the screen boundary", () => {
     // NON-VACUITY, and the first thing to fail if this guard is ever emptied. An import-graph
     // check over an empty entry list passes forever and reads as coverage — which is the failure
     // mode this whole file was written to avoid, so it is asserted before anything else.
+    // Still 4: community/community-team-hub.tsx was deleted on 15 Oct 2026 as dead code, and the live
+    // team page, community/community-screen.tsx, took its place the same day (owner's choice that the
+    // page reads the community-scoped projection).
     expect(WARD_FACING.length, "the ward-facing list changed size — re-read section 1 above").toBe(4);
     for (const file of WARD_FACING) {
       expect(existsSync(file), `${shortPath(file)} is named ward-facing but does not exist`).toBe(true);
     }
     // The named list, not just its length: a swap that kept the count would otherwise pass.
     expect(WARD_FACING.map((file) => basename(file)).sort()).toEqual([
-      "community-team-hub.tsx",
+      "community-screen.tsx",
       "ward-board.tsx",
       "ward-daily-sheet.tsx",
       "ward-screen.tsx",
@@ -536,7 +532,9 @@ describe("FD-23 at the screen boundary", () => {
     // morning/morning-tour.tsx outright, so their entries left this list. 21, not 22: the
     // full-page referrals/referral-intake.tsx was deleted on 8 Oct 2026 (the referral slide-out is
     // the one place a referral is written). Re-derived by running this file, not by arithmetic.
-    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(21);
+    // 18, not 21: community-home, escalation-board and live-tracker were deleted on 15 Oct 2026 as
+    // dead code (no route had rendered them since their redirects landed).
+    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(18);
     for (const { file, reason } of SEES_EVERYTHING) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no reason beside it`).toBeGreaterThan(10);
@@ -689,22 +687,15 @@ describe("FD-23 at the screen boundary", () => {
     expect(wardOnly).toContain("ward-board.tsx");
     expect(wardOnly).toContain("ward-daily-sheet.tsx");
     expect(wardOnly).toContain("ward-board-derivations.ts");
-    expect(wardOnly).toContain("community-team-hub.tsx");
-    // `ward-referral-visibility.ts` is NOT asserted either way here, deliberately. It happens to be
-    // excluded from `wardOnly` today because `community-home.tsx` (SEES_EVERYTHING) also imports it
-    // — genuinely shared infrastructure by construction, same as `ward-model.ts` below. But that is
-    // incidental to community-home.tsx's own implementation, not a property this guard should rely
-    // on: if that import ever moved, the module would fall INTO `wardOnly` and would need the
-    // bounded exemption (`IS_THE_PROJECTION_MODULE_ITSELF`) below to stay green rather than flag its
-    // own legitimate `Referral`/`ReferralAddressing` imports as a leak. The exemption and its
-    // dedicated bounding test exist for exactly that reason and are checked unconditionally, not
-    // only when this module happens to land in `wardOnly`.
+    expect(wardOnly).toContain("community-screen.tsx");
+    // `ward-referral-visibility.ts` is NOT asserted either way here, deliberately. Whether it lands
+    // in `wardOnly` depends on which SEES_EVERYTHING surfaces import it, which is incidental. If it
+    // falls INTO `wardOnly`, the bounded exemption (`IS_THE_PROJECTION_MODULE_ITSELF`) below keeps
+    // its own legitimate `Referral`/`ReferralAddressing` imports from reading as a leak. The
+    // exemption and its dedicated bounding test are checked unconditionally for that reason.
     // Shared infrastructure must be OUT of it, or the guard is red on day one and gets neutered.
     expect(wardOnly).not.toContain("ward-model.ts");
     expect(wardOnly).not.toContain("ward-flow-provider.tsx");
-    expect(wardOnly, "the coordinator's own community view leaked into the restricted set").not.toContain(
-      "community-home.tsx",
-    );
   });
 
   it("lets no ward-only module reach a referral's other destinations", () => {

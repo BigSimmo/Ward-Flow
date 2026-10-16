@@ -69,6 +69,7 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
+import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
@@ -88,7 +89,6 @@ import { AddPatientForm } from "@/components/ward-management/patients/add-patien
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -129,6 +129,10 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     { concrete: `/mockups/ward-flow/board/${unit.id}`, render: () => <WardBoard unitId={unit.id} /> },
   ],
   ["/mockups/ward-flow/capacity", { concrete: "/mockups/ward-flow/capacity", render: () => <CapacityScreen /> }],
+  [
+    "/mockups/ward-flow/bed-meeting",
+    { concrete: "/mockups/ward-flow/bed-meeting", render: () => <BedMeetingTvScreen /> },
+  ],
   ["/mockups/ward-flow/community", { concrete: "/mockups/ward-flow/community", render: () => <CommunityIndex /> }],
   [
     "/mockups/ward-flow/community/[teamId]",
@@ -177,10 +181,6 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ],
   ["/mockups/ward-flow/search", { concrete: "/mockups/ward-flow/search", render: () => <PatientSearchPage /> }],
   ["/mockups/ward-flow/settings", { concrete: "/mockups/ward-flow/settings", render: () => <SettingsScreen /> }],
-  [
-    "/mockups/ward-flow/sovereign",
-    { concrete: "/mockups/ward-flow/sovereign", render: () => <SovereignShowcaseScreen /> },
-  ],
   // Read-only reports, 9 Oct 2026 (stream C).
   [
     "/mockups/ward-flow/reports/chronology",

@@ -39,7 +39,7 @@ import styles from "./bed-map.module.css";
 
 /** The four ruled states a bed is drawn in. A `ready` square additionally carries `preparing` — see
  *  `BedSquare` below — never a fifth state of its own. */
-export type BedSquareState = "ready" | "pulled" | "closed" | "occupied";
+type BedSquareState = "ready" | "pulled" | "closed" | "occupied";
 
 /**
  * Grid: ward cards wrapping. Rows: one carousel of ward cards per service. Table: one shared
@@ -339,6 +339,7 @@ function WardBlock({
   };
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <div
       ref={cardRef}
       className={styles.wardBlock}
@@ -493,9 +494,11 @@ function WardBlock({
               </div>
               <div className={styles.baySquares}>
                 {bay.squares.map(({ square, index }) => (
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- focusable so keyboard users can open its tooltip
                   <span
                     key={square.key}
                     role="img"
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- focusable so keyboard users can open its tooltip
                     tabIndex={0}
                     aria-label={squareLabel(square)}
                     data-testid={`ward-bed-map-square-${ward.unit.id}`}

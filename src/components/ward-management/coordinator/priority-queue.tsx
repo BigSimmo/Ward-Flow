@@ -16,7 +16,14 @@ import {
   cx,
   durMinutes,
 } from "@/components/wf";
-import { clockState, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  isClockBreached,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -40,9 +47,11 @@ import { withSendingTeam } from "@/components/ward-management/referrals/referral
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
+import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./home.module.css";
 
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
 export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
@@ -66,21 +75,26 @@ const MS_PER_MINUTE = 60_000;
  * Settings ("Tier 1 overdue after 1h") and the Referrals board used 1h/4h/24h, so one patient was
  * overdue on one page and not on another. Every marker now reads the one rule,
  * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
- * in" within the hour (or half the window, if shorter) before it. Pending clinical sign-off.
+ * in" within the hour (or half the window, if shorter) before it. Signed for the prototype (D-56).
  */
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
   const overdue = tierOverdueAfterMinutes(urgency);
   return { dueSoon: overdue - Math.min(60, overdue / 2), overdue };
 }
 
-/** Shown wherever the tier targets drive a figure. */
-export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, pending clinical sign-off`;
+/** Shown wherever the tier targets drive a figure. The status is read from
+ *  `ward-clinical-values.ts`, so the note changes by itself once the tier values are signed. */
+export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
+  allClinicalValuesSigned(["tierOneOverdue", "tierTwoOverdue", "tierThreeOverdue", "anyTierOverdue"])
+    ? "signed for the prototype"
+    : "pending clinical sign-off"
+}`;
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
-function isSoon(movement: Movement, now: Instant) {
+function isSoon(movement: Movement, now: Instant, thresholds: DueSoonThresholds) {
   const dueAt = movement.legalForm?.dueAt;
   if (dueAt === undefined) return false;
-  const state = clockState(dueAt, now);
+  const state = clockState(dueAt, now, thresholds);
   return state === "due" || state === "critical" || state === "breached";
 }
 
@@ -158,6 +172,7 @@ export function PriorityQueue({
   pinnedIds,
   units = [],
 }: PriorityQueueProps) {
+  const dueSoonThresholds = useDueSoonThresholds();
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
@@ -169,9 +184,9 @@ export function PriorityQueue({
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
-  const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
+  const soonCount = movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)).length;
   // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
-  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
+  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)) : movements;
   const total = totalMovements ?? movements.length;
   const isOverdue = (movement: Movement) =>
     Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
@@ -257,9 +272,9 @@ export function PriorityQueue({
             const selected = movement.id === selectedId;
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
-            const { score, factors } = operationalScore(movement, now);
+            const { score, factors } = operationalScore(movement, now, dueSoonThresholds);
             const legalDueAt = movement.legalForm?.dueAt;
-            const legalBreached = legalDueAt !== undefined && clockState(legalDueAt, now) === "breached";
+            const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
             const waitedMinutes = Math.max(0, now - movement.openedAt);
             const thresholds = queueWaitThresholds(movement.urgency);
@@ -378,13 +393,14 @@ export function PriorityQueue({
                       ) : (
                         <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
                           <StatusGlyph tone="info" size={9} />
-                          In transit, {holdLabel} hold · {arrivalMode}
+                          In transit, bed held {holdLabel} · {arrivalMode}
                         </span>
                       )
                     ) : movement.stage === "pulled" ? (
                       <span className={styles.queueMark} data-testid={`ward-queue-transit-hold-${movement.id}`}>
                         <StatusGlyph tone="warning" size={9} />
-                        Pulled, {holdLabel} hold
+                        {/* F-24 (phone review, Oct 2026): plain words for a pulled bed and its hold. */}
+                        Bed held {holdLabel}
                       </span>
                     ) : null}
                   </span>

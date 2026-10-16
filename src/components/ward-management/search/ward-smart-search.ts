@@ -33,9 +33,9 @@ import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-managem
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
-import { teamHref, unitHref } from "../shell/ward-facade";
+import { movementHref, teamHref, unitHref } from "../shell/ward-facade";
 
 export type CoreSearchView = {
   key: string;
@@ -132,7 +132,7 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   },
 ];
 
-export type WardSearchResult = {
+type WardSearchResult = {
   unit: Unit;
   /** Null when the ward has not confirmed both its empty and allocatable figures. */
   readyBeds: number | null;
@@ -140,28 +140,28 @@ export type WardSearchResult = {
   href: string;
 };
 
-export type EdSearchResult = {
+type EdSearchResult = {
   ed: EmergencyDepartment;
   href: string;
 };
 
-export type CommunityTeamSearchResult = {
+type CommunityTeamSearchResult = {
   team: CommunityTeam;
   href: string;
 };
 
-export type LegalFormSearchResult = {
+type LegalFormSearchResult = {
   form: LegalForm;
   title: string;
   href: string;
 };
 
-export type ViewSearchResult = {
+type ViewSearchResult = {
   view: CoreSearchView;
   href: string;
 };
 
-export type TaskSearchResult = {
+type TaskSearchResult = {
   task: InboxItem;
   href: string;
 };
@@ -182,7 +182,7 @@ export function unitReadyBedCount(unit: Unit): number | null {
 /**
  * Matches wards by name, siteCode, unit id, or site name.
  */
-export function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
+function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -217,7 +217,7 @@ export function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
 /**
  * Matches emergency departments by name or siteCode.
  */
-export function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[]): EdSearchResult[] {
+function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[]): EdSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -242,7 +242,7 @@ export function searchEmergencyDepartments(query: string, eds?: EmergencyDepartm
 /**
  * Matches community teams by name or slug id.
  */
-export function searchCommunityTeams(
+function searchCommunityTeams(
   query: string,
   teams: readonly CommunityTeam[] = COMMUNITY_TEAM_PAGES,
 ): CommunityTeamSearchResult[] {
@@ -265,7 +265,7 @@ export function searchCommunityTeams(
 /**
  * Matches legal forms by code (e.g. "1A", "3A", "Form 1A") or official register title.
  */
-export function searchLegalForms(
+function searchLegalForms(
   query: string,
   forms: readonly LegalForm[] = SELECTABLE_LEGAL_FORMS,
 ): LegalFormSearchResult[] {
@@ -307,10 +307,7 @@ export function searchLegalForms(
 /**
  * Matches core views and navigation pages by title, key, keywords, or description.
  */
-export function searchCoreViews(
-  query: string,
-  views: readonly CoreSearchView[] = CORE_SEARCH_VIEWS,
-): ViewSearchResult[] {
+function searchCoreViews(query: string, views: readonly CoreSearchView[] = CORE_SEARCH_VIEWS): ViewSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -335,7 +332,7 @@ export function searchCoreViews(
 /**
  * Matches action inbox tasks by summary/detail, title, id, or keyword "task".
  */
-export function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResult[] {
+function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -354,7 +351,7 @@ export function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSea
     })
     .map((task) => ({
       task,
-      href: task.href ?? `/mockups/ward-flow/movements/${task.movementId}`,
+      href: task.href ?? movementHref(task.movementId),
     }));
 }
 
@@ -369,7 +366,7 @@ export type SearchIntent = "person" | "identifier" | "place" | "form" | "view" |
 
 export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Tasks" | "All";
 
-export const SEARCH_GROUP_ORDER = ["people", "movements", "wards", "eds", "teams", "forms", "views", "tasks"] as const;
+const SEARCH_GROUP_ORDER = ["people", "movements", "wards", "eds", "teams", "forms", "views", "tasks"] as const;
 
 export type SearchGroupKey = (typeof SEARCH_GROUP_ORDER)[number];
 
@@ -395,7 +392,7 @@ const SITE_NAME_NOISE = new Set([
 function mentionsKnownSite(query: string): boolean {
   const needle = query.trim().toLowerCase();
   const tokens = needle.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
-  return wardSites.some((site) => {
+  return siteDirectory.some((site) => {
     const code = site.code.toLowerCase();
     const name = site.name.toLowerCase();
     if (needle.length >= 3 && (code === needle || name.includes(needle))) return true;

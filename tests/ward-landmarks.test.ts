@@ -75,6 +75,7 @@ import { WardModeWorkspace } from "@/components/ward-management/ward-management-
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
+import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
@@ -94,7 +95,6 @@ import { WardPatientWorkspace } from "@/components/ward-management/ward-manageme
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -251,6 +251,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
+  // 15 Oct 2026: the bed meeting TV view, behind the `bed-meeting-tv` feature flag (on in tests).
+  { route: `${ROUTE_PREFIX}/bed-meeting`, render: () => createElement(BedMeetingTvScreen) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(OfficerScreen) },
   { route: `${ROUTE_PREFIX}/ward/[unitId]`, render: () => createElement(WardScreen, { unitId: "rph-adult-secure" }) },
@@ -282,7 +284,6 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
-  { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
   // Read-only reports, 9 Oct 2026 (stream C).
   { route: `${ROUTE_PREFIX}/statistics/weekly`, render: () => createElement(WeeklyReportScreen) },
   // The four statistics index pages, 9 Oct 2026 (Statistics A).
@@ -516,4 +517,14 @@ describe("Every Ward Flow route has exactly one <h1> (D7)", () => {
       expect(matches.length, `expected exactly one <h1> on ${entry.route}, found ${matches.length}`).toBe(1);
     });
   }
+
+  it.each(["/mockups/ward-flow/network", "/mockups/ward-flow/governance"])(
+    'AUD-12: places the visually hidden <h1> inside <main id="main-content"> on %s',
+    (route) => {
+      const entry = RENDERABLE_ROUTES.find((candidate) => candidate.route === route);
+      expect(entry).toBeDefined();
+      const markup = renderRoute(entry!);
+      expect(markup).toMatch(/<main[^>]*\bid="main-content"[^>]*>\s*<h1[^>]*class="sr-only"[^>]*>/);
+    },
+  );
 });

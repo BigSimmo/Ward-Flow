@@ -27,6 +27,11 @@ const WARD_DIR = "src/components/ward-management";
  *   - `ward-derivations.ts` — reads `PARALLEL_REFERRAL_CAP` ONLY, inside `heavilyDeclined`, which
  *     counts declines against the product's own courtesy cap rather than the coordinator-tunable
  *     one (a named, narrow exemption — see that function's own doc comment).
+ *   - `ward-clinical-values.ts` — reads `ED_ACCESS_TARGET_MINUTES` and `PULL_HOLD_MINUTES` ONLY,
+ *     to list the two adjustable figures' DEFAULTS (`adjustable: true`) beside their synthetic or
+ *     signed status. It is a catalogue of defaults, not an engine read site, so it cannot ignore a
+ *     coordinator's saved change. It cannot read them from `defaultWardConfiguration()` instead:
+ *     `ward-configuration.ts` imports `ward-operational-defaults.ts`, which imports this file.
  *
  * Every other file must read `state.configuration.<field>` instead.
  */
@@ -39,6 +44,7 @@ const READ_ALLOWLIST: Readonly<Record<string, ReadonlySet<(typeof RESTRICTED_NAM
   "ward-configuration.ts": new Set(RESTRICTED_NAMES),
   "settings-thresholds.ts": new Set(["ED_ACCESS_TARGET_MINUTES"]),
   "ward-derivations.ts": new Set(["PARALLEL_REFERRAL_CAP"]),
+  "ward-clinical-values.ts": new Set(["ED_ACCESS_TARGET_MINUTES", "PULL_HOLD_MINUTES"]),
 };
 
 function walk(dir: string): string[] {

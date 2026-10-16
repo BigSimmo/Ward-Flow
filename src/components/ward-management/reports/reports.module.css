@@ -160,7 +160,9 @@
   font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
 }
 
-.figure small {
+/* A note under a figure is its own <dd>, so the list stays a valid dt and dd group. */
+.figure small,
+.figure dd.figureNote {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
@@ -231,7 +233,7 @@
   padding: 2px var(--wf-s-2);
   box-sizing: border-box;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-on-hero-fill);
   color: var(--wf-hero-ink);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -285,7 +287,7 @@
   min-height: 36px;
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line);
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
@@ -389,7 +391,7 @@
   padding: 0 6px;
   box-sizing: border-box;
   border: 1px solid var(--wf-fit-edge);
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-fit-tint);
   color: var(--wf-ink-1);
   font-weight: 600;
@@ -496,7 +498,7 @@
   padding: 0 6px;
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
@@ -886,6 +888,14 @@
 .printMeta {
   margin: 0 0 var(--wf-s-2);
   font-size: var(--wf-fs-12);
+}
+
+/* F-05 (phone review, Oct 2026): a phone row's detail wraps to a second line ("1 being m…"). */
+.phoneMetaWrap {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* v10 phone downtime pack (11 Oct 2026): each service head reads as a plain caps label with its

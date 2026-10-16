@@ -8,7 +8,7 @@
   gap: var(--wf-s-1);
   height: var(--wf-h-sm);
   padding: 0 var(--wf-s-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
   background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);

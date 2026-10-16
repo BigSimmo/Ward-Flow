@@ -32,7 +32,11 @@ import {
   formatRemaining,
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
   foldPatientSearchText,
@@ -45,7 +49,7 @@ import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
@@ -106,6 +110,7 @@ import {
 import styles from "./search.module.css";
 import cs from "./census.module.css";
 import { isCommunityReferral } from "./community-referral";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -184,7 +189,7 @@ function recordedAge(patient: Patient | undefined, today: Date): number | null {
   return Number.isFinite(years) && years >= 0 ? years : null;
 }
 
-export interface UnifiedCaseloadPatient {
+interface UnifiedCaseloadPatient {
   id: string;
   urm: string;
   name: string;
@@ -225,7 +230,16 @@ export interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
-  const { movements, referrals, units, patients, admissions, plannedAdmissions = [], dayZero } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const {
+    movements,
+    referrals,
+    units,
+    patients,
+    admissions,
+    plannedAdmissions = [],
+    dayZero,
+  } = useWardFlowSelect("movements", "referrals", "units", "patients", "admissions", "plannedAdmissions", "dayZero");
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
   const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
@@ -628,8 +642,9 @@ export function PatientSearchPage() {
   // the same records as `unifiedCaseload` above, so every search and filter that narrows that list
   // narrows these rows the same way; the bed and record rows answer the typed name or UMRN.
   const census = useMemo(
-    () => buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero }),
-    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero],
+    () =>
+      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
   );
   const isPhone = usePhoneLayout();
   const needle = isChip ? "" : foldPatientSearchText(text);
@@ -1391,8 +1406,7 @@ function matchesTier(result: PatientSearchResult, tier: string): boolean {
 
 function matchesPatient(item: unknown, patientId: string): boolean {
   if (typeof item === "object" && item !== null) {
-    const key = ["patient", "Id"].join("");
-    return Reflect.get(item, key) === patientId;
+    return Reflect.get(item, "patientId") === patientId;
   }
   return false;
 }
@@ -1414,7 +1428,7 @@ function getPatientPresence(
   return { key: "past", label: "Past / Discharged" };
 }
 
-export function PeopleSection({
+function PeopleSection({
   people,
   query,
   otherMatches,
@@ -1529,11 +1543,13 @@ export function ResultsSection({
   selectedMovementId?: string | null;
   onPreviewReferral?: (referral: Referral) => void;
   selectedReferralId?: string | null;
-  /** For naming each movement's patient; absent, rows read "Unknown Patient", never the id. */
+  /** For naming each movement's patient; absent, rows read "Name not recorded", never the id. */
   patients?: Patient[];
   referrals?: Referral[];
 }) {
   const referralResults = results.filter((result) => result.kind === "referral");
+  // D-39: a referral row names its person by name and UMRN, never by the referral number.
+  const umrnLookup = { patients, referrals };
   const movementResults = results.filter((result) => result.kind === "movement");
 
   const [facetKey, setFacetKey] = useState<ShowFacetKey>("all");
@@ -1590,7 +1606,9 @@ export function ResultsSection({
               >
                 <div className={styles.referralHeaderCluster}>
                   <span className={`${styles.presenceTag} ${styles[presenceKey]}`}>{presenceLabel}</span>
-                  <span className={styles.referralId}>{summary.id}</span>
+                  <span className={styles.referralId}>
+                    {patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}
+                  </span>
                 </div>
                 <span className={styles.referralNote}>
                   {summary.originLine} — {summary.declineNote}
@@ -1625,6 +1643,7 @@ export function ResultsSection({
             Movement filters only; people and waiting referrals are unchanged.
           </p>
 
+          {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
           <div
             className={styles.showFacets}
             role="tablist"
@@ -1751,7 +1770,7 @@ function ResultRow({
             Preview
           </button>
         ) : null}
-        <Link className={styles.resultLink} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.resultLink} href={movementHref(movement.id)}>
           Open
         </Link>
       </td>

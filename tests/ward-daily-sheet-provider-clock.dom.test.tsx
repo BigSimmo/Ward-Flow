@@ -7,6 +7,7 @@ import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-manage
 import {
   WardFlowClockContext,
   WardFlowContext,
+  WardFlowOverride,
   WardFlowProvider,
 } from "@/components/ward-management/ward-flow-provider";
 import { allUnits } from "@/components/ward-management/ward-sites";
@@ -22,9 +23,9 @@ function Fixture({ now }: { now?: number }) {
     expectedDischargeAt: -30,
   };
   return (
-    <WardFlowContext.Provider value={{ ...flow, admissions: [admission] }}>
+    <WardFlowOverride value={{ ...flow, admissions: [admission] }}>
       <WardDailySheet unit={unit} now={now} />
-    </WardFlowContext.Provider>
+    </WardFlowOverride>
   );
 }
 

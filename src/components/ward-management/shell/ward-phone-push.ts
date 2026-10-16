@@ -7,14 +7,21 @@
  * demonstration has no server to send from. The server writes the words: a count, the hospital
  * site and a link to Alerts, never a patient name, record number, Ward Flow id or typed text.
  *
- * `public/ward-flow-push-sw.js` shows the notification and opens Alerts when it is tapped. It has
- * no fetch handler, so it never intercepts or caches pages.
+ * `public/ward-flow-push-sw.js` shows the notification and opens Alerts when it is tapped. The same
+ * worker also gives the offline fallback page (`shell/ward-pwa-registration.tsx` registers it on
+ * every Ward Flow load, with the same URL and scope, so there is one registration). It keeps only
+ * static files, never a page or data (D-18).
  */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { WARD_DEVELOPER_HUB_HREF } from "@/components/ward-management/ward-nav";
 
 export const PHONE_PUSH_WORKER_URL = "/ward-flow-push-sw.js";
-export const PHONE_PUSH_SCOPE = `${WARD_DEVELOPER_HUB_HREF}/`;
+/**
+ * No trailing slash (F-11): scope matching is a plain prefix, so `/mockups/ward-flow/` left Home
+ * (`/mockups/ward-flow`) uncontrolled. The worker itself ignores sibling paths such as
+ * `/mockups/ward-flow-digest` that this prefix also covers.
+ */
+export const PHONE_PUSH_SCOPE = WARD_DEVELOPER_HUB_HREF;
 
 /** The calls the signed-in shared workspace offers (`SharedWorkspaceClient`). */
 export type PhonePushApi = {
@@ -94,12 +101,26 @@ export function phonePushRow(state: PhonePushState): { checked: boolean; unavail
   }
 }
 
+/**
+ * An iPhone or iPad. iPadOS Safari reports itself as a Mac (F-29), so a "Macintosh" user agent
+ * with a touch screen counts too: no Mac has one.
+ */
+export function iosDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) return true;
+  return /Macintosh/.test(navigator.userAgent) && (navigator.maxTouchPoints ?? 0) > 1;
+}
+
+/** Whether Ward Flow is running as an installed Home Screen app rather than in a browser tab. */
+export function standaloneApp(): boolean {
+  if (typeof window === "undefined") return false;
+  const iosStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return iosStandalone || window.matchMedia?.("(display-mode: standalone)").matches === true;
+}
+
 /** An iPhone or iPad browser tab: web push works only from a Home Screen web app there. */
 function iosTab(): boolean {
-  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
-  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const standalone = window.matchMedia?.("(display-mode: standalone)").matches === true;
-  return ios && !standalone;
+  return iosDevice() && !standaloneApp();
 }
 
 /** Whether this browser can receive web push at all. */

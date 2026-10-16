@@ -1,16 +1,10 @@
 import {
   trackServiceBedCapacity,
-  deriveBedCapacityTone,
-  deriveEdWarning,
-  evaluateCompoundEscalation,
   METRO_HEALTH_SERVICES,
   type CapacityAlertCode,
   type CompoundEscalationAlert,
   type HospitalBedTracking,
-  type HospitalEdMetrics,
-  type ServiceCapacityTracking,
   type ServiceEdSummary,
-  type StatewideCapacityReport,
 } from "@/components/ward-management/capacity/service-capacity-tracker";
 import {
   type BedRelease,
@@ -21,29 +15,14 @@ import {
 } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   OCCUPANCY_ALERT_PERCENT,
   OCCUPANCY_CRITICAL_PERCENT,
 } from "@/components/ward-management/ward-operational-defaults";
 
-export {
-  METRO_HEALTH_SERVICES,
-  trackServiceBedCapacity,
-  deriveBedCapacityTone,
-  deriveEdWarning,
-  evaluateCompoundEscalation,
-};
-
-export type {
-  CapacityAlertCode,
-  CompoundEscalationAlert,
-  HospitalBedTracking,
-  HospitalEdMetrics,
-  ServiceCapacityTracking,
-  ServiceEdSummary,
-  StatewideCapacityReport,
-};
+export { METRO_HEALTH_SERVICES };
 
 export type ServiceBedAlertCode = CapacityAlertCode;
 
@@ -108,9 +87,10 @@ export function occupancyTone(occupancyPercent: number): {
  * or over this occupancy shows a filled amber circle, an amber meter and counts as one alert; under
  * it, a neutral ring. Every meter carries a tick at this value. It is a display threshold for the
  * synthetic prototype, separate from `OCCUPANCY_ALERT_PERCENT`'s colour bands, and not a clinical
- * standard.
+ * standard. Synthetic until clinically signed, with the 90% colour band listed beside it in
+ * `ward-clinical-values.ts`.
  */
-export const BED_ALERT_THRESHOLD_PERCENT = 85;
+export const BED_ALERT_THRESHOLD_PERCENT = CLINICAL_VALUES.bedAlertLine.value;
 
 /** True when an occupancy figure is at or over the rail's Bed alerts threshold. */
 export function isBedAlert(occupancyPercent: number): boolean {

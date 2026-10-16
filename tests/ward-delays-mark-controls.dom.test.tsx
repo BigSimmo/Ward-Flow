@@ -11,6 +11,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
  * THE DELAYS BOARD'S FILTERS NEVER LEAVE A STALE ONE PRESSED, AND THE COUNT IS ALWAYS HONEST.
  *
@@ -27,7 +28,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const seededMovements = seedWardFlowState().movements;
 const OPEN = seededMovements.filter(isOpen);
 const UNITS = allUnits();
-const GROUPS_AT_ANCHOR = delayGroups(seededMovements, UNITS, NOW_ANCHOR);
+const GROUPS_AT_ANCHOR = delayGroups(seededMovements, UNITS, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
 
 function ownerPeople(ownerId: string): number {
   return GROUPS_AT_ANCHOR.filter((group) => ownerOf(group.cause) === ownerId).reduce(

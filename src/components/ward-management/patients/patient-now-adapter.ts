@@ -12,7 +12,7 @@ import {
   clock,
   dur,
 } from "@/components/ward-management/patients/patient-now-records";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 
@@ -72,7 +72,7 @@ function movementVerdict(
   return { tone: "warn", short: "Seeking Bed", title: "Placement request active across network wards.", gates: [] };
 }
 
-export function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
+function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
   if (departed)
     return [
       {
@@ -343,7 +343,7 @@ export function resolvePatientNowRecord(
     const resolvedPatient = resolveSubjectPatient(movement, { patients, referrals, movements });
     const livePatient = resolvedPatient.patient;
     const displayName =
-      resolvedPatient.formalName !== "Unknown Patient" ? resolvedPatient.formalName : "Patient not recorded";
+      resolvedPatient.formalName !== NAME_NOT_RECORDED ? resolvedPatient.formalName : "Patient not recorded";
     const preferredName = livePatient?.preferredName;
 
     return {

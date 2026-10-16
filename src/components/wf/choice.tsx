@@ -68,6 +68,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
   const { refs, onKeyDown } = useRoving(items, value, onChange);
   const stop = tabStopIndex(items, value);
   return (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div role="tablist" aria-label={label} className={cx(styles.tabs, className)} onKeyDown={onKeyDown}>
       {items.map((item, index) => {
         const selected = item.id === value;
@@ -118,6 +119,7 @@ export function PillTabs<T extends string>({
   const { refs, onKeyDown } = useRoving(items, value, onChange);
   const stop = tabStopIndex(items, value);
   return (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div
       role="tablist"
       aria-label={label}
@@ -246,6 +248,7 @@ export function Segmented<T extends string>({
   }
 
   return (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div role="radiogroup" aria-label={label} className={groupClass} onKeyDown={onKeyDown}>
       {items.map((item, index) => {
         const checked = item.id === value;
@@ -288,7 +291,7 @@ export type FilterChipProps = {
   className?: string;
 };
 
-/** Toggle chip for quick filters (`aria-pressed`). Pressed gets a 3:1 edge, never a colour fill. */
+/** Toggle chip for quick filters (`aria-pressed`). Pressed takes the accent tint and edge. */
 export function FilterChip({
   pressed,
   onPressedChange,
@@ -307,7 +310,9 @@ export function FilterChip({
       onClick={() => onPressedChange(!pressed)}
     >
       {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-      <span className={styles.chipLabel}>{children}</span>
+      <span className={styles.chipLabel} data-text={typeof children === "string" ? children : undefined}>
+        {children}
+      </span>
       {count != null ? <Count n={count} className={styles.k} /> : null}
     </button>
   );

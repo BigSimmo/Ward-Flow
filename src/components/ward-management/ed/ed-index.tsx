@@ -1,6 +1,6 @@
 "use client";
 
-import { hasOpenSheet } from "@/components/ward-management/ward-modal-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -46,13 +46,16 @@ import {
   RowTrend,
 } from "@/components/wf";
 import {
+  ED_HELD_STAGES,
   ED_HOME_SERVICE_BAND_ORDER,
+  ED_LEAVING_STAGES,
+  ED_STAGE_LABELS,
   edHomeSummaries,
   edWaitingSeries,
   type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -116,17 +119,9 @@ type EdRow = {
   trend: number[];
 };
 
-const STAGE_LABEL: Record<MovementStage, string> = {
-  placement_requested: "No bed yet",
-  destination_review: "Finding a ward",
-  accepted_awaiting_bed: "Bed accepted",
-  pulled: "Bed pulled",
-  handover_ready: "Handover ready",
-  moving: "In transit",
-  arrived: "Arrived",
-};
-const HELD: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled"];
-const LEAVING: readonly MovementStage[] = ["handover_ready", "moving"];
+const STAGE_LABEL = ED_STAGE_LABELS;
+const HELD = ED_HELD_STAGES;
+const LEAVING = ED_LEAVING_STAGES;
 
 const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 const PIPS_SHOWN = 12;
@@ -192,7 +187,13 @@ function rowClock(row: EdRow): WaitClock {
 }
 
 export function EdIndex() {
-  const { movements, patients, referrals, units, configuration } = useWardFlow();
+  const { movements, patients, referrals, units, configuration } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "referrals",
+    "units",
+    "configuration",
+  );
   const { now, paused, togglePause } = usePageLive();
   const accessTarget = configuration.edAccessTargetMinutes;
 
@@ -414,7 +415,13 @@ export function EdIndex() {
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         <Hero
-          eyebrow={isPhone ? "Emergency · Statewide" : `Emergency · Statewide · ${rows.length} departments`}
+          // F-09 (phone review, Oct 2026): the phone eyebrow names how many EDs there are, so the "All
+          // EDs" count agrees with it; the title counts the EDs with someone waiting.
+          eyebrow={
+            isPhone
+              ? `Emergency · Statewide · ${rows.length} EDs`
+              : `Emergency · Statewide · ${rows.length} departments`
+          }
           level={1}
           title={
             <>
@@ -426,8 +433,8 @@ export function EdIndex() {
             // v10 phone: one quiet line under the title in place of the checking foot.
             isPhone
               ? waiting > 0 && longestRow
-                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
-                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "live"}`
+                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
+                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
               : undefined
           }
           aside={

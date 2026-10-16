@@ -18,6 +18,13 @@ import type {
   WardAddressing,
 } from "@/components/ward-management/ward-model";
 import { referralState } from "@/components/ward-management/ward-referrals";
+import type { PatientId } from "@/components/ward-management/ward-patients";
+import type {
+  ReferralChart,
+  ReferralContact,
+  ReferralIntakeDetails,
+  ReferralNeeds,
+} from "@/components/ward-management/referrals/referral-submission";
 
 /**
  * FD-23 — WHAT A WARD MAY SEE OF A REFERRAL, AND WHAT IT MAY NOT.
@@ -167,7 +174,7 @@ import { referralState } from "@/components/ward-management/ward-referrals";
  * rather than aliased to it. An alias would mean a field added to the model's ward arm arrives
  * here automatically; a separate declaration means somebody has to decide.
  */
-export type WardScopedDestination = {
+type WardScopedDestination = {
   kind: "psychiatric_ward";
   sex: RecordedSex;
   /**
@@ -261,7 +268,7 @@ export type WardScopedReferral = {
  * Two types, no converter — see this module's header on why a function both a ward screen and a
  * community screen reach is the FD-23 exemption arriving by the front door.
  */
-export type CommunityScopedDestination = {
+type CommunityScopedDestination = {
   kind: "community_team";
   teamName: string;
 };
@@ -354,9 +361,61 @@ export type CommunityScopedReferral = {
   urgency: UrgencyLevel;
   originSiteCode: string;
   transportNeeded: boolean;
+  /**
+   * 🔴 **THE FIVE KEYS BELOW JOINED ON 15 OCT 2026, ON THE OWNER'S CHOICE THAT THE LIVE TEAM PAGE
+   * (`community/community-screen.tsx`) READS THIS PROJECTION.** That page shows the person, the
+   * story, the clearance and the submitted intake, and the owner chose that it keeps looking the
+   * same. Each is a fact about the person or the referral every destination shares, so none names
+   * another destination. `intake` is the one with a part that could, and that part is cut: see
+   * `CommunityScopedIntake`.
+   */
+  patientId?: PatientId;
+  sendingTeamName?: string;
+  /** The referrer's story, word for word. Copied for display only, and never read by a gate here. */
+  history: string;
+  medicalClearance?: { cleared: boolean; at: Instant };
+  intake?: CommunityScopedIntake;
   /** Singular, and that is the whole rule in one key name. */
   addressing: CommunityScopedAddressing;
 };
+
+/**
+ * The submitted intake as a community team may see it. Declared field by field, so a field the
+ * drawer gains later does not arrive here unless somebody decides it should.
+ *
+ * ⚠️ **THREE PARTS OF THE DRAWER'S INTAKE ARE CUT, AND ALL THREE CUTS ARE FD-23.** `arrival` is
+ * the proposed arrival at a bed or an emergency department, `clearanceChecklist` is written only for
+ * a ward referral, and `needs` of kind `"ed"` is what an emergency department was asked to prepare.
+ * Each tells a community team the person was also sent somewhere else. Community needs are this
+ * team's own and stay.
+ */
+export type CommunityScopedIntake = {
+  catchment: ReferralIntakeDetails["catchment"];
+  reasonForReferral: string;
+  legalStatus: string;
+  riskFlags: ReferralIntakeDetails["riskFlags"];
+  medicalClearance: ReferralIntakeDetails["medicalClearance"];
+  triageAndRampCompleted: boolean;
+  charts: ReferralChart[];
+  additionalDocuments: boolean;
+  referrer: ReferralContact;
+  needs?: Extract<ReferralNeeds, { kind: "community" }>;
+};
+
+function communityScopedIntake(intake: ReferralIntakeDetails): CommunityScopedIntake {
+  return {
+    catchment: intake.catchment,
+    reasonForReferral: intake.reasonForReferral,
+    legalStatus: intake.legalStatus,
+    riskFlags: intake.riskFlags,
+    medicalClearance: intake.medicalClearance,
+    triageAndRampCompleted: intake.triageAndRampCompleted,
+    charts: intake.charts,
+    additionalDocuments: intake.additionalDocuments,
+    referrer: intake.referrer,
+    ...(intake.needs?.kind === "community" ? { needs: intake.needs } : {}),
+  };
+}
 
 /**
  * THIS emergency department's own arm — which department, and why it was asked.
@@ -371,7 +430,7 @@ export type CommunityScopedReferral = {
  * `purpose`. A seat that could not see why it was asked would answer a medical notification with a
  * psychiatric-review affordance — the exact confusion `REFERRAL_PURPOSES` exists to prevent.
  */
-export type EdScopedDestination = {
+type EdScopedDestination = {
   kind: "emergency_department";
   edId: string;
   purpose: ReferralPurpose;
@@ -644,6 +703,11 @@ export function communityScopedReferral(referral: Referral): CommunityScopedRefe
     urgency: referral.urgency,
     originSiteCode: referral.originSiteCode,
     transportNeeded: referral.transportNeeded,
+    ...(referral.patientId !== undefined ? { patientId: referral.patientId } : {}),
+    ...(referral.sendingTeamName !== undefined ? { sendingTeamName: referral.sendingTeamName } : {}),
+    history: referral.history,
+    ...(referral.medicalClearance !== undefined ? { medicalClearance: referral.medicalClearance } : {}),
+    ...(referral.intake !== undefined ? { intake: communityScopedIntake(referral.intake) } : {}),
     addressing: {
       destination: {
         kind: community.destination.kind,

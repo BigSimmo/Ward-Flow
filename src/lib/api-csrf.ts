@@ -16,12 +16,14 @@
  *
  * In both cases the browser still sends `Origin` on a cross-origin state-changing
  * request, so an `Origin` host that does not match the host the request was
- * addressed to is rejected. `Referer` is consulted only when there is neither
- * Fetch Metadata nor an `Origin` — the shape an old browser produces. A request
- * carrying none of the three is refused (12 October 2026 review, A4-12): Ward Flow
- * has no non-browser API client, and failing closed means a future mutation route
- * cannot be reached by a stripped-header request. A legitimate client sends
- * `Origin` or Fetch Metadata.
+ * addressed to is rejected. Without an `Origin`, only `Sec-Fetch-Site: same-origin`
+ * is accepted outright; any other Fetch Metadata value (`same-site`, `none` or an
+ * unknown one) falls through to the checks below, as does a request with no Fetch
+ * Metadata at all. A valid `x-ward-flow-csrf` header, or a same-host `Referer`, can
+ * then vouch for it — the shape an old browser produces. A request carrying none of
+ * these is refused (12 October 2026 review, A4-12): Ward Flow has no non-browser API
+ * client, and failing closed means a future mutation route cannot be reached by a
+ * stripped-header request. A legitimate client sends `Origin` or Fetch Metadata.
  *
  * This is defence in depth. It does not rely on any cookie's `SameSite`
  * attribute (the former clinical app's @supabase/ssr session cookies, which
@@ -42,7 +44,7 @@ export function isCsrfGuardedApiRequest(method: string, pathname: string): boole
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
-export const WARD_FLOW_CSRF_HEADER = "x-ward-flow-csrf";
+const WARD_FLOW_CSRF_HEADER = "x-ward-flow-csrf";
 
 export type ApiMutationCsrfVerdict =
   | { allowed: true }

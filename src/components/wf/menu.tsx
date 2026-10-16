@@ -189,6 +189,7 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
         onKeyDown: onTriggerKeyDown,
       })}
       {open ? (
+        // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
         <div
           id={menuId}
           role="menu"
@@ -248,12 +249,20 @@ export type PopoverCloseOptions = {
   restoreFocus?: boolean;
 };
 
+/**
+ * What `close` accepts: nothing (focus returns to the trigger), a boolean or options naming whether
+ * it should, or the click event itself, in which case a click on a link leaves focus where the
+ * navigation puts it.
+ */
+type PopoverCloseArgument =
+  PopoverCloseOptions | boolean | { target?: EventTarget | null; currentTarget?: EventTarget | null };
+
 export type PopoverProps = {
   /** Accessible name of the popover dialog. */
   label: string;
   trigger: (props: MenuTriggerProps) => ReactNode;
   /** Content. Receives `close` so an action inside can dismiss it. */
-  children: (close: (options?: PopoverCloseOptions | unknown) => void) => ReactNode;
+  children: (close: (options?: PopoverCloseArgument) => void) => ReactNode;
   align?: "start" | "end";
   className?: string;
   panelClassName?: string;
@@ -277,7 +286,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
     setReturnFocus(false);
     setOpen(false);
   }, []);
-  const closeAndReturn = useCallback((options?: PopoverCloseOptions | unknown) => {
+  const closeAndReturn = useCallback((options?: PopoverCloseArgument) => {
     let shouldRestore = true;
     if (typeof options === "boolean") {
       shouldRestore = options;
@@ -343,6 +352,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
         onKeyDown: onTriggerKeyDown,
       })}
       {open ? (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
         <div
           ref={panelRef}
           id={panelId}
@@ -389,6 +399,10 @@ export function Popover({ label, trigger, children, align = "start", className, 
                 (!event.shiftKey && document.activeElement === last) ||
                 (event.shiftKey && (document.activeElement === first || document.activeElement === panel))
               ) {
+                // Park focus on the trigger before the panel unmounts, so the browser's own Tab step
+                // carries on from there (the control after the trigger, or the one before it for
+                // Shift+Tab) rather than from a removed element.
+                triggerRef.current?.focus({ preventScroll: true });
                 close();
               }
             }

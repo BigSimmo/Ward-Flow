@@ -355,7 +355,7 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
   });
 
-  it("meets accessibility requirements: role=region, aria-live=polite, and tabpanel semantics", () => {
+  it("meets accessibility requirements: role=region, one polite summary live region, and tabpanel semantics", () => {
     render(
       <WardNotificationCenter {...defaultProps} morningRollupDeadlinePassed={true} morningRollupConfirmed={false} />,
     );
@@ -364,7 +364,9 @@ describe("WardNotificationCenter DOM Component", () => {
       name: "Ward notification and buzzer centre for Ward Alpha",
     });
     expect(region).toBeInTheDocument();
-    expect(region).toHaveAttribute("aria-live", "polite");
+    // Only the atomic summary announces; the panel itself is not a live region.
+    expect(region).not.toHaveAttribute("aria-live");
+    expect(screen.getByTestId("ward-notification-live-summary")).toHaveAttribute("aria-live", "polite");
 
     const tablist = screen.getByRole("tablist", { name: "Notification filters" });
     expect(tablist).toBeInTheDocument();
@@ -496,6 +498,6 @@ describe("WardNotificationCenter DOM Component", () => {
     render(<WardNotificationCenter {...defaultProps} now={700} movements={movements} patients={patients} />);
 
     expect(screen.getByText(/Overdue Inbound Arrival: John Doe/)).toBeInTheDocument();
-    expect(screen.queryByText(/Unknown Patient/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Name not recorded/)).not.toBeInTheDocument();
   });
 });

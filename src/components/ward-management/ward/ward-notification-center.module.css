@@ -236,6 +236,11 @@
   outline: none;
 }
 
+.tabPanel:focus-visible {
+  outline: 2px solid var(--ward-blue);
+  outline-offset: 2px;
+}
+
 .section {
   display: flex;
   flex-direction: column;

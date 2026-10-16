@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
   // never wires up its listeners.
   allowedDevOrigins: ["127.0.0.1"],
   devIndicators: false,
+  // Fix list 7.3: the React Compiler memoises screens on the inputs it can see. Screens take the
+  // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
+  // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
+  reactCompiler: true,
   experimental: {
     // Default 1 is the safe fallback for a Node-24 webpack WasmHash worker crash
     // seen on constrained local builds (see the webpack hashFunction override
@@ -98,6 +102,18 @@ const nextConfig: NextConfig = {
         // retrievable for sharing but must never be indexed (12 October 2026 review, A4-7).
         source: "/:file([^/]+\\.html)",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        // PWA plan item 7: the service worker and the manifest are always revalidated, so a new
+        // version reaches an installed app on its next load rather than after a day of HTTP cache.
+        // No Service-Worker-Allowed header: the worker sits at the root, so it may already control
+        // its /mockups/ward-flow scope.
+        source: "/ward-flow-push-sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache" }],
+      },
+      {
+        source: "/manifest.webmanifest",
+        headers: [{ key: "Cache-Control", value: "no-cache" }],
       },
     ];
   },

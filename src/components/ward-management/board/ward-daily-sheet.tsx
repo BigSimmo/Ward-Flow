@@ -1,12 +1,20 @@
-import { useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { Copy, FileText, Printer, X } from "lucide-react";
-import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
+import {
+  buttonClass,
+  Card,
+  CardHead,
+  CountBubble,
+  Icon,
+  StatusGlyph,
+  useModalFocus,
+  type WfTone,
+} from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   admissionsForUnit,
   bedIsOccupied,
@@ -14,6 +22,7 @@ import {
   isPastExpectedDischarge,
   stayBand,
   stayDayNumber,
+  type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
@@ -129,6 +138,32 @@ export function dailySheetGroups(people: readonly DailySheetPerson[]): DailyShee
     noDate: people.filter((person) => person.expectedDays === null),
     awayFromWard: people.filter((person) => person.awayAtEdHours !== null),
   };
+}
+
+/** The sheet's person rows for one ward, from its occupied beds. Shared with the ward TV view so
+ *  the two read the same rows. */
+export function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
+  return admissionsForUnit(admissions, unitId)
+    .filter(bedIsOccupied)
+    .map((admission) => ({
+      key: admission.id,
+      days: daysInBed(admission, now),
+      dayNumber: stayDayNumber(daysInBed(admission, now)),
+      bandLabel: stayBand(admission, now)?.label ?? null,
+      pastDate: isPastExpectedDischarge(admission, now),
+      sex: admission.sex,
+      homeRegion: admission.homeRegion,
+      tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
+      awayAtEdHours:
+        admission.awayAtEmergencyDepartmentSince === null
+          ? null
+          : Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60)),
+      expectedDays:
+        admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+          ? Math.floor((admission.expectedDischargeAt - now) / 1440)
+          : null,
+      blockReason: admission.blockReason,
+    }));
 }
 
 /**
@@ -424,7 +459,7 @@ export function WardDailySheet({
     now !== undefined && Number.isFinite(now) ? now : Number.isFinite(clockNow) ? clockNow : WARD_ADMISSIONS_ANCHOR;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
-  const liveFlow = useContext(WardFlowContext);
+  const liveFlow = useOptionalWardFlowSelect("admissions", "bedReleases");
   const liveAdmissions = liveFlow?.admissions;
   const liveBedReleases = liveFlow?.bedReleases;
   const admissionSource = liveAdmissions ?? wardAdmissions;
@@ -432,27 +467,7 @@ export function WardDailySheet({
   const resolvedPeople = useMemo(() => {
     if (people !== undefined) return people;
     if (!unit) return [];
-    return admissionsForUnit(admissionSource, unit.id)
-      .filter(bedIsOccupied)
-      .map((admission) => ({
-        key: admission.id,
-        days: daysInBed(admission, currentNow),
-        dayNumber: stayDayNumber(daysInBed(admission, currentNow)),
-        bandLabel: stayBand(admission, currentNow)?.label ?? null,
-        pastDate: isPastExpectedDischarge(admission, currentNow),
-        sex: admission.sex,
-        homeRegion: admission.homeRegion,
-        tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
-        awayAtEdHours:
-          admission.awayAtEmergencyDepartmentSince === null
-            ? null
-            : Math.max(0, Math.floor((currentNow - admission.awayAtEmergencyDepartmentSince) / 60)),
-        expectedDays:
-          admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
-            ? Math.floor((admission.expectedDischargeAt - currentNow) / 1440)
-            : null,
-        blockReason: admission.blockReason,
-      }));
+    return dailySheetPeople(admissionSource, unit.id, currentNow);
   }, [people, unit, currentNow, admissionSource]);
 
   const resolvedMovement = useMemo(() => {
@@ -781,9 +796,6 @@ const subscribeNever = () => () => {};
 const clipboardAvailable = () =>
   typeof navigator !== "undefined" && "clipboard" in navigator && typeof navigator.clipboard.writeText === "function";
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 /**
  * THE SHIFT BRIEF AS A DIALOG — the ward page's "Shift brief" button.
  *
@@ -817,61 +829,10 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
       ? null
       : [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · ");
 
-  // Shares the app's overlay stack: the page behind stops scrolling and is inert while the brief
-  // is open, and both come back when it closes.
-  const sheetId = useId();
-  useEffect(() => {
-    pushSheet(sheetId, panelRef.current);
-    return () => {
-      popSheet(sheetId);
-    };
-  }, [sheetId]);
-
-  // Focus moves into the dialog on open and returns to whatever opened it on close.
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panelRef.current?.focus();
-    return () => {
-      if (opener && opener.isConnected) opener.focus();
-    };
-  }, []);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      // Another overlay opened over the brief owns the keyboard; one Escape closes only that one.
-      if (!isTopmostSheet(sheetId)) return;
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (event.key !== "Tab" || panelRef.current === null) return;
-      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-        (element) => element.offsetParent !== null || element === document.activeElement,
-      );
-      if (focusable.length === 0) {
-        event.preventDefault();
-        panelRef.current.focus();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-      if (!panelRef.current.contains(active)) {
-        event.preventDefault();
-        first.focus();
-      } else if (event.shiftKey && (active === first || active === panelRef.current)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [onClose, sheetId]);
+  // The shared modal contract (`useModalFocus`): the page behind stops scrolling and is inert while
+  // the brief is open, focus moves to the dialog itself, Tab stays inside it, Escape closes only the
+  // top-most overlay, and focus returns to whatever opened it on close.
+  useModalFocus({ open: true, onClose, panelRef, initialFocusRef: panelRef, focusOnOpen: "immediate" });
 
   useEffect(() => {
     if (copyState === "idle") return;
@@ -904,6 +865,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   // brief alone. The scrim is the centring frame; only a click that starts AND ends on the scrim
   // itself closes, so a text selection dragged out of the brief does not dismiss it.
   return createPortal(
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
     <div
       className={styles.scrim}
       data-testid="ward-daily-sheet-scrim"

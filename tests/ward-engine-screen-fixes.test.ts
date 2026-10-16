@@ -21,6 +21,7 @@ import { ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS } from "../src/components/ward-m
 import { reduceBroadcastEvent } from "../src/components/ward-management/alerts/ward-broadcast-reducer";
 import { captureAuditEvent } from "../src/components/ward-management/ward-audit";
 
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
 describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
@@ -160,7 +161,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       expect(mov, "seed must contain a matching movement").toBeDefined();
       if (!mov) return;
 
-      const cause = causeOf(mov, state.units, NOW);
+      const cause = causeOf(mov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(cause).not.toBe("no_eligible_bed");
       expect(cause).toBe("awaiting_coordinator");
     });
@@ -202,7 +203,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         },
       };
 
-      const cause = causeOf(mov, state.units, NOW);
+      const cause = causeOf(mov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(cause).toBe("awaiting_coordinator");
 
       // Also routes community_order outcome when bed is held
@@ -211,7 +212,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         admissionId: "ADM-REVOKED-1",
         examination: { outcome: "community_order", at: NOW - 100 },
       };
-      expect(causeOf(communityOrderMov, state.units, NOW)).toBe("awaiting_coordinator");
+      expect(causeOf(communityOrderMov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("awaiting_coordinator");
 
       // A held bed stepped back to stage "pulled" with revoked examination routes to coordinator, not awaiting_bed_ready
       const pulledRevokedMov: Movement = {
@@ -220,7 +221,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         admissionId: "ADM-REVOKED-1",
         examination: { outcome: "revoked", at: NOW - 100 },
       };
-      expect(causeOf(pulledRevokedMov, state.units, NOW)).toBe("awaiting_coordinator");
+      expect(causeOf(pulledRevokedMov, state.units, NOW, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("awaiting_coordinator");
     });
 
     it("A3-13: answerSilenceReminder respects movement.referredUnitIds for wards added later or ED/community referrals", () => {
@@ -389,13 +390,41 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
   });
 
   describe("Stream 4: Event Scoping, Model Constants, Broadcast Alerts", () => {
-    it("A1-7: the ward screen raises referrals through the cross-role allowance, not EVENT_ROLE", () => {
-      // A ward-to-ward referral is dispatched as community with source psychiatric_ward; adding
-      // `ward` to EVENT_ROLE would let a ward caller file referrals under any source.
-      expect(EVENT_ROLE.RECEIVE_REFERRAL).not.toContain("ward");
+    it("A1-7: the ward raises referrals in its own name, and only as the sending ward", () => {
+      // Role access plan (15 Oct 2026). `ward` is in EVENT_ROLE now that the reducer refuses a
+      // ward-raised referral under any source but psychiatric_ward
+      // (`tests/ward-referral-ward-source.test.ts`). The New referral sheet on a ward page sends in
+      // that ward's name too, so no cross-role pair borrows another role for it.
+      expect(EVENT_ROLE.RECEIVE_REFERRAL).toContain("ward");
       expect(CROSS_ROLE_ALLOWED.some((pair) => pair.routeRole === "ward" && pair.event === "RECEIVE_REFERRAL")).toBe(
-        true,
+        false,
       );
+      const before = seedWardFlowState();
+      const unit = before.units[0];
+      const after = wardFlowReducer(before, {
+        type: "RECEIVE_REFERRAL",
+        role: "ward",
+        now: NOW_ANCHOR,
+        ageBand: unit.cohort,
+        destinations: [
+          {
+            kind: "psychiatric_ward",
+            sex: "Female",
+            secureBedNeeded: false,
+            involuntaryBedNeeded: false,
+            highAcuityNursingNeeded: false,
+          },
+        ],
+        homeRegion: "Perth Metropolitan",
+        suburb: { kind: "named", name: "Armadale" },
+        source: "community",
+        urgency: 2,
+        originSiteCode: unit.siteCode,
+        transportNeeded: false,
+        history: "Synthetic history.",
+      });
+      expect(after.referrals.length).toBe(before.referrals.length);
+      expect(after.rejections.at(-1)?.reason).toContain("raised as role ward must carry source psychiatric_ward");
     });
 
     it("S1-14: ED medical bed release timeout equals 24 hours (clinical owner ruling, 14 Oct 2026)", () => {

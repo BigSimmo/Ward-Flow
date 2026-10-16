@@ -73,7 +73,7 @@
   flex-wrap: wrap;
   gap: var(--wf-s-2);
   padding: 0 4px 0 12px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 60%, transparent);
   background: var(--wf-hero-ink);
   color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
@@ -122,7 +122,7 @@
   height: 26px;
   padding: 0 10px;
   border: 0;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-seg-item);
   background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
@@ -161,7 +161,7 @@
   height: 22px;
   padding: 0 7px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -176,7 +176,7 @@
   height: 26px;
   padding: 0 10px 0 8px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-2) 22%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
@@ -202,7 +202,7 @@
   flex: none;
   margin-right: 4px;
   padding: 4px 8px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
   color: var(--wf-hero-2);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -216,7 +216,7 @@
   height: 28px;
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -276,7 +276,7 @@
   height: 32px;
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   cursor: pointer;
 }
@@ -574,7 +574,7 @@ table.censusTable {
   height: 20px;
   padding: 0 6px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
   border: 1px solid var(--wf-line-2);
   color: var(--wf-ink-1);
@@ -672,7 +672,7 @@ table.censusTable {
 .restricted {
   padding: 0 6px;
   border: 1px solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / 16px var(--wf-font);
 }
@@ -998,7 +998,7 @@ table.censusTable {
   height: 28px;
   padding: 0 12px;
   border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -1008,7 +1008,7 @@ table.censusTable {
 .previewTag {
   padding: 2px 8px;
   border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-3);
   font: 600 var(--wf-fs-12) / 14px var(--wf-font);
 }
@@ -1073,7 +1073,7 @@ table.censusTable {
   margin-top: var(--wf-s-2);
   padding: 0 16px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-hero-ink);
   color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
 }
@@ -1295,6 +1295,19 @@ table.censusTable {
   min-height: 48px;
   height: 48px;
   padding: 0 0 0 16px;
+  /* One row: the icon, the input, then DOB, the count and Clear at the end (F-04). Wrapping put
+     the input and DOB below the 48px pill, on the navy. */
+  flex-wrap: nowrap;
+}
+
+.searchFormPhone input {
+  flex: 1 1 0;
+  width: auto;
+}
+
+/* The DOB switch reads as a chip inside the pill; its ::after hit area above keeps the full tap. */
+.searchFormPhone .dobToggle {
+  height: 32px;
 }
 
 .phoneHeroFoot {
@@ -1315,7 +1328,7 @@ table.censusTable {
   width: 100%;
   min-height: 48px;
   justify-content: center;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   white-space: nowrap;
 }
 
@@ -1399,7 +1412,7 @@ table.censusTable {
   height: 20px;
   padding: 0 6px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
@@ -1557,7 +1570,7 @@ table.censusTable {
   min-height: 48px;
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
 }

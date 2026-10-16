@@ -17,6 +17,7 @@ import {
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
+import { wardSites } from "@/components/ward-management/ward-sites";
 /**
  * Switch workstation, direction D (9 Oct 2026). The drawer lists desks derived from the Ward Hub
  * and ED home figures rather than a hard-coded list, and says what each role can do from
@@ -24,7 +25,7 @@ import { allEmergencyDepartments, NOW_ANCHOR } from "../src/components/ward-mana
  */
 const seed = seedWardFlowState();
 const desks = workstationDesks({
-  hub: hubEntries({ units: seed.units, bedReleases: seed.bedReleases, now: NOW_ANCHOR }),
+  hub: hubEntries({ units: seed.units, bedReleases: seed.bedReleases, now: NOW_ANCHOR, sites: wardSites }),
   eds: edHomeSummaries(seed.movements, NOW_ANCHOR, 1440),
   movements: seed.movements,
 });

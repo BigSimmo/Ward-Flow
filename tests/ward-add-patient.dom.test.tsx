@@ -31,7 +31,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { ToastProvider } from "@/components/ui/toast";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import {
@@ -40,6 +40,7 @@ import {
 } from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { decodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /** Echoes the live patient count so a test can observe `ADD_PATIENT` actually reaching state,
  *  without reaching into the reducer directly — same technique as `ClockAdvancer` in the sibling
@@ -137,7 +138,9 @@ describe("AddPatientForm", () => {
       expect(router.push).toHaveBeenCalledTimes(1);
     });
     const [target] = router.push.mock.calls[0] as [string];
-    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/PT-A\d+$/);
+    // D-39: the address carries the code for the new person, never the record number.
+    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/[0-9a-z]+$/);
+    expect(decodeRecordAddress(target.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
 
   it("treats Enter in a field as Add patient, never as Register & start referral", async () => {
@@ -149,7 +152,9 @@ describe("AddPatientForm", () => {
     await user.keyboard("{Enter}");
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     const [target] = router.push.mock.calls[0] as [string];
-    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/PT-A\d+$/);
+    // D-39: the address carries the code for the new person, never the record number.
+    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/[0-9a-z]+$/);
+    expect(decodeRecordAddress(target.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
 
   // shell-24 (13 Oct 2026): the save is confirmed by name and record number.

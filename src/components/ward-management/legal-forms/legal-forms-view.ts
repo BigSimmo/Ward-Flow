@@ -1,10 +1,12 @@
 import type { WfTone } from "@/components/wf";
 import {
+  type DueSoonThresholds,
   formatInstantWithDay,
+  type Instant,
+  minuteOfDayFromClockText,
   minutesUntil,
   perthCalendarDay,
   perthMidnight,
-  type Instant,
 } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -36,7 +38,7 @@ import {
 export const NOT_WIRED = "Not wired in this prototype.";
 
 /** Form codes this page may mark written or received. Other catalogue entries stay read-only. */
-export const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "6A", "6B", "6C", "5A", "5B"] as const;
+const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "6A", "6B", "6C", "5A", "5B"] as const;
 export type OwnedLegalFormCode = (typeof OWNED_LEGAL_FORM_CODES)[number];
 
 export function isOwnedLegalFormCode(code: string | undefined): code is OwnedLegalFormCode {
@@ -77,10 +79,10 @@ export function formTitle(code: string): string {
 /** Where a form stands against the warning windows. `none` when no expiry was typed. */
 export type ClockStanding = "passed" | "urgent" | "soon" | "later" | "none";
 
-export function clockStanding(movement: Movement, now: Instant): ClockStanding {
+export function clockStanding(movement: Movement, now: Instant, thresholds: DueSoonThresholds): ClockStanding {
   if (currentLegalDueAt(movement) === undefined) return "none";
   if (isLegalDeadlineBreached(movement, now)) return "passed";
-  const reminder = legalExpiryReminderOf(movement, now);
+  const reminder = legalExpiryReminderOf(movement, now, thresholds);
   if (reminder === "within-urgent") return "urgent";
   if (reminder === "within-soon") return "soon";
   return "later";
@@ -95,10 +97,10 @@ export const STANDING_TONE: Record<ClockStanding, WfTone> = {
 };
 
 /** The short word beside a typed expiry: "Passed", "Within 1h", "Within 3h" or "Later". */
-export function standingWord(standing: ClockStanding): string {
+export function standingWord(standing: ClockStanding, thresholds: DueSoonThresholds): string {
   if (standing === "passed") return "Passed";
-  if (standing === "urgent") return `Within ${reminderHours("within-urgent")}h`;
-  if (standing === "soon") return `Within ${reminderHours("within-soon")}h`;
+  if (standing === "urgent") return `Within ${reminderHours("within-urgent", thresholds)}h`;
+  if (standing === "soon") return `Within ${reminderHours("within-soon", thresholds)}h`;
   if (standing === "later") return "Later";
   return "Time not written";
 }
@@ -243,23 +245,10 @@ export function handoverLines(
     );
 }
 
-/** Same HH:MM parser the ED legal-form panel uses. */
-export function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
 /** Typed date and time to an Instant, counted from the provider's `dayZero`. No duration is added. */
 export function instantFromDateAndTimeInputs(dateValue: string, timeValue: string, dayZero: Date): number | undefined {
   if (dateValue === "" || timeValue === "") return undefined;
-  const minuteOfDayValue = minutesFromTimeInput(timeValue);
+  const minuteOfDayValue = minuteOfDayFromClockText(timeValue);
   if (minuteOfDayValue === undefined) return undefined;
   const dateParts = dateValue.split("-");
   if (dateParts.length !== 3) return undefined;

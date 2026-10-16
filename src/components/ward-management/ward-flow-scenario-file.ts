@@ -31,10 +31,10 @@ export const WARD_FLOW_SCENARIO_FILE_FORMAT = "ward-flow-demo-scenario";
 /** Bump only when the FILE's envelope changes. The world's own shape is versioned separately by the
  *  `stateVersion` the provider passes in (its browser-storage version), and both must match, except
  *  that a v6 world loads into this v7 build through the browser restore's own migration. */
-export const WARD_FLOW_SCENARIO_FILE_VERSION = 1;
+const WARD_FLOW_SCENARIO_FILE_VERSION = 1;
 /** Generous for a synthetic world (a seeded day is well under 1 MB) and small enough that a wrong
  *  file picked by mistake is refused before it is parsed. */
-export const WARD_FLOW_SCENARIO_FILE_MAX_BYTES = 10 * 1024 * 1024;
+const WARD_FLOW_SCENARIO_FILE_MAX_BYTES = 10 * 1024 * 1024;
 
 type ScenarioFile = {
   format: typeof WARD_FLOW_SCENARIO_FILE_FORMAT;
@@ -74,7 +74,9 @@ export function buildScenarioFile(
       reason:
         "This scenario includes a carer, PSP or MHAS notification record, which cannot be saved to a file yet. Nothing was saved.",
     };
-  const syntheticCheck = checkSyntheticPayload(state);
+  // Scan exactly what will be written: refusals are dropped from the file below, so a refusal that
+  // quoted a caller-supplied identifier must not block saving an otherwise safe scenario.
+  const syntheticCheck = checkSyntheticPayload({ ...state, rejections: [] });
   if (!syntheticCheck.safe)
     return {
       ok: false,

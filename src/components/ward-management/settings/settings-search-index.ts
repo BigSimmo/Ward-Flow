@@ -105,6 +105,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "about", label: "About", tab: "data", keywords: "version synthetic medical device" },
   { id: "thresholds", label: "Thresholds", tab: "data", keywords: "reference triggers figures" },
   { id: "fixed-defaults", label: "Fixed defaults", tab: "data", keywords: "operational reference code" },
+  {
+    id: "feature-flags",
+    label: "Feature flags",
+    tab: "data",
+    keywords: "unfinished preview experimental switch on off tv bed meeting demo reset",
+  },
 ];
 
 /** Every word typed must appear in the entry's name or keywords. Name matches rank first. */

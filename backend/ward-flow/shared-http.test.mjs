@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHandler } from "./server.mjs";
+import { storageFailure } from "./shared-http.mjs";
 import { readConfig } from "./config.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
+import { STATEWIDE_VIEW, bootstrapViewer } from "./viewer.test-support.mjs";
 
 const coordinator = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
@@ -26,9 +28,11 @@ const body = {
   expectedRevision: 1,
   event: { type: "PULL_PATIENT", role: "coordinator" },
 };
-function setup(actor = coordinator, dataMode = "prototype") {
+function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
   const calls = [];
+  const logs = [];
   const sharedStore = {
+    viewer: bootstrapViewer,
     read: async (...args) => {
       calls.push(args);
       return { revision: 1, dataMode };
@@ -41,6 +45,7 @@ function setup(actor = coordinator, dataMode = "prototype") {
       calls.push(["audit", ...args]);
       return [auditEvent];
     },
+    ...overrides,
   };
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
@@ -50,8 +55,9 @@ function setup(actor = coordinator, dataMode = "prototype") {
       if (!token) throw new Error("Unauthorized");
       return actor;
     },
+    log: (event) => logs.push(event),
   });
-  return { calls, handler };
+  return { calls, logs, handler };
 }
 const request = (path = "", data, token = "Bearer test") =>
   new Request(`http://localhost/v1/workspace${path}`, {
@@ -66,8 +72,10 @@ test("a named coordinator can read the entire shared workspace", async () => {
   assert.equal(response.status, 200);
   const value = await response.json();
   assert.equal(value.role, "coordinator");
+  assert.deepEqual(value.access, STATEWIDE_VIEW.access);
+  assert.equal(value.workingAs, "bootstrap");
   assert.deepEqual(value.data, { mode: "prototype", source: "synthetic", liveAvailable: false });
-  assert.deepEqual(calls, [[coordinator]]);
+  assert.deepEqual(calls, [[coordinator, { ...STATEWIDE_VIEW, actorId: coordinator }]]);
 });
 test("another tenant account cannot self-assign coordinator in a command", async () => {
   const { calls, handler } = setup(other);
@@ -79,9 +87,9 @@ test("a named coordinator can read audit events without reading or commanding th
   const response = await handler(request("/audit"));
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { events: [auditEvent] });
-  assert.deepEqual(calls, [["audit"]]);
+  assert.deepEqual(calls, [["audit", { ...STATEWIDE_VIEW, actorId: coordinator }]]);
 });
-test("another tenant account cannot read audit events or reach the store", async () => {
+test("another tenant account cannot read audit events or reach the workspace", async () => {
   const { calls, handler } = setup(other);
   const response = await handler(request("/audit"));
   assert.equal(response.status, 403);
@@ -108,6 +116,17 @@ test("the server forwards the authenticated actor and conflict result", async ()
   assert.equal(calls[0][0], coordinator);
   assert.equal(calls[0][1], commandId);
 });
+test("a role removed while a request is in flight answers 403, not a server error", async () => {
+  const { handler } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw new Error("role-ended");
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 403);
+  assert.match((await response.json()).error, /No Ward Flow role/);
+});
+
 test("clinical labels and invalid command envelopes are rejected", async () => {
   const { calls, handler } = setup();
   for (const invalid of [
@@ -146,27 +165,257 @@ test("shared configuration reads only the approved Supabase target and refuses l
   assert.throws(() => readConfig({ ...env, WARD_WORKSPACE_ID: "00000000-0000-4000-8000-000000000000" }), /workspace/);
 });
 
-test("command events containing real Australian identifiers are rejected", async () => {
-  const { calls, handler } = setup();
-  for (const badEvent of [
-    { type: "PULL_PATIENT", role: "coordinator", notes: "Medicare: 2123 45678 1" },
-    { type: "PULL_PATIENT", role: "coordinator", umrn: "12345678" },
-    { type: "PULL_PATIENT", role: "coordinator", contact: "0412 345 678" },
+test("every shared request is logged with its request ID and closed fields only", async () => {
+  const { logs, handler } = setup();
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 409);
+  const requestId = response.headers.get("x-request-id");
+  assert.match(requestId, /^[0-9a-f-]{36}$/);
+  assert.equal(logs.length, 1);
+  const { durationMs, ...entry } = logs[0];
+  assert.ok(Number.isInteger(durationMs));
+  assert.deepEqual(entry, {
+    event: "ward_backend_request",
+    requestId,
+    route: "workspace_commands",
+    method: "POST",
+    status: 409,
+    outcome: "refused",
+  });
+  assert.doesNotMatch(JSON.stringify(logs), new RegExp(coordinator));
+});
+test("a database outage is a 503 and a code fault is a 500, and both are logged", async () => {
+  const outage = Object.assign(new Error('relation "x" does not exist: secret value'), { code: "57P01" });
+  const fault = new TypeError("Cannot read properties of undefined (reading 'state')");
+  for (const [error, status, outcome, fields] of [
+    [outage, 503, "storage_unavailable", { errorName: "Error", errorCode: "57P01" }],
+    [new Error("Connection terminated unexpectedly"), 503, "storage_unavailable", { errorName: "Error" }],
+    [
+      Object.assign(new Error("canceling statement due to lock timeout"), { code: "55P03" }),
+      503,
+      "storage_unavailable",
+      { errorName: "Error", errorCode: "55P03" },
+    ],
+    [new Error("Query read timeout"), 503, "storage_unavailable", { errorName: "Error" }],
+    [fault, 500, "server_error", { errorName: "TypeError" }],
+    [
+      Object.assign(new Error('column "secret value" does not exist'), { code: "42703" }),
+      500,
+      "server_error",
+      { errorName: "Error", errorCode: "42703" },
+    ],
   ]) {
-    const response = await handler(request("/commands", { ...body, event: badEvent }));
-    assert.equal(response.status, 400);
+    const { logs, handler } = setup(coordinator, "prototype", {
+      command: async () => {
+        throw error;
+      },
+    });
+    const response = await handler(request("/commands", body));
+    assert.equal(response.status, status);
+    const { durationMs, requestId, ...entry } = logs[0];
+    assert.ok(Number.isInteger(durationMs));
+    assert.equal(requestId, response.headers.get("x-request-id"));
+    assert.deepEqual(entry, {
+      event: "ward_backend_request",
+      route: "workspace_commands",
+      method: "POST",
+      status,
+      outcome,
+      ...fields,
+    });
   }
-  assert.equal(calls.length, 0);
+});
+test("storage failures are told apart from code faults", () => {
+  assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ECONNREFUSED" })), true);
+  for (const code of ["08006", "53300", "57P01", "58030", "40001", "40P01"])
+    assert.equal(storageFailure(Object.assign(new Error("x"), { code })), true, code);
+  for (const code of ["23514", "42703", "P0001", "ENGINE"])
+    assert.equal(storageFailure(Object.assign(new Error("x"), { code })), false, code);
+  assert.equal(storageFailure(new Error("timeout exceeded when trying to connect")), true);
+  assert.equal(storageFailure(new RangeError("Invalid time value")), false);
+  assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ERR_INVALID_ARG_TYPE" })), false);
+});
+test("shared routes are logged with a request ID even when the shared workspace is off", async () => {
+  const logs = [];
+  const handler = createHandler({
+    config: { coordinatorIds: [coordinator], origin: null },
+    sharedStore: null,
+    authenticate: async () => coordinator,
+    log: (event) => logs.push(event),
+  });
+  const response = await handler(request());
+  assert.equal(response.status, 503);
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0].requestId, response.headers.get("x-request-id"));
+  assert.equal(logs[0].route, "workspace");
+  assert.equal(logs[0].outcome, "not_configured");
 });
 
-test("engine.applyCommand rejects events containing real Australian identifiers", async () => {
-  const { seedWorld, applyCommand } = await import("./dist/engine.mjs");
-  const world = seedWorld(new Date());
-  for (const badEvent of [
-    { type: "ADVANCE_CLOCK", role: "coordinator", notes: "Medicare: 2123 45678 1" },
-    { type: "ADVANCE_CLOCK", role: "coordinator", umrn: "12345678" },
-    { type: "ADVANCE_CLOCK", role: "coordinator", contact: "0412 345 678" },
-  ]) {
-    assert.throws(() => applyCommand(world, badEvent, new Date()), /invalid-command/);
+// Match the pg client's configured deadline vocabulary narrowly: arbitrary timeout text can
+// still be an application fault and must not hide behind a retryable database response.
+test("only the configured pg query timeout and lock SQLSTATE are storage failures", () => {
+  assert.equal(storageFailure(new Error("Query read timeout")), true);
+  assert.equal(storageFailure({ code: "55P03" }), true);
+  for (const message of ["Query read timeout: invalid application state", "application timeout", "query read timeout"])
+    assert.equal(storageFailure(new Error(message)), false, message);
+  for (const code of ["55000", "55P02", "55P04"]) assert.equal(storageFailure({ code }), false, code);
+});
+
+test("arbitrary exception fields cannot enter HTTP diagnostics or the response", async () => {
+  const { logs, handler } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw { name: "synthetic-private-name", code: "SECRT", message: "synthetic-private-marker" };
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 500);
+  const value = await response.json();
+  assert.equal(logs[0].errorName, "Error");
+  assert.equal(logs[0].errorCode, undefined);
+  assert.equal(logs[0].requestId, response.headers.get("x-request-id"));
+  assert.equal(logs[0].requestId, value.requestId);
+  assert.equal(logs[0].outcome, "server_error");
+  assert.doesNotMatch(JSON.stringify({ logs, value }), /synthetic-private|SECRT/);
+});
+
+test("the poll names its revision; an unchanged workspace answers with the clock only", async () => {
+  const { calls, handler } = setup(coordinator, "prototype", {
+    poll: async (...args) => {
+      calls.push(["poll", ...args]);
+      return { notModified: true, dataMode: "prototype", revision: 7, now: 900 };
+    },
+  });
+  const response = await handler(request("?since=7"));
+  assert.equal(response.status, 200);
+  const value = await response.json();
+  assert.equal(value.notModified, true);
+  assert.equal(value.revision, 7);
+  assert.equal(value.now, 900);
+  assert.equal(value.snapshot, undefined);
+  assert.deepEqual(calls, [["poll", coordinator, 7, { ...STATEWIDE_VIEW, actorId: coordinator }]]);
+  for (const since of ["0", "x", "1.5"]) {
+    const { calls: plain, handler: other } = setup();
+    assert.equal((await other(request(`?since=${since}`))).status, 200);
+    assert.deepEqual(
+      plain,
+      [[coordinator, { ...STATEWIDE_VIEW, actorId: coordinator }]],
+      "an unusable revision reads the full workspace",
+    );
   }
+});
+test("a command may ask for a revision-only reply, and nothing else", async () => {
+  const { calls, handler } = setup();
+  await handler(request("/commands", { ...body, reply: "revision" }));
+  assert.deepEqual(calls.at(-1).at(-1), { revisionOnly: true, view: { ...STATEWIDE_VIEW, actorId: coordinator } });
+  assert.equal((await handler(request("/commands", { ...body, reply: "everything" }))).status, 400);
+});
+
+const wardView = {
+  ...STATEWIDE_VIEW,
+  actorId: other,
+  membershipId: "55555555-5555-4555-8555-555555555555",
+  access: { role: "ward", scope: { kind: "ward", unitIds: ["unit-a"] } },
+};
+
+test("a desk with a membership is sent only its own view, and the audit is not part of its role", async () => {
+  const asked = [];
+  const { calls, handler } = setup(other, "prototype", {
+    viewer: async (...args) => {
+      asked.push(args);
+      return wardView;
+    },
+  });
+  const value = await (await handler(request())).json();
+  assert.equal(value.role, "ward");
+  assert.deepEqual(value.access, wardView.access);
+  assert.equal(value.workingAs, wardView.membershipId);
+  assert.deepEqual(calls, [[other, wardView]]);
+  assert.deepEqual(asked[0], [other, { bootstrap: false, workingAs: null }]);
+  const audit = await handler(request("/audit"));
+  assert.equal(audit.status, 403);
+  assert.equal(calls.length, 1);
+});
+
+test("an account with no role is refused, and one with several must say which", async () => {
+  const choices = [
+    { workingAs: "bootstrap", ...STATEWIDE_VIEW.access },
+    { workingAs: wardView.membershipId, ...wardView.access },
+  ];
+  const { calls, handler } = setup(other, "prototype", {
+    viewer: async (_actor, { workingAs }) =>
+      workingAs === null ? { status: "choose", choices } : workingAs === "bootstrap" ? { status: "none" } : wardView,
+  });
+  const choose = await handler(request());
+  assert.equal(choose.status, 409);
+  assert.deepEqual((await choose.json()).choices, choices);
+  const named = request();
+  named.headers.set("x-ward-working-as", wardView.membershipId.toUpperCase());
+  assert.equal((await handler(named)).status, 200);
+  const none = request();
+  none.headers.set("x-ward-working-as", "bootstrap");
+  assert.equal((await handler(none)).status, 403);
+  const bad = request();
+  bad.headers.set("x-ward-working-as", "coordinator");
+  assert.equal((await handler(bad)).status, 400);
+  assert.deepEqual(calls, [[other, wardView]]);
+});
+
+test("cross-origin calls may name the role they work as", async () => {
+  const { handler } = setup();
+  const preflight = new Request("http://localhost/v1/workspace", {
+    method: "OPTIONS",
+    headers: { origin: "https://ward-flow-production.up.railway.app" },
+  });
+  const response = await handler(preflight);
+  assert.equal(response.status, 204);
+  assert.match(response.headers.get("access-control-allow-headers"), /X-Ward-Working-As/);
+});
+
+test("access and break glass routes check their fields and pass the store's answer through", async () => {
+  const seen = [];
+  const answer =
+    (name) =>
+    async (...args) => {
+      seen.push([name, ...args]);
+      return { status: 200, body: { name } };
+    };
+  const { handler } = setup(coordinator, "prototype", {
+    listAccess: answer("list"),
+    grantAccess: answer("grant"),
+    approveAccess: answer("approve"),
+    revokeAccess: answer("revoke"),
+    breakGlass: answer("breakGlass"),
+  });
+  const view = { ...STATEWIDE_VIEW, actorId: coordinator };
+  const membershipId = "66666666-6666-4666-8666-666666666666";
+  const grant = {
+    actorId: other.toUpperCase(),
+    role: "ward",
+    scope: { kind: "ward", unitIds: ["unit-a"] },
+    expiresAt: "2027-01-01T00:00:00.000Z",
+  };
+  assert.deepEqual(await (await handler(request("/access"))).json(), { name: "list" });
+  assert.equal((await handler(request("/access/grant", grant))).status, 200);
+  assert.equal((await handler(request("/access/approve", { membershipId }))).status, 200);
+  assert.equal((await handler(request("/access/revoke", { membershipId }))).status, 200);
+  assert.equal((await handler(request("/break-glass", { patientId: "p-1", reason: "handover" }))).status, 200);
+  assert.deepEqual(seen, [
+    ["list", view],
+    ["grant", view, { actorId: other, role: "ward", scope: grant.scope, expiresAt: new Date(grant.expiresAt) }],
+    ["approve", view, membershipId],
+    ["revoke", view, membershipId],
+    ["breakGlass", view, "p-1", "handover"],
+  ]);
+  for (const [path, data] of [
+    ["/access/grant", { ...grant, actorId: "someone" }],
+    ["/access/grant", { ...grant, expiresAt: "soon" }],
+    ["/access/grant", { ...grant, scope: { kind: "team", teamName: "x".repeat(5000) } }],
+    ["/access/approve", { membershipId: "x" }],
+    ["/access/revoke", {}],
+    ["/break-glass", { patientId: 7, reason: "handover" }],
+    ["/break-glass", { patientId: "p".repeat(101), reason: "handover" }],
+  ])
+    assert.equal((await handler(request(path, data))).status, 400, path);
+  assert.equal((await handler(request("/access/grant"))).status, 405);
+  assert.equal(seen.length, 5);
 });

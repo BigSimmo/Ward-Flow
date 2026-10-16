@@ -5,7 +5,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Tooltip } from "@/components/ui/tooltip";
+import { Tooltip } from "@/components/wf/tooltip";
 import {
   CardFoot,
   CardHead,
@@ -42,11 +42,11 @@ const ITEMS: ChoiceItem<"a" | "b" | "c">[] = [
 describe("v9 component contracts", () => {
   it("the pause control keeps one name and reports its state with aria-pressed", () => {
     const { rerender } = render(<LiveChip state="live" onTogglePause={() => undefined} />);
-    const pause = screen.getByRole("button", { name: "Pause demo updates" });
+    const pause = screen.getByRole("button", { name: /pause demo updates$/ });
     expect(pause.getAttribute("aria-pressed")).toBe("false");
 
     rerender(<LiveChip state="paused" onTogglePause={() => undefined} />);
-    expect(screen.getByRole("button", { name: "Pause demo updates" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: /pause demo updates$/ }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.queryByRole("button", { name: /resume/i }), "the name swapped as well").toBeNull();
   });
 

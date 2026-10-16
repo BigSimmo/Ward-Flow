@@ -43,7 +43,7 @@
   min-height: 1.875rem;
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-hero-edge);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink);
   text-align: left;
@@ -118,7 +118,7 @@
   height: var(--wf-h-sm);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-hero-edge);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   color: var(--wf-hero-ink);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
@@ -916,7 +916,7 @@
   flex: 1;
   min-height: var(--spacing-tap, 3rem);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-seg-item);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
@@ -1618,9 +1618,12 @@
 }
 
 @media (max-width: 48rem) {
+  /* Phone review F-31: square corners, so the divider is a straight rule. The kit's figure keeps a
+   * 12px radius, which bent this left border into a bracket. */
   .heroPills > .heroPill:not(.deskOnly) {
     padding: 0 var(--wf-s-3);
     border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    border-radius: 0;
   }
 
   .heroPills > .heroPill:first-child {
@@ -1653,7 +1656,7 @@
     height: auto;
     min-height: var(--spacing-tap, 3rem);
     padding: 0 var(--wf-s-4);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .copyButton.copyButton .longLabel {
@@ -1663,13 +1666,13 @@
   .phArrivalsButton {
     min-height: var(--spacing-tap, 3rem);
     padding: 0 var(--wf-s-4);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .phArrivalsCount {
     min-width: 1.5rem;
     padding: 1px 6px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
     background: var(--wf-hero-ink);
     color: var(--wf-hero-2);
     font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
@@ -1696,7 +1699,7 @@
     min-height: var(--spacing-tap, 3rem);
     padding: 0 var(--wf-s-4);
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     font: 500 var(--wf-fs-13) / 1 var(--wf-font);
@@ -1746,7 +1749,7 @@
     padding: 2px;
     overflow: visible;
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
     background: var(--wf-track);
     /* Phone taps (13 Oct 2026): the shared tab row's edge-fade mask clipped the hit areas to the
        34px track. The track never scrolls, so the fade never shows; dropping it changes nothing seen. */
@@ -1761,7 +1764,7 @@
     min-height: 0;
     margin-bottom: 0;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-phone-pill-fs);
     font-weight: 600;
   }
@@ -2040,7 +2043,7 @@
     min-height: var(--spacing-tap, 3rem);
     justify-content: center;
     padding-inline: var(--wf-s-1);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     font-size: var(--wf-fs-12);
   }
 }
@@ -2072,7 +2075,7 @@
     box-sizing: border-box;
     padding: 0 6px 0 14px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
     box-shadow:
       0 0 0 1px var(--toast-ring),
@@ -2111,7 +2114,7 @@
     margin: 0;
     padding: 0 12px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: color-mix(in srgb, var(--toast-ink) 14%, transparent);
     color: var(--toast-ink);
     font: 600 var(--wf-fs-12) / 1 var(--wf-font);

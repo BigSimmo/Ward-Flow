@@ -14,6 +14,7 @@ import { readConfig } from "./config.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
 import { createHandler, sweepPush } from "./server.mjs";
+import { bootstrapViewer } from "./viewer.test-support.mjs";
 
 // Invented keys generated for this test run only; never a deployed key.
 function vapidKeys() {
@@ -235,12 +236,19 @@ test("the real web-push library accepts the configuration and encrypts the paylo
 
 const coordinator = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
-function routes({ actor = coordinator, push = readPushConfig(env), limit = false, outcome = null } = {}) {
+function routes({
+  actor = coordinator,
+  push = readPushConfig(env),
+  limit = false,
+  outcome = null,
+  viewer = bootstrapViewer,
+} = {}) {
   const calls = [];
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: null, push },
     store: {},
     sharedStore: {
+      viewer,
       read: async () => ({ revision: 1, dataMode: "prototype" }),
       subscribe: async (...args) => {
         calls.push(["subscribe", ...args]);
@@ -325,6 +333,36 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
   const refused = await full.handler(call("push-subscribe", { subscription }));
   assert.equal(refused.status, 409);
   assert.equal((await refused.json()).code, "limit");
+  // A desk other than the statewide coordinator gets no phone alerts in this prototype.
+  const ward = routes({
+    actor: other,
+    viewer: async () => ({
+      status: "ok",
+      actorId: other,
+      membershipId: "55555555-5555-4555-8555-555555555555",
+      access: { role: "ward", scope: { kind: "ward", unitIds: ["unit-a"] } },
+      grants: [],
+    }),
+  });
+  const notYours = await ward.handler(call("push-subscribe", { subscription }));
+  assert.equal(notYours.status, 422);
+  assert.equal((await notYours.json()).code, "role");
+  assert.equal(ward.calls.length, 0);
+  // A statewide coordinator by membership is not on the delivery list, so it is not subscribed either.
+  const member = routes({
+    actor: other,
+    viewer: async () => ({
+      status: "ok",
+      actorId: other,
+      membershipId: "55555555-5555-4555-8555-555555555555",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    }),
+  });
+  const unwired = await member.handler(call("push-subscribe", { subscription }));
+  assert.equal(unwired.status, 422);
+  assert.match((await unwired.json()).error, /not wired in this prototype/);
+  assert.equal(member.calls.length, 0);
 });
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {
@@ -348,16 +386,23 @@ test("configuration turns phone push on only with the shared workspace and all t
   assert.equal(readConfig({ ...shared, ...env }).push.publicKey, keys.publicKey);
 });
 
-test("error diagnostics carry name, code and a URL-free message only", () => {
+test("error diagnostics retain protocol codes but never arbitrary exception text", () => {
   const error = Object.assign(new Error("permission denied for table push_subscriptions at https://x.example/k"), {
     code: "42501",
   });
   assert.deepEqual(errorFields(error), {
     errorName: "Error",
     errorCode: "42501",
-    message: "permission denied for table push_subscriptions at [url]",
   });
-  assert.deepEqual(errorFields(undefined), { errorName: "Error", message: "" });
+  assert.deepEqual(errorFields(undefined), { errorName: "Error" });
+  assert.deepEqual(
+    errorFields({ name: "synthetic-private-name", code: "synthetic-private-code", message: "synthetic-private-text" }),
+    { errorName: "Error" },
+  );
+  for (const code of ["SECRT", 12345, "42501 synthetic-private-text"])
+    assert.deepEqual(errorFields({ name: "synthetic-private-name", code }), { errorName: "Error" });
+  for (const code of ["ECONNRESET", "ERR_INVALID_ARG_TYPE", "ENGINE", "55P03", "57014"])
+    assert.deepEqual(errorFields({ name: "TypeError", code }), { errorName: "TypeError", errorCode: code });
 });
 
 test("a failed sweep is logged with its cause, never silently", async () => {
@@ -376,7 +421,90 @@ test("a failed sweep is logged with its cause, never silently", async () => {
       event: "ward_backend_push_sweep_failure",
       errorName: "Error",
       errorCode: "42P01",
-      message: "relation does not exist",
     },
   ]);
+});
+
+test("failed sweep diagnostics exclude non-URL private text while retaining the event category", async () => {
+  const events = [];
+  await sweepPush(
+    {
+      sweepPush: async () => {
+        throw {
+          name: "synthetic-private-name",
+          code: "SECRT",
+          message: "synthetic-private-marker without a URL",
+          detail: "synthetic-private-detail",
+          stack: "synthetic-private-stack",
+        };
+      },
+    },
+    (event) => events.push(event),
+  );
+  assert.deepEqual(events, [{ event: "ward_backend_push_sweep_failure", errorName: "Error" }]);
+});
+
+test("diagnostic accessors are read once and only validated snapshots are emitted", () => {
+  let names = 0;
+  let codes = 0;
+  const error = {
+    get name() {
+      return ++names === 1 ? "Error" : "synthetic-private-name";
+    },
+    get code() {
+      return ++codes === 1 ? "ECONNRESET" : "synthetic-private-code";
+    },
+  };
+  assert.deepEqual(errorFields(error), { errorName: "Error", errorCode: "ECONNRESET" });
+  assert.equal(names, 1);
+  assert.equal(codes, 1);
+});
+
+test("throwing diagnostic accessors use the closed fallback without throwing", () => {
+  const error = {};
+  for (const key of ["name", "code", "message", "stack", "detail"])
+    Object.defineProperty(error, key, {
+      get() {
+        throw new Error("synthetic-private-accessor");
+      },
+    });
+  assert.deepEqual(errorFields(error), { errorName: "Error" });
+});
+
+test("push failure status is read once and retained only as a valid HTTP code", async () => {
+  let reads = 0;
+  const error = {
+    get statusCode() {
+      return ++reads === 1 ? 429 : "synthetic-private-status";
+    },
+  };
+  const send = createPushSender(readPushConfig(env), {
+    sendNotification: async () => {
+      throw error;
+    },
+  });
+  assert.deepEqual(await send({}, {}), { outcome: "failed", category: "status 429", retry: true });
+  assert.equal(reads, 1);
+  const unknown = createPushSender(readPushConfig(env), {
+    sendNotification: async () => {
+      throw { statusCode: 123456789 };
+    },
+  });
+  assert.deepEqual(await unknown({}, {}), { outcome: "failed", category: "Error", retry: true });
+});
+
+test("throwing push status and diagnostic accessors never reject delivery reporting", async () => {
+  const error = {};
+  for (const key of ["statusCode", "name", "code"])
+    Object.defineProperty(error, key, {
+      get() {
+        throw new Error("synthetic-private-accessor");
+      },
+    });
+  const send = createPushSender(readPushConfig(env), {
+    sendNotification: async () => {
+      throw error;
+    },
+  });
+  assert.deepEqual(await send({}, {}), { outcome: "failed", category: "Error", retry: true });
 });

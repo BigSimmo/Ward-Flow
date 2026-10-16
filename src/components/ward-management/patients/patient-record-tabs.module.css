@@ -164,7 +164,7 @@
   height: 20px;
   padding: 0 var(--wf-s-2);
   border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -178,7 +178,7 @@
   height: 22px;
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -197,7 +197,7 @@
   height: 22px;
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   white-space: nowrap;
 }
@@ -295,7 +295,7 @@
   min-height: var(--wf-h-sm, 30px);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
   font: 550 var(--wf-fs-12) / 1 var(--wf-font);

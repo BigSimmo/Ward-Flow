@@ -188,29 +188,25 @@ it("refuses refreshed tokens for a different account and removes the old session
   auth.dispose();
 });
 
-it("caches verified tokens for the configured TTL without repeating user fetches", async () => {
+it("refuses a bearer value that is not a signed token without asking Supabase about it", async () => {
+  // Verified tokens are cached by the authenticator itself (see backend/ward-flow/supabase-auth.test.mjs);
+  // a value that is not even shaped like a token must never reach the remote user check.
   const { createSupabaseAuthenticator } = await import("../backend/ward-flow/supabase-auth.mjs");
   let fetchCount = 0;
   const coordinatorId = "12345678-1234-1234-1234-123456789abc";
-  const config = {
-    coordinatorIds: [coordinatorId],
-    supabase: {
-      projectRef: "zakzoemeedfepxcstsou",
-      url,
-      publishableKey: "sb_publishable_test",
+  const authenticator = createSupabaseAuthenticator(
+    {
+      coordinatorIds: [coordinatorId],
+      supabase: { projectRef: "zakzoemeedfepxcstsou", url, publishableKey: "sb_publishable_test" },
     },
-  };
-  const authenticator = createSupabaseAuthenticator(config, {
-    cacheTtlMs: 20_000,
-    fetch: async () => {
-      fetchCount++;
-      return Response.json({ id: coordinatorId });
+    {
+      fetch: async () => {
+        fetchCount++;
+        return Response.json({ id: coordinatorId });
+      },
     },
-  });
+  );
 
-  const id1 = await authenticator("Bearer test-token-1");
-  const id2 = await authenticator("Bearer test-token-1");
-  expect(id1).toBe(coordinatorId);
-  expect(id2).toBe(coordinatorId);
-  expect(fetchCount).toBe(1);
+  await expect(authenticator("Bearer test-token-1")).rejects.toThrow("Unauthorised");
+  expect(fetchCount).toBe(0);
 });

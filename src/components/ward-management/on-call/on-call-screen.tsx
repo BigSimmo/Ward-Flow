@@ -1,10 +1,10 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
-import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -17,6 +17,7 @@ import {
   HeroTrack,
   Icon,
   Kbd,
+  LiveChip,
   Menu,
   PillTabs,
   Sheet,
@@ -36,6 +37,7 @@ import {
   SERVICE_META,
   availability,
   buildOnCallDirectory,
+  entrySearchFields,
   hhmm,
   isAnswering,
   keyLineLabel,
@@ -59,9 +61,8 @@ import {
 } from "./on-call-parts";
 import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
+import { readFavourites, saveFavourites, subscribeFavourites } from "./on-call-favourites";
 import styles from "./on-call.module.css";
-
-const FAVOURITES_KEY = "ward-flow:on-call:favourites";
 
 export type Highlight = "now" | "soon" | "email" | "due";
 
@@ -98,19 +99,6 @@ const JUMP_LABEL: Record<string, string> = {
   Private: "Pvt",
 };
 
-/** My list saved by the earlier roster page held its role ids; each maps to the same directory line. */
-const LEGACY_FAVOURITE_IDS: Record<string, string> = {
-  "bed-coordinator": "sw-bfc",
-  "governance-lead": "sw-gov",
-  "nm-coordinator": "nmhs-bfc",
-  "nm-consultant": "nmhs-scon",
-  "sm-coordinator": "smhs-bfc",
-  "sm-consultant": "smhs-scon",
-  "em-coordinator": "emhs-bfc",
-  "em-consultant": "emhs-scon",
-  "pr-coordinator": "pr-liaison",
-};
-
 const SECTION_LABEL: Record<DirectorySection, string> = {
   hospitals: "Hospitals",
   community: "Community",
@@ -120,17 +108,7 @@ const SECTION_LABEL: Record<DirectorySection, string> = {
 export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return false;
-  return [
-    entry.name,
-    entry.place,
-    entry.groupTitle,
-    entry.siteCode ?? "",
-    entry.purpose,
-    SERVICE_META[entry.service].short,
-    SERVICE_META[entry.service].name,
-    entry.email ?? "",
-    ...entry.lines.map((item) => `${item.number ?? ""} ${item.label}`),
-  ].some((value) => value.toLowerCase().includes(needle));
+  return entrySearchFields(entry).some((value) => value.toLowerCase().includes(needle));
 }
 
 export function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favourites: readonly string[]) {
@@ -154,9 +132,8 @@ export function OnCallScreen() {
   const isTabletPortrait = useIsTabletPortrait();
   const [slideId, setSlideId] = useState<string | null>(null);
   // The EMHS demo and surge scenarios swap in their own wards, so the directory follows the scenario.
-  const scenario = useContext(WardFlowContext)?.scenario;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `scenario` re-points `wardSites`, which the build reads
-  const entries = useMemo(() => buildOnCallDirectory(), [scenario]);
+  const network = useWardNetwork();
+  const entries = useMemo(() => buildOnCallDirectory(network.sites), [network.sites]);
   const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
 
   const [tab, setTab] = useState<DirectoryTab>("hospitals");
@@ -181,22 +158,17 @@ export function OnCallScreen() {
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       if (favouritesChanged.current) return;
-      try {
-        const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
-        if (Array.isArray(saved))
-          setFavourites([
-            ...new Set(
-              saved
-                .filter((id): id is string => typeof id === "string")
-                .map((id) => LEGACY_FAVOURITE_IDS[id] ?? id)
-                .filter((id) => ids.has(id)),
-            ),
-          ]);
-      } catch {
-        // Saved preferences are optional; the directory works without them.
-      }
+      setFavourites(readFavourites(ids));
     });
-    return () => window.cancelAnimationFrame(frame);
+    // A star set in the Tools sheet's Contacts shows here at once (Tools review, 15 Oct 2026).
+    const unsubscribe = subscribeFavourites((next) => {
+      favouritesChanged.current = true;
+      setFavourites(next.filter((id) => ids.has(id)));
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      unsubscribe();
+    };
   }, [ids]);
   useEffect(
     () => () => {
@@ -240,12 +212,8 @@ export function OnCallScreen() {
     favouritesChanged.current = true;
     const next = favourites.includes(id) ? favourites.filter((value) => value !== id) : [...favourites, id];
     setFavourites(next);
-    try {
-      window.localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next));
-      say(next.includes(id) ? "Added to My list" : "Removed from My list");
-    } catch {
-      say("My list is kept for this visit only. Browser storage is unavailable.");
-    }
+    if (saveFavourites(next)) say(next.includes(id) ? "Added to My list" : "Removed from My list");
+    else say("My list is kept for this visit only. Browser storage is unavailable.");
   }
 
   /** Selecting a contact opens its group and its tab, so the card and the row always agree. */
@@ -389,6 +357,8 @@ export function OnCallScreen() {
           atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
         }
         title={`${answering.length} ${answering.length === 1 ? "line" : "lines"} answering`}
+        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
+        titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
         stats={
           isPhone ? (
             // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.
@@ -409,7 +379,7 @@ export function OnCallScreen() {
             heroStats
           )
         }
-        aside={isPhone ? undefined : clock}
+        aside={isPhone ? <LiveChip state="live" onHero /> : clock}
         bar={
           <>
             <span className={styles.heroLabel}>Cover at</span>

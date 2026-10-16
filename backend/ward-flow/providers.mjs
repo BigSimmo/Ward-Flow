@@ -1,3 +1,4 @@
+// @ts-check
 import { createPush } from "./push.mjs";
 
 /**
@@ -9,6 +10,9 @@ import { createPush } from "./push.mjs";
  * A sign-in adapter returns `createAuthenticator(config)`, resolving to a function that maps an
  * Authorization header to a coordinator user ID or throws (VerifierUnavailableError for outages).
  */
+/** Built by build-engine.mjs. A variable path keeps the generated bundle out of type checking. */
+const ENGINE_MODULE = "./dist/engine.mjs";
+
 export const DATABASE_ADAPTERS = Object.freeze({
   supabase: async () => {
     const { createSupabasePool, verifySupabaseRuntimeRole } = await import("./supabase-postgres.mjs");
@@ -39,12 +43,13 @@ export async function createBackend(config, dependencies = {}) {
       await database.verifyPool(pool, { ...config.postgres, pushEnabled: !!config.push });
       const [{ createWorkspaceStore }, engine] = await Promise.all([
         (dependencies.workspace ?? (() => import("./postgres.mjs")))(),
-        (dependencies.engine ?? (() => import("./dist/engine.mjs")))(),
+        (dependencies.engine ?? (() => import(ENGINE_MODULE)))(),
       ]);
       sharedStore = createWorkspaceStore(pool, {
         workspaceId: config.workspaceId,
         engine,
         push: await createPush(config),
+        demoEvents: config.sharedDemoEvents === true,
       });
     }
     return { config, authenticate, sharedStore, pool };

@@ -295,7 +295,7 @@
 
 .countPill {
   padding: 0 6px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
@@ -456,7 +456,7 @@
   height: 22px;
   padding: 0 var(--wf-s-2);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 24%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-hero-ink);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
 }
@@ -507,7 +507,7 @@
   height: var(--wf-h-sm, 28px);
   padding: 0 var(--wf-s-3);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink-2);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -692,7 +692,7 @@
     width: 100%;
     min-height: var(--ward-tap, 48px);
     justify-content: center;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .phHead {
@@ -784,12 +784,31 @@
     border-color: var(--wf-line-2);
   }
 
+  /* The three buttons wrap rather than set a row wider than the phone (F-03): Reset and Register
+     share a line when they fit, and Add patient takes its own full line. */
   .main[data-phone-form="true"] .submitActions {
     flex: 1 1 100%;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .main[data-phone-form="true"] .submitActions > * {
+    max-width: 100%;
   }
 
   .main[data-phone-form="true"] .submitActions > :last-child {
-    flex: 1 1 auto;
+    flex: 1 1 100%;
+  }
+
+  /* The Identity head's badge and note drop under the title instead of pushing the card wide. */
+  .main[data-phone-form="true"] .idHead {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .main[data-phone-form="true"] .idHead > :last-child {
+    flex-wrap: wrap;
+    max-width: 100%;
   }
 }
 

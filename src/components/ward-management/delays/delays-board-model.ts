@@ -7,7 +7,7 @@
  * here invents a time limit or a status. The 8, 12 and 24 hour bands are the same named waits the
  * rest of the screen uses (see `delays-view-model.ts`), not new clinical limits.
  */
-import { currentDueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import {
@@ -44,7 +44,7 @@ export const OVER_24H = LONG_WAIT_MINUTES;
 export const SILENT_MINUTES = SILENT_WARD_FIRST_REMINDER_MINUTES;
 
 /** An hour label from a minute count ("8h"), so no hour figure is typed into shown copy. */
-export function hoursLabel(minutes: number): string {
+function hoursLabel(minutes: number): string {
   return `${minutes / 60}h`;
 }
 /** The same, in words ("4 hours"). */
@@ -53,7 +53,7 @@ export function hoursWord(minutes: number): string {
   return `${hours} ${hours === 1 ? "hour" : "hours"}`;
 }
 export const H8 = hoursLabel(OVER_8H);
-export const H12 = hoursLabel(OVER_12H);
+const H12 = hoursLabel(OVER_12H);
 export const H24 = hoursLabel(OVER_24H);
 
 export const WAIT_BANDS = [
@@ -127,17 +127,17 @@ export function bandCounts(rows: readonly BoardRow[]): BandCounts {
 }
 
 /** Legal tone from the recorded due time and the configured warnings (1h and 3h by default). */
-export function dueTone(dueIn: number | undefined): "danger" | "warning" | undefined {
+export function dueTone(dueIn: number | undefined, thresholds: DueSoonThresholds): "danger" | "warning" | undefined {
   if (dueIn === undefined) return undefined;
-  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  const { urgentMinutes, soonMinutes } = thresholds;
   if (dueIn <= urgentMinutes) return "danger";
   if (dueIn <= soonMinutes) return "warning";
   return undefined;
 }
 
 /** One shape per person on the spread chart: act now, at risk or waiting. */
-export function rowTone(row: BoardRow): "danger" | "warning" | "neutral" {
-  const legal = dueTone(row.dueIn);
+export function rowTone(row: BoardRow, thresholds: DueSoonThresholds): "danger" | "warning" | "neutral" {
+  const legal = dueTone(row.dueIn, thresholds);
   if (row.waited >= OVER_24H || legal === "danger") return "danger";
   if (row.waited >= OVER_8H || legal === "warning") return "warning";
   return "neutral";
@@ -205,7 +205,7 @@ export function ownerTiles(rows: readonly BoardRow[]): OwnerTile[] {
 
 export const WAIT_THRESHOLDS = [0, OVER_8H, OVER_12H, OVER_24H] as const;
 export const WAIT_THRESHOLD_LABELS = ["All", "8h+", "12h+", "24h+"] as const;
-export type WaitThreshold = 0 | 1 | 2 | 3;
+type WaitThreshold = 0 | 1 | 2 | 3;
 
 export type BoardFilters = {
   owner: DelayOwnerId | null;
@@ -252,8 +252,8 @@ export function hasFilters(filters: BoardFilters): boolean {
   );
 }
 
-export function isDueSoon(row: BoardRow): boolean {
-  return row.dueIn !== undefined && row.dueIn >= 0 && row.dueIn <= currentDueSoonThresholds().urgentMinutes;
+export function isDueSoon(row: BoardRow, thresholds: DueSoonThresholds): boolean {
+  return row.dueIn !== undefined && row.dueIn >= 0 && row.dueIn <= thresholds.urgentMinutes;
 }
 
 export function isBreached(row: BoardRow): boolean {
@@ -265,11 +265,12 @@ export function isBreached(row: BoardRow): boolean {
  * population; the table keeps every person visible and dims non-matching rows (owner ruling,
  * 2026-09-07, same as Capacity). `nameOf` resolves display name and number for the search box only.
  */
-export function rowMatchesFilters(
+function rowMatchesFilters(
   row: BoardRow,
   filters: BoardFilters,
   bins: readonly RunwayBin[],
   nameOf: (movement: Movement) => string,
+  thresholds: DueSoonThresholds,
 ): boolean {
   const binIds = filters.bin === null ? null : (bins[filters.bin]?.ids ?? new Set<string>());
   const needle = filters.search.trim().toLowerCase();
@@ -280,7 +281,7 @@ export function rowMatchesFilters(
     row.waited >= WAIT_THRESHOLDS[filters.threshold] &&
     (!filters.locked || row.locked) &&
     (!filters.silent || row.silent) &&
-    (!filters.dueSoon || isDueSoon(row)) &&
+    (!filters.dueSoon || isDueSoon(row, thresholds)) &&
     (!filters.breached || isBreached(row)) &&
     (!filters.severe || row.severe) &&
     (binIds === null || binIds.has(row.movement.id)) &&
@@ -296,8 +297,9 @@ export function filterRows(
   filters: BoardFilters,
   bins: readonly RunwayBin[],
   nameOf: (movement: Movement) => string,
+  thresholds: DueSoonThresholds,
 ): BoardRow[] {
-  return rows.filter((row) => rowMatchesFilters(row, filters, bins, nameOf));
+  return rows.filter((row) => rowMatchesFilters(row, filters, bins, nameOf, thresholds));
 }
 
 /* ---------- next four hours ---------- */
@@ -314,8 +316,8 @@ export type RunwayBin = {
 };
 
 /** Chart spacing: the runway's half-hour columns, eight of them, the four-hour look-ahead. */
-export const CHART_BIN_MINUTES = 30;
-export const RUNWAY_BINS = 8;
+const CHART_BIN_MINUTES = 30;
+const RUNWAY_BINS = 8;
 export const RUNWAY_WINDOW = CHART_BIN_MINUTES * RUNWAY_BINS;
 
 /** If nobody moves: who crosses 8h or 24h, and whose typed legal due time falls, per half hour. */
@@ -366,7 +368,7 @@ export const SPREAD_TICKS: readonly [number, string][] = [
 
 /* ---------- ward answers and the person's own record ---------- */
 
-export function unitName(units: readonly Unit[], unitId: string): string {
+function unitName(units: readonly Unit[], unitId: string): string {
   return units.find((unit) => unit.id === unitId)?.name ?? unitId;
 }
 
@@ -405,7 +407,7 @@ export function wardLines(row: BoardRow, units: readonly Unit[]): WardLine[] {
 }
 
 /** A ward this person could still be offered, from the coordinator shortlist's own verdicts. */
-export type CandidateWard = {
+type CandidateWard = {
   unitId: string;
   name: string;
   tone: "success" | "warning";
@@ -550,6 +552,6 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
 }
 
 /** Rows whose recorded legal time is pinned above the rest in the Longest wait view. */
-export function isPinned(row: BoardRow): boolean {
-  return row.dueIn !== undefined && row.dueIn <= currentDueSoonThresholds().soonMinutes;
+export function isPinned(row: BoardRow, thresholds: DueSoonThresholds): boolean {
+  return row.dueIn !== undefined && row.dueIn <= thresholds.soonMinutes;
 }

@@ -32,7 +32,7 @@ import {
   pullToArrival,
   refusedAndNothingPending,
 } from "@/components/ward-management/statistics/statistics-derivations";
-import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { axisMax } from "@/components/ward-management/statistics/statistics-axis";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -471,6 +471,7 @@ export function StatisticsScreen({
           navTestId="ward-statistics-index"
           eyebrow={`Statistics · whole network · as at ${formatInstant(now)}`}
           title={`${availableNow} ${availableNow === 1 ? "bed" : "beds"} ready now`}
+          now={now}
           paused={live.paused}
           onTogglePause={live.togglePause}
           exportFigures={{
@@ -1093,4 +1094,3 @@ export function StatisticsScreen({
 }
 
 // Kept for the community chooser deep link and the per-team statistics route.
-export { communityStatisticsHref };

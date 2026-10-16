@@ -1,6 +1,8 @@
 # Documents and design drawings
 
 > **Historical inventory — classifications measured 25 September 2026.** Counts, document descriptions and CURRENT labels below describe that snapshot. They do not establish current authority. For current work, use the [product entry point](../README.md), [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md), [task/receipt workflow](../../task-receipts.md) and each document's current banner. STATUS and UNIVERSAL-MOCKUP-SPECIFICATION are now historical; generated owner rulings include decisions.md as well as owner source files. Preserve the inventory below as evidence.
+>
+> **Docs trims, 15 October 2026:** three passes removed most dated plans, reports, handovers, registers and audit output listed below. `../ARCHIVE-NOTE.md` lists what went and how to restore it.
 
 This part covers `docs/ward-flow/` (measured at 1,284 files: 65 top-level files, 27 history/tooling
 subfolders, and `mockups/` at 135 files) and `docs/ward-flow-task-ledger.md` (7,867 lines). Tip
@@ -68,9 +70,9 @@ where marked "(inferred)". Back to [the code map index](README.md).
 - **`design-test-registry.json`** (452 lines) — registry connecting mockups and React components to
   their automated test suites and clinical invariants. Actively read by
   `scripts/ward-flow/design-test-sync.mjs`; not itself marked generated.
-- **`live-state.json`** (228 lines) — chat-control/reconciliation state file, read by
-  `scripts/ward-flow/chat-control.mjs`, `scripts/ward-flow/check-live-state.mjs` and
-  `tests/ward-flow-chat-control.test.ts`. Its own `capturedAt` field says 2026-08-31 and its
+- **`live-state.json`** (228 lines) — reconciliation state file, read by
+  `scripts/ward-flow/check-live-state.mjs` (`chat-control.mjs` and its test were removed on 15 Oct
+  2026). Its own `capturedAt` field says 2026-08-31 and its
   `chatControlSystem.contract` field points at `docs/ward-flow/control/roles.json`, a path that no
   longer exists (`HOW-WE-WORK.md` §7: "`control/README.md` (gone — deleted with WLQ-33)"). The file
   is still functionally live (code reads it), but do not trust its embedded pointers or timestamp.
@@ -195,8 +197,7 @@ in them as belonging to the tree named, never as current.
   the sweep would survive even if the session did not.
 - **`who-is-who.md`** (156 lines, 1 Sept 2026) — "a role is a folder, not a name": identity is bound
   to worktree + `.ward-session.json`, checked against `git worktree list`. The role scheme is
-  historical, but the tool it documents, `scripts/ward-flow/whois.mjs`, still exists on disk and
-  still works as a plain worktree/branch identifier regardless of which role naming is current.
+  historical, and the tool it documents, `scripts/ward-flow/whois.mjs`, was removed on 15 Oct 2026.
 - **`action-reachable-absence-prereg-2026-09-12.txt`** (78 lines, 12 Sept 2026) — a pre-registration
   (predictions written before measuring) for a sweep of action-reachable UI states.
 - **`none-census-prereg-2026-09-11.txt`** (33 lines, 11 Sept 2026) — pre-registration for a census of
@@ -367,7 +368,8 @@ in them as belonging to the tree named, never as current.
   **`PHASE0-RESOLUTION-2026-09-10.md`**, **`WARD-MOCKUPS-HANDOVER-2026-09-11.md`**,
   **`WARD-MOCKUPS-STATUS-2026-09-10.md`** — five DATED NOTE handover/status snapshots from the
   10–12 September third-edition build push. Historical; current status is `STATUS.md` and this
-  folder's own `README.md`.
+  folder's own `README.md`. The second 15 October 2026 docs trim removed all five; restore them
+  from Git history (see `../ARCHIVE-NOTE.md`).
 
 ### Design authority — the 34 screens with a build contract (per `SCREEN-MAP.md`)
 
@@ -428,8 +430,8 @@ source of this table and is more current than this bullet list if the two ever d
 - **`ward-flow-digest.html`** — the condensed reader's brief mirror of the same standard.
 - **`movement-gantt-third-edition.html`**, **`network-horizon-third-edition.html`** — alternate
   visualisations of Movement and Network, not routed.
-- **`sovereign-chrome-and-drawers-perfected.html`** — reference only (routed at `/sovereign`, a
-  scratch route, per `SCREEN-MAP.md`; not a design source for any real screen per `README.md`).
+- **`sovereign-chrome-and-drawers-perfected.html`** — reference only, not routed (its scratch
+  route `/sovereign` was deleted on 15 Oct 2026; not a design source for any real screen per `README.md`).
 - **`sovereign-sidebar-ultimate.html`** — reference only, confirmed by `README.md`.
 - **`perfected-activity-drawer.html`**, **`perfected-drawers-showcase.html`**,
   **`perfected-service-popover.html`**, **`perfected-tasks-drawer.html`**,
@@ -486,7 +488,8 @@ kept only so a restyle can copy their CSS. See `plans/2026-09-16-drawings-new-lo
   **`transport-officer-third-edition.html`**, **`ward-answer-third-edition.html`**,
   **`wards-third-edition.html`** — twenty visual restyles, one per named screen above, each
   reference-only per the folder's own README. Same filenames as the real mockups one level up; do
-  not confuse the two paths.
+  not confuse the two paths. The second 15 October 2026 docs trim removed this whole folder;
+  restore it from Git history (see `../ARCHIVE-NOTE.md`).
 
 ### `mockups/third-edition-kit/` (37 files across the folder and its `fonts/`, `inputs/` and `shell/` subfolders) — the drawing-checker toolchain
 
@@ -498,7 +501,9 @@ must start "Invented figures..." never "Live"), `check-standard.mjs`, `shell-swe
 page's shell from Command's — every page must read `SAME SHELL`), `recompute-contrast.mjs`,
 `shots.mjs`, plus `contrast-pairs.json`, `REVIEW-FINDINGS.json`, `check-output.txt` (a captured run),
 and dated docs `AGENT-BRIEF.md` (the brief given to one agent building one page),
-`HANDOVER.md`/`HANDOVER-MOCKUPS-CHAT-2026-09-10.md`/`MERGE-BRIEF.md`/`RESUME-2026-09-09.md`.
+`HANDOVER.md`/`HANDOVER-MOCKUPS-CHAT-2026-09-10.md`/`MERGE-BRIEF.md`/`RESUME-2026-09-09.md`. The
+second 15 October 2026 docs trim removed `REVIEW-FINDINGS.json`, `HANDOVER-MOCKUPS-CHAT-2026-09-10.md`,
+`MERGE-BRIEF.md` and `RESUME-2026-09-09.md`; `AGENT-BRIEF.md` and `HANDOVER.md` stay.
 `run-all-checks.sh` has a hard-coded `cd` to a worktree that no longer exists
 (`.claude/worktrees/ward-flow-phase-5-resume-166ecb`) and will fail here — run the individual `node`
 commands from `README.md` instead. `fonts/` (7 files) self-hosts the Geist/Geist Mono `.woff2` faces
@@ -554,8 +559,8 @@ this file directly.
    before following one of these, not just the file's own banner.
 2. **`live-state.json`'s embedded pointer is dead.** It names `docs/ward-flow/control/roles.json` as
    its contract; that `control/` folder was deleted with WLQ-33 (`HOW-WE-WORK.md` §7). The file is
-   still read by code (`scripts/ward-flow/chat-control.mjs`), but do not follow its internal path
-   fields.
+   still read by code (`scripts/ward-flow/check-live-state.mjs`), but do not follow its internal
+   path fields.
 3. **The mockups' `reference/gemini-2026-09-15/` folder shares filenames with the real mockups one
    level up** (`patient-now-third-edition.html` exists at both paths, with different content). A
    path-blind grep or diff across the whole `mockups/` tree will silently compare or conflate the

@@ -7,6 +7,7 @@ import {
   arrivalGaps,
   collectionGaps,
   holdEndsBeforeEta,
+  instantFromEtaText,
   legalNowTransportStatus,
   packRequirement,
   transportExceptionRecord,
@@ -14,6 +15,7 @@ import {
   transportStatusClashes,
 } from "@/components/ward-management/ward-transport-checks";
 import { packNeedsForms, packRequired } from "@/components/ward-management/officer/officer-forms-pack";
+import { instantFromDateAndTimeInputs } from "@/components/ward-management/legal-forms/legal-forms-view";
 
 /** Audit fixes, 13 Oct 2026 (transport group): the shared transport checks and what the engine records. */
 const job = (fields: Partial<Movement>) => fields as unknown as Movement;
@@ -191,5 +193,40 @@ describe("arrival gaps with no transport leg (audit r1 item 4)", () => {
     expect(arrivalGaps(job({}))).toEqual(["fit_to_travel_missing"]);
     expect(arrivalGaps(job({ medicalClearance: { cleared: true, at: 0 } }))).toEqual([]);
     expect(arrivalGaps(job({ transport: { collectedAt: 5 } as never }))).toEqual([]);
+  });
+});
+
+describe("every time box reads a typed clock time by the same rule", () => {
+  // Minute 600 of day 2 is 10:00, two days after day zero.
+  const now = 2 * 1440 + 600;
+  const startOfToday = 2 * 1440;
+
+  it("reads up to three digits on the patient page as minutes from now", () => {
+    expect(instantFromEtaText("45", now)).toBe(now + 45);
+    expect(instantFromEtaText("~45m", now)).toBe(now + 45);
+    expect(instantFromEtaText("+120 min", now)).toBe(now + 120);
+  });
+
+  it("reads four digits on the patient page as a clock time, not 930 minutes", () => {
+    expect(instantFromEtaText("0930", now)).toBe(startOfToday + 570);
+    expect(instantFromEtaText("9:30", now)).toBe(startOfToday + 570);
+    expect(instantFromEtaText("09:30 AWST", now)).toBe(startOfToday + 570);
+    expect(instantFromEtaText("0930 tomorrow", now)).toBe(startOfToday + 1440 + 570);
+  });
+
+  it("refuses rather than guesses on the patient page", () => {
+    expect(instantFromEtaText("", now)).toBeUndefined();
+    expect(instantFromEtaText("2460", now)).toBeUndefined();
+    expect(instantFromEtaText("soon", now)).toBeUndefined();
+  });
+
+  it("reads the legal form time box by the same rule", () => {
+    const dayZero = new Date("2026-10-01T00:00:00+08:00");
+    const expected = instantFromDateAndTimeInputs("2026-10-02", "09:30", dayZero);
+    expect(expected).toBe(1440 + 570);
+    expect(instantFromDateAndTimeInputs("2026-10-02", "9:30", dayZero)).toBe(expected);
+    expect(instantFromDateAndTimeInputs("2026-10-02", "0930", dayZero)).toBe(expected);
+    expect(instantFromDateAndTimeInputs("2026-10-02", "930", dayZero)).toBeUndefined();
+    expect(instantFromDateAndTimeInputs("2026-10-02", "24:00", dayZero)).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Ward Flow design-system primitives (`src/components/wf`). Build every page from these; never copy a primitive into a screen.
- * Contract: `design/v9/design-system-v9.md` (Sections 8–14). Tokens: `src/app/ward-flow-v9-tokens.css` (and base `src/app/ward-flow-v6-tokens.css`).
+ * Contract: `design/v9/design-system-v9.md` (Sections 8–14). Tokens: `src/app/ward-flow-v9-tokens.css`.
  */
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
@@ -49,8 +49,6 @@ export {
   WardCapacityRows,
   GroupHead,
   SinceYouLooked,
-  NeedsYou,
-  UndoHairline,
   type CheckingItem,
   type CheckingFootProps,
   type StepState,
@@ -58,9 +56,6 @@ export {
   type WardCapacityRowProps,
   type GroupHeadProps,
   type SinceItem,
-  type NeedsYouItem,
-  type NeedsYouProps,
-  type UndoHairlineProps,
 } from "./v10-parts";
 export {
   HeroChip,
@@ -120,6 +115,12 @@ export { Sheet, Drawer, type SheetProps } from "./sheet";
 export { Menu, Popover, type MenuItem, type MenuProps, type MenuTriggerProps, type PopoverProps } from "./menu";
 export { ToastView, type ToastViewProps, type ToastUndo } from "./toast";
 export { Dialog, type DialogProps, type DialogAction } from "./dialog";
+export {
+  useModalFocus,
+  modalFocusableIn,
+  type UseModalFocusOptions,
+  type UseModalFocusResult,
+} from "./use-modal-focus";
 export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
 export {
   ToastDeviceSaveContext,
@@ -128,8 +129,8 @@ export {
   useToast,
   type ToastApi,
   type ToastInput,
-} from "@/components/ui/toast";
-export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
+} from "./toast-provider";
+export { Tooltip, type TooltipProps } from "./tooltip";
 export {
   LiveChip,
   Timer,

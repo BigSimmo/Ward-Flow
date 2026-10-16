@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef, useState, type Dispatch } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch } from "react";
 import { WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -254,11 +254,11 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  useWardModalFocus(withBackdrop, drawerRef, onClose);
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
+  const sectionId = useId();
 
   /** A discharge notification row opens its stay on the discharges board; every other row opens
    *  its movement. */
@@ -273,6 +273,63 @@ export function WardTasksDrawer({
   const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
   const toast = useOptionalToast();
+
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!withBackdrop && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+      openerRef.current = document.activeElement;
+    }
+  }, [withBackdrop]);
+
+  function handleEscape() {
+    if (escalating !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        'button[data-escalate][aria-expanded="true"]',
+      );
+      setEscalating(null);
+      setContact("");
+      trigger?.focus();
+      return;
+    }
+    if (contacting !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        `button[data-contact="${CSS.escape(contacting)}"]`,
+      );
+      setContacting(null);
+      trigger?.focus();
+      return;
+    }
+    const opener = !withBackdrop
+      ? (openerRef.current ??
+        document.querySelector<HTMLElement>(
+          '[data-testid="ward-tasks-opener"], button[aria-controls*="tasks"], button[aria-label*="Tasks"]',
+        ))
+      : null;
+    onClose();
+    if (opener && opener.isConnected) opener.focus();
+  }
+
+  useWardModalFocus(withBackdrop, drawerRef, handleEscape);
+
+  // The inline panel has no modal focus handling, so Escape pressed inside it is caught here. A
+  // native listener, because the panel is a non-interactive landmark and takes no JSX key handler.
+  const handleEscapeRef = useRef(handleEscape);
+  useEffect(() => {
+    handleEscapeRef.current = handleEscape;
+  });
+  useEffect(() => {
+    const drawer = drawerRef.current;
+    if (withBackdrop || !drawer) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      // Let nested popovers/dialogs (such as the Snooze popover) handle Escape first:
+      if (event.target instanceof Element && event.target.closest('[role="dialog"]') !== null) return;
+      event.stopPropagation();
+      handleEscapeRef.current();
+    };
+    drawer.addEventListener("keydown", onKeyDown);
+    return () => drawer.removeEventListener("keydown", onKeyDown);
+  }, [withBackdrop]);
 
   /** Calling is not wired: the number is copied and the toast says so. */
   function callNumber(row: CallRow) {
@@ -411,6 +468,7 @@ export function WardTasksDrawer({
           aria-label="Contact"
           title="Contact"
           aria-expanded={contacting === item.id}
+          data-contact={item.id}
           onClick={() => {
             setContacting(contacting === item.id ? null : item.id);
           }}
@@ -487,6 +545,7 @@ export function WardTasksDrawer({
           Who did you escalate to?
           <span className={styles.escalationInput}>
             <input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- the field appears only after the user asks to escalate, so focus moves to it
               autoFocus
               required
               maxLength={160}
@@ -575,6 +634,7 @@ export function WardTasksDrawer({
       : "Patient not linked";
 
     return (
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and focus does the same for the keyboard
       <li
         key={item.id}
         className={styles.row}
@@ -585,6 +645,8 @@ export function WardTasksDrawer({
           if ((event.target as HTMLElement).closest("button, input, form, a")) return;
           setExpandedId(isPhone && isExpanded ? null : item.id);
         }}
+        // On a desktop, tabbing into a row shows its detail, the same as clicking it.
+        onFocus={isPhone ? undefined : () => setExpandedId(item.id)}
       >
         <div className={styles.rowHead}>
           <span className={styles.rowIcon} aria-hidden="true">
@@ -801,13 +863,6 @@ export function WardTasksDrawer({
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? "true" : undefined}
         aria-label="Tasks"
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            event.stopPropagation();
-            onClose();
-          }
-        }}
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">
@@ -833,6 +888,7 @@ export function WardTasksDrawer({
             onClick={onClose}
             aria-label="Close tasks panel"
             title="Close tasks panel"
+            data-sheet-autofocus="true"
           >
             <X aria-hidden="true" />
           </button>
@@ -973,10 +1029,10 @@ export function WardTasksDrawer({
           ) : (
             <>
               {filteredFacts.length > 0 ? (
-                <section className={styles.section} aria-labelledby="ward-tasks-facts">
+                <section className={styles.section} aria-labelledby={`${sectionId}-facts`}>
                   <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
                     <ShieldCheck aria-hidden="true" />
-                    <h3 id="ward-tasks-facts" className={styles.sectionTitle}>
+                    <h3 id={`${sectionId}-facts`} className={styles.sectionTitle}>
                       Needs attention
                     </h3>
                     <span className={styles.count}>{filteredFacts.length}</span>
@@ -987,10 +1043,10 @@ export function WardTasksDrawer({
               ) : null}
 
               {filteredCommitments.length > 0 ? (
-                <section className={styles.section} aria-labelledby="ward-tasks-commitments">
+                <section className={styles.section} aria-labelledby={`${sectionId}-commitments`}>
                   <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
                     <ListChecks aria-hidden="true" />
-                    <h3 id="ward-tasks-commitments" className={styles.sectionTitle}>
+                    <h3 id={`${sectionId}-commitments`} className={styles.sectionTitle}>
                       Commitments
                     </h3>
                     <span className={styles.count}>{filteredCommitments.length}</span>
@@ -1002,10 +1058,14 @@ export function WardTasksDrawer({
             </>
           )}
           {snoozedItems.length > 0 ? (
-            <section className={styles.section} aria-labelledby="ward-tasks-snoozed" data-testid="ward-tasks-snoozed">
+            <section
+              className={styles.section}
+              aria-labelledby={`${sectionId}-snoozed`}
+              data-testid="ward-tasks-snoozed"
+            >
               <div className={styles.sectionHead}>
                 <AlarmClock aria-hidden="true" />
-                <h3 id="ward-tasks-snoozed" className={styles.sectionTitle}>
+                <h3 id={`${sectionId}-snoozed`} className={styles.sectionTitle}>
                   Snoozed
                 </h3>
                 <span className={styles.count}>{snoozedItems.length}</span>

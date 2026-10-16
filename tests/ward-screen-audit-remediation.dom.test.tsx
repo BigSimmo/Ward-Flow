@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { hasOpenSheet } from "@/components/ui/sheet-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";

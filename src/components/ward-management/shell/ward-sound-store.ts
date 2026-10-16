@@ -8,12 +8,10 @@
 import { useCallback } from "react";
 import { createBrowserStore } from "@/lib/client-store-factory";
 
-export const AUDIO_BUZZ_STORAGE_KEY = "ward-flow-audio-buzz-pref";
-export const AUDIO_BUZZ_CHANGE_EVENT = "ward-flow-audio-buzz-change";
-export const VISUAL_PULSE_STORAGE_KEY = "ward-flow-visual-pulse-pref";
+const AUDIO_BUZZ_STORAGE_KEY = "ward-flow-audio-buzz-pref";
+const AUDIO_BUZZ_CHANGE_EVENT = "ward-flow-audio-buzz-change";
 
 let audioBuzzInMemoryFallback: boolean | undefined;
-let visualPulseInMemoryFallback: boolean | undefined;
 let sharedAudioContext: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -123,31 +121,6 @@ export function useAudioBuzzPreference(): [boolean, (enabled: boolean) => void] 
     setAudioBuzzPreference(next);
   }, []);
   return [enabled, setEnabled];
-}
-
-export function getVisualPulsePreference(): boolean {
-  if (visualPulseInMemoryFallback !== undefined) {
-    return visualPulseInMemoryFallback;
-  }
-  try {
-    if (typeof window === "undefined" || !window.localStorage) return true;
-    const stored = window.localStorage.getItem(VISUAL_PULSE_STORAGE_KEY);
-    if (stored === null) return true;
-    return stored === "true";
-  } catch {
-    return true;
-  }
-}
-
-export function setVisualPulsePreference(enabled: boolean): void {
-  visualPulseInMemoryFallback = enabled;
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.setItem(VISUAL_PULSE_STORAGE_KEY, String(enabled));
-    }
-  } catch {
-    // Graceful fallback
-  }
 }
 
 /**

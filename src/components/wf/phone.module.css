@@ -191,11 +191,11 @@
   justify-content: center;
 }
 
-/* v10 phone mockup: the secondary is an outlined pill beside the primary, not ghost text. */
+/* v10 phone mockup: the secondary is an outlined button beside the primary, not ghost text. */
 .sheetSecondary {
   flex: none;
   justify-content: center;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 @keyframes wfPhoneScrimIn {
@@ -230,6 +230,26 @@
   }
   .sheet[data-placement="right"] {
     animation-name: wfPhoneSheetFade;
+  }
+}
+
+/* F-07: iOS lays the keyboard over the page, so on a phone the sheet rises above it and keeps its
+   footer in reach. The home indicator is under the keyboard then, so the footer drops that pad.
+   F-21: on a phone the sheet is the solid overlay surface with no backdrop blur, which flickers on
+   iPhone while the body scrolls (phone bars are solid, D-45). */
+@media (max-width: 48rem) {
+  .sheet {
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :global(html[data-wf-keyboard="open"]) .sheetScrim {
+    padding-bottom: var(--keyboard-height, 0px);
+  }
+
+  :global(html[data-wf-keyboard="open"]) .sheetFooter {
+    padding-bottom: var(--wf-s-3);
   }
 }
 
@@ -403,8 +423,11 @@
   transition: background-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
-.rowInteractive:hover::after {
-  background: var(--wf-hover);
+/* F-28: hover only where a pointer hovers, so a tap on iPhone leaves no sticky hover. */
+@media (hover: hover) {
+  .rowInteractive:hover::after {
+    background: var(--wf-hover);
+  }
 }
 
 .rowInteractive:active::after {
@@ -445,9 +468,12 @@
 }
 
 .rowName {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
 }
@@ -460,13 +486,24 @@
   color: var(--wf-ink-3);
 }
 
-/* Truncated words show in full on focus as well as hover (v9 section 8). */
-.rowInteractive:hover .rowName,
-.rowInteractive:hover .rowMeta,
+/* Truncated words show in full on focus as well as hover (v9 section 8). F-28: hover only where a
+   pointer hovers, so a tap on iPhone does not leave the row expanded and the layout jumping. */
 .rowInteractive:focus-visible .rowName,
 .rowInteractive:focus-visible .rowMeta {
+  -webkit-line-clamp: unset;
+  line-clamp: none;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .rowInteractive:hover .rowName,
+  .rowInteractive:hover .rowMeta {
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .rowTrail {
@@ -555,11 +592,16 @@
   min-width: 0;
 }
 
+/* Phone review F-05 (WebKit check, 15 Oct 2026): a long title wraps to a second line rather than
+   losing its end to an ellipsis. */
 .heroTitle {
+  display: -webkit-box;
   margin: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
   font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
   letter-spacing: var(--wf-tr-20);
   color: var(--wf-hero-ink);
@@ -673,11 +715,14 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* Two lines before any cut, so "Out of area bed days" reads whole in a three-stat strip. */
 .heroLabelText {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .heroActions {

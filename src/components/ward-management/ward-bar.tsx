@@ -28,7 +28,7 @@ import styles from "./ward-bar.module.css";
  * something false about beds and waiting patients — but it means the guarding belongs at every call
  * site, and `tests/ward-bar-zero-is-reachable.test.ts` exists because one of them did not have it.
  */
-export type WardBarTone = "good" | "warning" | "danger" | "accent" | "rest";
+type WardBarTone = "good" | "warning" | "danger" | "accent" | "rest";
 export type WardBarSegment = { label: string; value: number; tone: WardBarTone };
 
 export function WardBar({ segments, caption }: { segments: WardBarSegment[]; caption: string }) {

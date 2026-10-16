@@ -6,7 +6,12 @@ import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-m
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -21,31 +26,6 @@ import { DelaysBoard } from "./delays-board";
 import styles from "./delays.module.css";
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
-
-export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
-
-export interface SystemicDelayHold {
-  id: string;
-  category: "ward" | "transport" | "staffing";
-  facility: string;
-  service: string;
-  categoryLabel: string;
-  reason: string;
-  impact: string;
-  severity: "danger" | "warn" | "info";
-  startedAgo: string;
-  bedsOffline?: number;
-  nextReview: string;
-  owner: string;
-}
-
-/**
- * Systemic holds (ward closures, fleet delays, staffing surges) have no record in Ward Flow's state:
- * nothing can create, change or clear one. The four invented holds that stood here (real facility
- * names, made-up outbreaks and bed counts) were removed on 2026-09-25 under the owner's rule that
- * every figure must come from a record. Until a hold can be recorded, the panel says so.
- */
-export const SYSTEMIC_HOLDS: SystemicDelayHold[] = [];
 
 export interface DelaysScreenProps {
   aliasFrom?: "queue" | "exceptions" | "escalation" | null;
@@ -95,15 +75,17 @@ function readAliasFromLocation() {
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
+  const thresholds = useDueSoonThresholds();
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
   const showSevere = useSyncExternalStore(subscribeToLocation, readSevereFromLocation, () => false);
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
-  const { movements: liveMovements, units, configuration, dispatch } = useWardFlow();
+  const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
   const now = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
 
   const allMovements = movementsOverride ?? liveMovements;
   const movements = useMemo(
@@ -137,7 +119,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     () => (movements === allMovements ? open : allMovements.filter(isOpen)),
     [movements, allMovements, open],
   );
-  const groups = useMemo(() => delayGroups(movements, units, now), [movements, units, now]);
+  const groups = useMemo(() => delayGroups(movements, units, now, thresholds), [movements, units, now, thresholds]);
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
   // never dropped.
@@ -148,8 +130,8 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   // Q-12: "Attention" is never dropped. The severe causes across the whole network, plus any urgent
   // movement outside the chosen service, each marked rather than hidden.
   const networkGroups = useMemo(
-    () => (movements === allMovements ? groups : delayGroups(allMovements, units, now)),
-    [movements, allMovements, groups, units, now],
+    () => (movements === allMovements ? groups : delayGroups(allMovements, units, now, thresholds)),
+    [movements, allMovements, groups, units, now, thresholds],
   );
   const urgentOutsideMovements = useMemo(
     () => (service === null ? [] : urgentMovementsOutsideService(openNetworkWide, service, units, now, configuration)),
@@ -187,10 +169,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     service !== null && !movementBelongsToService(movement, service, units);
 
   const escalate = (movement: Movement) => {
-    dispatch({
-      type: "RECORD_ESCALATION",
-      role: "coordinator",
-      now,
+    raise("RECORD_ESCALATION", {
       movementId: movement.id,
       triedUnitIds: movement.declines.map((decline) => decline.unitId),
       // The fixed escalation vocabulary's entry (ward-change-reasons.ts), as the coordinator picker records it.

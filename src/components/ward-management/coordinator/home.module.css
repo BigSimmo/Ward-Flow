@@ -812,7 +812,7 @@
   flex: 0 0 auto;
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-fit-edge);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -1158,7 +1158,7 @@ button.registerRow:hover {
   margin-left: var(--wf-s-2);
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
 }
@@ -1210,7 +1210,7 @@ button.registerRow:hover {
     min-height: var(--wf-touch);
     padding: 0 var(--wf-s-3);
     border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     white-space: nowrap;
   }
@@ -1390,7 +1390,7 @@ button.registerRow:hover {
   height: 44px;
   justify-content: center;
   padding: 0 14px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   white-space: nowrap;
   overflow: hidden;
@@ -1399,6 +1399,26 @@ button.registerRow:hover {
 .phoneSince > span {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Phone review F-31: a quiet text link, not a full-width filled pill that read as the page's main
+ * button. The transparent box keeps its 44px tap height. */
+.phoneSince.phoneSince {
+  flex: 0 1 auto;
+  justify-content: flex-start;
+  padding: 0 2px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.phoneSince.phoneSince:hover {
+  background: transparent;
+  text-decoration-color: currentColor;
 }
 
 .phoneSinceMono {
@@ -2099,7 +2119,7 @@ button.registerRow:hover {
     height: 44px;
     padding: 0;
     border: 0;
-    border-radius: 50%;
+    border-radius: var(--wf-r-ctl);
     background: transparent;
     font-size: 0;
   }

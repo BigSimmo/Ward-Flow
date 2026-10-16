@@ -96,6 +96,7 @@ const PINNED: Record<string, string | null> = {
   escalation: "redirect:/mockups/ward-flow/delays?from=escalation",
   exceptions: "redirect:/mockups/ward-flow/delays?from=exceptions",
   governance: "WardModeWorkspace",
+  "bed-meeting": "BedMeetingTvScreen",
   handover: "HandoverPage",
   hub: "HubScreen",
   // Added 2026-09-12 with the third-edition Legal forms build. ⚠️ A reconciliation is in flight
@@ -126,7 +127,6 @@ const PINNED: Record<string, string | null> = {
   // the full suite and none of them on any focused run**, because no register imports another and
   // nothing selects a test that reads the filesystem.
   settings: "SettingsScreen",
-  sovereign: "SovereignShowcaseScreen",
   statistics: "StatisticsScreen",
   "statistics/compare": "StatisticsCompareScreen",
   "statistics/ed/[edId]": "StatisticsEdScreen",

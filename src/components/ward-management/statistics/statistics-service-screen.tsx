@@ -20,6 +20,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
@@ -39,7 +40,7 @@ import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-managem
 import { HEALTH_SERVICES, type HealthService, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
@@ -95,7 +96,7 @@ function referralOriginService(referral: Referral): HealthService | undefined {
  *
  * ⚠️ **EVERY UNIT READ HERE COMES FROM THE PROVIDER'S LIVE `units`, NEVER FROM `allUnits()` OR
  * `unitById()`.** Which SITE a health service owns, and which SITE an emergency department sits at,
- * is identity rather than capacity, so `wardSites`, `siteByCode` and `allEmergencyDepartments()` are
+ * is identity rather than capacity, so `siteDirectory`, `siteByCode` and `allEmergencyDepartments()` are
  * read directly.
  *
  * ⚠️ **DECLINES ATTRIBUTED TO A WARD OR A SERVICE ARE A WITHHELD PRODUCT DECISION, NOT BUILT HERE.**
@@ -105,6 +106,7 @@ function referralOriginService(referral: Referral): HealthService | undefined {
  */
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const live = useStatisticsLive();
+  const small = useSmallNumber();
   const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements } = live.state;
   const now = live.now;
   const isPhone = useIsPhone();
@@ -114,7 +116,10 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
   const service = useMemo(() => HEALTH_SERVICES.find((candidate) => candidate === serviceId), [serviceId]);
 
-  const serviceSites = useMemo(() => (service ? wardSites.filter((site) => site.service === service) : []), [service]);
+  const serviceSites = useMemo(
+    () => (service ? siteDirectory.filter((site) => site.service === service) : []),
+    [service],
+  );
   const serviceSiteCodes = useMemo(() => new Set(serviceSites.map((site) => site.code)), [serviceSites]);
   const serviceUnits = useMemo(
     () => (service ? liveUnits.filter((unit) => serviceSiteCodes.has(unit.siteCode)) : []),
@@ -311,7 +316,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           ["Being made ready", pendingPreparation],
           ["Wards", serviceUnits.length],
           ["EDs", serviceEds.length],
-          ["Out of area", outOfAreaEntries.length],
+          ["Out of area", small(outOfAreaEntries.length)],
         ],
       }}
       phone={{
@@ -322,7 +327,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <HeroStat value={totalBedBase} label="Beds" />
             <HeroStat value={totalReady} label="Ready" />
             <HeroStat
-              value={edWaiting}
+              value={small(edWaiting)}
               label="In ED"
               tone={
                 edSwarmRows.some((row) => row.entries.some((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES))
@@ -351,7 +356,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           {/* Five figures at most (v10). The ED count is on the ED waits card's head ("N waiting in
               M EDs"), so the hero leaves it out; the export still carries it. */}
           <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-ooa">{outOfAreaEntries.length}</span>}
+            value={<span data-testid="ward-statistics-service-exec-ooa">{small(outOfAreaEntries.length)}</span>}
             label={
               <span className={styles.flagged}>
                 {outOfAreaEntries.length > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -371,7 +376,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             name: shortDepartmentName(department.name),
             figures: edWaitFigures(movements, department.id, now),
           }))}
-          edWaiting={edWaiting}
+          edWaiting={small(edWaiting)}
           outOfArea={outOfAreaEntries}
         />
       ) : (
@@ -416,7 +421,12 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 aside="Synthetic travel bands"
                 data-testid="ward-statistics-service-out-of-area"
               >
-                <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
+                <CardBody
+                  className={`${styles.bodyStack} ${detail.scrolls}`}
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Out of area figures"
+                >
                   <dl className={styles.figures}>
                     <div className={styles.figure}>
                       <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
@@ -466,7 +476,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             className={detail.anchor}
             icon={Clock}
             title="ED waits"
-            aside={`${edWaiting} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            aside={`${small(edWaiting)} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>
@@ -575,7 +585,8 @@ function ServicePhone({
   states: { unit: Unit; states: ReturnType<typeof bedStates> }[];
   pendingPreparation: number;
   eds: { id: string; name: string; figures: ReturnType<typeof edWaitFigures> }[];
-  edWaiting: number;
+  /** Worded as "fewer than 5" for an executive, like the hero. */
+  edWaiting: number | string;
   outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
 }) {
   const sum = (pick: (entry: (typeof states)[number]) => number) =>
@@ -865,7 +876,12 @@ function Placement({
       }
       data-testid="ward-statistics-service-placement"
     >
-      <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
+      <CardBody
+        className={`${styles.bodyStack} ${detail.scrolls}`}
+        tabIndex={0}
+        role="region"
+        aria-label="Placement figures"
+      >
         <dl className={styles.figures}>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-raised">

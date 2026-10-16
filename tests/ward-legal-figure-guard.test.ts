@@ -838,13 +838,16 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
   //   2. the declared list Part 1 drives is exactly these codes, in this order, so adding a code
   //      to the picker fails here until Part 1 is driving it too.
   it("pins where legal forms are authored, so Part 1 cannot silently miss one", () => {
-    const reducerPath = `${WARD_DIR}/ward-flow-reducer.ts`;
-    const source = ts.createSourceFile(
-      reducerPath,
-      readFileSync(reducerPath, "utf8"),
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS,
+    // The reducer hands RECORD_* and UNDO_* actions to its slice files, so read all three.
+    const reducerSources = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map(
+      (name) =>
+        ts.createSourceFile(
+          `${WARD_DIR}/${name}`,
+          readFileSync(`${WARD_DIR}/${name}`, "utf8"),
+          ts.ScriptTarget.Latest,
+          true,
+          ts.ScriptKind.TS,
+        ),
     );
 
     // An authored legal form is an object literal carrying a `code:` string. Read from the AST,
@@ -889,7 +892,9 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
 
     // 1. The reducer authors none. A single `code:` literal reappearing here means a branch has
     //    started deciding a patient's form again, which is the whole thing 2026-08-24 removed.
-    expect(authoredCodesIn(source), "the reducer authors a legal form again").toEqual([]);
+    for (const source of reducerSources) {
+      expect(authoredCodesIn(source), `${source.fileName} authors a legal form again`).toEqual([]);
+    }
 
     // 2. The declared list, in source order. Adding a code fails here until Part 1 drives it.
     expect(authoredCodesIn(formsSource)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A", "5B"]);
@@ -1032,7 +1037,9 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       `${WARD_DIR}/movements/movement-workspace-cockpit.tsx`,
       `${WARD_DIR}/ward-management-network.tsx`,
       `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
-      `${WARD_DIR}/ed/ed-screen.tsx`,
+      // Fix list 2.5 and 9.6 (15 Oct 2026): the ED screen's sentence (`outstandingItem`) moved,
+      // unchanged, from `ed/ed-screen.tsx` into `ed/ed-screen-model.ts` when the screen was split.
+      `${WARD_DIR}/ed/ed-screen-model.ts`,
     ]) {
       expect(recordedCarriers, `${expected} no longer says "No legal form recorded"`).toContain(expected);
     }
@@ -1067,7 +1074,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
       `${WARD_DIR}/ed/ed-screen.tsx`,
       `${WARD_DIR}/officer/officer-screen.tsx`,
-      `${WARD_DIR}/tracker/live-tracker.tsx`,
+      `${WARD_DIR}/tracker/tracker-derivations.ts`,
       `${WARD_DIR}/ward/ward-screen.tsx`,
     ]) {
       expect(scannedPaths, `${expected} was never scanned`).toContain(expected);

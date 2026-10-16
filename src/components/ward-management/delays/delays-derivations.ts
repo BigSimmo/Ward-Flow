@@ -5,10 +5,11 @@ import type { WardBarSegment } from "@/components/ward-management/ward-bar";
 import {
   clockState,
   dayOf,
-  MINUTES_PER_DAY,
-  minuteOfDay,
-  minutesUntil,
+  type DueSoonThresholds,
   type Instant,
+  minuteOfDay,
+  MINUTES_PER_DAY,
+  minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
@@ -217,7 +218,7 @@ export function ownerOf(cause: DelayCause): DelayOwnerId {
  * group is dropped from the screen — so the failure would have looked like "nothing is wrong in
  * that category" rather than like a defect.
  */
-export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayCause {
+export function causeOf(movement: Movement, units: Unit[], now: Instant, thresholds: DueSoonThresholds): DelayCause {
   // ⚠️ CORRECTION 1. The plan wrote `clockState(...) !== "ok"`. `ClockState` has no member "ok" —
   // it is "breached" | "critical" | "due" | "clear" — so that comparison is a type error, and had
   // it compiled it would have been true for every movement carrying a dueAt, putting the whole
@@ -239,7 +240,7 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   // Audit S-6: a form ended by an inpatient order or arrival is history, never an overdue cause.
   const legal = currentLegalDueAt(movement);
   if (legal !== undefined) {
-    const state = clockState(legal, now);
+    const state = clockState(legal, now, thresholds);
     if (state === "breached") return "legal_breached";
     if (state === "critical") return "legal_expiring";
   }
@@ -283,11 +284,16 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant): DelayC
   return "awaiting_coordinator";
 }
 
-export function delayGroups(movements: Movement[], units: Unit[], now: Instant): DelayGroup[] {
+export function delayGroups(
+  movements: Movement[],
+  units: Unit[],
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): DelayGroup[] {
   const open = movements.filter(isOpen);
   const causeByMovementId = new Map<string, DelayCause>();
   for (const movement of open) {
-    causeByMovementId.set(movement.id, causeOf(movement, units, now));
+    causeByMovementId.set(movement.id, causeOf(movement, units, now, thresholds));
   }
 
   return ORDER.map((entry) => ({
@@ -542,6 +548,18 @@ const MORNING_SHIFT_START = REMINDER_MORNING_SHIFT_START_MINUTE;
 const MORNING_SHIFT_END = REMINDER_MORNING_SHIFT_END_MINUTE;
 const firstMark = `${TWO_HOURS / 60} hours`;
 const secondMark = `${FOUR_HOURS / 60} hours`;
+/**
+ * Silent ward reminders (Top 25 item 7, flag `top25-silent-ward`). From the second reminder on, the
+ * line also suggests asking another ward. Owner ruling, 15 Oct 2026: reminders only, nothing is
+ * reallocated automatically, so this is words on the row and never an action.
+ */
+export const SILENT_WARD_ANOTHER_WARD_SUGGESTION =
+  "Consider asking another ward as well. Nothing is moved automatically.";
+
+export type SilenceReminderOptions = {
+  /** `top25-silent-ward`: add the another ward suggestion at the second reminder and after. */
+  suggestAnotherWard?: boolean;
+};
 
 /**
  * The named shift a referral sits in, and when that shift ends: the one shift pattern every screen
@@ -581,10 +599,21 @@ function nextMorningAtSeven(from: Instant): Instant {
  * Returns `undefined` when there is no referral time, or when two hours have not yet passed.
  * The latest reached mark wins: 2 hours, then 4 hours, then the end of that shift.
  */
-export function silentWardReminder(referredAt: Instant | undefined, now: Instant): string | undefined {
+export function silentWardReminder(
+  referredAt: Instant | undefined,
+  now: Instant,
+  options: SilenceReminderOptions = {},
+): string | undefined {
   if (referredAt === undefined) return undefined;
   const elapsed = now - referredAt;
   if (elapsed < TWO_HOURS) return undefined;
+  const line = silentWardReminderLine(referredAt, now, elapsed);
+  return options.suggestAnotherWard === true && elapsed >= FOUR_HOURS
+    ? `${line} ${SILENT_WARD_ANOTHER_WARD_SUGGESTION}`
+    : line;
+}
+
+function silentWardReminderLine(referredAt: Instant, now: Instant, elapsed: number): string {
   const shift = shiftContaining(referredAt);
   const pastShiftEnd = now >= shift.endsAt;
   if (pastShiftEnd && elapsed >= FOUR_HOURS) {
@@ -622,7 +651,12 @@ export function silentCommunityReminder(raisedAt: Instant | undefined, now: Inst
  * The one reminder line a delays row may show. Community wins when a linked community destination
  * is still awaiting an answer; otherwise a silent referred ward. Absent timestamps stay silent.
  */
-export function answerSilenceReminder(movement: Movement, referrals: Referral[], now: Instant): string | undefined {
+export function answerSilenceReminder(
+  movement: Movement,
+  referrals: Referral[],
+  now: Instant,
+  options: SilenceReminderOptions = {},
+): string | undefined {
   const referral = referralForMovement(movement, referrals);
   const silentCommunity = referral?.destinations.find(
     (addressing) => addressing.destination.kind === "community_team" && isAwaitingAnswer(addressing),
@@ -639,10 +673,10 @@ export function answerSilenceReminder(movement: Movement, referrals: Referral[],
         .filter((d) => isAwaitingAnswer(d) && d.waitlistedAt === undefined)
         .map((d) => d.referredAt ?? movement.referredAt)
         .filter((t): t is Instant => t !== undefined);
-      if (silentWardTimes.length > 0) return silentWardReminder(Math.min(...silentWardTimes), now);
+      if (silentWardTimes.length > 0) return silentWardReminder(Math.min(...silentWardTimes), now, options);
       return undefined;
     }
-    return silentWardReminder(movement.referredAt, now);
+    return silentWardReminder(movement.referredAt, now, options);
   }
   return undefined;
 }

@@ -4,7 +4,7 @@ import { BedDouble, ChevronRight, MapPin, Network as NetworkIcon } from "lucide-
 import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 
 import {
@@ -741,7 +741,7 @@ function NetworkUnitSheet({
   now: Instant;
   onClose: () => void;
 }) {
-  const { dispatch, refreshRequests } = useWardFlow();
+  const { dispatch, refreshRequests } = useWardFlowSelect("dispatch", "refreshRequests");
   const router = useRouter();
   const unit = row?.unit;
   // As on the places page: once asked, the sheet stops offering to ask again.

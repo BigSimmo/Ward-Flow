@@ -5,7 +5,7 @@
     "url": "https://www.figma.com/design/UfpjjBWlvb3NMp3Nuvktzu"
   },
   "tokens": {
-    "css": "src/app/ward-flow-v6-tokens.css",
+    "css": "src/app/ward-flow-v9-tokens.css",
     "export": "design/figma/tokens.json",
     "collections": {
       "Colour": { "modes": ["Day", "Night"] },
@@ -82,8 +82,7 @@
       "Handover": "/mockups/ward-flow/handover",
       "On call": "/mockups/ward-flow/on-call",
       "Movements": "/mockups/ward-flow/movements",
-      "Movement": "/mockups/ward-flow/movements/WF-001",
-      "Showcase": "/mockups/ward-flow/sovereign"
+      "Movement": "/mockups/ward-flow/movements/WF-001"
     },
     "Community, transport and stats": {
       "Community": "/mockups/ward-flow/community",

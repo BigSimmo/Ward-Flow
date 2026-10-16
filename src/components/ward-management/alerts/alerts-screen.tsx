@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   activeSnooze,
   currentInboxOwner,
@@ -31,11 +32,11 @@ import {
 } from "@/components/ward-management/ward-inbox-snooze";
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -57,6 +58,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
+import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { broadcastScopeCount, directiveAcknowledgements, isAlertLive, replyBoard } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
@@ -113,6 +115,7 @@ import {
   PhoneSheet,
   PillTabs,
   Kbd,
+  LiveChip,
   Segmented,
   Select,
   SrOnly,
@@ -124,6 +127,7 @@ import {
   Textarea,
   type WfTone,
   useIsTabletPortrait,
+  useModalFocus,
 } from "@/components/wf";
 
 /**
@@ -154,14 +158,31 @@ type HistoryEntry = { id: string; at: Instant; tone: WfTone; title: string; sub:
 type ActionRequest = { type: string; logOffset: number; ok: string; refused: string };
 
 export function AlertsScreen() {
-  const { worldGeneration } = useWardFlow();
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
   return <AlertsWorkspace key={worldGeneration} />;
 }
 
 function AlertsWorkspace() {
   usePrintableDisclosures();
 
-  const state = useWardFlow();
+  const state = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "dispatch",
+    "inboxAcknowledgements",
+    "inboxOwnership",
+    "inboxSnoozes",
+    "configuration",
+    "broadcastAlerts",
+    "notices",
+    "plannedAdmissions",
+    "admissions",
+    "supportNotifications",
+    "leaveBeds",
+    "eventLog",
+  );
   const {
     movements,
     units,
@@ -179,6 +200,8 @@ function AlertsWorkspace() {
   const clockNow = useWardFlowClock();
   const live = usePageLive();
   const now = live.now;
+  // Top 25 item 12: name a stuck handover once the transport booked target has passed.
+  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   // Phone layout: the selected alert opens in a sheet instead of the side panel.
   const isPhone = useIsPhone();
   // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
@@ -208,6 +231,7 @@ function AlertsWorkspace() {
           supportNotifications,
           plannedAdmissions,
           leaveBeds,
+          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
         },
         now,
       ).filter(isQueueItem),
@@ -222,6 +246,7 @@ function AlertsWorkspace() {
       supportNotifications,
       plannedAdmissions,
       leaveBeds,
+      stuckHandoverOn,
       now,
     ],
   );
@@ -355,15 +380,18 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
+  const deskInScope = useDeskInScope();
   // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
   // A bed call is answered by the wards it asked, never ED desks, so it counts replies as the banner does.
   const broadcastBoard =
     activeBroadcast && broadcastKind(activeBroadcast) !== "directive" ? replyBoard(activeBroadcast, units) : undefined;
-  const broadcastAcks = !activeBroadcast
+  const allAcks = !activeBroadcast
     ? undefined
     : broadcastBoard
       ? { acknowledged: broadcastBoard.answered, of: broadcastBoard.rows.length }
-      : directiveAcknowledgements(activeBroadcast, units);
+      : directiveAcknowledgements(activeBroadcast, units, deskInScope);
+  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
+  const broadcastAcks = allAcks && (allAcks.of > 0 || !deskInScope) ? allAcks : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );
@@ -374,55 +402,18 @@ function AlertsWorkspace() {
 
   const handleCloseBroadcastModal = useCallback(() => {
     setBroadcastModalOpen(false);
-    setTimeout(() => {
-      broadcastTriggerRef.current?.focus();
-    }, 0);
   }, [setBroadcastModalOpen]);
 
-  const trapFocus = (e: React.KeyboardEvent<HTMLElement>, container: HTMLElement | null) => {
-    if (e.key !== "Tab" || !container) return;
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
-  const handleModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      handleCloseBroadcastModal();
-      return;
-    }
-    trapFocus(e, modalRef.current);
-  };
-
-  useWardPageScrollLock(isBroadcastModalOpen);
-
-  useEffect(() => {
-    if (!isBroadcastModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleCloseBroadcastModal();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBroadcastModalOpen, handleCloseBroadcastModal]);
-
-  useEffect(() => {
-    if (isBroadcastModalOpen) {
-      modalCloseRef.current?.focus();
-    }
-  }, [isBroadcastModalOpen]);
+  // The shared modal contract: the page behind is inert and held still, focus starts on the close
+  // button, Tab wraps inside, Escape closes only this top layer, and focus returns to the trigger.
+  useModalFocus({
+    open: isBroadcastModalOpen,
+    onClose: handleCloseBroadcastModal,
+    panelRef: modalRef,
+    initialFocusRef: modalCloseRef,
+    returnFocusRef: broadcastTriggerRef,
+    focusOnOpen: "immediate",
+  });
 
   useEffect(() => {
     if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
@@ -632,7 +623,7 @@ function AlertsWorkspace() {
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const untriaged = (referrals ?? []).filter((referral) => referral.triagedAt === undefined);
   const prolongedEdCount = openMovements.filter(
-    (movement: Movement) => movement.originEdId !== undefined && now - movement.openedAt >= 1440,
+    (movement: Movement) => movement.originEdId !== undefined && now - movement.openedAt >= LONG_WAIT_MINUTES,
   ).length;
   const overrideCount = movements.reduce((total, movement: Movement) => total + movement.overrides.length, 0);
   const checks: { key: string; kind?: AlertKind; label: string; n: number; href?: string; scope: string }[] = [
@@ -738,7 +729,7 @@ function AlertsWorkspace() {
         dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
       const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking, admission);
       const kind = alertKindOf(inboxItemId);
-      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
+      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"} for ${subject.displayName} ${subject.umrn}`;
     };
     for (const [id, list] of Object.entries(inboxAcknowledgements)) {
       list.forEach((entry, index) =>
@@ -996,9 +987,11 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
+  // F-09 (phone review, Oct 2026): the title counts act now alerts assigned to you and not yet
+  // seen, a part of the Act now figure, so it says so rather than reading as a different total.
   const heroTitle =
     needYouCount > 0
-      ? `${needYouCount} need${needYouCount === 1 ? "s" : ""} you now`
+      ? `${needYouCount} act now, new to you`
       : actEntries.length > 0
         ? `${actEntries.length} to act on now`
         : "No alert needs you";
@@ -1158,7 +1151,7 @@ function AlertsWorkspace() {
           id: entry.item.id,
           at: entry.raised!,
           shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
-          title: `${entry.item.title}, ${entry.subject.displayName}, raised ${formatInstantWithDay(entry.raised!, now)}`,
+          title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
         }))}
       acted={history
         .filter((entry) => entry.action)
@@ -1249,6 +1242,8 @@ function AlertsWorkspace() {
                   : "Checking every condition below"
               }
               eyebrow="Alerts"
+              // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
+              chip={<LiveChip state={live.paused ? "paused" : "live"} onHero />}
               figures={[
                 {
                   id: "act",
@@ -1269,7 +1264,8 @@ function AlertsWorkspace() {
                 {
                   id: "mine",
                   value: yoursCount,
-                  label: "Yours",
+                  // F-09: says what it counts, so it reads beside the title's smaller number.
+                  label: "Assigned to you",
                   pressed: pill === "mine",
                   onPress: () => togglePill("mine"),
                 },
@@ -1307,9 +1303,13 @@ function AlertsWorkspace() {
                 <span className={styles.phoneCardText}>
                   <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{broadcastAcks?.acknowledged}</b> of{" "}
-                    <span className={styles.mono}>{broadcastAcks?.of}</span> answered · ends{" "}
-                    <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
+                    {broadcastAcks ? (
+                      <>
+                        <b className={styles.mono}>{broadcastAcks.acknowledged}</b> of{" "}
+                        <span className={styles.mono}>{broadcastAcks.of}</span> answered ·{" "}
+                      </>
+                    ) : null}
+                    ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
                   </span>
                 </span>
                 <ChevronRight size={16} aria-hidden="true" />
@@ -1408,10 +1408,12 @@ function AlertsWorkspace() {
                     <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
                     <span className={styles.heroBroadcastMeta}>
                       ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
-                      <span className={styles.deskOnly}>
-                        {" "}
-                        · <span className={styles.mono}>{broadcastAcks?.acknowledged}</span> acknowledged
-                      </span>
+                      {broadcastAcks ? (
+                        <span className={styles.deskOnly}>
+                          {" "}
+                          · <span className={styles.mono}>{broadcastAcks.acknowledged}</span> acknowledged
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                 ) : null}
@@ -1643,15 +1645,17 @@ function AlertsWorkspace() {
                               </span>
                             </dd>
                           </div>
-                          <div>
-                            <dt>Acknowledged</dt>
-                            <dd>
-                              <span>
-                                {broadcastAcks?.acknowledged} of {broadcastAcks?.of} units{" "}
-                                {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
-                              </span>
-                            </dd>
-                          </div>
+                          {broadcastAcks ? (
+                            <div>
+                              <dt>Acknowledged</dt>
+                              <dd>
+                                <span>
+                                  {broadcastAcks.acknowledged} of {broadcastAcks.of} units{" "}
+                                  {broadcastKind(activeBroadcast) === "directive" ? "acknowledged" : "answered"}
+                                </span>
+                              </dd>
+                            </div>
+                          ) : null}
                         </dl>
                         {broadcastKind(activeBroadcast) === "bed_call" ? (
                           <ReplyBoardList alert={activeBroadcast} units={units} now={now} />
@@ -1884,6 +1888,7 @@ function AlertsWorkspace() {
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
           <div
             ref={modalRef}
             className={styles.modalOverlay}
@@ -1892,13 +1897,13 @@ function AlertsWorkspace() {
             aria-labelledby="broadcast-title"
             aria-describedby="broadcast-desc"
             tabIndex={-1}
-            onKeyDown={handleModalKeyDown}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 handleCloseBroadcastModal();
               }
             }}
           >
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
             <div className={styles.composer} onClick={(e) => e.stopPropagation()}>
               <div className={styles.drawerHead}>
                 <IconTile icon={Radio} />

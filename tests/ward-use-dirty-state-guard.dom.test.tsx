@@ -298,10 +298,10 @@ describe("useDirtyStateGuard", () => {
     ).toBeUndefined();
   });
 
-  it("intercepts popstate when dirty and restores history URL when user cancels confirm", () => {
+  it("intercepts popstate when dirty and undoes the browser traversal when the user cancels the confirm", () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     const pushStateSpy = vi.spyOn(window.history, "pushState");
-    const guardedHref = window.location.href;
+    const goSpy = vi.spyOn(window.history, "go").mockImplementation(() => undefined);
 
     const { unmount } = renderHook(() =>
       useDirtyStateGuard({
@@ -315,7 +315,9 @@ describe("useDirtyStateGuard", () => {
     window.dispatchEvent(popEvent);
 
     expect(confirmSpy).toHaveBeenCalledWith("Discard unsaved changes?");
-    expect(pushStateSpy).toHaveBeenCalledWith(window.history.state, "", guardedHref);
+    // The traversal is undone, not replaced with a new entry, so forward history survives.
+    expect(goSpy).toHaveBeenCalledWith(1);
+    expect(pushStateSpy).not.toHaveBeenCalled();
     expect(stopImmediateSpy).toHaveBeenCalled();
 
     unmount();

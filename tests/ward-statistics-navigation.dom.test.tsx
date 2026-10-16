@@ -46,6 +46,33 @@ describe("one shared statistics navigation", () => {
     if (suffix.includes("/ward")) expect(current).toHaveAttribute("href", "/mockups/ward-flow/statistics/wards");
   });
 
+  it.each([
+    ["", undefined, "Summary"],
+    ["/teams", undefined, "Teams"],
+    ["/weekly", undefined, "Weekly"],
+    ["/service/North%20Metro", "North Metro", "Services"],
+  ])("shows the same eight phone chips on %s (phone review F-12)", (suffix, slug, label) => {
+    routing.pathname = `/mockups/ward-flow/statistics${suffix}`;
+    render(<StatisticsNav variant="chips" activeSlug={slug} withSamples={false} />);
+    const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
+    const links = nav.getAllByRole("link");
+    expect(links.map((link) => link.textContent?.replace(/\d+$/, ""))).toEqual([
+      "Summary",
+      "Overview",
+      "Compare",
+      "Services",
+      "Wards",
+      "EDs",
+      "Teams",
+      "Weekly",
+    ]);
+    const current = links.filter((link) => link.getAttribute("aria-current") === "page");
+    expect(current).toHaveLength(1);
+    expect(current[0]!.textContent).toMatch(new RegExp(`^${label}`));
+    // One unit's page: its kind's chip is the way back to that kind's index, not an extra chip.
+    expect(nav.queryAllByTestId("ward-statistics-nav-back")).toHaveLength(slug ? 1 : 0);
+  });
+
   it("uses the same destinations from the compact mobile selector", () => {
     routing.pathname = "/mockups/ward-flow/statistics";
     render(<StatisticsNav />);

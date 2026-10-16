@@ -49,9 +49,9 @@ import {
   useIsPhone,
   durMinutes,
 } from "@/components/wf";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
-import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
+import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
   groupedResults,
   hubCounts,
@@ -271,7 +271,9 @@ const HubPlaceRow = memo(function HubPlaceRow({
           ) : (
             <>
               <span className={styles.resultReadyNum}>{entry.ready}</span>
-              <span className={styles.resultReadyWord}>{entry.stale === true ? "to check" : "ready"}</span>
+              {/* Phone review F-24: "0 to check" read as a count of checks; the stale flag beside it
+                  already says the count needs checking. */}
+              <span className={styles.resultReadyWord}>ready</span>
             </>
           )}
         </span>
@@ -294,7 +296,15 @@ const HubPlaceRow = memo(function HubPlaceRow({
 
 export function HubScreen() {
   usePrintableDisclosures();
-  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch, movements } = useWardFlow();
+  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch, movements } = useWardFlowSelect(
+    "units",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "refreshRequests",
+    "dispatch",
+    "movements",
+  );
   const { now, paused, togglePause } = usePageLive();
   const router = useRouter();
   const isPhone = useIsPhone();
@@ -350,9 +360,10 @@ export function HubScreen() {
   // Audit 11 Oct 2026: community teams carry no figures here, so in the All view their section
   // starts folded; the Teams switch still lists them in full.
   const [teamsFoldOpen, setTeamsOpen] = useState(false);
+  const wardNetwork = useWardNetwork();
   const entries = useMemo(
-    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
-    [units, bedReleases, admissions, leaveBeds, now],
+    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: wardNetwork.sites }),
+    [units, bedReleases, admissions, leaveBeds, now, wardNetwork.sites],
   );
   const results = useMemo(() => {
     const base = searchHub(entries, "", kind);
@@ -1022,6 +1033,10 @@ export function HubScreen() {
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
                 ) : null}
+                {/* Phone review F-24: the hero's shorthand, spelled out once where the list starts. */}
+                <p className={styles.phoneKey} data-testid="hub-phone-key">
+                  {`${BED_STATE_LABELS.pulled}: ${BED_STATE_DETAILS.pulled.toLowerCase()}. Stale: the ward has not confirmed its count in time.`}
+                </p>
               </div>
             ) : null}
             {isPhone ? null : (
@@ -1143,7 +1158,7 @@ export function HubScreen() {
                       </h2>
                       {sectionBeds === undefined ? null : (
                         <span className={styles.groupMeta}>
-                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupancy`}
+                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} in use`}
                         </span>
                       )}
                     </div>
@@ -1194,7 +1209,7 @@ export function HubScreen() {
                                 <span className={styles.subGroupMeta}>
                                   {groupBeds.ready} ready
                                   {groupShare === undefined ? null : (
-                                    <span className={styles.subGroupShare}>{groupShare} occupancy</span>
+                                    <span className={styles.subGroupShare}>{groupShare} in use</span>
                                   )}
                                 </span>
                               </button>

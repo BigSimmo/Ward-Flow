@@ -8,6 +8,7 @@
  */
 import { durMinutes } from "@/components/wf";
 import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   formatInstantWithDay,
   MINUTES_PER_DAY,
@@ -189,7 +190,7 @@ export function toHandoverRow(
   return {
     movement,
     id: movement.id,
-    name: identity.displayName,
+    name: identity.formalName,
     umrn: identity.umrn,
     patientId: identity.patient?.id,
     tier: movement.urgency,
@@ -658,7 +659,8 @@ export function toHandoverWard(
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
     held: unitCapacity(unit, bedReleases).held,
-    longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= 7).length,
+    longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)
+      .length,
     pastEdd: here.filter((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now)
       .length,
     outToday: here.filter(
@@ -696,7 +698,7 @@ export function heldDischarges(
       const identity = resolveSubjectPatient(admission, { patients, referrals });
       return {
         admission,
-        name: identity.displayName,
+        name: identity.formalName,
         umrn: identity.umrn,
         ward: byId.get(admission.unitId)!.name,
         days: daysInBed(admission, now),

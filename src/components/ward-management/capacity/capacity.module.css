@@ -517,7 +517,7 @@
   height: var(--wf-h-chip);
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   white-space: nowrap;
@@ -771,7 +771,7 @@
 .screen .filters :global([data-ward-primitive="filters"]) button span {
   min-width: 18px;
   padding: 0 5px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-surface-2);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
@@ -1018,7 +1018,7 @@
   margin-left: var(--wf-s-1);
   padding: 0 6px;
   border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
@@ -1661,4 +1661,26 @@
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
+}
+
+/* Phone review F-25: the key for the mismatch list's dot and the Needs you clock. */
+.phoneDotKey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+  padding-inline: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.phoneDotKey > svg {
+  flex: none;
+}
+
+.phoneStaleIcon {
+  flex: none;
+  color: var(--wf-warning);
 }

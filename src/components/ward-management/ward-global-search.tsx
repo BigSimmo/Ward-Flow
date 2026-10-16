@@ -1,6 +1,6 @@
 "use client";
 
-import { hasOpenSheet, lockPageScroll } from "@/components/ui/sheet-focus";
+import { hasOpenSheet, lockPageScroll } from "@/components/wf/sheet-focus";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,6 +42,7 @@ import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/wa
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
@@ -148,7 +149,7 @@ export type WardGlobalSearchProps = {
   movements: Movement[];
   patients: readonly Patient[];
   /** D-39: a journey linked through a referral needs the referral to find its UMRN. */
-  referrals?: PatientLookup["referrals"];
+  referrals?: Parameters<typeof searchWardFlow>[0]["referrals"];
   units: Unit[];
   /**
    * The one thing that may differ by role — rendered exactly as given, with no interpretation.
@@ -363,16 +364,38 @@ const RECENT_LIMIT = 4;
  * was shown: ids, names and hrefs, none of which is typed text. Ward Flow's rule is that nothing a
  * person types reaches storage, and keeping these off storage keeps that rule without a review.
  */
-let sessionRecents: SearchResultItem[] = [];
+let sessionRecents: readonly SearchResultItem[] = [];
+const NO_RECENTS: readonly SearchResultItem[] = [];
+const recentsListeners = new Set<() => void>();
+
+/** A small store, so the React Compiler sees the list change as an input rather than a module read. */
+function setSessionRecents(next: readonly SearchResultItem[]) {
+  sessionRecents = next;
+  recentsListeners.forEach((listener) => listener());
+}
+
+function subscribeRecents(listener: () => void) {
+  recentsListeners.add(listener);
+  return () => {
+    recentsListeners.delete(listener);
+  };
+}
+
+const recentsSnapshot = () => sessionRecents;
+const serverRecentsSnapshot = () => NO_RECENTS;
+
+function useSessionRecents() {
+  return useSyncExternalStore(subscribeRecents, recentsSnapshot, serverRecentsSnapshot);
+}
 
 function rememberRecent(item: SearchResultItem) {
   if (item.kind === "action") return;
-  sessionRecents = [item, ...sessionRecents.filter((recent) => recent.href !== item.href)].slice(0, RECENT_LIMIT);
+  setSessionRecents([item, ...sessionRecents.filter((recent) => recent.href !== item.href)].slice(0, RECENT_LIMIT));
 }
 
 /** Test seam: recents are module memory, so a suite that asserts the start screen clears them first. */
 export function clearGlobalSearchRecents() {
-  sessionRecents = [];
+  setSessionRecents(NO_RECENTS);
 }
 
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
@@ -589,12 +612,14 @@ export function WardGlobalSearch({
   const id = useId();
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
+  const demoOffId = `${id}-demo-off`;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const nameFor = usePatientNameDisplay();
   const wardFlow = useOptionalWardFlow();
+  const demoOff = wardFlow?.demoControlsAvailable === false;
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -604,7 +629,7 @@ export function WardGlobalSearch({
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [top, setTop] = useState(0);
   const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
-  const [recentsVersion, setRecentsVersion] = useState(0);
+  const recents = useSessionRecents();
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const trimmed = deferredQuery.trim();
@@ -653,7 +678,6 @@ export function WardGlobalSearch({
 
   /** What someone sees before typing: live work, recent records, common screens and actions. */
   const startGroups = useMemo(() => {
-    void recentsVersion;
     const g: SearchResultGroup[] = [];
     const allNeeds = tasks ?? [];
     const needs = allNeeds.slice(0, NEEDS_YOU_LIMIT);
@@ -677,8 +701,8 @@ export function WardGlobalSearch({
         })),
       });
     }
-    if (sessionRecents.length > 0) {
-      g.push({ key: "recent", heading: "Recent", items: sessionRecents });
+    if (recents.length > 0) {
+      g.push({ key: "recent", heading: "Recent", items: [...recents] });
     }
     g.push({
       key: "goto",
@@ -701,7 +725,7 @@ export function WardGlobalSearch({
     });
     g.push({ key: "do", heading: "Do", items: [...START_ACTIONS] });
     return g;
-  }, [tasks, recentsVersion, lookup, nameFor]);
+  }, [tasks, recents, lookup, nameFor]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -888,7 +912,6 @@ export function WardGlobalSearch({
     const item = options.find((option) => option.href === href);
     if (item) {
       rememberRecent(item);
-      setRecentsVersion((version) => version + 1);
     }
   }
 
@@ -942,7 +965,6 @@ export function WardGlobalSearch({
     }
     if (previewItem) {
       rememberRecent(previewItem);
-      setRecentsVersion((version) => version + 1);
     }
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -1023,6 +1045,7 @@ export function WardGlobalSearch({
         data-testid="ward-global-search-scrim"
         onMouseDown={() => close()}
       />
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div
         ref={paletteRef}
         className={styles.popup}
@@ -1214,11 +1237,17 @@ export function WardGlobalSearch({
                 <span className={styles.group} data-testid="ward-global-search-group-commands">
                   <span>Quick commands</span>
                 </span>
+                {demoOff ? (
+                  <p id={demoOffId} className={styles.commandNote} data-testid="ward-global-search-demo-off">
+                    {DEMO_CONTROLS_OFF}
+                  </p>
+                ) : null}
                 <div className={styles.commandList}>
                   <button
                     type="button"
                     className={styles.commandBtn}
-                    disabled={!resultsCurrent}
+                    disabled={!resultsCurrent || demoOff}
+                    aria-describedby={demoOff ? demoOffId : undefined}
                     data-testid="ward-global-search-cmd-advance-clock"
                     onClick={() => {
                       if (wardFlow) {
@@ -1373,6 +1402,7 @@ export function WardGlobalSearch({
                 movements={movements}
                 units={units}
                 now={now}
+                dayZero={wardFlow?.dayZero}
                 onOpen={onPreviewOpen}
               />
             </div>
@@ -1447,6 +1477,8 @@ export function WardGlobalSearch({
           className={styles.input}
           type="text"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
           enterKeyHint="search"
           spellCheck={false}
           aria-haspopup="listbox"

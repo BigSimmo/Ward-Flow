@@ -2,7 +2,6 @@
 
 import { isTierOverdue } from "../ward-shared-figures";
 import { scrollWardPageToTop, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useWardPageScrollLock } from "@/components/ward-management/ward-modal-focus";
 import Link from "next/link";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
@@ -26,7 +25,11 @@ import { PatientFlightHeader, PatientRecordTabsRow } from "./patient-flight-head
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
@@ -57,7 +60,13 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
-import { PatientTransitOperations } from "./patient-transit-operations";
+import dynamic from "next/dynamic";
+import { preloadWhenIdle } from "../preload-when-idle";
+// F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
+// fetched once the page is idle, rather than with the patient page.
+const loadTransitOperations = () => import("./patient-transit-operations");
+const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
+preloadWhenIdle(loadTransitOperations);
 import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
@@ -68,6 +77,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   TRANSPORT_EXCEPTION_REASON_LABELS,
   holdEndsBeforeEta,
+  instantFromEtaText,
   legalNowText,
   legalNowTransportStatus,
   transportExceptionText,
@@ -94,6 +104,7 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, etaPresetText, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   Badge,
   Button,
@@ -106,10 +117,12 @@ import {
   StatusGlyph,
   buttonClass,
   useIsPhone,
+  useModalFocus,
 } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
+import { movementHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -145,51 +158,6 @@ function getStageBedflowDetail(stageId: string, liveMovement?: Movement): StageP
       detail: `Recorded by ${change.by}${change.reason ? `: ${change.reason}` : ""}.`,
     })),
   };
-}
-
-/**
- * Turns a typed `HH:MM` time string into minutes from midnight (0–1439).
- * Same HH:MM parser the ED booking popup uses — local copy matching ed-screen.tsx.
- * Refuses rather than guesses: returns undefined if blank, malformed, or out of range.
- */
-function minutesFromTimeInput(value: string): number | undefined {
-  const clean = value.replace(/\s*AWST\s*/i, "").trim();
-  const parts = clean.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (!rawHours || !rawMinutes) return undefined;
-  if (rawHours.length < 1 || rawHours.length > 2 || rawMinutes.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
-function instantFromEstimatedTimeInputs(timeValue: string, day: "today" | "tomorrow", now: number): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function parseEtaToInstant(value: string, now: number): number | undefined {
-  const clean = value.trim();
-  if (!clean) return undefined;
-
-  // Relative minutes: "~45m", "45m", "~30", "+45", "45 min", "45"
-  const relMatch = clean.match(/^[~+]?\s*(\d+)\s*(?:m|min|mins|minutes)?$/i);
-  if (relMatch && !clean.includes(":")) {
-    const mins = Number(relMatch[1]);
-    if (Number.isFinite(mins) && mins >= 0) {
-      return now + mins;
-    }
-  }
-
-  // HH:MM clock time matching ed-screen.tsx instantFromEstimatedTimeInputs
-  const isTomorrow = /tomorrow/i.test(clean);
-  const cleanTime = clean.replace(/\s*tomorrow\s*/i, "").trim();
-  return instantFromEstimatedTimeInputs(cleanTime, isTomorrow ? "tomorrow" : "today", now);
 }
 
 function formatTransportLegalStatus(status?: string): string {
@@ -237,8 +205,22 @@ export function PatientNowScreen({
   initialExampleId = "WF-009",
   initialTaskAction,
 }: PatientNowScreenProps) {
-  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
+    useWardFlowSelect(
+      "patients",
+      "movements",
+      "referrals",
+      "admissions",
+      "units",
+      "leaveBeds",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
   const now = useWardFlowClock();
+  // Top 25 item 24: time away and the held bed review warning on the absent without leave card.
+  const awolTracker = useWardFeatureFlag("top25-awol-tracker");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
@@ -293,13 +275,15 @@ export function PatientNowScreen({
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
-  useWardPageScrollLock(showClearanceModal);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
   const [clearanceAttested, setClearanceAttested] = useState(false);
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
+  // The saved ETA the form was refilled with. While the box still holds that exact text, the saved
+  // instant is kept as it is, so reopening and saving never moves an ETA from another day.
+  const [transportEtaRefill, setTransportEtaRefill] = useState<{ text: string; at: number } | undefined>();
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
   // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
   // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
@@ -314,44 +298,18 @@ export function PatientNowScreen({
 
   const closeClearanceModal = useCallback(() => {
     setShowClearanceModal(false);
-    clearanceTriggerRef.current?.focus();
   }, [setShowClearanceModal]);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (!showClearanceModal) return;
-      if (event.key === "Escape") {
-        closeClearanceModal();
-        return;
-      }
-      if (event.key === "Tab" && clearanceModalRef.current) {
-        const focusable = clearanceModalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
-          last.focus();
-          event.preventDefault();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          first.focus();
-          event.preventDefault();
-        }
-      }
-    }
-    if (showClearanceModal) {
-      window.addEventListener("keydown", handleKeyDown);
-      queueMicrotask(() => {
-        const first = clearanceModalRef.current?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        first?.focus();
-      });
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showClearanceModal, closeClearanceModal]);
+  // The shared modal contract: the page behind is inert and held still, focus starts on the first
+  // control, Tab wraps inside the box, Escape closes only this top layer, and focus returns to the
+  // button that opened it.
+  const { rootRef: clearanceBackdropRef } = useModalFocus({
+    open: showClearanceModal,
+    onClose: closeClearanceModal,
+    panelRef: clearanceModalRef,
+    returnFocusRef: clearanceTriggerRef,
+    focusOnOpen: "immediate",
+  });
 
   // Synchronize document title
   useEffect(() => {
@@ -502,7 +460,7 @@ export function PatientNowScreen({
   const displayCadNumber = liveMovement?.transport?.cadNumber;
   const displayEta =
     liveMovement?.transport?.estimatedAt !== undefined
-      ? `${clock(liveMovement.transport.estimatedAt)} AWST`
+      ? `${formatInstantWithDay(liveMovement.transport.estimatedAt, now)} AWST`
       : undefined;
   const displayProvider = liveMovement?.transport?.provider ?? "Not recorded";
   const displayLegalStatus = liveMovement?.transport?.transportLegalStatus
@@ -519,15 +477,22 @@ export function PatientNowScreen({
   const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
   const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
   const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
-  const draftEtaAt = parseEtaToInstant(transportEtaDraft.trim(), now);
+  const etaFromDraft = (text: string) =>
+    transportEtaRefill !== undefined && text === transportEtaRefill.text
+      ? transportEtaRefill.at
+      : instantFromEtaText(text, now);
+  const draftEtaAt = etaFromDraft(transportEtaDraft.trim());
   // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
   const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
 
   function openTransportForm() {
     setTransportCadDraft(displayCadNumber ?? "");
-    setTransportEtaDraft(
-      liveMovement?.transport?.estimatedAt !== undefined ? clock(liveMovement.transport.estimatedAt) : "",
-    );
+    const savedEta = liveMovement?.transport?.estimatedAt;
+    // A saved ETA on another day keeps its day word ("tomorrow"), so the box reads back as the
+    // same instant and the bed hold warning still fires.
+    const refillText = savedEta === undefined ? "" : formatInstantWithDay(savedEta, now);
+    setTransportEtaDraft(refillText);
+    setTransportEtaRefill(savedEta === undefined ? undefined : { text: refillText, at: savedEta });
     setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
     setTransportLegalChanging(false);
     setTransportLegalReason("");
@@ -539,7 +504,7 @@ export function PatientNowScreen({
     e.preventDefault();
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
-    const estimatedAt = parseEtaToInstant(cleanEta, now);
+    const estimatedAt = etaFromDraft(cleanEta);
     const errors: { cad?: string; eta?: string; legal?: string } = {};
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
@@ -675,9 +640,9 @@ export function PatientNowScreen({
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
   // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
-  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now);
+  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now, thresholds);
   const movementTimeLeft =
-    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now) : undefined;
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds) : undefined;
   // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
   const formMovementNext = formProgression(formMovement);
   const phoneLegal = ctoInForce
@@ -841,6 +806,7 @@ export function PatientNowScreen({
 
   const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
+    awolTracker,
     movement: liveMovement,
     admission: resolved.liveAdmission,
     patient: livePatient,
@@ -858,9 +824,7 @@ export function PatientNowScreen({
         }
       : undefined,
     transportHref:
-      liveMovement && !pathname.includes(`/movements/${encodeURIComponent(liveMovement.id)}`)
-        ? `/mockups/ward-flow/movements/${encodeURIComponent(liveMovement.id)}`
-        : undefined,
+      liveMovement && !pathname.includes(movementHref(liveMovement.id)) ? movementHref(liveMovement.id) : undefined,
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1374,7 +1338,10 @@ export function PatientNowScreen({
                 {hasArrivalPlan ? (
                   <span className={styles.pulledClockBadge}>
                     <Clock size={14} aria-hidden="true" />
-                    <span>ETA: {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120)} AWST</span>
+                    <span>
+                      ETA: {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120, now)}{" "}
+                      AWST
+                    </span>
                   </span>
                 ) : pullExpiresAt !== undefined ? (
                   <span
@@ -1402,7 +1369,8 @@ export function PatientNowScreen({
                   />
                   <div>
                     <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
-                    estimated arrival time ({clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST).
+                    estimated arrival time (
+                    {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now, now)} AWST).
                     Notification is not recorded here.
                   </div>
                 </div>
@@ -1512,11 +1480,7 @@ export function PatientNowScreen({
         barMain:
           isPhone && (mode === "idle" || mode === "cto") ? (
             <Link
-              href={
-                livePatient
-                  ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
-                  : "/mockups/ward-flow/referrals/new"
-              }
+              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/mockups/ward-flow/referrals/new"}
               className={buttonClass({ variant: "pri" })}
               data-testid="ward-person-refer-outpatient"
             >
@@ -1727,6 +1691,7 @@ export function PatientNowScreen({
 
   /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
   const recordTabs = (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
       {(isPhone ? phoneTabs : tabs).map((tab) => (
         <button
@@ -1787,8 +1752,13 @@ export function PatientNowScreen({
             }
             phoneEyebrow={
               phoneMovement ? (
-                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling on one line.
-                `Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
+                // A3-20: the phone hero keeps the desktop's tier, bed type and specialling. F-05 (phone
+                // review, Oct 2026): the observation level is its own chip, and the line may wrap to a
+                // second line rather than cut it off.
+                <span className={styles.phMoveEyebrow}>
+                  {`Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}`}
+                  {liveMovement?.specialling ? <span className={styles.phObsChip}>1:1 specialling</span> : null}
+                </span>
               ) : (
                 <span className={styles.phEyebrow}>
                   <StatusGlyph tone={modeMeta.tone} size={10} />
@@ -2172,7 +2142,7 @@ export function PatientNowScreen({
                   <Link
                     href={
                       livePatient
-                        ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                        ? raiseReferralHref({ patientId: livePatient.id })
                         : "/mockups/ward-flow/referrals/new"
                     }
                     className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}
@@ -2229,7 +2199,7 @@ export function PatientNowScreen({
         {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
 
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
-          <div className={styles.v6TabBody} id="pnBody" tabIndex={0}>
+          <div className={styles.v6TabBody} id="pnBody">
             {/* Tab 1: NOW. Only what is true at this moment: the status card, the work for this mode,
                 then why they are here, legal now and who to call. */}
             <div
@@ -2369,7 +2339,9 @@ export function PatientNowScreen({
       </div>
 
       {showClearanceModal && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
         <div
+          ref={clearanceBackdropRef}
           className={styles.clearanceModalBackdrop}
           role="dialog"
           aria-modal="true"

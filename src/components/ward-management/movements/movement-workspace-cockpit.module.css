@@ -259,7 +259,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 2px var(--space-2, 0.5rem);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--ward-blue-soft, var(--surface-subtle));
   color: var(--ward-blue, var(--clinical-accent));
 }
@@ -465,7 +465,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 1px var(--space-2, 0.5rem);
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--surface, var(--surface-raised));
   border: 1px solid var(--ward-border, var(--border));
   color: var(--ward-text, var(--text));
@@ -847,6 +847,15 @@
 /* Greyed for a role that cannot act (its reason shows beside it): by colour, never opacity. */
 .controlButton[disabled],
 .controlButton[aria-disabled="true"] {
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-dim);
+  cursor: not-allowed;
+}
+
+/* Workflow actions that are unavailable stay focusable (so the reason can be reached) and read as
+   unavailable by colour, never opacity, matching the greyed control buttons above. */
+.panelCardBody button[aria-disabled="true"] {
   border-color: var(--wf-line);
   background: var(--wf-surface-2);
   color: var(--wf-dim);

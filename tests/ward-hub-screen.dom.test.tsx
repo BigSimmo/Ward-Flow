@@ -54,7 +54,7 @@ vi.mock("next/navigation", () => ({
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { NOW_ANCHOR, allUnits, edById, siteByCode, unitById } from "@/components/ward-management/ward-sites";
+import { allUnits, edById, NOW_ANCHOR, unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { MINUTES_PER_DAY, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 // The hub lists the real WA teams since 2026-09-18 (owner ruling Q-5); the ten region
 // placeholders it used to show are retired. Pick a real one to assert against.
@@ -90,7 +90,7 @@ const SJGS_ADULT_SECURE = unitById("sjgs-adult-secure");
  *  network asymmetry the mockup's footer calls out by name. This is a REPORTED absence, not a
  *  missing figure, so the screen must say so in words rather than print a bare "0". */
 const JOONDALUP_ED = edById("jhc-ed");
-const JOONDALUP_SITE = siteByCode("JHC");
+const JOONDALUP_SITE = wardSites.find((site) => site.code === "JHC");
 
 /** v6: the category filter is a segmented radio group ("All 96", "Wards 22", …). */
 const CATEGORY_LABEL: Record<string, RegExp> = {
@@ -764,7 +764,7 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
       "the hub is asserting that invented figures reconcile, over a check array that does not exist",
     ).not.toBeInTheDocument();
     // v6: the hero's Live chip is the one "Live" on the page; nothing else may claim live figures.
-    const liveChip = screen.getByRole("button", { name: "Pause demo updates" }).parentElement;
+    const liveChip = screen.getByRole("button", { name: /pause demo updates$/ }).parentElement;
     const outsideChip = (document.body.textContent ?? "").replace(liveChip?.textContent ?? "", "");
     expect(outsideChip).not.toMatch(/Live/);
   });
@@ -800,7 +800,7 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
 describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and community never does", () => {
   // The same source `hubEntries()` itself reads (`allUnits()`, `bedReleases: []`) — never a second,
   // hand-typed list of ward/ED/community names that could drift from the real fixture.
-  const ALL_ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR });
+  const ALL_ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites });
   const WARD_ENTRIES = ALL_ENTRIES.filter((entry) => entry.kind === "ward");
   const ED_ENTRIES = ALL_ENTRIES.filter((entry) => entry.kind === "ed");
   const COMMUNITY_ENTRIES = ALL_ENTRIES.filter((entry) => entry.kind === "community");

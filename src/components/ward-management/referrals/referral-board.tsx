@@ -28,8 +28,8 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { hasOpenSheet } from "@/components/ward-management/ward-modal-focus";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -91,6 +91,7 @@ import {
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
@@ -129,6 +130,18 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
+
+/** The tier due times' status, read from the clinical values file so it changes when they are signed. */
+const DUE_TIMES_NOTE = allClinicalValuesSigned([
+  "tierOneOverdue",
+  "tierTwoOverdue",
+  "tierThreeOverdue",
+  "anyTierOverdue",
+])
+  ? "Due times are prototype defaults, signed for the prototype."
+  : "Due times are prototype defaults, pending clinical sign-off.";
 
 /**
  * Bed board decision 9A (Josh, 26 September 2026): the waiting list flags a queued referral whose
@@ -492,7 +505,8 @@ function subscribeToLocation(listener: () => void) {
   return () => window.removeEventListener("popstate", listener);
 }
 function readLinkedReferralId(): string | null {
-  return new URLSearchParams(window.location.search).get("referral");
+  // D-39: the link carries an address code; an old link may still carry the raw id.
+  return recordIdFromParam(new URLSearchParams(window.location.search).get("referral"));
 }
 
 /**
@@ -512,7 +526,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     admissions = [],
     bedReleases = [],
     leaveBeds = [],
-  } = useWardFlow();
+  } = useWardFlowSelect(
+    "referrals",
+    "units",
+    "dispatch",
+    "rejections",
+    "movements",
+    "patients",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+  );
   const now = useWardFlowClock();
   const queued = referralQueueOrder(referrals);
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first
@@ -883,7 +907,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               open={phoneSheet !== null}
               onClose={() => setPhoneSheet(null)}
               title={phoneSheet === "beds" ? "Beds ready statewide" : "Waiting time against due times"}
-              description="Due times are prototype defaults, pending clinical sign-off."
+              description={DUE_TIMES_NOTE}
             >
               <div className={p.sheetHero}>
                 {phoneSheet === "axis" ? (
@@ -1136,7 +1160,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <div className={a.panelWho}>
                       <h2 className={a.panelName}>
                         {selectedPatientInfo.displayName}
-                        <span className="sr-only"> {selectedReferral.id}</span>
+                        <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
                       <p className={a.panelMeta}>
                         {umrnCopyable ? (
@@ -1196,7 +1220,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         <>
                           {linkedMovement ? (
                             <Link
-                              href={`/mockups/ward-flow/movements/${encodeURIComponent(linkedMovement.id)}`}
+                              href={movementHref(linkedMovement.id)}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                               data-testid="ward-referral-open-movement"
                             >
@@ -1214,7 +1238,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                           )}
                           {selectedReferral.patientId && !isPhone ? (
                             <Link
-                              href={`/mockups/ward-flow/people/${encodeURIComponent(selectedReferral.patientId)}`}
+                              href={patientHref(selectedReferral.patientId)}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                               data-testid="ward-referral-open-patient"
                             >
@@ -1617,7 +1641,7 @@ function QueuedSection({
                             onSelect(referral.id);
                           }}
                         >
-                          {nameFor(patientInfo.displayName, patientInfo.umrn)}
+                          {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
                           <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
@@ -1760,7 +1784,7 @@ function QueuedSection({
                     </span>
                     <span className={a.cardMain}>
                       <span className={a.cardName}>
-                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                         <ReadmissionFlag
                           flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
@@ -1910,13 +1934,13 @@ function DecidedSection({
                         aria-pressed={referral.id === selectedId}
                         onClick={() => onSelect(referral.id)}
                       >
-                        {referral.id}
+                        {patientInfo.umrn}
                       </button>
                     </td>
                     <td>
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong>
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1965,7 +1989,7 @@ function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral)}, </span>
-                        <strong>{nameFor(patientInfo.displayName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
                         <span
                           className={styles.v6RowOutcome}
                           data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}

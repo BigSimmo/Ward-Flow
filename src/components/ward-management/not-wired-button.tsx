@@ -7,7 +7,7 @@ import { announceToWardShell } from "./shell/ward-live-region";
 import styles from "./not-wired-button.module.css";
 
 /** D4 wording, shared with the shell's primary action (`shell/ward-bar.tsx`, D-16). */
-export const NOT_WIRED_NOTE = "Not wired in this prototype.";
+const NOT_WIRED_NOTE = "Not wired in this prototype.";
 
 type NotWiredButtonProps = Omit<ComponentPropsWithRef<"button">, "children" | "onClick"> & {
   variant?: ButtonVariant;
@@ -70,6 +70,7 @@ export function NotWiredButton({
   };
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
     <span
       ref={wrapRef}
       className={wrapClassName ? `${styles.wrap} ${wrapClassName}` : styles.wrap}

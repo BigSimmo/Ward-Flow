@@ -7,6 +7,7 @@ import {
   type HealthService,
   type LegalStatus,
   type Movement,
+  type MovementStage,
 } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 
@@ -84,6 +85,21 @@ export function isDetainedUnderTheAct(legalStatus: LegalStatus): boolean {
 
 /** Elapsed minutes since a movement opened, clamped at zero — a movement authored with a future
  *  `openedAt` must never surface as a negative wait. Mirrors `edPressure`'s own clamp exactly. */
+/** Each journey stage in the words an ED board uses. Shared by the ED index and the ED TV view. */
+export const ED_STAGE_LABELS: Record<MovementStage, string> = {
+  placement_requested: "No bed yet",
+  destination_review: "Finding a ward",
+  accepted_awaiting_bed: "Bed accepted",
+  pulled: "Bed pulled",
+  handover_ready: "Handover ready",
+  moving: "In transit",
+  arrived: "Arrived",
+};
+/** A bed is accepted or pulled for them. */
+export const ED_HELD_STAGES: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled"];
+/** On their way out of the department. */
+export const ED_LEAVING_STAGES: readonly MovementStage[] = ["handover_ready", "moving"];
+
 export function elapsedOpenMinutes(movement: Pick<Movement, "openedAt">, now: Instant): number {
   return Math.max(0, minutesUntil(now, movement.openedAt));
 }

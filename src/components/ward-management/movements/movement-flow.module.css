@@ -59,7 +59,7 @@
   height: var(--wf-h-md);
   padding: 0 var(--wf-s-3) 0 var(--wf-s-2);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
@@ -120,7 +120,7 @@
   gap: 2px;
   min-width: 0;
   padding: 3px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-track);
   background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
   overflow-x: auto;
   scrollbar-width: none;
@@ -134,7 +134,7 @@
   height: calc(var(--wf-h-sm) - 2px);
   padding: 0 var(--wf-s-3);
   border: 0;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: transparent;
   color: var(--wf-hero-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
@@ -154,7 +154,7 @@
 .stageCount {
   min-width: 1.25rem;
   padding: 1px 6px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   text-align: center;
@@ -173,7 +173,7 @@
 .queueCount {
   min-width: 1.25rem;
   padding: 1px 6px;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
@@ -335,7 +335,7 @@
 }
 
 .search :global(input) {
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
 }
 
 .highlightNote {
@@ -346,7 +346,7 @@
   height: var(--wf-h-sm);
   padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-3);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-accent-tint);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -701,6 +701,20 @@
     scrollbar-width: none;
   }
 
+  /* F-20: on the phone the hero aside holds only the Live chip (the jump buttons are desk only), so
+     it does not scroll. As a scroller its chip's screen-reader line made it a region a keyboard
+     could not reach (axe scrollable-region-focusable). */
+  .heroAside {
+    overflow: visible;
+  }
+
+  /* F-08 (phone review, Oct 2026): on phone the aside holds only the Demo pill. It must not be the
+     pill's containing block, or the scroller clips it; the shared hero then puts it on the eyebrow
+     line as on every other page. */
+  .heroAside:not(:has(> :not([data-wf-live]))) {
+    position: static;
+  }
+
   .jump {
     flex: none;
     max-width: 15rem;
@@ -921,7 +935,7 @@
 
   .heroTools > :last-child {
     min-height: var(--ward-tap, 3rem);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   /* Stage chips on the canvas: white pills, number first, scrolling sideways. */
@@ -943,7 +957,7 @@
     min-height: var(--ward-tap, 3rem);
     padding: 0 var(--wf-s-4);
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
     font: 500 var(--wf-fs-13) / 1 var(--wf-font);
@@ -1088,7 +1102,7 @@
     width: 100%;
     min-height: var(--ward-tap, 3rem);
     margin-top: var(--wf-s-4);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   /* Worklist rows: tier | name, route, barrier | wait. UMRN, the transport and legal lines, the
@@ -1199,11 +1213,13 @@
 }
 
 .phGroupTitleText {
+  display: -webkit-box;
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .phGroupChevron {

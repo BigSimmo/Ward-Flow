@@ -9,7 +9,7 @@ import { formatInstant, formatInstantWithDay } from "../ward-clock";
 import { wardChromeRole } from "../ward-chrome-role";
 import type { WardFlowRole } from "../ward-flow-events";
 import { canDispatch } from "../ward-role-permissions";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import {
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
   SUPPORT_NOTIFICATION_PARTIES,
@@ -73,7 +73,15 @@ export function SupportNotificationChecklist({
   const routeRole = wardChromeRole(usePathname() ?? "");
   const role = roleOverride ?? routeRole;
   const canRecord = canDispatch(role, "RECORD_SUPPORT_NOTIFICATION");
-  const { movements, admissions, patients, referrals, supportNotifications, dispatch, rejections } = useWardFlow();
+  const { movements, admissions, patients, referrals, supportNotifications, dispatch, rejections } = useWardFlowSelect(
+    "movements",
+    "admissions",
+    "patients",
+    "referrals",
+    "supportNotifications",
+    "dispatch",
+    "rejections",
+  );
   const now = useWardFlowClock();
   const headingId = useId();
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
@@ -129,7 +137,7 @@ export function SupportNotificationChecklist({
     if (!subject) return;
     const contactedAt = clockTextOnDay(time, Number(day), now);
     if (outcome === "told" && contactedAt === null) {
-      setTimeError("Enter the time as HH:MM, for example 14:05");
+      setTimeError("Enter the time as HH:MM, for example 14:05 or 1405");
       return;
     }
     if (outcome === "told" && contactedAt !== null && contactedAt > now) {

@@ -23,14 +23,14 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
-import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
-import { PhoneBody, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
+import { PhoneBody, PhoneDotKey, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 
@@ -74,7 +74,7 @@ export function StatisticsServicesIndexScreen() {
   const isPhone = useIsPhone();
 
   const services = HEALTH_SERVICES.map((service) => {
-    const siteCodes = new Set(wardSites.filter((site) => site.service === service).map((site) => site.code));
+    const siteCodes = new Set(siteDirectory.filter((site) => site.service === service).map((site) => site.code));
     const serviceUnits = units.filter((unit) => siteCodes.has(unit.siteCode));
     const rows = serviceUnits.map((unit) => {
       const states = bedStates(unit, admissions, bedReleases, leaveBeds);
@@ -209,7 +209,7 @@ export function StatisticsServicesIndexScreen() {
                 value={
                   <span className={phone.flagged}>
                     {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {entry.departments === 0 ? "No ED" : entry.waiting}
+                    {entry.departments === 0 ? <span className={phone.word}>No ED</span> : entry.waiting}
                   </span>
                 }
                 time={entry.departments === 0 ? undefined : "in ED"}
@@ -217,6 +217,9 @@ export function StatisticsServicesIndexScreen() {
               />
             ))}
           </PhoneList>
+          <PhoneDotKey testId="ward-statistics-services-dot-key">
+            {`Amber dot: someone has waited in ED past ${LONG_WAIT_HOURS} hours`}
+          </PhoneDotKey>
           <PhoneSheetRow
             icon={Send}
             title="Where referrals were accepted"

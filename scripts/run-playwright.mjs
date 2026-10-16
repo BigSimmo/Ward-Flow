@@ -24,6 +24,7 @@ import { runOwnedChild } from "./owned-child.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 import { journeyRunVerdict, requestedProjects } from "./ward-flow/journey-run-verdict.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
+import { wardFlowLogsRoot } from "./ward-flow/logs-root.mjs";
 import {
   appName,
   circularProjectPortRange,
@@ -109,8 +110,16 @@ const mockupProjectRequested =
       argument === "--project=chromium-mockups" ||
       argument === "--project=firefox-ward-responsive" ||
       argument === "--project=webkit-ward-responsive" ||
+      argument === "--project=release-gate-desktop" ||
+      argument === "--project=release-gate-phone" ||
       (argument === "--project" &&
-        ["chromium-mockups", "firefox-ward-responsive", "webkit-ward-responsive"].includes(playwrightArgs[index + 1])),
+        [
+          "chromium-mockups",
+          "firefox-ward-responsive",
+          "webkit-ward-responsive",
+          "release-gate-desktop",
+          "release-gate-phone",
+        ].includes(playwrightArgs[index + 1])),
   );
 // Fail loud on missing browser binaries before the heavy lock or production build.
 // Otherwise launch failures surface as "N failed" product tests and are easy to misread
@@ -826,7 +835,7 @@ try {
         const kept = keepJourneyFailures({
           projectRoot,
           shardCount,
-          logsRoot: process.env.WARD_FLOW_LOGS ?? "D:/Repos/ward-flow-logs",
+          logsRoot: wardFlowLogsRoot(),
         });
         if (kept) console.log(`Kept the shards' failure artefacts in ${kept}`);
       } catch (error) {

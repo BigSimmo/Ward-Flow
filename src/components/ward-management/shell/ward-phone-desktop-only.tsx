@@ -6,8 +6,12 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass, Button } from "@/components/wf";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WARD_HOME_HREF, resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  WARD_BED_MEETING_TV_HREF,
+  WARD_HOME_HREF,
+  resolveWardScreenTitle,
+} from "@/components/ward-management/ward-nav";
 import styles from "./ward-phone-desktop-only.module.css";
 
 /**
@@ -18,7 +22,10 @@ import styles from "./ward-phone-desktop-only.module.css";
  * gated (`tests/ui-ward-statistics-journey.spec.ts`). Hidden above 48rem, so desktop and tablet
  * never see it; Show anyway still opens the page.
  */
-const DESKTOP_ONLY_PREFIXES: readonly string[] = [];
+const DESKTOP_ONLY_PREFIXES: readonly string[] = [
+  // The bed meeting TV view (15 Oct 2026) is a meeting room screen, and is left out of the phone menu.
+  WARD_BED_MEETING_TV_HREF,
+];
 
 export function isPhoneDesktopOnlyPath(pathname: string): boolean {
   return DESKTOP_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -26,7 +33,7 @@ export function isPhoneDesktopOnlyPath(pathname: string): boolean {
 
 export function WardPhoneDesktopOnly() {
   const pathname = usePathname() ?? "";
-  const { units } = useWardFlow();
+  const { units } = useWardFlowSelect("units");
   const [shownPath, setShownPath] = useState<string | null>(null);
   if (!isPhoneDesktopOnlyPath(pathname) || shownPath === pathname) return null;
   const title = resolveWardScreenTitle(pathname, units);

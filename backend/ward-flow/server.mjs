@@ -1,9 +1,10 @@
+// @ts-check
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { readConfig } from "./config.mjs";
-import { VerifierUnavailableError } from "./auth.mjs";
+import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { createBackend } from "./providers.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { errorFields } from "./push.mjs";
@@ -46,20 +47,23 @@ export function createHandler({
         authenticate,
         readBody,
         verifierUnavailable: VerifierUnavailableError,
+        verifierRateLimited: VerifierRateLimitedError,
+        log,
       })
     : null;
-  return async (request) => {
+  /** `meta.clientAddress` comes from `listen()`; it keys the sign-in check limit. */
+  return async (request, meta = {}) => {
     const path = new URL(request.url).pathname;
-    if (path.startsWith("/v1/workspace"))
-      return sharedHandler
-        ? sharedHandler(request)
-        : Response.json(
-            { error: "Shared workspace is not configured" },
-            { status: 503, headers: { "cache-control": "no-store" } },
-          );
+    if (path.startsWith("/v1/workspace") && sharedHandler) return sharedHandler(request, meta);
     const requestId = randomUUID();
     const startedAt = performance.now();
-    const route = path === "/readyz" ? "readiness" : path === "/healthz" ? "liveness" : "unknown";
+    const route = path.startsWith("/v1/workspace")
+      ? "workspace"
+      : path === "/readyz"
+        ? "readiness"
+        : path === "/healthz"
+          ? "liveness"
+          : "unknown";
     const origin = request.headers.get("origin");
     const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff", "x-request-id": requestId };
     const respond = (status, value, outcome = "completed", extraHeaders = {}) => {
@@ -70,7 +74,7 @@ export function createHandler({
           event: "ward_backend_request",
           requestId,
           route,
-          method: ["GET", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
+          method: ["GET", "POST", "OPTIONS"].includes(request.method) ? request.method : "OTHER",
           status,
           outcome,
           durationMs: Math.round(performance.now() - startedAt),
@@ -80,7 +84,7 @@ export function createHandler({
       }
       return status === 204
         ? new Response(null, { status, headers: { ...headers, ...extraHeaders } })
-        : Response.json(value, { status, headers });
+        : Response.json(value, { status, headers: { ...headers, ...extraHeaders } });
     };
     if (origin && origin !== config.origin) return respond(403, { error: "Origin not allowed" }, "origin_denied");
     if (origin) {
@@ -88,6 +92,8 @@ export function createHandler({
       headers["access-control-expose-headers"] = "X-Request-ID";
       headers.vary = "Origin";
     }
+    // Shared routes with the shared workspace switched off: still logged, with a request ID.
+    if (route === "workspace") return respond(503, { error: "Shared workspace is not configured" }, "not_configured");
     if (path === "/healthz" && request.method === "GET") return respond(200, { service: "ward-flow-backend" });
     if (path !== "/readyz") return respond(404, { error: "Not found" });
     if (request.method === "OPTIONS" && origin)
@@ -97,8 +103,12 @@ export function createHandler({
         "access-control-max-age": "600",
       });
     try {
-      await authenticate(request.headers.get("authorization"));
+      await authenticate(request.headers.get("authorization"), { clientAddress: meta.clientAddress });
     } catch (error) {
+      if (error instanceof VerifierRateLimitedError)
+        return respond(429, { error: "Too many sign-in checks; try again shortly" }, "rate_limited", {
+          "retry-after": "60",
+        });
       if (error instanceof VerifierUnavailableError)
         return respond(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable");
       return respond(401, { error: "Sign in with the authorised account" }, "auth_denied");
@@ -113,31 +123,62 @@ export function createHandler({
   };
 }
 
+/**
+ * The address sign-in checks are limited by. Proxy headers are read only when the socket peer is a
+ * listed trusted proxy, or "*" is listed for a host such as Railway that is reachable only through
+ * its proxy. Then X-Real-IP (the single client address Railway sets) is used, else the last
+ * X-Forwarded-For entry (the one a proxy appends). Otherwise the socket's own address, so a direct
+ * client cannot choose its limit address.
+ */
+export function clientAddress(incoming, trustedProxyAddresses = []) {
+  const socketAddress = (incoming.socket?.remoteAddress || "unknown").replace(/^::ffff:/i, "");
+  if (!trustedProxyAddresses.includes("*") && !trustedProxyAddresses.includes(socketAddress))
+    return socketAddress.slice(0, 64);
+  const realIp = incoming.headers["x-real-ip"];
+  const forwarded = incoming.headers["x-forwarded-for"];
+  const last = typeof forwarded === "string" ? (forwarded.split(",").at(-1)?.trim() ?? "") : "";
+  return ((typeof realIp === "string" && realIp.trim()) || last || socketAddress).slice(0, 64);
+}
+
+/**
+ * Up to 256 open connections. A client must finish its headers within 5 seconds and its whole
+ * request within 15, so a handful of slow or idle connections cannot hold every slot.
+ */
+export const MAX_CONNECTIONS = 256;
+export const HEADERS_TIMEOUT_MS = 5_000;
+
 export function listen(handler, config) {
   const server = createServer(
-    { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: 10_000 },
+    { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: HEADERS_TIMEOUT_MS },
     async (incoming, outgoing) => {
       try {
         const request = new Request(`http://backend${incoming.url}`, {
           method: incoming.method,
-          headers: incoming.headers,
-          ...(["GET", "HEAD"].includes(incoming.method) ? {} : { body: Readable.toWeb(incoming), duplex: "half" }),
+          headers: /** @type {HeadersInit} */ (/** @type {unknown} */ (incoming.headers)),
+          ...(["GET", "HEAD"].includes(incoming.method)
+            ? {}
+            : { body: /** @type {BodyInit} */ (/** @type {unknown} */ (Readable.toWeb(incoming))), duplex: "half" }),
         });
-        const response = await handler(request);
+        const response = await handler(request, {
+          clientAddress: clientAddress(incoming, config.trustedProxyAddresses),
+        });
         outgoing.writeHead(response.status, Object.fromEntries(response.headers));
         outgoing.end(Buffer.from(await response.arrayBuffer()));
-      } catch {
-        outgoing.writeHead(500, { "cache-control": "no-store" });
+      } catch (error) {
+        // Name and code only: a database or engine message can quote values from the request.
+        const { errorName, errorCode } = errorFields(error);
+        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", errorName, errorCode }));
+        if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
         outgoing.end();
       }
     },
   );
-  server.maxConnections = 64;
+  server.maxConnections = MAX_CONNECTIONS;
   server.setTimeout(15_000, (socket) => socket.destroy());
   return server.listen(config.port, config.host);
 }
 
-/** One phone-push re-check. A failure is logged with its cause (name, code, URL-free message), never silently. */
+/** One phone-push re-check. A failure is logged with closed diagnostic fields, never exception text. */
 export async function sweepPush(sharedStore, log = (event) => console.error(JSON.stringify(event))) {
   try {
     await sharedStore.sweepPush();

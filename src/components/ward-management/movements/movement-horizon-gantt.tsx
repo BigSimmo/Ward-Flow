@@ -10,6 +10,7 @@ import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
 import { HEALTH_SERVICES, type HealthService, type Unit } from "@/components/ward-management/ward-model";
+import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 
 import type {
   CorridorCount,
@@ -56,7 +57,7 @@ const TICK_COUNT = 6;
  */
 export type HorizonDensity = "compact" | "expanded";
 
-export interface DensitySettings {
+interface DensitySettings {
   barHeight: number;
   barGap: number;
   barTop: number;
@@ -64,7 +65,7 @@ export interface DensitySettings {
   labelPadding: string;
 }
 
-export const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
+const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
   compact: {
     barHeight: 22,
     barGap: 2,
@@ -139,6 +140,7 @@ export function MovementHorizonGantt({
 
   const scrubberId = useId();
   const serviceFilterId = useId();
+  const diagramAreaId = useId();
   const horizonRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(isEnlarged, horizonRef, () => setIsEnlarged(false));
 
@@ -314,7 +316,7 @@ export function MovementHorizonGantt({
             type="button"
             className={buttonClass({ variant: "ghost", size: "sm", className: styles.phBtn })}
             id="toggleHorizonDiagram"
-            aria-controls="horizonDiagramArea"
+            aria-controls={diagramAreaId}
             aria-expanded={!isCollapsed}
             disabled={isEnlarged}
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -325,7 +327,7 @@ export function MovementHorizonGantt({
       </div>
 
       {!isCollapsed && (
-        <div id="horizonDiagramArea" className={styles.diagramArea}>
+        <div id={diagramAreaId} className={styles.diagramArea}>
           {/* Scrub row: step back, the slider, step forward, the time it points at, then Reset. */}
           <div className={styles.ganttControlsBar}>
             <div className={styles.ganttScrubberWrap}>
@@ -599,7 +601,9 @@ export function MovementHorizonGantt({
                 corridors.length === 0 ? (
                   <p className={styles.railEmpty}>No open movement currently has an accepting ward.</p>
                 ) : (
-                  <ol className={styles.corridorRanks}>
+                  // Scrolls when the list is long, so it takes a tab stop (axe scrollable-region-focusable).
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
+                  <ol className={styles.corridorRanks} tabIndex={0} aria-label="Accepted corridors, busiest first">
                     {rankedPairs.map((corridor) => {
                       const ed = edById(corridor.originEdId);
                       const unit = units.find((candidate) => candidate.id === corridor.acceptedUnitId);
@@ -686,14 +690,14 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
 /** The narrowest a bar draws: wide enough for "Pallowmere, O" at the bar's type size. */
 const BAR_MIN_WIDTH = "7.5rem";
 
-/** The patient's name for a bar, or the resolver's own "Unknown Patient" when none is linked. */
+/** The patient's name for a bar, or the resolver's own "Name not recorded" when none is linked. */
 function barPatientName(ev: MovementHorizonEvent): string {
-  return ev.patientName ?? "Unknown Patient";
+  return ev.patientName ?? NAME_NOT_RECORDED;
 }
 
 /** "Noor Tremalow" to "Tremalow, Noor". A name already in that order, or one word, is kept. */
 function formalName(name: string): string {
-  if (name === "Unknown Patient" || name.includes(",")) return name;
+  if (name === NAME_NOT_RECORDED || name.includes(",")) return name;
   const parts = name.trim().split(/\s+/u);
   if (parts.length < 2) return name;
   const surname = parts[parts.length - 1];
@@ -704,6 +708,6 @@ function formalName(name: string): string {
 function shortName(name: string): string {
   const formal = formalName(name);
   const [surname, given] = formal.split(", ");
-  if (given === undefined || formal === "Unknown Patient") return formal;
+  if (given === undefined || formal === NAME_NOT_RECORDED) return formal;
   return `${surname}, ${given.charAt(0)}`;
 }

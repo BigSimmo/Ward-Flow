@@ -8,6 +8,7 @@ import {
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { applyCommand, seedWorld, validCommand, worldNow, type SharedWorld } from "../backend/ward-flow/engine";
 import { createSharedHandler } from "../backend/ward-flow/shared-http.mjs";
+import { bootstrapViewer } from "../backend/ward-flow/viewer.test-support.mjs";
 
 const COORDINATOR_A = "11111111-1111-4111-8111-111111111111";
 const COORDINATOR_B = "22222222-2222-4222-8222-222222222222";
@@ -46,6 +47,8 @@ function createMemoryStore(clock = () => FIXED_CLOCK) {
   });
 
   return {
+    // Accounts named in the handler's coordinator list work as the statewide coordinator; nobody else holds a role.
+    viewer: bootstrapViewer,
     async read() {
       return toSnapshot(clock());
     },
@@ -383,5 +386,12 @@ describe("Frontend-to-backend shared workspace contract", () => {
     expect(conflictingReuseRes.status).toBe(422);
 
     validClient.dispose();
+  });
+
+  it("refuses a command that carries a real-looking Australian identifier", () => {
+    for (const note of ["Medicare: 2123 45678 1", "UMRN 12345678", "call 0412 345 678"]) {
+      expect(validCommand({ type: "ADVANCE_CLOCK", role: "demo", minutes: 5, note })).toBe(false);
+    }
+    expect(validCommand({ type: "ADVANCE_CLOCK", role: "demo", minutes: 5 })).toBe(true);
   });
 });

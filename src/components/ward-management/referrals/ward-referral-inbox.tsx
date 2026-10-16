@@ -4,9 +4,10 @@ import { useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL, type GenderPlacementReason } from "../ward-change-reasons";
-import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { genderReviewNeeded, REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "../ward-model";
 import { DECLINE_REASON_LABELS, wardTransferNeedsCoordinator } from "../ward-referrals";
+import { wardRouteUnitId } from "../ward-chrome-role";
 import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
 import { referralInboxName } from "./referral-inbox";
@@ -15,30 +16,25 @@ import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
 
-/** The ward a `/ward/<unitId>` or `/board/<unitId>` route belongs to, if any. */
-function routeUnitId(pathname: string): string | undefined {
-  const match = /\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
-  if (!match?.[1]) return undefined;
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return match[1];
-  }
-}
-
 /**
  * B1 (site review, 12 Oct 2026): the inbox answers as the route's own role. A ward route answers
  * for its own ward only (`actingUnitId`), and the coordinator answers for any ward, including the
  * D-30 transfers from another hospital and a gender placement that needs a recorded reason.
  */
 export function WardReferralInbox({ unitId }: { unitId: string }) {
-  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units } = useWardFlow();
+  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units } = useWardFlowSelect(
+    "wardReferralInbox",
+    "resolvePatientIdentity",
+    "dispatch",
+    "rejections",
+    "units",
+  );
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const pathname = usePathname() ?? "";
   const reasonId = useId();
   const isCoordinator = routeRole === "coordinator";
-  const actingUnitId = routeRole === "ward" ? routeUnitId(pathname) : undefined;
+  const actingUnitId = routeRole === "ward" ? wardRouteUnitId(pathname) : undefined;
   const unitName = units.find((unit) => unit.id === unitId)?.name ?? "This ward";
   // Mirrors the reducer's own `answerableBy` and acting-unit checks: only this ward or the
   // coordinator answers a ward referral.
@@ -97,7 +93,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
         return (
           <article className={styles.refCard} key={entry.id}>
             <h3 className={styles.refCardTitle}>
-              {referralInboxName(entry, patient.displayName)} · {entry.id}
+              {referralInboxName(entry, patient.displayName)} · {patient.umrn}
             </h3>
             <p className={styles.refCardSubtitle}>
               {entry.withdrawnAt !== undefined

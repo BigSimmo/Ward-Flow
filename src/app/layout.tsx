@@ -11,11 +11,11 @@ import {
   THEME_COOKIE_NAME,
 } from "@/lib/theme";
 import { AppAnnouncements } from "@/components/app-announcements";
-import { OverlayRoot } from "@/components/ui/overlay-root";
+import { OverlayRoot } from "@/components/wf/overlay-root";
 import { PRIVATE_APP_ROBOTS_METADATA } from "@/lib/crawler-policy";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
+import { startupImages } from "./icons/startup-images";
 import "./globals.css";
-import "./ward-flow-v6-tokens.css";
 import "./ward-flow-v9-tokens.css";
 
 const geistSans = localFont({
@@ -66,6 +66,9 @@ const baseMetadata: Metadata = {
     // "default" lets iOS pick status bar text that reads on the page. "black-translucent" forced
     // white text, which disappeared on the light theme.
     statusBarStyle: "default",
+    // iOS launch screens for current iPhones (app/icons/startup-images.ts), so a Home Screen launch
+    // opens on the brand mark instead of a blank flash.
+    startupImage: startupImages(),
   },
 };
 

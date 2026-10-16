@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";
 /**
  * A person, as distinct from a request for a bed or a stay in one.
  *
@@ -235,9 +235,12 @@ export function patientAgeYears(patient: Patient, today: Date): number {
   // Read the birth date's own calendar fields. `new Date("YYYY-MM-DD")` is UTC midnight, which
   // local getters read as the day before in zones west of UTC.
   const [year, month, day] = patient.dateOfBirth.slice(0, 10).split("-").map(Number);
-  let age = today.getFullYear() - year;
-  const monthDelta = today.getMonth() + 1 - month;
-  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < day)) age -= 1;
+  // Compare on the Perth calendar day, not the browser's: a browser west of Perth would otherwise
+  // read the day before and show someone a year younger around their birthday.
+  const perthToday = perthCalendarDay(today);
+  let age = perthToday.year - year;
+  const monthDelta = perthToday.monthIndex + 1 - month;
+  if (monthDelta < 0 || (monthDelta === 0 && perthToday.day < day)) age -= 1;
   return age;
 }
 
@@ -256,8 +259,16 @@ export function patientCohort(
   return "Adult";
 }
 
-/** A UMRN as people type or paste it into an address: two letters then digits (shell-6). */
-export const UMRN_IN_ADDRESS = /^[A-Za-z]{2}\d+$/u;
+/** A UMRN as people type or paste it into an address (shell-6): the synthetic two letters then
+ *  digits, or the real WA shape of one letter then seven digits. Either is refused in an address. */
+export const UMRN_IN_ADDRESS = /^[A-Za-z]{1,2}\d+$/u;
+
+/** A UMRN with its label, "UMRN UM100047". An empty or unrecorded one reads "UMRN not recorded". */
+export function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN ${umrn}`;
+}
 
 /**
  * `Family, Given`: the one way a list or identity line names a patient (shell-8, 13 Oct 2026), the

@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { communityScreenSource } from "./helpers/community-screen-sources";
+
 import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "../src/components/ward-management/ward-flow-roles";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
@@ -17,6 +19,7 @@ import {
   buildPatientStatus,
   type PatientStatusContext,
 } from "../src/components/ward-management/patients/patient-status-card";
+import { edScreenSource } from "./helpers/ed-screen-source";
 
 /**
  * Feature 11, actions limited by role. The route gives the role (`wardChromeRole`); `EVENT_ROLE`
@@ -103,10 +106,13 @@ describe("CROSS_ROLE_ALLOWED", () => {
     // Legal forms Mark received (coordinator route), ward Raise referral, New referral sheet.
     expect(canDispatch("coordinator", "RECORD_LEGAL_FORM_RECEIVED")).toBe(true);
     expect(canDispatch("ward", "RECEIVE_REFERRAL")).toBe(true);
-    for (const role of ["coordinator", "ward", "ed", "officer", "community"] as const) {
+    for (const role of ["coordinator", "ward", "ed", "community"] as const) {
       expect(canDispatch(role, "RECEIVE_REFERRAL"), role).toBe(true);
       expect(canDispatch(role, "ADD_PATIENT"), role).toBe(true);
     }
+    // Role access plan decision 6 (Josh, 15 Oct 2026): the transport officer raises no referrals.
+    expect(canDispatch("officer", "RECEIVE_REFERRAL")).toBe(false);
+    expect(canDispatch("officer", "ADD_PATIENT")).toBe(false);
   });
 });
 
@@ -161,12 +167,17 @@ const ROLE_SCREENS: Record<string, WardChromeRole> = {
   "capacity/planned-admissions-panel.tsx": "coordinator",
   "delays/delays-screen.tsx": "coordinator",
   "discharges/discharge-board.tsx": "coordinator",
+  // Split from discharge-board.tsx (15 Oct 2026): the record dossier dispatches its own date change.
+  "discharges/discharge-detail-panes.tsx": "coordinator",
   "out-of-area/out-of-area-board.tsx": "coordinator",
   "hub/hub-screen.tsx": "coordinator",
   "settings/settings-screen.tsx": "coordinator",
   "governance-registers.tsx": "coordinator",
   "patients/add-patient.tsx": "coordinator",
   "referrals/referral-match.tsx": "coordinator",
+  // Split from referral-match.tsx (15 Oct 2026): the whole-referral withdrawal and the history correction.
+  "referrals/use-referral-match-state.tsx": "coordinator",
+  "referrals/referral-history-corrections.tsx": "coordinator",
   "patients/patient-now-screen.tsx": "coordinator",
   "patients/patient-transit-operations.tsx": "coordinator",
   "legal-forms/legal-forms-screen.tsx": "coordinator",
@@ -176,8 +187,22 @@ describe("role screens dispatch only what their route's role may take", () => {
   const root = join(__dirname, "../src/components/ward-management");
   for (const [file, role] of Object.entries(ROLE_SCREENS)) {
     it(`${file} (${role} route)`, () => {
-      const source = readFileSync(join(root, file), "utf8");
-      const types = [...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g)].map((match) => match[1] as EventType);
+      // The ED and community screens were split into sibling files on 15 Oct 2026 (fix list 2.5 and
+      // 9.6). Each entry reads every file of its screen, so a dispatch added to any part of the
+      // screen is still checked against that screen's role.
+      const source =
+        file === "ed/ed-screen.tsx"
+          ? edScreenSource()
+          : file === "community/community-screen.tsx"
+            ? communityScreenSource(join(__dirname, ".."))
+            : readFileSync(join(root, file), "utf8");
+      // A raw `dispatch({ type, role, ... })`, or a named `raise("TYPE", ...)` from `useWardRaise(role)`.
+      const types = [
+        ...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g),
+        ...source.matchAll(/\braise\(\s*"([A-Z_]+)"/g),
+      ].map((match) => match[1] as EventType);
+      // A screen raises as its own route's desk.
+      for (const [, raisedAs] of source.matchAll(/useWardRaise\(\s*"([a-z_]+)"/g)) expect(raisedAs, file).toBe(role);
       expect(types.length, "no dispatch found; update this list if the screen moved").toBeGreaterThan(0);
       for (const type of new Set(types)) {
         expect(EVENT_TYPES).toContain(type);
@@ -185,6 +210,23 @@ describe("role screens dispatch only what their route's role may take", () => {
       }
     });
   }
+});
+
+describe("the movement cockpit embedded on a ward page", () => {
+  it("gates every action a ward may not take", () => {
+    // The patient page embeds the cockpit with role `ward`, and the cockpit raises as `useWardRaise(role)`,
+    // so the literal check above cannot see it. Each raised type is a ward action or sits behind `lock`.
+    const source = readFileSync(
+      join(__dirname, "../src/components/ward-management/movements/movement-workspace-cockpit.tsx"),
+      "utf8",
+    );
+    expect(source).toMatch(/useWardRaise\(role\)/);
+    const raised = new Set([...source.matchAll(/\braise\(\s*"([A-Z_]+)"/g)].map((match) => match[1] as EventType));
+    const locked = new Set([...source.matchAll(/\block\(\s*"([A-Z_]+)"/g)].map((match) => match[1]));
+    expect(raised.size).toBeGreaterThan(0);
+    const ungated = [...raised].filter((type) => !canDispatch("ward", type) && !locked.has(type));
+    expect(ungated, "wrap these in lock(...) or let the ward take them").toEqual([]);
+  });
 });
 
 describe("Patient status card actions follow the route's role", () => {

@@ -41,7 +41,8 @@ const expectedFor = (movementId: string) => {
     referrals: seed.referrals,
     movements: seed.movements,
   });
-  return { name: info.displayName, umrn: info.umrn };
+  // F-06 (phone review, Oct 2026): list rows name a patient family name first, as the census does.
+  return { name: info.formalName, umrn: info.umrn };
 };
 
 function walk(dir: string): string[] {
@@ -82,7 +83,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
     for (const card of cards) {
       const movementId = card.getAttribute("data-row-id")!;
       const recorded = expectedFor(movementId);
-      if (recorded.name !== "Unknown Patient") linked += 1;
+      if (recorded.name !== "Name not recorded") linked += 1;
       expect(card.textContent, movementId).toContain(recorded.name);
       expect(card.textContent, movementId).toContain(recorded.umrn);
     }

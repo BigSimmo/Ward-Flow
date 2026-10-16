@@ -25,7 +25,7 @@ import type { Movement } from "./ward-model";
  * A step whose start time the record does not hold has no target running. Nothing is backfilled
  * from `openedAt`, the same discipline `Movement.referredAt` documents.
  */
-export type DecisionTargetStep = "referral_decision" | "transfer_acceptance" | "transport_booked";
+type DecisionTargetStep = "referral_decision" | "transfer_acceptance" | "transport_booked";
 
 type StepDefinition = {
   readonly step: DecisionTargetStep;

@@ -17,7 +17,7 @@
  */
 
 /** Whether the register offers a download. */
-export type FormAvailability = "downloadable" | "unavailable" | "contact_ocp";
+type FormAvailability = "downloadable" | "unavailable" | "contact_ocp";
 
 export type OfficialForm = {
   code: string;
@@ -149,7 +149,7 @@ export const officialForms: OfficialForm[] = [
   { code: "13", title: "Statistics about ECT", category: "Electroconvulsive therapy", availability: "contact_ocp" },
 ];
 
-export function normalizeCode(value: string) {
+function normalizeCode(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 

@@ -17,11 +17,11 @@
  */
 
 import { type HealthService } from "./ward-model";
-import { wardSites } from "./ward-sites";
+import { siteDirectory } from "./ward-sites";
 
 function resolveSiteName(siteId: string, suffix?: string): string {
   const query = siteId.toLowerCase();
-  const site = wardSites.find((s) => s.code.toLowerCase() === query || s.referenceSiteId?.toLowerCase() === query);
+  const site = siteDirectory.find((s) => s.code.toLowerCase() === query || s.referenceSiteId?.toLowerCase() === query);
   const base = site ? site.name : siteId;
   return suffix ? `${base} ${suffix}` : base;
 }
@@ -61,7 +61,7 @@ export interface ServiceColorDefinition {
   readonly cssVarPrefix: string;
 }
 
-export const WA_HEALTH_SERVICES_COLOR_KEY = {
+const WA_HEALTH_SERVICES_COLOR_KEY = {
   EMHS: {
     code: "EMHS",
     name: "East Metropolitan Health Service",
@@ -257,8 +257,6 @@ export const WA_HEALTH_SERVICES_COLOR_KEY = {
     cssVarPrefix: "--svc-private",
   },
 } as const satisfies Record<string, ServiceColorDefinition>;
-
-export type ServiceColorKey = keyof typeof WA_HEALTH_SERVICES_COLOR_KEY;
 
 /**
  * Resolves any health service string or model enum to its authoritative color definition.

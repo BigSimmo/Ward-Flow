@@ -7,6 +7,7 @@ import requireButtonWiring from "./eslint-rules/require-button-wiring.mjs";
 import requireZIndexLadder from "./eslint-rules/require-z-index-ladder.mjs";
 import restrictSuppressHydrationWarning from "./eslint-rules/restrict-suppress-hydration-warning.mjs";
 import noHardcodedHex from "./eslint-rules/no-hardcoded-hex.mjs";
+import { MAX_LINES_BASELINE, MAX_LINES_DEFAULT } from "./eslint-rules/max-lines-baseline.mjs";
 
 // Shared `local` plugin object. ESLint flat config requires every config block
 // that references a plugin namespace to point at the *same* object, and the five
@@ -53,6 +54,108 @@ const eslintConfig = defineConfig([
       "jsx-a11y/label-has-associated-control": "error",
     },
   },
+  // The rest of the jsx-a11y recommended set. `aria-role` ignores components because `role` is also
+  // the Ward Flow role prop (`role="coordinator"`). Options follow the plugin's recommended config,
+  // widened only for patterns this site uses on purpose:
+  // - a scrollable region, tab panel or feed takes tabIndex={0} so keyboard users can scroll it
+  //   (axe's scrollable-region-focusable asks for exactly that);
+  // - list and table roles are written out where CSS display would strip them in Safari;
+  // - a tab list or radio group handles arrow keys on the group while its children take focus.
+  // A case that still needs a judgement carries an eslint-disable-next-line with its reason.
+  {
+    files: ["src/**/*.{jsx,tsx}"],
+    rules: {
+      "jsx-a11y/alt-text": "error",
+      "jsx-a11y/anchor-has-content": "error",
+      "jsx-a11y/anchor-is-valid": "error",
+      "jsx-a11y/aria-activedescendant-has-tabindex": "error",
+      "jsx-a11y/aria-props": "error",
+      "jsx-a11y/aria-proptypes": "error",
+      "jsx-a11y/aria-role": ["error", { ignoreNonDOM: true }],
+      "jsx-a11y/aria-unsupported-elements": "error",
+      "jsx-a11y/autocomplete-valid": "error",
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/interactive-supports-focus": [
+        "error",
+        { tabbable: ["button", "checkbox", "link", "searchbox", "spinbutton", "switch", "textbox"] },
+      ],
+      "jsx-a11y/no-autofocus": "error",
+      "jsx-a11y/no-interactive-element-to-noninteractive-role": [
+        "error",
+        { tr: ["none", "presentation"], canvas: ["img"], td: ["cell"] },
+      ],
+      "jsx-a11y/no-noninteractive-element-interactions": [
+        "error",
+        {
+          handlers: ["onClick", "onError", "onLoad", "onMouseDown", "onMouseUp", "onKeyPress", "onKeyDown", "onKeyUp"],
+          alert: ["onKeyUp", "onKeyDown", "onKeyPress"],
+          body: ["onError", "onLoad"],
+          dialog: ["onKeyUp", "onKeyDown", "onKeyPress"],
+          iframe: ["onError", "onLoad"],
+          img: ["onError", "onLoad"],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-element-to-interactive-role": [
+        "error",
+        {
+          ul: ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+          ol: ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+          li: ["menuitem", "menuitemradio", "menuitemcheckbox", "option", "row", "tab", "treeitem"],
+          table: ["grid"],
+          td: ["gridcell"],
+          fieldset: ["radiogroup", "presentation"],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-tabindex": [
+        "error",
+        { tags: [], roles: ["tabpanel", "region", "feed"], allowExpressionValues: true },
+      ],
+      "jsx-a11y/no-redundant-roles": [
+        "error",
+        {
+          nav: ["navigation"],
+          ul: ["list"],
+          ol: ["list"],
+          li: ["listitem"],
+          thead: ["rowgroup"],
+          tbody: ["rowgroup"],
+        },
+      ],
+      "jsx-a11y/no-static-element-interactions": [
+        "error",
+        {
+          allowExpressionValues: true,
+          handlers: ["onClick", "onMouseDown", "onMouseUp", "onKeyPress", "onKeyDown", "onKeyUp"],
+        },
+      ],
+      "jsx-a11y/heading-has-content": "error",
+      "jsx-a11y/html-has-lang": "error",
+      "jsx-a11y/iframe-has-title": "error",
+      "jsx-a11y/img-redundant-alt": "error",
+      "jsx-a11y/media-has-caption": "error",
+      "jsx-a11y/mouse-events-have-key-events": "error",
+      "jsx-a11y/no-access-key": "error",
+      "jsx-a11y/no-distracting-elements": "error",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      "jsx-a11y/role-supports-aria-props": "error",
+      "jsx-a11y/scope": "error",
+      "jsx-a11y/tabindex-no-positive": "error",
+    },
+  },
+  // File size ratchet. New source files stay under MAX_LINES_DEFAULT lines, and the files that
+  // were already larger cannot grow much past their baseline (eslint-rules/max-lines-baseline.mjs).
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "max-lines": ["error", { max: MAX_LINES_DEFAULT }],
+    },
+  },
+  ...Object.entries(MAX_LINES_BASELINE).map(([file, max]) => ({
+    files: [file],
+    rules: {
+      "max-lines": ["error", { max }],
+    },
+  })),
   // A lucide-react icon rendered as JSX must be decorative (aria-hidden) or
   // carry an accessible name. Enforces the codebase's own convention so a glyph
   // can't silently reach the a11y tree. Mockups are design-scratch and exempt.

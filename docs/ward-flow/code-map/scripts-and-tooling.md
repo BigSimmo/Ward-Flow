@@ -1,8 +1,8 @@
 # Scripts, generators, hooks and tooling
 
-Current doc-link checks: default `npm run check:ward-doc-links` checks relative paths in the
-Ward tree including history. Use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
-(repeat selections) for maintained root/other Markdown; paired historical sections are excluded.
+Current doc-link checks: `npm run docs:check-links` checks every tracked Markdown file with
+`--file`, so paired historical sections are excluded. Run `node scripts/ward-flow/check-doc-links.mjs`
+with no `--file` to check the Ward tree including history.
 `--anchors` checks supported ATX/setext headings and explicit HTML IDs. Web URLs,
 reference-style links and renderer extensions are not validated; forensic file URLs are
 advisory. Missing/unreadable selected files fail. A pass does not establish semantic freshness.
@@ -64,7 +64,8 @@ run individually per file; nothing here was executed. Back to [the code map inde
   from the hand-authored `PAIRS`/`SUPERSEDED` roster in `screen-pairs.mjs`, cross-checked against
   every mockup, route source and screen folder actually on disk. `--check` fails on a stale map
   **or** on anything unmapped/unreachable it discovers that `PAIRS` does not cover — the
-  UNREACHABLE check is what would have caught `ed-home.tsx` (imported by nothing, no route).
+  UNREACHABLE check is what would have caught `ed-home.tsx` (imported by nothing, no route, since
+  removed by PR #306 on 15 Oct 2026).
 - **`scripts/ward-flow/screen-pairs.mjs`** (99 lines) — Not a script (no CLI, no shebang): the
   single hand-authored `PAIRS`/`SUPERSEDED` roster (mockup file ↔ route ↔ screen folder ↔
   in-build-plan flag), imported by `screen-map.mjs` and `screen-verification.mjs` so the list
@@ -100,11 +101,10 @@ run individually per file; nothing here was executed. Back to [the code map inde
   endpoints exist, proves the prototype disclaimer is mounted, and hard-blocks live deployment
   without governance sign-off records in `docs/ward-flow/governance/approvals/`. Exit 1 on any
   breach.
-- **`scripts/ward-flow/check-doc-links.mjs`** (100 lines) — npm: `check:ward-doc-links` /
-  `ward:check-docs`. Fails if a relative markdown link under `docs/ward-flow/**` points at a file
+- **`scripts/ward-flow/check-doc-links.mjs`** (100 lines) — the parser behind `docs:check-links`. Fails if a relative markdown link under `docs/ward-flow/**` points at a file
   that is not there. Does not check absolute URLs, in-file anchors, or links inside fenced code
   blocks. ⚠️ Similarly named to, and a **different file from**, the repo-wide
-  `scripts/check-docs-links.mjs` (`npm run check:ward-doc-links`) — see Pitfalls.
+  `scripts/check-docs-links.mjs` (`npm run docs:check-links`) — see Pitfalls.
 - **`scripts/ward-flow/check-drawing-rules.mjs`** (223 lines) — Usage:
   `node scripts/ward-flow/check-drawing-rules.mjs <drawing.html> [...]`. Static, read-only check of
   a drawing's rendered copy (text, title/aria-label/placeholder/alt/value attributes, and string
@@ -155,30 +155,8 @@ run individually per file; nothing here was executed. Back to [the code map inde
 
 ## `scripts/ward-flow/` — coordination and dev tooling
 
-- **`scripts/ward-flow/chat-control.mjs`** (3,404 lines — the largest file in this area) — Local-only
-  multi-session coordination: validates the role contract (lead/builder/verifier), creates
-  content-addressed assignments, handovers and reset certificates in
-  `docs/ward-flow/control/` (`handoverDirectory`, `promptDirectory`), manages atomic local role
-  leases, and renders a recreation prompt. Subcommands: `validate`, `status`, `export-chat-log`,
-  `capture-checkout-artifacts`, `create-assignment`, `create-handover`, `publish-handover`,
-  `certify-reset`, `recreate --role lead|builder|verifier`. Imports `receiptKey` from
-  `../gate-receipts.mjs`. Never commits, merges, fetches, pushes or contacts a provider. Not
-  npm-wired; invoked directly by whichever chat-control workflow doc names it.
-- **`scripts/ward-flow/whois.mjs`** (239 lines) — Usage: `node scripts/ward-flow/whois.mjs [name]
-[--role <query>] [--all]`. Resolves "what is checked out in folder X" from git state, because a
-  session's self-reported name or branch label cannot be trusted (documented incident: one session
-  claimed two contradictory identities from the same transport address in one day). Explicitly a
-  folder audit, not an identity system — it answers a different question from "who sent this
-  message". Full protocol: `docs/ward-flow/who-is-who.md`. Tested by
-  `tests/ward-whois-register.test.ts` (its own doc comment warns that `process.exit` inside the
-  `--role` path would end a whole Vitest run, not just a test, if imported carelessly).
-- **`scripts/ward-flow/folded.sh`** (110 lines, bash) — Usage: `folded.sh <worktree> <line-ref>
-<known-folded-control> <sha>...`. Answers "has this commit actually landed on the ward line", as
-  opposed to `git log --all -S '<text>'` which answers "which commit introduced this text" — a
-  substitution that produced two same-day false "unfolded" reports. Refuses to report at all until
-  a commit named as KNOWN-FOLDED resolves as folded (proves the checker CAN say yes before trusting
-  a no). Three exit codes: 0 all folded, 1 at least one not folded, 2 CANNOT TELL (control or ref
-  failed to resolve) — code 2 is deliberately not collapsed into "not folded".
+- `chat-control.mjs`, `whois.mjs` and `folded.sh` were removed on 15 Oct 2026 with the other
+  scripts that only served the old Database checkout (fix list 10.11). Git history keeps them.
 - **`scripts/ward-flow/role-map.py`** (103 lines, Python) — Prints the second-edition →
   ward-tokens colour-role mapping with WCAG contrast ratios, authored by ROLE rather than by VALUE
   (six of seven neutral roles differ by only a hex digit, so value-matching cannot discover the
@@ -301,15 +279,11 @@ browser-stabilisation helpers from the adversarial audit — not part of the fol
 | `check:ward-legal-language`       | `node scripts/ward-flow/check-ward-legal-language.mjs`                         | No wording asserting legal authority the app lacks.                                                                                                                                           |
 | `ward:reference:build`            | runs `build-reference-registry.mjs` then `-distances.mjs` then `-teams.mjs`    | Regenerates the three reference-pack-derived TypeScript files.                                                                                                                                |
 | `check:ward-reference`            | `node scripts/ward-flow/check-ward-reference.mjs`                              | The three generated reference files match their source pack.                                                                                                                                  |
-| `check:ward-doc-links`            | `node scripts/ward-flow/check-doc-links.mjs`                                   | Relative links under `docs/ward-flow/**` resolve.                                                                                                                                             |
 | `ward:journey`                    | `node docs/ward-flow/journey/build.mjs`                                        | Runs the 7-step journey-explorer build chain.                                                                                                                                                 |
 | `ward:journey:prove`              | `node docs/ward-flow/journey/build.mjs --prove`                                | Runs the 7 `prove-*.mjs` probes instead (each deliberately breaks an input and checks the build refuses).                                                                                     |
-| `ward:docs`                       | inline `node -e`                                                               | Prints where the Ward Flow docs and boot instructions live.                                                                                                                                   |
-| `ward:check-docs`                 | `npm run check:ward-doc-links`                                                 | Alias.                                                                                                                                                                                        |
 | `ward:organise`                   | `node scripts/ward-flow/organisation.mjs --write-report --source working-tree` | Writes an organisation report to the git-dir side location.                                                                                                                                   |
 | `ward:organise:check`             | `node scripts/ward-flow/organisation.mjs --check`                              | Gate mode of the same.                                                                                                                                                                        |
 | `ward:dev`                        | `node scripts/ward-flow/dev-with-organisation.mjs`                             | Organisation check, then starts/ensures the local dev server.                                                                                                                                 |
-| `ward:first-run`                  | inline `node -e`                                                               | Prints the three-step local first-run instructions.                                                                                                                                           |
 | `ward:test:sync`                  | `node scripts/ward-flow/design-test-sync.mjs`                                  | Regenerate design↔test alignment.                                                                                                                                                             |
 | `ward:test:sync:check`            | `node scripts/ward-flow/design-test-sync.mjs --check`                          | Gate mode.                                                                                                                                                                                    |
 | `ward:governance:check`           | `node scripts/ward-flow/check-clinical-governance-gate.mjs`                    | Synthetic-only / no-live-endpoint / disclaimer / sign-off gate.                                                                                                                               |
@@ -568,7 +542,7 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 
 - **`roots`** — ~50 glob roots that are IN scope for classification at all (every Ward Flow source
   tree, plus the shared build/test/lint config files and a short list of shared UI/theme files
-  Ward Flow depends on but does not own, e.g. `src/app/layout.tsx`, `src/components/ui/sheet.tsx`).
+  Ward Flow depends on but does not own, e.g. `src/app/layout.tsx`, `src/components/wf/sheet.tsx`).
 - **`sourceClasses`** — three classes by extension: `code` (`.ts .tsx .js .mjs .mts .css .py .sh
 .html`), `documentation` (`.md .txt`), `structured-reference` (`.json .yaml .yml`).
 - **`denials`** — globs excluded outright regardless of root match, including
@@ -622,7 +596,7 @@ generator `--check`s only when their own source changed.
    - `node scripts/check-ward-expected-reds.mjs` — full offline ward suite; required for any
      engine change.
    - `npm run test:e2e:ward-journeys` — the 13 browser journeys, `chromium-mockups` project.
-   - `npm run check:ward-doc-links` — Ward doc links resolve.
+   - `npm run docs:check-links` — Ward doc links resolve.
    - `npm run ward:organise:check -- --source working-tree`.
    - Each generator's own `--check` when its sources changed: `screen-map`, `mockup-manifest`,
      `owner-rulings-index`, `screen-verification`, `rules-index` (pre-commit already runs these
@@ -642,11 +616,10 @@ generator `--check`s only when their own source changed.
 
 ## Pitfalls in this area
 
-1. **Two different, similarly-named doc-link checkers.** `scripts/check-docs-links.mjs`
-   (`npm run check:ward-doc-links`, repo-wide) and `scripts/ward-flow/check-doc-links.mjs`
-   (`npm run check:ward-doc-links`, Ward-only) are separate files with separate scope. Running the
-   wrong one gives a false sense that Ward Flow's links were checked, or floods you with unrelated
-   repo-wide link findings.
+1. **One doc-link checker.** `npm run docs:check-links` (`scripts/check-maintained-doc-links.mjs`)
+   runs the parser in `scripts/ward-flow/check-doc-links.mjs` over every tracked Markdown file,
+   with anchors. The separate Ward-only `check:ward-doc-links` command was retired on
+   15 October 2026; run the parser directly with `--file` for a single file.
 2. **Most `scripts/ward-flow/` files are not npm-wired.** `chat-control.mjs`, `whois.mjs`,
    `folded.sh`, `role-map.py`, `check-drawing-rules.mjs`, `check-live-state.mjs`, every "manual
    visual audit" script, and everything in `audit/` are run directly with `node`/`python`/`bash`.

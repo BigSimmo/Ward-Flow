@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/operator-switcher-modal";
-import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({

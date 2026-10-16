@@ -171,7 +171,6 @@ export const NEVER_DEFER_CLASSES = new Set(["db", "rag", "deps", "container", "w
 export const NARROWED_GATES = new Map([
   ["test:e2e", "npm run plan:browser"],
   ["test:e2e:pr", "npm run plan:browser"],
-  ["test:e2e:chromium", "npm run plan:browser"],
   ["verify:ui", "npm run plan:browser"],
 ]);
 

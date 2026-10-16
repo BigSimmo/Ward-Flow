@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 
-import { hasOpenSheet } from "@/components/ward-management/ward-modal-focus";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

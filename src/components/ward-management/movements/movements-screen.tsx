@@ -3,9 +3,15 @@
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 
-import type { Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  dayOf,
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { clockState, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
   movementHealthService,
@@ -15,7 +21,11 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -88,6 +98,7 @@ import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ArrivalsAheadList } from "./arrivals-ahead-list";
 import arrivalsStyles from "./arrivals-ahead-list.module.css";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -103,11 +114,11 @@ function meaningfulBlocker(movement: Movement): string | null {
  * whose due time has passed, or is approaching (`clockState` critical, the same threshold Delays
  * reads). Worded as the `legal_breached`/`legal_expiring` causes below; never a computed limit (D5).
  */
-function legalActNowReason(movement: Movement, now: Instant): string | null {
+function legalActNowReason(movement: Movement, now: Instant, thresholds: DueSoonThresholds): string | null {
   const form = movement.legalForm;
   const dueAt = currentLegalDueAt(movement);
   if (!form || dueAt === undefined) return null;
-  const state = clockState(dueAt, now);
+  const state = clockState(dueAt, now, thresholds);
   if (state === "breached") return `Form ${form.code} · legal due time passed`;
   if (state === "critical") return `Form ${form.code} · expiry approaching`;
   return null;
@@ -281,7 +292,16 @@ function bedReadyNote(items: Movement[]): string {
  * Delays merge's own 30-of-42 audit as exactly the failure mode this guards against.
  */
 export function MovementsScreen() {
-  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlow();
+  const thresholds = useDueSoonThresholds();
+  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlowSelect(
+    "movements",
+    "units",
+    "referrals",
+    "patients",
+    "dispatch",
+    "configuration",
+    "setFocusMovementId",
+  );
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
@@ -369,7 +389,7 @@ export function MovementsScreen() {
     setReveal((previous) => ({ id, request: (previous?.request ?? 0) + 1 }));
   }
 
-  const stages = useMemo(() => journeyStages(movements, now), [movements, now]);
+  const stages = useMemo(() => journeyStages(movements, now, thresholds), [movements, now, thresholds]);
   const closedMovements = useMemo(() => movements.filter((movement) => !isOpen(movement)), [movements]);
   const closedToday = useMemo(
     () =>
@@ -399,24 +419,27 @@ export function MovementsScreen() {
       byLongestWait(
         movements.filter((movement) => movement.transport?.acceptedAt !== undefined),
         now,
+        thresholds,
       ),
-    [movements, now],
+    [movements, now, thresholds],
   );
   const withoutLeg = useMemo(
     () =>
       byLongestWait(
         movements.filter((movement) => movement.transport === undefined),
         now,
+        thresholds,
       ),
-    [movements, now],
+    [movements, now, thresholds],
   );
   const requestedLeg = useMemo(
     () =>
       byLongestWait(
         movements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
         now,
+        thresholds,
       ),
-    [movements, now],
+    [movements, now, thresholds],
   );
 
   // `transportLegs` takes whichever list the caller passes (the derivation's own comment says so
@@ -467,8 +490,11 @@ export function MovementsScreen() {
   useWardChecksPublisher(checks);
 
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
-  const openStages = useMemo(() => journeyStages(openMovements, now), [openMovements, now]);
-  const waitingMovements = useMemo(() => byLongestWait(openMovements, now), [openMovements, now]);
+  const openStages = useMemo(() => journeyStages(openMovements, now, thresholds), [openMovements, now, thresholds]);
+  const waitingMovements = useMemo(
+    () => byLongestWait(openMovements, now, thresholds),
+    [openMovements, now, thresholds],
+  );
   const unacceptedTransport = useMemo(
     () =>
       byLongestWait(
@@ -476,18 +502,20 @@ export function MovementsScreen() {
           (movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined,
         ),
         now,
+        thresholds,
       ),
-    [openMovements, now],
+    [openMovements, now, thresholds],
   );
   const noTransportRecord = useMemo(
     () =>
       byLongestWait(
         openMovements.filter((movement) => movement.transport === undefined),
         now,
+        thresholds,
       ),
-    [openMovements, now],
+    [openMovements, now, thresholds],
   );
-  const legs = useMemo(() => transportLegs(openMovements, now), [openMovements, now]);
+  const legs = useMemo(() => transportLegs(openMovements, now, thresholds), [openMovements, now, thresholds]);
   const counts = useMemo(() => transportCounts(legs), [legs]);
   // Audit round 2, A4-18: only a pulled bed or later needs transport, so a referred-stage movement
   // is not "without" a leg.
@@ -505,7 +533,7 @@ export function MovementsScreen() {
     [corridors],
   );
   const tierOneOpen = openMovements.filter((movement) => movement.urgency === 1);
-  const attentionCore = byLongestWait(tierOneOpen, now).slice(0, 3);
+  const attentionCore = byLongestWait(tierOneOpen, now, thresholds).slice(0, 3);
   /**
    * R2 item 3 (P2): flagged-urgent (or otherwise urgent per the widened service-safety definition)
    * patients OUTSIDE the chosen service were counted by the scope bar's own
@@ -542,18 +570,19 @@ export function MovementsScreen() {
   // stable `movements`/`isOpen` it is actually derived from.
   const severeCauseById = useMemo(() => {
     const map = new Map<string, DelayCause>();
-    for (const group of delayGroups(movements.filter(isOpen), units, now)) {
+    for (const group of delayGroups(movements.filter(isOpen), units, now, thresholds)) {
       if (!SEVERE_CAUSES.includes(group.cause)) continue;
       for (const movement of group.movements) map.set(movement.id, group.cause);
     }
     return map;
-  }, [movements, units, now]);
+  }, [movements, units, now, thresholds]);
 
   const causeGroups = useMemo(() => {
     return CAUSES.map((c) => {
       const items = byLongestWait(
         movements.filter(isOpen).filter((m) => causeOf(m, now, severeCauseById) === c.key),
         now,
+        thresholds,
       );
       return {
         key: c.key,
@@ -564,7 +593,7 @@ export function MovementsScreen() {
         movements: items,
       };
     }).filter((g) => g.movements.length > 0);
-  }, [movements, now, severeCauseById]);
+  }, [movements, now, severeCauseById, thresholds]);
 
   /**
    * SERVICE SCOPING — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
@@ -597,8 +626,8 @@ export function MovementsScreen() {
     return isPhone ? scoped.filter(isOpen) : scoped;
   }, [movements, isInServiceScope, isPhone]);
   const worklistStages = useMemo(
-    () => (isInServiceScope || isPhone ? journeyStages(worklistMovements, now) : stages),
-    [isInServiceScope, isPhone, worklistMovements, stages, now],
+    () => (isInServiceScope || isPhone ? journeyStages(worklistMovements, now, thresholds) : stages),
+    [isInServiceScope, isPhone, worklistMovements, stages, now, thresholds],
   );
   const worklistClosedToday = useMemo(
     () => (isInServiceScope ? closedToday.filter(isInServiceScope) : closedToday),
@@ -663,7 +692,10 @@ export function MovementsScreen() {
   const shownStages = worklistStages;
   const shownCauseGroups = worklistCauseGroups;
   const shownTransportGroups = worklistTransportGroups;
-  const shownByWait = useMemo(() => byLongestWait(worklistMovements, now), [worklistMovements, now]);
+  const shownByWait = useMemo(
+    () => byLongestWait(worklistMovements, now, thresholds),
+    [worklistMovements, now, thresholds],
+  );
   const shownClosedToday = worklistClosedToday;
   const searchedTotal = matchesSearch ? worklistMovements.filter(matchesSearch).length : null;
   const markedTotal =
@@ -791,6 +823,7 @@ export function MovementsScreen() {
   const myQueue = byLongestWait(
     openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
     now,
+    thresholds,
   ).sort((a, b) => Number(Boolean(b.flaggedUrgent)) - Number(Boolean(a.flaggedUrgent)) || a.urgency - b.urgency);
   const surname = (movement: Movement) =>
     resolveSubjectPatient(movement, { patients, referrals }).formalName.split(",")[0];
@@ -800,7 +833,7 @@ export function MovementsScreen() {
   const phoneCorridors = rankCorridorPairs(corridors);
   // The live transport legs: the side card's feed on the larger screen, a sheet on phone.
   const transportFeed = (onPicked?: () => void) => (
-    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs" tabIndex={0}>
+    <div className={styles.transportRunsFeed} role="region" aria-label="Active transport legs" tabIndex={0}>
       {legs.map((leg) => {
         const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
         const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
@@ -925,7 +958,10 @@ export function MovementsScreen() {
               </span>
             }
             titleMeta={
-              isPhone ? undefined : (
+              // F-08 (phone review, Oct 2026): the phone hero says its records are invented, as Home does.
+              isPhone ? (
+                "Prototype data, invented records"
+              ) : (
                 <span className={flow.heroTitleMeta}>
                   {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
                 </span>
@@ -1046,7 +1082,7 @@ export function MovementsScreen() {
                   const subject = resolveSubjectPatient(movement, { patients, referrals });
                   // Surname first on every device, as the worklist and timeline list people.
                   const who = subject.formalName;
-                  const legalReason = legalActNowReason(movement, now);
+                  const legalReason = legalActNowReason(movement, now, thresholds);
                   const reason = legalReason ?? meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
                     <li key={movement.id} className={flow.needsCell}>
@@ -1121,7 +1157,8 @@ export function MovementsScreen() {
             >
               <ArrowRightLeft size={16} className={flow.phNavIcon} aria-hidden="true" />
               <span className={flow.phNavText}>
-                <strong>Corridors</strong>
+                {/* F-24 (phone review, Oct 2026): plain words for a corridor, an ED to ward pairing. */}
+                <strong>ED to ward routes</strong>
                 <span>
                   <b>{activeCorridorCount}</b> active · {refusedCorridors.length} declined today
                 </span>
@@ -1177,8 +1214,8 @@ export function MovementsScreen() {
             <PhoneSheet
               open={phoneSheet === "corridors"}
               onClose={() => setPhoneSheet(null)}
-              title="Corridors"
-              description="ED to ward, people now"
+              title="ED to ward routes"
+              description="People now, by ED and accepting ward"
               height="tall"
             >
               {phoneCorridors.length === 0 ? (
@@ -2029,6 +2066,7 @@ function StageRow({
   marked: boolean;
   selected: boolean;
 }) {
+  const thresholds = useDueSoonThresholds();
   const rowRef = useRef<HTMLLIElement>(null);
   const revealRequest = reveal?.id === movement.id ? reveal.request : null;
   useEffect(() => {
@@ -2061,7 +2099,7 @@ function StageRow({
   // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
   const dueAt = currentLegalDueAt(movement);
   const isBreached = dueAt !== undefined && dueAt < now;
-  const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < 60;
+  const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < thresholds.urgentMinutes;
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
@@ -2151,6 +2189,7 @@ function StageRow({
   const step = movementNextStep(movement);
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li
       ref={rowRef}
       tabIndex={-1}
@@ -2289,7 +2328,7 @@ function StageRow({
       </span>
       <Link
         className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true, className: flow.review })}
-        href={`/mockups/ward-flow/movements/${movement.id}`}
+        href={movementHref(movement.id)}
         aria-label={`Review patient ${patientInfo.formalName}`}
         title="Open the Patient page"
       >
@@ -2387,7 +2426,7 @@ function TransportRow({ leg, units, name }: { leg: TransportLegRow; units: Unit[
       clock={{ value: splitDuration(Math.max(leg.minutesSinceBooked, 0)), sub: "since accepted" }}
       attributes={[`Provider: ${leg.provider}`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.action} href={movementHref(movement.id)}>
           Review patient
         </Link>
       }
@@ -2417,7 +2456,7 @@ function UnacceptedTransportRow({ movement, units, name }: { movement: Movement;
         `To ${destinationLabel}`,
       ]}
       actions={
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.action} href={movementHref(movement.id)}>
           Review patient
         </Link>
       }
@@ -2436,7 +2475,7 @@ function NoTransportRecordRow({ movement, units, name }: { movement: Movement; u
       clock={{ value: "No job", sub: "No transport time recorded" }}
       attributes={[`Provider: Not recorded`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+        <Link className={styles.action} href={movementHref(movement.id)}>
           Review patient
         </Link>
       }

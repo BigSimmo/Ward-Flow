@@ -499,6 +499,22 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
   },
 ];
 
+/**
+ * D-39: a synthetic UMRN for each demonstration person who is not on the caseload, so every
+ * referral, inpatient and egress row names a distinct person without showing a record number.
+ */
+export const DEMO_COMMUNITY_UMRNS: Readonly<Record<string, string>> = {
+  "PT-3419": "UM960341",
+  "PT-3712": "UM960371",
+  "PT-4102": "UM960410",
+  "PT-4512": "UM960451",
+  "PT-4620": "UM960462",
+  "PT-4731": "UM960473",
+  "PT-4805": "UM960480",
+  "PT-4918": "UM960491",
+  "PT-5022": "UM960502",
+};
+
 export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   {
     id: "CL-01",
@@ -834,7 +850,7 @@ export interface CommunityTeamConfig {
   sector: string;
 }
 
-export const KNOWN_TEAM_CONFIGS: Record<string, CommunityTeamConfig> = {
+const KNOWN_TEAM_CONFIGS: Record<string, CommunityTeamConfig> = {
   fremantle: {
     name: "Fremantle Adult CMHT (SMHS)",
     campus: "Fremantle Hospital · Alma Street",

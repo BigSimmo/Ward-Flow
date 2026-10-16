@@ -16,8 +16,9 @@ import { ShortlistPanel } from "@/components/ward-management/coordinator/shortli
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 const seeded = seedWardFlowState();
 const baseMovement = seeded.movements[0];
@@ -128,6 +129,10 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
   return {
     ...actual,
     useWardFlow: () => mockContext,
+    useWardFlowSelect: () => mockContext,
+    useOptionalWardFlowSelect: () => mockContext,
+    useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
+    useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
   };
 });
@@ -184,7 +189,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementHoldArrival.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("In transit, 4h hold · Self Arrival");
+      expect(pill).toHaveTextContent("In transit, bed held 4h · Self Arrival");
     });
 
     it("renders default 4h hold pill when movement.stage is pulled without arrivalDetails", () => {
@@ -201,7 +206,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-hold-${movementPulled.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("Pulled, 4h hold");
+      expect(pill).toHaveTextContent("Bed held 4h");
     });
   });
 

@@ -7,6 +7,7 @@ import type { Admission, PlannedAdmission } from "@/components/ward-management/w
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
+import { patientHref as personHref } from "@/components/ward-management/shell/ward-facade";
 
 /**
  * Alerts, Command queue (9 Oct 2026, round 2 option A). What each inbox row is, where it sits in
@@ -170,32 +171,32 @@ export function resolveAlertSubject(
   if (admission) {
     const info = resolveSubjectPatient(admission, lookup);
     return {
-      displayName: info.displayName,
+      displayName: info.formalName,
       umrn: info.umrn,
       from: unitName(admission.unitId) ?? "Ward not recorded",
-      patientHref: info.patient ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : undefined,
+      patientHref: info.patient ? personHref(info.patient.id) : undefined,
     };
   }
   if (booking) {
     const info = resolveSubjectPatient(booking.planned, lookup);
     return {
-      displayName: booking.personLabel ?? info.displayName,
+      displayName: booking.personLabel ?? info.formalName,
       umrn: info.umrn,
       from: unitName(booking.planned.unitId) ?? "Ward not recorded",
       legalStatus: booking.planned.legalStatus,
-      patientHref: info.patient ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : undefined,
+      patientHref: info.patient ? personHref(info.patient.id) : undefined,
     };
   }
   const info = resolveSubjectPatient(movement ?? { id: movementId ?? "" }, lookup);
   const origin = movement?.originEdId ? (edById(movement.originEdId)?.name ?? movement.originEdId) : undefined;
   const to = unitName(movement?.acceptedUnitId);
   return {
-    displayName: info.displayName,
+    displayName: info.formalName,
     umrn: info.umrn,
     from: origin ?? to ?? "Location not recorded",
     to: origin ? to : undefined,
     legalStatus: movement?.legalStatus,
-    patientHref: info.patient ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : undefined,
+    patientHref: info.patient ? personHref(info.patient.id) : undefined,
   };
 }
 

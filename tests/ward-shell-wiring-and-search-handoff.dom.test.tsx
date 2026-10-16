@@ -9,7 +9,7 @@ import { setServiceScope } from "@/components/ward-management/shell/ward-service
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { takeHandedOffPatientSearchText } from "@/components/ward-management/search/patient-query-handoff";
-import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
@@ -142,24 +142,15 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
     expect(searchInputs.length).toBeGreaterThan(0);
   });
 
-  it("renders Ward Flow Digest link with target=_blank and rel=noopener noreferrer and coordinates / vs Ctrl+K on /search", () => {
+  it("coordinates / vs Ctrl+K on /search", () => {
+    // The Ward Flow Digest link moved from Tools to Settings, About (Tools review, 15 Oct 2026);
+    // its new-tab wiring is pinned in tests/ward-settings-screen.dom.test.tsx.
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardBar />
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-
-    const toolsTrigger = screen.getByTestId("ward-bar-tools-trigger");
-    fireEvent.click(toolsTrigger);
-    expect(toolsTrigger).toHaveAttribute("aria-expanded", "true");
-
-    const digestLink = screen.getByRole("link", { name: /Ward Flow Digest/i });
-    expect(digestLink).toHaveAttribute("target", "_blank");
-    expect(digestLink).toHaveAttribute("rel", "noopener noreferrer");
-
-    fireEvent.click(digestLink);
-    expect(toolsTrigger).toHaveAttribute("aria-expanded", "false");
 
     // Pressing / when PatientSearchPage is mounted focuses the on-page census input, not global search
     (document.activeElement as HTMLElement | null)?.blur?.();

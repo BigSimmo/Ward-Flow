@@ -2,13 +2,13 @@ import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { useEffect, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Sheet } from "@/components/ui/sheet";
+import { Sheet } from "@/components/wf/sheet";
 import {
   SHEET_INERT_MARKER,
   SHEET_INERT_SKIP_ATTRIBUTE,
   SHEET_PORTAL_ATTRIBUTE,
   shouldReclaimFocus,
-} from "@/components/ui/sheet-focus";
+} from "@/components/wf/sheet-focus";
 
 afterEach(() => {
   vi.restoreAllMocks();

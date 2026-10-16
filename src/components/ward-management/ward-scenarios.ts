@@ -1,25 +1,67 @@
 import { demoNetwork, type DemoNetwork, type DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { activateWardNetwork, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+import {
+  activateWardNetwork,
+  STANDARD_WARD_SITES,
+  type WardNetwork,
+  wardNetworkOf,
+} from "@/components/ward-management/ward-sites";
 
-export type WardScenario = "standard" | "scarce" | "emhs-demo" | "emhs-surge";
-export const WARD_SCENARIOS: readonly WardScenario[] = ["standard", "scarce", "emhs-demo", "emhs-surge"] as const;
+export type WardScenario =
+  "standard" | "scarce" | "emhs-demo" | "emhs-surge" | "quiet-day" | "winter-surge" | "ed-crisis";
+export const WARD_SCENARIOS: readonly WardScenario[] = [
+  "standard",
+  "scarce",
+  "emhs-demo",
+  "emhs-surge",
+  "quiet-day",
+  "winter-surge",
+  "ed-crisis",
+] as const;
+
+/** The one-tap demo reset choices (Josh, 15 Oct 2026). */
+export const DEMO_RESET_SCENARIOS = [
+  "quiet-day",
+  "winter-surge",
+  "ed-crisis",
+] as const satisfies readonly WardScenario[];
 
 export const scenarioLabels: Record<WardScenario, string> = {
   standard: "Standard night",
   scarce: "Scarce beds",
   "emhs-demo": "EMHS demo",
   "emhs-surge": "EMHS surge",
+  "quiet-day": "Quiet day",
+  "winter-surge": "Winter surge",
+  "ed-crisis": "ED crisis",
+};
+
+export const scenarioDescriptions: Record<WardScenario, string> = {
+  standard: "The standard night with its usual wards and patients.",
+  scarce: "The standard night with few beds ready and no extra observation staff.",
+  "emhs-demo": "A typical East Metro day with most beds full and some ED waits.",
+  "emhs-surge": "A busy East Metro day with fuller wards and longer ED waits.",
+  "quiet-day": "Beds free across the network and short ED waits.",
+  "winter-surge": "Every ward full or nearly full and more people waiting in ED.",
+  "ed-crisis": "Busy wards and many people waiting in East Metro EDs, some for over two days.",
+};
+
+/** The network variant each demonstration scenario loads. The standard and scarce nights have none. */
+const SCENARIO_VARIANT: Partial<Record<WardScenario, DemoNetworkVariant>> = {
+  "emhs-demo": "demo",
+  "emhs-surge": "surge",
+  "quiet-day": "quiet",
+  "winter-surge": "winter",
+  "ed-crisis": "ed-crisis",
 };
 
 /**
- * The two prepared demonstration states (owner rulings 2026-09-25): their own wards and their own
- * linked patients (`ward-demo-network.ts`). `undefined` for the standard and scarce nights, which
- * keep the standard network and its seed.
+ * The prepared demonstration states (owner rulings 2026-09-25, and the one-tap resets of
+ * 15 Oct 2026): their own wards and their own linked patients (`ward-demo-network.ts`).
+ * `undefined` for the standard and scarce nights, which keep the standard network and its seed.
  */
 export function scenarioNetwork(scenario: WardScenario): DemoNetwork | undefined {
-  const variant: DemoNetworkVariant | undefined =
-    scenario === "emhs-demo" ? "demo" : scenario === "emhs-surge" ? "surge" : undefined;
+  const variant = SCENARIO_VARIANT[scenario];
   return variant ? demoNetwork(variant) : undefined;
 }
 
@@ -29,6 +71,11 @@ export function scenarioNetwork(scenario: WardScenario): DemoNetwork | undefined
  */
 export function activateScenarioNetwork(scenario: WardScenario): void {
   activateWardNetwork(scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES);
+}
+
+/** The scenario's wards, as an input a screen passes on (`useWardNetwork()`). */
+export function scenarioWardNetwork(scenario: WardScenario): WardNetwork {
+  return wardNetworkOf(scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES);
 }
 
 /**

@@ -245,7 +245,7 @@
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-track);
   background: var(--wf-surface-2);
 }
 
@@ -256,7 +256,7 @@
   height: 28px;
   padding: 0 var(--wf-s-3);
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
@@ -1532,7 +1532,7 @@
   height: var(--wf-h-sm, 28px);
   padding: 0 var(--wf-s-3) 0 var(--wf-s-1);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
 }
 
@@ -1557,7 +1557,7 @@
   min-width: 1.5rem;
   height: 1.5rem;
   padding: 0 var(--wf-s-1);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
   letter-spacing: 0;
@@ -1711,7 +1711,7 @@
     width: 100%;
     min-height: 44px;
     margin-top: var(--wf-s-3);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .phToolbar {
@@ -1726,7 +1726,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 3px;
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
     background: var(--wf-track);
   }
 
@@ -1734,7 +1734,7 @@
     justify-content: center;
     height: 40px;
     border: 1px solid transparent;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
     color: var(--wf-ink-2);
     font-size: var(--wf-fs-13);
   }
@@ -1758,7 +1758,7 @@
     width: 48px;
     height: 48px;
     border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: var(--wf-surface);
     box-shadow: var(--wf-e1);
     color: var(--wf-ink-1);
@@ -1950,13 +1950,17 @@
     font-weight: 500;
   }
 
+  /* F-05 (phone review, Oct 2026): a barrier wraps to a second line rather than losing its end
+     ("Awaiting receiving-servic…"). */
   .stageCluster .blocker,
   .stageCluster .secondary {
+    display: -webkit-box;
     min-width: 0;
     margin: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .stageCluster .blocker::before,
@@ -2014,7 +2018,7 @@
   .detailFooter > a,
   .detailFooter > button {
     min-height: 48px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .detailFooter > a:only-child {

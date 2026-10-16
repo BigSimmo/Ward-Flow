@@ -407,7 +407,7 @@
   font-size: var(--t-0, 12px);
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: var(--pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--sunk);
   color: var(--muted);
   border: 1px solid var(--line);
@@ -986,7 +986,7 @@
   font-size: var(--t-0, 12px);
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: var(--pill, 9999px);
+  border-radius: var(--wf-r-tag);
 }
 
 .wardQueryStatusDeclined {
@@ -1173,7 +1173,7 @@
 /* =====================================================================
    v6 LAYER (7 Oct 2026). Inside the Delays main the older third-edition
    and delays tokens resolve to the v6 set, so day and night both follow
-   ward-flow-v6-tokens.css. The screen still paints no ground of its own.
+   ward-flow-v9-tokens.css. The screen still paints no ground of its own.
    ===================================================================== */
 .screen[data-ward-design="v6"] > * {
   --surface: var(--wf-surface);
@@ -1312,7 +1312,7 @@
     box-sizing: border-box;
     padding: 0 14px;
     border: 0;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
     box-shadow:
       0 0 0 1px var(--toast-ring),

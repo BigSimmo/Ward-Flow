@@ -702,7 +702,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   font-size: var(--t-0);
   font-weight: 500;
   background: var(--sunk);
@@ -839,7 +839,7 @@
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   font-size: var(--t-0);
   font-weight: 700;
   border: 1px solid var(--line);
@@ -1103,7 +1103,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 4px 10px;
-  border-radius: var(--radius-pill, 9999px);
+  border-radius: var(--wf-r-tag);
   background: var(--accent);
   color: var(--on-accent);
 }
@@ -1779,6 +1779,12 @@
   background: var(--surface);
   color: var(--ink);
   font: inherit;
+}
+/* Phone: 16px so iOS Safari does not zoom the page on focus. */
+@media (max-width: 48rem) {
+  .clearanceField select {
+    font-size: max(1rem, 16px);
+  }
 }
 .clearanceAttestation {
   display: flex;
@@ -2634,7 +2640,7 @@
   margin-left: var(--wf-s-2);
   padding: 0 var(--wf-s-2);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
   color: var(--wf-hero-ink);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -2694,7 +2700,7 @@
   padding: 0 var(--wf-s-3);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink-2);
   font-weight: 500;
@@ -2826,14 +2832,50 @@
   gap: 6px;
 }
 
+/* F-05 (phone review, Oct 2026): a movement's eyebrow may take two lines, so the observation level
+ * (its own chip) is never cut off under the Live chip. */
+.phMoveEyebrow {
+  display: inline;
+}
+
+.phObsChip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  margin-left: var(--wf-s-2);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+  border-radius: var(--wf-r-tag);
+  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+@media (max-width: 48rem) {
+  .v6Hero :has(> .phMoveEyebrow) {
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 24px;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
 .phIdSub {
-  display: block;
+  /* F-05: the place at the end of the identity line wraps to a second line, not an ellipsis. */
+  display: -webkit-box;
   min-width: 0;
   max-width: calc(100vw - 2 * var(--wf-s-4));
   overflow: hidden;
   font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .phMoreRow {
@@ -2887,7 +2929,7 @@
   height: 48px;
   min-height: 0;
   justify-content: center;
-  border-radius: var(--wf-r-pill);
+  border-radius: var(--wf-r-ctl);
   white-space: nowrap;
 }
 
@@ -2998,11 +3040,11 @@
 @media (max-width: 48rem) {
   .v6HeroTabsRow .v6Tabs {
     padding: 3px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
   }
 
   .v6HeroTabsRow .v6Tab {
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
   }
 
   .v6HeroTabsRow .v6Tab[aria-selected="true"],
@@ -3017,7 +3059,7 @@
     min-width: 22px;
     height: 22px;
     padding: 0 6px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-tag);
     background: var(--wf-surface);
     line-height: 22px;
   }
@@ -3057,7 +3099,7 @@
  * the record with the shared `pinnedSwitch` class, so it sticks under the header as Home's queue
  * switch does. The row carries its own vertical padding (offset by a negative margin so the resting
  * layout keeps its spacing), and the track takes the shared phone segmented size (`--wf-phone-seg-*`):
- * a 48px box with a transparent band round a painted 34px pill, so each 28px tab keeps a 48px hit
+ * a 48px box with a transparent band round a painted 44px track, so each 38px tab keeps a 48px hit
  * area without being clipped by the sideways scroll. Nothing here applies above 48rem. */
 @media (max-width: 48rem) {
   .v6Page > .v6HeroTabsRow {
@@ -3066,7 +3108,7 @@
   }
 
   .v6HeroTabsRow .v6Tabs {
-    --wf-seg-r: calc(var(--wf-phone-seg-h) / 2);
+    --wf-seg-r: var(--wf-r-track);
     align-items: center;
     box-sizing: border-box;
     height: var(--spacing-tap, 3rem);
@@ -3074,18 +3116,29 @@
     border: 0;
     border-radius: 0;
     background-color: transparent;
+    /* A soft cornered track painted inside the band, as in the shared phone Segmented. */
     background-image:
       radial-gradient(
-        circle at 100% 50%,
+        circle at 100% 100%,
         var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
         transparent var(--wf-seg-r)
       ),
       radial-gradient(
-        circle at 0 50%,
+        circle at 0 100%,
         var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      radial-gradient(
+        circle at 100% 0,
+        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
+        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
+        transparent var(--wf-seg-r)
+      ),
+      radial-gradient(
+        circle at 0 0,
+        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
         var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
         transparent var(--wf-seg-r)
       ),
@@ -3099,16 +3152,28 @@
         var(--wf-line) calc(100% - var(--wf-phone-seg-band) - 1px),
         var(--wf-line) calc(100% - var(--wf-phone-seg-band)),
         transparent calc(100% - var(--wf-phone-seg-band))
+      ),
+      linear-gradient(
+        to right,
+        var(--wf-line) 1px,
+        var(--wf-surface-2) 1px,
+        var(--wf-surface-2) calc(100% - 1px),
+        var(--wf-line) calc(100% - 1px)
       );
     background-position:
-      left center,
-      right center,
+      left 0 top var(--wf-phone-seg-band),
+      right 0 top var(--wf-phone-seg-band),
+      left 0 bottom var(--wf-phone-seg-band),
+      right 0 bottom var(--wf-phone-seg-band),
+      center,
       center;
-    /* Each end cap is only the outer half circle, so no ring shows inside the track. */
     background-size:
-      var(--wf-seg-r) 100%,
-      var(--wf-seg-r) 100%,
-      calc(100% - var(--wf-phone-seg-h)) 100%;
+      var(--wf-seg-r) var(--wf-seg-r),
+      var(--wf-seg-r) var(--wf-seg-r),
+      var(--wf-seg-r) var(--wf-seg-r),
+      var(--wf-seg-r) var(--wf-seg-r),
+      calc(100% - 2 * var(--wf-seg-r)) 100%,
+      100% calc(100% - 2 * var(--wf-phone-seg-band) - 2 * var(--wf-seg-r));
     background-repeat: no-repeat;
   }
 
