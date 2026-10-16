@@ -30,11 +30,24 @@ function confirmNavigationAcrossGuards(): boolean {
   return true;
 }
 
+function handleGuardedPopState(event: PopStateEvent): void {
+  if (confirmNavigationAcrossGuards()) return;
+  // The browser has already traversed back. Undo that traversal rather than pushing a
+  // replacement entry, which would destroy the user's forward history and can restore a stale URL.
+  window.history.go(1);
+  event.stopImmediatePropagation();
+}
+
 function syncNavigationConfirm(): void {
   if (typeof window === "undefined") return;
   const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
-  if (navigationGuards.size > 0) globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
-  else delete globalWindow.__wardFlowConfirmNavigation;
+  if (navigationGuards.size > 0) {
+    globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
+    if (navigationGuards.size === 1) window.addEventListener("popstate", handleGuardedPopState);
+  } else {
+    delete globalWindow.__wardFlowConfirmNavigation;
+    window.removeEventListener("popstate", handleGuardedPopState);
+  }
 }
 
 /** Removes legacy typed drafts without reading their contents. */
@@ -141,20 +154,9 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       }
     };
 
-    const guardedHref = window.location.href;
-    const handlePopState = (event: PopStateEvent) => {
-      const confirmed = confirmNavigationAcrossGuards();
-      if (!confirmed) {
-        window.history.pushState(window.history.state, "", guardedHref);
-        event.stopImmediatePropagation();
-      }
-    };
-
     document.addEventListener("click", handleClick, true);
-    window.addEventListener("popstate", handlePopState);
     return () => {
       document.removeEventListener("click", handleClick, true);
-      window.removeEventListener("popstate", handlePopState);
     };
   }, [isDirty, confirmMessage, skipAnchor]);
 
