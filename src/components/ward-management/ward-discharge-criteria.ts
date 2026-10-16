@@ -19,8 +19,10 @@ export const DISCHARGE_CRITERIA = [
   "Family, carer or support person told",
   "Transport home arranged",
   // D-63: from MP 0181/24 Safety Planning, and the WACHS guideline's observations on the day of discharge.
+  // A tick always falls inside the validity window (a review clears every tick), so "the last 24
+  // hours" stays true while the criteria are live. Change the wording if the validity changes.
   "Safety plan reviewed with the patient",
-  "Observations done today and reviewed",
+  "Observations done and reviewed in the last 24 hours",
 ] as const;
 
 export type DischargeCriterion = (typeof DISCHARGE_CRITERIA)[number];
