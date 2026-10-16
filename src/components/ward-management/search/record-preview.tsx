@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import Link from "next/link";
 
@@ -15,6 +15,7 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import { patientDisplayName, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -249,8 +250,12 @@ export function RecordPreview({
   dayZero?: Date;
   onClose: () => void;
 }) {
-  const activeDayZero = dayZero ?? demoDayZero(new Date());
-  const activeDate = calendarDateOf(now, activeDayZero);
+  const flow = useOptionalWardFlow();
+  const activeDate = useMemo(() => {
+    const activeDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
+    // `patientAgeYears` reads this instant on the Perth calendar day itself (no browser-local midnight).
+    return calendarDateOf(now, activeDayZero);
+  }, [dayZero, flow?.dayZero, now]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

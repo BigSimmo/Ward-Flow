@@ -81,13 +81,18 @@ describe("A4-7: root public/*.html mockups", () => {
       /source: "\/:file\(\[\^\/\]\+\\\\\.html\)",\s*headers: \[\{ key: "X-Robots-Tag", value: "noindex, nofollow" \}\]/,
     );
   });
-  it("load no unpinned third-party script", () => {
+  it("load no unpinned or external third-party script and carry noindex meta tags", () => {
     for (const file of ["public/capacity-table-mockup.html", "public/referral-board-mockup.html"]) {
       const html = read(file);
       expect(html, file).not.toContain("gstatic.com/antigravity");
-      for (const [, src] of html.matchAll(/<script[^>]*\bsrc="(https?:[^"]+)"/g)) {
-        expect(src, file).toMatch(/\d+\.\d+\.\d+/);
-      }
+      expect(html, file).not.toContain("cdn.tailwindcss.com");
+      expect(html, file).toMatch(/<meta\s+name="robots"\s+content="noindex,\s*nofollow"\s*\/?>/i);
+      // Any quote style, and protocol-relative `//host/file.js` as well as `http(s):`.
+      const externalScripts = [...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*(?:"|')?\s*((?:https?:)?\/\/[^"'\s>]+)/gi)];
+      expect(
+        externalScripts.map(([, src]) => src),
+        file,
+      ).toEqual([]);
     }
   });
 });
