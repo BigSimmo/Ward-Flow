@@ -15,94 +15,104 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
   const basePatient = seed.patients[0]!;
 
   it("GlobalSearchPreview computes patient age from simulation dayZero and now rather than wall-clock Date", () => {
-    // Patient born on 16 Aug 1990:
-    // On dayZero (15 Aug 2026) they are 35y; two days later (17 Aug 2026, now = NOW_ANCHOR + 2880) they are 36y.
-    const birthdayPatient = {
-      ...basePatient,
-      id: "PT-CLOCK-TEST" as const,
-      umrn: "UM999001",
-      dateOfBirth: "1990-08-16",
-      sex: "Female" as const,
-    };
-    const scenarioDayZero = perthMidnight(2026, 7, 15); // 15 Aug 2026
+    vi.stubEnv("TZ", "America/New_York");
+    try {
+      // Patient born on 16 Aug 1990:
+      // On dayZero (15 Aug 2026) they are 35y; on their Perth birthday (16 Aug 2026, now = NOW_ANCHOR + 1440) they are 36y.
+      const birthdayPatient = {
+        ...basePatient,
+        id: "PT-CLOCK-TEST" as const,
+        umrn: "UM999001",
+        dateOfBirth: "1990-08-16",
+        sex: "Female" as const,
+      };
+      const scenarioDayZero = perthMidnight(2026, 7, 15); // 15 Aug 2026
 
-    const { rerender } = render(
-      <GlobalSearchPreview
-        item={{
-          kind: "person",
-          id: birthdayPatient.id,
-          title: "Clock Test",
-          meta: "",
-          href: "/mockups/ward-flow/patients",
-        }}
-        patients={[birthdayPatient]}
-        referrals={[]}
-        movements={[]}
-        units={seed.units}
-        now={NOW_ANCHOR}
-        dayZero={scenarioDayZero}
-        onOpen={vi.fn()}
-      />,
-    );
-    expect(screen.getByTestId("ward-global-search-preview")).toHaveTextContent("UM999001 · 35y · F");
+      const { rerender } = render(
+        <GlobalSearchPreview
+          item={{
+            kind: "person",
+            id: birthdayPatient.id,
+            title: "Clock Test",
+            meta: "",
+            href: "/mockups/ward-flow/patients",
+          }}
+          patients={[birthdayPatient]}
+          referrals={[]}
+          movements={[]}
+          units={seed.units}
+          now={NOW_ANCHOR}
+          dayZero={scenarioDayZero}
+          onOpen={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId("ward-global-search-preview")).toHaveTextContent("UM999001 · 35y · F");
 
-    rerender(
-      <GlobalSearchPreview
-        item={{
-          kind: "person",
-          id: birthdayPatient.id,
-          title: "Clock Test",
-          meta: "",
-          href: "/mockups/ward-flow/patients",
-        }}
-        patients={[birthdayPatient]}
-        referrals={[]}
-        movements={[]}
-        units={seed.units}
-        now={NOW_ANCHOR + 2 * 1440}
-        dayZero={scenarioDayZero}
-        onOpen={vi.fn()}
-      />,
-    );
-    expect(screen.getByTestId("ward-global-search-preview")).toHaveTextContent("UM999001 · 36y · F");
+      rerender(
+        <GlobalSearchPreview
+          item={{
+            kind: "person",
+            id: birthdayPatient.id,
+            title: "Clock Test",
+            meta: "",
+            href: "/mockups/ward-flow/patients",
+          }}
+          patients={[birthdayPatient]}
+          referrals={[]}
+          movements={[]}
+          units={seed.units}
+          now={NOW_ANCHOR + 1440}
+          dayZero={scenarioDayZero}
+          onOpen={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId("ward-global-search-preview")).toHaveTextContent("UM999001 · 36y · F");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("RecordPreview computes patient age from dayZero and now across multi-day simulation advances", () => {
-    const birthdayPatient = {
-      ...basePatient,
-      id: "PT-RECORD-CLOCK" as const,
-      umrn: "UM999002",
-      dateOfBirth: "1986-08-16",
-    };
-    const scenarioDayZero = perthMidnight(2026, 7, 15); // 15 Aug 2026
+    vi.stubEnv("TZ", "America/New_York");
+    try {
+      const birthdayPatient = {
+        ...basePatient,
+        id: "PT-RECORD-CLOCK" as const,
+        umrn: "UM999002",
+        dateOfBirth: "1986-08-16",
+      };
+      const scenarioDayZero = perthMidnight(2026, 7, 15); // 15 Aug 2026
 
-    const { container, rerender } = render(
-      <RecordPreview
-        selection={{ kind: "person", patient: birthdayPatient }}
-        referrals={[]}
-        movements={[]}
-        patients={[birthdayPatient]}
-        units={seed.units}
-        now={NOW_ANCHOR}
-        dayZero={scenarioDayZero}
-        onClose={vi.fn()}
-      />,
-    );
-    expect(container.textContent).toContain("39 years");
+      const { container, rerender } = render(
+        <RecordPreview
+          selection={{ kind: "person", patient: birthdayPatient }}
+          referrals={[]}
+          movements={[]}
+          patients={[birthdayPatient]}
+          units={seed.units}
+          now={NOW_ANCHOR}
+          dayZero={scenarioDayZero}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(container.textContent).toContain("39 years");
 
-    rerender(
-      <RecordPreview
-        selection={{ kind: "person", patient: birthdayPatient }}
-        referrals={[]}
-        movements={[]}
-        patients={[birthdayPatient]}
-        units={seed.units}
-        now={NOW_ANCHOR + 2 * 1440}
-        dayZero={scenarioDayZero}
-        onClose={vi.fn()}
-      />,
-    );
-    expect(container.textContent).toContain("40 years");
+      rerender(
+        <RecordPreview
+          selection={{ kind: "person", patient: birthdayPatient }}
+          referrals={[]}
+          movements={[]}
+          patients={[birthdayPatient]}
+          units={seed.units}
+          now={NOW_ANCHOR + 1440}
+          dayZero={scenarioDayZero}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(container.textContent).toContain("40 years");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("WardFormTimes resolves simulation dayZero and demoNow cleanly without wall-clock drift", () => {

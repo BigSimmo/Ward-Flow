@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useId, useRef, useState, type Dispatch } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch } from "react";
 import { WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -286,7 +286,7 @@ export function WardTasksDrawer({
     }
     if (contacting !== null) {
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
-        'button[aria-label="Contact"][aria-expanded="true"]',
+        `button[data-contact="${CSS.escape(contacting)}"]`,
       );
       setContacting(null);
       trigger?.focus();
@@ -296,6 +296,24 @@ export function WardTasksDrawer({
   }
 
   useWardModalFocus(withBackdrop, drawerRef, handleEscape);
+
+  // The inline panel has no modal focus handling, so Escape pressed inside it is caught here. A
+  // native listener, because the panel is a non-interactive landmark and takes no JSX key handler.
+  const handleEscapeRef = useRef(handleEscape);
+  useEffect(() => {
+    handleEscapeRef.current = handleEscape;
+  });
+  useEffect(() => {
+    const drawer = drawerRef.current;
+    if (withBackdrop || !drawer) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      handleEscapeRef.current();
+    };
+    drawer.addEventListener("keydown", onKeyDown);
+    return () => drawer.removeEventListener("keydown", onKeyDown);
+  }, [withBackdrop]);
 
   /** Calling is not wired: the number is copied and the toast says so. */
   function callNumber(row: CallRow) {
@@ -434,6 +452,7 @@ export function WardTasksDrawer({
           aria-label="Contact"
           title="Contact"
           aria-expanded={contacting === item.id}
+          data-contact={item.id}
           onClick={() => {
             setContacting(contacting === item.id ? null : item.id);
           }}
@@ -828,12 +847,6 @@ export function WardTasksDrawer({
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? "true" : undefined}
         aria-label="Tasks"
-        onKeyDown={(event) => {
-          if (!withBackdrop && event.key === "Escape") {
-            event.stopPropagation();
-            handleEscape();
-          }
-        }}
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">

@@ -240,9 +240,11 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
        * - Here in `eligibility()`, a Secure movement passes when `unitHasLockedBeds(unit)` is true
        *   even if all locked beds are currently occupied (`lockedBedsFree(unit) === 0`), so
        *   `ACCEPT_IN_PRINCIPLE` can accept the patient onto the ward's waitlist while `detail`
-       *   surfaces `"no locked bed is free right now (0 of N)"` to the coordinator. Physical bed
-       *   allocation at `PULL_PATIENT` (`ward-flow-reducer.ts`) then enforces `lockedBedsFree(unit) > 0`
-       *   via the `locked_bed_capacity` check.
+       *   reports that locked beds exist but none is free to the coordinator. Physical bed
+       *   allocation at `PULL_PATIENT` (`ward-flow-reducer.ts`) checks `lockedBedsFree(unit)` for a new
+       *   pull: a Secure movement with no free locked bed requires a valid override, then uses an
+       *   open bed and records `locked_bed_capacity`. A movement that already holds a bed follows
+       *   the restore path and does not run this bed-kind check.
        * - By contrast, `referralEligibility()` below checks immediate placement readiness and
        *   requires both `unitHasLockedBeds(unit) && lockedBedsFree(unit) > 0` (mirroring how
        *   `allocatable_bed` checks `unit.allocatable.value > 0` here vs `availableNow > 0` there).
@@ -613,11 +615,12 @@ export function referralEligibility(
   const mixFlag = mixSexFlag(ward.gender, ward.sex);
   const genderDesignation = genderDesignationResult(ward.gender, unit, referral.genderPlacements);
   // S2-9: Unlike `eligibility()` above — which checks ward capability (`unitHasLockedBeds(unit)`)
-  // so `ACCEPT_IN_PRINCIPLE` can waitlist a Secure movement until `PULL_PATIENT` checks
-  // `lockedBedsFree(unit) > 0` — referral matching (`referralEligibility`) evaluates whether a
-  // suitable bed is immediately available now and therefore requires both `unitHasLockedBeds(unit)`
-  // and `lockedBedsFree(unit) > 0` when `ward.secureBedNeeded` is true. Both paths share
-  // `bedKindGateDetail` so the coordinator sees the exact locked-bed counts on either surface.
+  // so `ACCEPT_IN_PRINCIPLE` can waitlist a Secure movement until a new `PULL_PATIENT` checks
+  // `lockedBedsFree(unit)` (requiring a valid override when no locked bed is free) — referral matching
+  // (`referralEligibility`) evaluates whether a suitable bed is immediately available now and therefore
+  // requires both `unitHasLockedBeds(unit)` and `lockedBedsFree(unit) > 0` when `ward.secureBedNeeded`
+  // is true. Both paths share `bedKindGateDetail` so the coordinator sees the exact locked-bed counts
+  // on either surface.
   const securityMet = !ward.secureBedNeeded || (unitHasLockedBeds(unit) && lockedBedsFree(unit) > 0);
   // See the `legal_status` gate's own comment below for why this is an accepts-rule, never an
   // equality: a referral that does not need an involuntary bed is accepted by ANY bed, including
