@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Clock3, Info, ListChecks, Netwo
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -820,6 +821,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [factorsOpen, setFactorsOpen] = useState(false);
+  const markerId = useId();
   const [shortlistOpen, setShortlistOpen] = useState(true);
   // Phone (v10): queue rows are named by the patient's UMRN, never a WF number. Desktop unchanged.
   const isPhone = useIsPhone();
@@ -1262,10 +1264,24 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
           >
             <svg className={styles.connectorLayer} aria-hidden="true">
               <defs>
-                <marker id="ward-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <marker
+                  id={`${markerId}-ward-arrow`}
+                  markerWidth="7"
+                  markerHeight="7"
+                  refX="6"
+                  refY="3.5"
+                  orient="auto"
+                >
                   <path d="M 0 0 L 7 3.5 L 0 7 z" className={styles.arrowHead} />
                 </marker>
-                <marker id="ward-arrow-route" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <marker
+                  id={`${markerId}-ward-arrow-route`}
+                  markerWidth="7"
+                  markerHeight="7"
+                  refX="6"
+                  refY="3.5"
+                  orient="auto"
+                >
                   <path d="M 0 0 L 7 3.5 L 0 7 z" className={styles.arrowHeadRoute} />
                 </marker>
               </defs>
@@ -1274,7 +1290,9 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   key={connector.id}
                   d={connector.path}
                   className={connector.kind === "route" ? styles.connectorRoute : styles.connector}
-                  markerEnd={connector.kind === "route" ? "url(#ward-arrow-route)" : "url(#ward-arrow)"}
+                  markerEnd={
+                    connector.kind === "route" ? `url(#${markerId}-ward-arrow-route)` : `url(#${markerId}-ward-arrow)`
+                  }
                 />
               ))}
             </svg>

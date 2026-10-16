@@ -1,7 +1,7 @@
 "use client";
 
 import { BedDouble, ChevronRight, MapPin, Network as NetworkIcon } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -102,6 +102,7 @@ export function NetworkBedflow({
   onScopeChange?: (scope: HealthService | "all") => void;
 }) {
   const isPhone = useIsPhone();
+  const baseId = useId();
   const [ownScope, setOwnScope] = useState<HealthService | "all">("all");
   const scope = scopeProp ?? ownScope;
   const setScope = (next: HealthService | "all") => {
@@ -123,10 +124,10 @@ export function NetworkBedflow({
   const readyCount = shown.reduce((sum, group) => sum + group.rows.filter((row) => row.states.ready > 0).length, 0);
 
   return (
-    <Card as="section" className={styles.bedflow} aria-labelledby="ward-network-flow-heading">
+    <Card as="section" className={styles.bedflow} aria-labelledby={`${baseId}-ward-network-flow-heading`}>
       <CardHead
         icon={NetworkIcon}
-        id="ward-network-flow-heading"
+        id={`${baseId}-ward-network-flow-heading`}
         title={
           <>
             State bedflow <span className={styles.countTag}>{unitCount} units</span>
@@ -361,11 +362,12 @@ export function NetworkBedflow({
 
 /** Ready beds against people waiting in each service's EDs. Short is a warning glyph and a word. */
 function ReadyAgainstWaiting({ groups }: { groups: readonly ServiceGroup[] }) {
+  const baseId = useId();
   const scale = Math.max(1, ...groups.map((group) => Math.max(group.ready, group.waiting)));
   return (
-    <section className={styles.versus} aria-labelledby="ward-network-versus-heading">
+    <section className={styles.versus} aria-labelledby={`${baseId}-ward-network-versus-heading`}>
       <header className={styles.versusHead}>
-        <h3 id="ward-network-versus-heading" className={styles.versusTitle}>
+        <h3 id={`${baseId}-ward-network-versus-heading`} className={styles.versusTitle}>
           Ready against waiting
         </h3>
         <span className={styles.versusKey} aria-hidden="true">
@@ -424,10 +426,11 @@ export function ReadyAgainstWaitingPhone({
   /** Audit 11 Oct 2026: phone links to All wards instead of repeating every ward here. */
   wardsHref?: string;
 }) {
+  const baseId = useId();
   return (
-    <section className={styles.phoneVersus} aria-labelledby="ward-network-versus-phone-heading">
+    <section className={styles.phoneVersus} aria-labelledby={`${baseId}-ward-network-versus-phone-heading`}>
       <header className={styles.phoneVersusHead}>
-        <h2 id="ward-network-versus-phone-heading" className={styles.phoneVersusTitle}>
+        <h2 id={`${baseId}-ward-network-versus-phone-heading`} className={styles.phoneVersusTitle}>
           Ready against waiting
         </h2>
         {onScope ? <span className={styles.phoneVersusHint}>tap to scope beds</span> : null}
@@ -527,6 +530,7 @@ export function ReadyByRoadTime({
   sheetOpen?: boolean;
   onSheetOpenChange?: (open: boolean) => void;
 }) {
+  const baseId = useId();
   const ranked = useMemo(() => {
     if (ed === undefined) return [];
     return rows
@@ -633,10 +637,10 @@ export function ReadyByRoadTime({
   }
 
   return (
-    <Card as="section" className={styles.nearest} aria-labelledby="ward-network-roadtime-heading">
+    <Card as="section" className={styles.nearest} aria-labelledby={`${baseId}-ward-network-roadtime-heading`}>
       <CardHead
         icon={MapPin}
-        id="ward-network-roadtime-heading"
+        id={`${baseId}-ward-network-roadtime-heading`}
         title="Ready beds by road time"
         aside={ed === undefined ? null : <span className={styles.fromTag}>from {ed.siteCode} ED</span>}
       />
@@ -691,14 +695,15 @@ export function NetworkUnitDetail({
   onClose?: () => void;
 }) {
   const isPhone = useIsPhone();
+  const baseId = useId();
   if (isPhone && onClose) return <NetworkUnitSheet row={row} now={now} onClose={onClose} />;
   if (row === undefined) return null;
   const { unit, states } = row;
   return (
-    <Card as="section" className={styles.detail} aria-labelledby="ward-network-unit-heading">
+    <Card as="section" className={styles.detail} aria-labelledby={`${baseId}-ward-network-unit-heading`}>
       <CardHead
         icon={BedDouble}
-        id="ward-network-unit-heading"
+        id={`${baseId}-ward-network-unit-heading`}
         title={unit.name}
         aside={<span className={styles.unitMeta}>{unitMeta(unit)}</span>}
       />

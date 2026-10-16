@@ -141,6 +141,7 @@ export function MovementHorizonGantt({
   const scrubberId = useId();
   const serviceFilterId = useId();
   const diagramAreaId = useId();
+  const baseId = useId();
   const horizonRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(isEnlarged, horizonRef, () => setIsEnlarged(false));
 
@@ -305,7 +306,7 @@ export function MovementHorizonGantt({
           <button
             type="button"
             className={buttonClass({ variant: "sec", size: "sm", className: styles.phBtn })}
-            id="enlargeHorizonGantt"
+            id={`${baseId}-enlargeHorizonGantt`}
             aria-pressed={isEnlarged}
             onClick={handleToggleEnlarge}
             title={isEnlarged ? "Close full screen timeline (Esc)" : "Open full screen timeline"}
@@ -315,7 +316,7 @@ export function MovementHorizonGantt({
           <button
             type="button"
             className={buttonClass({ variant: "ghost", size: "sm", className: styles.phBtn })}
-            id="toggleHorizonDiagram"
+            id={`${baseId}-toggleHorizonDiagram`}
             aria-controls={diagramAreaId}
             aria-expanded={!isCollapsed}
             disabled={isEnlarged}
@@ -396,11 +397,14 @@ export function MovementHorizonGantt({
           </div>
 
           {/* Split Container: Gantt Grid + Side Corridor Register */}
-          <div className={`${styles.diagSplit}${isEnlarged ? ` ${styles.enlarged}` : ""}`} id="horizonSplit">
+          <div
+            className={`${styles.diagSplit}${isEnlarged ? ` ${styles.enlarged}` : ""}`}
+            id={`${baseId}-horizonSplit`}
+          >
             <div className={styles.diagMain}>
               <div
                 className={styles.diagWrap}
-                id="horizonDiagWrap"
+                id={`${baseId}-horizonDiagWrap`}
                 tabIndex={0}
                 role="region"
                 aria-label="Movements timeline"

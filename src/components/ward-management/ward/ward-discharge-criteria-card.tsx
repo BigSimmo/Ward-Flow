@@ -42,7 +42,12 @@ export function WardDischargeCriteriaCard({
   const [editing, setEditing] = useState(false);
   const [chosen, setChosen] = useState<DischargeCriterion[]>([]);
   const [attested, setAttested] = useState(false);
+  // WACHS CLD guideline s 2.2: a patient chosen for criteria led discharge must be told. Confirmed
+  // here before saving, and not recorded, so the event carries nothing new.
+  const [patientTold, setPatientTold] = useState(false);
   const status = dischargeCriteriaStatus(record, eligibility, now);
+  // Paused criteria can also be past their validity. Ticks then read as lapsed, not as met now.
+  const pastValidity = status.kind === "paused" && dischargeCriteriaStatus(record, "voluntary", now).kind === "lapsed";
   const ineligible = criteriaEligibilityRefusal(eligibility);
   const items = record?.items ?? [];
   const metList = items.filter((item) => item.metAt !== null).map((item) => item.criterion);
@@ -50,6 +55,7 @@ export function WardDischargeCriteriaCard({
   const openEditor = () => {
     setChosen(items.map((item) => item.criterion));
     setAttested(false);
+    setPatientTold(false);
     setEditing(true);
   };
 
@@ -95,11 +101,16 @@ export function WardDischargeCriteriaCard({
           <span>{summary}</span>
         </p>
         {eligibility === "voluntary" ? <p className={styles.note}>Legal status recorded as voluntary.</p> : null}
+        {status.kind === "in_progress" && !editing ? (
+          <p className={styles.note} data-testid="ward-drawer-criteria-escalate">
+            If a criterion cannot be met or there is a new concern, ask for a medical review.
+          </p>
+        ) : null}
 
         {!editing && items.length > 0 ? (
           <ul className={styles.list}>
             {items.map((item) => (
-              <li key={item.criterion}>
+              <li key={item.criterion} className={styles.item}>
                 {canTick ? (
                   <Checkbox
                     label={item.criterion}
@@ -110,11 +121,26 @@ export function WardDischargeCriteriaCard({
                 ) : (
                   <span className={styles.readOnly}>
                     {item.criterion}{" "}
-                    <Badge size="sm" tone={item.metAt !== null ? "success" : "neutral"}>
-                      {item.metAt !== null ? "Met" : "Not met"}
-                    </Badge>
+                    {status.kind === "lapsed" || status.kind === "paused" ? (
+                      <Badge size="sm" tone="neutral">
+                        {item.metAt !== null
+                          ? status.kind === "lapsed" || pastValidity
+                            ? "Met before it lapsed"
+                            : "Met"
+                          : "Not met"}
+                      </Badge>
+                    ) : (
+                      <Badge size="sm" tone={item.metAt !== null ? "success" : "neutral"}>
+                        {item.metAt !== null ? "Met" : "Not met"}
+                      </Badge>
+                    )}
                   </span>
                 )}
+                {item.metAt !== null ? (
+                  <span className={canTick ? `${styles.metAt} ${styles.metAtIndent}` : styles.metAt}>
+                    Ticked {formatInstantWithDay(item.metAt, now)}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -138,17 +164,26 @@ export function WardDischargeCriteriaCard({
                 }
               />
             ))}
-            <Checkbox
-              label="Set by the treating psychiatrist"
-              className={styles.touchTarget}
-              checked={attested}
-              onChange={(event) => setAttested(event.target.checked)}
-            />
+            <fieldset className={styles.confirm}>
+              <legend className={styles.legend}>Before saving, confirm</legend>
+              <Checkbox
+                label="Set by the treating psychiatrist"
+                className={styles.touchTarget}
+                checked={attested}
+                onChange={(event) => setAttested(event.target.checked)}
+              />
+              <Checkbox
+                label="Patient told they are on criteria led discharge"
+                className={styles.touchTarget}
+                checked={patientTold}
+                onChange={(event) => setPatientTold(event.target.checked)}
+              />
+            </fieldset>
             <div className={styles.actions}>
               <Button
                 className={styles.touchTarget}
                 variant="sec"
-                disabled={chosen.length === 0 || !attested}
+                disabled={chosen.length === 0 || !attested || !patientTold}
                 onClick={() => {
                   onChange({
                     criteria: chosen,
@@ -164,9 +199,9 @@ export function WardDischargeCriteriaCard({
                 Cancel
               </Button>
             </div>
-            {chosen.length === 0 || !attested ? (
+            {chosen.length === 0 || !attested || !patientTold ? (
               <p className={styles.note}>
-                Choose at least one criterion and confirm the treating psychiatrist set them.
+                Choose at least one criterion, confirm the treating psychiatrist set them and that the patient was told.
               </p>
             ) : null}
           </fieldset>

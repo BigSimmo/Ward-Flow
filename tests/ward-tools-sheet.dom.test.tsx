@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { WardFlowContext, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
@@ -91,10 +91,11 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
         id: `finder-${index + 1}`,
         name: `Finder ward ${index + 1}`,
       }));
+      // An override reaches the finder's field reads as well as whole-value readers.
       return (
-        <WardFlowContext.Provider value={{ ...flow, units, bedReleases: [] }}>
+        <WardFlowOverride value={{ ...flow, units, bedReleases: [] }}>
           <WardBedFinder onNavigate={vi.fn()} />
-        </WardFlowContext.Provider>
+        </WardFlowOverride>
       );
     }
     render(

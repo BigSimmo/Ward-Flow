@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { EventEmitter } from "node:events";
@@ -52,6 +53,10 @@ test("configuration refuses wildcard or insecure origins and invalid ports", () 
   );
 });
 
+/** @typedef {EventEmitter & { close?: any }} FakeServer */
+/** @typedef {EventEmitter & { exitCode?: number | string | null }} FakeSignals */
+
+/** @param {{ authenticate?: (token: string) => Promise<string>, sharedStore?: any, log?: (event: any) => void }} [options] */
 function setup({ authenticate, sharedStore, log = () => {} } = {}) {
   const calls = [];
   return {
@@ -199,9 +204,10 @@ test("failure diagnostics correlate responses without request or exception conte
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   test(`${signal} stops the listener before ending the pool exactly once`, async (t) => {
-    const signals = new EventEmitter();
-    const server = new EventEmitter();
+    const signals = /** @type {FakeSignals} */ (new EventEmitter());
+    const server = /** @type {FakeServer} */ (new EventEmitter());
     const order = [];
+    /** @type {(error?: Error) => void} */
     let finishClose;
     server.close = t.mock.fn((callback) => {
       order.push("server");
@@ -227,8 +233,8 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 test("listener startup errors still end the pool when the server is not running", async (t) => {
   const messages = [];
   t.mock.method(console, "error", (...args) => messages.push(args));
-  const signals = new EventEmitter();
-  const server = new EventEmitter();
+  const signals = /** @type {FakeSignals} */ (new EventEmitter());
+  const server = /** @type {FakeServer} */ (new EventEmitter());
   server.close = t.mock.fn((callback) =>
     callback(Object.assign(new Error("synthetic close diagnostic"), { code: "ERR_SERVER_NOT_RUNNING" })),
   );
@@ -246,8 +252,8 @@ test("listener startup errors still end the pool when the server is not running"
 test("pool shutdown rejection is caught and logged without raw diagnostics", async (t) => {
   const messages = [];
   t.mock.method(console, "error", (...args) => messages.push(args));
-  const signals = new EventEmitter();
-  const server = new EventEmitter();
+  const signals = /** @type {FakeSignals} */ (new EventEmitter());
+  const server = /** @type {FakeServer} */ (new EventEmitter());
   server.close = t.mock.fn((callback) => callback());
   const pool = {
     end: t.mock.fn(async () => {
@@ -266,8 +272,8 @@ test("pool shutdown rejection is caught and logged without raw diagnostics", asy
 test("listener close errors still end the pool and produce sanitized shutdown failure", async (t) => {
   const messages = [];
   t.mock.method(console, "error", (...args) => messages.push(args));
-  const signals = new EventEmitter();
-  const server = new EventEmitter();
+  const signals = /** @type {FakeSignals} */ (new EventEmitter());
+  const server = /** @type {FakeServer} */ (new EventEmitter());
   server.close = t.mock.fn((callback) => callback(new Error("synthetic listener close diagnostic")));
   const pool = { end: t.mock.fn(async () => {}) };
   const close = registerShutdown(server, pool, signals);
@@ -278,8 +284,8 @@ test("listener close errors still end the pool and produce sanitized shutdown fa
 });
 
 test("nonshared shutdown closes the listener without a pool", async (t) => {
-  const signals = new EventEmitter();
-  const server = new EventEmitter();
+  const signals = /** @type {FakeSignals} */ (new EventEmitter());
+  const server = /** @type {FakeServer} */ (new EventEmitter());
   server.close = t.mock.fn((callback) => callback());
   const close = registerShutdown(server, undefined, signals);
   signals.emit("SIGTERM");

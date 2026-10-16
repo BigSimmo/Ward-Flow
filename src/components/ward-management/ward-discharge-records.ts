@@ -1,6 +1,8 @@
 import { admissionBelongsToTeam, communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
-import type { Patient } from "./ward-patients";
+import { criteriaEligibility, type CriteriaEligibility } from "./ward-discharge-criteria";
+import type { Movement } from "./ward-model";
+import { activeCommunityTreatmentOrder, type Patient } from "./ward-patients";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 export type WardRecordActor =
@@ -23,6 +25,8 @@ export type DischargeRecord = Readonly<
     unitId: string;
     identity: DischargeIdentity;
     admissionState: Admission["state"];
+    /** D-64: whether criteria led discharge may be used, read the same way as the ward's criteria card. */
+    criteriaEligibility: CriteriaEligibility;
   } & Pick<
     Admission,
     | "expectedDischargeAt"
@@ -35,6 +39,7 @@ export type DischargeRecord = Readonly<
     | "leavingDestination"
     | "followUp"
     | "careJourney"
+    | "dischargeCriteria"
   >
 >;
 
@@ -65,6 +70,34 @@ export function validRecordActor(actor: unknown): actor is WardRecordActor {
       actor.actingUnitId.length > 0
     );
   return keys.join() === "role" && ["coordinator", "ed", "officer", "community", "demo"].includes(String(actor.role));
+}
+
+/** A previous stay must never decide this admission's discharge or transport state. */
+export function dischargeMovement(state: Pick<WardFlowState, "movements">, admission: Admission): Movement | undefined {
+  return (
+    state.movements.find((movement) => movement.admissionId === admission.id) ??
+    state.movements.find(
+      (movement) =>
+        admission.patientId !== null &&
+        movement.patientId === admission.patientId &&
+        movement.admissionId === undefined &&
+        movement.closure === undefined,
+    )
+  );
+}
+
+/** The single legal-status lookup used by the ward card, the command reducer and the Discharges list. */
+export function admissionCriteriaEligibility(
+  state: Pick<WardFlowState, "movements" | "patients">,
+  admission: Admission,
+): CriteriaEligibility {
+  const movement = dischargeMovement(state, admission);
+  const patient = uniqueRecord(state.patients, admission.patientId);
+  return criteriaEligibility(
+    patient?.legalStatus,
+    movement?.legalStatus,
+    activeCommunityTreatmentOrder(patient) !== undefined,
+  );
 }
 
 export function dischargeIdentity(state: WardFlowState, admission: Admission): DischargeIdentity {
@@ -106,6 +139,9 @@ function project(state: WardFlowState, admission: Admission): DischargeRecord {
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
+    // Fixed-list criteria and times only, never typed text (ward-discharge-criteria.ts).
+    dischargeCriteria: admission.dischargeCriteria ?? null,
+    criteriaEligibility: admissionCriteriaEligibility(state, admission),
   });
 }
 

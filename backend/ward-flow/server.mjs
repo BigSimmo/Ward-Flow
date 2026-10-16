@@ -187,6 +187,11 @@ export async function sweepPush(sharedStore, log = (event) => console.error(JSON
   }
 }
 
+/**
+ * @param {any} server
+ * @param {{ end(): Promise<unknown> } | undefined} pool
+ * @param {Pick<NodeJS.EventEmitter, "once"> & { exitCode?: number | string | null }} [signals] `process`, or an emitter in tests.
+ */
 export function registerShutdown(server, pool, signals = process) {
   let shutdown;
   const close = () => {

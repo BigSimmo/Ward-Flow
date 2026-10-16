@@ -105,11 +105,12 @@ function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boo
  * still sees its outbound move, but never the receiving ward's notes about it (review on PR #365).
  */
 function notifiesOnArrival(
-  context: Pick<Context, "coordinator" | "unitIn">,
+  context: Pick<Context, "unitIn"> & { readonly wholeNetwork: boolean },
   movement: { acceptedUnitId?: string | null },
 ): boolean {
-  // A service coordinator sees notes only from wards in its own service, as a ward desk does.
-  return typeof movement.acceptedUnitId === "string" ? context.unitIn(movement.acceptedUnitId) : context.coordinator;
+  // A service coordinator sees notes only from wards in its own service, as a ward desk does. With
+  // no receiving ward recorded the notes belong to no service, so only the statewide desk sees them.
+  return typeof movement.acceptedUnitId === "string" ? context.unitIn(movement.acceptedUnitId) : context.wholeNetwork;
 }
 
 /**
@@ -119,6 +120,7 @@ function notifiesOnArrival(
 export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string }>(
   records: readonly R[] | undefined,
   desk: Pick<Context, "coordinator" | "unitIn"> & {
+    readonly wholeNetwork: boolean;
     readonly role: WardAccess["role"];
     readonly movements: readonly { id: string; acceptedUnitId?: string | null }[];
     readonly wholeStay: (admissionId: string) => boolean;
@@ -211,6 +213,7 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   supportNotifications: (context) =>
     supportNotificationsForDesk(context.state.supportNotifications, {
       coordinator: context.coordinator,
+      wholeNetwork: accessIsWholeNetwork(context.access),
       unitIn: context.unitIn,
       role: context.access.role,
       movements: context.scoped.movements,
@@ -473,7 +476,7 @@ export function commandScopeRefusal(
       movement &&
       (typeof movement.acceptedUnitId === "string"
         ? !unitInScope(access.scope, movement.acceptedUnitId, places)
-        : access.role === "ward")
+        : !accessIsWholeNetwork(access))
     )
       return outside;
   }

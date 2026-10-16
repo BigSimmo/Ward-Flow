@@ -1,6 +1,7 @@
 "use client";
 
 import { Flag } from "lucide-react";
+import { useId } from "react";
 
 import { Card, CardHead, SrOnly, Switch, buttonClass } from "@/components/wf";
 import {
@@ -19,16 +20,21 @@ import styles from "./settings.module.css";
  * changes this device only. In production the server alone decides, so the switches are greyed.
  */
 export function FeatureFlagsCard() {
+  const baseId = useId();
   const flags = useWardFeatureFlags();
   const environment = wardEnvironment();
   const deviceCanChange = flags[0]?.deviceCanChange ?? false;
   const anyOnDevice = flags.some((flag) => flag.source === "device");
 
   return (
-    <Card aria-labelledby="feature-flags-title" data-setting="feature-flags" data-testid="ward-settings-feature-flags">
+    <Card
+      aria-labelledby={`${baseId}-feature-flags-title`}
+      data-setting="feature-flags"
+      data-testid="ward-settings-feature-flags"
+    >
       <CardHead
         iconPlain
-        id="feature-flags-title"
+        id={`${baseId}-feature-flags-title`}
         icon={Flag}
         title="Feature flags"
         meta={`This site: ${environment}`}

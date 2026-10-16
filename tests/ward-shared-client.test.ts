@@ -187,6 +187,119 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot).toBeNull();
     client.dispose();
   });
+  it("never re-sends a write without x-ward-working-as when the chosen role has ended, and refreshes the desk", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const postHeaders: (string | null)[] = [];
+    const getHeaders: (string | null)[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, options) => {
+        const as = new Headers(options?.headers).get("x-ward-working-as");
+        if (!options?.body) {
+          getHeaders.push(as);
+          return Response.json({ snapshot: snapshot(as ? 1 : 2), workingAs: as ?? "fallback-coordinator" });
+        }
+        postHeaders.push(as);
+        return Response.json(
+          { error: "No Ward Flow role is assigned to this account", code: "no-role" },
+          { status: 403 },
+        );
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(getHeaders).toHaveLength(2));
+    expect(postHeaders).toEqual(["3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d"]);
+    expect(getHeaders).toEqual(["3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d", null]);
+    expect(stored).toBeNull();
+    expect(view?.eventLog).toHaveLength(1);
+    expect(view?.eventLog?.[0]?.accepted).toBe(false);
+    expect(view?.error).toBe(
+      "The role this tab was working as has ended. Review the current desk before making changes.",
+    );
+    expect(view?.workingAs).toBe("fallback-coordinator");
+    client.dispose();
+  });
+  it("refuses an access write after the chosen role ends instead of re-sending it under another role", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    const postHeaders: (string | null)[] = [];
+    const getUrls: string[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (url, options) => {
+        if (!options?.body) {
+          getUrls.push(String(url));
+          return Response.json({ snapshot: snapshot(1), workingAs: "fallback-coordinator" });
+        }
+        postHeaders.push(new Headers(options?.headers).get("x-ward-working-as"));
+        return Response.json(
+          { error: "No Ward Flow role is assigned to this account", code: "no-role" },
+          { status: 403 },
+        );
+      },
+    });
+    await client.refresh();
+    const result = await client.revokeAccess("3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9e");
+    expect(result).toBe("The role this tab was working as has ended. Review the current desk before making changes.");
+    expect(postHeaders).toEqual(["3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d"]);
+    expect(stored).toBeNull();
+    // The desk is read again in full, never from the ended role's revision.
+    await vi.waitFor(() => expect(getUrls).toHaveLength(2));
+    expect(getUrls[1]).toBe("https://example.test/v1/workspace");
+    expect(view?.workingAs).toBe("fallback-coordinator");
+    client.dispose();
+  });
+  it("drops a board read that was out when the role ended, so the ended desk never comes back", async () => {
+    let view: SharedView | undefined;
+    let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+    let releaseRead: (() => void) | undefined;
+    let reads = 0;
+    const seen: number[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+        if (next.snapshot) seen.push(next.snapshot.revision);
+      },
+      workingAs: { get: () => stored, set: (id) => (stored = id) },
+      fetch: async (_url, options) => {
+        if (!options?.body) {
+          reads += 1;
+          // The second read starts under the ended role and answers only after the refusal.
+          if (reads === 2) await new Promise<void>((resolve) => (releaseRead = resolve));
+          return Response.json({ snapshot: snapshot(reads), workingAs: "fallback-coordinator" });
+        }
+        return Response.json(
+          { error: "No Ward Flow role is assigned to this account", code: "no-role" },
+          { status: 403 },
+        );
+      },
+    });
+    await client.refresh();
+    const stale = client.refresh();
+    await vi.waitFor(() => expect(releaseRead).toBeDefined());
+    await client.revokeAccess("3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9e");
+    expect(view?.snapshot).toBeNull();
+    releaseRead!();
+    await stale;
+    await vi.waitFor(() => expect(reads).toBe(3));
+    await vi.waitFor(() => expect(view?.snapshot?.revision).toBe(3));
+    expect(seen).not.toContain(2);
+    client.dispose();
+  });
   it("hands back step-up and role refusals on access steps instead of signing out", async () => {
     let view: SharedView | undefined;
     const bodies: unknown[] = [];

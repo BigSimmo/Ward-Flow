@@ -49,12 +49,12 @@ describe("Legal forms — wired confirm controls (F2.1)", () => {
     fireEvent.click(registerConfirm);
     expect(screen.queryByText("Statutory Form registered successfully in registry.")).not.toBeInTheDocument();
 
-    const movementSelect = document.getElementById("legal-forms-new-movement") as HTMLSelectElement;
+    const movementSelect = screen.getByLabelText("Movement") as HTMLSelectElement;
     const firstOption = Array.from(movementSelect.options).find((opt) => opt.value !== "");
     expect(firstOption).toBeDefined();
     fireEvent.change(movementSelect, { target: { value: firstOption!.value } });
     // A blank, malformed or future time is refused rather than replaced with the save moment.
-    const timeInput = document.getElementById("legal-forms-new-time") as HTMLInputElement;
+    const timeInput = screen.getByLabelText("Time on form") as HTMLInputElement;
     const timeBlockedConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
     expect(timeBlockedConfirm).toHaveAttribute("aria-disabled", "true");
     expect(timeBlockedConfirm).toHaveAttribute(
@@ -136,7 +136,7 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
   it("builds the 'Record a form' picker options from the register too", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
-    const select = document.getElementById("legal-forms-new-instrument") as HTMLSelectElement;
+    const select = screen.getByLabelText("Form type") as HTMLSelectElement;
     const optionText = Array.from(select.options).map((o) => o.textContent);
     expect(optionText.some((t) => t?.includes(formTitleForCode("3B") as string))).toBe(true);
     expect(optionText.some((t) => t?.includes(formTitleForCode("3D") as string))).toBe(true);

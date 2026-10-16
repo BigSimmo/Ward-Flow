@@ -12,7 +12,7 @@ import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -148,6 +148,7 @@ export function MovementWorkspaceCockpit({
   // show as off with the reason instead of borrowing the coordinator's role.
   const raise = useWardRaise(role);
   const gate = useRoleGate();
+  const baseId = useId();
   const lock = (type: WardFlowEventType): RoleGate => (role === "ward" ? gate(type) : OPEN_GATE);
 
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);
@@ -495,7 +496,9 @@ export function MovementWorkspaceCockpit({
                   data-testid="ward-console-record-gender-submit"
                   className={styles.controlButton}
                   aria-disabled={genderRecordDraft === undefined ? "true" : undefined}
-                  aria-describedby={genderRecordDraft === undefined ? "ward-console-record-gender-blocked" : undefined}
+                  aria-describedby={
+                    genderRecordDraft === undefined ? `${baseId}-ward-console-record-gender-blocked` : undefined
+                  }
                   title={genderRecordDraft === undefined ? "Choose a gender to record first." : undefined}
                   {...lock("RECORD_MOVEMENT_GENDER").buttonProps}
                   onClick={(event) => {
@@ -513,7 +516,7 @@ export function MovementWorkspaceCockpit({
                   Record gender
                 </button>
                 {genderRecordDraft === undefined ? (
-                  <span id="ward-console-record-gender-blocked" className="sr-only">
+                  <span id={`${baseId}-ward-console-record-gender-blocked`} className="sr-only">
                     Choose a gender to record first.
                   </span>
                 ) : null}
@@ -594,7 +597,7 @@ export function MovementWorkspaceCockpit({
         {/* =========================================================================
             1. EXECUTIVE CLINICAL MASTHEAD
             ========================================================================= */}
-        <section className={styles.mastheadCard} aria-labelledby="movement-masthead-title">
+        <section className={styles.mastheadCard} aria-labelledby={`${baseId}-movement-masthead-title`}>
           <div className={styles.mastheadTop}>
             <div className={styles.patientIdentityGroup}>
               <div className={styles.patientAvatar} aria-hidden="true">
@@ -607,7 +610,7 @@ export function MovementWorkspaceCockpit({
                   <span>{mastheadUmrn}</span>
                 </div>
                 {/* Single <h1> Landmark for this route */}
-                <h1 id="movement-masthead-title" className={styles.mastheadTitle}>
+                <h1 id={`${baseId}-movement-masthead-title`} className={styles.mastheadTitle}>
                   {mastheadName ? `${mastheadName} (${mastheadUmrn})` : mastheadUmrn} —{" "}
                   {originEd ? `in ${originEd.name}` : unresolvedOriginDepartment(patient)}
                 </h1>
@@ -695,9 +698,9 @@ export function MovementWorkspaceCockpit({
         {/* =========================================================================
             2. HORIZONTAL 7-STAGE TRAJECTORY STEPPER
             ========================================================================= */}
-        <section className={styles.stepperContainer} aria-labelledby="stepper-title">
+        <section className={styles.stepperContainer} aria-labelledby={`${baseId}-stepper-title`}>
           <div className={styles.stepperHeader}>
-            <h2 id="stepper-title" className={styles.stepperTitle}>
+            <h2 id={`${baseId}-stepper-title`} className={styles.stepperTitle}>
               {open ? "Where this has got to" : "Where this stopped"}
             </h2>
             <span className={styles.stepperCountBadge}>
@@ -1326,7 +1329,9 @@ export function MovementWorkspaceCockpit({
                       className={styles.controlButton}
                       data-testid="ward-console-urgent-flag-toggle"
                       aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-                      aria-describedby={urgentFlagReason === undefined ? "ward-console-urgent-flag-blocked" : undefined}
+                      aria-describedby={
+                        urgentFlagReason === undefined ? `${baseId}-ward-console-urgent-flag-blocked` : undefined
+                      }
                       title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
                       {...lock("FLAG_MOVEMENT_URGENT").buttonProps}
                       onClick={
@@ -1346,7 +1351,7 @@ export function MovementWorkspaceCockpit({
                     {lock("FLAG_MOVEMENT_URGENT").note}
                   </>
                   {urgentFlagReason === undefined ? (
-                    <span id="ward-console-urgent-flag-blocked" className="sr-only">
+                    <span id={`${baseId}-ward-console-urgent-flag-blocked`} className="sr-only">
                       {URGENT_FLAG_UNCHOSEN}
                     </span>
                   ) : null}
@@ -1385,12 +1390,12 @@ export function MovementWorkspaceCockpit({
                     setBlockerDraft("");
                   }}
                 >
-                  <label className="sr-only" htmlFor="ward-console-blocker">
+                  <label className="sr-only" htmlFor={`${baseId}-ward-console-blocker`}>
                     What is holding this up? Wards, roles and jobs only — never a patient&rsquo;s name, details or
                     clinical narrative.
                   </label>
                   <input
-                    id="ward-console-blocker"
+                    id={`${baseId}-ward-console-blocker`}
                     type="text"
                     className={styles.blockerInput}
                     data-testid="ward-console-blocker-input"
@@ -1403,7 +1408,9 @@ export function MovementWorkspaceCockpit({
                     className={styles.controlButton}
                     aria-disabled={blockerDraft.trim().length === 0 ? "true" : undefined}
                     onClick={blockerDraft.trim().length === 0 ? ignoreUnavailableActivation : undefined}
-                    aria-describedby={blockerDraft.trim().length === 0 ? "ward-console-blocker-blocked" : undefined}
+                    aria-describedby={
+                      blockerDraft.trim().length === 0 ? `${baseId}-ward-console-blocker-blocked` : undefined
+                    }
                     title={
                       blockerDraft.trim().length === 0 ? "Enter what is holding this movement up first." : undefined
                     }
@@ -1411,7 +1418,7 @@ export function MovementWorkspaceCockpit({
                     Record it
                   </button>
                   {blockerDraft.trim().length === 0 ? (
-                    <span id="ward-console-blocker-blocked" className="sr-only">
+                    <span id={`${baseId}-ward-console-blocker-blocked`} className="sr-only">
                       Enter what is holding this movement up first.
                     </span>
                   ) : null}
@@ -1493,7 +1500,7 @@ export function MovementWorkspaceCockpit({
                       wardCannotCancel
                         ? "ward-console-cancel-transport-not-yours"
                         : cancelTransportReason === undefined
-                          ? "ward-console-cancel-transport-blocked"
+                          ? `${baseId}-ward-console-cancel-transport-blocked`
                           : undefined
                     }
                     title={
@@ -1527,7 +1534,7 @@ export function MovementWorkspaceCockpit({
                       {CANCEL_TRANSPORT_NOT_YOURS}
                     </span>
                   ) : cancelTransportReason === undefined ? (
-                    <span id="ward-console-cancel-transport-blocked" className="sr-only">
+                    <span id={`${baseId}-ward-console-cancel-transport-blocked`} className="sr-only">
                       {CANCEL_TRANSPORT_UNCHOSEN}
                     </span>
                   ) : null}
@@ -1548,11 +1555,11 @@ export function MovementWorkspaceCockpit({
                   officer; the bed stays held until it is released.
                 </p>
                 <div className={styles.controlRow}>
-                  <label className="sr-only" htmlFor="ward-console-stop-transport-reason">
+                  <label className="sr-only" htmlFor={`${baseId}-ward-console-stop-transport-reason`}>
                     Why is the journey being stopped?
                   </label>
                   <select
-                    id="ward-console-stop-transport-reason"
+                    id={`${baseId}-ward-console-stop-transport-reason`}
                     className={styles.controlSelect}
                     data-testid="ward-console-stop-transport-reason"
                     value={stopTransportReason ?? ""}
@@ -1572,11 +1579,11 @@ export function MovementWorkspaceCockpit({
                       </option>
                     ))}
                   </select>
-                  <label className="sr-only" htmlFor="ward-console-stop-transport-whereabouts">
+                  <label className="sr-only" htmlFor={`${baseId}-ward-console-stop-transport-whereabouts`}>
                     Where is the patient now?
                   </label>
                   <select
-                    id="ward-console-stop-transport-whereabouts"
+                    id={`${baseId}-ward-console-stop-transport-whereabouts`}
                     className={styles.controlSelect}
                     data-testid="ward-console-stop-transport-whereabouts"
                     value={stopTransportWhereabouts ?? ""}
@@ -1606,7 +1613,7 @@ export function MovementWorkspaceCockpit({
                       }
                       aria-describedby={
                         stopTransportReason === undefined || stopTransportWhereabouts === undefined
-                          ? "ward-console-stop-transport-blocked"
+                          ? `${baseId}-ward-console-stop-transport-blocked`
                           : undefined
                       }
                       title={
@@ -1634,7 +1641,7 @@ export function MovementWorkspaceCockpit({
                     {lock("STOP_TRANSPORT").note}
                   </>
                   {stopTransportReason === undefined || stopTransportWhereabouts === undefined ? (
-                    <span id="ward-console-stop-transport-blocked" className="sr-only">
+                    <span id={`${baseId}-ward-console-stop-transport-blocked`} className="sr-only">
                       Choose a reason and where the patient is first.
                     </span>
                   ) : null}
@@ -1678,11 +1685,11 @@ export function MovementWorkspaceCockpit({
                   The patient is no longer going to the accepting ward. The bed stays held until it is released.
                 </p>
                 <div className={styles.controlRow}>
-                  <label className="sr-only" htmlFor="ward-console-diversion-reason">
+                  <label className="sr-only" htmlFor={`${baseId}-ward-console-diversion-reason`}>
                     Why was the journey diverted?
                   </label>
                   <select
-                    id="ward-console-diversion-reason"
+                    id={`${baseId}-ward-console-diversion-reason`}
                     className={styles.controlSelect}
                     data-testid="ward-console-diversion-reason"
                     value={diversionReason ?? ""}
@@ -1700,11 +1707,11 @@ export function MovementWorkspaceCockpit({
                       </option>
                     ))}
                   </select>
-                  <label className="sr-only" htmlFor="ward-console-diversion-place">
+                  <label className="sr-only" htmlFor={`${baseId}-ward-console-diversion-place`}>
                     Where is the patient now?
                   </label>
                   <select
-                    id="ward-console-diversion-place"
+                    id={`${baseId}-ward-console-diversion-place`}
                     className={styles.controlSelect}
                     data-testid="ward-console-diversion-place"
                     value={diversionPlace ?? ""}
@@ -1732,7 +1739,7 @@ export function MovementWorkspaceCockpit({
                       aria-disabled={diversionReason === undefined || diversionPlace === undefined ? "true" : undefined}
                       aria-describedby={
                         diversionReason === undefined || diversionPlace === undefined
-                          ? "ward-console-diversion-blocked"
+                          ? `${baseId}-ward-console-diversion-blocked`
                           : undefined
                       }
                       title={
@@ -1760,7 +1767,7 @@ export function MovementWorkspaceCockpit({
                     {lock("RECORD_DIVERSION").note}
                   </>
                   {diversionReason === undefined || diversionPlace === undefined ? (
-                    <span id="ward-console-diversion-blocked" className="sr-only">
+                    <span id={`${baseId}-ward-console-diversion-blocked`} className="sr-only">
                       Choose a reason and where the patient is first.
                     </span>
                   ) : null}
@@ -1855,7 +1862,9 @@ export function MovementWorkspaceCockpit({
                         className={styles.controlButton}
                         data-testid="ward-console-withdraw-acceptance"
                         aria-disabled={withdrawReason === undefined ? "true" : undefined}
-                        aria-describedby={withdrawReason === undefined ? "ward-console-withdraw-blocked" : undefined}
+                        aria-describedby={
+                          withdrawReason === undefined ? `${baseId}-ward-console-withdraw-blocked` : undefined
+                        }
                         title={withdrawReason === undefined ? WITHDRAW_REASON_UNCHOSEN : undefined}
                         {...lock("WITHDRAW_ACCEPTANCE").buttonProps}
                         onClick={
@@ -1875,7 +1884,7 @@ export function MovementWorkspaceCockpit({
                       {lock("WITHDRAW_ACCEPTANCE").note}
                     </>
                     {withdrawReason === undefined ? (
-                      <span id="ward-console-withdraw-blocked" className="sr-only">
+                      <span id={`${baseId}-ward-console-withdraw-blocked`} className="sr-only">
                         {WITHDRAW_REASON_UNCHOSEN}
                       </span>
                     ) : null}
@@ -1962,7 +1971,7 @@ export function MovementWorkspaceCockpit({
                         aria-disabled={stepBackTo === undefined || stepBackReason === undefined ? "true" : undefined}
                         aria-describedby={
                           stepBackTo === undefined || stepBackReason === undefined
-                            ? "ward-console-step-back-blocked"
+                            ? `${baseId}-ward-console-step-back-blocked`
                             : undefined
                         }
                         title={
@@ -1988,7 +1997,7 @@ export function MovementWorkspaceCockpit({
                       {lock("STEP_BACK_STAGE").note}
                     </>
                     {stepBackTo === undefined || stepBackReason === undefined ? (
-                      <span id="ward-console-step-back-blocked" className="sr-only">
+                      <span id={`${baseId}-ward-console-step-back-blocked`} className="sr-only">
                         {STEP_BACK_UNCHOSEN}
                       </span>
                     ) : null}

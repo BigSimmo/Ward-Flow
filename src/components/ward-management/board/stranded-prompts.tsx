@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease } from "@/components/ward-management/ward-model";
@@ -30,18 +31,19 @@ export function StrandedPrompts({
   onOpen: (admissionId: string) => void;
   bedReleases?: readonly BedRelease[];
 }) {
+  const baseId = useId();
   const flags = strandedFlags(admissions, now, bedReleases);
   if (flags.length === 0) return null;
 
   return (
     <details className={styles.panel} data-testid="ward-board-stranded" open>
       <summary className={styles.summary}>
-        <span id="ward-board-stranded-heading">Worth a look: long stays and people waiting to leave</span>
+        <span id={`${baseId}-ward-board-stranded-heading`}>Worth a look: long stays and people waiting to leave</span>
         <span className={styles.count}>({flags.length})</span>
       </summary>
       {/* Device audit, 11 Oct 2026: the four-line explanation is gone; the heading says what
           the list is. */}
-      <ul className={styles.list} aria-labelledby="ward-board-stranded-heading">
+      <ul className={styles.list} aria-labelledby={`${baseId}-ward-board-stranded-heading`}>
         {flags.map((flag) => (
           <li key={flag.admissionId} className={styles.row} data-testid={`ward-board-stranded-${flag.admissionId}`}>
             <button type="button" className={styles.open} onClick={() => onOpen(flag.admissionId)}>

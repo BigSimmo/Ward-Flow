@@ -16,5 +16,5 @@
     "types": ["node"]
   },
   "include": ["*.mjs"],
-  "exclude": ["*.test.mjs", "*.test-support.mjs", "dist", "node_modules"]
+  "exclude": ["dist", "node_modules"]
 }

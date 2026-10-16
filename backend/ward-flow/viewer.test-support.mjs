@@ -1,3 +1,4 @@
+// @ts-check
 /** The statewide coordinator view a bootstrap account gets from `store.viewer()`. */
 export const STATEWIDE_VIEW = Object.freeze({
   status: "ok",
