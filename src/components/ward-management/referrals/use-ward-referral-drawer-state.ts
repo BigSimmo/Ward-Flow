@@ -24,6 +24,7 @@ import {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { patientInBedOnUnit, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import type { NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
 import { type Gender } from "@/components/ward-management/ward-patients";
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
@@ -375,6 +376,7 @@ export function useWardReferralDrawerState({
         : defaultPatient.provisionalDiag),
   );
   const [doctorNote, setDoctorNote] = useState(kept?.doctorNote ?? defaultPatient.doctorNote);
+  const [notOnWardReason, setNotOnWardReason] = useState<NotOnSendingWardReason | "">("");
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
   const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
@@ -560,6 +562,7 @@ export function useWardReferralDrawerState({
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
+    setNotOnWardReason("");
     setAgeBand("");
     setUnidentified(null);
     setNewPatientOpen(false);
@@ -738,16 +741,22 @@ export function useWardReferralDrawerState({
         ? [destType === "community" ? selectedRecipient : (edById(selectedRecipient)?.name ?? selectedRecipient)]
         : [];
 
-  // A ward refers only someone currently in one of its beds, the stay the transfer moves
-  // (`movementSourceAdmission` in the reducer) (CodeAnt's review).
+  // A ward refers its own inpatients, the stay the transfer moves (`movementSourceAdmission` in the
+  // reducer). Anyone else warns and asks why (Josh, 16 Oct 2026), then goes as a new admission.
   const patientOnSendingWard =
     !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
+  const notOnSendingWard = !!sendingWard && !patientOnSendingWard;
+  const notOnWardNote =
+    sendingWard && notOnSendingWard && notOnWardReason
+      ? `Not in a bed on ${sendingWard.name}: ${notOnWardReason}.`
+      : "";
+  const referralReason = notOnWardNote ? `${notOnWardNote} ${doctorNote}` : doctorNote;
   function patientError() {
-    if (sendingWard && !patientOnSendingWard)
-      return `Choose a patient on ${sendingWard.name}. A ward refers its own patients.`;
     if (!patientRecord && unidentified === null)
       return 'Find a registered patient, add a new patient, or choose "Not yet identified".';
     if (!patientRecord && !unidentified?.trim()) return "Describe the unidentified person.";
+    if (sendingWard && notOnSendingWard && !notOnWardReason)
+      return `This person is not in a bed on ${sendingWard.name}. Choose why the ward is referring them.`;
     if (!effectiveCohort) return "Choose the age band.";
     if (!catchmentConfirmed || !catchmentTeam.trim()) return "Confirm the patient's catchment before continuing.";
     if (!homeRegion) return "Choose the patient's home region.";
@@ -778,7 +787,7 @@ export function useWardReferralDrawerState({
   const needsSendingTeam = !sendingWard && !senderMissing && sourceKind === "community";
   const needed: Record<DrawerSection, number> = {
     patient: [
-      (!patientRecord && !unidentified?.trim()) || (!!sendingWard && !patientOnSendingWard),
+      (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && !notOnWardReason),
       !effectiveCohort,
       !catchmentConfirmed || !catchmentTeam.trim(),
       !homeRegion,
@@ -868,7 +877,7 @@ export function useWardReferralDrawerState({
     const needs = needsFor(destType, communityNeeds, edNeeds);
     const intake: ReferralIntakeDetails = {
       catchment: { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
-      reasonForReferral: doctorNote,
+      reasonForReferral: referralReason,
       legalStatus,
       riskFlags: REFERRAL_RISK_FLAGS.filter((flag) => riskFlags[flag]),
       medicalClearance: {
@@ -1065,7 +1074,7 @@ export function useWardReferralDrawerState({
     recipients: recipientLabels,
     urgency: tier === undefined ? "" : tierLabel,
     legalStatus,
-    reason: doctorNote,
+    reason: referralReason,
     history: unidentifiedHistory,
     risks: recordedFlags.map((key) => RISK_FLAG_LABELS[key]),
     clearance: clearance.label,
@@ -1213,6 +1222,9 @@ export function useWardReferralDrawerState({
     sendGate,
     sendingWard,
     senderMissing,
+    notOnSendingWard,
+    notOnWardReason,
+    setNotOnWardReason,
     addPatientGate,
     movements,
     patients,

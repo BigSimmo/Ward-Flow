@@ -406,6 +406,20 @@ export const REFERRAL_CAP_REASONS = [
 ] as const;
 export type ReferralCapReason = (typeof REFERRAL_CAP_REASONS)[number];
 
+/**
+ * ⚠️ PLACEHOLDER VALUES (owner ruling 16 Oct 2026): a ward refers its own inpatients, and a person
+ * not in one of its beds is a safety check, so the New referral sheet warns and asks why rather
+ * than refusing. The referral then goes as a new admission, since there is no stay to move. The
+ * wording of each reason is NOT chosen or seen by the owner, the same warning `OVERRIDE_REASONS`
+ * carries. Complete sentences the receiving ward reads back in the referral reason.
+ */
+export const NOT_ON_SENDING_WARD_REASONS = [
+  "Recently discharged from this ward",
+  "Known to this ward's team but not in a bed",
+  "Another reason, given in the referral",
+] as const;
+export type NotOnSendingWardReason = (typeof NOT_ON_SENDING_WARD_REASONS)[number];
+
 export const BED_PREPARATION_NOTES = ["Being cleaned", "Awaiting maintenance or repair"] as const;
 export type BedPreparationNote = (typeof BED_PREPARATION_NOTES)[number];
 

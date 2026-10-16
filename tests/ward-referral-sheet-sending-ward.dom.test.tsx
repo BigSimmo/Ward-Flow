@@ -11,6 +11,7 @@ import {
   readKeptReferralDraft,
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOT_ON_SENDING_WARD_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -64,6 +65,7 @@ function Probe() {
         {JSON.stringify(sent.map(({ source, originUnitId }) => ({ source, originUnitId })))}
       </output>
       <output data-testid="errors">{rejections.map((rejection) => rejection.reason).join(";")}</output>
+      <output data-testid="reasons">{sent.map((referral) => referral.intake?.reasonForReferral).join(";")}</output>
     </>
   );
 }
@@ -104,8 +106,10 @@ function startReferral(umrn: string) {
 }
 
 /** Walks the sheet to the wards step, with no From details chosen: a ward sender has none. */
-async function walkToWards() {
-  startReferral(ON_WARD_UMRN);
+async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
+  startReferral(umrn);
+  if (notOnWardReason)
+    fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), { target: { value: notOnWardReason } });
   next("Next, referral");
   fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic ward to ward story" } });
   const urgent = screen.getAllByRole("radio").find((radio) => radio.getAttribute("name")?.endsWith("-urgency"));
@@ -142,8 +146,8 @@ async function walkToWards() {
 }
 
 /** Walks the sheet to Confirm and send. */
-async function walkToConfirm() {
-  await walkToWards();
+async function walkToConfirm(umrn?: string, notOnWardReason?: string) {
+  await walkToWards(umrn, notOnWardReason);
   fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
   expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
   fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Demo Sender" } });
@@ -188,12 +192,29 @@ describe("the New referral sheet on a ward page", () => {
     expect(selectedCount()).toBe("1 selected");
   }, 60_000);
 
-  it("asks for a patient on the ward, because a ward refers its own patients", () => {
+  it("warns about a patient not in the ward's beds and asks why, never blocking", () => {
     route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
     startReferral(OFF_WARD_UMRN);
+    expect(screen.getByTestId("ward-referral-not-on-sending-ward")).toHaveTextContent(
+      `Not in a bed on ${sendingWard.name}`,
+    );
     next("Next, referral");
-    expect(screen.getByRole("alert")).toHaveTextContent(`Choose a patient on ${sendingWard.name}`);
+    expect(screen.getByRole("alert")).toHaveTextContent(`This person is not in a bed on ${sendingWard.name}`);
+    fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), {
+      target: { value: NOT_ON_SENDING_WARD_REASONS[0] },
+    });
+    next("Next, referral");
+    expect(screen.getByLabelText(/Patient story/)).toBeVisible();
   });
+
+  it("sends a patient not in the ward's beds with the reason in the referral", async () => {
+    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    await walkToConfirm(OFF_WARD_UMRN, NOT_ON_SENDING_WARD_REASONS[0]);
+    await sendAndExpectFromSendingWard();
+    expect(screen.getByTestId("reasons")).toHaveTextContent(
+      `Not in a bed on ${sendingWard.name}: ${NOT_ON_SENDING_WARD_REASONS[0]}.`,
+    );
+  }, 60_000);
 
   it("says why it cannot send from a ward page that names no ward", () => {
     route.pathname = "/mockups/ward-flow/ward/not-a-ward";
