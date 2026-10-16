@@ -28,7 +28,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
     referrals,
     patientDialogRef,
     setSelectedPatientId,
-    setArrivalPlanOpenFor,
+    openArrivalPlanFromRecord,
     selectedPatientInfo,
     selectedPatientJourneyEvents,
     patientBay,
@@ -199,7 +199,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                     // This native modal dialog makes everything outside it inert, so it closes
                     // first and reopens when the arrival modal closes (review on PR #365).
                     setSelectedPatientId(null);
-                    setArrivalPlanOpenFor(selectedPatient.id);
+                    openArrivalPlanFromRecord(selectedPatient.id);
                   }}
                 >
                   {selectedPatient.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}

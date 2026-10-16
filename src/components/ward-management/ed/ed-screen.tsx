@@ -476,8 +476,8 @@ export function EdScreen({ edId }: EdScreenProps) {
           isOpen
           onClose={() => {
             setArrivalPlanOpenFor(undefined);
-            // Back to the patient the plan was opened from.
-            setSelectedPatientId(arrivalPlanMovement.id);
+            // Back to the patient record only when that record opened the plan.
+            if (rowPanels.arrivalPlanFromRecord) setSelectedPatientId(arrivalPlanMovement.id);
           }}
           movement={arrivalPlanMovement}
           role="ed"
