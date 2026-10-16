@@ -50,7 +50,6 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
         setLoaded(() => module.WardGlobalSearch);
       },
       () => {
-        // Offline before the code arrived: try again when the field is next tapped.
         if (live) setFailed(true);
       },
     );
@@ -58,6 +57,14 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
       live = false;
     };
   }, [deferred, attempt]);
+
+  // Offline before the code arrived: the next tap or keystroke tries again, even in a field that
+  // already has the focus.
+  const retry = () => {
+    if (!failed) return;
+    setFailed(false);
+    setAttempt((count) => count + 1);
+  };
 
   if (!deferred) return <SearchLoaded {...props} />;
   if (Loaded) return <Loaded {...props} initialQuery={draft} takeFocus={focused} />;
@@ -67,13 +74,15 @@ export function WardGlobalSearch(props: WardGlobalSearchProps) {
       label={props.label ?? "Search"}
       placeholder={props.placeholder ?? "Search people and movements…"}
       scope={props.scope}
-      onChange={setDraft}
+      onChange={(value) => {
+        setDraft(value);
+        retry();
+      }}
       onFocus={() => {
         setFocused(true);
-        if (!failed) return;
-        setFailed(false);
-        setAttempt((count) => count + 1);
+        retry();
       }}
+      onPointerDown={retry}
       onBlur={() => setFocused(false)}
     />
   );
@@ -87,6 +96,7 @@ function SearchField({
   scope,
   onChange,
   onFocus,
+  onPointerDown,
   onBlur,
 }: {
   fieldRef: RefObject<HTMLInputElement | null>;
@@ -95,6 +105,7 @@ function SearchField({
   scope: ReactNode;
   onChange: (value: string) => void;
   onFocus: () => void;
+  onPointerDown: () => void;
   onBlur: () => void;
 }) {
   const id = useId();
@@ -125,6 +136,7 @@ function SearchField({
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
           onFocus={onFocus}
+          onPointerDown={onPointerDown}
           onBlur={onBlur}
           data-testid="ward-global-search-input"
         />
