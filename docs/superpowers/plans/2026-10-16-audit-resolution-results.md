@@ -1,5 +1,31 @@
 # Audit resolution results — 16 October 2026
 
+## Post-merge reconciliation — 17 October 2026
+
+PR [#381](https://github.com/BigSimmo/Ward-Flow/pull/381) merged as
+`ed9d59e71a294787e4fd32c8363ee875c7b63161`; PR
+[#382](https://github.com/BigSimmo/Ward-Flow/pull/382) merged as
+`135c485f6aca3157f72df6e556dd67d83f677c6b`. The 44-item register below now records **43 findings
+addressed in merged source and one open upstream advisory**, rather than 44 items awaiting a
+handoff. This reconciliation preserves the original finding IDs and historical checks; it does
+not claim that every original counterexample was independently repeated after merge.
+
+R43, SEC-003 and the separate audit's QF-10 are the same advisory, maintained once in
+[the dependency follow-up](../../dependency-security-exceptions.md#open-upstream-advisory-braces).
+The [operations readiness record](../../ward-flow/operations-readiness.md) records the remaining
+browser and recovery checks separately from confirmed defects.
+
+[Ward Flow CI #2533](https://github.com/BigSimmo/Ward-Flow/actions/runs/39000996265) completed
+successfully on PR #381's final head `d51008848ac4a34a2a3aac3b1c8e6aeb6974efa3`. Its production
+job checked out merge `8e9c86425026f9d24726f3296a635f6a3e9b5383`, whose tree
+`6442d8a8f717641cdc5c7fa819d91b79cd6eb368` matches the merged main snapshot above. The observed
+successful jobs include static/backend, all eight unit shards, coverage, all three browser
+groups, release journeys, secret scan and production build. This is hosted CI evidence for
+that source snapshot; it is not proof of browser authentication or database recovery in the
+deployed services. Later source or lock changes require their own applicable checks.
+
+## Original implementation receipt
+
 All 44 retained findings are accounted for: **34 implemented on this branch, nine already merged and rechecked, and R43 remains open because no supported upstream patch was available.** Implementation does not imply that every verification gate passed; the exact evidence and limitations appear below.
 
 Final implementation and test commit: `ed06098435c80a783f5c16b4f10e5eb736f0ccf2` on `codex/resolve-audit-20261016`, from verified main `c9f271a98c96551bc3b3a725923461c02344a1f2`. That base already includes PRs #365 and #366. This is a local implementation receipt, not a current hosted PR inventory, hosted CI verdict, publication or deployment claim.

@@ -11,34 +11,20 @@ seven days. Review those warnings, including audit-service errors; an informatio
 claim that the finding is fixed or accepted. Moderate and lower production findings also remain in
 the full report. This standalone schedule does not change the existing PR or deployment gates.
 
-## Upstream-blocked development advisory
+## Open advisory and review ownership
 
-Checked while preparing maintenance from main `5394102122ef823a1e3a16dc6a3d633fc7b07177`:
+[SEC-003 in the dependency follow-up](dependency-security-exceptions.md#open-upstream-advisory-braces)
+is the single record for the open `braces` advisory, its dependency path, mitigation, owner and
+next review. The original audit identifiers R43 and QF-10 refer to that same finding. The five
+affected npm package records do not represent five independent advisories.
 
-- [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) affects `braces <=3.0.3`.
-  The root lockfile's ESLint/Next lint chain contains `braces@3.0.3` through `micromatch` and
-  `fast-glob`. npm reports five affected package records for this one underlying high advisory.
-- `npm view braces version dist-tags --json` reports latest `3.0.3`; the published version list has
-  no newer release. `npm view micromatch version dependencies --json` reports `4.0.8`, still using
-  `braces ^3.0.3`. Even `@next/eslint-plugin-next@16.4.1` still uses `fast-glob`, so updating the lint
-  package alone does not remove this chain.
-- `npm audit --json` suggests `eslint-config-next@14.2.35` as a semver-major change from the
-  installed Next 16 lint configuration. That downgrade is not a compatible targeted fix. Do not use
-  `npm audit fix --force`, a fabricated patched version, or a suppressed advisory to obtain green.
+The next review is **22 October 2026**, or sooner on the triggers in that record. Review the
+nightly full-audit warning in the meantime. Do not use `npm audit fix --force`, an unsupported
+Next lint downgrade, a fabricated patched version or an advisory suppression to obtain green.
 
-This finding remains **upstream-blocked**, not resolved or exempted. It concerns stack exhaustion
-when tooling parses deeply nested glob patterns; no runtime exploit or production exposure was
-established by this advisory check. Keep project/tool glob inputs trusted and bounded while
-tracking a compatible upstream fix. Re-evaluate when `braces`, its callers or the lint toolchain
-publish a relevant change, then validate the dependency graph, audit and focused lint/CI contracts.
-
-Review on 17 October 2026 against Ward Flow main `7b14c9888d2ed2e534a55b2e366ddaf91f5d690b`:
-the npm registry still lists `braces@3.0.3` as latest with no newer release, and
-`micromatch@4.0.8` still requires `braces ^3.0.3`. No compatible version-only repair was found.
-The dependency maintainer owns the follow-up: review the nightly full-audit warning and
-recheck publication metadata within 30 days, or sooner on a relevant upstream release or a
-change to the lint/glob dependency chain. Keep untrusted glob input out of this development
-toolchain in the meantime. This mitigation and review record do not close the advisory.
+The [post-merge operations record](ward-flow/operations-readiness.md) separates merged audit
+repairs from browser, deployment and recovery evidence; a passing build does not close an
+unverified operational check.
 
 Useful read-only commands:
 

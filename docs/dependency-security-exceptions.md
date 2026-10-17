@@ -1,14 +1,21 @@
 # Dependency security follow-up
 
-Checked 16 October 2026 against this repository's npm lockfile and the npm registry. This record
-covers dependency maintenance for synthetic local development. It does not approve clinical use.
+Current advisory review: 17 October 2026, from main
+`ed9d59e71a294787e4fd32c8363ee875c7b63161` and the npm registry. This is the canonical record for
+the remaining advisory. The dated installation evidence below is retained separately. This record
+covers dependency maintenance for synthetic local development; it does not approve clinical use.
 
 ## Open upstream advisory: braces
 
-- **Tracking:** SEC-003; [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+- **Tracking:** SEC-003, also R43 and QF-10;
+  [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). These are aliases of
+  one finding, not additional open issues.
 - **Affected version:** braces 3.0.3, the latest published version on the checked date. There is no
   supported patched release to select (`npm view braces version` still returns `3.0.3`). This
   vulnerability remains open and upstream-blocked.
+- **Latest caller check:** `micromatch@4.0.8` still requires `braces ^3.0.3`.
+  `@next/eslint-plugin-next@16.4.2` still requires `fast-glob@3.3.1`; a lint-package update alone
+  is not a demonstrated repair.
 - **Dependency path:** development-only `eslint-config-next` 16.3.6 → `@next/eslint-plugin-next`
   16.3.6 → `fast-glob` 3.3.1 → `micromatch` 4.0.8 → `braces` 3.0.3. The five audit package entries
   describe one inherited advisory, not five separate vulnerabilities.
@@ -23,7 +30,7 @@ covers dependency maintenance for synthetic local development. It does not appro
   accepting external patterns. Required CI has job deadlines, read-only permissions and no
   persisted checkout credentials. A malicious pull request can disrupt its own tooling run, but
   this record establishes no guarantee that every possible repository-tooling path is protected.
-- **Fresh audit:** the locked install reports five high development package entries for this one
+- **17 October audit:** the corrected lock reports five high development package entries for this one
   advisory; `npm audit --omit=dev --json` reports zero vulnerabilities. The full audit exits nonzero
   while this exception is open. Neither result establishes a reachable application exploit.
 - **Decision:** retain the supported Next 16 toolchain while awaiting an upstream fix. Do not use
@@ -35,7 +42,24 @@ covers dependency maintenance for synthetic local development. It does not appro
   accepts external glob patterns. Re-run `npm view braces version`, `npm explain braces` and
   `npm audit --json`; install a supported patch and verify the lint contracts when available.
 
-## Patched advisory roots
+## Current toolchain and install evidence — 17 October 2026
+
+The assessed lock selects Next 16.3.8, React 19.2.8, ESLint 10.12.0,
+`eslint-config-next` 16.3.6, Vitest and coverage-v8 5.0.5, Codspeed's Vitest plugin 6.0.1,
+Vite 8.2.2 and PostCSS 8.5.30. These are a dated lockfile snapshot, not new version constraints.
+The ESLint 10 upgrade's explicit React-version setting is retained. npm still warns about the
+ESLint peer ranges of the inherited React, import and accessibility plugins; successful lint
+execution is separate evidence from declared peer support.
+
+A clean `npm ci --include=dev` using the required npm 11 toolchain initially failed the normal
+postinstall parity guard. Two unreachable lock entries, `supports-color@7.2.0` and its
+`has-flag@4.0.0` dependency, were absent from npm's concrete install. Native lock-only generation
+removed exactly those entries without changing any package version or the manifest. The fresh
+clean install then passed with lifecycle scripts and the unchanged parity guard enabled; the
+existing installed-lock regression suite passed all ten cases. This lock correction does not
+fix or suppress SEC-003.
+
+## Historical patched advisory roots — 16 October 2026
 
 The remediation lock selects sharp 0.35.5 (including libvips 1.3.4), source-map-js 1.2.2 and
 smol-toml 1.9.0. These address SEC-001, SEC-002 and SEC-004 respectively. The sharp override and
@@ -43,7 +67,7 @@ its installation allowlist entry agree. All other application versions are retai
 locked install, image processing, source-map/TOML consumer checks, the production audit and the
 integration build before claiming the candidate's full verification.
 
-## Supported toolchain constraints
+## Historical toolchain checks — 16 October 2026
 
 The 16 October 2026 lock raises PostCSS from 8.5.23 to 8.5.30. The direct dependency and override
 now require at least 8.5.26, satisfying Vite 8.2.2's declared `^8.5.26` dependency. Codspeed's
