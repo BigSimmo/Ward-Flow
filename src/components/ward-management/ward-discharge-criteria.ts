@@ -4,8 +4,10 @@
  * without waiting for the next psychiatrist review. Involuntary patients are excluded: only a
  * psychiatrist can revoke the order, so their discharge always waits for one.
  *
- * Criteria are chosen from a fixed list, never typed, so the event stays on the persistence safe
- * list. They lapse after `CLINICAL_VALUES.dischargeCriteriaValidity` and then need a fresh review.
+ * Criteria are chosen from a fixed list. D-65: the treating psychiatrist can also add up to
+ * `PATIENT_SPECIFIC_CRITERIA_MAX` patient specific criteria as typed text. A save or tick that carries
+ * typed text stops browser saving like any typed-text event (`eventCarriesTypedTextPayload`). They
+ * lapse after `CLINICAL_VALUES.dischargeCriteriaValidity` and then need a fresh review.
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -27,10 +29,19 @@ export const DISCHARGE_CRITERIA = [
 
 export type DischargeCriterion = (typeof DISCHARGE_CRITERIA)[number];
 
+/** D-65: input bounds for typed patient specific criteria (WACHS form MR28 Part B), not clinical values. */
+export const PATIENT_SPECIFIC_CRITERIA_MAX = 3;
+export const PATIENT_SPECIFIC_CRITERION_MAX_LENGTH = 120;
+
+/** One criterion on the list. `patientSpecific` marks typed text the treating psychiatrist added. */
+export type DischargeCriteriaItem =
+  | { criterion: DischargeCriterion; metAt: Instant | null }
+  | { criterion: string; metAt: Instant | null; patientSpecific: true };
+
 export type DischargeCriteriaRecord = {
   /** When the treating psychiatrist set or last changed the list. The validity runs from here. */
   setAt: Instant;
-  items: { criterion: DischargeCriterion; metAt: Instant | null }[];
+  items: DischargeCriteriaItem[];
 };
 
 export type DischargeCriteriaStatus =
@@ -59,11 +70,25 @@ export function criteriaEligibilityRefusal(eligibility: CriteriaEligibility): st
   return null;
 }
 
-function isDischargeCriterion(value: unknown): value is DischargeCriterion {
+export function isDischargeCriterion(value: unknown): value is DischargeCriterion {
   return typeof value === "string" && (DISCHARGE_CRITERIA as readonly string[]).includes(value);
 }
 
-/** A stored record holds only fixed-list criteria and finite times, so a restored state cannot carry typed text. */
+/** A typed patient specific criterion: trimmed, within the length bound and not a fixed criterion. */
+export function isPatientSpecificCriterionText(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= PATIENT_SPECIFIC_CRITERION_MAX_LENGTH &&
+    value.trim() === value &&
+    !isDischargeCriterion(value)
+  );
+}
+
+/**
+ * A stored record holds fixed-list criteria, at most `PATIENT_SPECIFIC_CRITERIA_MAX` marked patient
+ * specific criteria within the length bound (D-65), and finite times. Any other key is refused.
+ */
 export function isDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
   if (typeof value !== "object" || value === null) return false;
   const record = value as { setAt?: unknown; items?: unknown };
@@ -71,11 +96,27 @@ export function isDischargeCriteriaRecord(value: unknown): value is DischargeCri
   // Closed shape: an extra key could carry typed text.
   if (Object.keys(record).some((key) => key !== "setAt" && key !== "items")) return false;
   const seen = new Set<string>();
+  let patientSpecific = 0;
   return record.items.every((item: unknown) => {
     if (typeof item !== "object" || item === null) return false;
-    if (Object.keys(item).some((key) => key !== "criterion" && key !== "metAt")) return false;
-    const { criterion, metAt } = item as { criterion?: unknown; metAt?: unknown };
-    if (!isDischargeCriterion(criterion) || seen.has(criterion)) return false;
+    if (Object.keys(item).some((key) => key !== "criterion" && key !== "metAt" && key !== "patientSpecific")) {
+      return false;
+    }
+    const {
+      criterion,
+      metAt,
+      patientSpecific: marked,
+    } = item as {
+      criterion?: unknown;
+      metAt?: unknown;
+      patientSpecific?: unknown;
+    };
+    if ("patientSpecific" in item) {
+      if (marked !== true || !isPatientSpecificCriterionText(criterion)) return false;
+      patientSpecific += 1;
+      if (patientSpecific > PATIENT_SPECIFIC_CRITERIA_MAX) return false;
+    } else if (!isDischargeCriterion(criterion)) return false;
+    if (seen.has(criterion)) return false;
     seen.add(criterion);
     return metAt === null || (typeof metAt === "number" && Number.isFinite(metAt));
   });
@@ -172,6 +213,12 @@ export type DischargeCriteriaChange = {
   met: readonly unknown[];
   setByTreatingPsychiatrist: boolean;
   /**
+   * D-65: typed patient specific criteria the treating psychiatrist set, added after the fixed ones.
+   * Read only when the treating psychiatrist sets the list. A tick or change by the ward keeps the
+   * stored ones.
+   */
+  patientSpecific?: readonly unknown[];
+  /**
    * One criterion ticked or unticked. When present it is applied to the stored list, so two quick
    * ticks queued from the same screen cannot undo each other.
    */
@@ -204,11 +251,19 @@ export function criteriaEligibility(
   return "not_recorded";
 }
 
+/** Whether a stored item is a typed patient specific criterion (D-65). */
+export function isPatientSpecificItem(
+  item: DischargeCriteriaItem,
+): item is Extract<DischargeCriteriaItem, { patientSpecific: true }> {
+  return "patientSpecific" in item && item.patientSpecific === true;
+}
+
 /**
  * The new record for a `SET_DISCHARGE_CRITERIA` event, or the reason it is refused. Clearing is
  * always allowed. Setting, changing or reviewing the list needs the treating psychiatrist and a
  * voluntary patient, and restarts the validity. Ticking criteria met keeps the list and its
- * validity, and is refused once the criteria have lapsed.
+ * validity, and is refused once the criteria have lapsed. Typed patient specific criteria (D-65)
+ * follow the fixed ones and are ticked the same way.
  */
 export function nextDischargeCriteria(
   current: DischargeCriteriaRecord | null | undefined,
@@ -220,31 +275,54 @@ export function nextDischargeCriteria(
   const ineligible = criteriaEligibilityRefusal(eligibility);
   if (ineligible) return { refusal: ineligible };
 
+  // Typed criteria come from the treating psychiatrist's save, otherwise from the stored list.
+  let typed: readonly string[];
+  if (change.setByTreatingPsychiatrist) {
+    const entered = change.patientSpecific ?? [];
+    if (entered.length > PATIENT_SPECIFIC_CRITERIA_MAX) {
+      return { refusal: `Add at most ${PATIENT_SPECIFIC_CRITERIA_MAX} patient specific criteria.` };
+    }
+    if (!entered.every(isPatientSpecificCriterionText)) {
+      return {
+        refusal: `Each patient specific criterion needs text of up to ${PATIENT_SPECIFIC_CRITERION_MAX_LENGTH} characters that is not already on the list.`,
+      };
+    }
+    typed = entered;
+  } else {
+    typed = (current?.items ?? []).filter(isPatientSpecificItem).map((item) => item.criterion);
+  }
+  const allowed = (value: unknown): value is string =>
+    isDischargeCriterion(value) || (typeof value === "string" && typed.includes(value));
+
   let criteria: readonly unknown[] = change.criteria;
   let met: readonly unknown[] = change.met;
   const tick = change.setByTreatingPsychiatrist ? undefined : change.tick;
   if (tick) {
     if (!current) return { refusal: "Discharge criteria are set by the treating psychiatrist." };
     if (typeof tick.met !== "boolean") return { refusal: "A tick must say met or not met." };
-    if (!isDischargeCriterion(tick.criterion) || !current.items.some((item) => item.criterion === tick.criterion)) {
+    if (!allowed(tick.criterion) || !current.items.some((item) => item.criterion === tick.criterion)) {
       return { refusal: "Only a chosen discharge criterion can be marked met." };
     }
     const metNow = current.items.filter((item) => item.metAt !== null).map((item) => item.criterion);
     criteria = current.items.map((item) => item.criterion);
     met = tick.met ? [...metNow, tick.criterion] : metNow.filter((entry) => entry !== tick.criterion);
+  } else if (change.setByTreatingPsychiatrist) {
+    if (!criteria.every(isDischargeCriterion)) return { refusal: "Discharge criteria must be chosen from the list." };
+    criteria = [...criteria, ...typed];
   }
 
   if (criteria.length === 0) return { refusal: "Choose at least one discharge criterion, or clear them." };
-  if (!criteria.every(isDischargeCriterion) || !met.every(isDischargeCriterion)) {
+  if (!criteria.every(allowed) || !met.every(allowed)) {
     return { refusal: "Discharge criteria must be chosen from the list." };
   }
-  if (new Set(criteria).size !== criteria.length) return { refusal: "Each discharge criterion can be chosen once." };
-  if (!met.every((criterion) => criteria.includes(criterion))) {
+  const chosen = criteria as readonly string[];
+  if (new Set(chosen).size !== chosen.length) return { refusal: "Each discharge criterion can be chosen once." };
+  if (!met.every((criterion) => chosen.includes(criterion as string))) {
     return { refusal: "Only a chosen discharge criterion can be marked met." };
   }
 
   const items = current?.items ?? [];
-  const sameList = items.length === criteria.length && items.every((item, index) => item.criterion === criteria[index]);
+  const sameList = items.length === chosen.length && items.every((item, index) => item.criterion === chosen[index]);
   if (!change.setByTreatingPsychiatrist) {
     if (!current || !sameList) return { refusal: "Discharge criteria are set by the treating psychiatrist." };
     if (now >= current.setAt + CLINICAL_VALUES.dischargeCriteriaValidity.value) {
@@ -256,14 +334,14 @@ export function nextDischargeCriteria(
   return {
     record: {
       setAt: change.setByTreatingPsychiatrist || !current ? now : current.setAt,
-      items: criteria.map((criterion) => ({
-        criterion,
-        metAt: change.setByTreatingPsychiatrist
+      items: chosen.map((criterion): DischargeCriteriaItem => {
+        const metAt = change.setByTreatingPsychiatrist
           ? null
           : met.includes(criterion)
             ? (metBefore.get(criterion) ?? now)
-            : null,
-      })),
+            : null;
+        return isDischargeCriterion(criterion) ? { criterion, metAt } : { criterion, metAt, patientSpecific: true };
+      }),
     },
   };
 }

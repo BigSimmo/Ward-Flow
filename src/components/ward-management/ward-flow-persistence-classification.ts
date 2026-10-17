@@ -1,3 +1,4 @@
+import { isDischargeCriterion } from "@/components/ward-management/ward-discharge-criteria";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
 /**
@@ -255,7 +256,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "WITHDRAW_WARD_REQUEST",
   "SET_STEP_DOWN_CANDIDATE",
   "SET_DISCHARGE_BARRIER",
-  // D-60: criteria are a closed list chosen from checkboxes, never typed text.
+  // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
+  // criteria, so a dispatch naming any criterion off that list locks storage at payload level
+  // (`eventCarriesTypedTextPayload` below). A save or tick of fixed criteria only stays safe.
   "SET_DISCHARGE_CRITERIA",
   // D-34 carries only originating ED/movement ids, role and time; the audit reason is fixed by the reducer.
   "RECORD_ED_MEDICAL_DETERIORATION",
@@ -549,9 +552,20 @@ export type _AssertNoUnreviewedRaiseReferralDraftFields = AssertNever<Unreviewed
  * carries a typed name or initials inside a nested object, which the compile-time check above
  * cannot see (its known nested-object gap). Those three events stay on the safe list for every
  * ordinary dispatch; one that carries a sign-off locks persistence exactly like a typed-text event,
- * whether or not the reducer accepts it.
+ * whether or not the reducer accepts it. D-65 (17 Oct 2026): `SET_DISCHARGE_CRITERIA` does the same
+ * when it names any criterion off the fixed list, which can only be typed patient specific text.
  */
 export function eventCarriesTypedTextPayload(event: WardFlowEvent): boolean {
+  if (event.type === "SET_DISCHARGE_CRITERIA") {
+    // D-65: anything off the fixed list is typed patient specific text, accepted or not.
+    const named: unknown[] = [
+      ...(event.criteria ?? []),
+      ...event.met,
+      ...(event.patientSpecific ?? []),
+      ...(event.tick ? [event.tick.criterion] : []),
+    ];
+    return named.some((criterion) => !isDischargeCriterion(criterion));
+  }
   return (
     ("overrideSignOff" in event && event.overrideSignOff !== undefined) ||
     ("reassessmentNote" in event &&

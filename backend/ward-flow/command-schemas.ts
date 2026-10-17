@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { CHART_MAX_BYTES } from "../../src/components/ward-management/referrals/referral-submission";
+import {
+  PATIENT_SPECIFIC_CRITERIA_MAX,
+  PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
+} from "../../src/components/ward-management/ward-discharge-criteria";
 
 /**
  * Shape checks for commands sent to the shared workspace, before the reducer sees them.
@@ -113,6 +117,11 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     criteria: z.array(z.unknown()).nullable(),
     met: z.array(z.unknown()),
     setByTreatingPsychiatrist: z.boolean(),
+    // D-65: typed patient specific criteria. The reducer checks each one; this bounds the payload.
+    patientSpecific: z
+      .array(z.string().max(PATIENT_SPECIFIC_CRITERION_MAX_LENGTH))
+      .max(PATIENT_SPECIFIC_CRITERIA_MAX)
+      .optional(),
     tick: z.looseObject({ criterion: z.unknown(), met: z.boolean() }).optional(),
     actingUnitId: id.optional(),
   }),

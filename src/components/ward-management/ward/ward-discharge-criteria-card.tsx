@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Checkbox } from "@/components/wf";
+import { Badge, Button, Checkbox, Field, TextInput } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   criteriaEligibilityRefusal,
   DISCHARGE_CRITERIA,
   dischargeCriteriaStatus,
+  isDischargeCriterion,
+  isPatientSpecificItem,
+  PATIENT_SPECIFIC_CRITERIA_MAX,
+  PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
   type CriteriaEligibility,
   type DischargeCriteriaRecord,
   type DischargeCriterion,
@@ -15,10 +19,12 @@ import drawerStyles from "./ward-bed-dossier-drawer.module.css";
 import styles from "./ward-discharge-criteria-card.module.css";
 
 export type DischargeCriteriaUpdate = {
-  criteria: DischargeCriterion[] | null;
-  met: DischargeCriterion[];
+  criteria: string[] | null;
+  met: string[];
   setByTreatingPsychiatrist: boolean;
-  tick?: { criterion: DischargeCriterion; met: boolean };
+  /** D-65: typed patient specific criteria, sent only when the treating psychiatrist sets the list. */
+  patientSpecific?: string[];
+  tick?: { criterion: string; met: boolean };
 };
 
 /**
@@ -41,6 +47,8 @@ export function WardDischargeCriteriaCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [chosen, setChosen] = useState<DischargeCriterion[]>([]);
+  // D-65: typed patient specific criteria (WACHS form MR28 Part B), up to the set number.
+  const [typed, setTyped] = useState<string[]>([]);
   const [attested, setAttested] = useState(false);
   // WACHS CLD guideline s 2.2: a patient chosen for criteria led discharge must be told. Confirmed
   // here before saving, and not recorded, so the event carries nothing new.
@@ -53,7 +61,8 @@ export function WardDischargeCriteriaCard({
   const metList = items.filter((item) => item.metAt !== null).map((item) => item.criterion);
 
   const openEditor = () => {
-    setChosen(items.map((item) => item.criterion));
+    setChosen(items.map((item) => item.criterion).filter(isDischargeCriterion));
+    setTyped(items.filter(isPatientSpecificItem).map((item) => item.criterion));
     setAttested(false);
     setPatientTold(false);
     setEditing(true);
@@ -75,7 +84,17 @@ export function WardDischargeCriteriaCard({
   })();
 
   const canTick = onChange !== undefined && (status.kind === "in_progress" || status.kind === "all_met");
-  const toggleMet = (criterion: DischargeCriterion, met: boolean) => {
+  const typedToSave = typed.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+  const nothingChosen = chosen.length === 0 && typedToSave.length === 0;
+  const typedRows = typed.length < PATIENT_SPECIFIC_CRITERIA_MAX ? [...typed, ""] : typed;
+  const setTypedAt = (index: number, value: string) =>
+    setTyped((current) => {
+      const next = [...current];
+      next[index] = value;
+      // A cleared row goes, so the spare empty row is always the last one.
+      return next.filter((entry) => entry.length > 0);
+    });
+  const toggleMet = (criterion: string, met: boolean) => {
     onChange?.({
       criteria: items.map((item) => item.criterion),
       met: met ? [...metList, criterion] : metList.filter((entry) => entry !== criterion),
@@ -136,6 +155,11 @@ export function WardDischargeCriteriaCard({
                     )}
                   </span>
                 )}
+                {isPatientSpecificItem(item) ? (
+                  <span className={canTick ? `${styles.metAt} ${styles.metAtIndent}` : styles.metAt}>
+                    Patient specific
+                  </span>
+                ) : null}
                 {item.metAt !== null ? (
                   <span className={canTick ? `${styles.metAt} ${styles.metAtIndent}` : styles.metAt}>
                     Ticked {formatInstantWithDay(item.metAt, now)}
@@ -164,6 +188,22 @@ export function WardDischargeCriteriaCard({
                 }
               />
             ))}
+            {typedRows.map((value, index) => (
+              <Field
+                key={index}
+                label={`Patient specific criterion ${index + 1}, optional`}
+                hint={`Up to ${PATIENT_SPECIFIC_CRITERION_MAX_LENGTH} characters`}
+              >
+                <TextInput
+                  value={value}
+                  maxLength={PATIENT_SPECIFIC_CRITERION_MAX_LENGTH}
+                  autoComplete="off"
+                  onChange={(event) => setTypedAt(index, event.target.value)}
+                  onClear={() => setTypedAt(index, "")}
+                  data-testid={`ward-drawer-criteria-typed-${index + 1}`}
+                />
+              </Field>
+            ))}
             <fieldset className={styles.confirm}>
               <legend className={styles.legend}>Before saving, confirm</legend>
               <Checkbox
@@ -183,12 +223,13 @@ export function WardDischargeCriteriaCard({
               <Button
                 className={styles.touchTarget}
                 variant="sec"
-                disabled={chosen.length === 0 || !attested || !patientTold}
+                disabled={nothingChosen || !attested || !patientTold}
                 onClick={() => {
                   onChange({
                     criteria: chosen,
                     met: [],
                     setByTreatingPsychiatrist: true,
+                    ...(typedToSave.length > 0 ? { patientSpecific: typedToSave } : {}),
                   });
                   setEditing(false);
                 }}
@@ -199,9 +240,10 @@ export function WardDischargeCriteriaCard({
                 Cancel
               </Button>
             </div>
-            {chosen.length === 0 || !attested || !patientTold ? (
+            {nothingChosen || !attested || !patientTold ? (
               <p className={styles.note}>
-                Choose at least one criterion, confirm the treating psychiatrist set them and that the patient was told.
+                Choose or type at least one criterion, confirm the treating psychiatrist set them and that the patient
+                was told.
               </p>
             ) : null}
           </fieldset>

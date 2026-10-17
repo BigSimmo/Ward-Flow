@@ -103,4 +103,40 @@ describe("criteria led discharge card", () => {
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getAllByText("Met")).toHaveLength(1);
   });
+
+  it("adds typed patient specific criteria to the save and marks them on the list (D-65)", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
+    fireEvent.change(screen.getByTestId("ward-drawer-criteria-typed-1"), {
+      target: { value: "  Lives with sister until flat repairs done " },
+    });
+    // A filled row offers the next one, up to the set number.
+    expect(screen.getByTestId("ward-drawer-criteria-typed-2")).toHaveValue("");
+    fireEvent.click(screen.getByRole("checkbox", { name: "Set by the treating psychiatrist" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Patient told they are on criteria led discharge" }));
+    // Typed criteria alone are enough to save.
+    fireEvent.click(screen.getByRole("button", { name: "Save criteria" }));
+    expect(onChange).toHaveBeenCalledWith({
+      criteria: [],
+      met: [],
+      setByTreatingPsychiatrist: true,
+      patientSpecific: ["Lives with sister until flat repairs done"],
+    });
+    const record = {
+      setAt: NOW - 60,
+      items: [{ criterion: "Lives with sister until flat repairs done", metAt: null, patientSpecific: true as const }],
+    };
+    rerender(<WardDischargeCriteriaCard record={record} eligibility="voluntary" now={NOW} onChange={onChange} />);
+    expect(screen.getByText("Patient specific")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Lives with sister until flat repairs done" }));
+    expect(onChange).toHaveBeenLastCalledWith({
+      criteria: ["Lives with sister until flat repairs done"],
+      met: ["Lives with sister until flat repairs done"],
+      setByTreatingPsychiatrist: false,
+      tick: { criterion: "Lives with sister until flat repairs done", met: true },
+    });
+  });
 });

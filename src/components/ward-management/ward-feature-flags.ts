@@ -75,7 +75,8 @@ export const WARD_FEATURE_FLAGS = {
       "For a voluntary patient, the treating psychiatrist sets discharge criteria and the ward can confirm the discharge once all are met.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    // D-65 (17 Oct 2026): Josh switched it on in production for the prototype.
+    defaults: { development: true, demo: true, production: true },
     removeWhen:
       "Josh signs off the item in the real screens after review, and clinical governance agrees the criteria list.",
   },
@@ -186,6 +187,16 @@ export const WARD_FEATURE_FLAGS = {
     added: "2026-10-15",
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh signs off the item in the real screens after review.",
+  },
+  "awol-bed-hold-review": {
+    label: "Absent without leave bed hold review",
+    description:
+      "The absent without leave tracker asks for a review of the held bed once the person has been away past the set time.",
+    owner: "Josh",
+    added: "2026-10-17",
+    // D-65 (17 Oct 2026): paused everywhere until Josh reviews the hold time against local procedure.
+    defaults: { development: false, demo: false, production: false },
+    removeWhen: "Josh reviews the bed hold time and switches the review back on, or removes it.",
   },
   "top25-referral-cap": {
     label: "Referral cap and auto withdraw",
