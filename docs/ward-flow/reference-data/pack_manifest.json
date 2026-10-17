@@ -37,8 +37,8 @@
       "sha256": "3f0a0badea810e9fc7a5aa15ee506494ba4993eef2083621b4488ee9a72a8364"
     },
     "DECISIONS-APPLIED-2026-09-17.md": {
-      "bytes": 3372,
-      "sha256": "4910961fa053607aba18557d518daea29fce0408023cf1aadc162b4916eb111f"
+      "bytes": 3348,
+      "sha256": "9733639d3b9628069136bea30c1ec91960a86071f632bdb0d45e68fd1638a1bd"
     },
     "sources.json": {
       "bytes": 129697,
@@ -49,8 +49,8 @@
       "sha256": "691ebad8cf4742da89e7d9bc5f7a8207ffb461348fe321f28e0b289e01983d2f"
     },
     "INGEST_MAP.md": {
-      "bytes": 5448,
-      "sha256": "790cf3fdb24fded653fc4014a00597a9cd204183db4c05d7bbdc3d6b04a0cc38"
+      "bytes": 5447,
+      "sha256": "d60173ced8b5948e4b248002edab9b55acb91224ba68ea889bc751a6135df1d0"
     },
     "CHANGELOG.md": {
       "bytes": 3297,
