@@ -29,6 +29,7 @@ import {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatUmrn } from "@/components/ward-management/ward-patients";
+import { unitHasLockedBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   candidateAccepts,
   COMMUNITY_DECLINE_REASON_LABELS,
@@ -270,7 +271,17 @@ export function ReferralMatchView({
   const tier2Candidates = candidates.filter(
     (c) =>
       !candidateAccepts(c) &&
-      c.verdict.gates.every((g) => (g.gate === "allocatable_bed" || g.gate === "capacity_freshness" ? true : g.pass)),
+      c.verdict.gates.every(
+        (g) =>
+          g.pass ||
+          g.gate === "allocatable_bed" ||
+          g.gate === "capacity_freshness" ||
+          // A clearing locked bed permits staging only. Immediate placement still fails the original verdict.
+          (g.gate === "security" &&
+            unitHasLockedBeds(c.unit) &&
+            turnaroundState &&
+            unitTurnaroundSource(turnaroundState, c.unit.id, now, cldEnabled) !== null),
+      ),
   );
   const tier3Candidates = candidates.filter((c) => !candidateAccepts(c) && !tier2Candidates.includes(c));
 

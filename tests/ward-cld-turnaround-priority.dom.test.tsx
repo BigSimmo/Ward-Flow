@@ -178,7 +178,6 @@ describe("human turnaround preference control", () => {
   it("allows a confirmed, unblocked occupied-bed departure with CLD disabled", () => {
     flag.cld = false;
     const f = fixture();
-    f.admission.dischargeCriteria = null;
     f.state.bedReleases = [
       {
         ...seedWardFlowState().bedReleases[0]!,
@@ -197,6 +196,34 @@ describe("human turnaround preference control", () => {
     expect(
       screen.getByText("Turnaround preference recorded for confirmed departure; placement still needs confirmation."),
     ).toBeVisible();
+  });
+
+  it("offers staging for a CLD-ready secure unit without a free locked bed, without enabling placement", () => {
+    const f = fixture();
+    const arm = f.referral.destinations[0]!;
+    if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
+    arm.destination.secureBedNeeded = true;
+    const events = renderFixture(f);
+    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    expect(button).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByRole("button", { name: /^Accept for/ })).toBeNull();
+    fireEvent.click(button);
+    expect(events).toHaveBeenCalledTimes(1);
+    expect(events.mock.calls[0]![0].type).toBe("FLAG_REFERRAL_TURNAROUND_PRIORITY");
+  });
+
+  it.each(["no locked beds", "unauthorised receiving unit"])("does not offer staging for %s", (reason) => {
+    const f = fixture();
+    const arm = f.referral.destinations[0]!;
+    if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
+    arm.destination.secureBedNeeded = true;
+    if (reason === "no locked beds") f.state.units[0]!.lockedBeds = 0;
+    else {
+      arm.destination.involuntaryBedNeeded = true;
+      f.state.units[0]!.authorised = false;
+    }
+    renderFixture(f);
+    expect(screen.queryByRole("button", { name: "Flag Turnaround Priority" })).toBeNull();
   });
 
   it.each(["no criteria", "expired criteria", "CLD disabled", "placed movement"])(
