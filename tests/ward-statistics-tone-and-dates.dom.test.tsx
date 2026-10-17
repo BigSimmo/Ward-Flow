@@ -18,7 +18,7 @@ import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistic
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
 import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { demoDayZero, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
@@ -48,10 +48,21 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/**
+ * The demo calendar's day zero comes from the wall clock unless pinned, and the weekly report's
+ * "last full week" is counted from that day's weekday. With an unpinned day zero the seeded long
+ * ED waits fall outside the last full week whenever the suite runs on a Sunday (Perth), so the
+ * stats-9 list was absent and this file went red every Sunday. Pinned to a fixed Saturday so the
+ * same seeded week is shown on every day of the week.
+ */
+const PINNED_DAY_ZERO = demoDayZero(new Date("2026-10-17T12:00:00+08:00")).getTime();
+
 function renderInProvider(node: ReactNode) {
   return render(
     <ToastProvider>
-      <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={PINNED_DAY_ZERO}>
+        {node}
+      </WardFlowProvider>
     </ToastProvider>,
   );
 }
