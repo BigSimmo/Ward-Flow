@@ -15,6 +15,9 @@ const config = {
   // transform cache outside that shared dependency tree and unique per worktree.
   cacheDir: vitestCacheDirectory(process.cwd()),
   test: {
+    // Vitest 5's persistent module cache is separate from Vite's cacheDir.
+    // Keep generated transforms out of the integrity-stamped dependency tree.
+    fsModuleCachePath: `${vitestCacheDirectory(process.cwd())}/modules`,
     // Route and RAG tests cold-import large Next.js module graphs inside the test
     // body. Give those transforms headroom on slower worktree filesystems while
     // retaining a finite timeout that still catches genuine hangs.

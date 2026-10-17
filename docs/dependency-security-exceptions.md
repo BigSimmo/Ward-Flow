@@ -59,6 +59,13 @@ clean install then passed with lifecycle scripts and the unchanged parity guard 
 existing installed-lock regression suite passed all ten cases. This lock correction does not
 fix or suppress SEC-003.
 
+Vitest 5 also introduced a persistent module cache distinct from Vite's `cacheDir`. Its default
+location under `node_modules` changed the stamped dependency inventory after a test run. The
+supported `fsModuleCachePath` setting now keeps it in the existing worktree-specific temporary
+cache. A new regression failed before this change and passed afterwards. Following another
+normal clean install, all 56 runner-safety and installed-lock cases passed, then the unchanged
+installed-lock parity check passed without restamping.
+
 ## Historical patched advisory roots — 16 October 2026
 
 The remediation lock selects sharp 0.35.5 (including libvips 1.3.4), source-map-js 1.2.2 and
