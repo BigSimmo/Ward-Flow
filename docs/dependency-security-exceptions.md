@@ -1,6 +1,6 @@
 # Dependency security follow-up
 
-Checked 16 October 2026 against this repository's npm lockfile and the npm registry. This record
+Checked 17 October 2026 against merged commit `ed9d59e7`, its npm lockfile and the npm registry. This record
 covers dependency maintenance for synthetic local development. It does not approve clinical use.
 
 ## Open upstream advisory: braces
@@ -9,6 +9,10 @@ covers dependency maintenance for synthetic local development. It does not appro
 - **Affected version:** braces 3.0.3, the latest published version on the checked date. There is no
   supported patched release to select (`npm view braces version` still returns `3.0.3`). This
   vulnerability remains open and upstream-blocked.
+- **Supported parent updates:** the latest `micromatch` 4.0.8 still requires `braces ^3.0.3`;
+  `fast-glob` 3.3.3 still requires that micromatch line. Even `@next/eslint-plugin-next` 16.4.2
+  pins `fast-glob` 3.3.1. Open dependency PR #335's Next 16.4.0 update therefore does not close
+  this advisory. Updating these packages solely for R43 would leave the vulnerable parser present.
 - **Dependency path:** development-only `eslint-config-next` 16.3.6 → `@next/eslint-plugin-next`
   16.3.6 → `fast-glob` 3.3.1 → `micromatch` 4.0.8 → `braces` 3.0.3. The five audit package entries
   describe one inherited advisory, not five separate vulnerabilities.
@@ -23,8 +27,8 @@ covers dependency maintenance for synthetic local development. It does not appro
   accepting external patterns. Required CI has job deadlines, read-only permissions and no
   persisted checkout credentials. A malicious pull request can disrupt its own tooling run, but
   this record establishes no guarantee that every possible repository-tooling path is protected.
-- **Fresh audit:** the locked install reports five high development package entries for this one
-  advisory; `npm audit --omit=dev --json` reports zero vulnerabilities. The full audit exits nonzero
+- **Fresh audit:** `npm audit --package-lock-only --json` reports five high development package
+  entries for this one advisory; adding `--omit=dev` reports zero vulnerabilities. The full audit exits nonzero
   while this exception is open. Neither result establishes a reachable application exploit.
 - **Decision:** retain the supported Next 16 toolchain while awaiting an upstream fix. Do not use
   `npm audit fix --force`: its suggested ESLint/Next 14 downgrade is incompatible with the current
@@ -45,10 +49,14 @@ integration build before claiming the candidate's full verification.
 
 ## Supported toolchain constraints
 
-The 16 October 2026 lock raises PostCSS from 8.5.23 to 8.5.30. The direct dependency and override
-now require at least 8.5.26, satisfying Vite 8.2.2's declared `^8.5.26` dependency. Codspeed's
-Vitest plugin is 6.0.1, whose published Vite peer includes `^8.0.0`; the forced Vite override is
-removed. Vitest and coverage-v8 remain together at 4.1.11. A clean `npm ci --ignore-scripts` and
-`npm ls postcss @codspeed/vitest-plugin vite vitest @vitest/coverage-v8 --all` completed without
-peer errors. Lifecycle scripts were deliberately not executed during this local verification.
-These compatibility repairs do not fix or close the braces advisory above.
+The merged lock selects PostCSS 8.5.30, Vite 8.2.2, Codspeed's Vitest plugin 6.0.1, and matching
+Vitest/coverage-v8 5.0.5 after PR #336. Next is 16.3.8, its ESLint configuration/plugin are 16.3.6,
+and ESLint is 10.12.0 after PR #338. The direct PostCSS dependency and override require at least
+8.5.26, satisfying Vite's declared `^8.5.26` dependency; no forced Vite override is present.
+
+The earlier 16 October verification used Vitest 4.1.11 with lifecycle scripts disabled. It is
+historical evidence, not a check of this merged toolchain. The current ESLint configuration names
+React 19 explicitly for the inherited React plugin's ESLint 10 compatibility workaround. That
+plugin's declared peer range still stops at ESLint 9, so installation can warn about its peer
+range. The final integrated PR #381 passed whole-tree lint in hosted CI; no broader upstream peer
+support is inferred. None of these compatibility changes closes the braces advisory above.
