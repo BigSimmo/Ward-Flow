@@ -319,3 +319,22 @@ describe("catchment-priority ordering — scoped to secure-bed patients, by owne
     expect(detained.map((candidate) => candidate.unit.id)).toEqual(involuntary.map((candidate) => candidate.unit.id));
   });
 });
+
+describe("shortlistCandidates — a closed ward is not offered", () => {
+  it("marks a closed ward unavailable with a reason that names the closure, even with allocatable beds", () => {
+    const open = state.units.find((unit) => !unit.isClosed && unit.allocatable.value > 0);
+    expect(open, "the seeded network has an open ward with an allocatable bed").toBeDefined();
+    const closedUnits = state.units.map((unit) => (unit.id === open!.id ? { ...unit, isClosed: true } : unit));
+    const before = shortlistCandidates(movement, state.units, NOW).find((c) => c.unit.id === open!.id)!;
+    const after = shortlistCandidates(movement, closedUnits, NOW).find((c) => c.unit.id === open!.id)!;
+    expect(
+      after.unit.allocatable.value,
+      "the count is still positive, so only closure explains the change",
+    ).toBeGreaterThan(0);
+    expect(after.availability).toBe("unavailable");
+    expect(after.verdict.eligible).toBe(false);
+    expect(blockingGate(after.verdict)?.detail).toContain("is closed");
+    // Anti-vacuity: the same ward is not unavailable for this reason when open.
+    expect(before.verdict.gates.find((gate) => gate.gate === "allocatable_bed")?.pass).toBe(true);
+  });
+});

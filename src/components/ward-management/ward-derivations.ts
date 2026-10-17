@@ -1024,7 +1024,24 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
 
   return units
     .map((unit) => {
-      const verdict = eligibility(movement, unit, now);
+      const baseVerdict = eligibility(movement, unit, now);
+      /*
+       * Owner decision, 17 October 2026: a closed ward is not offered on the shortlist. The pull
+       * itself already refuses a new reservation there (`ward-flow-placement-events.ts`), so this
+       * only stops the list offering what the pull would refuse. It is applied to this list's own
+       * copy of the verdict: `eligibility()` and the lenient `allocatable_bed` rule are unchanged,
+       * and the reason shown names the closure rather than a bed count.
+       */
+      const verdict = unit.isClosed
+        ? {
+            eligible: false,
+            gates: baseVerdict.gates.map((gate) =>
+              gate.gate === "allocatable_bed"
+                ? { ...gate, pass: false, detail: `${unit.name} is closed; a new bed cannot be reserved there` }
+                : gate,
+            ),
+          }
+        : baseVerdict;
       const failing = verdict.gates.filter((gate) => !gate.pass);
       /*
        * 🔴 Owner reversal, item 2, 17 September 2026: a Non-binary movement failing ONLY
