@@ -54,7 +54,21 @@ export function consumeRecoveryFragment(
     recovery: true,
   };
 }
-export class SupabaseWardAuth {
+export type WardBrowserAuthAdapter = {
+  readonly isRecovery: boolean;
+  readonly userId: string | null;
+  reauthenticate(password: string): Promise<void>;
+  restore(recovery?: ReturnType<typeof consumeRecoveryFragment>): Promise<void>;
+  signUp(email: string, password: string, redirectTo?: string): Promise<void>;
+  signIn(email: string, password: string): Promise<void>;
+  token(): Promise<string>;
+  recover(email: string, redirectTo: string): Promise<void>;
+  updatePassword(password: string): Promise<void>;
+  captureAccessTokenForSignOut(): string | null;
+  signOut(): Promise<void>;
+  dispose(): void;
+};
+export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   private session: Session | null = null;
   private generation = 0;
   private disposed = false;

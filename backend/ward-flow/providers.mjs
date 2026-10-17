@@ -41,13 +41,17 @@ export async function createBackend(config, dependencies = {}) {
     const authenticate = await (await loadAuth())(config, { roleHolders });
     if (config.shared) {
       const database = await loadDatabase();
-      pool = await database.createPool(config.postgres);
-      await database.verifyPool(pool, { ...config.postgres, pushEnabled: !!config.push });
-      const [{ createWorkspaceStore }, engine] = await Promise.all([
-        (dependencies.workspace ?? (() => import("./postgres.mjs")))(),
+      pool = database.createPool ? await database.createPool(config.postgres) : null;
+      if (database.verifyPool) {
+        await database.verifyPool(pool, { ...config.postgres, pushEnabled: !!config.push });
+      }
+      const [workspaceModule, engine] = await Promise.all([
+        database.createWorkspaceStore
+          ? Promise.resolve(database) // keep the adapter as the method receiver (`this`)
+          : (dependencies.workspace ?? (() => import("./postgres.mjs")))(),
         (dependencies.engine ?? (() => import(ENGINE_MODULE)))(),
       ]);
-      sharedStore = createWorkspaceStore(pool, {
+      sharedStore = workspaceModule.createWorkspaceStore(pool, {
         workspaceId: config.workspaceId,
         engine,
         push: await createPush(config),
