@@ -105,8 +105,7 @@ jobs:
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
       # Documentation checks cover links and anchors, maintained commands, facts and retired
-      # terms, safety wording, and reference-pack integrity. The index and organisation
-      # checks also run in the pre-commit hook and the full maintenance aggregate.
+      # terms, safety wording, reference-pack integrity, and scoped generated indexes.
       - name: Check document links and anchors
         run: npm run docs:check-links
       - name: Check reference-pack integrity
@@ -119,6 +118,15 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/doc-facts.mjs
+      - name: Check owner rulings index
+        if: ${{ steps.plan.outputs.owner_index == 'true' }}
+        run: node scripts/ward-flow/owner-rulings-index.mjs --check
+      - name: Check lessons rules index
+        if: ${{ steps.plan.outputs.rules_index == 'true' }}
+        run: node scripts/ward-flow/rules-index.mjs --check
+      - name: Check file organisation
+        if: ${{ steps.plan.outputs.organisation == 'true' }}
+        run: node scripts/ward-flow/organisation.mjs --check --source working-tree
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && steps.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0

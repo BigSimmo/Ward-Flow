@@ -137,13 +137,16 @@ describe("maintained document CI scope", () => {
       organisation: true,
     });
   });
-  it("required workflow keeps the doc links, facts and safety wording checks and the bounded synthetic check", () => {
+  it("required workflow keeps the doc links, facts, safety wording, planned index/organisation checks, and the bounded synthetic check", () => {
     const workflow = readFileSync(".github/workflows/ward-flow.yml", "utf8");
-    // Fix list 10.12 (15 Oct 2026): the index, inventory and organisation checks run locally only.
+    for (const flag of ["owner_index", "rules_index", "organisation"])
+      expect(workflow).toContain(`steps.plan.outputs.${flag} == 'true'`);
     expect(workflow).toContain("run: npm run docs:check-links");
     expect(workflow).toContain("run: node scripts/doc-facts.mjs");
     expect(workflow).toContain("run: npm run check:ward-legal-language");
-    expect(workflow).not.toContain("owner-rulings-index.mjs --check");
+    expect(workflow).toContain("owner-rulings-index.mjs --check");
+    expect(workflow).toContain("rules-index.mjs --check");
+    expect(workflow).toContain("organisation.mjs --check --source working-tree");
     expect(workflow).toContain("run: node scripts/ward-flow/check-clinical-governance-gate.mjs");
     expect(workflow).toContain("run: node scripts/ward-ci-public/install-chromium.mjs");
     expect(workflow).toMatch(/id: chromium\n\s*timeout-minutes: 8/u);
