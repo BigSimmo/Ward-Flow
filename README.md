@@ -1,5 +1,7 @@
 # Ward Flow
 
+_Updated 2026-10-17 - focused test example uses the maintained runner; Documentation owns._
+
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
 **All patient data is synthetic. This is a development prototype, not an approved system for real patient care.** Never enter real patient information.
@@ -25,18 +27,18 @@ npm ci --prefix backend/ward-flow
 
 ## Everyday commands
 
-| Task                                                 | Command                                   |
-| ---------------------------------------------------- | ----------------------------------------- |
-| One unit test file (fast)                            | `npx vitest run tests/ward-model.test.ts` |
-| Unit tests for your changes                          | `npm run test:related`                    |
-| All unit tests                                       | `npm run test`                            |
-| Lint (zero warnings allowed)                         | `npm run lint`                            |
-| Typecheck                                            | `npm run typecheck`                       |
-| Format the files you changed                         | `npm run format -- --files <paths>`       |
-| Ward browser journeys                                | `npm run test:e2e:ward-journeys`          |
-| Release gate journeys (desktop Chrome, phone WebKit) | `npm run test:e2e:release-gate`           |
-| Shared backend tests                                 | `npm run test:backend`                    |
-| Pre-push checks for your change                      | `npm run verify:pr-local`                 |
+| Task                                                 | Command                                                    |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
+| One unit test file (fast)                            | `node scripts/run-vitest.mjs run tests/ward-model.test.ts` |
+| Unit tests for your changes                          | `npm run test:related`                                     |
+| All unit tests                                       | `npm run test`                                             |
+| Lint (zero warnings allowed)                         | `npm run lint`                                             |
+| Typecheck                                            | `npm run typecheck`                                        |
+| Format the files you changed                         | `npm run format -- --files <paths>`                        |
+| Ward browser journeys                                | `npm run test:e2e:ward-journeys`                           |
+| Release gate journeys (desktop Chrome, phone WebKit) | `npm run test:e2e:release-gate`                            |
+| Shared backend tests                                 | `npm run test:backend`                                     |
+| Pre-push checks for your change                      | `npm run verify:pr-local`                                  |
 
 ## How it fits together
 

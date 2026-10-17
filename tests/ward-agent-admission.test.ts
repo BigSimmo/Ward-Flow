@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { devNull, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { it, onTestFinished } from "vitest";
@@ -37,7 +37,9 @@ if (process.platform === "win32") {
 function fixture(t: Cleanup) {
   const dir = mkdtempSync(path.join(tmpdir(), "ward-admission-"));
   t.after(() => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
-  const env: NodeJS.ProcessEnv = { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: devNull };
+  const globalGitConfig = path.join(dir, ".gitconfig-global");
+  writeFileSync(globalGitConfig, "");
+  const env: NodeJS.ProcessEnv = { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: globalGitConfig };
   for (const key of Object.keys(env)) {
     if (key.startsWith("GIT_") && !["GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_GLOBAL"].includes(key)) delete env[key];
     if (key.startsWith("WARD_") || key.startsWith("SKIP_") || key === "CONFIRM_WARD_FLOW_FOLD_TO_MAIN") delete env[key];
@@ -213,14 +215,20 @@ test("bare admission checks ownership during a merge", (t) => {
   assert.match(result.stderr, /without your sign-out/);
 });
 
-test("merge admission excludes unchanged upstream files from task ownership", (t) => {
+test("merge admission exempts clean incoming paths but requires ownership for manual resolutions", (t) => {
   const f = mergeFixture(t);
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  // A committed current-side-only change needs no new claim. A manual merge
+  // resolution changes HEAD-to-index and must still have an own sign-out.
+  f.stage("synthetic manual merge resolution\n");
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
   const unsigned = f.run();
   assert.equal(unsigned.status, 1);
   assert.match(unsigned.stderr, /without your sign-out/);
+  f.claims();
+  const resolved = f.run();
+  assert.equal(resolved.status, 0, resolved.stderr);
 });
 
 test("merge admission still scans upstream changes for secrets", (t) => {
@@ -232,9 +240,11 @@ test("merge admission still scans upstream changes for secrets", (t) => {
 
 test("merge ownership preserves NUL-delimited paths with whitespace and non-ASCII names", (t) => {
   const f = mergeFixture(t);
-  const special = ["space name.md", "tab\tname.md", "line\nname.md", "é.md"].map(
-    (name) => `docs/ward-flow/special/${name}`,
-  );
+  const special = (
+    process.platform === "win32"
+      ? ["space name.md", "é.md"]
+      : ["space name.md", "tab\tname.md", "line\nname.md", "é.md"]
+  ).map((name) => `docs/ward-flow/special/${name}`);
   for (const name of special) f.stage("synthetic task addition\n", name);
   const unsigned = f.run();
   assert.equal(unsigned.status, 1);
